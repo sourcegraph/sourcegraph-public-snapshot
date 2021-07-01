@@ -4,77 +4,29 @@ import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Observable } from 'rxjs'
-import { catchError, map, startWith } from 'rxjs/operators'
+import { catchError, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../backend/graphql'
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryFields, Scalars } from '../../graphql-operations'
+import { RepositoryFields } from '../../graphql-operations'
 import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
-import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
+import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
+import { fetchDocumentationPage, fetchDocumentationPathInfo, isExcluded, Tag } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
-
-interface DocumentationPageResults {
-    node: GQL.IRepository
-}
-interface DocumentationPageVariables {
-    repo: Scalars['ID']
-    revspec: string
-    pathID: string
-}
-
-const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQL.IDocumentationPage> =>
-    requestGraphQL<DocumentationPageResults, DocumentationPageVariables>(
-        gql`
-            query DocumentationPage($repo: ID!, $revspec: String!, $pathID: String!) {
-                node(id: $repo) {
-                    ... on Repository {
-                        commit(rev: $revspec) {
-                            tree(path: "/") {
-                                lsif {
-                                    documentationPage(pathID: $pathID) {
-                                        tree
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.node) {
-                throw createAggregateError(errors)
-            }
-            const repo = data.node
-            if (!repo.commit || !repo.commit.tree || !repo.commit.tree.lsif) {
-                throw new Error('no LSIF data')
-            }
-            if (!repo.commit.tree.lsif.documentationPage || !repo.commit.tree.lsif.documentationPage.tree) {
-                throw new Error('no LSIF documentation')
-            }
-            return repo.commit.tree.lsif.documentationPage
-        })
-    )
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="repository-docs-page__error alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
@@ -129,7 +81,24 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                         revspec: props.commitID,
                         pathID: pagePathID,
                     }).pipe(
-                        map(page => ({ ...page, tree: JSON.parse(page.tree) as GQLDocumentationNode })),
+                        catchError(error => [asError(error)]),
+                        startWith(LOADING)
+                    ),
+                [props.repo.id, props.commitID, pagePathID]
+            )
+        ) || LOADING
+
+    const pathInfo =
+        useObservable(
+            useMemo(
+                () =>
+                    fetchDocumentationPathInfo({
+                        repo: props.repo.id,
+                        revspec: props.commitID,
+                        pathID: pagePathID,
+                        ignoreIndex: true,
+                        maxDepth: 1,
+                    }).pipe(
                         catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
@@ -140,12 +109,17 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
     const [sidebarVisible, setSidebarVisible] = useState(getSidebarVisibility())
     const handleSidebarVisible = useCallback((visible: boolean) => setSidebarVisible(visible), [])
 
+    const loading = page === LOADING || pathInfo === LOADING
+    const error = isErrorLike(page) ? page : isErrorLike(pathInfo) ? pathInfo : null
+
+    const excludingTags: Tag[] = ['private']
+
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
-            {page === LOADING ? <LoadingSpinner className="icon-inline m-1" /> : null}
-            {isErrorLike(page) && page.message === 'page not found' ? <PageNotFound /> : null}
-            {isErrorLike(page) && (page.message === 'no LSIF data' || page.message === 'no LSIF documentation') ? (
+            {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
+            {error && error.message === 'page not found' ? <PageNotFound /> : null}
+            {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
                 <div className="repository-docs-page__container">
                     <div className="repository-docs-page__container-content">
                         <div className="d-flex float-right">
@@ -167,7 +141,15 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                         </h1>
                         <p>API documentation generated for all your code</p>
                         <Container>
-                            <h2 className="text-muted mb-2">This repository has no LSIF documentation data.</h2>
+                            <h2 className="text-muted mb-2">
+                                <MapSearchIcon className="icon-inline mr-2" />
+                                Repository has no LSIF documentation data
+                            </h2>
+                            <p className="mt-3">
+                                Sourcegraph can use LSIF code intelligence to generate API documentation for all your
+                                code, giving you the ability to navigate and explore the APIs provided by this
+                                repository.
+                            </p>
                             <h3>
                                 <a
                                     // eslint-disable-next-line react/jsx-no-target-blank
@@ -178,22 +160,26 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                     Learn more
                                 </a>
                             </h3>
+                            <p className="text-muted mt-3 mb-0">
+                                <strong>Note:</strong> only the Go programming language is currently supported.
+                            </p>
                         </Container>
                     </div>
                 </div>
             ) : null}
-            {isErrorLike(page) &&
-            page.message !== 'page not found' &&
-            page.message !== 'no LSIF data' &&
-            page.message !== 'no LSIF documentation' ? (
-                <PageError error={page} />
+            {isErrorLike(error) &&
+            error.message !== 'page not found' &&
+            error.message !== 'no LSIF data' &&
+            error.message !== 'no LSIF documentation' ? (
+                <PageError error={error} />
             ) : null}
-            {page !== LOADING && !isErrorLike(page) ? (
+            {page !== LOADING && !isErrorLike(page) && pathInfo !== LOADING && !isErrorLike(pathInfo) ? (
                 <>
                     <RepositoryDocumentationSidebar
                         {...props}
                         onToggle={handleSidebarVisible}
                         node={page.tree}
+                        pathInfo={pathInfo}
                         pagePathID={pagePathID}
                         depth={0}
                     />
@@ -204,13 +190,19 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                             }`}
                         >
                             <DocumentationWelcomeAlert />
+                            {isExcluded(page.tree, excludingTags) ? (
+                                <div className="m-3">
+                                    <h2 className="text-muted">Looks like there's nothing to see here.</h2>
+                                    <p>API docs for private / unexported code is coming soon!</p>
+                                </div>
+                            ) : null}
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
                                 node={page.tree}
                                 pagePathID={pagePathID}
                                 depth={0}
-                                excludingTags={['private']}
+                                excludingTags={excludingTags}
                             />
                         </div>
                     </div>

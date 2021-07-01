@@ -85,7 +85,7 @@ export function experimentalFeaturesFromSettings(
         showQueryBuilder = false,
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
-        apiDocs = false,
+        apiDocs = true, // Default to true if not set
         designRefreshToggleEnabled = false,
     } = experimentalFeatures
 

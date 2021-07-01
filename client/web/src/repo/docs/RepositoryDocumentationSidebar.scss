@@ -1,5 +1,16 @@
 .repository-documentation-sidebar {
-    &-scroller:last-child {
-        padding-bottom: 3rem;
+    &-scroller {
+        height: 100%;
+        :last-child {
+            padding-bottom: 3rem;
+        }
+    }
+    &__show-more-button > button {
+        :focus {
+            box-shadow: none;
+        }
+        > svg {
+            display: none;
+        }
     }
 }

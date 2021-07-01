@@ -75,7 +75,7 @@ func (r *QueryResolver) DocumentationPathInfo(ctx context.Context, args *gql.LSI
 		}, nil
 	}
 
-	result, err := get(args.PathID, 0)
+	result, err := get(args.PathID, -1)
 	if err != nil {
 		return gql.JSONValue{}, err
 	}

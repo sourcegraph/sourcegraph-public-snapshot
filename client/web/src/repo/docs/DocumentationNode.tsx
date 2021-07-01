@@ -12,74 +12,7 @@ import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
 import { DocumentationIcons } from './DocumentationIcons'
-
-// Mirrors the same type on the backend:
-//
-// https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal
-export interface GQLDocumentationNode {
-    pathID: string
-    documentation: Documentation
-    label: MarkupContent
-    detail: MarkupContent
-    children: DocumentationNodeChild[]
-}
-
-export interface MarkupContent {
-    kind: MarkupKind
-    value: string
-}
-export type MarkupKind = 'plaintext' | 'markdown'
-
-export interface Documentation {
-    identifier: string
-    newPage: boolean
-    searchKey: string
-    tags: Tag[]
-}
-
-export type Tag =
-    | 'private'
-    | 'deprecated'
-    | 'test'
-    | 'benchmark'
-    | 'example'
-    | 'license'
-    | 'owner'
-    | 'file'
-    | 'module'
-    | 'namespace'
-    | 'package'
-    | 'class'
-    | 'method'
-    | 'property'
-    | 'field'
-    | 'constructor'
-    | 'enum'
-    | 'interface'
-    | 'function'
-    | 'variable'
-    | 'constant'
-    | 'string'
-    | 'number'
-    | 'boolean'
-    | 'array'
-    | 'object'
-    | 'key'
-    | 'null'
-    | 'enumNumber'
-    | 'struct'
-    | 'event'
-    | 'operator'
-    | 'typeParameter'
-
-export interface DocumentationNodeChild {
-    node?: GQLDocumentationNode
-    pathID?: string
-}
-
-export function isExcluded(node: GQLDocumentationNode, excludingTags: Tag[]): boolean {
-    return node.documentation.tags.filter(tag => excludingTags.includes(tag)).length > 0
-}
+import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters {
     repo: RepositoryFields
@@ -119,6 +52,14 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             [depth, node.label.value, thisPage]
         )
     )
+    if (node.detail.value === '') {
+        const children = node.children.filter(child =>
+            !child.node ? false : !isExcluded(child.node, props.excludingTags)
+        )
+        if (children.length === 0) {
+            return null
+        }
+    }
 
     return (
         <div className="documentation-node">
@@ -132,11 +73,11 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             )}
 
             {node.children?.map(
-                (child, index) =>
+                child =>
                     child.node &&
                     !isExcluded(child.node, props.excludingTags) && (
                         <DocumentationNode
-                            key={`${depth}-${index}`}
+                            key={`${depth}-${child.node!.pathID}`}
                             {...props}
                             node={child.node}
                             depth={depth + 1}

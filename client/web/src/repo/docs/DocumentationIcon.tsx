@@ -32,7 +32,7 @@ import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
 import * as React from 'react'
 
-import { Tag } from './DocumentationNode'
+import { Tag } from './graphql'
 
 /**
  * Returns the icon component for a given documentation tag

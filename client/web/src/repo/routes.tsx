@@ -248,7 +248,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 return false
             }
             const settings: Settings = settingsCascade.final
-            return !!settings.experimentalFeatures?.apiDocs
+            return settings.experimentalFeatures?.apiDocs !== false
         },
         render: ({ resolvedRev: { commitID }, match, repoHeaderContributionsLifecycleProps, ...context }: any) => (
             <>
