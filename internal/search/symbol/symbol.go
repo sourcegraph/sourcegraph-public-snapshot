@@ -30,8 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-const DefaultSymbolLimit = 100
-
 var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
 
 // Search searches the given repos in parallel for symbols matching the given search query
@@ -43,7 +41,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		results, stats, err := MockSearchSymbols(ctx, args, limit)
 		stream.Send(streaming.SearchEvent{
 			Results: results,
-			Stats:   stats.Deref(),
+			Stats:   statsDeref(stats),
 		})
 		return err
 	}
@@ -120,7 +118,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 	return run.Wait()
 }
 
-func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {

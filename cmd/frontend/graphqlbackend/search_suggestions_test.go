@@ -51,7 +51,11 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	}
 
+<<<<<<< HEAD
 	symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
+=======
+	run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
+>>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}
@@ -102,7 +106,11 @@ func TestSearchSuggestions(t *testing.T) {
 		defer git.ResetMocks()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
+<<<<<<< HEAD
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+=======
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+>>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
 			calledSearchFilesInRepos.Store(true)
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -152,7 +160,11 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
+<<<<<<< HEAD
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+=======
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+>>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
@@ -269,7 +281,11 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
+<<<<<<< HEAD
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+=======
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+>>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
