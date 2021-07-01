@@ -6,7 +6,6 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -23,7 +22,7 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageRe
 
 	// 🚨 SECURITY: Users will fetch status messages for any external services they
 	// own. In addition, site admins will also fetch site level external services.
-	messages, err := repos.FetchStatusMessages(ctx, r.db, currentUser, envvar.SourcegraphDotComMode())
+	messages, err := repos.FetchStatusMessages(ctx, r.db, currentUser)
 	if err != nil {
 		return nil, err
 	}

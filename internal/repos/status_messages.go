@@ -17,7 +17,7 @@ var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, erro
 // external service sync errors we'll fetch any external services owned by the
 // user. In addition, if the user is a site admin we'll also fetch site level
 // external services.
-func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud bool) ([]StatusMessage, error) {
+func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]StatusMessage, error) {
 	if MockStatusMessages != nil {
 		return MockStatusMessages(ctx, u)
 	}
