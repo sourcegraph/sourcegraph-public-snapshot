@@ -266,7 +266,11 @@ func GitServer() *monitoring.Container {
 						{
 							Name:           "janitor_running",
 							Description:    "if the janitor process is running",
+<<<<<<< HEAD
 							Query:          "max by (instance) (src_gitserver_janitor_running)",
+=======
+							Query:          "src_gitserver_janitor_running",
+>>>>>>> 31066d4713 (monitoring: Add gitserver cleanup panel (#22385))
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("janitor process running").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
