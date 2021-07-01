@@ -4195,7 +4195,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 90%+ container memory usage by instance
+- <span class="badge badge-critical">critical</span> repo-updater: 90%+ container memory usage by instance for 10m0s
 
 **Possible solutions**
 
