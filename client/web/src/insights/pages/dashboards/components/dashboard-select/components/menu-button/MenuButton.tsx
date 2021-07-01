@@ -23,7 +23,7 @@ export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
     const { dashboards, className } = props
 
     return (
-        <ListboxButton className={classnames(styles.listboxButton, className)}>
+        <ListboxButton className={classnames(styles.button, className)}>
             {({ value, isExpanded }) => {
                 if (value === InsightsDashboardType.All) {
                     return <MenuButtonContent title="All Insights" isExpanded={isExpanded} />
@@ -59,12 +59,12 @@ const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props
 
     return (
         <>
-            <span className={styles.listboxButtonText}>
+            <span className={styles.text}>
                 <TruncatedText title={title}>{title}</TruncatedText>
-                {badge && <Badge value={badge} className={classnames('ml-1 mr-1', styles.listboxButtonBadge)} />}
+                {badge && <Badge value={badge} className={classnames('ml-1 mr-1', styles.badge)} />}
             </span>
 
-            <ListboxButtonIcon className={styles.listboxButtonIcon} />
+            <ListboxButtonIcon className={styles.expandedIcon} />
         </>
     )
 }

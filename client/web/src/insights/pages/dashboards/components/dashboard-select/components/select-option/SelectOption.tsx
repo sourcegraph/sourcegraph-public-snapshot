@@ -29,11 +29,11 @@ export const SelectOption: React.FunctionComponent<SelectOptionProps> = props =>
     const { value, label, badge, className } = props
 
     return (
-        <ListboxOption className={classnames(styles.listboxOption, className)} value={value}>
-            <TruncatedText title={label} className={styles.listboxOptionText}>
+        <ListboxOption className={classnames(styles.option, className)} value={value}>
+            <TruncatedText title={label} className={styles.text}>
                 {label}
             </TruncatedText>
-            {badge && <Badge value={badge} className={styles.listboxOptionBadge} />}
+            {badge && <Badge value={badge} className={styles.badge} />}
         </ListboxOption>
     )
 }

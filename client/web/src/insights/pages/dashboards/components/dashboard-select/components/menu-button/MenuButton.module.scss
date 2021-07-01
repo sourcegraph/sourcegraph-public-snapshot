@@ -1,43 +1,41 @@
-.listbox-button {
-    // A special selector to increase the specificity in order to override reach ui styles
-    // for the list-box button element.
-    &[data-reach-listbox-button] {
-        display: flex;
-        justify-content: flex-start;
-        cursor: pointer;
-        padding: 0.25rem 0.5rem 0.25rem 0.75rem;
-        background: var(--input-bg);
-        border-radius: var(--border-radius);
+// Special reach-ui selector to increase the specificity in order to override reach ui styles
+// for the list-box button element.
+.button[data-reach-listbox-button] {
+    display: flex;
+    justify-content: flex-start;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+    background: var(--input-bg);
+    border-radius: var(--border-radius);
 
-        /* Reset reach ui border value */
-        border: 1px solid var(--border-color);
+    /* Reset reach ui border value */
+    border: 1px solid var(--border-color);
 
-        &:focus {
-            border-color: var(--focus-outline-color);
-        }
+    &:focus {
+        border-color: var(--focus-outline-color);
     }
+}
 
-    &__text {
-        display: flex;
-        align-items: baseline;
+.text {
+    display: flex;
+    align-items: baseline;
 
-        /*
-            Without min-width with value, the flex child containing the other text elements
-            won’t narrow past the “implied width” of those text elements.
+    /*
+        Without min-width with value, the flex child containing the other text elements
+        won’t narrow past the “implied width” of those text elements.
 
-            More info (https://css-tricks.com/flexbox-truncated-text/)
-        */
-        min-width: 0;
-        white-space: nowrap;
-    }
+        More info (https://css-tricks.com/flexbox-truncated-text/)
+    */
+    min-width: 0;
+    white-space: nowrap;
+}
 
-    &__badge {
-        max-width: 8rem;
-        flex-shrink: 0;
-    }
+.badge {
+    max-width: 8rem;
+    flex-shrink: 0;
+}
 
-    &__icon {
-        color: var(--color-bg-6);
-        margin-left: auto;
-    }
+.expanded-icon {
+    color: var(--color-bg-6);
+    margin-left: auto;
 }

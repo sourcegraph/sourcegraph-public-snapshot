@@ -34,18 +34,18 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
             <VisuallyHidden id={LABEL_ID}>Choose a dashboard</VisuallyHidden>
 
             <ListboxInput value={selectedDashboard} onChange={handleChange}>
-                <MenuButton dashboards={dashboards} className={styles.listboxButton} />
+                <MenuButton dashboards={dashboards} className={styles.selectButton} />
 
-                <ListboxPopover className={classnames(styles.listboxPopover)} portal={true}>
-                    <ListboxList className={classnames(styles.listboxList, 'dropdown-menu')}>
+                <ListboxPopover className={classnames(styles.popover)} portal={true}>
+                    <ListboxList className={classnames(styles.list, 'dropdown-menu')}>
                         <SelectOption
                             value={InsightsDashboardType.All}
                             label="All Insights"
-                            className={styles.listboxOption}
+                            className={styles.option}
                         />
 
                         <ListboxGroup>
-                            <ListboxGroupLabel className={classnames(styles.listboxGroupLabel, 'text-muted')}>
+                            <ListboxGroupLabel className={classnames(styles.groupLabel, 'text-muted')}>
                                 Private
                             </ListboxGroupLabel>
 
@@ -55,14 +55,14 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
-                                        className={styles.listboxOption}
+                                        className={styles.option}
                                     />
                                 ))}
                         </ListboxGroup>
 
                         {organizationGroups.map(group => (
                             <ListboxGroup key={group.id}>
-                                <ListboxGroupLabel className={classnames(styles.listboxGroupLabel, 'text-muted')}>
+                                <ListboxGroupLabel className={classnames(styles.groupLabel, 'text-muted')}>
                                     {group.name}
                                 </ListboxGroupLabel>
 
@@ -70,7 +70,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
-                                        className={styles.listboxOption}
+                                        className={styles.option}
                                     />
                                 ))}
                             </ListboxGroup>
