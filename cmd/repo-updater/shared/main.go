@@ -463,7 +463,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			log15.Error("Listing default repos", "error", err)
 			return
 		} else {
-			// Ensure that uncloned repos are known to the scheduler
+			// Ensure that uncloned indexable repos are known to the scheduler
 			sched.EnsureScheduled(u)
 		}
 
