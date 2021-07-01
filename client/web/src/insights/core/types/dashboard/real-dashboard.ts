@@ -9,7 +9,7 @@ interface BuiltInInsightDashboard extends ExtendedInsightDashboard {
      * built-in dashboard. Currently we support 2 types of user built-in dashboard.
      *
      * "Personal" - all personal insights from personal settings (all users
-     * it have by default)
+     * have it by default)
      *
      * "Organizations level" - all organizations act as an insights dashboard.
      */

@@ -24,7 +24,7 @@ export enum InsightsDashboardType {
 }
 
 /**
- * Owner of dashboard information. It can be a user-type subject (personal dashboard), org subject
+ * Information about dashboard owner. It can be a user-type subject (personal dashboard), org subject
  * (org level dashboard)
  */
 export interface InsightDashboardOwner {
