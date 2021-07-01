@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -52,10 +51,14 @@ func TestSearchSuggestions(t *testing.T) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 =======
 	run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 >>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
+=======
+	symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
+>>>>>>> 94f08a3615 (pull symbol and commit logic out of internal/search/run (#22365))
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}

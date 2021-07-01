@@ -3,7 +3,6 @@ package symbol
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"regexp/syntax"
 	"sort"
 	"time"
@@ -29,6 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
+
+const DefaultSymbolLimit = 100
 
 var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
 
@@ -118,7 +119,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 	return run.Wait()
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -362,33 +363,16 @@ func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID
 	return matches, err
 }
 
-// GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
-// at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
-	// Should be large enough to include all symbols from a single file
-	first := int32(999999)
-	emptyString := ""
-	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var match *result.SymbolMatch
-	for _, symbolMatch := range symbolMatches {
-		symbolRange := symbolMatch.Symbol.Range()
-		isWithinRange := line >= symbolRange.Start.Line && character >= symbolRange.Start.Character && line <= symbolRange.End.Line && character <= symbolRange.End.Character
-		if isWithinRange && (match == nil || len(symbolMatch.Symbol.Name) < len(match.Symbol.Name)) {
-			match = symbolMatch
-		}
-	}
-	return match, nil
-}
-
 func limitOrDefault(first *int32) int {
 	if first == nil {
 		return DefaultSymbolLimit
 	}
 	return int(*first)
+}
+
+func statsDeref(s *streaming.Stats) streaming.Stats {
+	if s == nil {
+		return streaming.Stats{}
+	}
+	return *s
 }

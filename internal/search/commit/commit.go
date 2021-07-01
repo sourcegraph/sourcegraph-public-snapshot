@@ -434,33 +434,7 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *result.HighlightedSt
 	}
 }
 
-// ResolveCommitParameters creates parameters for commit search from tp. It
-// will wait for the list of repos to be resolved.
-func ResolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*search.TextParametersForCommitParameters, error) {
-	old := tp.PatternInfo
-	patternInfo := &search.CommitPatternInfo{
-		Pattern:                      old.Pattern,
-		IsRegExp:                     old.IsRegExp,
-		IsCaseSensitive:              old.IsCaseSensitive,
-		FileMatchLimit:               old.FileMatchLimit,
-		IncludePatterns:              old.IncludePatterns,
-		ExcludePattern:               old.ExcludePattern,
-		PathPatternsAreRegExps:       true,
-		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
-	}
-	repos, err := tp.RepoPromise.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &search.TextParametersForCommitParameters{
-		PatternInfo: patternInfo,
-		Repos:       repos,
-		Query:       tp.Query,
-	}, nil
-}
-
-type SearchCommitsInReposParameters struct {
+type searchCommitsInReposParameters struct {
 	TraceName string
 
 	// CommitParams are the base commit parameters passed to
