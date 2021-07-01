@@ -245,7 +245,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil)))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
 	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
-	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch changes", nil)))
+	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
 	router.Get(routeRepoDocs).Handler(handler(serveBrandedPageString("API docs", nil)))
 	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil)))
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
