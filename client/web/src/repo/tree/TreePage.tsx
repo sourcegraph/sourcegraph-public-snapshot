@@ -265,7 +265,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs = !isErrorLike(settingsCascade.final) && !!settingsCascade.final?.experimentalFeatures?.apiDocs
+    const enableAPIDocs = !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
 
     const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
