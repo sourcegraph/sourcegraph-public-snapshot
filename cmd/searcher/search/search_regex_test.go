@@ -427,7 +427,8 @@ func TestMaxMatches(t *testing.T) {
 	// Create a zip archive which contains our limits + 1
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
-	for i := 0; i < maxFileMatches+1; i++ {
+	maxMatches := 33
+	for i := 0; i < maxMatches+1; i++ {
 		w, err := zw.CreateHeader(&zip.FileHeader{
 			Name:   strconv.Itoa(i),
 			Method: zip.Store,
@@ -435,7 +436,7 @@ func TestMaxMatches(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for j := 0; j < maxLineMatches+1; j++ {
+		for j := 0; j < 10; j++ {
 			_, _ = w.Write([]byte(pattern))
 			_, _ = w.Write([]byte{' '})
 			_, _ = w.Write([]byte{'\n'})
@@ -454,7 +455,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxFileMatches, true, false, false)
+	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxMatches, true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -462,16 +463,13 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatalf("expected limitHit on regexSearch")
 	}
 
-	if len(fileMatches) != maxFileMatches {
-		t.Fatalf("expected %d file matches, got %d", maxFileMatches, len(fileMatches))
+	totalMatches := 0
+	for _, match := range fileMatches {
+		totalMatches += match.MatchCount
 	}
-	for _, fm := range fileMatches {
-		if !fm.LimitHit {
-			t.Fatalf("expected limitHit on file match")
-		}
-		if len(fm.LineMatches) != maxLineMatches {
-			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
-		}
+
+	if totalMatches != maxMatches {
+		t.Fatalf("expected %d file matches, got %d", maxMatches, totalMatches)
 	}
 }
 
@@ -574,7 +572,8 @@ func TestRegexSearch(t *testing.T) {
 			},
 			wantFm: []protocol.FileMatch{
 				{
-					Path: "a.go",
+					Path:       "a.go",
+					MatchCount: 1,
 				},
 			},
 		},

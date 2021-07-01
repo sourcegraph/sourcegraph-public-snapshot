@@ -18,33 +18,29 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	nettrace "golang.org/x/net/trace"
+
+	"github.com/cockroachdb/errors"
+	"github.com/gorilla/schema"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/cockroachdb/errors"
-
-	"github.com/gorilla/schema"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
-	// maxFileMatches is the limit on number of matching files we return.
-	maxFileMatches = 1000
-
-	// maxLineMatches is the limit on number of matches to return in a
-	// file.
-	maxLineMatches = 100
+	// maxLimit is a hard-coded maximum for total number of matches we return.
+	// This may be increased in the future pending stability evaluation, or may
+	// be removed entirely once streaming is in place and we don't need to buffer
+	// the whole result set in memory.
+	maxLimit = 100_000
 
 	// numWorkers is how many concurrent readerGreps run in the case of
 	// regexSearch, and the number of parallel workers in the case of
@@ -101,8 +97,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if p.Limit == 0 || p.Limit > maxLimit {
+		p.Limit = maxLimit
+	}
 
 	sender := &collectingSender{}
+
 	limitHit, deadlineHit, err := s.search(ctx, &p, sender)
 	if err != nil {
 		code := http.StatusInternalServerError
@@ -130,8 +130,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(&resp)
 }
 
-const maxFileMatchLimit = 100
-
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender MatchSender) (limitHit, deadlineHit bool, err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
@@ -149,7 +147,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender MatchS
 	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
 	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
 	span.SetTag("pathPatternsAreCaseSensitive", strconv.FormatBool(p.PathPatternsAreCaseSensitive))
-	span.SetTag("fileMatchLimit", p.FileMatchLimit)
+	span.SetTag("limit", p.Limit)
 	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
 	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
 	span.SetTag("deadline", p.Deadline)
@@ -194,6 +192,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender MatchS
 
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
+		// TODO use limit in indexed structural search
 		return structuralSearchWithZoekt(ctx, p, sender)
 	}
 
@@ -244,7 +243,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender MatchS
 		limitHit, err := filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 		return limitHit, false, err
 	} else {
-		limitHit, err := regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+		limitHit, err := regexSearch(ctx, rg, zf, p.Limit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 		return limitHit, false, err
 	}
 }
@@ -306,26 +305,4 @@ func isTemporary(err error) bool {
 		Temporary() bool
 	})
 	return ok && e.Temporary()
-}
-
-type MatchSender interface {
-	Send(protocol.FileMatch)
-	SentCount() int
-}
-
-type collectingSender struct {
-	mux       sync.Mutex
-	collected []protocol.FileMatch
-}
-
-func (m *collectingSender) Send(match protocol.FileMatch) {
-	m.mux.Lock()
-	m.collected = append(m.collected, match)
-	m.mux.Unlock()
-}
-
-func (m *collectingSender) SentCount() int {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return len(m.collected)
 }

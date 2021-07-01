@@ -187,7 +187,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *stor
 		return false, err
 	}
 
-	fileMatches, _, err := regexSearchBatch(ctx, rg, zipFile, p.FileMatchLimit, true, false, false)
+	fileMatches, _, err := regexSearchBatch(ctx, rg, zipFile, p.Limit, true, false, false)
 	if err != nil {
 		return false, err
 	}
@@ -275,30 +275,22 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 }
 
 func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender MatchSender) (limitHit, deadlineHit bool, err error) {
-	// Since we are returning file content, limit the number of file matches
-	// until streaming from Zoekt is implemented
-	fileMatchLimit := p.FileMatchLimit
-	if fileMatchLimit > maxFileMatchLimit {
-		fileMatchLimit = maxFileMatchLimit
+	patternInfo := &search.TextPatternInfo{
+		Pattern:                      p.Pattern,
+		IsNegated:                    p.IsNegated,
+		IsRegExp:                     p.IsRegExp,
+		IsStructuralPat:              p.IsStructuralPat,
+		CombyRule:                    p.CombyRule,
+		IsWordMatch:                  p.IsWordMatch,
+		IsCaseSensitive:              p.IsCaseSensitive,
+		FileMatchLimit:               int32(p.Limit), // TODO convert this to Limit
+		IncludePatterns:              p.IncludePatterns,
+		ExcludePattern:               p.ExcludePattern,
+		PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+		PatternMatchesContent:        p.PatternMatchesContent,
+		PatternMatchesPath:           p.PatternMatchesPath,
+		Languages:                    p.Languages,
 	}
-
-	patternInfo :=
-		&search.TextPatternInfo{
-			Pattern:                      p.Pattern,
-			IsNegated:                    p.IsNegated,
-			IsRegExp:                     p.IsRegExp,
-			IsStructuralPat:              p.IsStructuralPat,
-			CombyRule:                    p.CombyRule,
-			IsWordMatch:                  p.IsWordMatch,
-			IsCaseSensitive:              p.IsCaseSensitive,
-			FileMatchLimit:               int32(fileMatchLimit),
-			IncludePatterns:              p.IncludePatterns,
-			ExcludePattern:               p.ExcludePattern,
-			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-			PatternMatchesContent:        p.PatternMatchesContent,
-			PatternMatchesPath:           p.PatternMatchesPath,
-			Languages:                    p.Languages,
-		}
 
 	if p.Branch == "" {
 		p.Branch = "HEAD"

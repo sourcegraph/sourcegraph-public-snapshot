@@ -225,8 +225,8 @@ func foo(real string) {}
 	}
 
 	p := &protocol.PatternInfo{
-		Pattern:        pattern,
-		FileMatchLimit: 30,
+		Pattern: pattern,
+		Limit:   30,
 	}
 	sender := &collectingSender{}
 	_, err = filteredStructuralSearch(context.Background(), zPath, zFile, p, "foo", sender)
