@@ -1,7 +1,7 @@
 .repository-documentation-sidebar {
     &-scroller {
         height: 100%;
-        :last-child {
+        &:last-child {
             padding-bottom: 3rem;
         }
     }
