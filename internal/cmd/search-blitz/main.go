@@ -20,7 +20,6 @@ import (
 )
 
 const port = "8080"
-const envConfig = "CONFIG"
 const envLogDir = "LOG_DIR"
 
 func run(ctx context.Context, wg *sync.WaitGroup) {
@@ -36,11 +35,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	configPath := os.Getenv(envConfig)
-	if configPath == "" {
-		configPath = "/config.yaml"
-	}
-	config, err := loadQueries(configPath)
+	config, err := loadQueries()
 	if err != nil {
 		panic(err)
 	}
