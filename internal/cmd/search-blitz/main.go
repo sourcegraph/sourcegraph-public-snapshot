@@ -57,6 +57,8 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			qc.Interval = time.Minute
 		}
 
+		log := log15.New("group", group, "name", qc.Name, "query", qc.Query, "type", c.clientType())
+
 		// Randomize start to a random time in the initial interval so our
 		// queries aren't all scheduled at the same time.
 		randomStart := time.Duration(int64(float64(qc.Interval) * rand.Float64()))
@@ -73,10 +75,10 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 
 			m, err := c.search(ctx, qc.Query, qc.Name)
 			if err != nil {
-				log15.Error(err.Error())
+				log.Error(err.Error())
 			} else {
-				log15.Info("metrics", "group", group, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-				durationSearchHistogram.WithLabelValues(group, c.clientType()).Observe(float64(m.took))
+				log.Info("metrics", "trace", m.trace, "duration_ms", m.took)
+				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
 			}
 
 			select {
