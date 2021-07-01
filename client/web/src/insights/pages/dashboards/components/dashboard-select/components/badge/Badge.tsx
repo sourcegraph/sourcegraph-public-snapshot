@@ -11,5 +11,9 @@ interface BadgeProps {
 export const Badge: React.FunctionComponent<BadgeProps> = props => {
     const { value, className } = props
 
-    return <TruncatedText className={classnames('badge badge-secondary', className)}>{value}</TruncatedText>
+    return (
+        <TruncatedText title={value} className={classnames('badge badge-secondary', className)}>
+            {value}
+        </TruncatedText>
+    )
 }
