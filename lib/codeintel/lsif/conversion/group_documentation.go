@@ -121,10 +121,6 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 			this.PathID = pathID + "/" + cleanPathIDElement(documentation.Identifier)
 		default:
 			this.PathID = pathID + "#" + cleanPathIDFragment(documentation.Identifier)
-			if !p.dupChecker.add(this.PathID) {
-				log15.Warn("API docs: duplicate pathID forbidden", "pathID", this.PathID)
-				return
-			}
 		}
 		if parent != nil {
 			if this.Documentation.NewPage {
@@ -135,17 +131,12 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					PathID: this.PathID,
 				})
-				if p.walkedPages.add(this.PathID) {
-					remainingPages = append(remainingPages, &pageCollector{
-						isChildPage:                 true,
-						parentPathID:                parent.PathID,
-						state:                       p.state,
-						startingDocumentationResult: documentationResult,
-						dupChecker:                  p.dupChecker,
-						walkedPages:                 p.walkedPages,
-					})
-				}
-				return
+				remainingPages = append(remainingPages, &pageCollector{
+					isChildPage:                 true,
+					parentPathID:                parent.PathID,
+					state:                       p.state,
+					startingDocumentationResult: documentationResult,
+				})
 			} else {
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					Node: this,
