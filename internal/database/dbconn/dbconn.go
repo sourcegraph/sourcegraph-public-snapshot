@@ -348,9 +348,6 @@ func (h *hook) OnError(ctx context.Context, err error, query string, args ...int
 	return err
 }
 
-func registerPrometheusCollector(db *sql.DB, dbName, app string) {
-}
-
 // configureConnectionPool sets reasonable sizes on the built in DB queue. By
 // default the connection pool is unbounded, which leads to the error `pq:
 // sorry too many clients already`.
