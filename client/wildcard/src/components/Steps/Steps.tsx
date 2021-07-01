@@ -56,7 +56,6 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ current = 1, number
         return React.cloneElement(child, {
             disabled: current < index + 1,
             active: current === index + 1,
-            // TODO: check this again
             onClick: () => (onTabClick ? onTabClick(index + 1) : undefined),
         })
     })

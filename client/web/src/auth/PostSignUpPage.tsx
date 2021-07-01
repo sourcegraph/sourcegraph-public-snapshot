@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState, useCallback, useEffect } from 'react'
+import React, { FunctionComponent, useState } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -37,19 +37,16 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const location = useLocation()
     const history = useHistory()
 
-    // const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
-
-    const { data, loading, error } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {
-        variables: {
-            namespace: user.id,
-            first: null,
-            after: null,
-        },
-    })
-
-    if (data) {
-        console.log(data)
-    }
+    const { data, loading, error, refetch } = useQuery<ExternalServicesResult, ExternalServicesVariables>(
+        EXTERNAL_SERVICES,
+        {
+            variables: {
+                namespace: user.id,
+                first: null,
+                after: null,
+            },
+        }
+    )
 
     if (loading) {
         return (
@@ -62,19 +59,6 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     if (error) {
         console.log(error)
     }
-    // const fetchExternalServices = useCallback(async (): Promise<void> => {
-    //     const { nodes: fetchedServices } = await queryExternalServices({
-    //         namespace: user.id,
-    //         first: null,
-    //         after: null,
-    //     }).toPromise()
-
-    //     setExternalServices(fetchedServices)
-    // }, [user.id])
-
-    // useEffect(() => {
-    //     fetchExternalServices().catch(error => console.log(error))
-    // }, [fetchExternalServices])
 
     const connectCodeHosts = {
         content: (
@@ -92,27 +76,14 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                         externalServices={data.externalServices.nodes}
                         context={context}
                         onDidError={error => console.warn('<UserCodeHosts .../>', error)}
-                        onDidRemove={() => null}
+                        onDidRemove={() => refetch()}
                     />
                 )}
-
-                {/* {externalServices ? (
-                    <UserCodeHosts
-                        user={user}
-                        externalServices={externalServices}
-                        context={context}
-                        onDidError={error => console.warn('<UserCodeHosts .../>', error)}
-                        onDidRemove={() => fetchExternalServices()}
-                    />
-                ) : (
-                    <div className="d-flex justify-content-center">
-                        <LoadingSpinner className="icon-inline" />
-                    </div>
-                )} */}
             </>
         ),
         // step is considered complete when user has at least one external service
-        isComplete: (): boolean => true, // Array.isArray(externalServices) && externalServices.length > 0,
+        isComplete: (): boolean =>
+            !!data && Array.isArray(data?.externalServices?.nodes) && data.externalServices.nodes.length > 0,
     }
 
     const addRepositories = {
@@ -125,7 +96,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                 </p>
             </>
         ),
-        isComplete: () => false,
+        isComplete: () => true,
     }
 
     const startSearching = {
@@ -151,21 +122,41 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const goToSearch = (): void => history.push(getReturnTo(location))
     const isCurrentStepComplete = (): boolean => currentStep?.isComplete()
 
-    const onStepTabClick = (clickedStepTabIndex: number): void => {
+    const onStepTabClick = (clickedStepTabNumber: number): void => {
         /**
          * User can navigate through the steps by clicking the step's tab when:
-         * 1. navigating back and the navigated to step is complete
-         * 2. navigating forward and the current step is complete
+         * 1. navigating back
+         * 2. navigating one step forward when the current step is complete
+         * 3. navigating many steps forward when all of the steps, from the
+         * current one to the clickedStepTabNumber step but not including are
+         * complete.
          */
 
-        const isValidNavigationBack =
-            clickedStepTabIndex < currentStepNumber && steps[clickedStepTabIndex - 1].isComplete()
+        // do nothing for the current tab
+        if (clickedStepTabNumber === currentStepNumber) {
+            return
+        }
 
-        const isValidNavigationForward =
-            clickedStepTabIndex > currentStepNumber && steps[clickedStepTabIndex - 1].isComplete()
+        if (clickedStepTabNumber < currentStepNumber) {
+            // allow to navigate back since all of the previous steps had to be completed
+            setCurrentStepNumber(clickedStepTabNumber)
+        } else if (currentStepNumber - 1 === clickedStepTabNumber) {
+            // forward navigation
 
-        if (isValidNavigationBack || isValidNavigationForward) {
-            setCurrentStepNumber(clickedStepTabIndex)
+            // if navigating to the next tab, check if the current step is completed
+
+            if (isCurrentStepComplete()) {
+                setCurrentStepNumber(clickedStepTabNumber)
+            }
+        } else {
+            // if navigating further away check [current, ..., clicked)
+            const areInBetweenStepsComplete = steps
+                .slice(currentStepNumber - 1, clickedStepTabNumber - 1)
+                .every(step => step.isComplete())
+
+            if (areInBetweenStepsComplete) {
+                setCurrentStepNumber(clickedStepTabNumber)
+            }
         }
     }
 
@@ -187,6 +178,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                                 <Step title="Connect with code hosts" borderColor="purple" />
                                 <Step title="Add repositories" borderColor="blue" />
                                 <Step title="Start searching" borderColor="orange" />
+                                <Step title="Last step" borderColor="purple" />
                             </Steps>
                         </div>
                         <div className="mt-4 pb-3">{currentStep.content}</div>
@@ -216,7 +208,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                         <div className="pt-5">
                             <hr />
                             <br />
-                            <p>🚧 Debugging buttons 🚧</p>
+                            <p>🚧&nbsp; Debugging navigation&nbsp;🚧</p>
                             <button
                                 type="button"
                                 className="btn btn-secondary"
