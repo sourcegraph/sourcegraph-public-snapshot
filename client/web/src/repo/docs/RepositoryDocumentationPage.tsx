@@ -24,9 +24,8 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
-import { DocumentationNode } from './DocumentationNode'
+import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
-import { fetchDocumentationPage, fetchDocumentationPathInfo, isExcluded, Tag } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -179,6 +178,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
                             }`}
                         >
+                            <DocumentationWelcomeAlert />
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
