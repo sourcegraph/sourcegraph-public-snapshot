@@ -89,6 +89,21 @@ func (d *duplicateChecker) count() (duplicates, nonDupicates int) {
 	return d.duplicates, d.nonDuplicates
 }
 
+type duplicateChecker struct {
+	pathIDs                   map[string]struct{}
+	duplicates, nonDuplicates int
+}
+
+func (d *duplicateChecker) check(pathID string) bool {
+	if _, ok := d.pathIDs[pathID]; ok {
+		d.duplicates++
+		return true
+	}
+	d.nonDuplicates++
+	d.pathIDs[pathID] = struct{}{}
+	return false
+}
+
 // pageCollector collects all of the children for a single documentation page.
 //
 // It spawns a new pageCollector to collect each new child page as it encounters them.
@@ -121,6 +136,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 			this.PathID = pathID + "/" + cleanPathIDElement(documentation.Identifier)
 		default:
 			this.PathID = pathID + "#" + cleanPathIDFragment(documentation.Identifier)
+		}
+		if p.dupChecker.check(this.PathID) {
+			log15.Warn("API docs: duplicate pathID forbidden", "pathID", this.PathID)
+			return
 		}
 		if parent != nil {
 			if this.Documentation.NewPage {
