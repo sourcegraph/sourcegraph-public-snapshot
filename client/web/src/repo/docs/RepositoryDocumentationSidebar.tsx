@@ -151,6 +151,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             depth={0}
                             subpagesOnly={false}
                             contentOnly={false}
+                            excludingTags={['private']}
                         />
                     </div>
                 </div>

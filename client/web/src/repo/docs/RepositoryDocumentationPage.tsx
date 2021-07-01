@@ -196,7 +196,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 node={page.tree}
                                 pagePathID={pagePathID}
                                 depth={0}
-                                excludingTags={excludingTags}
+                                excludingTags={['private']}
                             />
                         </div>
                     </div>
