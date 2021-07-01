@@ -52,7 +52,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		return nil
 	}
 
-	loopSearch := func(ctx context.Context, c genericClient, group string, qc QueryConfig) {
+	loopSearch := func(ctx context.Context, c genericClient, group string, qc *QueryConfig) {
 		if qc.Interval == 0 {
 			qc.Interval = time.Minute
 		}
@@ -89,7 +89,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		}
 	}
 
-	scheduleQuery := func(ctx context.Context, group string, qc QueryConfig) {
+	scheduleQuery := func(ctx context.Context, group string, qc *QueryConfig) {
 		if len(qc.Protocols) == 0 {
 			qc.Protocols = allProtocols
 		}
