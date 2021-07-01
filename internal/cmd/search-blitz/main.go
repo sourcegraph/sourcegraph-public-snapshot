@@ -56,8 +56,6 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		if qc.Interval == 0 {
 			qc.Interval = time.Minute
 		}
-		ticker := time.NewTicker(qc.Interval)
-		defer ticker.Stop()
 
 		// Randomize start to a random time in the initial interval so our
 		// queries aren't all scheduled at the same time.
@@ -67,6 +65,9 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			return
 		case <-time.After(randomStart):
 		}
+
+		ticker := time.NewTicker(qc.Interval)
+		defer ticker.Stop()
 
 		for {
 
