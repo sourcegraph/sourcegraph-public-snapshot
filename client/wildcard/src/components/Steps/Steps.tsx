@@ -62,7 +62,7 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ current = 1, number
 
     return (
         <nav className={stepsStyles.stepsWrapper} aria-label="progress">
-            {numbered ? <ol role="tablist">{element}</ol> : <ul role="tablist">{element}</ul>}
+            {numbered ? <ol>{element}</ol> : <ul>{element}</ul>}
         </nav>
     )
 }
