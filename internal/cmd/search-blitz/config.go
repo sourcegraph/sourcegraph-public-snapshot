@@ -1,13 +1,16 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
 )
+
+//go:embed config.yaml
+var configRaw []byte
 
 type Config struct {
 	Groups []*QueryGroupConfig
@@ -57,15 +60,9 @@ func (s *Protocol) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
-func loadQueries(path string) (*Config, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	dec := yaml.NewDecoder(f)
+func loadQueries() (*Config, error) {
 	var config Config
-	err = dec.Decode(&config)
+	err := yaml.UnmarshalStrict(configRaw, &config)
 	if err != nil {
 		return nil, err
 	}
