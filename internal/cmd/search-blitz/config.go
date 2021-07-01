@@ -6,12 +6,12 @@ import (
 )
 
 type Config struct {
-	Groups []QueryGroupConfig
+	Groups []*QueryGroupConfig
 }
 
 type QueryGroupConfig struct {
 	Name    string
-	Queries []QueryConfig
+	Queries []*QueryConfig
 }
 
 type QueryConfig struct {
