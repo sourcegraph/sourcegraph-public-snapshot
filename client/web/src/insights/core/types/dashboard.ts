@@ -5,26 +5,26 @@ import { InsightDashboard as InsightDashboardConfiguration } from '../../../sche
  */
 export enum InsightsDashboardType {
     /**
-     * A dashboard that includes all insights from the personal and organization
+     * Dashboard that includes all insights from the personal and organization
      * level dashboards.
      */
     All = 'all',
 
     /**
-     * A dashboard that includes insights from personal settings or from
+     * Dashboard that includes insights from personal settings or from
      * dashboards that are stored in personal settings (personal dashboard)
      */
     Personal = 'personal',
 
     /**
-     * A dashboard that includes insights from organization settings or from
+     * Dashboard that includes insights from organization settings or from
      * dashboards that are stored in organization settings (org dashboard)
      */
     Organization = 'organization',
 }
 
 /**
- * An extended custom insights dashboard. A user can have they own dashboards created
+ * Extended custom insights dashboard. A user can have they own dashboards created
  * by insights dashboard creation UI.
  */
 export interface InsightDashboard extends InsightDashboardConfiguration {
@@ -55,7 +55,7 @@ export interface InsightDashboard extends InsightDashboardConfiguration {
 }
 
 /**
- * An Owner of dashboard. It can be user subject (a personal dashboard), org subject
+ * Info about dashboard owner. It can be user subject (a personal dashboard), org subject
  * (an org level dashboard)
  */
 export interface InsightDashboardOwner {
@@ -64,6 +64,6 @@ export interface InsightDashboardOwner {
 }
 
 /**
- * The key for accessing  insights dashboards in the subject settings.
+ * The key for accessing insights dashboards in the subject settings.
  */
 export const INSIGHTS_DASHBOARDS_SETTINGS_KEY = 'insights.dashboards'
