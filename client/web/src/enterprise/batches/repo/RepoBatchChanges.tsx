@@ -29,7 +29,7 @@ interface Props extends ThemeProps {
 }
 
 /**
- * A list of a batch change's changesets.
+ * A list of batch changes affecting a particular repo.
  */
 export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     viewerCanAdminister,
