@@ -57,20 +57,10 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			qc.Interval = time.Minute
 		}
 
-		// Randomize start to a random time in the initial interval so our
-		// queries aren't all scheduled at the same time.
-		randomStart := time.Duration(int64(float64(qc.Interval) * rand.Float64()))
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(randomStart):
-		}
+		// Randomize start so queries aren't all scheduled at the same time.
+		jitterSleep(ctx, qc.Interval, 1.0)
 
-		ticker := time.NewTicker(qc.Interval)
-		defer ticker.Stop()
-
-		for {
-
+		for ctx.Err() == nil {
 			m, err := c.search(ctx, qc.Query, qc.Name)
 			if err != nil {
 				log15.Error(err.Error())
@@ -79,11 +69,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 				durationSearchHistogram.WithLabelValues(group, c.clientType()).Observe(float64(m.took))
 			}
 
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-			}
+			jitterSleep(ctx, qc.Interval, 0.25)
 		}
 	}
 
@@ -106,6 +92,20 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		for _, qc := range group.Queries {
 			scheduleQuery(ctx, group.Name, qc)
 		}
+	}
+}
+
+// jitterSleep will sleep for an expected d duration. It will uniformly pick a
+// value in the range [d - d*jitter, d + d*jitter). The sleep respects ctx.
+func jitterSleep(ctx context.Context, d time.Duration, jitter float64) {
+	expected := float64(d)
+	variance := expected * jitter * 2
+	min := expected - variance/2
+	sample := min + variance*rand.Float64()
+
+	select {
+	case <-ctx.Done():
+	case <-time.After(time.Duration(sample)):
 	}
 }
 
