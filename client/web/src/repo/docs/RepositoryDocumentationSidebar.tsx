@@ -143,37 +143,14 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             <ChevronDoubleLeftIcon className="icon-inline" />
                         </Button>
                     </div>
-                    <div aria-hidden={true} className="repository-documentation-sidebar-scroller overflow-auto px-3">
-                        {props.pathInfo.isIndex && (
-                            <>
-                                <h4 className="text-nowrap">Index</h4>
-                                {props.pathInfo.children.length > 0 ? (
-                                    <SubpagesList onToggle={onToggle} {...props} />
-                                ) : (
-                                    <p>Looks like there's nothing to see here..</p>
-                                )}
-                            </>
-                        )}
-                        {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
-                            <>
-                                <h4 className="text-nowrap">Subpages</h4>
-                                <SubpagesList onToggle={onToggle} {...props} />
-                            </>
-                        )}
-                        {!props.pathInfo.isIndex &&
-                            props.pathInfo.children.length === 0 &&
-                            isExcluded(props.node, excludingTags) && (
-                                <>
-                                    <p>Looks like there's nothing to see here..</p>
-                                </>
-                            )}
+                    <div aria-hidden={true} className="d-flex explorer overflow-auto px-3">
                         <DocumentationIndexNode
                             {...props}
                             node={props.node}
                             pagePathID={props.pagePathID}
                             depth={0}
+                            subpagesOnly={false}
                             contentOnly={false}
-                            excludingTags={excludingTags}
                         />
                     </div>
                 </div>
