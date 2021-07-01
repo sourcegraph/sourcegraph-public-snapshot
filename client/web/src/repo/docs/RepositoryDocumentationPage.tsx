@@ -179,10 +179,12 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                             }`}
                         >
                             <DocumentationWelcomeAlert />
-                            {isExcluded(page.tree, excludingTags) ? <div className="m-3">
-                                <h2 className="text-muted">Looks like there's nothing to see here.</h2>
-                                <p>API docs for private / unexported code is coming soon!</p>
-                            </div> : null}
+                            {isExcluded(page.tree, excludingTags) ? (
+                                <div className="m-3">
+                                    <h2 className="text-muted">Looks like there's nothing to see here.</h2>
+                                    <p>API docs for private / unexported code is coming soon!</p>
+                                </div>
+                            ) : null}
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
