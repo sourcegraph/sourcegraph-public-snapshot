@@ -80,7 +80,6 @@ func TestStatusMessages(t *testing.T) {
 		user             *types.User
 		// maps repoName to external service
 		repoOwner map[api.RepoName]*types.ExternalService
-		cloud     bool
 		err       string
 	}{
 		{
@@ -359,7 +358,7 @@ func TestStatusMessages(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			res, err := FetchStatusMessages(ctx, db, tc.user, tc.cloud)
+			res, err := FetchStatusMessages(ctx, db, tc.user)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have err: %q, want: %q", have, want)
 			}

@@ -960,6 +960,7 @@ type NotifierOpsGenie struct {
 	Priority string `json:"priority,omitempty"`
 	// Responders description: List of responders responsible for notifications.
 	Responders []*Responders `json:"responders,omitempty"`
+	Tags       string        `json:"tags,omitempty"`
 	Type       string        `json:"type"`
 }
 

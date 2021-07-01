@@ -10,8 +10,9 @@ Sourcegraph uses <a href="../../code_intelligence">LSIF code intelligence</a> to
 
 You can try out API docs on Sourcegraph.com here:
 
-* [sourcegraph.com/github.com/golang/go](https://sourcegraph.com/github.com/golang/go/-/docs)
-* [sourcegraph.com/github.com/sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/docs)
+* [encoding/json](https://sourcegraph.com/github.com/golang/go/-/docs/encoding/json)
+* [net/http](https://sourcegraph.com/github.com/golang/go/-/docs/net/http)
+* [github.com/sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/docs)
 
 ## ✨ Try API docs on your repository
 

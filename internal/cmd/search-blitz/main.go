@@ -52,12 +52,12 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		return nil
 	}
 
-	loopSearch := func(ctx context.Context, c genericClient, group string, qc QueryConfig) {
+	loopSearch := func(ctx context.Context, c genericClient, group string, qc *QueryConfig) {
 		if qc.Interval == 0 {
 			qc.Interval = time.Minute
 		}
-		ticker := time.NewTicker(qc.Interval)
-		defer ticker.Stop()
+
+		log := log15.New("group", group, "name", qc.Name, "query", qc.Query, "type", c.clientType())
 
 		// Randomize start to a random time in the initial interval so our
 		// queries aren't all scheduled at the same time.
@@ -68,14 +68,17 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		case <-time.After(randomStart):
 		}
 
+		ticker := time.NewTicker(qc.Interval)
+		defer ticker.Stop()
+
 		for {
 
 			m, err := c.search(ctx, qc.Query, qc.Name)
 			if err != nil {
-				log15.Error(err.Error())
+				log.Error(err.Error())
 			} else {
-				log15.Info("metrics", "group", group, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-				durationSearchHistogram.WithLabelValues(group, c.clientType()).Observe(float64(m.took))
+				log.Info("metrics", "trace", m.trace, "duration_ms", m.took, "first_result_ms", m.firstResultMs, "match_count", m.matchCount)
+				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
 			}
 
 			select {
@@ -86,7 +89,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		}
 	}
 
-	scheduleQuery := func(ctx context.Context, group string, qc QueryConfig) {
+	scheduleQuery := func(ctx context.Context, group string, qc *QueryConfig) {
 		if len(qc.Protocols) == 0 {
 			qc.Protocols = allProtocols
 		}

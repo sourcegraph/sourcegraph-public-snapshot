@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"strings"
 
+	"path"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -64,8 +66,8 @@ func (fm *FileMatch) ResultCount() int {
 	return rc
 }
 
-func (fm *FileMatch) Select(path filter.SelectPath) Match {
-	switch path.Root() {
+func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
+	switch selectPath.Root() {
 	case filter.Repository:
 		return &RepoMatch{
 			Name: fm.Repo.Name,
@@ -74,12 +76,15 @@ func (fm *FileMatch) Select(path filter.SelectPath) Match {
 	case filter.File:
 		fm.LineMatches = nil
 		fm.Symbols = nil
+		if len(selectPath) > 1 && selectPath[1] == "directory" {
+			fm.Path = path.Clean(path.Dir(fm.Path)) + "/" // Add trailing slash for clarity.
+		}
 		return fm
 	case filter.Symbol:
 		if len(fm.Symbols) > 0 {
 			fm.LineMatches = nil // Only return symbol match if symbols exist
-			if len(path) > 1 {
-				filteredSymbols := SelectSymbolKind(fm.Symbols, path[1])
+			if len(selectPath) > 1 {
+				filteredSymbols := SelectSymbolKind(fm.Symbols, selectPath[1])
 				if len(filteredSymbols) == 0 {
 					return nil // Remove file match if there are no symbol results after filtering
 				}

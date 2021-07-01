@@ -39,7 +39,7 @@
         "apiDocs": {
           "description": "Enables API documentation.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
