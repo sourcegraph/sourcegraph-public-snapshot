@@ -21,6 +21,7 @@
     &__feedback-container {
         width: 0;
         height: 0;
+        z-index: 1;
         &-content {
             display: block;
             width: 19rem;
