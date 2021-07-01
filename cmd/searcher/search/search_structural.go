@@ -191,7 +191,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *stor
 		return nil, false, err
 	}
 
-	fileMatches, _, err := regexSearch(ctx, rg, zipFile, p.FileMatchLimit, true, false, false)
+	fileMatches, _, err := regexSearchBatch(ctx, rg, zipFile, p.FileMatchLimit, true, false, false)
 	if err != nil {
 		return nil, false, err
 	}
@@ -279,7 +279,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	return matches, false, err
 }
 
-func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
+func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (limitHit, deadlineHit bool, err error) {
 	// Since we are returning file content, limit the number of file matches
 	// until streaming from Zoekt is implemented
 	fileMatchLimit := p.FileMatchLimit
@@ -312,22 +312,22 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 	useFullDeadline := false
 	zoektMatches, limitHit, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
 	if err != nil {
-		return nil, false, false, err
+		return false, false, err
 	}
 
 	if len(zoektMatches) == 0 {
-		return nil, false, false, nil
+		return false, false, nil
 	}
 
 	zipFile, err := os.CreateTemp("", "*.zip")
 	if err != nil {
-		return nil, false, false, err
+		return false, false, err
 	}
 	defer zipFile.Close()
 	defer os.Remove(zipFile.Name())
 
 	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
-		return nil, false, false, err
+		return false, false, err
 	}
 
 	var extensionHint string
@@ -336,8 +336,10 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		extensionHint = filepath.Ext(filename)
 	}
 
-	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo)
-	return matches, limitHit, false, err
+	matches, limitHit, err := structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo)
+	sender.Send(matches)
+
+	return limitHit, false, err
 }
 
 var requestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
