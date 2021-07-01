@@ -4,9 +4,19 @@
     &[data-reach-listbox-option] {
         display: flex;
         align-items: baseline;
-        padding: 0.5rem 0.75rem;
+        padding: 0.25rem 0.75rem;
         justify-content: space-between;
         cursor: pointer;
+
+        &[data-current] {
+            font-weight: normal;
+            background-color: var(--color-bg-2);
+        }
+
+        &[aria-selected] {
+            background-color: var(--link-color);
+            color: var(--light-text);
+        }
     }
 
     &__text {

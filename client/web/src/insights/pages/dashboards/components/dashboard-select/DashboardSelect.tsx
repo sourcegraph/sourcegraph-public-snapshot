@@ -1,11 +1,4 @@
-import {
-    ListboxGroup,
-    ListboxGroupLabel,
-    ListboxInput,
-    ListboxList,
-    ListboxOption,
-    ListboxPopover,
-} from '@reach/listbox'
+import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classnames from 'classnames'
 import React, { useMemo, useState } from 'react'
@@ -13,7 +6,7 @@ import React, { useMemo, useState } from 'react'
 import { InsightDashboard, InsightsDashboardType } from '../../../../core/types'
 
 import { MenuButton } from './components/menu-button/MenuButton'
-import { SelectOption } from './components/select-option/SelectOption'
+import { SelectDashboardOption, SelectOption } from './components/select-option/SelectOption'
 import styles from './DashboardSelect.module.scss'
 
 const LABEL_ID = 'insights-dashboards--select'
@@ -45,12 +38,11 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                 <ListboxPopover className={classnames(styles.listboxPopover)} portal={true}>
                     <ListboxList className={classnames(styles.listboxList, 'dropdown-menu')}>
-                        <ListboxOption
-                            className={classnames(styles.listboxOption, styles.listboxOptionSimpleText)}
+                        <SelectOption
                             value={InsightsDashboardType.All}
-                        >
-                            All Insights
-                        </ListboxOption>
+                            label="All Insights"
+                            className={styles.listboxOption}
+                        />
 
                         <ListboxGroup>
                             <ListboxGroupLabel className={classnames(styles.listboxGroupLabel, 'text-muted')}>
@@ -60,7 +52,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                             {dashboards
                                 .filter(dashboard => dashboard.type === InsightsDashboardType.Personal)
                                 .map(dashboard => (
-                                    <SelectOption
+                                    <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
                                         className={styles.listboxOption}
@@ -75,7 +67,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 </ListboxGroupLabel>
 
                                 {group.dashboards.map(dashboard => (
-                                    <SelectOption
+                                    <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
                                         className={styles.listboxOption}

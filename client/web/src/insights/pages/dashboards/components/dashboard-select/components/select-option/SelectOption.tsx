@@ -9,22 +9,52 @@ import { TruncatedText } from '../trancated-text/TrancatedText'
 
 import styles from './SelectOption.module.scss'
 
-interface SelectOptionProps {
+export interface SelectOptionProps {
+    /** Value for the list-option element */
+    value: string
+
+    /** List-box label text */
+    label: string
+
+    /** Badge text */
+    badge?: string
+
+    className?: string
+}
+
+/**
+ * Displays simple text (label) list select (list-box) option.
+ */
+export const SelectOption: React.FunctionComponent<SelectOptionProps> = props => {
+    const { value, label, badge, className } = props
+
+    return (
+        <ListboxOption className={classnames(styles.listboxOption, className)} value={value}>
+            <TruncatedText title={label} className={styles.listboxOptionText}>
+                {label}
+            </TruncatedText>
+            {badge && <Badge value={badge} className={styles.listboxOptionBadge} />}
+        </ListboxOption>
+    )
+}
+
+interface SelectDashboardOptionProps {
     dashboard: InsightDashboard
     className?: string
 }
 
-export const SelectOption: React.FunctionComponent<SelectOptionProps> = props => {
+/**
+ * Displays select dashboard list-box options.
+ */
+export const SelectDashboardOption: React.FunctionComponent<SelectDashboardOptionProps> = props => {
     const { dashboard, className } = props
 
-    const optionText = getDashboardTitle(dashboard)
-
     return (
-        <ListboxOption className={classnames(styles.listboxOption, className)} value={dashboard.id}>
-            <TruncatedText title={optionText} className={styles.listboxOptionText}>
-                {optionText}
-            </TruncatedText>
-            <Badge value={getDashboardOwnerName(dashboard)} className={styles.listboxOptionBadge} />
-        </ListboxOption>
+        <SelectOption
+            value={dashboard.id}
+            label={getDashboardTitle(dashboard)}
+            badge={getDashboardOwnerName(dashboard)}
+            className={className}
+        />
     )
 }
