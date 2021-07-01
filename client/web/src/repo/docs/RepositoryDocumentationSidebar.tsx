@@ -4,17 +4,17 @@ import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback } from 'react'
 import { Button } from 'reactstrap'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 
 import { RepositoryFields } from '../../graphql-operations'
+import { toDocumentationURL } from '../../util/url'
 
 import { DocumentationIndexNode } from './DocumentationIndexNode'
 import { GQLDocumentationNode, GQLDocumentationPathInfo, isExcluded, Tag } from './graphql'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { toDocumentationURL } from '../../util/url'
-import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields
@@ -42,7 +42,7 @@ export const getSidebarVisibility = (): boolean => {
 
 function nonIndexPathIDs(depth: number, pathInfo: GQLDocumentationPathInfo): string[] {
     const paths = []
-    if (depth != 0 && !pathInfo.isIndex) {
+    if (depth !== 0 && !pathInfo.isIndex) {
         paths.push(pathInfo.pathID)
     }
     depth++
@@ -65,7 +65,7 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                 const url = toDocumentationURL({
                     repoName: props.repo.name,
                     revision: props.revision || '',
-                    pathID: pathID,
+                    pathID,
                 })
                 return (
                     <div key={pathID}>
@@ -85,7 +85,7 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                         const url = toDocumentationURL({
                             repoName: props.repo.name,
                             revision: props.revision || '',
-                            pathID: pathID,
+                            pathID,
                         })
                         return (
                             <div key={pathID}>
@@ -161,7 +161,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             </>
                         )}
                         {!props.pathInfo.isIndex &&
-                            props.pathInfo.children.length == 0 &&
+                            props.pathInfo.children.length === 0 &&
                             isExcluded(props.node, excludingTags) && (
                                 <>
                                     <p>Looks like there's nothing to see here..</p>

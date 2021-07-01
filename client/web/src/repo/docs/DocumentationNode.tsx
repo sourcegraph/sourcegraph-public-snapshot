@@ -56,7 +56,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
         const children = node.children.filter(child =>
             !child.node ? false : !isExcluded(child.node, props.excludingTags)
         )
-        if (children.length == 0) {
+        if (children.length === 0) {
             return null
         }
     }
@@ -73,11 +73,11 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             )}
 
             {node.children?.map(
-                (child, index) =>
+                child =>
                     child.node &&
                     !isExcluded(child.node, props.excludingTags) && (
                         <DocumentationNode
-                            key={`${depth}-${index}`}
+                            key={`${depth}-${child.node!.pathID}`}
                             {...props}
                             node={child.node}
                             depth={depth + 1}

@@ -53,7 +53,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
             const children = node.children.filter(child =>
                 !child.node ? false : !isExcluded(child.node, props.excludingTags)
             )
-            if (children.length == 0) {
+            if (children.length === 0) {
                 return null
             }
         }
@@ -63,10 +63,10 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
                     <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
                 </Link>
                 <ul className="pl-3">
-                    {node.children?.map((child, index) =>
+                    {node.children?.map(child =>
                         child.pathID ? null : (
                             <DocumentationIndexNode
-                                key={`${depth}-${index}`}
+                                key={`${depth}-${child.node!.pathID}`}
                                 {...props}
                                 node={child.node!}
                                 depth={depth + 1}
