@@ -29,7 +29,7 @@ export function getInsightsViews(
                 // If insight ids was specified we should resolve only
                 // insights from this list
                 if (insightIds) {
-                    // Get everything until last dot accordit to extension id conventions
+                    // Get everything until last dot according to extension id naming convention
                     // <type>.<name>.<view type = directory|insightPage|homePage>
                     const providerId = provider.id.match(/.*(?=\.)/)?.[0] ?? ''
 
