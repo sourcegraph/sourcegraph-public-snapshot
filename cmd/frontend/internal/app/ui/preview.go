@@ -77,13 +77,16 @@ func formatLineRange(lineRange *lineRange) string {
 	return formattedLineRange
 }
 
-func getBlobPreviewImageURL(previewServiceURL string, blobURLPath string, lineRange *lineRange) string {
+func getBlobPreviewImageURL(previewServiceURL string, blobURLPath string, lineRange *lineRange, symbolResult *result.Symbol) string {
 	blobPreviewImageURL := previewServiceURL + blobURLPath
 	formattedLineRange := formatLineRange(lineRange)
 
 	queryValues := url.Values{}
 	if formattedLineRange != "" {
 		queryValues.Add("range", formattedLineRange)
+	}
+	if symbolResult != nil {
+		queryValues.Add("type", "symbol")
 	}
 
 	encodedQueryValues := queryValues.Encode()
