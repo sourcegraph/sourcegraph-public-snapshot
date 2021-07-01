@@ -141,7 +141,15 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                         </h1>
                         <p>API documentation generated for all your code</p>
                         <Container>
-                            <h2 className="text-muted mb-2">This repository has no LSIF documentation data.</h2>
+                            <h2 className="text-muted mb-2">
+                                <MapSearchIcon className="icon-inline mr-2" />
+                                Repository has no LSIF documentation data
+                            </h2>
+                            <p className="mt-3">
+                                Sourcegraph can use LSIF code intelligence to generate API documentation for all your
+                                code, giving you the ability to navigate and explore the APIs provided by this
+                                repository.
+                            </p>
                             <h3>
                                 <a
                                     // eslint-disable-next-line react/jsx-no-target-blank
@@ -152,6 +160,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                     Learn more
                                 </a>
                             </h3>
+                            <p className="text-muted mt-3 mb-0">
+                                <strong>Note:</strong> only the Go programming language is currently supported.
+                            </p>
                         </Container>
                     </div>
                 </div>

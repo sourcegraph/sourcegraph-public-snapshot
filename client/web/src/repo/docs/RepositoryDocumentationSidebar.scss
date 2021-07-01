@@ -3,10 +3,10 @@
         padding-bottom: 3rem;
     }
     &__show-more-button > button {
-        &:focus {
+        :focus {
             box-shadow: none;
         }
-        & > svg {
+        > svg {
             display: none;
         }
     }
