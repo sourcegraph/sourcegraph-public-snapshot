@@ -178,7 +178,6 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                                 <Step title="Connect with code hosts" borderColor="purple" />
                                 <Step title="Add repositories" borderColor="blue" />
                                 <Step title="Start searching" borderColor="orange" />
-                                <Step title="Last step" borderColor="purple" />
                             </Steps>
                         </div>
                         <div className="mt-4 pb-3">{currentStep.content}</div>
@@ -217,7 +216,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                             >
                                 previous tab
                             </button>
-                            &nbsp;
+                            &nbsp;&nbsp;
                             <button
                                 type="button"
                                 className="btn btn-secondary"
