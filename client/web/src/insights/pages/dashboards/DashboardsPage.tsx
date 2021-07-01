@@ -11,21 +11,17 @@ import { PageHeader } from '@sourcegraph/wildcard/src'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
-import { Settings } from '../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-import { useDashboards } from './hooks/use-dashboards/use-dashboards'
-
 export interface DashboardsPageProps
-    extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
-        SettingsCascadeProps<Settings>,
+    extends Omit<InsightsViewGridProps, 'views'>,
+        SettingsCascadeProps,
         ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
-     * dashboard's info from the user or org settings by the dashboard id.
-     * In case the if id is undefined we get insights from the final
-     * version of merged settings (all insights)
+     * dashboard's info from user/org by id. In case if id equals undefined
+     * we will get insights from final version of merged settings (all insights)
      */
     dashboardID?: string
 }
@@ -42,14 +38,13 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
             return undefined
         }
 
-        const dashboardConfiguration = settingsCascade.final['insights.dashboards']?.[dashboardID]
+        const dashboardConfiguration = settingsCascade.final[`insightDashboard.${dashboardID}`]
 
-        // if dashboard doesn't exist in the final settings we don't need to load anything
         if (!dashboardConfiguration) {
             return []
         }
 
-        return dashboardConfiguration.insightIds
+        return dashboardConfiguration.ids
     }, [dashboardID, settingsCascade])
 
     const views = useObservable(
@@ -59,11 +54,6 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
             getInsightCombinedViews,
         ])
     )
-
-    const dashboards = useDashboards(settingsCascade)
-
-    // TODO use this dashboard data in https://github.com/sourcegraph/sourcegraph/issues/22225
-    console.log('Code insights dashboards', { dashboards })
 
     return (
         <Page>
