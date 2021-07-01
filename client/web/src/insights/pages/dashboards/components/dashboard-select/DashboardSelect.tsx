@@ -22,13 +22,14 @@ export interface DashboardSelectProps {
     dashboards: InsightDashboard[]
 
     onSelect: (dashboard: InsightDashboard) => void
+    className?: string
 }
 
 /**
  * Renders dashboard select component for the code insights dashboard page selection UI.
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
-    const { value, dashboards, onSelect } = props
+    const { value, dashboards, onSelect, className } = props
 
     const handleChange = (value: string): void => {
         const dashboard = dashboards.find(dashboard => dashboard.id === value)
@@ -41,14 +42,10 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
     const organizationGroups = getDashboardOrganizationsGroups(dashboards)
 
     return (
-        <div>
+        <div className={className}>
             <VisuallyHidden id={LABEL_ID}>Choose a dashboard</VisuallyHidden>
 
-            <ListboxInput
-                aria-labelledby={LABEL_ID}
-                value={value}
-                onChange={handleChange}
-            >
+            <ListboxInput aria-labelledby={LABEL_ID} value={value} onChange={handleChange}>
                 <MenuButton dashboards={dashboards} />
 
                 <ListboxPopover className={classnames(styles.popover)} portal={true}>

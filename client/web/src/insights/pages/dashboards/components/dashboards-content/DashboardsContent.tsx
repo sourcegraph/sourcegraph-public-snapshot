@@ -15,6 +15,8 @@ import { InsightDashboard, isVirtualDashboard } from '../../../../core/types'
 import { useDashboards } from '../../hooks/use-dashboards/use-dashboards'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 
+import styles from './DashboardsContent.module.scss'
+
 export interface DashboardsContentProps
     extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
         SettingsCascadeProps<Settings>,
@@ -55,7 +57,12 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
     return (
         <div>
-            <DashboardSelect value={currentDashboard?.id} dashboards={dashboards} onSelect={handleDashboardSelect} />
+            <DashboardSelect
+                value={currentDashboard?.id}
+                dashboards={dashboards}
+                onSelect={handleDashboardSelect}
+                className={styles.dashboardSelect}
+            />
 
             <hr className="mt-2 mb-3" />
 
