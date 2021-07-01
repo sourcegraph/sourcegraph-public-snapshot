@@ -13,10 +13,11 @@ import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container } from '@sourcegraph/wildcard'
 
+import { requestGraphQL } from '../../backend/graphql'
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryFields } from '../../graphql-operations'
+import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -204,6 +205,19 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 depth={0}
                                 excludingTags={excludingTags}
                             />
+                        </div>
+                        <div className="repository-docs-page__container-feedback">
+                            <Badge status="experimental" className="text-uppercase mr-2" />
+                            <a
+                                // eslint-disable-next-line react/jsx-no-target-blank
+                                target="_blank"
+                                rel="noopener"
+                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
+                            >
+                                Learn more
+                            </a>
+                            <FeedbackPrompt routes={routes} />
                         </div>
                     </div>
                     <div className="repository-docs-page__feedback-container">
