@@ -1433,10 +1433,10 @@ Referenced by:
 Policies:
     POLICY "sg_repo_access_policy"
       TO sg_service
-      USING (((private IS FALSE) OR (EXISTS ( SELECT
+      USING ((((NOT (current_setting('rls.use_permissions_user_mapping'::text))::boolean) AND ((private IS FALSE) OR (EXISTS ( SELECT
    FROM (external_services es
      JOIN external_service_repos esr ON (((esr.external_service_id = es.id) AND (esr.repo_id = repo.id) AND (es.unrestricted = true) AND (es.deleted_at IS NULL))))
- LIMIT 1)) OR (EXISTS ( SELECT 1
+ LIMIT 1)))) OR (EXISTS ( SELECT 1
    FROM external_service_repos
   WHERE ((external_service_repos.repo_id = repo.id) AND (external_service_repos.user_id = (current_setting('rls.user_id'::text))::integer)))) OR ( SELECT (user_permissions.object_ids_ints @> intset(repo.id))
    FROM user_permissions
