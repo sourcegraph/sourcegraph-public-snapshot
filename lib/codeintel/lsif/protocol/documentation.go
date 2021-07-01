@@ -227,11 +227,17 @@ const (
 	TagTest Tag = "test"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// The documentation describes e.g. a benchmark function or concept related to benchmarking.
 	TagBenchmark Tag = "benchmark"
 
 =======
 >>>>>>> 9c449f7e0f (API docs: LSIF: protocol: add all the tags (#22327))
+=======
+	// The documentation describes e.g. a benchmark function or concept related to benchmarking.
+	TagBenchmark Tag = "benchmark"
+
+>>>>>>> 2fb7713b20 (API docs: LSIF: protocol: add benchmark tag (#22334))
 	// The documentation describes e.g. an example function or example code.
 	TagExample Tag = "example"
 
