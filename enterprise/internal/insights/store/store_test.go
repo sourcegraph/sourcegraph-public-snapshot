@@ -54,7 +54,7 @@ SELECT time,
     2,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
-	FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '6 months', CURRENT_TIMESTAMP::date, '2 weeks') AS time;
+	FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '30 weeks', CURRENT_TIMESTAMP::date, '2 weeks') AS time;
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -69,7 +69,6 @@ SELECT time,
 	}
 
 	t.Run("all data points", func(t *testing.T) {
-		t.SkipNow() // TODO(insights): flaky test
 		// Confirm we get all data points.
 		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{})
 		if err != nil {
@@ -197,7 +196,6 @@ func TestCountData(t *testing.T) {
 }
 
 func TestRecordSeriesPoints(t *testing.T) {
-	t.SkipNow() // TODO(insights): flaky test
 	if testing.Short() {
 		t.Skip()
 	}
