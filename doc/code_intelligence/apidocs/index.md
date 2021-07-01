@@ -1,18 +1,19 @@
 # API docs for your code
 
-<p class="subtitle">API documentation generated for all your code</p>
+<p class="subtitle">Generated API documentation for all your code</p>
 
 <p class="lead">
-Sourcegraph uses <a href="../../code_intelligence">LSIF code intelligence</a> to generate API documentation for all your code, giving you the ability to navigate and explore the APIs provided by repositories.
+
+Sourcegraph uses [LSIF code intelligence](../index.md) to generate API documentation for all your code, giving you the ability to navigate and explore the APIs provided by repositories.
+
 </p>
 
 ## 🚀 Try it out
 
 You can try out API docs on Sourcegraph.com here:
 
-* [encoding/json](https://sourcegraph.com/github.com/golang/go/-/docs/encoding/json)
-* [net/http](https://sourcegraph.com/github.com/golang/go/-/docs/net/http)
-* [github.com/sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/docs)
+* [sourcegraph.com/github.com/golang/go](https://sourcegraph.com/github.com/golang/go)
+* [sourcegraph.com/github.com/sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph)
 
 ## ✨ Try API docs on your repository
 
