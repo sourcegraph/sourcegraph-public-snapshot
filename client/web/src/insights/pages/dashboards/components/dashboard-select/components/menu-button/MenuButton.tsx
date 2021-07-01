@@ -55,6 +55,7 @@ interface MenuButtonContentProps {
 
 const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props => {
     const { title, isExpanded, badge } = props
+    const ListboxButtonIcon = isExpanded ? ChevronUpIcon : ChevronDownIcon
 
     return (
         <>
@@ -63,11 +64,7 @@ const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props
                 {badge && <Badge value={badge} className={classnames('ml-1 mr-1', styles.listboxButtonBadge)} />}
             </span>
 
-            {isExpanded ? (
-                <ChevronUpIcon className={styles.listboxButtonIcon} />
-            ) : (
-                <ChevronDownIcon className={styles.listboxButtonIcon} />
-            )}
+            <ListboxButtonIcon className={styles.listboxButtonIcon} />
         </>
     )
 }

@@ -21,10 +21,10 @@ export interface DashboardSelectProps {
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { dashboards } = props
 
-    const [value, setValue] = useState<string>()
+    const [selectedDashboard, setSelectedDashboard] = useState<string>()
 
     const handleChange = (value: string): void => {
-        setValue(value)
+        setSelectedDashboard(value)
     }
 
     const organizationGroups = useMemo(() => getDashboardOrganizationsGroups(dashboards), [dashboards])
@@ -33,7 +33,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         <div>
             <VisuallyHidden id={LABEL_ID}>Choose a dashboard</VisuallyHidden>
 
-            <ListboxInput value={value} onChange={handleChange}>
+            <ListboxInput value={selectedDashboard} onChange={handleChange}>
                 <MenuButton dashboards={dashboards} className={styles.listboxButton} />
 
                 <ListboxPopover className={classnames(styles.listboxPopover)} portal={true}>
