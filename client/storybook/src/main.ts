@@ -3,26 +3,16 @@ import path from 'path'
 import { Options } from '@storybook/core-common'
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
-import signale from 'signale'
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
+import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
-import { ensureDllBundleIsReady } from './dllPlugin'
 import { environment } from './environment-config'
-import {
-    rootPath,
-    monacoEditorPath,
-    dllPluginConfig,
-    dllBundleManifestPath,
-    getMonacoCSSRule,
-    getMonacoTTFRule,
-    getMonacoWebpackPlugin,
-    nodeModulesPath,
-    getBasicCSSLoader,
-    readJsonFile,
-} from './webpack.config.common'
+
+const rootPath = path.resolve(__dirname, '../../../')
+const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
 
 const getStoriesGlob = (): string[] => {
     if (process.env.STORIES_GLOB) {
@@ -90,14 +80,7 @@ const config = {
         reactDocgen: false,
     },
 
-    // Include DLL bundle script tag into preview-head.html if DLLPlugin is enabled.
-    previewHead: (head: string) => `
-        ${head}
-        ${environment.isDLLPluginEnabled ? getDllScriptTag() : ''}
-    `,
-
-    webpackFinal: (config: Configuration, options: Options) => {
-        config.stats = 'errors-warnings'
+    webpackFinal: (config: Configuration) => {
         config.mode = environment.shouldMinify ? 'production' : 'development'
 
         // Check the default config is in an expected shape.
@@ -218,6 +201,20 @@ const config = {
                 'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
                 'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
             })
+        }
+
+        if (environment.isBundleAnalyzerEnabled) {
+            config.plugins.push(new BundleAnalyzerPlugin())
+        }
+
+        if (environment.isSpeedAnalyzerEnabled) {
+            const speedMeasurePlugin = new SpeedMeasurePlugin({
+                outputFormat: 'human',
+            })
+
+            config.plugins.push(speedMeasurePlugin)
+
+            return speedMeasurePlugin.wrap(config)
         }
 
         if (environment.isBundleAnalyzerEnabled) {
