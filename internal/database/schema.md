@@ -1611,6 +1611,7 @@ Contains security-relevant events with a long time horizon for storage.
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
     "settings_org_id_idx" btree (org_id)
+    "settings_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
