@@ -2,6 +2,7 @@ package batches
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -85,6 +86,9 @@ func (p *PublishedValue) UnmarshalYAML(unmarshal func(interface{}) error) error 
 
 func (p *PublishedValue) UnmarshalGraphQL(input interface{}) error {
 	p.Val = input
+	if !p.Valid() {
+		return errors.New("invalid PublishedValue")
+	}
 	return nil
 }
 
