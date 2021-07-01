@@ -47,7 +47,7 @@ export interface InsightDashboard extends InsightDashboardConfiguration {
      * "All" - all insights that dashboard have all users by default
      *
      * "Personal" - all personal insights from personal settings (also all users
-     * it have by default)
+     * have it by default)
      *
      * "Organizations level" - all organizations act as insights dashboard
      */
