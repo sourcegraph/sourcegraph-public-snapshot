@@ -4,7 +4,7 @@ import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { catchError, map, startWith } from 'rxjs/operators'
+import { catchError, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -25,7 +25,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
-import { fetchDocumentationPage, fetchDocumentationPathInfo, GQLDocumentationNode } from './graphql'
+import { fetchDocumentationPage, fetchDocumentationPathInfo } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
