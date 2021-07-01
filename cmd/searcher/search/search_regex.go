@@ -303,7 +303,8 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fi
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (_ bool, err error) {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (bool, error) {
+	var err error
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")
 	if rg.re != nil {
@@ -388,10 +389,10 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 			for f := range fileFeeder {
 				// decide whether to process, record that decision
 				if !rg.matchPath.MatchPath(f.Name) {
-					filesSkipped.Add(1)
+					filesSkipped.Inc()
 					continue
 				}
-				filesSearched.Add(1)
+				filesSearched.Inc()
 
 				// process
 				var fm protocol.FileMatch
