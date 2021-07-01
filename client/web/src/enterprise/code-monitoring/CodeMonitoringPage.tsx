@@ -27,8 +27,8 @@ import {
 import { CodeMonitoringGettingStarted, HAS_SEEN_CODE_MONITORING_GETTING_STARTED } from './CodeMonitoringGettingStarted'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps, FeatureFlagProps {
-    authenticatedUser: AuthenticatedUser | null
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+    authenticatedUser: AuthenticatedUser
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
     showGettingStarted?: boolean
@@ -41,7 +41,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     showGettingStarted = false,
     isLightTheme,
-    featureFlags,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
@@ -142,13 +141,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     </div>
                 </div>
 
-                {showGettingStarted && (
-                    <CodeMonitoringGettingStarted
-                        isLightTheme={isLightTheme}
-                        isSignedIn={!!authenticatedUser}
-                        setHasSeenGettingStarted={setHasSeenGettingStarted}
-                    />
-                )}
+                {showGettingStarted && <CodeMonitoringGettingStarted isLightTheme={isLightTheme} />}
 
                 {showList && (
                     <CodeMonitorList

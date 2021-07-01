@@ -1,5 +1,13 @@
-.subheading {
-    font-size: 1rem;
+.hero {
+    padding: 1.5rem 6rem;
+}
+
+.hero-image {
+    margin-right: 5rem;
+}
+
+.heading {
+    font-size: 1.5rem !important;
 }
 
 .create-button {
@@ -14,6 +22,6 @@
 
 .starting-point {
     &:not(:first-child) {
-        padding-left: 1.5rem;
+        padding-left: 2rem;
     }
 }

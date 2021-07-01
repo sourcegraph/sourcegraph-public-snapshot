@@ -20,34 +20,9 @@ import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 type CodeMonitorFilter = 'all' | 'user'
 
-interface CodeMonitorListProps
-    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
-        SettingsCascadeProps<Settings> {
-    authenticatedUser: AuthenticatedUser | null
-}
-
-const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: AuthenticatedUser | null }> = ({
-    authenticatedUser,
-}) => (
-    <div className="text-center">
-        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
-        {authenticatedUser ? (
-            <Link to="/code-monitoring/new" className="btn btn-primary">
-                <PlusIcon className="icon-inline" />
-                Create a code monitor
-            </Link>
-        ) : (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
-        )}
-    </div>
-)
-
-export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
-    authenticatedUser,
-    settingsCascade,
-    fetchUserCodeMonitors,
-    toggleCodeMonitorEnabled,
-}) => {
+export const CodeMonitorList: React.FunctionComponent<
+    Omit<Required<CodeMonitoringPageProps>, 'showGettingStarted' | 'isLightTheme'>
+> = ({ authenticatedUser, settingsCascade, fetchUserCodeMonitors, toggleCodeMonitorEnabled }) => {
     const location = useLocation()
     const history = useHistory()
     const [monitorListFilter, setMonitorListFilter] = useState<CodeMonitorFilter>('all')
