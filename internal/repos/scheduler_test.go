@@ -7,16 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var defaultTime = time.Date(2000, 1, 1, 1, 1, 1, 1, time.UTC)
@@ -72,7 +71,6 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		repo     configuredRepo
 		priority priority
 	}
-
 	tests := []struct {
 		name                  string
 		calls                 []*enqueueCall
@@ -804,7 +802,7 @@ func TestSchedule_upsert(t *testing.T) {
 	}
 }
 
-func TestUpdateQueue_setCloned(t *testing.T) {
+func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	cloned1 := configuredRepo{ID: 1, Name: "cloned1"}
 	cloned2 := configuredRepo{ID: 2, Name: "CLONED2"}
 	notcloned := configuredRepo{ID: 3, Name: "notcloned"}
@@ -830,10 +828,10 @@ func TestUpdateQueue_setCloned(t *testing.T) {
 
 	assertFront(cloned1.Name)
 
-	// Reset the time to now and do setCloned. We then verify that notcloned
+	// Reset the time to now and do prioritiseUncloned. We then verify that notcloned
 	// is now at the front of the queue.
 	mockTime(defaultTime)
-	s.schedule.setCloned([]string{"CLONED1", "cloned2", "notscheduled"})
+	s.schedule.prioritiseUncloned([]string{"notcloned"})
 
 	assertFront(notcloned.Name)
 }
