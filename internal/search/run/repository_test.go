@@ -34,7 +34,7 @@ func TestSearchRepositories(t *testing.T) {
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
 	MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repos, err := getRepos(context.Background(), args.RepoPromise)
+		repos, err := args.RepoPromise.Get(context.Background())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -132,7 +132,7 @@ func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, l
 
 func TestRepoShouldBeAdded(t *testing.T) {
 	MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repos, err := getRepos(context.Background(), args.RepoPromise)
+		repos, err := args.RepoPromise.Get(context.Background())
 		if err != nil {
 			return nil, nil, err
 		}
