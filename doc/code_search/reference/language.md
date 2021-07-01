@@ -316,7 +316,7 @@ ComplexDiagram(
             Optional(
                 Sequence(
                     Terminal("."),
-                    Terminal("file kind", {href: "#file-directory"})),
+                    Terminal("file kind", {href: "#file-kind"})),
                 'skip')),
         Terminal("content"),
         Sequence(
