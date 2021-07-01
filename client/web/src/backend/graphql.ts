@@ -61,4 +61,9 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
         headers: getHeaders(),
     })
 
-export const client = graphQLClient({ headers: getHeaders() })
+export const client = graphQLClient({
+    headers: {
+        ...window?.context?.xhrHeaders,
+        'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
+    },
+})
