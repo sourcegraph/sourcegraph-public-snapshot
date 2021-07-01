@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -110,10 +111,14 @@ func TestSearchSuggestions(t *testing.T) {
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
 <<<<<<< HEAD
+<<<<<<< HEAD
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 =======
 		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 >>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
+=======
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+>>>>>>> 617ff5d42d (move unindexed search code into `internal/search/unindexed` (#22388))
 			calledSearchFilesInRepos.Store(true)
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -164,10 +169,14 @@ func TestSearchSuggestions(t *testing.T) {
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
 <<<<<<< HEAD
+<<<<<<< HEAD
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 =======
 		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 >>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
+=======
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+>>>>>>> 617ff5d42d (move unindexed search code into `internal/search/unindexed` (#22388))
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
@@ -285,10 +294,14 @@ func TestSearchSuggestions(t *testing.T) {
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
 <<<<<<< HEAD
+<<<<<<< HEAD
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 =======
 		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 >>>>>>> a578ee9d4b (return `[]result.Match` from search functions (#22362))
+=======
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+>>>>>>> 617ff5d42d (move unindexed search code into `internal/search/unindexed` (#22388))
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
