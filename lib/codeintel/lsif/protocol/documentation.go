@@ -218,7 +218,7 @@ type Tag string
 const (
 	// The documentation describes a concept that is private/unexported, not a public/exported
 	// concept.
-	DocumentationPrivate DocumentationTag = "private"
+	TagPrivate Tag = "private"
 
 	// The documentation describes a concept that is deprecated.
 	TagDeprecated Tag = "deprecated"
@@ -226,9 +226,12 @@ const (
 	// The documentation describes e.g. a test function or concept related to testing.
 	TagTest Tag = "test"
 
+<<<<<<< HEAD
 	// The documentation describes e.g. a benchmark function or concept related to benchmarking.
 	TagBenchmark Tag = "benchmark"
 
+=======
+>>>>>>> 9c449f7e0f (API docs: LSIF: protocol: add all the tags (#22327))
 	// The documentation describes e.g. an example function or example code.
 	TagExample Tag = "example"
 
