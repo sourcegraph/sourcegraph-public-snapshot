@@ -78,14 +78,14 @@ export const Terminal: React.FunctionComponent = () => {
     return (
         <div className={terminalStyles.wrapper}>
             <header className={terminalStyles.headerTitle}>
-                <h3>Activity log</h3>
+                <h3 className="title">Activity log</h3>
                 <div>{percentage}</div>
             </header>
             <section className={terminalStyles.repositoriesInfo}>
                 <code>Cloning Repositories...</code>
-                <ul>
-                    <li>
-                        <code>
+                <ul className={terminalStyles.downloadProgressWrapper}>
+                    <li className={terminalStyles.downloadProgressItem}>
+                        <code className={terminalStyles.downloadProgressItemDetails}>
                             <span className={terminalStyles.downloadStatus}>{status}</span>
                             <span ref={progressContainerReference} className={terminalStyles.downloadProgress}>
                                 <span ref={progressReference}>{progress}</span>
@@ -95,18 +95,26 @@ export const Terminal: React.FunctionComponent = () => {
                             </span>
                         </code>
                     </li>
-                    <li>
-                        <code>
-                            <span className={terminalStyles.downloadStatus}>Downloading...</span>
-                            <span className={terminalStyles.downloadProgress}>===={'>'}</span>
-                            <span>10.11MB/36.28MB</span>
+                    <li className={terminalStyles.downloadProgressItem}>
+                        <code className={terminalStyles.downloadProgressItemDetails}>
+                            <span className={terminalStyles.downloadStatus}>{status}</span>
+                            <span ref={progressContainerReference} className={terminalStyles.downloadProgress}>
+                                <span ref={progressReference}>{progress}</span>
+                            </span>
+                            <span>
+                                {response.progress.size}MB/{response.size}MB
+                            </span>
                         </code>
                     </li>
-                    <li>
-                        <code>
-                            <span className={terminalStyles.downloadStatus}>Downloading...</span>
-                            <span className={terminalStyles.downloadProgress}>===={'>'}</span>
-                            <span>10.11MB/36.28MB</span>
+                    <li className={terminalStyles.downloadProgressItem}>
+                        <code className={terminalStyles.downloadProgressItemDetails}>
+                            <span className={terminalStyles.downloadStatus}>{status}</span>
+                            <span ref={progressContainerReference} className={terminalStyles.downloadProgress}>
+                                <span ref={progressReference}>{progress}</span>
+                            </span>
+                            <span>
+                                {response.progress.size}MB/{response.size}MB
+                            </span>
                         </code>
                     </li>
                 </ul>
