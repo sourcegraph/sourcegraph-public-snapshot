@@ -4,7 +4,7 @@ Sourcegraph records basic per-user usage statistics. To view analytics, visit th
 
 Here you can see charts with counts of unique users by day, week, or months.
 
-From this page, you can also see user-level activity, including counts of pageviews, searches, and code intelligence actions, and last active times. This user-level data is all stored locally on your Sourcegraph instance, and is never sent to Sourcegraph.com. The user-specific values are recorded over the last 93 days.
+From this page, you can also see user-level activity, including counts of pageviews, searches, and code intelligence actions, and last active times. This user-level data is all stored locally on your Sourcegraph instance, and is never sent to Sourcegraph.com. The user-specific values are recorded over all time.
 
 ## See also 
 
