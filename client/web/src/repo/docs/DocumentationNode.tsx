@@ -11,6 +11,8 @@ import { useScrollToLocationHash } from '../../components/useScrollToLocationHas
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
+import { DocumentationIcons } from './DocumentationIcons'
+
 // Mirrors the same type on the backend:
 //
 // https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal
@@ -121,7 +123,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
     return (
         <div className="documentation-node">
             <Link className={`h${depth + 1 < 4 ? depth + 1 : 4}`} id={hash} to={thisPage}>
-                {node.label.value}
+                <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
             </Link>
             {node.detail.value !== '' && (
                 <div className="px-2 pt-2">
