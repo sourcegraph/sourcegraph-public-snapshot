@@ -376,14 +376,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	for i := 0; i < numWorkers; i++ {
 		rg := rg.Copy()
 		g.Go(func() error {
-			for {
-				// check whether we've been cancelled
-				select {
-				case <-ctx.Done():
-					return nil
-				default:
-				}
-
+			for ctx.Err() == nil {
 				// grab a file to work on
 				filesmu.Lock()
 				if len(files) == 0 {
@@ -424,6 +417,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 					}
 				}
 			}
+			return nil
 		})
 	}
 
