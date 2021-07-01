@@ -5,9 +5,10 @@ BEGIN;
 -- dictates the filtering mechanism used to decide what rows can be seen or
 -- updated by the specified role(s).
 --
--- The USING clause requires two LOCAL variables to be set:
---     1. rls.user_id: the effective ID for the user making the request
---     2. rls.permission: the permission that the user needs (e.g. "write")
+-- The USING clause requires three LOCAL variables to be set:
+--     1. rls.use_permissions_user_mapping: the switch to turn on permissions uesr mapping
+--     2. rls.user_id: the effective ID for the user making the request
+--     3. rls.permission: the permission that the user needs (e.g. "read")
 ALTER TABLE repo ENABLE ROW LEVEL SECURITY;
 CREATE POLICY sg_repo_access_policy
     ON repo
