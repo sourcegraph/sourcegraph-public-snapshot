@@ -65,14 +65,3 @@ func (s *Serializer) UnmarshalDocumentationPathInfoData(data []byte) (documentat
 	}
 	return documentationPathInfo, nil
 }
-
-// MarshalDocumentationPathInfoData transforms documentation path info data into a string of bytes writable to disk.
-func (s *Serializer) MarshalDocumentationPathInfoData(documentationPathInfo *semantic.DocumentationPathInfoData) ([]byte, error) {
-	return s.encode(&documentationPathInfo)
-}
-
-// UnmarshalDocumentationPathInfoData is the inverse of MarshalDocumentationPathInfoData.
-func (s *Serializer) UnmarshalDocumentationPathInfoData(data []byte) (documentationPathInfo *semantic.DocumentationPathInfoData, err error) {
-	err = s.decode(data, &documentationPathInfo)
-	return documentationPathInfo, err
-}
