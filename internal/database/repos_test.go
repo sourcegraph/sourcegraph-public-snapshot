@@ -2,12 +2,10 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -408,15 +406,6 @@ func TestListIndexableRepos(t *testing.T) {
 			Name:  "github.com/foo/bar4",
 			Stars: 10, // Not enough stars
 		},
-		{
-			ID:    api.RepoID(5),
-			Name:  "github.com/foo/bar5",
-			Stars: 400,
-			Blocked: &types.RepoBlock{
-				At:     time.Now().UTC().Unix(),
-				Reason: "Failed to index too many times.",
-			},
-		},
 	}
 
 	ctx := context.Background()
@@ -429,15 +418,7 @@ func TestListIndexableRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, r := range reposToAdd {
-		blocked, err := json.Marshal(r.Blocked)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.ExecContext(ctx,
-			`INSERT INTO repo(id, name, stars, private, blocked) VALUES ($1, $2, $3, $4, NULLIF($5, 'null'::jsonb))`,
-			r.ID, r.Name, r.Stars, r.Private, blocked,
-		)
-		if err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name, stars, private) VALUES ($1, $2, $3, $4)`, r.ID, r.Name, r.Stars, r.Private); err != nil {
 			t.Fatal(err)
 		}
 
@@ -495,43 +476,6 @@ func TestListIndexableRepos(t *testing.T) {
 				t.Errorf("mismatch (-want +have):\n%s", diff)
 			}
 		})
-	}
-}
-
-func TestRepoStore_Blocking(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t, "")
-	rs := Repos(db)
-
-	ctx := context.Background()
-
-	repos := []*types.Repo{
-		{
-			ID:      1,
-			Name:    "foo",
-			URI:     "foo-uri",
-			Sources: map[string]*types.SourceInfo{},
-		},
-		{
-			ID:      2,
-			Name:    "bar",
-			URI:     "bar-uri",
-			Sources: map[string]*types.SourceInfo{},
-		},
-	}
-
-	err := rs.Create(ctx, repos...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = rs.Block(ctx, "too big", repos[1].ID)
-	if err != nil {
-		t.Fatal(err)
 	}
 
 	t.Run("GetByName_Name", func(t *testing.T) {
