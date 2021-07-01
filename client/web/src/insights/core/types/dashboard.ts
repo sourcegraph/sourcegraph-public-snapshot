@@ -24,7 +24,7 @@ export enum InsightsDashboardType {
 }
 
 /**
- * Extended custom insights dashboard. A user can have they own dashboards created
+ * Extended custom insights dashboard. A user can have their own dashboards created
  * by insights dashboard creation UI.
  */
 export interface InsightDashboard extends InsightDashboardConfiguration {
