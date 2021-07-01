@@ -57,7 +57,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			qc.Interval = time.Minute
 		}
 
-		// Randomize start so queries aren't all scheduled at the same time.
+    // Randomize start so queries aren't all scheduled at the same time.
 		jitterSleep(ctx, qc.Interval, 1.0)
 
 		for ctx.Err() == nil {
