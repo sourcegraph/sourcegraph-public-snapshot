@@ -89,30 +89,6 @@ func (d *duplicateChecker) count() (duplicates, nonDupicates int) {
 	return d.duplicates, d.nonDuplicates
 }
 
-type duplicateChecker struct {
-	mu                        sync.RWMutex
-	pathIDs                   map[string]struct{}
-	duplicates, nonDuplicates int
-}
-
-func (d *duplicateChecker) add(pathID string) bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if _, ok := d.pathIDs[pathID]; ok {
-		d.duplicates++
-		return false
-	}
-	d.nonDuplicates++
-	d.pathIDs[pathID] = struct{}{}
-	return true
-}
-
-func (d *duplicateChecker) count() (duplicates, nonDupicates int) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	return d.duplicates, d.nonDuplicates
-}
-
 // pageCollector collects all of the children for a single documentation page.
 //
 // It spawns a new pageCollector to collect each new child page as it encounters them.
@@ -126,6 +102,7 @@ type pageCollector struct {
 }
 
 func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
+	var remainingPagesMu sync.RWMutex
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
 		labelID := p.state.DocumentationStringLabel[documentationResult]
@@ -160,6 +137,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 					PathID: this.PathID,
 				})
 				if p.walkedPages.add(this.PathID) {
+					remainingPagesMu.Lock()
 					remainingPages = append(remainingPages, &pageCollector{
 						isChildPage:                 true,
 						parentPathID:                parent.PathID,
@@ -168,6 +146,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 						dupChecker:                  p.dupChecker,
 						walkedPages:                 p.walkedPages,
 					})
+					remainingPagesMu.Unlock()
 				}
 				return
 			} else {
@@ -193,23 +172,23 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 	}
 	walk(nil, p.startingDocumentationResult, p.parentPathID)
 	if p.isChildPage {
+		remainingPagesMu.RLock()
+		defer remainingPagesMu.RUnlock()
 		return remainingPages
 	}
 
 	// We are the root project page! Collect all the remaining pages.
-	var (
-		remainingWorkMu sync.RWMutex
-		remainingWork   = remainingPages
-	)
 	wg := &sync.WaitGroup{}
-	wg.Add(len(remainingWork))
+	remainingPagesMu.RLock()
+	wg.Add(len(remainingPages))
+	remainingPagesMu.RUnlock()
 	for i := 0; i <= p.numWorkers; i++ {
 		go func() {
 			for {
 				// Get a remaining page to process.
-				remainingWorkMu.Lock()
-				if len(remainingWork) == 0 {
-					remainingWorkMu.Unlock()
+				remainingPagesMu.Lock()
+				if len(remainingPages) == 0 { // HERE
+					remainingPagesMu.Unlock()
 					return // no more work
 				}
 				work := remainingWork[0]
