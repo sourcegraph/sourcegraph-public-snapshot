@@ -124,8 +124,8 @@ export const fetchDocumentationPage = (args: DocumentationPageVariables): Observ
             if (!repo.commit.tree.lsif.documentationPage || !repo.commit.tree.lsif.documentationPage.tree) {
                 throw new Error('no LSIF documentation')
             }
-            const page = repo.commit.tree.lsif.documentationPage;
-            return ({ ...page, tree: JSON.parse(page.tree) as GQLDocumentationNode })
+            const page = repo.commit.tree.lsif.documentationPage
+            return { ...page, tree: JSON.parse(page.tree) as GQLDocumentationNode }
         })
     )
 
@@ -149,16 +149,28 @@ export interface DocumentationPathInfoVariables {
     ignoreIndex: boolean
 }
 
-export const fetchDocumentationPathInfo = (args: DocumentationPathInfoVariables): Observable<GQLDocumentationPathInfo> =>
+export const fetchDocumentationPathInfo = (
+    args: DocumentationPathInfoVariables
+): Observable<GQLDocumentationPathInfo> =>
     requestGraphQL<DocumentationPathInfoResults, DocumentationPathInfoVariables>(
         gql`
-            query DocumentationPathInfo($repo: ID!, $revspec: String!, $pathID: String!, $maxDepth: Int!, $ignoreIndex: Boolean!) {
+            query DocumentationPathInfo(
+                $repo: ID!
+                $revspec: String!
+                $pathID: String!
+                $maxDepth: Int!
+                $ignoreIndex: Boolean!
+            ) {
                 node(id: $repo) {
                     ... on Repository {
                         commit(rev: $revspec) {
                             tree(path: "/") {
                                 lsif {
-                                    documentationPathInfo(pathID:$pathID, maxDepth:$maxDepth, ignoreIndex:$ignoreIndex)
+                                    documentationPathInfo(
+                                        pathID: $pathID
+                                        maxDepth: $maxDepth
+                                        ignoreIndex: $ignoreIndex
+                                    )
                                 }
                             }
                         }

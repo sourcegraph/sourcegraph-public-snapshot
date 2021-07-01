@@ -110,7 +110,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
     const handleSidebarVisible = useCallback((visible: boolean) => setSidebarVisible(visible), [])
 
     const loading = page === LOADING || pathInfo === LOADING
-    const error = isErrorLike(page) ? page : (isErrorLike(pathInfo) ? pathInfo : null);
+    const error = isErrorLike(page) ? page : isErrorLike(pathInfo) ? pathInfo : null
 
     return (
         <div className="repository-docs-page">

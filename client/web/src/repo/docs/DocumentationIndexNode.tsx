@@ -50,7 +50,9 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
     }
     if (props.contentOnly) {
         if (node.detail.value === '') {
-            const children = node.children.filter(child => !child.node ? false : !isExcluded(child.node, props.excludingTags))
+            const children = node.children.filter(child =>
+                !child.node ? false : !isExcluded(child.node, props.excludingTags)
+            )
             if (children.length == 0) {
                 return null
             }

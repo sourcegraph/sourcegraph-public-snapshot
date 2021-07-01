@@ -62,7 +62,11 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
     return (
         <div className="pl-3 pb-3">
             {firstFew.map(pathID => {
-                const url = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: pathID });
+                const url = toDocumentationURL({
+                    repoName: props.repo.name,
+                    revision: props.revision || '',
+                    pathID: pathID,
+                })
                 return (
                     <div key={pathID}>
                         <Link id={'index-' + pathID} to={url} className="text-nowrap">
@@ -71,18 +75,28 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                     </div>
                 )
             })}
-            {remaining && <Collapsible title="..." titleAtStart={true} buttonClassName="repository-documentation-sidebar__show-more-button">
-                {firstFew.map(pathID => {
-                    const url = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: pathID });
-                    return (
-                        <div key={pathID}>
-                            <Link id={'index-' + pathID} to={url} className="text-nowrap">
-                                {pathID.slice('/'.length)}&#47;
-                            </Link>
-                        </div>
-                    )
-                })}
-            </Collapsible>}
+            {remaining && (
+                <Collapsible
+                    title="..."
+                    titleAtStart={true}
+                    buttonClassName="repository-documentation-sidebar__show-more-button"
+                >
+                    {firstFew.map(pathID => {
+                        const url = toDocumentationURL({
+                            repoName: props.repo.name,
+                            revision: props.revision || '',
+                            pathID: pathID,
+                        })
+                        return (
+                            <div key={pathID}>
+                                <Link id={'index-' + pathID} to={url} className="text-nowrap">
+                                    {pathID.slice('/'.length)}&#47;
+                                </Link>
+                            </div>
+                        )
+                    })}
+                </Collapsible>
+            )}
         </div>
     )
 }
@@ -130,17 +144,29 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                         </Button>
                     </div>
                     <div aria-hidden={true} className="repository-documentation-sidebar-scroller overflow-auto px-3">
-                        {props.pathInfo.isIndex && <>
-                            <h4 className="text-nowrap">Index</h4>
-                            {props.pathInfo.children.length > 0 ? <SubpagesList onToggle={onToggle} {...props} /> : <p>Looks like there's nothing to see here..</p>}
-                        </>}
-                        {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && <>
-                            <h4 className="text-nowrap">Subpages</h4>
-                            <SubpagesList onToggle={onToggle} {...props} />
-                        </>}
-                        {!props.pathInfo.isIndex && props.pathInfo.children.length == 0 && isExcluded(props.node, excludingTags) && <>
-                            <p>Looks like there's nothing to see here..</p>
-                        </>}
+                        {props.pathInfo.isIndex && (
+                            <>
+                                <h4 className="text-nowrap">Index</h4>
+                                {props.pathInfo.children.length > 0 ? (
+                                    <SubpagesList onToggle={onToggle} {...props} />
+                                ) : (
+                                    <p>Looks like there's nothing to see here..</p>
+                                )}
+                            </>
+                        )}
+                        {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
+                            <>
+                                <h4 className="text-nowrap">Subpages</h4>
+                                <SubpagesList onToggle={onToggle} {...props} />
+                            </>
+                        )}
+                        {!props.pathInfo.isIndex &&
+                            props.pathInfo.children.length == 0 &&
+                            isExcluded(props.node, excludingTags) && (
+                                <>
+                                    <p>Looks like there's nothing to see here..</p>
+                                </>
+                            )}
                         <DocumentationIndexNode
                             {...props}
                             node={props.node}

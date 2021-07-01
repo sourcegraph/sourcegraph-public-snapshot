@@ -53,7 +53,9 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
         )
     )
     if (node.detail.value === '') {
-        const children = node.children.filter(child => !child.node ? false : !isExcluded(child.node, props.excludingTags))
+        const children = node.children.filter(child =>
+            !child.node ? false : !isExcluded(child.node, props.excludingTags)
+        )
         if (children.length == 0) {
             return null
         }
