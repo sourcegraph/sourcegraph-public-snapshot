@@ -10,7 +10,7 @@ export type InsightDashboard = RealInsightDashboard | VirtualInsightsDashboard
 export { InsightsDashboardType, RealInsightDashboard, VirtualInsightsDashboard }
 
 /**
- * The key for accessing  insights dashboards in the subject settings.
+ * Key for accessing insights dashboards in a subject settings.
  */
 export const INSIGHTS_DASHBOARDS_SETTINGS_KEY = 'insights.dashboards'
 

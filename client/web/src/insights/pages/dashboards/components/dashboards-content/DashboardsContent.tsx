@@ -69,7 +69,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 }
 
 // This strange props extending here (child props interface is extended by parent props)
-// is needed for InsightsViewGrid component and related to '/views' specific component usage.
+// is needed for the InsightsViewGrid component and related to '/views' specific component usage.
 // This problem will be resolved here https://github.com/sourcegraph/sourcegraph/issues/22462
 interface DashboardInsightsProps extends DashboardsContentProps {
     /**
@@ -79,7 +79,7 @@ interface DashboardInsightsProps extends DashboardsContentProps {
 }
 
 /**
- * Renders code insight view grid with dashboard specific insights within.
+ * Renders code insight view grid.
  */
 const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
     const { extensionsController, insightIds } = props

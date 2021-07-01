@@ -25,7 +25,7 @@ export interface DashboardSelectProps {
 }
 
 /**
- * Renders dashboard select component for code insights dashboard page selection UI.
+ * Renders dashboard select component for the code insights dashboard page selection UI.
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { value, dashboards, onSelect } = props

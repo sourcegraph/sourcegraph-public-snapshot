@@ -5,36 +5,33 @@ import { InsightDashboard as InsightDashboardConfiguration } from '../../../../s
  */
 export enum InsightsDashboardType {
     /**
-     * The dashboard includes all insights from the personal and organization
+     * This type of dashboard includes all insights from the personal and organization
      * settings.
      */
     All = 'all',
 
     /**
-     * The dashboard includes insights from the personal settings or from
+     * This type of dashboard includes insights from the personal settings or from
      * dashboards that are stored in the personal settings (personal dashboard)
      */
     Personal = 'personal',
 
     /**
-     * The dashboard includes insights from the organization settings or from
+     * This type of dashboard includes insights from the organization settings or from
      * dashboards that are stored in the organization settings (org dashboard)
      */
     Organization = 'organization',
 }
 
 /**
- * An Owner of dashboard. It can be user subject (a personal dashboard), org subject
- * (an org level dashboard)
+ * Owner of dashboard information. It can be a user-type subject (personal dashboard), org subject
+ * (org level dashboard)
  */
 export interface InsightDashboardOwner {
     id: string
     name: string
 }
 
-/**
- * An extended custom insights dashboard by payload info about type and owner of dashboard.
- */
 export interface ExtendedInsightDashboard extends InsightDashboardConfiguration {
     /**
      * All dashboards that were created in users or org settings explicitly are
