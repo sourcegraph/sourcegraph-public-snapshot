@@ -25,7 +25,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
-import { fetchDocumentationPage, fetchDocumentationPathInfo } from './graphql'
+import { fetchDocumentationPage, fetchDocumentationPathInfo, isExcluded, Tag } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -112,6 +112,8 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
     const loading = page === LOADING || pathInfo === LOADING
     const error = isErrorLike(page) ? page : isErrorLike(pathInfo) ? pathInfo : null
 
+    const excludingTags: Tag[] = ['private']
+
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
@@ -177,13 +179,17 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                             }`}
                         >
                             <DocumentationWelcomeAlert />
+                            {isExcluded(page.tree, excludingTags) ? <div className="m-3">
+                                <h2 className="text-muted">Looks like there's nothing to see here.</h2>
+                                <p>API docs for private / unexported code is coming soon!</p>
+                            </div> : null}
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
                                 node={page.tree}
                                 pagePathID={pagePathID}
                                 depth={0}
-                                excludingTags={['private']}
+                                excludingTags={excludingTags}
                             />
                         </div>
                     </div>
