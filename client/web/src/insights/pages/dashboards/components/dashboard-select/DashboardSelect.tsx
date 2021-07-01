@@ -34,7 +34,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
             <VisuallyHidden id={LABEL_ID}>Choose a dashboard</VisuallyHidden>
 
             <ListboxInput value={value} onChange={handleChange}>
-                <MenuButton dashboards={dashboards} />
+                <MenuButton dashboards={dashboards} className={styles.listboxButton} />
 
                 <ListboxPopover className={classnames(styles.listboxPopover)} portal={true}>
                     <ListboxList className={classnames(styles.listboxList, 'dropdown-menu')}>

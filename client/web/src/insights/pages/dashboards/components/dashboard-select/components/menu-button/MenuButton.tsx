@@ -13,16 +13,17 @@ import styles from './MenuButton.module.scss'
 
 interface MenuButtonProps {
     dashboards: InsightDashboard[]
+    className?: string
 }
 
 /**
  * Renders ListBox menu button for dashboard select component.
  */
 export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
-    const { dashboards } = props
+    const { dashboards, className } = props
 
     return (
-        <ListboxButton className={styles.listboxButton}>
+        <ListboxButton className={classnames(styles.listboxButton, className)}>
             {({ value, isExpanded }) => {
                 if (value === InsightsDashboardType.All) {
                     return <MenuButtonContent title="All Insights" isExpanded={isExpanded} />

@@ -1,10 +1,15 @@
 @import '~@reach/listbox/styles.css';
 
 .listbox {
+    &__button {
+        max-width: 22.75rem;
+    }
+
     &__list {
         display: block;
         position: static;
-        width: 22.8125rem;
+        max-width: 22.75rem;
+        width: 100%;
         overflow: hidden;
 
         &:focus {
