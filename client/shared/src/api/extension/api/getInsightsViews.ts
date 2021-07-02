@@ -31,7 +31,7 @@ export function getInsightsViews(
                 if (insightIds) {
                     // Get everything until last dot according to extension id naming convention
                     // <type>.<name>.<view type = directory|insightPage|homePage>
-                    const providerId = provider.id.match(/.*(?=\.)/)?.[0] ?? ''
+                    const providerId = provider.id.split('.').slice(0, -1).join('.')
 
                     return insightsIdSet.has(providerId)
                 }
