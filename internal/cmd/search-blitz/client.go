@@ -41,7 +41,6 @@ func newClient() (*client, error) {
 
 func (s *client) search(ctx context.Context, query, queryName string) (*metrics, error) {
 	var body bytes.Buffer
-	m := &metrics{}
 	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
 		"query":     graphQLQuery,
 		"variables": map[string]string{"query": query},
@@ -60,7 +59,6 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
-	m.took = time.Since(start).Milliseconds()
 
 	if err != nil {
 		return nil, err
@@ -74,14 +72,20 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	m.trace = resp.Header.Get("x-trace")
-
 	// Decode the response.
 	respDec := rawResult{Data: result{}}
 	if err := json.NewDecoder(resp.Body).Decode(&respDec); err != nil {
 		return nil, err
 	}
-	return m, nil
+
+	durationMs := time.Since(start).Milliseconds()
+
+	return &metrics{
+		took:          durationMs,
+		firstResultMs: durationMs,
+		matchCount:    respDec.Data.Search.Results.ResultCount,
+		trace:         resp.Header.Get("x-trace"),
+	}, nil
 }
 
 func (s *client) url() string {

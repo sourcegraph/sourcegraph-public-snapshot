@@ -14,6 +14,7 @@ import { Settings } from '../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGridProps } from '../../components'
 import { InsightsDashboardType } from '../../core/types'
 
+import { DashboardSelect } from './components/dashboard-select/DashboardSelect'
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
 export interface DashboardsPageProps

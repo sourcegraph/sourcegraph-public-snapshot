@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -17,7 +20,6 @@ import (
 )
 
 const port = "8080"
-const envConfig = "CONFIG"
 const envLogDir = "LOG_DIR"
 
 func run(ctx context.Context, wg *sync.WaitGroup) {
@@ -33,11 +35,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	configPath := os.Getenv(envConfig)
-	if configPath == "" {
-		configPath = "/config.yaml"
-	}
-	config, err := loadQueries(configPath)
+	config, err := loadQueries()
 	if err != nil {
 		panic(err)
 	}
@@ -52,12 +50,12 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		return nil
 	}
 
-	loopSearch := func(ctx context.Context, c genericClient, group string, qc QueryConfig) {
+	loopSearch := func(ctx context.Context, c genericClient, group string, qc *QueryConfig) {
 		if qc.Interval == 0 {
 			qc.Interval = time.Minute
 		}
-		ticker := time.NewTicker(qc.Interval)
-		defer ticker.Stop()
+
+		log := log15.New("group", group, "name", qc.Name, "query", qc.Query, "type", c.clientType())
 
 		// Randomize start to a random time in the initial interval so our
 		// queries aren't all scheduled at the same time.
@@ -68,14 +66,18 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		case <-time.After(randomStart):
 		}
 
+		ticker := time.NewTicker(qc.Interval)
+		defer ticker.Stop()
+
 		for {
 
 			m, err := c.search(ctx, qc.Query, qc.Name)
 			if err != nil {
-				log15.Error(err.Error())
+				log.Error(err.Error())
 			} else {
-				log15.Info("metrics", "group", group, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-				durationSearchHistogram.WithLabelValues(group, c.clientType()).Observe(float64(m.took))
+				log.Info("metrics", "trace", m.trace, "duration_ms", m.took, "first_result_ms", m.firstResultMs, "match_count", m.matchCount)
+				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, m.took, m.firstResultMs)
+				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
 			}
 
 			select {
@@ -86,7 +88,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		}
 	}
 
-	scheduleQuery := func(ctx context.Context, group string, qc QueryConfig) {
+	scheduleQuery := func(ctx context.Context, group string, qc *QueryConfig) {
 		if len(qc.Protocols) == 0 {
 			qc.Protocols = allProtocols
 		}
@@ -128,6 +130,28 @@ func startServer(wg *sync.WaitGroup) *http.Server {
 	return srv
 }
 
+type tsvLogger struct {
+	mu  sync.Mutex
+	w   io.Writer
+	buf bytes.Buffer
+}
+
+func (t *tsvLogger) Log(a ...interface{}) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.buf.Reset()
+	t.buf.WriteString(time.Now().UTC().Format(time.RFC3339))
+	for _, v := range a {
+		t.buf.WriteByte('\t')
+		_, _ = fmt.Fprintf(&t.buf, "%v", v)
+	}
+	t.buf.WriteByte('\t')
+	_, _ = t.buf.WriteTo(t.w)
+}
+
+var tsv *tsvLogger
+
 func main() {
 	logDir := os.Getenv(envLogDir)
 	if logDir == "" {
@@ -140,7 +164,16 @@ func main() {
 			Filename: filepath.Join(logDir, "search_blitz.log"),
 			MaxSize:  10, // Megabyte
 			MaxAge:   90, // days
+			Compress: true,
 		}, log15.JsonFormat())))
+
+	// We also log to a TSV file since its easy to interact with via AWK.
+	tsv = &tsvLogger{w: &lumberjack.Logger{
+		Filename:   filepath.Join(logDir, "search_blitz.tsv"),
+		MaxSize:    10, // Megabyte
+		MaxBackups: 90, // days
+		Compress:   true,
+	}}
 
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()

@@ -20,7 +20,6 @@ export enum FilterType {
     content = 'content',
     patterntype = 'patterntype',
     index = 'index',
-    stable = 'stable',
     // eslint-disable-next-line unicorn/prevent-abbreviations
     rev = 'rev',
 }

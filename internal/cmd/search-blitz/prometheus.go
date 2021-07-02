@@ -8,7 +8,7 @@ var durationSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpt
 	Name:    "search_blitz_duration_ms",
 	Help:    "e2e duration search-blitz where search_type is either stream or batch",
 	Buckets: UserLatencyBuckets,
-}, []string{"type", "search_type"})
+}, []string{"group", "query_name", "client"})
 
 func init() {
 	prometheus.MustRegister(durationSearchHistogram)

@@ -115,7 +115,6 @@ type SearchResultsResolver struct {
 type SearchResults struct {
 	Matches []result.Match
 	Stats   streaming.Stats
-	Cursor  *run.SearchCursor
 	Alert   *searchAlert
 }
 
@@ -464,57 +463,6 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, er
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	// If the request specifies stable:truthy, use pagination to return a stable ordering.
-	if r.Query.BoolValue(query.FieldStable) {
-		var stableResultCount int32 = defaultMaxSearchResults
-		if count := r.Query.Count(); count != nil {
-			stableResultCount = int32(*count)
-			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrapResults(), nil
-			}
-		}
-
-		r.Pagination = &run.SearchPaginationInfo{
-			Limit: stableResultCount,
-		}
-
-		// Pagination only works for file content searches, and will
-		// raise an error otherwise. If stable is explicitly set, this
-		// is implied. So, force this query to only return file content
-		// results.
-		r.Query = query.OverrideField(r.Query, query.FieldType, "file")
-		result, err := r.paginatedResults(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if result == nil {
-			// Panic if paginatedResults does not ensure a non-nil search result.
-			panic("stable search: paginated search returned nil results")
-		}
-		if result.Cursor == nil {
-			// Perhaps an alert was raised.
-			return result, err
-		}
-		if !result.Cursor.Finished {
-			// For stable result queries limitHit = true implies
-			// there is a next cursor, and more results may exist.
-			result.Stats.IsLimitHit = true
-		}
-		if r.stream != nil {
-			r.stream.Send(streaming.SearchEvent{
-				Results: result.Matches,
-				Stats:   result.Stats,
-			})
-		}
-		return result, err
-	}
-
-	// If the request is a paginated one, we handle it separately. See
-	// paginatedResults for more details.
-	if r.Pagination != nil {
-		return r.paginatedResults(ctx)
-	}
 
 	return r.resultsWithTimeoutSuggestion(ctx)
 }

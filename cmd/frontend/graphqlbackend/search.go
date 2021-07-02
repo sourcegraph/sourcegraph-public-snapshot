@@ -32,8 +32,6 @@ type SearchArgs struct {
 	Version        string
 	PatternType    *string
 	Query          string
-	After          *string
-	First          *int32
 	VersionContext *string
 
 	// Stream if non-nil will stream all SearchEvents.
@@ -99,15 +97,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	}
 	tr.LazyPrintf("parsing done")
 
-	// If the request is a paginated one, decode those arguments now.
-	var pagination *run.SearchPaginationInfo
-	if args.First != nil {
-		pagination, err = processPaginationRequest(args, plan.ToParseTree())
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	defaultLimit := defaultMaxSearchResults
 	if args.Stream != nil {
 		defaultLimit = defaultMaxSearchResultsStreaming
@@ -125,7 +114,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 			OriginalQuery:  args.Query,
 			VersionContext: args.VersionContext,
 			UserSettings:   settings,
-			Pagination:     pagination,
 			PatternType:    searchType,
 			DefaultLimit:   defaultLimit,
 		},
@@ -141,26 +129,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(ctx, r.db, args)
-}
-
-func processPaginationRequest(args *SearchArgs, q query.Q) (*run.SearchPaginationInfo, error) {
-	var pagination *run.SearchPaginationInfo
-	if args.First != nil {
-		cursor, err := unmarshalSearchCursor(args.After)
-		if err != nil {
-			return nil, err
-		}
-		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
-			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
-		}
-		pagination = &run.SearchPaginationInfo{
-			Cursor: cursor,
-			Limit:  *args.First,
-		}
-	} else if args.After != nil {
-		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
-	}
-	return pagination, nil
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
@@ -259,9 +227,7 @@ func (r *searchResolver) countIsSet() bool {
 // protocol returns what type of search we are doing (batch, stream,
 // paginated).
 func (r *searchResolver) protocol() search.Protocol {
-	if r.SearchInputs.Pagination != nil {
-		return search.Pagination
-	} else if r.stream != nil {
+	if r.stream != nil {
 		return search.Streaming
 	}
 	return search.Batch
@@ -269,7 +235,6 @@ func (r *searchResolver) protocol() search.Protocol {
 
 const defaultMaxSearchResults = 30
 const defaultMaxSearchResultsStreaming = 500
-const maxSearchResultsPerPaginatedRequest = 5000
 
 var mockDecodedViewerFinalSettings *schema.Settings
 

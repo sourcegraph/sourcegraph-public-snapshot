@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
@@ -43,17 +44,26 @@ func (s *streamClient) search(ctx context.Context, query, queryName string) (*me
 	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
 	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", queryName))
 
+	var m metrics
+	first := true
+
 	start := time.Now()
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	res := []streamhttp.EventMatch{}
 	dec := streamhttp.Decoder{
 		OnMatches: func(matches []streamhttp.EventMatch) {
-			res = append(res, matches...)
+			if first && len(matches) > 0 {
+				m.firstResultMs = time.Since(start).Milliseconds()
+				first = false
+			}
+		},
+		OnProgress: func(p *api.Progress) {
+			m.matchCount = p.MatchCount
 		},
 	}
 
@@ -61,11 +71,16 @@ func (s *streamClient) search(ctx context.Context, query, queryName string) (*me
 		return nil, err
 	}
 
-	m := &metrics{
-		took:  time.Since(start).Milliseconds(),
-		trace: resp.Header.Get("x-trace"),
+	m.took = time.Since(start).Milliseconds()
+	m.trace = resp.Header.Get("x-trace")
+
+	// If we have no results, we use the total time taken for first result
+	// time.
+	if first {
+		m.firstResultMs = m.took
 	}
-	return m, nil
+
+	return &m, nil
 }
 
 func (s *streamClient) clientType() string {
