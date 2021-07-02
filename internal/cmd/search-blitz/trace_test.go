@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,7 @@ func TestTraceStore(t *testing.T) {
 	traceID := "5fd3f3b7e7206687"
 	tracePath := "/-/debug/jaeger/trace/" + traceID
 	wantPath := "/-/debug/jaeger/api/traces/" + traceID
+	wantAuth := "token s3cr3t"
 	payload := []byte(`{"hello": "world"}`)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +25,7 @@ func TestTraceStore(t *testing.T) {
 			http.Error(w, "bad path: "+r.URL.Path, 404)
 			return
 		}
-		if got := r.Header.Get("Authorization"); got != "token s3cr3t" {
+		if got := r.Header.Get("Authorization"); got != wantAuth {
 			http.Error(w, "bad auth: "+got, 401)
 			return
 		}
@@ -42,13 +44,33 @@ func TestTraceStore(t *testing.T) {
 	}
 
 	dst := filepath.Join(store.Dir, traceID+".json.gz")
-	got, err := readFileGZ(dst)
-	if err != nil {
+	checkStoredPayload := func() error {
+		got, err := readFileGZ(dst)
+		if err != nil {
+			return err
+		}
+		if !bytes.Equal(payload, got) {
+			return fmt.Errorf("unexpected payload on disk:\nwant: %s\ngot:  %s", payload, got)
+		}
+		return nil
+	}
+
+	if err := checkStoredPayload(); err != nil {
 		t.Fatal(err)
 	}
 
-	if !bytes.Equal(payload, got) {
-		t.Fatalf("unexpected payload on disk:\nwant: %s\ngot:  %s", payload, got)
+	// Now test the JaegerServerURL feature which doesn't use auth
+	if err := os.Remove(dst); err != nil {
+		t.Fatal(err)
+	}
+	store.JaegerServerURL = ts.URL
+	wantAuth = ""
+	err = store.Fetch(context.Background(), "https://sourcegraph.com"+tracePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checkStoredPayload(); err != nil {
+		t.Fatal(err)
 	}
 
 	// Test we don't cleanup
@@ -56,9 +78,8 @@ func TestTraceStore(t *testing.T) {
 	if err := store.doCleanup(); err != nil {
 		t.Fatal(err)
 	}
-	_, err = readFileGZ(dst)
-	if err != nil {
-		t.Fatal("expected no error after cleanup", err)
+	if err := checkStoredPayload(); err != nil {
+		t.Fatal(err)
 	}
 
 	// Now make low enough to cleanup
@@ -66,9 +87,8 @@ func TestTraceStore(t *testing.T) {
 	if err := store.doCleanup(); err != nil {
 		t.Fatal(err)
 	}
-	_, err = readFileGZ(dst)
-	if !os.IsNotExist(err) {
-		t.Fatal("expected is not exist error", err)
+	if err := checkStoredPayload(); !os.IsNotExist(err) {
+		t.Fatal(err)
 	}
 }
 

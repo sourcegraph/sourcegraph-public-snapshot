@@ -27,7 +27,15 @@ type traceStore struct {
 	// Token is the Sourcegraph Access token.
 	Token string
 
+	// MaxTotalTraceBytes is the maximum number of bytes on disk all traces
+	// should take. CleanupLoop will remove old traces to keep this invariant.
 	MaxTotalTraceBytes int64
+
+	// JaegerServerURL if non-empty will be used as the non-path of the URL
+	// for queries. If set, Token will not be used. In production we can
+	// internally access jaeger-query instead of needing an admin access token
+	// + the jaeger proxy. Environment variable we use is JAEGER_SERVER_URL.
+	JaegerServerURL string
 }
 
 // Fetch and store the trace.
@@ -46,6 +54,19 @@ func (t *traceStore) Fetch(ctx context.Context, traceURL string) error {
 	// after:  https://sourcegraph.com/-/debug/jaeger/api/traces/5fd3f3b7e7206687
 	traceID := path.Base(u.Path)
 	u.Path = path.Dir(path.Dir(u.Path)) + "/api/traces/" + traceID
+
+	// use internal URL vs public url. Example:
+	// before: https://sourcegraph.com/-/debug/jaeger/api/traces/5fd3f3b7e7206687
+	// after:  http://jaeger-query.prod:16686/-/debug/jaeger/api/traces/5fd3f3b7e7206687
+	if t.JaegerServerURL != "" {
+		p := u.Path
+		u, err = url.Parse(t.JaegerServerURL)
+		if err != nil {
+			return err
+		}
+		u.Path = p
+	}
+
 	traceURL = u.String()
 
 	req, err := http.NewRequest("GET", traceURL, nil)
@@ -54,7 +75,10 @@ func (t *traceStore) Fetch(ctx context.Context, traceURL string) error {
 	}
 
 	req = req.WithContext(ctx)
-	req.Header.Set("Authorization", "token "+t.Token)
+
+	if t.JaegerServerURL == "" && t.Token != "" {
+		req.Header.Set("Authorization", "token "+t.Token)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
