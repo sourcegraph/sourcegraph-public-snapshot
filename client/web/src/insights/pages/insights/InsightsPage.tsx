@@ -5,20 +5,21 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
-import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
+import { CodeInsightsIcon, InsightsViewGrid } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
 import { useDeleteInsight } from './hooks/use-delete-insight'
 
 export interface InsightsPageProps
-    extends ExtensionsControllerProps,
-        Omit<InsightsViewGridProps, 'views'>,
+    extends SettingsCascadeProps,
+        ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps<'updateSettings'> {}
 
@@ -26,7 +27,7 @@ export interface InsightsPageProps
  * Renders insight page. (insights grid and navigation for insight)
  */
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
-    const { settingsCascade, platformContext } = props
+    const { settingsCascade, platformContext, telemetryService } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
@@ -40,12 +41,12 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
 
     // Tracking handlers and logic
     useEffect(() => {
-        props.telemetryService.logViewEvent('Insights')
-    }, [props.telemetryService])
+        telemetryService.logViewEvent('Insights')
+    }, [telemetryService])
 
     const logAddMoreClick = useCallback(() => {
-        props.telemetryService.log('InsightAddMoreClick')
-    }, [props.telemetryService])
+        telemetryService.log('InsightAddMoreClick')
+    }, [telemetryService])
 
     return (
         <div className="w-100">
@@ -65,7 +66,12 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                         <LoadingSpinner className="my-4" />
                     </div>
                 ) : (
-                    <InsightsViewGrid {...props} views={views} hasContextMenu={true} onDelete={handleDelete} />
+                    <InsightsViewGrid
+                        telemetryService={telemetryService}
+                        views={views}
+                        hasContextMenu={true}
+                        onDelete={handleDelete}
+                    />
                 )}
             </Page>
         </div>
