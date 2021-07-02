@@ -27,15 +27,6 @@ export const ALL_INSIGHTS_DASHBOARD: InsightDashboard = {
 }
 
 /**
- * Currently we support only two types of subject that can have insights dashboard.
- */
-type SupportedSubject = IUser | IOrg
-
-const SUPPORTED_TYPES_OF_SUBJECT = new Set<SettingsSubject['__typename']>(['User', 'Org'])
-const isSubjectSupported = (subject: SettingsSubject): subject is SupportedSubject =>
-    SUPPORTED_TYPES_OF_SUBJECT.has(subject.__typename)
-
-/**
  * React hook that returns all valid and available insights dashboards.
  */
 export function useDashboards(settingsCascade: SettingsCascadeOrError): InsightDashboard[] {
