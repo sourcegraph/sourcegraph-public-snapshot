@@ -25,7 +25,7 @@ assignees: ''
   
 #### Descriptive analytics
 
-<!-- What other analytics will you leverage to understand the test? (Note that only one metric should be used for success -->
+<!-- What other analytics will you leverage to understand the test? (Note that only one metric should be used for success) -->
   
 ### Flag
 
