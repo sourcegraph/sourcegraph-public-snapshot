@@ -397,14 +397,13 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit i
 				}
 				if match == !isPatternNegated {
 					limitMux.Lock()
-					limitCounter += len(fm.LineMatches)
-					if limitCounter > limit {
+					if limitCounter+len(fm.LineMatches) > limit {
 						// This match would exceed the limit, so cancel all other
 						// workers and send only the line matches that would fit
 						limitHit = true
 						cancel()
 
-						if limitCounter-limit >= len(fm.LineMatches) {
+						if limitCounter >= limit {
 							// We were already over or at the limit when we
 							// attempted to make a claim, so skip this result entirely
 							limitMux.Unlock()
@@ -412,10 +411,11 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit i
 						}
 
 						// Truncate any line matches that would cause us to go over the limit
-						truncateTo := len(fm.LineMatches) - (limitCounter - limit)
+						truncateTo := limit - limitCounter
 						fm.LineMatches = fm.LineMatches[:truncateTo]
 						fm.MatchCount = truncateTo
 					}
+					limitCounter += len(fm.LineMatches)
 					limitMux.Unlock()
 					sender.Send(fm)
 				}
