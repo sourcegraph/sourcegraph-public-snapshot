@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -57,4 +59,18 @@ func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) er
 		return errors.Wrap(err, "INSERT")
 	}
 	return nil
+}
+
+// LogAuthEvent will log an authentication or an authorization event. Examples are:
+// SignOutAttempted, SignOutScceeded, SignOutFailed.
+func (s *SecurityEventLogStore) LogAuthEvent(ctx context.Context, e *SecurityEvent) {
+	// We don't want to begin logging authentication or authorization events in on-premises
+	// installations yet.
+	if !envvar.SourcegraphDotComMode() {
+		return
+	}
+
+	if err := s.Insert(ctx, e); err != nil {
+		log15.Error(e.Name, "err", err)
+	}
 }
