@@ -1,0 +1,43 @@
+@import '~@reach/listbox/styles.css';
+
+.select-button {
+    max-width: 22.75rem;
+}
+
+.list {
+    display: block;
+    position: static;
+    max-width: 22.75rem;
+    width: 100%;
+    overflow: hidden;
+
+    &:focus {
+        // Reach-ui implicitly reset box-shadow to none if list element is focused
+        // to preserve visual state we have to explicitly set a box shadow value to
+        // our standard --dropdown-shadow
+        box-shadow: var(--dropdown-shadow);
+    }
+}
+
+.popover {
+    // Reset reach-ui styles for popover element.
+    outline: none !important;
+    box-shadow: none !important;
+    border: none;
+    background: none;
+}
+
+.group-label {
+    font-weight: normal;
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    padding: 0.5rem 0.75rem 0;
+}
+
+.option {
+    margin: 0.25rem 0;
+
+    & + & {
+        margin-top: -0.25rem;
+    }
+}
