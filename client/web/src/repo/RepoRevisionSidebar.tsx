@@ -62,7 +62,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             element={
                 <div className={classnames('d-flex w-100', !isRedesignEnabled && 'bg-2 border-right')}>
                     <Tabs
-                        className="w-100 test-repo-revision-sidebar mr-3"
+                        className="w-100 test-repo-revision-sidebar pr-3"
                         defaultIndex={tabIndex}
                         onChange={handleTabsChange}
                     >
