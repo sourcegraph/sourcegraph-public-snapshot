@@ -36,20 +36,16 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const history = useHistory()
     const dashboards = useDashboards(settingsCascade)
 
-    const currentDashboard = useMemo(
-        () =>
-            dashboards.find(dashboard => {
-                if (isVirtualDashboard(dashboard)) {
-                    return (
-                        dashboard.id === dashboardID.toLowerCase() ||
-                        dashboard.type.toLowerCase() === dashboardID.toLowerCase()
-                    )
-                }
+    const currentDashboard = dashboards.find(dashboard => {
+        if (isVirtualDashboard(dashboard)) {
+            return (
+                dashboard.id === dashboardID.toLowerCase() ||
+                dashboard.type.toLowerCase() === dashboardID.toLowerCase()
+            )
+        }
 
-                return dashboard.id === dashboardID || dashboard.title.toLowerCase() === dashboardID?.toLowerCase()
-            }),
-        [dashboardID, dashboards]
-    )
+        return dashboard.id === dashboardID || dashboard.title.toLowerCase() === dashboardID?.toLowerCase()
+    })
 
     const handleDashboardSelect = (dashboard: InsightDashboard): void => {
         history.push(`/insights/dashboard/${dashboard.id}`)
