@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Link, Redirect, useLocation } from 'react-router-dom'
+import { Link, Redirect, useLocation, useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -32,6 +32,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     telemetryService,
 }) => {
     const location = useLocation()
+    // const history = useHistory()
     const query = new URLSearchParams(location.search)
 
     useEffect(() => {
@@ -65,10 +66,12 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             // if sign up is successful and enablePostSignupFlow feature is ON -
             // redirect user to the /post-sign-up page
             if (context.experimentalFeatures.enablePostSignupFlow) {
-                window.location.replace(new URL('/post-sign-up', window.location.href).pathname)
+                window.location.replace(new URL('/welcome', window.location.href).pathname)
             } else {
                 window.location.replace(getReturnTo(location))
             }
+
+            // TODO: check this section ^^^
 
             return Promise.resolve()
         })

@@ -2,7 +2,9 @@ import React, { FunctionComponent, useState } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
 import { Terminal } from '@sourcegraph/wildcard/src/components/Terminal'
 
@@ -36,6 +38,11 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
     const location = useLocation()
     const history = useHistory()
+
+    if (!user) {
+        // TODO: do this on the backend
+        history.push(getReturnTo(location))
+    }
 
     const { data, loading, error, refetch } = useQuery<ExternalServicesResult, ExternalServicesVariables>(
         EXTERNAL_SERVICES,
@@ -121,6 +128,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const goToNextTab = (): void => setCurrentStepNumber(currentStepNumber + 1)
     const goToSearch = (): void => history.push(getReturnTo(location))
     const isCurrentStepComplete = (): boolean => currentStep?.isComplete()
+    const skipPostSignup = (): void => history.push(getReturnTo(location))
 
     const onStepTabClick = (clickedStepTabNumber: number): void => {
         /**
@@ -161,80 +169,85 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     }
 
     return (
-        <div className="signin-signup-page post-signup-page">
-            <PageTitle title="Post sign up page" />
+        <>
+            <LinkOrSpan to={getReturnTo(location)} className="post-signup-page__logo-link">
+                <BrandLogo
+                    className="position-absolute ml-3 mt-3 post-signup-page__logo"
+                    isLightTheme={true}
+                    variant="symbol"
+                    onClick={skipPostSignup}
+                />
+            </LinkOrSpan>
 
-            <HeroPage
-                lessPadding={true}
-                className="text-left"
-                body={
-                    <div className="post-signup-page__container">
-                        <h2>Get started with Sourcegraph</h2>
-                        <p className="text-muted pb-3">
-                            Three quick steps to add your repositories and get searching with Sourcegraph
-                        </p>
-                        <div className="mt-4 pb-3">
-                            <Steps current={currentStepNumber} numbered={true} onTabClick={onStepTabClick}>
-                                <Step title="Connect with code hosts" borderColor="purple" />
-                                <Step title="Add repositories" borderColor="blue" />
-                                <Step title="Start searching" borderColor="orange" />
-                            </Steps>
-                        </div>
-                        <div className="mt-4 pb-3">{currentStep.content}</div>
+            <div className="signin-signup-page post-signup-page">
+                <PageTitle title="Post sign up page" />
 
-                        <div className="mt-4">
-                            <button
-                                type="button"
-                                className="btn btn-primary float-right ml-2"
-                                disabled={!isCurrentStepComplete()}
-                                onClick={isLastStep ? goToSearch : goToNextTab}
-                            >
-                                {isLastStep ? 'Start searching' : 'Continue'}
-                            </button>
+                <HeroPage
+                    lessPadding={true}
+                    className="text-left"
+                    body={
+                        <div className="post-signup-page__container">
+                            <h2>Get started with Sourcegraph</h2>
+                            <p className="text-muted pb-3">
+                                Three quick steps to add your repositories and get searching with Sourcegraph
+                            </p>
+                            <div className="mt-4 pb-3">
+                                <Steps current={currentStepNumber} numbered={true} onTabClick={onStepTabClick}>
+                                    <Step title="Connect with code hosts" borderColor="purple" />
+                                    <Step title="Add repositories" borderColor="blue" />
+                                    <Step title="Start searching" borderColor="orange" />
+                                </Steps>
+                            </div>
+                            <div className="mt-4 pb-3">{currentStep.content}</div>
 
-                            {!isLastStep && (
+                            <div className="mt-4">
                                 <button
                                     type="button"
-                                    className="btn btn-link font-weight-normal text-secondary float-right"
-                                    onClick={() => history.push(getReturnTo(location))}
+                                    className="btn btn-primary float-right ml-2"
+                                    disabled={!isCurrentStepComplete()}
+                                    onClick={isLastStep ? goToSearch : goToNextTab}
                                 >
-                                    Not right now
+                                    {isLastStep ? 'Start searching' : 'Continue'}
                                 </button>
-                            )}
-                        </div>
 
-                        {/* debugging */}
-                        <div className="pt-5">
-                            <hr />
-                            <br />
-                            <p>🚧&nbsp; Debugging navigation&nbsp;🚧</p>
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                disabled={currentStepNumber === 1}
-                                onClick={() => setCurrentStepNumber(currentStepNumber - 1)}
-                            >
-                                previous tab
-                            </button>
-                            &nbsp;&nbsp;
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                disabled={currentStepNumber === steps.length}
-                                onClick={goToNextTab}
-                            >
-                                next tab
-                            </button>
+                                {!isLastStep && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-link font-weight-normal text-secondary float-right"
+                                        onClick={skipPostSignup}
+                                    >
+                                        Not right now
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* debugging */}
+                            <div className="pt-5">
+                                <hr />
+                                <br />
+                                <p>🚧&nbsp; Debugging navigation&nbsp;🚧</p>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    disabled={currentStepNumber === 1}
+                                    onClick={() => setCurrentStepNumber(currentStepNumber - 1)}
+                                >
+                                    previous tab
+                                </button>
+                                &nbsp;&nbsp;
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    disabled={currentStepNumber === steps.length}
+                                    onClick={goToNextTab}
+                                >
+                                    next tab
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                }
-            />
-        </div>
+                    }
+                />
+            </div>
+        </>
     )
 }
-// ) : (
-//     <Redirect to={getReturnTo(location)} />
-// )
-
-// Is this part of the sign-up flow? I think this would ba a getting-started stage isolated from the sign-up
-//
