@@ -18,28 +18,30 @@ import { UserCodeHosts } from '../user/settings/codeHosts/UserCodeHosts'
 
 import { getReturnTo } from './SignInSignUpCommon'
 
-// import { Redirect } from 'react-router-dom'
-
 interface Props {
     authenticatedUser: AuthenticatedUser
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
     user: UserAreaUserFields
     routingPrefix: string
 }
 
 export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: user, context }) => {
-    // post sign-up flow is available only for .com and only in two cases, user:
-    // 1. is authenticated and has AllowUserViewPostSignup tag
-    // 2. is authenticated and enablePostSignupFlow experimental feature is ON
-    // sourcegraphDotComMode &&
-    // ((authenticatedUser && experimentalFeatures.enablePostSignupFlow) ||
-    //     authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
-
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
     const location = useLocation()
     const history = useHistory()
 
-    if (!user) {
+    /**
+     * post sign-up flow is available only for .com and only in two cases, user:
+     * 1. is authenticated and has AllowUserViewPostSignup tag
+     * 2. is authenticated and enablePostSignupFlow experimental feature is ON
+     */
+
+    if (
+        !user ||
+        !context.sourcegraphDotComMode ||
+        !context.experimentalFeatures?.enablePostSignupFlow ||
+        !user?.tags.includes('AllowUserViewPostSignup')
+    ) {
         // TODO: do this on the backend
         history.push(getReturnTo(location))
     }
@@ -180,7 +182,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
             </LinkOrSpan>
 
             <div className="signin-signup-page post-signup-page">
-                <PageTitle title="Post sign up page" />
+                <PageTitle title="Welcome" />
 
                 <HeroPage
                     lessPadding={true}
