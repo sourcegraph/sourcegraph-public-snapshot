@@ -1,7 +1,7 @@
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classnames from 'classnames'
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 
 import { InsightDashboard, InsightsDashboardType } from '../../../../core/types'
 
@@ -27,7 +27,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         setSelectedDashboard(value)
     }
 
-    const organizationGroups = useMemo(() => getDashboardOrganizationsGroups(dashboards), [dashboards])
+    const organizationGroups = getDashboardOrganizationsGroups(dashboards)
 
     return (
         <div>
