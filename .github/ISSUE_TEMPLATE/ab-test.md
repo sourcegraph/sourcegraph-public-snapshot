@@ -20,7 +20,7 @@ assignees: ''
 **Metric:** <!-- What metric are we measuring success with? -->
 **Smaller significant change:** <!-- What metric change would validate the test? If <metric> reaches at least xx (+yy%), the proposed version will be signinificantly better? -->
 **Significance threshold:** 5% <!-- Default to 5% -->
-**Duratio/size:** How long (on how many users) do we need to run this A/B test for it to be significant? Include a link to a singificance calculator.
+**Duration/size:** How long (on how many users) do we need to run this A/B test for it to be significant? Include a link to a singificance calculator.
   
   
 #### Descriptive analytics
