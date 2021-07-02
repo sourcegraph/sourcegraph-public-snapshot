@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gchaincl/sqlhooks/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgx/v4"
@@ -47,7 +48,7 @@ var (
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func SetupGlobalConnection(dataSource string) (err error) {
-	Global, err = New(dataSource, "_app")
+	Global, err = New(dataSource, "frontend")
 	return err
 }
 
@@ -56,14 +57,20 @@ func SetupGlobalConnection(dataSource string) (err error) {
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
-	db, err := NewRaw(dataSource)
+func New(dataSource, app string) (*sql.DB, error) {
+	cfg, err := buildConfig(dataSource, app)
 	if err != nil {
 		return nil, err
 	}
 
-	registerPrometheusCollector(db, dbNameSuffix)
+	db, err := newWithConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	prometheus.MustRegister(sqlstats.NewStatsCollector(cfg.Database+":"+app, db))
 	configureConnectionPool(db)
+
 	return db, nil
 }
 
@@ -71,12 +78,15 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 //
 // Prefer to call New as it also configures a connection pool and metrics.
 // Use this method only in internal utilities (such as schemadoc).
-func NewRaw(dataSource string) (*sql.DB, error) {
-	cfg, err := buildConfig(dataSource)
+func NewRaw(dataSource, app string) (*sql.DB, error) {
+	cfg, err := buildConfig(dataSource, app)
 	if err != nil {
 		return nil, err
 	}
+	return newWithConfig(cfg)
+}
 
+func newWithConfig(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	db, err := openDBWithStartupWait(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "DB not available")
@@ -121,9 +131,13 @@ var startupTimeout = func() time.Duration {
 
 // buildConfig takes either a Postgres connection string or connection URI,
 // parses it, and returns a config with additional parameters.
-func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
+func buildConfig(dataSource, app string) (*pgx.ConnConfig, error) {
 	if dataSource == "" {
 		dataSource = defaultDataSource
+	}
+
+	if app == "" {
+		app = defaultApplicationName
 	}
 
 	cfg, err := pgx.ParseConfig(dataSource)
@@ -145,7 +159,7 @@ func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 	// by checking if application_name is set and setting a default
 	// value if not.
 	if _, ok := cfg.RuntimeParams["application_name"]; !ok {
-		cfg.RuntimeParams["application_name"] = defaultApplicationName
+		cfg.RuntimeParams["application_name"] = app
 	}
 
 	// Force PostgreSQL session timezone to UTC.
@@ -332,22 +346,6 @@ func (h *hook) OnError(ctx context.Context, err error, query string, args ...int
 		tr.Finish()
 	}
 	return err
-}
-
-func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
-	c := prometheus.NewGaugeFunc(
-		prometheus.GaugeOpts{
-			Namespace: "src",
-			Subsystem: "pgsql" + strings.ReplaceAll(dbNameSuffix, "-", "_"),
-			Name:      "open_connections",
-			Help:      "Number of open connections to pgsql DB, as reported by pgsql.DB.Stats()",
-		},
-		func() float64 {
-			s := db.Stats()
-			return float64(s.OpenConnections)
-		},
-	)
-	prometheus.MustRegister(c)
 }
 
 // configureConnectionPool sets reasonable sizes on the built in DB queue. By

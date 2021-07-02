@@ -153,7 +153,7 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 }
 
 func generateInternal(database *dbconn.Database, dataSource string, run runFunc) (string, error) {
-	db, err := dbconn.NewRaw(dataSource)
+	db, err := dbconn.NewRaw(dataSource, "")
 	if err != nil {
 		return "", errors.Wrap(err, "NewRaw")
 	}

@@ -159,7 +159,7 @@ func wdHash() string {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db, err := dbconn.NewRaw(cfg.String())
+	db, err := dbconn.NewRaw(cfg.String(), "")
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
