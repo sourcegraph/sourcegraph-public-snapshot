@@ -132,7 +132,9 @@ type Interval struct {
 type SearchInsight struct {
 	ID           string
 	Title        string
+	Description  string
 	Repositories []string
+	Uuid         string
 	Series       []TimeSeries
 	Step         Interval
 	Visibility   string

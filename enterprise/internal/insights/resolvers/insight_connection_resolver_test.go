@@ -93,7 +93,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		resolver := newWithClock(timescale, postgres, clock)
 
 		// Create the insights connection resolver.
-		conn, err := resolver.Insights(ctx)
+		conn, err := resolver.Insights(ctx, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
