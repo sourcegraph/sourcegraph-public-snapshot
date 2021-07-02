@@ -347,9 +347,11 @@ SELECT
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
-WHERE changesets.repo_id = %s AND
--- authz conditions:
-%s
+WHERE
+	changesets.repo_id = %s AND
+	repo.deleted_at IS NULL AND
+	-- authz conditions:
+	%s
 `
 
 func getRepoDiffStatQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
@@ -449,10 +451,12 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		joins = append(joins, sqlf.Sprintf("INNER JOIN repo ON changesets.repo_id = repo.id"))
 		preds = append(preds, sqlf.Sprintf(`EXISTS(
 			SELECT * FROM changesets
-			WHERE changesets.batch_change_ids ? batch_changes.id::TEXT AND
-			changesets.repo_id = %s AND
-			-- authz conditions:
-			%s
+			WHERE
+				changesets.batch_change_ids ? batch_changes.id::TEXT AND
+				changesets.repo_id = %s AND
+				repo.deleted_at IS NULL AND
+				-- authz conditions:
+				%s
 		)`, opts.RepoID, repoAuthzConds))
 	}
 
