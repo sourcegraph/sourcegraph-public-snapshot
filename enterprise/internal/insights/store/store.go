@@ -119,7 +119,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 // This query is a barebones implementation of per-repo per-series last-observation carried forward. Long term
 // this query is too expensive to run in real-time and should be moved to a materialized view.
 const lastObservationCarriedPointsSql = `select sub.series_id, sub.interval_time, sum(value) as value, null as metadata from (WITH target_times AS (SELECT *
-FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '6 months', CURRENT_TIMESTAMP::date, '2 weeks') as interval_time)
+FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '26 weeks', CURRENT_TIMESTAMP::date, '2 weeks') as interval_time)
 SELECT sub.series_id, sub.repo_id, sub.value, interval_time
 FROM (select distinct repo_id, series_id from series_points) as r
 cross join target_times tt
