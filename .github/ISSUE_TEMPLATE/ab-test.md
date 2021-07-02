@@ -13,7 +13,7 @@ assignees: ''
 
 ### Test
 
-<!-- What will be test? What will be the control, and what version(s) will we test? -->
+<!-- What will be test? What will be the control, and what version(s) will we test? Consider linking to the issues.-->
   
 ### Metric and experimental design
   
