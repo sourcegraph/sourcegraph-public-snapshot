@@ -214,3 +214,18 @@ export const PEOPLE = gql`
 This is less safe as fields could be missing from the actual queries and it makes testing harder as hard-coded results need to be casted to the whole type.
 Some components also worked around this by redeclaring the type structure with complex `Pick<T, K>` expressions.
 When you need to interface with these, consider refactoring them to use a fragment type instead.
+
+## Migrating to Apollo
+
+It should be relatively straightforward to refactor existing code to use Apollo. A typical migration will look like this:
+
+1. Replace `requestGraphQL | queryGraphQL | mutateGraphQL` with `useQuery` or `useMutation` hooks. This may mean refactoring React `class` components into functional ones. 
+    - Some components may be problematic to refactor right now. If this is the case, it is still possible to benefit from the Apollo cache by using `watchQuery`. This works similarly to `requestGraphQL` but routes the request through the Apollo cache. You should always handle the result as an `Observable` (i.e. not convert it to a promise) so the component can listen to updates from the Apollo cache.
+
+2. Ensure that the query/mutation is correctly updating the Apollo cache by returning an `id` alongside the relevant data. Typically Apollo will warn in the console if this is not the case, you should also install [Apollo Client Devtools](https://www.apollographql.com/docs/react/development-testing/developer-tooling/#apollo-client-devtools) to help with debugging.
+    - In some cases this might mean we can remove some code. For example, if two components are now able to use the Apollo cache as a source of truth, those components may no longer need to communicate with each other to pass data back and forth (common with mutations).
+    - Mutations should return updated data. If I fire a mutation to change my `username`, the mutation should return the updated `username` alongside my user `id` so the cache can refresh correctly. If this is not possible, consider changing the backend to return the correct data, or consult the [Apollo docs to manually update the cache](https://www.apollographql.com/docs/react/caching/cache-interaction/#using-cachemodify).
+
+3. Add/fix tests. We should be able to correctly mock each query/mutation without having to change too much of our tests. Check the [Apollo testing documentation](https://www.apollographql.com/docs/react/development-testing/testing/) for further information.
+
+If you are running into problems, or have any questions at all, please get in touch with the [Frontend platform team](https://about.sourcegraph.com/handbook/engineering/developer-insights/frontend-platform).
