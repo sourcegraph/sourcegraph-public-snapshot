@@ -283,8 +283,8 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 	return protocol.FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,
-		MatchCount: len(lm),
-		LimitHit:   false,
+		MatchCount:  len(lm),
+		LimitHit:    false,
 	}, err
 }
 
