@@ -101,7 +101,7 @@ Apollo lets us easily mock queries in our tests without having to actually mock 
 import { MockedProvider } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/utils'
 
 import { MyComponent, USER_DISPLAY_NAME } from './MyComponent'
 
@@ -139,7 +139,7 @@ describe('My Test', () => {
 Most queries should be requested in the context of our UI and should use hooks. If there is a scenario where this is not possible, it is still possible to realise the benefits of Apollo without relying this approach. We can imperatively trigger any query using `client.query`.
 
 ```ts
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/utils'
 
 import { client } from './backend/graphql'
 import {
