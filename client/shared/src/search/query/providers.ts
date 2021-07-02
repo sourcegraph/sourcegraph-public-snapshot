@@ -83,7 +83,9 @@ export function getProviders(
                 scannedQueries
                     .pipe(
                         first(),
-                        map(({ scanned }) => (scanned.type === 'error' ? null : getHoverResult(scanned.term))),
+                        map(({ scanned }) =>
+                            scanned.type === 'error' ? null : getHoverResult(scanned.term, position)
+                        ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
                     .toPromise(),
