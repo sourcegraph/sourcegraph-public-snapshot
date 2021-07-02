@@ -202,7 +202,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *stor
 		extensionHint = filepath.Ext(matchedPaths[0])
 	}
 
-	return structuralSearch(ctx, zipPath, Subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
+	return structuralSearch(ctx, zipPath, Subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Limit, repo, sender)
 }
 
 // toMatcher returns the matcher that parameterizes structural search. It
@@ -240,7 +240,7 @@ type Subset []string
 
 var All UniversalSet = struct{}{}
 
-func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender MatchSender) (limitHit bool, err error) {
+func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, limit int, repo api.RepoName, sender MatchSender) (limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
@@ -268,10 +268,34 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 		return false, err
 	}
 
+	limitCounter := 0
 	for _, combyMatch := range combyMatches {
+		if limitCounter+len(combyMatch.Matches) > limit {
+			if limitCounter == limit {
+				// We're exactly at the limit, so skip this match
+				return true, nil
+			}
+
+			// Truncate the matches to fit inside our limit.
+			// We must do this before converting to a FileMatch because
+			// we lose information about what constitutes a "single match"
+			// when we convert comby's multi-line matches into line matches.
+			truncateTo := limit - limitCounter
+			if len(combyMatch.Matches) < truncateTo {
+				truncateTo = len(combyMatch.Matches)
+			}
+			combyMatch.Matches = combyMatch.Matches[:truncateTo]
+
+			fm := toFileMatch(combyMatch)
+			fm.LimitHit = true
+			sender.Send(fm)
+
+			return true, nil
+		}
+		limitCounter += len(combyMatch.Matches)
 		sender.Send(toFileMatch(combyMatch))
 	}
-	return false, err
+	return false, nil
 }
 
 func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender MatchSender) (limitHit, deadlineHit bool, err error) {
@@ -323,7 +347,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		extensionHint = filepath.Ext(filename)
 	}
 
-	limitHit, err = structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
+	limitHit, err = structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Limit, p.Repo, sender)
 	return limitHit, false, err
 }
 

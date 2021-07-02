@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -76,7 +77,7 @@ func foo(go string) {}
 				}
 
 				sender := &collectingSender{}
-				_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+				_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "repo_foo", sender)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -136,7 +137,7 @@ func foo(go.txt) {}
 
 		extensionHint := filepath.Ext(filename)
 		sender := &collectingSender{}
-		_, err := structuralSearch(context.Background(), zf, All, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
+		_, err := structuralSearch(context.Background(), zf, All, extensionHint, "foo(:[args])", "", languages, 1000000, "repo_foo", sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
@@ -335,7 +336,7 @@ func TestIncludePatterns(t *testing.T) {
 		IncludePatterns: includePatterns,
 	}
 	sender := &collectingSender{}
-	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
+	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "foo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,7 +379,7 @@ func TestRule(t *testing.T) {
 	}
 
 	sender := &collectingSender{}
-	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
+	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "repo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -402,7 +403,65 @@ func TestRule(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
 	}
+}
 
+func TestStructuralLimits(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"test1.go": `
+func foo() {
+    fmt.Println("foo")
+}
+
+func bar() {
+    fmt.Println("bar")
+}
+`,
+		"test2.go": `
+func foo() {
+    fmt.Println("foo")
+}
+
+func bar() {
+    fmt.Println("bar")
+}
+`,
+	}
+
+	zipData, err := testutil.CreateZip(input)
+	require.NoError(t, err)
+
+	t.TempFile()
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	require.NoError(t, err)
+	defer cleanup()
+
+	count := func(matches []protocol.FileMatch) int {
+		c := 0
+		for _, match := range matches {
+			c += match.MatchCount
+		}
+		return c
+	}
+
+	test := func(limit, wantCount int, p *protocol.PatternInfo) func(t *testing.T) {
+		return func(t *testing.T) {
+			sender := &collectingSender{}
+			_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, limit, "repo_foo", sender)
+			require.NoError(t, err)
+
+			require.Equal(t, wantCount, count(sender.collected))
+		}
+	}
+
+	t.Run("unlimited", test(10000, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
+	t.Run("exact limit", test(4, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
+	t.Run("limited", test(2, 2, &protocol.PatternInfo{Pattern: "{:[body]}"}))
+	t.Run("many", test(12, 8, &protocol.PatternInfo{Pattern: "(:[_])"}))
 }
 
 func TestHighlightMultipleLines(t *testing.T) {
@@ -534,7 +593,7 @@ func bar() {
 
 	t.Run("Strutural search match count", func(t *testing.T) {
 		sender := &collectingSender{}
-		_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "repo_foo", sender)
 		if err != nil {
 			t.Fatal(err)
 		}
