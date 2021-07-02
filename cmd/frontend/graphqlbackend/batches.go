@@ -234,7 +234,6 @@ type CreateBatchSpecExecutionArgs struct {
 
 type CloseChangesetsArgs struct {
 	BulkOperationBaseArgs
-	Squash bool
 }
 
 type BatchChangesResolver interface {
