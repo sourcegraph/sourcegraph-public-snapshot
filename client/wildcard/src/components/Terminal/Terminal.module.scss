@@ -1,6 +1,6 @@
-ul,
-li,
-h3 {
+.download-progress-wrapper,
+.download-progress-item,
+.title {
     margin: 0;
     padding: 0;
     list-style: none;
@@ -8,13 +8,13 @@ h3 {
     flex: 1;
 }
 
-ul {
+.download-progress-wrapper {
     flex-direction: column;
 }
 
-li {
+.download-progress-item {
     flex: 0 0 100%;
-    code {
+    .download-progress-item-details {
         display: flex;
         flex: 1;
     }
