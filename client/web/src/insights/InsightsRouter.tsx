@@ -93,6 +93,8 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                 />
             )}
 
+            {codeInsightsDashboards && <DashboardsRoutes {...outerProps}/>}
+
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     )
