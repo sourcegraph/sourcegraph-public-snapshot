@@ -396,6 +396,20 @@ commands:
       - enterprise/internal
       - enterprise/cmd/executor
 
+  batches-executor:
+    cmd: .bin/executor
+    install: |
+      go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
+    checkBinary: .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      TMPDIR: $HOME/.sourcegraph/batches-executor-temp
+    watch:
+      - lib
+      - internal
+      - enterprise/internal
+      - enterprise/cmd/executor
+
   minio:
     cmd: |
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
@@ -493,6 +507,26 @@ commandsets:
     - zoekt-indexserver-1
     - zoekt-webserver-0
     - zoekt-webserver-1
+
+  enterprise-batches:
+    - enterprise-frontend
+    - enterprise-worker
+    - enterprise-repo-updater
+    - enterprise-web
+    - gitserver
+    - searcher
+    - symbols
+    - query-runner
+    - caddy
+    - docsite
+    - syntect_server
+    - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
+    - executor-queue
+    - batches-executor
 
   enterprise-codeintel:
     - enterprise-frontend

@@ -7,11 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-const port = 3191
-
 type Config struct {
 	env.BaseConfig
 
+	Port                       int
 	MaximumNumTransactions     int
 	JobRequeueDelay            time.Duration
 	JobCleanupInterval         time.Duration
@@ -19,6 +18,7 @@ type Config struct {
 }
 
 func (c *Config) Load() {
+	c.Port = c.GetInt("EXECUTOR_QUEUE_PORT", "3191", "The port to listen on.")
 	c.MaximumNumTransactions = c.GetInt("EXECUTOR_QUEUE_MAXIMUM_NUM_TRANSACTIONS", "10", "Number of jobs that can be processing at one time.")
 	c.JobRequeueDelay = c.GetInterval("EXECUTOR_QUEUE_JOB_REQUEUE_DELAY", "1m", "The requeue delay of jobs assigned to an unreachable executor.")
 	c.JobCleanupInterval = c.GetInterval("EXECUTOR_QUEUE_JOB_CLEANUP_INTERVAL", "10s", "Interval between cleanup runs.")
@@ -27,7 +27,7 @@ func (c *Config) Load() {
 
 func (c *Config) ServerOptions(queueOptions map[string]apiserver.QueueOptions) apiserver.Options {
 	return apiserver.Options{
-		Port:                   port,
+		Port:                   c.Port,
 		QueueOptions:           queueOptions,
 		MaximumNumTransactions: c.MaximumNumTransactions,
 		RequeueDelay:           c.JobRequeueDelay,

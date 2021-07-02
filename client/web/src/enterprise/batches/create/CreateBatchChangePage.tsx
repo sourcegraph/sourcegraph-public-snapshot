@@ -1,17 +1,48 @@
 import classNames from 'classnames'
+import { noop } from 'lodash'
+import * as Monaco from 'monaco-editor'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { ErrorAlert } from '../../../components/alerts'
+import { MonacoEditor } from '../../../components/MonacoEditor'
 import { PageTitle } from '../../../components/PageTitle'
 import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../components/Sidebar'
+import { BatchSpecExecutionFields } from '../../../graphql-operations'
 
+import { createBatchSpecExecution } from './backend'
 import combySample from './samples/comby.batch.yaml'
 import helloWorldSample from './samples/empty.batch.yaml'
 import goImportsSample from './samples/go-imports.batch.yaml'
 import minimalSample from './samples/minimal.batch.yaml'
+
+const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
+    // readOnly: true,
+    minimap: {
+        enabled: false,
+    },
+    lineNumbers: 'off',
+    fontSize: 14,
+    glyphMargin: false,
+    overviewRulerBorder: false,
+    rulers: [],
+    overviewRulerLanes: 0,
+    wordBasedSuggestions: false,
+    quickSuggestions: false,
+    fixedOverflowWidgets: true,
+    renderLineHighlight: 'none',
+    contextmenu: false,
+    links: false,
+    // Display the cursor as a 1px line.
+    cursorStyle: 'line',
+    cursorWidth: 1,
+}
 
 interface SampleTabHeaderProps {
     sample: Sample
@@ -53,12 +84,27 @@ const samples: Sample[] = [
     { name: 'Minimal', file: minimalSample },
 ]
 
-export interface CreateBatchChangePageProps {
+export interface CreateBatchChangePageProps extends ThemeProps {
     headingElement: 'h1' | 'h2'
 }
 
-export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({ headingElement }) => {
+export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
+    headingElement,
+    isLightTheme,
+}) => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
+    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields>()
+    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+    const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
+        setIsLoading(true)
+        try {
+            const exec = await createBatchSpecExecution(selectedSample.file)
+            setBatchSpecExecution(exec)
+            setIsLoading(false)
+        } catch (error) {
+            setIsLoading(error)
+        }
+    }, [selectedSample.file])
     return (
         <>
             <PageTitle title="Create batch change" />
@@ -111,7 +157,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 </Container>
             </div>
             <h2>2. Preview the batch change with Sourcegraph CLI</h2>
-            <Container>
+            <Container className="mb-3">
                 <p>
                     Use the{' '}
                     <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
@@ -124,6 +170,36 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the batch
                     change.
                 </p>
+            </Container>
+            <h2>Or run your batch spec server side</h2>
+            <Container>
+                <MonacoEditor
+                    isLightTheme={isLightTheme}
+                    language="yaml"
+                    options={options}
+                    height={300}
+                    editorWillMount={noop}
+                    value={selectedSample.file}
+                    className="mb-3"
+                />
+                <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={submitBatchSpec}
+                    disabled={isLoading === true}
+                >
+                    Run batch spec
+                </button>
+                {batchSpecExecution && (
+                    <div className="mt-3 mb-0 alert alert-success">
+                        Running batch spec. Check{' '}
+                        <Link to="/users/erik/batch-changes/hello-world/executions">
+                            https://sourcegraph.test:3443/users/erik/batch-changes/hello-world/executions
+                        </Link>
+                        .
+                    </div>
+                )}
+                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             </Container>
         </>
     )

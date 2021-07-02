@@ -25,6 +25,16 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 
 		newBulkOperationWorker(ctx, batchesStore, sourcer, metrics),
 		newBulkOperationWorkerResetter(batchesStore, metrics),
+
+		// dbworker.NewResetter(s, dbworker.ResetterOptions{
+		// 	Name:     "precise_code_intel_index_worker_resetter",
+		// 	Interval: interval,
+		// 	Metrics: dbworker.ResetterMetrics{
+		// 		RecordResets:        metrics.numIndexResets,
+		// 		RecordResetFailures: metrics.numIndexResetFailures,
+		// 		Errors:              metrics.numErrors,
+		// 	},
+		// }),
 	}
 	return routines
 }

@@ -28,10 +28,10 @@ type handler struct {
 	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
 
-var _ workerutil.Handler = &handler{}
-
 // ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
 var ErrJobAlreadyExists = errors.New("job already exists")
+
+var _ workerutil.Handler = &handler{}
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
@@ -106,7 +106,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		}
 
 		if !strings.HasPrefix(path, workingDirectory) {
-			return fmt.Errorf("refusing to write outside of working directory")
+			return fmt.Errorf("refusing to write outside of working directory 2")
 		}
 
 		if err := os.WriteFile(path, []byte(content), os.ModePerm); err != nil {
@@ -191,7 +191,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 			Key:       fmt.Sprintf("step.src.%d", i),
 			Command:   append([]string{"src"}, cliStep.Commands...),
 			Dir:       cliStep.Dir,
-			Env:       cliStep.Env,
+			Env:       append(os.Environ(), cliStep.Env...),
 			Operation: h.operations.Exec,
 		}
 

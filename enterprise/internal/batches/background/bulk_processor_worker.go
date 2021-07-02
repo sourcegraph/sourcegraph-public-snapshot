@@ -100,3 +100,18 @@ func (b *bulkProcessorWorker) HandlerFunc() dbworker.HandlerFunc {
 		return processor.process(ctx, record.(*btypes.ChangesetJob))
 	}
 }
+
+// newBatchSpecExecutionResetter creates a dbworker.Resetter that reenqueues lost jobs
+// for processing.
+// func newBatchSpecExecutionResetter(s *store.Store, metrics batchChangesMetrics) *dbworker.Resetter {
+// 	workerStore := createBulkOperationDBWorkerStore(s)
+
+// 	options := dbworker.ResetterOptions{
+// 		Name:     "batches_batch_spec_execution_resetter",
+// 		Interval: 1 * time.Minute,
+// 		Metrics:  metrics.bulkProcessorWorkerResetterMetrics,
+// 	}
+
+// 	resetter := dbworker.NewResetter(workerStore, options)
+// 	return resetter
+// }

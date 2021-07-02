@@ -2097,6 +2097,8 @@ extend type Mutation {
     Experimental: This API is likely to change in the future.
     """
     mergeChangesets(batchChange: ID!, changesets: [ID!]!, squash: Boolean = false): BulkOperation!
+
+    createBatchSpecExecution(spec: String!): BatchSpecExecution!
 }
 
 extend type Query {
@@ -2780,4 +2782,54 @@ type BatchChangeDescription {
     The description as parsed from the input.
     """
     description: String!
+}
+
+enum BatchSpecExecutionState {
+    """
+    This spec is being processed.
+    """
+    PROCESSING
+
+    """
+    This spec errored processing.
+    """
+    ERRORED
+
+    """
+    This spec failed to be processed.
+    """
+    FAILED
+
+    """
+    This spec was processed successfully.
+    """
+    COMPLETED
+
+    """
+    This spec is queued to be processed.
+    """
+    QUEUED
+}
+
+type BatchSpecExecution implements Node {
+    id: ID!
+
+    inputSpec: String!
+
+    state: BatchSpecExecutionState!
+
+    startedAt: DateTime
+
+    finishedAt: DateTime
+
+    failure: String
+
+    # steps: IndexSteps!
+
+    """
+    The rank of this index in the queue. The value of this field is null if the index has been processed.
+    """
+    placeInQueue: Int
+
+    batchSpec: BatchSpec
 }
