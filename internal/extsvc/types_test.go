@@ -284,7 +284,7 @@ func TestUniqueCodeHostIdentifier(t *testing.T) {
 			want:   "ssh://user@host.xz:2333/",
 		},
 	} {
-		t.Run(string(tc.kind), func(t *testing.T) {
+		t.Run(tc.kind, func(t *testing.T) {
 			have, err := UniqueCodeHostIdentifier(tc.kind, tc.config)
 			if err != nil {
 				t.Fatal(err)

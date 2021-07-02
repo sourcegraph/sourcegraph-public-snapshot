@@ -1275,11 +1275,6 @@ func TestClient_WithAuthenticator(t *testing.T) {
 }
 
 func TestClient_GetVersion(t *testing.T) {
-	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
-	if instanceURL == "" {
-		instanceURL = "https://bitbucket.sgdev.org"
-	}
-
 	fixture := "GetVersion"
 	cli, save := NewTestClient(t, fixture, *update)
 	defer save()
