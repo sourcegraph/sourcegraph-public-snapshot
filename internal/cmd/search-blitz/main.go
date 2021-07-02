@@ -187,7 +187,7 @@ func main() {
 		Dir:                filepath.Join(logDir, "traces"),
 		Token:              os.Getenv(envToken),
 		JaegerServerURL:    os.Getenv("JAEGER_SERVER_URL"),
-		MaxTotalTraceBytes: 1024 * 1024 * 1024, // 1 GiB
+		MaxTotalTraceBytes: 10 * 1024 * 1024 * 1024, // 10 GiB
 	}
 	go traces.CleanupLoop(ctx)
 
