@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/codeintel"
 	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,7 +31,8 @@ type config interface {
 func main() {
 	serviceConfig := &Config{}
 	codeintelConfig := &codeintel.Config{}
-	configs := []config{serviceConfig, codeintelConfig}
+	batchesConfig := &batches.Config{}
+	configs := []config{serviceConfig, codeintelConfig, batchesConfig}
 
 	for _, config := range configs {
 		config.Load()
@@ -71,6 +73,7 @@ func main() {
 	// Initialize queues
 	queueOptions := map[string]apiserver.QueueOptions{
 		"codeintel": codeintel.QueueOptions(db, codeintelConfig, observationContext),
+		"batches":   batches.QueueOptions(db, batchesConfig, observationContext),
 	}
 
 	for queueName, options := range queueOptions {
