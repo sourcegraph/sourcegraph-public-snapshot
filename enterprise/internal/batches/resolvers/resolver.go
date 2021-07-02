@@ -1315,13 +1315,49 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
+func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.CloseChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CloseChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	published := btypes.ChangesetPublicationStatePublished
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeClose,
+		&btypes.ChangesetJobClosePayload{},
+		store.ListChangesetsOpts{
+			PublicationState: &published,
+			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+			ExternalStates:   []btypes.ChangesetExternalState{btypes.ChangesetExternalStateOpen, btypes.ChangesetExternalStateDraft},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
+}
+
 func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlbackend.CreateBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateBatchSpecExecution", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
 	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}

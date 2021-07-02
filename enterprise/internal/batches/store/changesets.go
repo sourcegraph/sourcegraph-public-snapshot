@@ -478,6 +478,7 @@ type ListChangesetsOpts struct {
 	PublicationState     *btypes.ChangesetPublicationState
 	ReconcilerStates     []btypes.ReconcilerState
 	ExternalState        *btypes.ChangesetExternalState
+	ExternalStates       []btypes.ChangesetExternalState
 	ExternalReviewState  *btypes.ChangesetReviewState
 	ExternalCheckState   *btypes.ChangesetCheckState
 	OwnedByBatchChangeID int64
@@ -559,6 +560,13 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
+	}
+	if len(opts.ExternalStates) > 0 {
+		states := make([]*sqlf.Query, len(opts.ExternalStates))
+		for i, externalState := range opts.ExternalStates {
+			states[i] = sqlf.Sprintf("%s", externalState)
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.external_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if opts.ExternalReviewState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))

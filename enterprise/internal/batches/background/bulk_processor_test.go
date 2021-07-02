@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 func TestBulkProcessor(t *testing.T) {
@@ -25,7 +27,12 @@ func TestBulkProcessor(t *testing.T) {
 	ct.CreateTestSiteCredential(t, bstore, repo)
 	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)
-	changeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{Repo: repo.ID, BatchChanges: []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}})
+	changeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+		Metadata:            &github.PullRequest{},
+		ExternalServiceType: extsvc.TypeGitHub,
+	})
 
 	t.Run("Unknown job type", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
@@ -43,7 +50,7 @@ func TestBulkProcessor(t *testing.T) {
 		}
 		job.JobType = types.ChangesetJobType("UNKNOWN")
 		err := bp.process(ctx, job)
-		if err.Error() != `invalid job type "UNKNOWN"` {
+		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
 			t.Fatalf("unexpected error returned %s", err)
 		}
 	})
@@ -156,6 +163,29 @@ func TestBulkProcessor(t *testing.T) {
 		}
 		if !fake.MergeChangesetCalled {
 			t.Fatal("expected MergeChangeset to be called but wasn't")
+		}
+	})
+
+	t.Run("Close job", func(t *testing.T) {
+		fake := &sources.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
+		bp := &bulkProcessor{
+			tx:      bstore,
+			sourcer: sources.NewFakeSourcer(nil, fake),
+		}
+		job := &types.ChangesetJob{
+			JobType:     types.ChangesetJobTypeClose,
+			ChangesetID: changeset.ID,
+			UserID:      user.ID,
+		}
+		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+		err := bp.process(ctx, job)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !fake.CloseChangesetCalled {
+			t.Fatal("expected CloseChangeset to be called but wasn't")
 		}
 	})
 }
