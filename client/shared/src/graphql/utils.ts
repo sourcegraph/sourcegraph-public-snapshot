@@ -1,14 +1,8 @@
-import {
-    ApolloQueryResult,
-    ObservableQuery,
-    Observable as ApolloObservable,
-    FetchResult as ApolloFetchResult,
-    gql as apolloGql,
-} from '@apollo/client'
+import { ApolloQueryResult, ObservableQuery, Observable as ApolloObservable, gql as apolloGql } from '@apollo/client'
 import type { DocumentNode } from 'graphql'
 import { Observable, observable } from 'rxjs'
 
-import type { GraphQLResult, GraphQLRequestDocument } from './graphql'
+import type { GraphQLRequestDocument } from './graphql'
 
 // Apollo's QueryObservable is not compatible with RxJS
 // https://github.com/ReactiveX/rxjs/blob/9fb0ce9e09c865920cf37915cc675e3b3a75050b/src/internal/util/subscribeTo.ts#L32
@@ -19,26 +13,6 @@ export function fixObservable<T>(
 ): Observable<ApolloQueryResult<T>> | Observable<T> {
     ;(obz as any)[observable] = () => obz
     return obz as any
-}
-
-export function apolloToGraphQLResult<T>(response: ApolloQueryResult<T> | ApolloFetchResult<T>): GraphQLResult<T> {
-    if (response.errors) {
-        return {
-            data: undefined,
-            errors: response.errors,
-        }
-    }
-
-    if (!response.data) {
-        // This should never happen unless `errorPolicy` is set to `ignore` when calling `client.mutate`
-        // We don't support this configuration through this wrapper function, so OK to error here.
-        throw new Error('Invalid response. Neither data nor errors is present in the response.')
-    }
-
-    return {
-        data: response.data,
-        errors: undefined,
-    }
 }
 
 /**

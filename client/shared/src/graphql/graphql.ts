@@ -12,17 +12,16 @@ import {
     MutationHookOptions,
     MutationTuple,
 } from '@apollo/client'
+import { GraphQLError } from 'graphql'
 import { useMemo } from 'react'
 import { Observable, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
-import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
 
-import * as GQL from './schema'
-import { fixObservable, getDocumentNode, apolloToGraphQLResult } from './utils'
+import { fixObservable, getDocumentNode } from './utils'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -35,15 +34,9 @@ export interface SuccessGraphQLResult<T> {
     errors: undefined
 }
 
-// TODO: Use implements?
-interface GraphQLResponseError extends Omit<GQL.IGraphQLResponseError, 'locations'> {
-    message: string
-    locations?: readonly GQL.IGraphQLResponseErrorLocation[]
-}
-
 export interface ErrorGraphQLResult {
     data: undefined
-    errors: readonly GraphQLResponseError[]
+    errors: readonly GraphQLError[]
 }
 
 export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
@@ -64,17 +57,11 @@ export function dataOrThrowErrors<T>(result: GraphQLResult<T>): T {
     return result.data
 }
 
-export interface GraphQLError extends Error {
-    queryName: string
-}
 export const createInvalidGraphQLQueryResponseError = (queryName: string): GraphQLError =>
-    Object.assign(new Error(`Invalid GraphQL response: query ${queryName}`), {
-        queryName,
-    })
+    new GraphQLError(`Invalid GraphQL response: query ${queryName}`)
+
 export const createInvalidGraphQLMutationResponseError = (queryName: string): GraphQLError =>
-    Object.assign(new Error(`Invalid GraphQL response: mutation ${queryName}`), {
-        queryName,
-    })
+    new GraphQLError(`Invalid GraphQL response: mutation ${queryName}`)
 
 export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'body'> {
     baseUrl?: string
@@ -116,9 +103,7 @@ export function watchQueryCommon<T, V = object>({
     client: ApolloClient<NormalizedCacheObject>
 }): Observable<GraphQLResult<T>> {
     const document = getDocumentNode(request)
-    return from(
-        fixObservable(client.watchQuery({ query: document, variables, fetchPolicy: 'cache-and-network' }))
-    ).pipe(map(apolloToGraphQLResult))
+    return from(fixObservable(client.watchQuery({ query: document, variables, fetchPolicy: 'cache-and-network' })))
 }
 
 export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
