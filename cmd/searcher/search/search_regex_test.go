@@ -540,7 +540,7 @@ func TestRegexSearch(t *testing.T) {
 		ctx                   context.Context
 		rg                    *readerGrep
 		zf                    *store.ZipFile
-		fileMatchLimit        int
+		limit                 int
 		patternMatchesContent bool
 		patternMatchesPaths   bool
 	}
@@ -569,6 +569,7 @@ func TestRegexSearch(t *testing.T) {
 				},
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
+				limit:                 5,
 			},
 			wantFm: []protocol.FileMatch{
 				{
@@ -580,7 +581,7 @@ func TestRegexSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
+			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return

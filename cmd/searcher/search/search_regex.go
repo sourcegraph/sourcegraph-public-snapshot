@@ -332,8 +332,9 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit i
 		filesmu sync.Mutex // protects files
 		files   = zf.Files
 
-		limitCounter atomic.Uint32
-		limitHit     atomic.Bool
+		limitCounter int
+		limitHit     bool
+		limitMux     sync.Mutex
 	)
 
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
@@ -342,8 +343,8 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit i
 		for _, f := range files {
 			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
 				fm := protocol.FileMatch{Path: f.Name, MatchCount: 1}
-				total := int(limitCounter.Inc())
-				if total > limit {
+				limitCounter += 1
+				if limitCounter > limit {
 					return true, nil
 				}
 				sender.Send(fm)
@@ -395,24 +396,27 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit i
 					}
 				}
 				if match == !isPatternNegated {
-					total := int(limitCounter.Add(uint32(len(fm.LineMatches))))
-					if total > limit {
+					limitMux.Lock()
+					limitCounter += len(fm.LineMatches)
+					if limitCounter > limit {
 						// This match would exceed the limit, so cancel all other
 						// workers and send only the line matches that would fit
-						limitHit.Store(true)
+						limitHit = true
 						cancel()
 
-						if total-limit >= len(fm.LineMatches) {
+						if limitCounter-limit >= len(fm.LineMatches) {
 							// We were already over or at the limit when we
 							// attempted to make a claim, so skip this result entirely
+							limitMux.Unlock()
 							continue
 						}
 
 						// Truncate any line matches that would cause us to go over the limit
-						truncateTo := len(fm.LineMatches) - (total - limit)
+						truncateTo := len(fm.LineMatches) - (limitCounter - limit)
 						fm.LineMatches = fm.LineMatches[:truncateTo]
 						fm.MatchCount = truncateTo
 					}
+					limitMux.Unlock()
 					sender.Send(fm)
 				}
 			}
@@ -431,7 +435,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit i
 		otlog.Int("filesSearched", int(filesSearched.Load())),
 	)
 
-	return limitHit.Load(), err
+	return limitHit, err
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include
