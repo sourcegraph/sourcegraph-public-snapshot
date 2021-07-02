@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -202,46 +203,88 @@ func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.U
 
 // HandleSignIn accepts a POST containing username-password credentials and authenticates the
 // current session if the credentials are valid.
-func HandleSignIn(w http.ResponseWriter, r *http.Request) {
-	if handleEnabledCheck(w) {
-		return
+func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if handleEnabledCheck(w) {
+			return
+		}
+
+		var actor actor.Actor
+		var usr types.User
+		var result = "SignInAttempted"
+		logSignInEvent(r, db, &actor, &usr, &result)
+
+		// We have more failure scenarios and ONLY one successful scenario. By default assume a
+		// SigninFailed state so that the deffered logSignInEvent function call will log the correct
+		// security event in case of a failure.
+		result = "SignInFailed"
+		defer logSignInEvent(r, db, &actor, &usr, &result)
+
+		ctx := r.Context()
+
+		if r.Method != "POST" {
+			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
+			return
+		}
+		var creds credentials
+		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+			http.Error(w, "Could not decode request body", http.StatusBadRequest)
+			return
+		}
+
+		// Validate user. Allow login by both email and username (for convenience).
+		u, err := getByEmailOrUsername(ctx, creds.Email)
+		if err != nil {
+			httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
+			return
+		}
+		usr = *u
+
+		// 🚨 SECURITY: check password
+		correct, err := database.GlobalUsers.IsPassword(ctx, usr.ID, creds.Password)
+		if err != nil {
+			httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
+			return
+		}
+		if !correct {
+			httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
+			return
+		}
+
+		log15.Warn("userIdentified", "usrID", string(usr.ID))
+		actor.UID = usr.ID
+
+		// Write the session cookie
+		if err := session.SetActor(w, r, &actor, 0, usr.CreatedAt); err != nil {
+			httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
+			return
+		}
+
+		// IMPORTANT: If we reached here, it implies that sign in was succesful. We must set this to
+		// log the right security event with the deferred logSignInEvent function call.
+		result = "SignInSucceeded"
+		// log15.Warn("loginSuccessful", "userID", string(usr.ID), "actor", actor)
+	}
+}
+
+func logSignInEvent(r *http.Request, db dbutil.DB, actor *actor.Actor, usr *types.User, name *string) {
+	anon := ""
+	if usr.ID == 0 {
+		anon = "true"
 	}
 
-	ctx := r.Context()
-
-	if r.Method != "POST" {
-		http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
-		return
-	}
-	var creds credentials
-	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, "Could not decode request body", http.StatusBadRequest)
-		return
+	event := &database.SecurityEvent{
+		Name:            *name,
+		URL:             r.URL.Path,
+		UserID:          uint32(usr.ID),
+		AnonymousUserID: anon,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
 	}
 
-	// Validate user. Allow login by both email and username (for convenience).
-	usr, err := getByEmailOrUsername(ctx, creds.Email)
-	if err != nil {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
-		return
-	}
-	// 🚨 SECURITY: check password
-	correct, err := database.GlobalUsers.IsPassword(ctx, usr.ID, creds.Password)
-	if err != nil {
-		httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
-		return
-	}
-	if !correct {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
-		return
-	}
-	actor := &actor.Actor{UID: usr.ID}
+	log15.Warn("security_event", fmt.Sprintf("%#v", event))
 
-	// Write the session cookie
-	if err := session.SetActor(w, r, actor, 0, usr.CreatedAt); err != nil {
-		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
-		return
-	}
+	database.SecurityEventLogs(db).LogAuthEvent(r.Context(), event)
 }
 
 // Check availability of username for signup form
