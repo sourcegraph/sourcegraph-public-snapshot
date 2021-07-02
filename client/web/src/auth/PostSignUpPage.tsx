@@ -36,15 +36,15 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
      * 2. is authenticated and enablePostSignupFlow experimental feature is ON
      */
 
-    if (
-        !user ||
-        !context.sourcegraphDotComMode ||
-        !context.experimentalFeatures?.enablePostSignupFlow ||
-        !user?.tags.includes('AllowUserViewPostSignup')
-    ) {
-        // TODO: do this on the backend
-        history.push(getReturnTo(location))
-    }
+    // if (
+    //     !user ||
+    //     !context.sourcegraphDotComMode ||
+    //     !context.experimentalFeatures?.enablePostSignupFlow ||
+    //     !user?.tags.includes('AllowUserViewPostSignup')
+    // ) {
+    //     // TODO: do this on the backend
+    //     history.push(getReturnTo(location))
+    // }
 
     const { data, loading, error, refetch } = useQuery<ExternalServicesResult, ExternalServicesVariables>(
         EXTERNAL_SERVICES,
