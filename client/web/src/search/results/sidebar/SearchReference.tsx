@@ -5,12 +5,12 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
-import { QueryChangeSource, QueryState } from '../../../helpers'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../index'
+import { QueryChangeSource, QueryState } from '../../helpers'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
-import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Selection } from 'monaco-editor'
@@ -37,6 +37,17 @@ export interface SearchReferenceInfo {
      * "Common" filters section and at which position
      */
     commonRank?: number
+    alias?: string
+}
+
+/**
+ * Adds additional search reference information from the existing filters list.
+ */
+function augmentSearchReference(searchReference: SearchReferenceInfo) {
+    const filter = FILTERS[searchReference.type]
+    if (filter && filter.alias) {
+        searchReference.alias = filter.alias
+    }
 }
 
 const searchReferenceInfo: SearchReferenceInfo[] = [
@@ -156,6 +167,8 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
             'Filter results to only public or private repositories. The default is to include both private and public repositories.',
     },
 ]
+
+searchReferenceInfo.forEach(augmentSearchReference)
 
 const commonFilters = searchReferenceInfo
     .filter(info => info.commonRank != null)
@@ -337,7 +350,7 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                 >
                     <CollapseIcon className="icon-inline" />
                 </button>
-                <button className="btn p-0" type="button" onClick={() => onClick(searchReference)}>
+                <button className="btn p-0 flex-1" type="button" onClick={() => onClick(searchReference)}>
                     <span className="text-monospace">
                         <span className="search-filter-keyword">{searchReference.type}:</span>
                         {searchReference.placeholder.tokens.map(token => (
@@ -352,6 +365,22 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                 <div className={styles.description}>
                     {searchReference.description && (
                         <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
+                    )}
+                    {searchReference.alias && (
+                        <p>
+                            Alias: <span className="search-filter-keyword">{searchReference.alias}:</span>
+                        </p>
+                    )}
+                    {isNegatableFilter(searchReference.type) && (
+                        <p>
+                            Negation: <span className="search-filter-keyword">-{searchReference.type}:</span>
+                            {searchReference.alias && (
+                                <>
+                                    {' '}
+                                    | <span className="search-filter-keyword">-{searchReference.alias}:</span>
+                                </>
+                            )}
+                        </p>
                     )}
                 </div>
             </Collapse>
@@ -420,14 +449,12 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
                     <TabList className={styles.tablist}>
                         <Tab>Common</Tab>
                         <Tab>All filters</Tab>
-                        <Tab>Operators</Tab>
                     </TabList>
                     <TabPanels>
                         <TabPanel>
                             <SearchReferenceList filters={commonFilters} onClick={updateQuery} />
                         </TabPanel>
                         <TabPanel>{filterList}</TabPanel>
-                        <TabPanel>TODO</TabPanel>
                     </TabPanels>
                 </Tabs>
             )}

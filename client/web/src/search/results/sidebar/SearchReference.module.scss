@@ -51,6 +51,14 @@
     padding: 0.5rem 0.75rem;
 }
 
+.description > * {
+    margin-bottom: 0.5rem;
+}
+
+.description > :last-child {
+    margin-bottom: 0;
+}
+
 .placeholder {
     font-style: italic;
     color: var(--text-muted);
