@@ -64,7 +64,7 @@ var (
 
 	priorityTemplateDefault = `{{ range .Alerts }}{{ if eq .Labels.severity "critical"}}P1{{else if eq .Labels.severity "warning"}}P2{{else if eq .Labels.severity "info"}}P3{{else}}P4{{end}}{{end}}`
 
-	tagsTemplateDefault = "{{ range $index, $element := .Labels}}{{if $index}},{{end}}{{$element}}{{end}}"
+	tagsTemplateDefault = "{{ range $index, $element := $labels}}{{if $index}},{{end}}{{$element}}{{end}}"
 )
 
 // newRoutesAndReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers
