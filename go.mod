@@ -39,7 +39,6 @@ require (
 	github.com/dgraph-io/ristretto v0.0.3
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
-	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect

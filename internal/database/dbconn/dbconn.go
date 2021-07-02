@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gchaincl/sqlhooks/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgx/v4"
@@ -68,7 +67,7 @@ func New(dataSource, app string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	prometheus.MustRegister(sqlstats.NewStatsCollector(cfg.Database+":"+app, db))
+	prometheus.MustRegister(newMetricsCollector(db, cfg.Database, app))
 	configureConnectionPool(db)
 
 	return db, nil
