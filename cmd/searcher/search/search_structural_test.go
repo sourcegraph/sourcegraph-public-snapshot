@@ -435,7 +435,6 @@ func bar() {
 	zipData, err := testutil.CreateZip(input)
 	require.NoError(t, err)
 
-	t.TempFile()
 	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
 	require.NoError(t, err)
 	defer cleanup()
