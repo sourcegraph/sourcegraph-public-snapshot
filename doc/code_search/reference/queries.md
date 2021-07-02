@@ -87,9 +87,9 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | **case:yes**  | Perform a case sensitive query. Without this, everything is matched case insensitively. | [`OPEN_FILE case:yes`](https://sourcegraph.com/search?q=OPEN_FILE+case:yes) |
 | **fork:yes, fork:only** | Include results from repository forks or filter results to only repository forks. Results in repository forks are exluded by default. | [`fork:yes repo:sourcegraph`](https://sourcegraph.com/search?q=fork:yes+repo:sourcegraph) |
 | **archived:yes, archived:only** | The yes option, includes archived repositories. The only option, filters results to only archived repositories. Results in archived repositories are excluded by default. | [`repo:sourcegraph/ archived:only`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/+archived:only) |
-| **repohasfile:regexp-pattern** | Only include results from repositories that contain a matching file. This keyword is a pure filter, so it requires at least one other search term in the query.  Note: this filter currently only works on text matches and file path matches. | [`repohasfile:\.py file:Dockerfile pip`](https://sourcegraph.com/search?q=repohasfile:%5C.py+file:Dockerfile+pip+repo:/sourcegraph/) |
+| **repo:contains.file(...)** | Conditionally search inside repositories only if they contain a file path matching the regular expression. See [built-in predicates](language.md#built-in-predicate) for more. | [`repo:contains.file(\.py) file:Dockerfile pip`](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.file%28%5C.py%29+file:Dockerfile+pip&patternType=literal) |
 | **-repohasfile:regexp-pattern** | Exclude results from repositories that contain a matching file. This keyword is a pure filter, so it requires at least one other search term in the query. Note: this filter currently only works on text matches and file path matches. | [`-repohasfile:Dockerfile docker`](https://sourcegraph.com/search?q=-repohasfile:Dockerfile+docker) |
-| **repohascommitafter:"string specifying time frame"** | (Experimental) Filter out stale repositories that don't contain commits past the specified time frame. | [`repohascommitafter:"last thursday"`](https://sourcegraph.com/search?q=error+repohascommitafter:%22last+thursday%22) <br> [`repohascommitafter:"june 25 2017"`](https://sourcegraph.com/search?q=error+repohascommitafter:%22june+25+2017%22) |
+| **repo:contains.commit.after(...)** | (Experimental) Filter out stale repositories that don't contain commits past the specified time frame. | [`repo:contains.commit.after(yesterday)`](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.commit.after%28yesterday%29&patternType=literal) <br> [`repo:contains.commit.after(june 25 2017)`](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.commit.after%28june+25+2017%29&patternType=literal) |
 | **count:_N_,<br> count:all**<br/> | Retrieve <em>N</em> results. By default, Sourcegraph stops searching early and returns if it finds a full page of results. This is desirable for most interactive searches. To wait for all results, use **count:all**. | [`count:1000 function`](https://sourcegraph.com/search?q=count:1000+repo:sourcegraph/sourcegraph$+function) <br> [`count:all err`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+err+count:all&patternType=literal) |
 | **timeout:_go-duration-value_**<br/> | Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package's `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 10 seconds, and the search will optimize for returning results as soon as possible. The timeout value cannot be set longer than 1 minute. When provided, the search is given the full timeout to complete. | [`repo:^github.com/sourcegraph timeout:15s func count:10000`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/+timeout:15s+func+count:10000) |
 | **patterntype:literal, patterntype:regexp, patterntype:structural**  | Configure your query to be interpreted literally, as a regular expression, or a [structural search pattern](structural.md). Note: this keyword is available as an accessibility option in addition to the visual toggles. | [`test. patternType:literal`](https://sourcegraph.com/search?q=test.+patternType:literal)<br/>[`(open\|close)file patternType:regexp`](https://sourcegraph.com/search?q=%28open%7Cclose%29file&patternType=regexp) |
@@ -121,6 +121,9 @@ Returns file content matching either on the left or right side, or both (set uni
 `NOT` can be used in place of `-` to negate keywords, such as `file`, `content`, `lang`, `repohasfile`, and `repo`. For
 search patterns, `NOT` excludes documents that contain the term after `NOT`. For readability, you can also include the
 `AND` operator before a `NOT` (i.e. `panic NOT ever` is equivalent to `panic AND NOT ever`).
+
+> If you want to actually search for reserved keywords like `OR` in your code use `content` like this: <br>
+> `content:"query with OR"`.
 
 ### Operator precedence and groups
 
@@ -199,7 +202,15 @@ You can negate a glob pattern by prepending `*!`, for example:
 - [`@*refs/heads/*:*!refs/heads/release* type:commit `](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/kubernetes/kubernetes%24%40*refs/heads/*:*%21refs/heads/release*+type:commit+&patternType=literal) - search commits on all branches except on those that start with "release"
 - [`@*refs/tags/v3.*:*!refs/tags/v3.*-* context`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/sourcegraph%24%40*refs/tags/v3.*:*%21refs/tags/v3.*-*+context&patternType=literal) - search all versions starting with `3.` except release candidates, alpha and beta versions.
 
-#### Commit and Diff searches
+### Repository names
+
+A query with only `repo:` filters returns a list of repositories with matching names.
+
+Example: [`repo:docker repo:registry`](https://sourcegraph.com/search?q=repo:docker+repo:registry) matches repositories with names that contain _both_ `docker` _and_ `registry` substrings.
+
+Example: [`repo:docker OR repo:registry`](https://sourcegraph.com/search?q=repo:docker+OR+repo:registry&patternType=literal) matches repositories with names that contain _either_ `docker` _or_ `registry` substrings.
+
+### Commit and Diff searches
 Commit and diff searches act on sets of commits. A set is defined by a revision (branch, commit hash, or tag), and it
 contains all commits reachable from that revision. A commit is reachable from another commit if it can be
 reached by following the pointers to parent commits.
@@ -207,12 +218,6 @@ reached by following the pointers to parent commits.
 For commit and diff searches it is possible to exclude a set of commits by prepending a caret `^`. The caret acts as a set
 difference. For example, `repo:github.com/myteam/abc@main:^3.15 type:commit` will show all commits in `main`
 minus the commits reachable from the commit tagged with `3.15`.
-
-### Repository names
-
-A query with only `repo:` filters returns a list of repositories with matching names.
-
-Example: [`repo:docker repo:registry`](https://sourcegraph.com/search?q=repo:docker+repo:registry)
 
 ## Filename search
 
