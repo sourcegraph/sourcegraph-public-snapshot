@@ -164,6 +164,7 @@ func main() {
 			Filename: filepath.Join(logDir, "search_blitz.log"),
 			MaxSize:  10, // Megabyte
 			MaxAge:   90, // days
+			Compress: true,
 		}, log15.JsonFormat())))
 
 	// We also log to a TSV file since its easy to interact with via AWK.
@@ -171,6 +172,7 @@ func main() {
 		Filename:   filepath.Join(logDir, "search_blitz.tsv"),
 		MaxSize:    10, // Megabyte
 		MaxBackups: 90, // days
+		Compress:   true,
 	}}
 
 	ctx, cleanup := SignalSensitiveContext()
