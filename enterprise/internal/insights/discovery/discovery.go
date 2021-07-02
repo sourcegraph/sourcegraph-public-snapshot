@@ -3,6 +3,8 @@ package discovery
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -18,7 +20,7 @@ type SettingStore interface {
 //
 // TODO(slimsag): future: include user/org settings and consider security implications of doing so.
 // In the future, this will be expanded to also include insights from users/orgs.
-func Discover(ctx context.Context, settingStore SettingStore) ([]*schema.Insight, error) {
+func Discover(ctx context.Context, settingStore SettingStore) ([]insights.SearchInsight, error) {
 	// Get latest Global user settings.
 	subject := api.SettingsSubject{Site: true}
 	globalSettingsRaw, err := settingStore.GetLatest(ctx, subject)
@@ -29,7 +31,28 @@ func Discover(ctx context.Context, settingStore SettingStore) ([]*schema.Insight
 	if err != nil {
 		return nil, err
 	}
-	return globalSettings.Insights, nil
+
+	results := convertFromBackendInsight(globalSettings.Insights)
+
+	return results, nil
+}
+
+func convertFromBackendInsight(backendInsights []*schema.Insight) []insights.SearchInsight {
+	converted := make([]insights.SearchInsight, 0)
+	for _, backendInsight := range backendInsights {
+		var temp insights.SearchInsight
+		temp.Title = backendInsight.Title
+		temp.Description = backendInsight.Description
+		for _, series := range backendInsight.Series {
+			temp.Series = append(temp.Series, insights.TimeSeries{
+				Name:  series.Label,
+				Query: series.Search,
+			})
+		}
+		converted = append(converted, temp)
+	}
+
+	return converted
 }
 
 func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
