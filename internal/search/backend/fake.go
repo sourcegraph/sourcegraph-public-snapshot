@@ -29,7 +29,7 @@ func (ss *FakeSearcher) StreamSearch(ctx context.Context, q zoektquery.Q, opts *
 	return (&StreamSearchAdapter{ss}).StreamSearch(ctx, q, opts, z)
 }
 
-func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
+func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q, opt *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	return &zoekt.RepoList{Repos: ss.Repos}, nil
 }
 
