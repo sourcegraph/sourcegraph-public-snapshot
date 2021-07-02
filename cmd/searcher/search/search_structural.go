@@ -307,7 +307,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		CombyRule:                    p.CombyRule,
 		IsWordMatch:                  p.IsWordMatch,
 		IsCaseSensitive:              p.IsCaseSensitive,
-		FileMatchLimit:               int32(p.Limit), // TODO convert this to Limit
+		FileMatchLimit:               int32(p.Limit),
 		IncludePatterns:              p.IncludePatterns,
 		ExcludePattern:               p.ExcludePattern,
 		PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
