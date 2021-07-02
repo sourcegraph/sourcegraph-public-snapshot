@@ -22,7 +22,7 @@ import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
 
 import * as GQL from './schema'
-import { fixObservable, getDocumentNode, getOperationType, apolloToGraphQLResult } from './utils'
+import { fixObservable, getDocumentNode, apolloToGraphQLResult } from './utils'
 
 /**
  * Use this template string tag for all GraphQL queries.

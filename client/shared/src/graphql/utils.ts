@@ -5,7 +5,7 @@ import {
     FetchResult as ApolloFetchResult,
     gql as apolloGql,
 } from '@apollo/client'
-import type { DefinitionNode, OperationDefinitionNode, DocumentNode, OperationTypeNode } from 'graphql'
+import type { DocumentNode } from 'graphql'
 import { Observable, observable } from 'rxjs'
 
 import type { GraphQLResult, GraphQLRequestDocument } from './graphql'
@@ -19,19 +19,6 @@ export function fixObservable<T>(
 ): Observable<ApolloQueryResult<T>> | Observable<T> {
     ;(obz as any)[observable] = () => obz
     return obz as any
-}
-
-const isOperationDefinition = (definition: DefinitionNode): definition is OperationDefinitionNode =>
-    definition.kind === 'OperationDefinition'
-
-export const getOperationType = (document: DocumentNode): OperationTypeNode => {
-    const definition = document.definitions.find(isOperationDefinition)
-
-    if (!definition) {
-        throw new Error('Could not find operation definition')
-    }
-
-    return definition.operation
 }
 
 export function apolloToGraphQLResult<T>(response: ApolloQueryResult<T> | ApolloFetchResult<T>): GraphQLResult<T> {
