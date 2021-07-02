@@ -150,7 +150,7 @@ func (t *tsvLogger) Log(a ...interface{}) {
 		t.buf.WriteByte('\t')
 		_, _ = fmt.Fprintf(&t.buf, "%v", v)
 	}
-	t.buf.WriteByte('\t')
+	t.buf.WriteByte('\n')
 	_, _ = t.buf.WriteTo(t.w)
 }
 
@@ -186,6 +186,7 @@ func main() {
 	traces = &traceStore{
 		Dir:                filepath.Join(logDir, "traces"),
 		Token:              os.Getenv(envToken),
+		JaegerServerURL:    os.Getenv("JAEGER_SERVER_URL"),
 		MaxTotalTraceBytes: 1024 * 1024 * 1024, // 1 GiB
 	}
 	go traces.CleanupLoop(ctx)
