@@ -296,7 +296,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 		preds = append(preds, authzConds)
 	}
 	if opts.RepoID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.repo_id = %s", opts.RepoID))
+		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
 	}
 
 	join := sqlf.Sprintf("")
@@ -586,7 +586,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		preds = append(preds, authzConds)
 	}
 	if opts.RepoID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.repo_id = %s", opts.RepoID))
+		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
 	}
 
 	join := sqlf.Sprintf("")
