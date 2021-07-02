@@ -329,7 +329,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 	// We use reposResolved to synchronize repo resolution and event processing.
 	reposResolved := make(chan struct{})
 	var getRepoInputRev repoRevFunc
-	var repoRevMap map[string]*search.RepositoryRevisions
+	var repoRevMap map[api.RepoID]*search.RepositoryRevisions
 
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -339,12 +339,12 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 		if err != nil {
 			return err
 		}
-		repoRevMap = make(map[string]*search.RepositoryRevisions, len(repos))
+		repoRevMap = make(map[api.RepoID]*search.RepositoryRevisions, len(repos))
 		for _, r := range repos {
-			repoRevMap[string(r.Repo.Name)] = r
+			repoRevMap[r.Repo.ID] = r
 		}
 		getRepoInputRev = func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool) {
-			if repoRev, ok := repoRevMap[file.Repository]; ok {
+			if repoRev, ok := repoRevMap[api.RepoID(file.RepositoryID)]; ok {
 				return repoRev.Repo, repoRev.RevSpecs(), true
 			}
 			return types.RepoName{}, nil, false
@@ -375,7 +375,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 		// zoekt for only results of type repo.
 		if args.PatternInfo.Select.Root() == filter.Repository {
-			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
+			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
 				<-reposResolved
 				// getRepoInputRev is nil only if we encountered an error during repo resolution.
 				if getRepoInputRev == nil {
@@ -481,8 +481,12 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 	// zoekt for only results of type repo.
 	if args.PatternInfo.Select.Root() == filter.Repository {
-		return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
-			return repos.repoRevs
+		return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
+			repoRevMap := make(map[api.RepoID]*search.RepositoryRevisions, len(repos.repoRevs))
+			for _, r := range repos.repoRevs {
+				repoRevMap[r.Repo.ID] = r
+			}
+			return repoRevMap
 		})
 	}
 
@@ -592,8 +596,8 @@ func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
-	repoList, err := client.List(ctx, query, nil)
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[api.RepoID]*search.RepositoryRevisions) error {
+	repoList, err := client.List(ctx, query, &zoekt.ListOptions{Minimal: true})
 	if err != nil {
 		return err
 	}
@@ -603,9 +607,9 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 		return nil
 	}
 
-	matches := make([]result.Match, 0, len(repoList.Repos))
-	for _, repo := range repoList.Repos {
-		rev, ok := repoRevMap[repo.Repository.Name]
+	matches := make([]result.Match, 0, len(repoList.Minimal))
+	for id := range repoList.Minimal {
+		rev, ok := repoRevMap[api.RepoID(id)]
 		if !ok {
 			continue
 		}

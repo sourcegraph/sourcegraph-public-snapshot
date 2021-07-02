@@ -24,13 +24,18 @@ func TestHorizontalSearcher(t *testing.T) {
 		Dial: func(endpoint string) zoekt.Streamer {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
+			repoID, _ := strconv.Atoi(endpoint)
 			client := &mockSearcher{
 				searchResult: &zoekt.SearchResult{
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
 				},
-				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
+				listResult: &zoekt.RepoList{
+					Repos:   []*zoekt.RepoListEntry{&rle},
+					Crashes: 0,
+					Minimal: map[uint32]*zoekt.MinimalRepoListEntry{uint32(repoID): {}},
+				},
 			}
 			// Return metered searcher to test that codepath
 			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
@@ -94,6 +99,15 @@ func TestHorizontalSearcher(t *testing.T) {
 		got = []string{}
 		for _, r := range rle.Repos {
 			got = append(got, r.Repository.Name)
+		}
+		sort.Strings(got)
+		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
+			t.Errorf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		}
+
+		got = []string{}
+		for r := range rle.Minimal {
+			got = append(got, strconv.Itoa(int(r)))
 		}
 		sort.Strings(got)
 		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
