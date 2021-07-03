@@ -38,6 +38,22 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                 {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
                     <div className="search-result__divider" />
                 )}
+                {result.type === 'repo' && (
+                    <>
+                        {result.fork && (
+                            <SourceForkIcon
+                                className="search-result__icon icon-inline flex-shrink-0 text-muted"
+                                data-tooltip="Fork"
+                            />
+                        )}
+                        {result.archived && (
+                            <ArchiveIcon
+                                className="search-result__icon icon-inline flex-shrink-0 text-muted"
+                                data-tooltip="Archive"
+                            />
+                        )}
+                    </>
+                )}
                 {formattedRepositoryStarCount && (
                     <>
                         <StarIcon className="search-result__star" />
@@ -48,51 +64,15 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
         )
     }
 
-    const renderBody = (): JSX.Element => {
+    const renderBody = (): JSX.Element | undefined => {
         if (result.type === 'repo') {
-            return (
-                <div>
-                    <div className="search-result-match p-2 flex-column">
-                        <div className="d-flex align-items-center flex-row">
-                            <div className="search-result__match-type">
-                                <small>Repository match</small>
-                            </div>
-                            {result.fork && (
-                                <>
-                                    <div className="search-result__divider" />
-                                    <div>
-                                        <SourceForkIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
-                                    </div>
-                                    <div>
-                                        <small>Fork</small>
-                                    </div>
-                                </>
-                            )}
-                            {result.archived && (
-                                <>
-                                    <div className="search-result__divider" />
-                                    <div>
-                                        <ArchiveIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
-                                    </div>
-                                    <div>
-                                        <small>Archived</small>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                        {result.description && (
-                            <>
-                                <div className="search-result__divider-vertical" />
-                                <div className="search-result__description">
-                                    <small>
-                                        <em>{result.description}</em>
-                                    </small>
-                                </div>
-                            </>
-                        )}
-                    </div>
+            return result.description ? (
+                <div className="search-result-match p-2 flex-column">
+                    <small>
+                        <em>{result.description}</em>
+                    </small>
                 </div>
-            )
+            ) : undefined
         }
 
         return <CommitSearchResultMatch key={result.url} item={result} isLightTheme={isLightTheme} />
