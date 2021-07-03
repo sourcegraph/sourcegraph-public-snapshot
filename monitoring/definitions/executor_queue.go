@@ -91,6 +91,11 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			{
+				Title:  shared.TitleDatabaseConnectionsMonitoring,
+				Hidden: true,
+				Rows:   shared.DatabaseConnectionsMonitoring("executor-queue"),
+			},
+			{
 				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []monitoring.Row{
