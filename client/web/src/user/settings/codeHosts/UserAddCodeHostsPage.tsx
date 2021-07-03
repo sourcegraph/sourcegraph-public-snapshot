@@ -28,7 +28,6 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
-    showHeader?: boolean
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -65,7 +64,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     routingPrefix,
     context,
     onUserExternalServicesOrRepositoriesUpdate,
-    showHeader = true,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
@@ -237,23 +235,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     return (
         <div className="user-code-hosts-page">
-            {showHeader && (
-                <>
-                    <PageTitle title="Code host connections" />
-                    <PageHeader
-                        headingElement="h2"
-                        path={[{ text: 'Code host connections' }]}
-                        description={
-                            <>
-                                Connect with your code hosts. Then,{' '}
-                                <Link to={`${routingPrefix}/repositories/manage`}>add repositories</Link> to search with
-                                Sourcegraph.
-                            </>
-                        }
-                        className="mb-3"
-                    />
-                </>
-            )}
+            <PageTitle title="Code host connections" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Code host connections' }]}
+                description={
+                    <>
+                        Connect with your code hosts. Then,{' '}
+                        <Link to={`${routingPrefix}/repositories/manage`}>add repositories</Link> to search with
+                        Sourcegraph.
+                    </>
+                }
+                className="mb-3"
+            />
 
             {/* display external service errors and success banners */}
             {getErrorAndSuccessBanners(statusOrError)}

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Link, Redirect, useLocation, useHistory } from 'react-router-dom'
+import { Link, Redirect, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

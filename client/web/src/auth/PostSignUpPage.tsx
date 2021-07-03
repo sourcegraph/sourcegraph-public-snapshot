@@ -6,9 +6,7 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
-import { Terminal } from '@sourcegraph/wildcard/src/components/Terminal'
 
-import { AuthenticatedUser } from '../auth'
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
@@ -16,13 +14,12 @@ import { UserAreaUserFields, ExternalServicesVariables, ExternalServicesResult }
 import { SourcegraphContext } from '../jscontext'
 import { UserCodeHosts } from '../user/settings/codeHosts/UserCodeHosts'
 
+import { CloningStatusTerminal } from './CloningStatusTerminal'
 import { getReturnTo } from './SignInSignUpCommon'
 
 interface Props {
-    authenticatedUser: AuthenticatedUser
+    authenticatedUser: UserAreaUserFields
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
-    user: UserAreaUserFields
-    routingPrefix: string
 }
 
 export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: user, context }) => {
@@ -69,24 +66,28 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
         console.log(error)
     }
 
-    const connectCodeHosts = {
+    const firstStep = {
         content: (
             <>
-                <div className="mb-4">
-                    <h3>Connect with code hosts</h3>
-                    <p className="text-muted">
-                        Connect with providers where your source code is hosted. Then, choose the repositories you’d
-                        like to search with Sourcegraph.
-                    </p>
-                </div>
-                {data?.externalServices?.nodes && (
-                    <UserCodeHosts
-                        user={user}
-                        externalServices={data.externalServices.nodes}
-                        context={context}
-                        onDidError={error => console.warn('<UserCodeHosts .../>', error)}
-                        onDidRemove={() => refetch()}
-                    />
+                {currentStepNumber === 1 && (
+                    <>
+                        <div className="mb-4">
+                            <h3>Connect with code hosts</h3>
+                            <p className="text-muted">
+                                Connect with providers where your source code is hosted. Then, choose the repositories
+                                you’d like to search with Sourcegraph.
+                            </p>
+                        </div>
+                        {data?.externalServices?.nodes && (
+                            <UserCodeHosts
+                                user={user}
+                                externalServices={data.externalServices.nodes}
+                                context={context}
+                                onDidError={error => console.warn('<UserCodeHosts .../>', error)}
+                                onDidRemove={() => refetch()}
+                            />
+                        )}
+                    </>
                 )}
             </>
         ),
@@ -95,33 +96,43 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
             !!data && Array.isArray(data?.externalServices?.nodes) && data.externalServices.nodes.length > 0,
     }
 
-    const addRepositories = {
+    const secondStep = {
         content: (
             <>
-                <h3>Add repositories</h3>
-                <p className="text-muted">
-                    Choose repositories you own or collaborate on from your code hosts to search with Sourcegraph. We’ll
-                    sync and index these repositories so you can search your code all in one place.
-                </p>
+                {currentStepNumber === 2 && (
+                    <>
+                        <h3>Add repositories</h3>
+                        <p className="text-muted">
+                            Choose repositories you own or collaborate on from your code hosts to search with
+                            Sourcegraph. We’ll sync and index these repositories so you can search your code all in one
+                            place.
+                        </p>
+                    </>
+                )}
             </>
         ),
         isComplete: () => true,
     }
 
-    const startSearching = {
+    const thirdStep = {
         content: (
             <>
-                <h3>Start searching...</h3>
-                <p className="text-muted">
-                    We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
-                </p>
-                <Terminal />
+                {currentStepNumber === 3 && (
+                    <>
+                        <h3>Start searching...</h3>
+                        <p className="text-muted">
+                            We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first
+                            search!
+                        </p>
+                        <CloningStatusTerminal userId={user.id} pollInterval={3000} />
+                    </>
+                )}
             </>
         ),
         isComplete: () => false,
     }
 
-    const steps = [connectCodeHosts, addRepositories, startSearching]
+    const steps = [firstStep, secondStep, thirdStep]
 
     // Steps helpers
     const isLastStep = currentStepNumber === steps.length
