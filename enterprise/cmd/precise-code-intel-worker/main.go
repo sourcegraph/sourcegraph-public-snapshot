@@ -125,7 +125,7 @@ func mustInitializeDB() *sql.DB {
 		}
 	})
 
-	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
+	if err := dbconn.SetupGlobalConnection(postgresDSN, "frontend", "precise-code-intel-worker"); err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
 
@@ -154,7 +154,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		}
 	})
 
-	db, err := dbconn.New(postgresDSN, "precise-code-intel-worker")
+	db, err := dbconn.New(postgresDSN, "codeintel", "precise-code-intel-worker")
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

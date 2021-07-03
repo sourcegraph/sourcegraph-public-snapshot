@@ -43,20 +43,30 @@ var (
 // SetupGlobalConnection connects to the given data source and stores the handle
 // globally.
 //
+// dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
+// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
+// logical databases. app, however is set as the application_name in the connection string. This is needed
+// because we have multiple apps connecting to the same database, but have a single shared DSN.
+//
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func SetupGlobalConnection(dataSource string) (err error) {
-	Global, err = New(dataSource, "frontend")
+func SetupGlobalConnection(dataSource, dbname, app string) (err error) {
+	Global, err = New(dataSource, dbname, app)
 	return err
 }
 
 // New connects to the given data source and returns the handle.
 //
+// dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
+// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
+// logical databases. app, however is set as the application_name in the connection string. This is needed
+// because we have multiple apps connecting to the same database, but have a single shared DSN.
+//
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func New(dataSource, app string) (*sql.DB, error) {
+func New(dataSource, dbname, app string) (*sql.DB, error) {
 	cfg, err := buildConfig(dataSource, app)
 	if err != nil {
 		return nil, err
@@ -67,7 +77,7 @@ func New(dataSource, app string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	prometheus.MustRegister(newMetricsCollector(db, cfg.Database, app))
+	prometheus.MustRegister(newMetricsCollector(db, dbname, app))
 	configureConnectionPool(db)
 
 	return db, nil
@@ -77,8 +87,8 @@ func New(dataSource, app string) (*sql.DB, error) {
 //
 // Prefer to call New as it also configures a connection pool and metrics.
 // Use this method only in internal utilities (such as schemadoc).
-func NewRaw(dataSource, app string) (*sql.DB, error) {
-	cfg, err := buildConfig(dataSource, app)
+func NewRaw(dataSource string) (*sql.DB, error) {
+	cfg, err := buildConfig(dataSource, "")
 	if err != nil {
 		return nil, err
 	}

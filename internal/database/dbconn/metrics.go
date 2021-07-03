@@ -27,7 +27,7 @@ type metricsCollector struct {
 func newMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
 	const (
 		namespace = "src"
-		subsystem = "pgsql"
+		subsystem = "pgsql_conns"
 	)
 
 	labels := prometheus.Labels{
