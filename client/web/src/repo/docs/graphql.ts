@@ -21,6 +21,7 @@ export interface GQLDocumentationPage {
 export interface GQLDocumentationNode {
     pathID: string
     documentation: Documentation
+    locations: { URI: string; StartLine: number; StartCharacter: number; EndLine: number; EndCharacter: number }[]
     label: MarkupContent
     detail: MarkupContent
     children: DocumentationNodeChild[]

@@ -35,6 +35,7 @@ func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_
 		// matching bundle.
 		var page *semantic.DocumentationPageData
 		page, err = r.lsifStore.DocumentationPage(ctx, r.uploads[i].ID, pathID)
+		// TODO(sqs): adjust location ranges to be in the commit that the user is looking at
 		if err == nil {
 			return page, nil
 		}

@@ -145,7 +145,11 @@ type DocumentationNodeChild struct {
 // DocumentationNode describes one node in a tree of hierarchical documentation.
 type DocumentationNode struct {
 	// PathID is the path ID of this node itself.
-	PathID        string                   `json:"pathID"`
+	PathID string `json:"pathID"`
+
+	// Locations is the set of locations in source code that define the documented item.
+	Locations []LocationData `json:"locations"`
+
 	Documentation protocol.Documentation   `json:"documentation"`
 	Label         protocol.MarkupContent   `json:"label"`
 	Detail        protocol.MarkupContent   `json:"detail"`

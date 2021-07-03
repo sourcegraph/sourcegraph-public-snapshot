@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { ResolvedRevisionSpec, RevisionSpec, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
@@ -66,6 +66,22 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             <Link className={`h${depth + 1 < 4 ? depth + 1 : 4}`} id={hash} to={thisPage}>
                 <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
             </Link>
+            {node.locations?.[0] && (
+                <Link
+                    className="ml-2 text-muted"
+                    to={toPrettyBlobURL({
+                        repoName: props.repo.name,
+                        revision: props.revision || '',
+                        filePath: node.locations[0].URI,
+                        position: {
+                            line: node.locations[0].StartLine + 1,
+                            character: node.locations[0].StartCharacter + 1,
+                        },
+                    })}
+                >
+                    View code
+                </Link>
+            )}
             {node.detail.value !== '' && (
                 <div className="px-2 pt-2">
                     <Markdown dangerousInnerHTML={renderMarkdown(node.detail.value)} />
@@ -77,7 +93,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
                     child.node &&
                     !isExcluded(child.node, props.excludingTags) && (
                         <DocumentationNode
-                            key={`${depth}-${child.node!.pathID}`}
+                            key={`${depth}-${child.node.pathID}`}
                             {...props}
                             node={child.node}
                             depth={depth + 1}

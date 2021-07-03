@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
@@ -112,6 +113,26 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 			Label:         p.state.DocumentationStringsData[labelID],
 			Detail:        p.state.DocumentationStringsData[detailID],
 		}
+
+		if resultSetID, ok := p.state.ResultSetByDocumentationResults[documentationResult]; ok {
+			resultSet := p.state.ResultSetData[resultSetID]
+			if resultSet.DefinitionResultID != 0 {
+				p.state.DefinitionData[resultSet.DefinitionResultID].Each(func(documentID int, value *datastructures.IDSet) {
+					documentURI := p.state.DocumentData[documentID]
+					value.Each(func(rangeID int) {
+						rangeData := p.state.RangeData[rangeID]
+						this.Locations = append(this.Locations, semantic.LocationData{
+							URI:            documentURI,
+							StartLine:      rangeData.Start.Line,
+							StartCharacter: rangeData.Start.Character,
+							EndLine:        rangeData.End.Line,
+							EndCharacter:   rangeData.End.Character,
+						})
+					})
+				})
+			}
+		}
+
 		switch {
 		case pathID == "":
 			this.PathID = "/"
