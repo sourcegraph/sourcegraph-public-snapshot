@@ -91,7 +91,7 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 	}
 }
 
-// A "documentationResult" vertex describes hierarchial project-wide documentation. It represents
+// A "documentationResult" vertex describes hierarchical project-wide documentation. It represents
 // documentation for a programming construct (variable, function, etc.) or group of programming
 // constructs in a workspace (library, package, crate, module, etc.)
 //

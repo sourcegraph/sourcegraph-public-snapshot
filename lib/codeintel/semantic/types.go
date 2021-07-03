@@ -142,7 +142,7 @@ type DocumentationNodeChild struct {
 	PathID string `json:"pathID,omitempty"`
 }
 
-// DocumentationNode describes one node in a tree of hierarchial documentation.
+// DocumentationNode describes one node in a tree of hierarchical documentation.
 type DocumentationNode struct {
 	// PathID is the path ID of this node itself.
 	PathID        string                   `json:"pathID"`
