@@ -88,7 +88,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		}
 	})
 
-	db, err := dbconn.New(postgresDSN, "frontend")
+	db, err := dbconn.New(postgresDSN, "frontend_codeintel")
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
