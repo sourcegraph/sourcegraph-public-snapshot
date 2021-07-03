@@ -141,55 +141,51 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         grouped.length === 0 && (result.type !== 'symbol' || !result.symbols || result.symbols.length === 0)
 
     return (
-        <div className="file-match-children">
-            {/* No symbols or line matches means that this is a path match */}
-            {noMatches && (
-                <div className="file-match-children__item">
-                    <small>Path match</small>
-                </div>
-            )}
-
-            {/* Symbols */}
-            {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
-                <Link
-                    to={symbol.url}
-                    className="file-match-children__item test-file-match-children-item"
-                    key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
-                >
-                    <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
-                    <code>
-                        {symbol.name}{' '}
-                        {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </code>
-                </Link>
-            ))}
-
-            {/* Line matches */}
-            {grouped.map((group, index) => (
-                <div
-                    key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
-                    className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
-                >
+        // No symbols or line matches means that this is a path match
+        noMatches ? null : (
+            <div className="file-match-children">
+                {/* Symbols */}
+                {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
                     <Link
-                        to={createCodeExcerptLink(group)}
-                        className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                        onClick={props.onSelect}
+                        to={symbol.url}
+                        className="file-match-children__item test-file-match-children-item"
+                        key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     >
-                        <CodeExcerpt
-                            repoName={result.repository}
-                            commitID={result.version || ''}
-                            filePath={result.name}
-                            startLine={group.startLine}
-                            endLine={group.endLine}
-                            highlightRanges={group.matches}
-                            className="file-match-children__item-code-excerpt"
-                            isLightTheme={isLightTheme}
-                            fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                            isFirst={index === 0}
-                        />
+                        <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
+                        <code>
+                            {symbol.name}{' '}
+                            {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                        </code>
                     </Link>
-                </div>
-            ))}
-        </div>
+                ))}
+
+                {/* Line matches */}
+                {grouped.map((group, index) => (
+                    <div
+                        key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
+                        className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                    >
+                        <Link
+                            to={createCodeExcerptLink(group)}
+                            className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                            onClick={props.onSelect}
+                        >
+                            <CodeExcerpt
+                                repoName={result.repository}
+                                commitID={result.version || ''}
+                                filePath={result.name}
+                                startLine={group.startLine}
+                                endLine={group.endLine}
+                                highlightRanges={group.matches}
+                                className="file-match-children__item-code-excerpt"
+                                isLightTheme={isLightTheme}
+                                fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                                isFirst={index === 0}
+                            />
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        )
     )
 }

@@ -13,11 +13,6 @@
         height: 1rem;
         margin: 0 0.5rem;
     }
-    &__divider-vertical {
-        border-bottom: 1px solid var(--border-color-2);
-        width: 100%;
-        margin: 0.5rem 0;
-    }
     &__match-type {
         white-space: nowrap;
     }
@@ -29,6 +24,7 @@
         margin-right: 0.25rem;
     }
     &__icon {
+        margin-left: 0.25rem;
         margin-right: 0.25rem;
     }
 }
