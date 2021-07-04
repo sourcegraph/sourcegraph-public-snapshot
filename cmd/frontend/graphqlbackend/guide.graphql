@@ -58,3 +58,7 @@ type GuideInfo {
     """
     references: LocationConnection!
 }
+
+extend type GitBlobLSIFData {
+    exploreUsageURL(line: Int!, character: Int!): String
+}

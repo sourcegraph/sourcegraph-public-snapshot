@@ -293,6 +293,8 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     """
     ranges(startLine: Int!, endLine: Int!): CodeIntelligenceRangeConnection
 
+    monikers(line: Int!, character: Int!): [Moniker!]!
+
     """
     A list of definitions of the symbol under the given document position.
     """

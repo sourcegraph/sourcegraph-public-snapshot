@@ -23,6 +23,7 @@ type operations struct {
 	references            *observation.Operation
 	documentationPage     *observation.Operation
 	documentationPathInfo *observation.Operation
+	monikers              *observation.Operation
 	packages              *observation.Operation
 	symbols               *observation.Operation
 	symbol                *observation.Operation
@@ -64,6 +65,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		references:            op("References"),
 		documentationPage:     op("DocumentationPage"),
 		documentationPathInfo: op("DocumentationPathInfo"),
+		monikers:              op("Monikers"),
 		packages:              op("Packages"),
 		symbols:               op("Symbols"),
 		symbol:                op("Symbol"),

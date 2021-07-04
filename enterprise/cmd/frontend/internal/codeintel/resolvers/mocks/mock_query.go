@@ -31,6 +31,9 @@ type MockQueryResolver struct {
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *QueryResolverHoverFunc
+	// MonikersAtPositionFunc is an instance of a mock function object
+	// controlling the behavior of the method MonikersAtPosition.
+	MonikersAtPositionFunc *QueryResolverMonikersAtPositionFunc
 	// RangesFunc is an instance of a mock function object controlling the
 	// behavior of the method Ranges.
 	RangesFunc *QueryResolverRangesFunc
@@ -71,6 +74,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 				return "", lsifstore.Range{}, false, nil
 			},
 		},
+		MonikersAtPositionFunc: &QueryResolverMonikersAtPositionFunc{
+			defaultHook: func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error) {
+				return nil, nil
+			},
+		},
 		RangesFunc: &QueryResolverRangesFunc{
 			defaultHook: func(context.Context, int, int) ([]resolvers.AdjustedCodeIntelligenceRange, error) {
 				return nil, nil
@@ -108,6 +116,9 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 		},
 		HoverFunc: &QueryResolverHoverFunc{
 			defaultHook: i.Hover,
+		},
+		MonikersAtPositionFunc: &QueryResolverMonikersAtPositionFunc{
+			defaultHook: i.MonikersAtPosition,
 		},
 		RangesFunc: &QueryResolverRangesFunc{
 			defaultHook: i.Ranges,
@@ -683,6 +694,121 @@ func (c QueryResolverHoverFuncCall) Args() []interface{} {
 // invocation.
 func (c QueryResolverHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// QueryResolverMonikersAtPositionFunc describes the behavior when the
+// MonikersAtPosition method of the parent MockQueryResolver instance is
+// invoked.
+type QueryResolverMonikersAtPositionFunc struct {
+	defaultHook func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error)
+	hooks       []func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error)
+	history     []QueryResolverMonikersAtPositionFuncCall
+	mutex       sync.Mutex
+}
+
+// MonikersAtPosition delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockQueryResolver) MonikersAtPosition(v0 context.Context, v1 int, v2 int) ([]resolvers.AdjustedMonikerData, error) {
+	r0, r1 := m.MonikersAtPositionFunc.nextHook()(v0, v1, v2)
+	m.MonikersAtPositionFunc.appendCall(QueryResolverMonikersAtPositionFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MonikersAtPosition
+// method of the parent MockQueryResolver instance is invoked and the hook
+// queue is empty.
+func (f *QueryResolverMonikersAtPositionFunc) SetDefaultHook(hook func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MonikersAtPosition method of the parent MockQueryResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *QueryResolverMonikersAtPositionFunc) PushHook(hook func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverMonikersAtPositionFunc) SetDefaultReturn(r0 []resolvers.AdjustedMonikerData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverMonikersAtPositionFunc) PushReturn(r0 []resolvers.AdjustedMonikerData, r1 error) {
+	f.PushHook(func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error) {
+		return r0, r1
+	})
+}
+
+func (f *QueryResolverMonikersAtPositionFunc) nextHook() func(context.Context, int, int) ([]resolvers.AdjustedMonikerData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverMonikersAtPositionFunc) appendCall(r0 QueryResolverMonikersAtPositionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverMonikersAtPositionFuncCall
+// objects describing the invocations of this function.
+func (f *QueryResolverMonikersAtPositionFunc) History() []QueryResolverMonikersAtPositionFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverMonikersAtPositionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverMonikersAtPositionFuncCall is an object that describes an
+// invocation of method MonikersAtPosition on an instance of
+// MockQueryResolver.
+type QueryResolverMonikersAtPositionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []resolvers.AdjustedMonikerData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverMonikersAtPositionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverMonikersAtPositionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // QueryResolverRangesFunc describes the behavior when the Ranges method of

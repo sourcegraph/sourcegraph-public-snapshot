@@ -7,6 +7,7 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // DefaultReferencesPageSize is the reference result page size when no limit is supplied.
@@ -107,4 +108,37 @@ func (r *QueryResolver) Diagnostics(ctx context.Context, args *gql.LSIFDiagnosti
 	}
 
 	return NewDiagnosticConnectionResolver(diagnostics, totalCount, r.locationResolver), nil
+}
+
+func (r *QueryResolver) Monikers(ctx context.Context, args *gql.LSIFQueryPositionArgs) ([]gql.MonikerResolver, error) {
+	monikers, err := r.resolver.MonikersAtPosition(ctx, int(args.Line), int(args.Character))
+	if err != nil {
+		return nil, err
+	}
+
+	monikerResolvers := make([]gql.MonikerResolver, len(monikers))
+	for i, m := range monikers {
+		monikerResolvers[i] = NewMonikerResolver(m.MonikerData)
+	}
+	return monikerResolvers, nil
+}
+
+func (r *QueryResolver) ExploreUsageURL(ctx context.Context, args *gql.LSIFQueryPositionArgs) (*string, error) {
+	monikers, err := r.resolver.MonikersAtPosition(ctx, int(args.Line), int(args.Character))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(monikers) == 0 {
+		return nil, nil
+	}
+
+	moniker := monikers[0]
+	repo, err := r.locationResolver.Repository(ctx, api.RepoID(moniker.Dump.RepositoryID))
+	if err != nil {
+		return nil, err
+	}
+	// TODO(sqs): move this URL generation to the Guide package
+	u := repo.URL() + "@" + moniker.Dump.Commit + "/usage/" + moniker.Scheme + "/" + moniker.Identifier
+	return &u, nil
 }

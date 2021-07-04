@@ -32,7 +32,7 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
+import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink, toRepoURL } from '../util/url'
 
 import { HoverContext } from './HoverOverlay'
 
@@ -179,6 +179,11 @@ export function getHoverActionsContext(
                               { part: hoverContext.part }
                           )
                         : null,
+
+                'exploreUsage.url': `${toRepoURL({
+                    repoName: hoverContext.repoName,
+                    revision: hoverContext.revision,
+                })}/-/usage/`,
 
                 // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
                 hoverPosition: parameters,
@@ -461,7 +466,27 @@ export function registerHoverContributions({
             })
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
-            return Promise.all([definitionContributionsPromise, referencesContributionPromise])
+            const exploreUsageContributionPromise = extensionHostAPI.registerContributions({
+                actions: [
+                    {
+                        id: 'exploreUsage',
+                        title: 'Explore usage',
+                        command: 'open',
+                        // eslint-disable-next-line no-template-curly-in-string
+                        commandArguments: ['${exploreUsage.url}'],
+                    },
+                ],
+                menus: {
+                    hover: [{ action: 'exploreUsage', when: 'exploreUsage.url' }],
+                },
+            })
+            subscriptions.add(syncRemoteSubscription(exploreUsageContributionPromise))
+
+            return Promise.all([
+                definitionContributionsPromise,
+                referencesContributionPromise,
+                exploreUsageContributionPromise,
+            ])
         })
         // Don't expose remote subscriptions, only sync subscriptions bag
         .then(() => undefined)
