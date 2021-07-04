@@ -12,16 +12,7 @@ extend type Query {
         """
         commonPublicAncestorRevision: String
 
-        """
-        A file path.
-        """
-        path: String!
-
-        """
-        A position in the file.
-        """
-        line: Int!
-        character: Int!
+        selections: [GuideSelectionInput!]!
     ): GuideInfo!
 }
 
@@ -29,7 +20,22 @@ extend type Query {
 TODO(sqs) also allow inferring this from (credentials-stripped) clone URLs.
 """
 input GuideRepositoryInput {
-    name:
+    name: String!
+}
+
+input GuideSelectionInput {
+    """
+    A file path.
+    """
+    path: String
+
+    """
+    A position in the file.
+    """
+    line: Int
+    character: Int
+
+    symbolMonikers: [MonikerInput!]
 }
 
 type GuideInfo {

@@ -10,11 +10,23 @@ type GuideRootResolver interface {
 }
 
 type GuideInfoParams struct {
-	RepositoryName               string
+	Repository                   GuideRepositoryInput
 	Head                         string
 	CommonPublicAncestorRevision *string
-	Path                         string
-	Line, Character              int32
+	Selections                   []GuideSelectionInput
+}
+
+type GuideRepositoryInput struct {
+	Name string
+}
+
+type GuideSelectionInput struct {
+	Path *string
+
+	Line      *int32
+	Character *int32
+
+	SymbolMonikers *[]MonikerInput
 }
 
 type GuideInfoResolver interface{ Hello() string }
