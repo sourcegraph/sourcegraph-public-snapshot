@@ -1,27 +1,25 @@
 import H from 'history'
 import { useMemo } from 'react'
+
 import * as GQL from '../../../../shared/src/graphql/schema'
 
-export interface SymbolsViewOptionsProps {
-    viewOptions: SymbolsViewOptions
+export interface ContextViewOptionsProps {
+    viewOptions: ContextViewOptions
 }
 
-export interface SymbolsViewOptions {
+export interface ContextViewOptions {
     internals: GQL.ISymbolFilters['internals']
     externals: boolean
 }
 
-const DEFAULT_OPTIONS: SymbolsViewOptions = {
+const DEFAULT_OPTIONS: ContextViewOptions = {
     externals: true,
     internals: false,
 }
 
-const KEYS: (keyof SymbolsViewOptions)[] = ['externals', 'internals']
+const KEYS: (keyof ContextViewOptions)[] = ['externals', 'internals']
 
-interface ToggleURLs {
-    externals: H.LocationDescriptorObject
-    internals: H.LocationDescriptorObject
-}
+interface ToggleURLs extends Record<keyof ContextViewOptions, H.LocationDescriptorObject> {}
 
 interface Props {
     location: H.Location
@@ -29,7 +27,7 @@ interface Props {
 
 const locationWithViewOptions = (
     base: H.LocationDescriptorObject,
-    viewOptions: SymbolsViewOptions
+    viewOptions: ContextViewOptions
 ): H.LocationDescriptorObject => {
     const parameters = new URLSearchParams(base.search)
 
@@ -47,22 +45,21 @@ const locationWithViewOptions = (
 const parseSearchParameterValue = (value: string | null, defaultValue: boolean): boolean =>
     value === null ? defaultValue : value === '1'
 
-export const useSymbolsViewOptions = ({
+export const useContextViewOptions = ({
     location,
-}: Props): { viewOptions: SymbolsViewOptions; toggleURLs: ToggleURLs } => {
-    const viewOptions = useMemo<SymbolsViewOptions>(() => {
+}: Props): { viewOptions: ContextViewOptions; toggleURLs: ToggleURLs } => {
+    const viewOptions = useMemo<ContextViewOptions>(() => {
         const parameters = new URLSearchParams(location.search)
-        return {
-            externals: parseSearchParameterValue(parameters.get('externals'), DEFAULT_OPTIONS.externals),
-            internals: parseSearchParameterValue(parameters.get('internals'), DEFAULT_OPTIONS.internals),
-        }
+        return (Object.fromEntries(
+            KEYS.map(key => [key, parseSearchParameterValue(parameters.get(key), DEFAULT_OPTIONS[key])])
+        ) as unknown) as ContextViewOptions
     }, [location.search])
 
     const toggleURLs = useMemo<ToggleURLs>(
-        () => ({
-            externals: locationWithViewOptions(location, { ...viewOptions, externals: !viewOptions.externals }),
-            internals: locationWithViewOptions(location, { ...viewOptions, internals: !viewOptions.internals }),
-        }),
+        () =>
+            (Object.fromEntries(
+                KEYS.map(key => [key, locationWithViewOptions(location, { ...viewOptions, [key]: !viewOptions[key] })])
+            ) as unknown) as ToggleURLs,
         [location, viewOptions]
     )
 

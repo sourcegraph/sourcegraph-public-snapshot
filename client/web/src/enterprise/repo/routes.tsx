@@ -5,22 +5,14 @@ import { RepoRevisionContainerRoute } from '../../repo/RepoRevisionContainer'
 import { repoContainerRoutes, repoRevisionContainerRoutes } from '../../repo/routes'
 import { lazyComponent } from '../../util/lazyComponent'
 
-const SymbolsArea = lazyComponent(() => import('../symbols/SymbolsArea'), 'SymbolsArea')
-/* const RepositoryDependenciesPage = lazyComponent(
-    () => import('./network/RepositoryDependenciesPage'),
-    'RepositoryDependenciesPage'
-)
- */
+const ContextArea = lazyComponent(() => import('../context/ContextArea'), 'ContextArea')
+
 export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = repoContainerRoutes
 
 export const enterpriseRepoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...repoRevisionContainerRoutes,
     {
-        path: '/-/symbols',
-        render: context => <SymbolsArea {...context} />,
+        path: '/-/ctx',
+        render: context => <ContextArea {...context} />,
     },
-    /* {
-        path: '/-/dependencies',
-        render: context => <RepositoryDependenciesPage {...context} />,
-    }, */
 ]

@@ -1,0 +1,37 @@
+extend type Query {
+    guideInfo(
+        """
+        The repository.
+        """
+        repository: GuideRepositoryInput!
+
+        head: String!
+
+        """
+        If the current local repository state is not synced to Sourcegraph, TODO
+        """
+        commonPublicAncestorRevision: String
+
+        """
+        A file path.
+        """
+        path: String!
+
+        """
+        A position in the file.
+        """
+        line: Int!
+        character: Int!
+    ): GuideInfo!
+}
+
+"""
+TODO(sqs) also allow inferring this from (credentials-stripped) clone URLs.
+"""
+input GuideRepositoryInput {
+    name:
+}
+
+type GuideInfo {
+    hello: String!
+}

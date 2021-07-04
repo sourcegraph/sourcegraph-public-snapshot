@@ -1,9 +1,10 @@
-import React, { useCallback } from 'react'
 import H from 'history'
-import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
-import { useSymbolsViewOptions } from './useSymbolsViewOptions'
+import React, { useCallback } from 'react'
+
 import { Toggle } from '../../../../branded/src/components/Toggle'
-import { Link } from 'react-router-dom'
+import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
+
+import { useContextViewOptions } from './useContextViewOptions'
 
 interface ButtonProps {
     toggleURL: H.LocationDescriptorObject
@@ -12,7 +13,7 @@ interface ButtonProps {
     className?: string
 }
 
-const SymbolsViewOptionsToggle: React.FunctionComponent<ButtonProps> = ({
+const ContextViewOptionsToggle: React.FunctionComponent<ButtonProps> = ({
     toggleURL,
     value,
     history,
@@ -36,26 +37,26 @@ const SymbolsViewOptionsToggle: React.FunctionComponent<ButtonProps> = ({
     )
 }
 
-interface Props extends ReturnType<typeof useSymbolsViewOptions> {
+interface Props extends ReturnType<typeof useContextViewOptions> {
     history: H.History
 }
 
-export const SymbolsInternalsViewOptionToggle: React.FunctionComponent<Props> = ({
+export const ContextInternalsViewOptionToggle: React.FunctionComponent<Props> = ({
     viewOptions,
     toggleURLs,
     history,
 }) => (
-    <SymbolsViewOptionsToggle toggleURL={toggleURLs.internals} value={viewOptions.internals} history={history}>
+    <ContextViewOptionsToggle toggleURL={toggleURLs.internals} value={viewOptions.internals} history={history}>
         Internals
-    </SymbolsViewOptionsToggle>
+    </ContextViewOptionsToggle>
 )
 
-export const SymbolsExternalsViewOptionToggle: React.FunctionComponent<Props> = ({
+export const ContextExternalsViewOptionToggle: React.FunctionComponent<Props> = ({
     viewOptions,
     toggleURLs,
     history,
 }) => (
-    <SymbolsViewOptionsToggle toggleURL={toggleURLs.externals} value={viewOptions.externals} history={history}>
+    <ContextViewOptionsToggle toggleURL={toggleURLs.externals} value={viewOptions.externals} history={history}>
         External usage
-    </SymbolsViewOptionsToggle>
+    </ContextViewOptionsToggle>
 )
