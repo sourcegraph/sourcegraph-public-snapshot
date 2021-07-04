@@ -7,12 +7,18 @@ import { lazyComponent } from '../../util/lazyComponent'
 
 const GuideArea = lazyComponent(() => import('../guide/GuideArea'), 'GuideArea')
 
+const UsageArea = lazyComponent(() => import('../usage/UsageArea'), 'UsageArea')
+
 export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = repoContainerRoutes
 
 export const enterpriseRepoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...repoRevisionContainerRoutes,
     {
         path: '/-/guide',
-        render: context => <GuideArea {...context} />,
+        render: GuideArea,
+    },
+    {
+        path: '/-/usage',
+        render: UsageArea,
     },
 ]

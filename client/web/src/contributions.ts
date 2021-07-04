@@ -6,8 +6,8 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { registerExploreUsageActionContribution } from '@sourcegraph/web/src/enterprise/usage/exploreUsageAction'
 
-import { registerExploreUsageActionContribution } from './enterprise/guide/usage/exploreUsageAction'
 import { registerSearchStatsContributions } from './search/stats/contributions'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {

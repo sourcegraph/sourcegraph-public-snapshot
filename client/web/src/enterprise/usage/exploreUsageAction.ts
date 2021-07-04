@@ -6,7 +6,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ENTERPRISE_HOVER_ACTIONS_CONTEXT } from '@sourcegraph/shared/src/hover/actions'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { getExploreUsageURL } from '../getExploreUsageUrl'
+import { getExploreUsageURL } from '@sourcegraph/web/src/enterprise/guide/getExploreUsageUrl'
 
 ENTERPRISE_HOVER_ACTIONS_CONTEXT.push(parameters => {
     const { repoName, revision, commitID, filePath } = parseRepoURI(parameters.textDocument.uri)
