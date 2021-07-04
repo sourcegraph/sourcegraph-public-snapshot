@@ -29,6 +29,11 @@ func TestGroupBundleData(t *testing.T) {
 						Start: protocol.Pos{Line: 1, Character: 2},
 						End:   protocol.Pos{Line: 3, Character: 4},
 					},
+					Tag: &protocol.RangeTag{
+						Type:      "definition",
+						Text:      "foo",
+						FullRange: &protocol.RangeData{}, // TODO(sqs): empty
+					},
 				},
 				DefinitionResultID: 3001,
 				ReferenceResultID:  0,
@@ -267,8 +272,34 @@ func TestGroupBundleData(t *testing.T) {
 				},
 			},
 		},
+		SymbolData: map[int]semantic.SymbolData{
+			7001: {
+				RangeTag: protocol.RangeTag{Text: "foo", Kind: 4},
+				Location: semantic.LocationData{
+					URI:       "foo.go",
+					StartLine: 0, StartCharacter: 8, EndLine: 0, EndCharacter: 11,
+				},
+				// Locations: []protocol.SymbolLocation{
+				// 	{
+				// 		URI:       "foo.go",
+				// 		Range:     &protocol.RangeData{Start: protocol.Pos{Character: 8}, End: protocol.Pos{Character: 11}},
+				// 		FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 9}},
+				// 	},
+				// 	{
+				// 		URI:       "bar.go",
+				// 		Range:     &protocol.RangeData{Start: protocol.Pos{Character: 8}, End: protocol.Pos{Character: 11}},
+				// 		FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 11}},
+				// 	},
+				// },
+			},
+		},
 		ImportedMonikers: datastructures.IDSetWith(4001, 4006),
 		ExportedMonikers: datastructures.IDSetWith(4003, 4005),
+		DocumentSymbolResults: map[int][]protocol.RangeBasedDocumentSymbol{
+			1001: {
+				{ID: 2001},
+			},
+		},
 		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			1001: datastructures.IDSetWith(2001, 2002, 2003),
 			1002: datastructures.IDSetWith(2004, 2005, 2006),
@@ -277,10 +308,14 @@ func TestGroupBundleData(t *testing.T) {
 		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2001: datastructures.IDSetWith(4001, 4002),
 			2002: datastructures.IDSetWith(4003, 4004),
+			7001: datastructures.IDSetWith(4001),
 		}),
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			1001: datastructures.IDSetWith(1001, 1002),
 			1002: datastructures.IDSetWith(1003),
+		}),
+		DocumentSymbols: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
+			1001: datastructures.IDSetWith(1001),
 		}),
 	}
 
@@ -651,6 +686,78 @@ func TestGroupBundleData(t *testing.T) {
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
+
+	var symbols []semantic.SymbolData
+	for v := range actualBundleData.Symbols {
+		symbols = append(symbols, v)
+	}
+	sortSymbols(symbols)
+
+	expectedSymbols := []semantic.SymbolData{
+		{
+			ID:       2001,
+			RangeTag: protocol.RangeTag{Type: "definition", Text: "foo", FullRange: &protocol.RangeData{}},
+			Location: semantic.LocationData{
+				URI:       "foo.go",
+				StartLine: 1, StartCharacter: 2, EndLine: 3, EndCharacter: 4,
+			},
+			// Locations: []protocol.SymbolLocation{
+			// 	{
+			// 		URI: "foo.go",
+			// 		Range: &protocol.RangeData{
+			// 			Start: protocol.Pos{Line: 1, Character: 2},
+			// 			End:   protocol.Pos{Line: 3, Character: 4},
+			// 		},
+			// 	},
+			// },
+			Monikers: []semantic.MonikerData{
+				{Kind: "import", Scheme: "scheme A", Identifier: "ident A"},
+				{Kind: "import", Scheme: "scheme B", Identifier: "ident B"},
+			},
+		},
+		// TODO(sqs): This one isn't found bc we removed support for `member`:
+		//
+		// {
+		// 	ID:       7001,
+		// 	RangeTag: protocol.RangeTag{Type: "definition", Text: "foo"},
+		// 	Location: semantic.LocationData{
+		// 		URI:       "foo.go",
+		// 		StartLine: 0, StartCharacter: 8, EndLine: 0, EndCharacter: 11,
+		// 	},
+		// 	// Locations: []protocol.SymbolLocation{
+		// 	// 	{
+		// 	// 		URI: "foo.go",
+		// 	// 		Range: &protocol.RangeData{
+		// 	// 			Start: protocol.Pos{Line: 0, Character: 8},
+		// 	// 			End:   protocol.Pos{Line: 0, Character: 11},
+		// 	// 		},
+		// 	// 		FullRange: protocol.RangeData{
+		// 	// 			Start: protocol.Pos{Line: 0, Character: 0},
+		// 	// 			End:   protocol.Pos{Line: 3, Character: 9},
+		// 	// 		},
+		// 	// 	},
+		// 	// 	{
+		// 	// 		URI: "bar.go",
+		// 	// 		Range: &protocol.RangeData{
+		// 	// 			Start: protocol.Pos{Line: 0, Character: 8},
+		// 	// 			End:   protocol.Pos{Line: 0, Character: 11},
+		// 	// 		},
+		// 	// 		FullRange: protocol.RangeData{
+		// 	// 			Start: protocol.Pos{Line: 0, Character: 0},
+		// 	// 			End:   protocol.Pos{Line: 3, Character: 11},
+		// 	// 		},
+		// 	// 	},
+		// 	// },
+		// 	Monikers: []semantic.MonikerData{
+		// 		{Kind: "import", Scheme: "scheme A", Identifier: "ident A"},
+		// 	},
+		// 	Children: []uint64{2001},
+		// },
+	}
+
+	if diff := cmp.Diff(expectedSymbols, symbols); diff != "" {
+		t.Errorf("unexpected symbols (-want +got):\n%s", diff)
+	}
 }
 
 //
@@ -695,10 +802,17 @@ func sortMonikerLocations(monikerLocations []semantic.MonikerLocations) {
 
 func sortLocations(locations []semantic.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
+		// TODO(sqs): should not use strings.Compare, just use "<" - and same for all other sortXyzs
 		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
 			return cmp < 0
 		}
 
 		return locations[i].StartLine < locations[j].StartLine
+	})
+}
+
+func sortSymbols(symbols []semantic.SymbolData) {
+	sort.Slice(symbols, func(i, j int) bool {
+		return symbols[i].ID < symbols[j].ID
 	})
 }

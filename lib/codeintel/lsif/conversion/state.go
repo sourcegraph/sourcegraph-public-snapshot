@@ -3,6 +3,7 @@ package conversion
 import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 // State is an in-memory representation of an uploaded LSIF index.
@@ -36,6 +37,10 @@ type State struct {
 	DocumentationChildren           map[int][]int                  // maps documentationResult vertex -> ordered list of children documentationResult vertices
 	DocumentationStringLabel        map[int]int                    // maps documentationResult vertex -> label documentationString vertex
 	DocumentationStringDetail       map[int]int                    // maps documentationResult vertex -> detail documentationString vertex
+
+	SymbolData            map[int]semantic.SymbolData // TODO(sqs): use type w/o embedded Vertex
+	DocumentSymbolResults map[int][]protocol.RangeBasedDocumentSymbol
+	DocumentSymbols       *datastructures.DefaultIDSetMap // maps document symbols to their documents
 }
 
 // newState create a new State with zero-valued map fields.
@@ -68,5 +73,9 @@ func newState() *State {
 		DocumentationChildren:           map[int][]int{},
 		DocumentationStringLabel:        map[int]int{},
 		DocumentationStringDetail:       map[int]int{},
+
+		SymbolData:            map[int]semantic.SymbolData{},
+		DocumentSymbolResults: map[int][]protocol.RangeBasedDocumentSymbol{},
+		DocumentSymbols:       datastructures.NewDefaultIDSetMap(),
 	}
 }

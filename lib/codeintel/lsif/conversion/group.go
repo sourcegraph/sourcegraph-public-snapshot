@@ -38,6 +38,7 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 	if err != nil {
 		return nil, err
 	}
+	symbols := gatherSymbols(ctx, state)
 
 	return &semantic.GroupedBundleDataChans{
 		Meta:                  meta,
@@ -49,6 +50,7 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 		DocumentationPathInfo: documentationPathInfoRows,
 		Packages:              packages,
 		PackageReferences:     packageReferences,
+		Symbols:               symbols,
 	}, nil
 }
 
@@ -108,6 +110,7 @@ func serializeDocument(state *State, documentID int) semantic.DocumentData {
 				document.PackageInformation[toID(moniker.PackageInformationID)] = semantic.PackageInformationData{
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
+					Manager: packageInformation.Manager,
 				}
 			}
 		})
@@ -364,6 +367,7 @@ func gatherPackages(state *State) []semantic.Package {
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
+			Manager: packageInfo.Manager,
 		}
 	})
 
@@ -380,6 +384,7 @@ func gatherPackageReferences(state *State, packageDefinitions []semantic.Package
 		Scheme      string
 		Name        string
 		Version     string
+		Manager     string
 		Identifiers []string
 	}
 
@@ -406,6 +411,7 @@ func gatherPackageReferences(state *State, packageDefinitions []semantic.Package
 			Scheme:      source.Scheme,
 			Name:        packageInfo.Name,
 			Version:     packageInfo.Version,
+			Manager:     packageInfo.Manager,
 			Identifiers: append(uniques[key].Identifiers, source.Identifier),
 		}
 	})
@@ -422,6 +428,7 @@ func gatherPackageReferences(state *State, packageDefinitions []semantic.Package
 				Scheme:  v.Scheme,
 				Name:    v.Name,
 				Version: v.Version,
+				Manager: v.Manager,
 			},
 			Filter: filter,
 		})

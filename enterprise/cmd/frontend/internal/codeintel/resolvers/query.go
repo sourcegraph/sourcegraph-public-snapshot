@@ -36,6 +36,21 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText   string
 }
 
+// AdjustedSymbol describes a symbol. The location has been adjusted to fit the target (originally
+// requested) commit.
+type AdjustedSymbol struct {
+	semantic.SymbolData
+	AdjustedLocation AdjustedLocation
+	Children         []AdjustedSymbol
+}
+
+func (s AdjustedSymbol) Descendant(path []int) AdjustedSymbol {
+	for _, index := range path {
+		s = s.Children[index]
+	}
+	return s
+}
+
 // QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver consolidates the logic for bundle operations and is not itself concerned with GraphQL/API
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
@@ -48,6 +63,7 @@ type QueryResolver interface {
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 	DocumentationPage(ctx context.Context, pathID string) (*semantic.DocumentationPageData, error)
 	DocumentationPathInfo(ctx context.Context, pathID string) (*semantic.DocumentationPathInfoData, error)
+	Symbol(ctx context.Context, scheme, identifier string) (*AdjustedSymbol, []int, error)
 }
 
 type queryResolver struct {

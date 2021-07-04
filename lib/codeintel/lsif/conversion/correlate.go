@@ -168,6 +168,8 @@ var vertexHandlers = map[string]func(state *wrappedState, element Element) error
 	// Sourcegraph extensions
 	string(protocol.VertexSourcegraphDocumentationResult): correlateDocumentationResult,
 	string(protocol.VertexSourcegraphDocumentationString): correlateDocumentationString,
+
+	"documentSymbolResult": correlateDocumentSymbolResult,
 }
 
 // correlateElement maps a single vertex element into the correlation state.
@@ -201,6 +203,8 @@ var edgeHandlers = map[string]func(state *wrappedState, id int, edge Edge) error
 	// Sourcegraph extensions
 	string(protocol.EdgeSourcegraphDocumentationResult):   correlateDocumentationResultEdge,
 	string(protocol.EdgeSourcegraphDocumentationChildren): correlateDocumentationChildrenEdge,
+
+	"textDocument/documentSymbol": correlateTextDocumentDocumentSymbolEdge,
 }
 
 // correlateElement maps a single edge element into the correlation state.
@@ -347,6 +351,19 @@ func correlateContainsEdge(state *wrappedState, id int, edge Edge) error {
 	return nil
 }
 
+func correlateDocumentSymbolResult(state *wrappedState, element Element) error {
+	// TODO(sqs): support inline document symbols
+	payload, ok := element.Payload.([]protocol.RangeBasedDocumentSymbol)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
+	// TODO(sqs): validate that IDs and child IDs are all correct
+
+	state.DocumentSymbolResults[element.ID] = payload
+	return nil
+}
+
 func correlateNextEdge(state *wrappedState, id int, edge Edge) error {
 	if _, ok := state.ResultSetData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "resultSet")
@@ -456,6 +473,8 @@ func correlateMonikerEdge(state *wrappedState, id int, edge Edge) error {
 		state.Monikers.SetAdd(edge.OutV, edge.InV)
 	} else if _, ok := state.ResultSetData[edge.OutV]; ok {
 		state.Monikers.SetAdd(edge.OutV, edge.InV)
+	} else if _, ok := state.SymbolData[edge.OutV]; ok {
+		state.Monikers.SetAdd(edge.OutV, edge.InV)
 	} else {
 		return malformedDump(id, edge.OutV, "range", "resultSet")
 	}
@@ -507,5 +526,18 @@ func correlateDiagnosticEdge(state *wrappedState, id int, edge Edge) error {
 	}
 
 	state.Diagnostics.SetAdd(edge.OutV, edge.InV)
+	return nil
+}
+
+func correlateTextDocumentDocumentSymbolEdge(state *wrappedState, id int, edge Edge) error {
+	if _, ok := state.DocumentData[edge.OutV]; !ok {
+		return malformedDump(id, edge.OutV, "document")
+	}
+
+	if _, ok := state.DocumentSymbolResults[edge.InV]; !ok {
+		return malformedDump(id, edge.InV, "documentSymbolResult")
+	}
+
+	state.DocumentSymbols.SetAdd(edge.OutV, edge.InV)
 	return nil
 }

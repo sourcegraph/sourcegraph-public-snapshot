@@ -283,6 +283,31 @@ SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locatio
 FROM t_%s source
 `
 
+func (s *Store) WriteSymbols(ctx context.Context, bundleID int, symbols chan semantic.SymbolData) (err error) {
+	// TODO(sqs): use temporary table as in the others, and also tx...in general, use the pattern in WriteDocuments
+	ctx, endObservation := s.operations.writeSymbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	inserter := func(inserter *batch.Inserter) error {
+		for v := range symbols {
+			data, err := s.serializer.MarshalSymbolData(v)
+			if err != nil {
+				return err
+			}
+
+			if err := inserter.Insert(ctx, bundleID, data); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_symbols", []string{"dump_id", "data"}, inserter)
+}
+
 // withBatchInserter runs batch.WithInserter in a number of goroutines proportional to
 // the maximum number of CPUs that can be executing simultaneously.
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.Inserter) error) (err error) {

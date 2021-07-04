@@ -23,6 +23,9 @@ type operations struct {
 	references            *observation.Operation
 	documentationPage     *observation.Operation
 	documentationPathInfo *observation.Operation
+	packages              *observation.Operation
+	symbols               *observation.Operation
+	symbol                *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
@@ -61,6 +64,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		references:            op("References"),
 		documentationPage:     op("DocumentationPage"),
 		documentationPathInfo: op("DocumentationPathInfo"),
+		packages:              op("Packages"),
+		symbols:               op("Symbols"),
+		symbol:                op("Symbol"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}

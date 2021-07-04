@@ -44,6 +44,9 @@ func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
 		if unmarshaler, ok := vertexUnmarshalers[element.Label]; ok {
 			element.Payload, err = unmarshaler(line)
 		}
+		if unmarshaler, ok := vertexUnmarshalersWithInterner[element.Label]; ok {
+			element.Payload, err = unmarshaler(interner, line)
+		}
 	}
 
 	return element, err
@@ -124,15 +127,16 @@ func unmarshalEdgeFast(line []byte) (Edge, bool) {
 var edgeUnmarshalers = map[string]func(line []byte) (interface{}, error){}
 
 var vertexUnmarshalers = map[string]func(line []byte) (interface{}, error){
-	"metaData":             unmarshalMetaData,
-	"document":             unmarshalDocument,
-	"documentSymbolResult": unmarshalDocumentSymbolResult,
-	"range":                unmarshalRange,
-	"hoverResult":          unmarshalHover,
-	"moniker":              unmarshalMoniker,
-	"packageInformation":   unmarshalPackageInformation,
-	"diagnosticResult":     unmarshalDiagnosticResult,
+	"metaData":           unmarshalMetaData,
+	"document":           unmarshalDocument,
+	"range":              unmarshalRange,
+	"hoverResult":        unmarshalHover,
+	"moniker":            unmarshalMoniker,
+	"packageInformation": unmarshalPackageInformation,
+	"diagnosticResult":   unmarshalDiagnosticResult,
 }
+
+var vertexUnmarshalersWithInterner = map[string]func(interner *Interner, line []byte) (interface{}, error){}
 
 func unmarshalMetaData(line []byte) (interface{}, error) {
 	var payload struct {
@@ -147,16 +151,6 @@ func unmarshalMetaData(line []byte) (interface{}, error) {
 		Version:     payload.Version,
 		ProjectRoot: payload.ProjectRoot,
 	}, nil
-}
-
-func unmarshalDocumentSymbolResult(line []byte) (interface{}, error) {
-	var payload struct {
-		Result []*protocol.RangeBasedDocumentSymbol `json:"result"`
-	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
-		return nil, err
-	}
-	return payload.Result, nil
 }
 
 func unmarshalDocument(line []byte) (interface{}, error) {
@@ -332,6 +326,7 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 	var payload struct {
 		Name    string `json:"name"`
 		Version string `json:"version"`
+		Manager string `json:"manager"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
@@ -340,6 +335,7 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 	return PackageInformation{
 		Name:    payload.Name,
 		Version: payload.Version,
+		Manager: payload.Manager,
 	}, nil
 }
 

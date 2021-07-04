@@ -50,6 +50,9 @@ type PackageInformationData struct {
 
 	// Version of the package.
 	Version string
+
+	// Package manager in which the package is defined.
+	Manager string
 }
 
 // QualifiedMonikerData pairs a moniker with its package information.
@@ -180,12 +183,21 @@ type Package struct {
 	Scheme  string
 	Name    string
 	Version string
+	Manager string
 }
 
 // PackageReferences pairs a package name/version with a dump that depends on it.
 type PackageReference struct {
 	Package
 	Filter []byte // a bloom filter of identifiers imported by this dependent
+}
+
+type SymbolData struct {
+	ID uint64 // ID (unique within a bundle)
+	protocol.RangeTag
+	Location LocationData
+	Monikers []MonikerData // the monikers that refer to this symbol
+	Children []uint64      // ID of children
 }
 
 // GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
@@ -203,6 +215,7 @@ type GroupedBundleDataChans struct {
 	PackageReferences     []PackageReference
 	DocumentationPages    chan *DocumentationPageData
 	DocumentationPathInfo chan *DocumentationPathInfoData
+	Symbols               chan SymbolData
 }
 
 type GroupedBundleDataMaps struct {
@@ -213,4 +226,5 @@ type GroupedBundleDataMaps struct {
 	References        map[string]map[string][]LocationData
 	Packages          []Package
 	PackageReferences []PackageReference
+	Symbols           []SymbolData
 }

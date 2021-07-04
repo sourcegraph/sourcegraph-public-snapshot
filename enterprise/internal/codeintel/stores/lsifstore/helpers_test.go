@@ -11,6 +11,8 @@ import (
 
 const testBundleID = 39162
 
+const testDatabasePackageInformationID = "18" // changes when lsif-go@ad3507cb.sql is regenerated
+
 func populateTestStore(t testing.TB) *Store {
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {

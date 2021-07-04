@@ -10,6 +10,7 @@ type Package struct {
 	Scheme  string
 	Name    string
 	Version string
+	Manager string
 }
 
 // PackageReferences pairs a package name/version with a dump that depends on it.
@@ -51,4 +52,11 @@ type CodeIntelligenceRange struct {
 	Definitions []Location
 	References  []Location
 	HoverText   string
+}
+
+// SymbolNode TODO(sqs) move this
+type SymbolNode struct {
+	DumpID int
+	semantic.SymbolData
+	Children []SymbolNode
 }

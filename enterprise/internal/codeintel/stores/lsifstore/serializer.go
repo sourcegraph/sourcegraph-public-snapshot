@@ -16,6 +16,7 @@ func init() {
 	gob.Register(&semantic.DocumentData{})
 	gob.Register(&semantic.ResultChunkData{})
 	gob.Register(&semantic.LocationData{})
+	gob.Register(&semantic.SymbolData{})
 }
 
 type Serializer struct {
@@ -73,6 +74,11 @@ func (s *Serializer) MarshalResultChunkData(resultChunks semantic.ResultChunkDat
 // MarshalLocations transforms a slice of locations into a string of bytes writable to disk.
 func (s *Serializer) MarshalLocations(locations []semantic.LocationData) ([]byte, error) {
 	return s.encode(&locations)
+}
+
+// MarshalSymbolData transforms a symbol into a string of bytes writable to disk.
+func (s *Serializer) MarshalSymbolData(symbol semantic.SymbolData) ([]byte, error) {
+	return s.encode(&symbol)
 }
 
 // encode gob-encodes and compresses the given payload.
@@ -135,6 +141,12 @@ func (s *Serializer) UnmarshalResultChunkData(data []byte) (resultChunk semantic
 func (s *Serializer) UnmarshalLocations(data []byte) (locations []semantic.LocationData, err error) {
 	err = s.decode(data, &locations)
 	return locations, err
+}
+
+// UnmarshalSymbolData is the inverse of MarshalSymbolData.
+func (s *Serializer) UnmarshalSymbolData(data []byte) (symbol semantic.SymbolData, err error) {
+	err = s.decode(data, &symbol)
+	return symbol, err
 }
 
 // encode decompresses gob-decodes the given data and sets the given pointer. If the given data

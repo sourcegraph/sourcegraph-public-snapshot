@@ -32,7 +32,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 					Kind:                 "export",
 					Scheme:               "gomod",
 					Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
-					PackageInformationID: "251",
+					PackageInformationID: testDatabasePackageInformationID,
 				},
 			},
 		}

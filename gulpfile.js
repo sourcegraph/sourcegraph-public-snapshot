@@ -36,7 +36,14 @@ const build = gulp.series(generate, webWebpack)
 /**
  * Watches everything and rebuilds on file changes.
  */
-const dev = gulp.series(generate, gulp.parallel(watchGenerators, webWebpackDevServer))
+const dev = gulp.series(async () => {
+  try {
+    await generate(err => {
+      gulp.task
+      console.error('Error in initial generate step: ', err)
+    })
+  } catch (err) {}
+}, gulp.parallel(watchGenerators, webWebpackDevServer))
 
 module.exports = {
   generate,

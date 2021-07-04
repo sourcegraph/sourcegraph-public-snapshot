@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 func TestCorrelate(t *testing.T) {
@@ -65,6 +66,14 @@ func TestCorrelate(t *testing.T) {
 					RangeData: protocol.RangeData{
 						Start: protocol.Pos{Line: 4, Character: 5},
 						End:   protocol.Pos{Line: 6, Character: 7},
+					},
+					Tag: &protocol.RangeTag{
+						Type: "definition",
+						Text: "foo",
+						FullRange: &protocol.RangeData{
+							Start: protocol.Pos{Line: 1, Character: 2},
+							End:   protocol.Pos{Line: 3, Character: 4},
+						},
 					},
 				},
 				ReferenceResultID: 15,
@@ -160,6 +169,32 @@ func TestCorrelate(t *testing.T) {
 				},
 			},
 		},
+		SymbolData: map[int]semantic.SymbolData{
+			// 53: {
+			// 	RangeTag: protocol.RangeTag{Text: "foo", Kind: 4},
+			// 	Location: semantic.LocationData{
+			// 		URI:       "foo.go",
+			// 		StartLine: 0, StartCharacter: 8, EndLine: 0, EndCharacter: 11,
+			// 	},
+			// 	// Locations: []protocol.SymbolLocation{
+			// 	// 	{
+			// 	// 		URI:       "foo.go",
+			// 	// 		Range:     &protocol.RangeData{Start: protocol.Pos{Character: 8}, End: protocol.Pos{Character: 11}},
+			// 	// 		FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 9}},
+			// 	// 	},
+			// 	// 	{
+			// 	// 		URI:       "bar.go",
+			// 	// 		FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 11}},
+			// 	// 	},
+			// 	// },
+			// },
+		},
+		DocumentSymbolResults: map[int][]protocol.RangeBasedDocumentSymbol{
+			51: {
+				{ID: 7},
+				{ID: 8, Children: []protocol.RangeBasedDocumentSymbol{{ID: 9}}},
+			},
+		},
 		NextData: map[int]int{
 			9:  10,
 			10: 11,
@@ -177,6 +212,7 @@ func TestCorrelate(t *testing.T) {
 			9:  datastructures.IDSetWith(19),
 			10: datastructures.IDSetWith(20),
 			11: datastructures.IDSetWith(21),
+			// 53: datastructures.IDSetWith(19),
 		}),
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2: datastructures.IDSetWith(49),
@@ -186,10 +222,15 @@ func TestCorrelate(t *testing.T) {
 		DocumentationResultsData:        map[int]protocol.Documentation{},
 		DocumentationStringsData:        map[int]protocol.MarkupContent{},
 		DocumentationResultsByResultSet: map[int]int{},
+		ResultSetByDocumentationResults: map[int]int{},
 		DocumentationResultRoot:         -1,
 		DocumentationChildren:           map[int][]int{},
 		DocumentationStringLabel:        map[int]int{},
 		DocumentationStringDetail:       map[int]int{},
+
+		DocumentSymbols: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
+			2: datastructures.IDSetWith(51),
+		}),
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -221,7 +262,9 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]Moniker{},
 		PackageInformationData: map[int]PackageInformation{},
+		SymbolData:             map[int]semantic.SymbolData{},
 		DiagnosticResults:      map[int][]Diagnostic{},
+
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
@@ -235,10 +278,14 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		DocumentationResultsData:        map[int]protocol.Documentation{},
 		DocumentationStringsData:        map[int]protocol.MarkupContent{},
 		DocumentationResultsByResultSet: map[int]int{},
+		ResultSetByDocumentationResults: map[int]int{},
 		DocumentationResultRoot:         -1,
 		DocumentationChildren:           map[int][]int{},
 		DocumentationStringLabel:        map[int]int{},
 		DocumentationStringDetail:       map[int]int{},
+
+		DocumentSymbolResults: map[int][]protocol.RangeBasedDocumentSymbol{},
+		DocumentSymbols:       datastructures.NewDefaultIDSetMap(),
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -270,7 +317,9 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]Moniker{},
 		PackageInformationData: map[int]PackageInformation{},
+		SymbolData:             map[int]semantic.SymbolData{},
 		DiagnosticResults:      map[int][]Diagnostic{},
+		DocumentSymbolResults:  map[int][]protocol.RangeBasedDocumentSymbol{},
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
@@ -284,10 +333,13 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		DocumentationResultsData:        map[int]protocol.Documentation{},
 		DocumentationStringsData:        map[int]protocol.MarkupContent{},
 		DocumentationResultsByResultSet: map[int]int{},
+		ResultSetByDocumentationResults: map[int]int{},
 		DocumentationResultRoot:         -1,
 		DocumentationChildren:           map[int][]int{},
 		DocumentationStringLabel:        map[int]int{},
 		DocumentationStringDetail:       map[int]int{},
+
+		DocumentSymbols: datastructures.NewDefaultIDSetMap(),
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {

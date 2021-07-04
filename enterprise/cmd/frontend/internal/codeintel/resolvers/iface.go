@@ -54,6 +54,7 @@ type LSIFStore interface {
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (semantic.PackageInformationData, bool, error)
 	DocumentationPage(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPageData, error)
 	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPathInfoData, error)
+	Symbol(ctx context.Context, uploadID int, scheme, identifier string) (*semantic.SymbolData, []int, error)
 }
 
 type IndexEnqueuer interface {

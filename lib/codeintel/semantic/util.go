@@ -214,6 +214,18 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			}
 		}
 	}()
+	symbolsChan := make(chan SymbolData)
+	go func() {
+		defer close(symbolsChan)
+
+		for _, symbol := range maps.Symbols {
+			select {
+			case symbolsChan <- symbol:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	return &GroupedBundleDataChans{
 		Meta:              maps.Meta,
@@ -223,6 +235,7 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 		References:        monikerRefsChan,
 		Packages:          maps.Packages,
 		PackageReferences: maps.PackageReferences,
+		Symbols:           symbolsChan,
 	}
 }
 
@@ -250,6 +263,10 @@ func GroupedBundleDataChansToMaps(chans *GroupedBundleDataChans) *GroupedBundleD
 		}
 		monikerRefsMap[monikerRefs.Scheme][monikerRefs.Identifier] = monikerRefs.Locations
 	}
+	var symbols []SymbolData
+	for symbol := range chans.Symbols {
+		symbols = append(symbols, symbol)
+	}
 
 	return &GroupedBundleDataMaps{
 		Meta:              chans.Meta,
@@ -259,5 +276,6 @@ func GroupedBundleDataChansToMaps(chans *GroupedBundleDataChans) *GroupedBundleD
 		References:        monikerRefsMap,
 		Packages:          chans.Packages,
 		PackageReferences: chans.PackageReferences,
+		Symbols:           symbols,
 	}
 }

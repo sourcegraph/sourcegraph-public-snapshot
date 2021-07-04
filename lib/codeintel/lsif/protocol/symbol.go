@@ -2,15 +2,15 @@ package protocol
 
 type RangeBasedDocumentSymbol struct {
 	// ID is the range ID associated with this symbol.
-	ID       uint64                      `json:"id"`
-	Children []*RangeBasedDocumentSymbol `json:"children,omitempty"`
+	ID       uint64                     `json:"id"`
+	Children []RangeBasedDocumentSymbol `json:"children,omitempty"`
 }
 
 type DocumentSymbolResult struct {
 	Vertex
 
-	// Note: the LSIF spec also says Result can be an array of lsp.DocumentSymbol instances, but we
-	// don't yet support that here.
+	// TODO(sqs): The LSIF spec also says Result can be an array of lsp.DocumentSymbol instances,
+	// but we don't yet support that here.
 	Result []*RangeBasedDocumentSymbol `json:"result"`
 }
 
