@@ -7,6 +7,7 @@ import { registerHighlightContributions } from '@sourcegraph/shared/src/highligh
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
+import { registerExploreUsageActionContribution } from './enterprise/guide/usage/exploreUsageAction'
 import { registerSearchStatsContributions } from './search/stats/contributions'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -26,6 +27,9 @@ export class GlobalContributions extends React.Component<Props> {
             registerHoverContributions({ ...this.props, locationAssign: location.assign.bind(location) })
         )
         this.subscriptions.add(registerSearchStatsContributions(this.props))
+
+        // TODO(sqs): move to enterprise
+        this.subscriptions.add(registerExploreUsageActionContribution(this.props))
     }
 
     public componentWillUnmount(): void {

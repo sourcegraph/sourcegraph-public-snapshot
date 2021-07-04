@@ -25,7 +25,7 @@ func (r *queryResolver) MonikersAtPosition(ctx context.Context, line, character 
 	})
 	defer endObservation()
 
-	adjustedUploads, err := r.adjustUploadPaths(ctx)
+	adjustedUploads, err := r.adjustUploads(ctx, line, character)
 	if err != nil {
 		return nil, err
 	}

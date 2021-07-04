@@ -102,6 +102,10 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
     hoverPosition: TextDocumentPositionParameters & URLToFileContext
 }
 
+export const ENTERPRISE_HOVER_ACTIONS_CONTEXT: ((
+    parameters: TextDocumentPositionParameters & URLToFileContext
+) => Observable<Context<TextDocumentPositionParameters>>)[] = []
+
 /**
  * Returns an observable that emits the scoped context for the hover upon subscription and whenever it changes.
  *
@@ -157,9 +161,13 @@ export function getHoverActionsContext(
                 mapTo(true)
             )
         ),
+
+        combineLatest(ENTERPRISE_HOVER_ACTIONS_CONTEXT.map(getContext => getContext(parameters))).pipe(
+            map(contexts => contexts.reduce((merged, context) => ({ ...merged, ...context }), {}))
+        ),
     ]).pipe(
         map(
-            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => ({
+            ([definitionURLOrError, hasReferenceProvider, showFindReferences, extra]): HoverActionsContext => ({
                 'goToDefinition.showLoading': definitionURLOrError === LOADING,
                 'goToDefinition.url':
                     (definitionURLOrError !== LOADING &&
@@ -180,13 +188,10 @@ export function getHoverActionsContext(
                           )
                         : null,
 
-                'exploreUsage.url': `${toRepoURL({
-                    repoName: hoverContext.repoName,
-                    revision: hoverContext.revision,
-                })}/-/usage/`,
-
                 // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
                 hoverPosition: parameters,
+
+                ...extra,
             })
         ),
         distinctUntilChanged((a, b) => isEqual(a, b))
@@ -466,27 +471,7 @@ export function registerHoverContributions({
             })
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
-            const exploreUsageContributionPromise = extensionHostAPI.registerContributions({
-                actions: [
-                    {
-                        id: 'exploreUsage',
-                        title: 'Explore usage',
-                        command: 'open',
-                        // eslint-disable-next-line no-template-curly-in-string
-                        commandArguments: ['${exploreUsage.url}'],
-                    },
-                ],
-                menus: {
-                    hover: [{ action: 'exploreUsage', when: 'exploreUsage.url' }],
-                },
-            })
-            subscriptions.add(syncRemoteSubscription(exploreUsageContributionPromise))
-
-            return Promise.all([
-                definitionContributionsPromise,
-                referencesContributionPromise,
-                exploreUsageContributionPromise,
-            ])
+            return Promise.all([definitionContributionsPromise, referencesContributionPromise])
         })
         // Don't expose remote subscriptions, only sync subscriptions bag
         .then(() => undefined)
