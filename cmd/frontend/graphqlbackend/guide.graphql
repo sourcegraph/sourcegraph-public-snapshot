@@ -5,13 +5,6 @@ extend type Query {
         """
         repository: GuideRepositoryInput!
 
-        head: String!
-
-        """
-        If the current local repository state is not synced to Sourcegraph, TODO
-        """
-        commonPublicAncestorRevision: String
-
         selections: [GuideSelectionInput!]!
     ): GuideInfo!
 }
@@ -20,7 +13,20 @@ extend type Query {
 TODO(sqs) also allow inferring this from (credentials-stripped) clone URLs.
 """
 input GuideRepositoryInput {
-    name: String!
+    id: ID
+    name: String
+
+    """
+    TODO(sqs): rename revision->revisionSpecifier?
+    """
+    revision: String
+    commitID: String
+    dirty: Boolean
+
+    """
+    If the current local repository state is not synced to Sourcegraph, TODO
+    """
+    lastPublicAncestorCommitID: String
 }
 
 input GuideSelectionInput {
@@ -40,4 +46,15 @@ input GuideSelectionInput {
 
 type GuideInfo {
     hello: String!
+    url: String!
+
+    hover: Hover
+    editCommits: GitCommitConnection
+
+    monikers: [Moniker!]!
+
+    """
+    The locations where this symbol is referenced.
+    """
+    references: LocationConnection!
 }

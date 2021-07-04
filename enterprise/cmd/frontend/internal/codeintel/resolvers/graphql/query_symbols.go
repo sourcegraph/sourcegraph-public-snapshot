@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -34,8 +33,6 @@ func (r *QueryResolver) Symbol(ctx context.Context, args *gql.LSIFSymbolArgs) (g
 	if rootSymbol == nil || err != nil {
 		return nil, err
 	}
-
-	log.Printf("rootSymbol=%v", rootSymbol)
 
 	var symbol resolvers.AdjustedSymbol
 	if len(treePath) == 0 || true /* TODO(sqs): always returns rootSymbol for now */ {

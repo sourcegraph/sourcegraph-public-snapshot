@@ -92,7 +92,7 @@ func (r *QueryResolver) Hover(ctx context.Context, args *gql.LSIFQueryPositionAr
 		return nil, err
 	}
 
-	return NewHoverResolver(text, convertRange(rx)), nil
+	return NewHoverResolver(text, ConvertRange(rx)), nil
 }
 
 func (r *QueryResolver) Diagnostics(ctx context.Context, args *gql.LSIFDiagnosticsArgs) (gql.DiagnosticConnectionResolver, error) {

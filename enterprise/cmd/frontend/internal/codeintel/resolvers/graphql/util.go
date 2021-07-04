@@ -62,8 +62,8 @@ func derefBool(val *bool, defaultValue bool) bool {
 	return defaultValue
 }
 
-// convertRange creates an LSP range from a bundle range.
-func convertRange(r lsifstore.Range) lsp.Range {
+// ConvertRange creates an LSP range from a bundle range.
+func ConvertRange(r lsifstore.Range) lsp.Range {
 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
 }
 

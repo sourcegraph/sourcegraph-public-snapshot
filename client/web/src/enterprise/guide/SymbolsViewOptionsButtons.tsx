@@ -4,7 +4,7 @@ import React, { useCallback } from 'react'
 import { Toggle } from '../../../../branded/src/components/Toggle'
 import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 
-import { useContextViewOptions } from './useContextViewOptions'
+import { useContextViewOptions } from './useGuideViewOptions'
 
 interface ButtonProps {
     toggleURL: H.LocationDescriptorObject

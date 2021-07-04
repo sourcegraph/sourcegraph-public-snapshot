@@ -32,6 +32,8 @@ type Resolver struct {
 	locationResolver *CachedLocationResolver
 }
 
+func (r *Resolver) InnerResolver() resolvers.Resolver { return r.resolver }
+
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
 func NewResolver(db dbutil.DB, resolver resolvers.Resolver) gql.CodeIntelResolver {
 	return &Resolver{

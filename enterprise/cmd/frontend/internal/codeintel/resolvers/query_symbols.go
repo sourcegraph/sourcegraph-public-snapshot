@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,7 +27,8 @@ func (r *queryResolver) Symbol(ctx context.Context, scheme, identifier string) (
 	defer endObservation()
 
 	if r.path != "" {
-		return nil, nil, errors.New("unable to get symbol for non-root")
+		// return nil, nil, errors.New("unable to get symbol for non-root")
+		r.path = "" // TODO(sqs): hacky
 	}
 
 	adjustedUploads, err := r.adjustUploadPaths(ctx)

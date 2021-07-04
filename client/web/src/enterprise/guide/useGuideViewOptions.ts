@@ -1,25 +1,25 @@
 import H from 'history'
 import { useMemo } from 'react'
 
-import * as GQL from '../../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
-export interface ContextViewOptionsProps {
-    viewOptions: ContextViewOptions
+export interface GuideViewOptionsProps {
+    viewOptions: GuideViewOptions
 }
 
-export interface ContextViewOptions {
+export interface GuideViewOptions {
     internals: GQL.ISymbolFilters['internals']
     externals: boolean
 }
 
-const DEFAULT_OPTIONS: ContextViewOptions = {
+const DEFAULT_OPTIONS: GuideViewOptions = {
     externals: true,
     internals: false,
 }
 
-const KEYS: (keyof ContextViewOptions)[] = ['externals', 'internals']
+const KEYS: (keyof GuideViewOptions)[] = ['externals', 'internals']
 
-interface ToggleURLs extends Record<keyof ContextViewOptions, H.LocationDescriptorObject> {}
+interface ToggleURLs extends Record<keyof GuideViewOptions, H.LocationDescriptorObject> {}
 
 interface Props {
     location: H.Location
@@ -27,7 +27,7 @@ interface Props {
 
 const locationWithViewOptions = (
     base: H.LocationDescriptorObject,
-    viewOptions: ContextViewOptions
+    viewOptions: GuideViewOptions
 ): H.LocationDescriptorObject => {
     const parameters = new URLSearchParams(base.search)
 
@@ -45,14 +45,12 @@ const locationWithViewOptions = (
 const parseSearchParameterValue = (value: string | null, defaultValue: boolean): boolean =>
     value === null ? defaultValue : value === '1'
 
-export const useContextViewOptions = ({
-    location,
-}: Props): { viewOptions: ContextViewOptions; toggleURLs: ToggleURLs } => {
-    const viewOptions = useMemo<ContextViewOptions>(() => {
+export const useGuideViewOptions = ({ location }: Props): { viewOptions: GuideViewOptions; toggleURLs: ToggleURLs } => {
+    const viewOptions = useMemo<GuideViewOptions>(() => {
         const parameters = new URLSearchParams(location.search)
         return (Object.fromEntries(
             KEYS.map(key => [key, parseSearchParameterValue(parameters.get(key), DEFAULT_OPTIONS[key])])
-        ) as unknown) as ContextViewOptions
+        ) as unknown) as GuideViewOptions
     }, [location.search])
 
     const toggleURLs = useMemo<ToggleURLs>(

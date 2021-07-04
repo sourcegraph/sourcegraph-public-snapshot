@@ -268,6 +268,6 @@ func resolveLocation(ctx context.Context, locationResolver *CachedLocationResolv
 		return nil, err
 	}
 
-	lspRange := convertRange(location.AdjustedRange)
+	lspRange := ConvertRange(location.AdjustedRange)
 	return gql.NewLocationResolver(treeResolver, &lspRange), nil
 }

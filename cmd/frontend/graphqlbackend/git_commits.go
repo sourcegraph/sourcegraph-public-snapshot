@@ -28,6 +28,8 @@ type gitCommitConnectionResolver struct {
 	err     error
 }
 
+type GitCommitConnectionResolver = gitCommitConnectionResolver
+
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commit, error) {
 	do := func() ([]*git.Commit, error) {
 		var n int32

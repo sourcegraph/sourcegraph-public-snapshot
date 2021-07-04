@@ -1,6 +1,10 @@
 package graphqlbackend
 
-import "context"
+import (
+	"context"
+
+	"github.com/graph-gophers/graphql-go"
+)
 
 // This file just contains stub GraphQL resolvers and data types for Guide which return an error if
 // not running in enterprise mode. The actual resolvers are in enterprise/internal/guide/resolvers.
@@ -10,14 +14,18 @@ type GuideRootResolver interface {
 }
 
 type GuideInfoParams struct {
-	Repository                   GuideRepositoryInput
-	Head                         string
-	CommonPublicAncestorRevision *string
-	Selections                   []GuideSelectionInput
+	Repository GuideRepositoryInput
+	Selections []GuideSelectionInput
 }
 
 type GuideRepositoryInput struct {
-	Name string
+	ID   *graphql.ID
+	Name *string
+
+	Revision                   *string
+	CommitID                   *string
+	Dirty                      *bool
+	LastPublicAncestorCommitID *string
 }
 
 type GuideSelectionInput struct {
@@ -29,4 +37,11 @@ type GuideSelectionInput struct {
 	SymbolMonikers *[]MonikerInput
 }
 
-type GuideInfoResolver interface{ Hello() string }
+type GuideInfoResolver interface {
+	Hello() string
+	URL() string
+	Monikers(context.Context) ([]MonikerResolver, error)
+	Hover(context.Context) (HoverResolver, error)
+	References(context.Context) (LocationConnectionResolver, error)
+	EditCommits(context.Context) (*GitCommitConnectionResolver, error)
+}

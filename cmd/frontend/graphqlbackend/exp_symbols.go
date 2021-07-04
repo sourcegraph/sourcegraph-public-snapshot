@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 )
 
@@ -194,4 +196,16 @@ func (r *ExpSymbol) EditCommits(ctx context.Context) (*gitCommitConnectionResolv
 		// TODO(sqs): assumes all locations are from same repo, probably safe?
 		repo: locations[0].Resource().commit.repoResolver,
 	}, nil
+}
+
+func NewGitCommitConnectionResolver(revisionRange string, lineRanges []string, repo api.RepoID) *gitCommitConnectionResolver {
+	// TODO(sqs): hacky
+	first := int32(5)
+	return &gitCommitConnectionResolver{
+		db:            dbconn.Global,
+		revisionRange: revisionRange,
+		lineRanges:    lineRanges,
+		first:         &first,
+		repo:          NewRepositoryResolver(dbconn.Global, &types.Repo{ID: repo, Name: "github.com/hashicorp/go-multierror"}),
+	}
 }
