@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"sort"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -38,7 +39,7 @@ func (r *symbolUsageResolver) Callers(ctx context.Context) ([]gql.SymbolCallerEd
 	}
 
 	// TODO(sqs): dedupe by user (eg one user might have many emails)
-	edges := make([]gql.SymbolCallerEdgeResolver, 0, len(callers))
+	edges := make([]*symbolCallerEdgeResolver, 0, len(callers))
 	for _, callerInfo := range callers {
 		edges = append(edges, &symbolCallerEdgeResolver{
 			person:           gql.NewPersonResolver(dbconn.Global, callerInfo.sig.Name, callerInfo.sig.Email, true),
@@ -48,7 +49,18 @@ func (r *symbolUsageResolver) Callers(ctx context.Context) ([]gql.SymbolCallerEd
 
 	}
 
-	return edges, nil
+	// Sort by #locations.
+	sort.Slice(edges, func(i, j int) bool {
+		return len(edges[i].locations) > len(edges[j].locations)
+	})
+
+	// Convert to slice of interface type.
+	edgeIfaces := make([]gql.SymbolCallerEdgeResolver, len(edges))
+	for i, edge := range edges {
+		edgeIfaces[i] = edge
+	}
+
+	return edgeIfaces, nil
 }
 
 func (r *symbolUsageResolver) getCallerHunkAuthors(ctx context.Context, loc resolvers.AdjustedLocation) ([]git.Signature, error) {

@@ -19,6 +19,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../../repo/RepoHeader'
 import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { SymbolCallerEdgeGQLFragment, SymbolCallersSection } from './symbol/SymbolCallers'
 import { SymbolReferenceGroupsSection, SymbolReferenceGroupGQLFragment } from './symbol/SymbolReferenceGroupsSection'
 
 const UsagePageFieldsGQLFragment = gql`
@@ -30,9 +31,13 @@ const UsagePageFieldsGQLFragment = gql`
             referenceGroups {
                 ...SymbolReferenceGroup
             }
+            callers {
+                ...SymbolCallerEdgeFields
+            }
         }
     }
     ${SymbolReferenceGroupGQLFragment}
+    ${SymbolCallerEdgeGQLFragment}
 `
 const queryUsagePageUncached = (vars: UsagePageVariables): Observable<UsagePageFields | null> =>
     requestGraphQL<UsagePageResult, UsagePageVariables>(
@@ -131,6 +136,11 @@ export const UsagePage: React.FunctionComponent<Props> = ({
         <LoadingSpinner className="m-3" />
     ) : (
         <>
+            {symbol.usage.callers.length > 0 && (
+                <section>
+                    <SymbolCallersSection symbolCallers={symbol.usage.callers} {...props} />
+                </section>
+            )}
             {symbol.usage.referenceGroups.length > 0 && (
                 <section>
                     <SymbolReferenceGroupsSection referenceGroups={symbol.usage.referenceGroups} {...props} />
