@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
@@ -27,9 +28,11 @@ func TestTransformRecord(t *testing.T) {
 		Outfile:     "",
 	}
 	config := &Config{
-		FrontendURL:      "https://test.io",
-		FrontendUsername: "test*",
-		FrontendPassword: "hunter2",
+		Shared: &config.SharedConfig{
+			FrontendURL:      "https://test.io",
+			FrontendUsername: "test*",
+			FrontendPassword: "hunter2",
+		},
 	}
 
 	job, err := transformRecord(index, config)
@@ -104,9 +107,11 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		Outfile:     "other/path/lsif.dump",
 	}
 	config := &Config{
-		FrontendURL:      "https://test.io",
-		FrontendUsername: "test*",
-		FrontendPassword: "hunter2",
+		Shared: &config.SharedConfig{
+			FrontendURL:      "https://test.io",
+			FrontendUsername: "test*",
+			FrontendPassword: "hunter2",
+		},
 	}
 
 	job, err := transformRecord(index, config)

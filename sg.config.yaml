@@ -513,6 +513,7 @@ commandsets:
     - zoekt-indexserver-1
     - zoekt-webserver-0
     - zoekt-webserver-1
+    - executor-queue
 
   enterprise-codeintel:
     - enterprise-frontend
