@@ -179,6 +179,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "batchChangesExecution": {
+          "description": "Enables/disables the Batch Changes server side execution feature.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
