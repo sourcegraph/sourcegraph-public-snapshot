@@ -1,0 +1,19 @@
+.usage-page {
+}
+
+.usage-page-body {
+    > :global(#root) > :global(.layout) {
+        > nav {
+            display: none;
+        }
+        > :global(div.w-100.px-3.pt-2) {
+            display: none;
+        }
+        :global(.repo-header) {
+            display: none;
+        }
+        :global(.repo-revision-container) {
+            padding-left: 0 !important;
+        }
+    }
+}

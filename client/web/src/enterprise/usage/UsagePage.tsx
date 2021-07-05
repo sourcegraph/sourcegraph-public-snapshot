@@ -9,29 +9,27 @@ import { FileLocations } from '@sourcegraph/branded/src/components/panel/views/F
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { UsageInfoVariables, UsagePageFields, UsageInfoResult } from '../../graphql-operations'
+import { UsagePageVariables, UsagePageFields, UsagePageResult } from '../../graphql-operations'
 import { fetchHighlightedFileLineRanges } from '../../repo/backend'
-import { GitCommitNode } from '../../repo/commits/GitCommitNode'
-import { gitCommitFragment } from '../../repo/commits/RepositoryCommitsPage'
 import { RepoHeaderContributionsLifecycleProps } from '../../repo/RepoHeader'
 import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
 import { eventLogger } from '../../tracking/eventLogger'
 
-/// import { UsageHoverFieldsGQLFragment, UsageHover } from './UsageHover'
-// import { UsageViewOptionsProps, useUsageViewOptions } from './useUsageViewOptions'
+import styles from './UsagePage.module.scss'
 
 const UsagePageFieldsGQLFragment = gql`
-    fragment UsagePageFields on UsageInfo {
-        hello
+    fragment UsagePageFields on ExpSymbol {
+        text
         url
-        ...UsageHoverFields
 
         references {
             nodes {
@@ -56,22 +54,22 @@ const UsagePageFieldsGQLFragment = gql`
                 }
             }
         }
-
-        editCommits {
-            nodes {
-                ...GitCommitFields
-            }
-        }
     }
-    ${UsageHoverFieldsGQLFragment}
-    ${gitCommitFragment}
 `
-const queryUsageInfoUncached = (vars: UsageInfoVariables): Observable<UsagePageFields> =>
-    requestGraphQL<UsageInfoResult, UsageInfoVariables>(
+const queryUsagePageUncached = (vars: UsagePageVariables): Observable<UsagePageFields | null> =>
+    requestGraphQL<UsagePageResult, UsagePageVariables>(
         gql`
-            query UsageInfo($repository: UsageRepositoryInput!, $selections: [UsageSelectionInput!]!) {
-                guideInfo(repository: $repository, selections: $selections) {
-                    ...UsagePageFields
+            query UsagePage($repo: ID!, $commitID: String!, $inputRevspec: String!, $moniker: MonikerInput!) {
+                node(id: $repo) {
+                    ... on Repository {
+                        commit(rev: $commitID, inputRevspec: $inputRevspec) {
+                            tree(path: "/") {
+                                expSymbol(moniker: $moniker) {
+                                    ...UsagePageFields
+                                }
+                            }
+                        }
+                    }
                 }
             }
             ${UsagePageFieldsGQLFragment}
@@ -79,23 +77,24 @@ const queryUsageInfoUncached = (vars: UsageInfoVariables): Observable<UsagePageF
         vars
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.guideInfo)
+        map(data => data.node?.commit?.tree?.expSymbol || null)
     )
 
-const queryUsageInfo = memoizeObservable(queryUsageInfoUncached, parameters => JSON.stringify(parameters))
+const queryUsagePage = memoizeObservable(queryUsagePageUncached, parameters => JSON.stringify(parameters))
 
-export interface SymbolRouteProps {
+export interface UsageRouteProps {
     scheme: string
     identifier: string
 }
 
 interface Props
     extends Pick<RepoRevisionContainerContext, 'repo' | 'resolvedRev' | 'revision'>,
-        RouteComponentProps<SymbolRouteProps>,
+        RouteComponentProps<UsageRouteProps>,
         RepoHeaderContributionsLifecycleProps,
         BreadcrumbSetters,
         SettingsCascadeProps,
-        UsageViewOptionsProps {}
+        ThemeProps,
+        VersionContextProps {}
 
 export const UsagePage: React.FunctionComponent<Props> = ({
     repo,
@@ -106,63 +105,56 @@ export const UsagePage: React.FunctionComponent<Props> = ({
     },
     useBreadcrumb,
     history,
-    location,
-    settingsCascade,
     ...props
 }) => {
     useEffect(() => {
-        document.body.classList.add('usage-page')
-        return () => document.body.classList.remove('usage-page')
+        document.body.classList.add(styles.usagePageBody)
+        return () => document.body.classList.remove(styles.usagePageBody)
     })
 
     useEffect(() => {
         eventLogger.logViewEvent('Usage')
     }, [])
 
-    const guideInfo = useObservable(
+    const usageInfo = useObservable(
         useMemo(
             () =>
-                queryUsageInfo({
-                    repository: {
-                        id: repo.id,
-                        revision,
-                        commitID: resolvedRev.commitID,
-                    },
-                    selections: [
-                        {
-                            symbolMonikers: [{ scheme, identifier }],
-                        },
-                    ],
+                queryUsagePage({
+                    repo: repo.id,
+                    commitID: resolvedRev.commitID,
+                    inputRevspec: revision,
+                    moniker: { scheme, identifier },
                 }),
-            [identifier, repo.id, resolvedRev.commitID, revision, scheme]
+            []
         )
     )
 
     useBreadcrumb(
         useMemo(
             () =>
-                guideInfo === null
+                usageInfo === null
                     ? null
                     : {
-                          key: 'symbol/current',
-                          element: guideInfo ? (
-                              <Link to={guideInfo.url}>{guideInfo.hello}</Link>
+                          key: 'usage',
+                          element: usageInfo ? (
+                              <>
+                                  Usage: <Link to={usageInfo.url}>{usageInfo.text}</Link>
+                              </>
                           ) : (
                               <LoadingSpinner className="icon-inline" />
                           ),
                       },
-            [guideInfo]
+            [usageInfo]
         )
     )
 
-    return guideInfo === null ? (
+    return usageInfo === null ? (
         <p className="p-3 text-muted h3">Not found</p>
-    ) : guideInfo === undefined ? (
+    ) : usageInfo === undefined ? (
         <LoadingSpinner className="m-3" />
     ) : (
         <>
-            <UsageHover {...props} guideInfo={guideInfo} className="mx-3 mt-3" />
-            {guideInfo.references.nodes.length > 1 && (
+            {usageInfo.references.nodes.length > 1 && (
                 <section id="refs" className="mt-2">
                     <h2 className="mt-0 mx-3 mb-0 h4">Examples</h2>
                     <style>
@@ -171,9 +163,8 @@ export const UsagePage: React.FunctionComponent<Props> = ({
                         }
                     </style>
                     <FileLocations
-                        location={location}
                         locations={of(
-                            guideInfo.references.nodes
+                            usageInfo.references.nodes
                                 .slice(0, -1)
                                 .slice(0, 3)
                                 .map<Location>(reference => ({
@@ -186,27 +177,12 @@ export const UsagePage: React.FunctionComponent<Props> = ({
                                 }))
                         )}
                         icon={SourceRepositoryIcon}
-                        isLightTheme={false /* TODO(sqs) */}
                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                        settingsCascade={settingsCascade}
-                        versionContext={undefined /* TODO(sqs) */}
+                        parentContainerIsEmpty={true}
+                        {...props}
                     />
                 </section>
             )}
-            {guideInfo.editCommits && guideInfo.editCommits.nodes.length > 0 && (
-                <section id="refs" className="my-4">
-                    <h2 className="mt-0 mx-3 mb-0 h4">Changes</h2>
-                    {guideInfo.editCommits.nodes.map(commit => (
-                        <GitCommitNode key={commit.oid} node={commit} className="px-3" compact={true} />
-                    ))}
-                </section>
-            )}
-            {/* {symbol.children.nodes.length > 0 && (
-                <ContainerSymbolsList
-                    symbols={symbol.children.nodes.sort((a, b) => (a.kind < b.kind ? -1 : 1))}
-                    history={history}
-                />
-            )} */}
         </>
     )
 }

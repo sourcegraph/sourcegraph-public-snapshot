@@ -106,18 +106,28 @@ const sassPlugin = {
             await fs.promises.writeFile(tmpFilePath, result.css)
             return tmpFilePath
         }
+        /** @type Map<string, {path: string, originalContent: string, outPath: string}> */
         const cssRenderCache = new Map()
         const cachedCSSRender = async (sourceFullPath, fileContent) => {
             // TODO(sqs): invalidate
             const key = sourceFullPath
             const existing = cssRenderCache.get(key)
-            if (existing || false /* TODO(sqs): not actually caching */) {
-                return existing
+            if (false)
+                console.log(
+                    'CACHE',
+                    existing ? (existing.originalContent === fileContent ? 'HIT' : 'STALE') : 'MISS',
+                    sourceFullPath
+                )
+            if (existing && existing.originalContent === fileContent) {
+                if (sourceFullPath.includes('UsagePage')) {
+                    if (false) console.log('CACHE HIT', sourceFullPath, fileContent)
+                }
+                return existing.outPath
             }
 
-            const value = await cssRender(sourceFullPath, fileContent)
-            cssRenderCache.set(key, value)
-            return value
+            const outPath = await cssRender(sourceFullPath, fileContent)
+            cssRenderCache.set(key, { path: sourceFullPath, originalContent: fileContent, outPath: outPath })
+            return outPath
         }
 
         build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
@@ -215,6 +225,6 @@ if (process.env.SERVE) {
         BUILD_OPTIONS
     )
 } else {
-    await esbuild.build({ ...BUILD_OPTIONS, watch: true })
+    await esbuild.build({ ...BUILD_OPTIONS, watch: !!process.env.WATCH })
 }
 // cleanup()

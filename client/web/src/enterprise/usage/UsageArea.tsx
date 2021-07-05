@@ -2,21 +2,25 @@ import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link } from 'react-router-dom'
 
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepoHeaderContributionsLifecycleProps } from '../../repo/RepoHeader'
 import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
 
 import { UsageHelpPage } from './UsageHelpPage'
-import { UsagePage } from './UsagePage'
+import { UsagePage, UsageRouteProps } from './UsagePage'
 
 interface Props
     extends Pick<RepoRevisionContainerContext, 'repo' | 'revision' | 'resolvedRev'>,
         RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
-        BreadcrumbSetters {}
+        BreadcrumbSetters,
+        ThemeProps,
+        VersionContextProps {}
 
 export const UsageArea: React.FunctionComponent<Props> = ({
     match,

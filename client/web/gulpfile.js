@@ -24,18 +24,16 @@ const {
 // TODO(sqs): differentiate enterprise build
 const isEnterpriseBuild = !!process.env.ENTERPRISE
 
-const webapp = gulp.parallel(
-  () =>
-    spawn(path.join(__dirname, '..', '..', 'esbuild-js.sh'), [], {
-      stdio: 'inherit',
-    }),
-  () =>
-    spawn(path.join(__dirname, '..', '..', 'esbuild-css.sh'), [], {
-      stdio: 'inherit',
-    })
-)
+const webapp = () =>
+  spawn('node', [path.join(__dirname, '..', '..', 'esbuild-js.mjs')], {
+    stdio: 'inherit',
+  })
 
-const watchWebapp = () => gulp.watch('src/**', { delay: 0, cwd: __dirname }, webapp)
+const watchWebapp = () =>
+  spawn('node', [path.join(__dirname, '..', '..', 'esbuild-js.mjs')], {
+    stdio: 'inherit',
+    env: { ...process.env, SERVE: 1 },
+  })
 
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
 const codeGen = gulp.parallel(schema, graphQlOperations, graphQlSchema)
@@ -58,7 +56,7 @@ const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, watchWebapp
  */
 const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  codeGen,
+  /// //////// TODO(sqs): for speed; -------      codeGen,
   developmentWithoutInitialCodeGen
 )
 

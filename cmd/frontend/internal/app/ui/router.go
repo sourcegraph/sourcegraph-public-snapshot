@@ -45,6 +45,7 @@ const (
 	routeRepoCompare    = "repo-compare"
 	routeRepoStats      = "repo-stats"
 	routeRepoGuide      = "repo-guide"
+	routeRepoUsage      = "repo-usage"
 	routeInsights       = "insights"
 	routeBatchChanges   = "batch-changes"
 	routeCodeMonitoring = "code-monitoring"
@@ -200,6 +201,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
 	repo.PathPrefix("/guide").Methods("GET").Name(routeRepoGuide)
+	repo.PathPrefix("/usage").Methods("GET").Name(routeRepoUsage)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -251,6 +253,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare", nil)))
 	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats", nil)))
 	router.Get(routeRepoGuide).Handler(handler(serveBrandedPageString("Guide", nil)))
+	router.Get(routeRepoUsage).Handler(handler(serveBrandedPageString("Usage", nil)))
 	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey", nil)))
 	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey", nil)))
 	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry", nil)))
