@@ -15,7 +15,7 @@ const examplePlugin = {
     setup: build => {
         build.onResolve({ filter: /./, namespace: 'file' }, args => {
             if (args.path.endsWith('.css')) {
-                console.log('onResolve', args)
+                //console.log('onResolve', args)
             }
         })
     },
@@ -28,7 +28,20 @@ const sassPlugin = {
         build.onResolve({ filter: /\.scss$/ }, args => ({
             path: path.resolve(args.resolveDir, args.path),
             namespace: 'sass',
+            pluginData: args,
         }))
+        build.onResolve({ filter: /\.css$/ }, args => {
+            if (args.path.startsWith('wildcard/')) {
+                return { path: path.resolve(`client/${args.path}`) }
+            }
+            if (
+                args.path.startsWith('@reach') ||
+                args.path.startsWith('graphiql') ||
+                args.path.startsWith('@sourcegraph')
+            ) {
+                return { path: path.resolve(`node_modules/${args.path}`) }
+            }
+        })
         build.onLoad({ filter: /./, namespace: 'sass' }, async args => {
             const { css: rawCSS } = sass.renderSync({
                 file: args.path,
@@ -59,17 +72,31 @@ const sassPlugin = {
                 ],
             }).process(rawCSS, { from: args.path })
 
-            if (cssModulesJSON) {
+            /*             if (cssModulesJSON) {
                 const basename = path.basename(args.path, '.scss')
                 const cssModulePath = path.resolve(build.initialOptions.outdir, basename + '.json')
                 console.log('WRITE', cssModulePath)
                 fs.writeFileSync(cssModulePath, JSON.stringify(cssModulesJSON))
             }
+ */
 
-            return {
-                contents: css,
-                loader: 'css',
-                resolveDir: path.dirname(args.path),
+            const resolveDir = path.dirname(args.path)
+            /** @type esbuild.OnResolveArgs */
+            const resolveArgs = args.pluginData
+            if (resolveArgs.kind === 'import-statement') {
+                console.log('AAAAAAAAAA', resolveArgs)
+                return {
+                    contents: `import "data:text/css,${encodeURI(css)}"
+export default ${JSON.stringify(cssModulesJSON)}`,
+                    loader: 'js',
+                    resolveDir,
+                }
+            } else {
+                return {
+                    contents: css,
+                    loader: 'css',
+                    resolveDir,
+                }
             }
         })
     },
@@ -98,7 +125,7 @@ esbuild
                 // resolveMap: { wildcard: '/home/sqs/src/github.com/sourcegraph/sourcegraph/client/wildcard' },
             }), */
             sassPlugin,
-            examplePlugin,
+            // examplePlugin,
 
             /* cssModulesPlugin({
                 inject: false,
@@ -113,7 +140,7 @@ esbuild
         splitting: true,
         loader: {
             '.yaml': 'text',
-            // '.scss': 'text',
+            '.css': 'text',
             '.ttf': 'dataurl',
             '.png': 'dataurl',
         },
