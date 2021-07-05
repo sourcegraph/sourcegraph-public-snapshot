@@ -10,7 +10,7 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--allow-insecure-localhost", "/home/sqs/src/github.com/sourcegraph/sourcegraph.tmp"],
 			"outFiles": ["${workspaceFolder}/out/**/*.js"],
 			"preLaunchTask": "npm: watch"
 		}

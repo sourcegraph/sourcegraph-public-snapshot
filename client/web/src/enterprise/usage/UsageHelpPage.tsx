@@ -8,9 +8,8 @@ export const UsageHelpPage: React.FunctionComponent = () => {
     }, [])
 
     return (
-        <div>
-            <h1>Usage</h1>
-            <p>Welcome!</p>
+        <div className="m-3">
+            <p className="text-muted">No usage examples</p>
         </div>
     )
 }

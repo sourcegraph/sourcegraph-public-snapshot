@@ -120,7 +120,7 @@ export const UsagePage: React.FunctionComponent<Props> = ({
                     inputRevspec: revision,
                     moniker: { scheme, identifier },
                 }),
-            []
+            [identifier, repo.id, resolvedRev.commitID, revision, scheme]
         )
     )
 

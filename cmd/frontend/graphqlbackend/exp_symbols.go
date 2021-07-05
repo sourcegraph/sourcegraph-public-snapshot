@@ -64,7 +64,8 @@ func (r *GitTreeEntryResolver) ExpSymbol(ctx context.Context, args *ExpSymbolArg
 		return nil, err
 	}
 	if symbol == nil {
-		return nil, fmt.Errorf("symbol not found: %#v", args.Moniker)
+		return nil, nil
+		// return nil, fmt.Errorf("symbol not found: %#v", args.Moniker)
 	}
 
 	return &ExpSymbol{sym: symbol, tree: r}, nil

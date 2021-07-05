@@ -1,25 +1,35 @@
 import * as vscode from 'vscode'
+import * as path from 'path'
 
 export function activate(context: vscode.ExtensionContext) {
     const provider = new ColorsViewProvider(context.extensionUri)
 
+    context.subscriptions.push(
+        vscode.window.onDidChangeTextEditorSelection(e => {
+            const wordRange = e.textEditor.document.getWordRangeAtPosition(e.selections[0].active)
+            if (!wordRange) {
+                return
+            }
+            const relpath = e.textEditor.document.fileName
+                .replace('/home/sqs/src/', '')
+                .replace('sourcegraph.tmp', 'sourcegraph')
+            const repo = relpath.split('/', 4).slice(0, 3).join('/')
+            const rev = 'HEAD'
+            const filePath = relpath.slice(repo.length + 1)
+
+            const goModule = path.join(repo, path.dirname(filePath))
+            const moniker = { scheme: 'gomod', identifier: `${goModule}:${e.textEditor.document.getText(wordRange)}` }
+
+            const url = `https://sourcegraph.test:3443/${repo}@${rev}/-/usage/symbol/${moniker.scheme}/${moniker.identifier}`
+            provider.setCursor(url)
+        })
+    )
+
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(ColorsViewProvider.viewType, provider))
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('calicoColors.addColor', () => {
-            provider.addColor()
-        })
-    )
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('calicoColors.clearColors', () => {
-            provider.clearColors()
-        })
-    )
 }
 
 class ColorsViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'calicoColors.colorsView'
+    public static readonly viewType = 'sourcegraph.exploreUsage'
 
     private _view?: vscode.WebviewView
 
@@ -35,7 +45,6 @@ class ColorsViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.options = {
             // Allow scripts in the webview
             enableScripts: true,
-
             localResourceRoots: [this._extensionUri],
         }
 
@@ -53,17 +62,8 @@ class ColorsViewProvider implements vscode.WebviewViewProvider {
         })
     }
 
-    public addColor() {
-        if (this._view) {
-            this._view.show?.(true) // `show` is not implemented in 1.49 but is for 1.50 insiders
-            this._view.webview.postMessage({ type: 'addColor' })
-        }
-    }
-
-    public clearColors() {
-        if (this._view) {
-            this._view.webview.postMessage({ type: 'clearColors' })
-        }
+    public setCursor(url: string): void {
+        this._view!.webview.postMessage({ type: 'cursor', url })
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {

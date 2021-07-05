@@ -1,8 +1,8 @@
 {
-  "name": "calico-colors",
-  "description": "Calico Colors - A Webview View API Sample",
+  "name": "sourcegraph-explore-usage",
+  "description": "Sourcegraph - Explore usage",
   "version": "0.0.1",
-  "publisher": "vscode-samples",
+  "publisher": "sourcegraph",
   "private": true,
   "license": "MIT",
   "repository": {
@@ -20,9 +20,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:calicoColors.colorsView",
-    "onCommand:calicoColors.addColor",
-    "onCommand:calicoColors.clearColors"
+    "onView:sourcegraph.exploreUsage"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -30,30 +28,8 @@
       "explorer": [
         {
           "type": "webview",
-          "id": "calicoColors.colorsView",
+          "id": "sourcegraph.exploreUsage",
           "name": "Explore usage"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "calicoColors.addColor",
-        "category": "Calico Colors",
-        "title": "Add Color"
-      },
-      {
-        "command": "calicoColors.clearColors",
-        "category": "Calico Colors",
-        "title": "Clear Colors",
-        "icon": "$(clear-all)"
-      }
-    ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "calicoColors.clearColors",
-          "group": "navigation",
-          "when": "view == calicoColors.colorsView"
         }
       ]
     }
@@ -67,9 +43,6 @@
   "dependencies": {},
   "devDependencies": {
     "@types/vscode": "^1.50.0",
-    "@typescript-eslint/eslint-plugin": "^4.16.0",
-    "@typescript-eslint/parser": "^4.16.0",
-    "eslint": "^7.21.0",
     "typescript": "^4.3.2"
   }
 }
