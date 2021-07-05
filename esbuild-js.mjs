@@ -84,7 +84,7 @@ const sassPlugin = {
             const tmpDir = path.resolve(tmpDirPath, sourceRelDir)
 
             const tmpFilePath =
-                args.kind === 'entry-point' || true
+                args.kind === 'entry-point'
                     ? path.join(tmpDir, `${sourceBaseName}.css`)
                     : path.resolve(tmpDir, `${Date.now()}-${sourceBaseName}.css`)
 
@@ -124,10 +124,6 @@ const sassPlugin = {
 
             fs.writeFileSync(tmpFilePath, result.css)
 
-            if (tmpFilePath.includes('SourcegraphWebApp')) {
-                console.log('XXXXXXXXXXXXX', tmpFilePath, isModule, sourceFullPath)
-            }
-
             return {
                 namespace: isModule ? 'postcss-module' : 'file',
                 path: tmpFilePath,
@@ -147,11 +143,10 @@ const sassPlugin = {
         })
 
         const DATA_TEXT_CSS_PREFIX = 'data:text/css,'
-        if (false)
-            build.onResolve({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
-                const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
-                return {}
-            })
+        /*build.onResolve({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
+            const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
+            return {}
+        })
 
         build.onLoad({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
             const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
@@ -160,11 +155,11 @@ const sassPlugin = {
                 loader: 'css',
             }
         })
-
-        build.onResolve({ filter: /^x:/, namespace: 'postcss-module' }, args => {
-            console.log('QQQQQQQQQQ', args)
+ */
+        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => {
             return {
-                path:
+                path: args.path,
+                namespace: 'file',
             }
         })
 
@@ -174,7 +169,7 @@ const sassPlugin = {
 
             const css = fs.readFileSync(args.path)
 
-            const contents = `import ${JSON.stringify('x:' + args.path)}
+            const contents = `import ${JSON.stringify(args.path)}
             // import "${DATA_TEXT_CSS_PREFIX}${encodeURI(css)}"
             export default ${JSON.stringify(mod && mod.map ? mod.map : {})}`
 
