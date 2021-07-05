@@ -165,7 +165,7 @@ export const UsagePage: React.FunctionComponent<Props> = ({
                         locations={of(
                             usageInfo.references.nodes
                                 .slice(0, -1)
-                                .slice(0, 9)
+                                .slice(0, 25)
                                 .map<Location>(reference => ({
                                     uri: makeRepoURI({
                                         repoName: reference.resource.repository.name,

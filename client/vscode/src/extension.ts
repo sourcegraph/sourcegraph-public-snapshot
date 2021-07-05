@@ -20,7 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
                 .replace('/home/sqs/src/', '')
                 .replace('sourcegraph.tmp', 'sourcegraph')
             const repo = relpath.split('/', 4).slice(0, 3).join('/')
-            const rev = 'HEAD'
+            const rev = repo === 'github.com/hashicorp/go-multierror' ? 'v1.1.0' : 'HEAD'
             const filePath = relpath.slice(repo.length + 1)
 
             const goModule = path.join(repo, path.dirname(filePath))
