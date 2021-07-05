@@ -2,7 +2,7 @@ import { ListboxOption } from '@reach/listbox'
 import classnames from 'classnames'
 import React from 'react'
 
-import { RealInsightDashboard } from '../../../../../../../core/types/dashboard/real-dashboard'
+import { RealInsightDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { Badge } from '../badge/Badge'
 import { TruncatedText } from '../trancated-text/TrancatedText'

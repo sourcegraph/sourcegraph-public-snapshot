@@ -9,6 +9,8 @@ export type InsightDashboard = RealInsightDashboard | VirtualInsightsDashboard
 
 export { InsightsDashboardType }
 
+export type { RealInsightDashboard, VirtualInsightsDashboard }
+
 /**
  * Key for accessing insights dashboards in a subject settings.
  */

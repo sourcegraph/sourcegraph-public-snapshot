@@ -17,7 +17,10 @@ import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
 import { getExperimentalFeatures } from './utils/get-experimental-features'
 
 const InsightsLazyPage = lazyComponent(() => import('./pages/insights/insights-page/InsightsPage'), 'InsightsPage')
-const EditInsightLazyPage = lazyComponent(() => import('./pages/insights/edit-insight/EditInsightPage'), 'EditInsightPage')
+const EditInsightLazyPage = lazyComponent(
+    () => import('./pages/insights/edit-insight/EditInsightPage'),
+    'EditInsightPage'
+)
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 

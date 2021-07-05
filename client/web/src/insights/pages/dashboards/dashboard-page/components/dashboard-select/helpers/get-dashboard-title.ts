@@ -1,5 +1,4 @@
-import { InsightsDashboardType } from '../../../../../../core/types'
-import { RealInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard';
+import { InsightsDashboardType, RealInsightDashboard } from '../../../../../../core/types'
 
 /**
  * Get formatted dashboard title for the dashboard select option.
