@@ -64,6 +64,7 @@ yarn-error.log
 /ui/assets/extension
 /ui/.tmp
 /ui/assets/scripts/
+/ui/assets/esbuild/
 *.json.actual
 
 eb-bundle.zip
