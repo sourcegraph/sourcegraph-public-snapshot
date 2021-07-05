@@ -193,7 +193,7 @@ esbuild
         define: {
             'process.env.NODE_ENV': '"development"',
             global: 'window',
-            'process.env.SOURCEGRAPH_API_URL': '"' + process.env.SOURCEGRAPH_API_URL + '"',
+            'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
         },
         loader: {
             '.yaml': 'text',
