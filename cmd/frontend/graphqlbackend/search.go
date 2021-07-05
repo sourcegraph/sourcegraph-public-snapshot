@@ -219,11 +219,6 @@ func (r *searchResolver) rawQuery() string {
 	return r.OriginalQuery
 }
 
-func (r *searchResolver) countIsSet() bool {
-	count := r.Query.Count()
-	return count != nil
-}
-
 // protocol returns what type of search we are doing (batch, stream,
 // paginated).
 func (r *searchResolver) protocol() search.Protocol {
@@ -397,7 +392,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		PatternInfo:     p,
 		RepoPromise:     (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
 		Query:           r.Query,
-		UseFullDeadline: r.searchTimeoutFieldSet(),
+		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil,
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
