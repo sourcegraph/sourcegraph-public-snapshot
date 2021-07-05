@@ -18,7 +18,7 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	c.Port = c.GetInt("EXECUTOR_QUEUE_PORT", "3191", "The port to listen on.")
+	c.Port = c.GetInt("EXECUTOR_QUEUE_API_PORT", "3191", "The port to listen on.")
 	c.MaximumNumTransactions = c.GetInt("EXECUTOR_QUEUE_MAXIMUM_NUM_TRANSACTIONS", "10", "Number of jobs that can be processing at one time.")
 	c.JobRequeueDelay = c.GetInterval("EXECUTOR_QUEUE_JOB_REQUEUE_DELAY", "1m", "The requeue delay of jobs assigned to an unreachable executor.")
 	c.JobCleanupInterval = c.GetInterval("EXECUTOR_QUEUE_JOB_CLEANUP_INTERVAL", "10s", "Interval between cleanup runs.")
