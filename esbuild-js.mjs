@@ -50,21 +50,14 @@ const cachedResolveFile = (modulePath, dir) => {
     return resolvedPath
 }
 
+const tmpDirPath = fs.mkdtempSync(path.join(os.tmpdir(), 'esbuild-'))
+const cleanup = () => fs.rmdirSync(tmpDirPath, { recursive: true })
+
 /** @type esbuild.Plugin */
 const sassPlugin = {
     name: 'sass',
     setup: build => {
         const CWD = process.cwd()
-
-        const tmpPrefix = path.join(os.tmpdir(), 'esbuild-')
-        const tmpDirPath = fs.mkdtempSync(tmpPrefix)
-        build.onEnd(() => {
-            // Check prefix just in case the Node.js mkdtempSync API is weird, to avoid `rm -rf`ing
-            // anything unintentional.
-            if (tmpDirPath.startsWith(tmpPrefix)) {
-                fs.rmdirSync(tmpDirPath, { recursive: true })
-            }
-        })
 
         /** @type {path:string; map: {[key: string]: string}}[] */
         const modulesMap = new Map()
@@ -107,7 +100,6 @@ const sassPlugin = {
                     css = sass
                         .renderSync({
                             file: sourceFullPath,
-                            includePaths: ['node_modules', 'client'],
                             importer: url => {
                                 return { file: cachedResolveFile(url) }
                             },
@@ -180,26 +172,26 @@ const sassPlugin = {
     },
 }
 
-esbuild
-    .build({
-        entryPoints: ['client/web/src/enterprise/main.tsx'],
-        bundle: true,
-        format: 'esm',
-        outdir: 'ui/assets/esbuild',
-        logLevel: 'error',
-        splitting: true,
-        plugins: [sassPlugin],
-        define: {
-            'process.env.NODE_ENV': '"development"',
-            global: 'window',
-            'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
-        },
-        loader: {
-            '.yaml': 'text',
-            '.ttf': 'file',
-            '.png': 'file',
-        },
-        target: 'es2020',
-        sourcemap: true,
-    })
-    .catch(e => console.error(e.message))
+await esbuild.build({
+    entryPoints: ['client/web/src/enterprise/main.tsx'],
+    bundle: true,
+    format: 'esm',
+    outdir: 'ui/assets/esbuild',
+    logLevel: 'info',
+    splitting: true,
+    plugins: [sassPlugin],
+    define: {
+        'process.env.NODE_ENV': '"development"',
+        global: 'window',
+        'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
+    },
+    loader: {
+        '.yaml': 'text',
+        '.ttf': 'file',
+        '.png': 'file',
+    },
+    target: 'es2020',
+    sourcemap: true,
+    watch: true,
+})
+cleanup()
