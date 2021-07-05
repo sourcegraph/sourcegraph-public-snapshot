@@ -373,7 +373,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 	}
 	defer func() { _ = rc.Close() }()
 
-	users, err := p.scanProtectsAllUsers(ctx, rc)
+	users, err := p.scanAllUsers(ctx, rc)
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning protects")
 	}
@@ -393,9 +393,9 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 	return extIDs, nil
 }
 
-// scanProtectsAllUsers is intended to scan the output of `protects -a` and will
+// scanAllUsers is intended to scan the output of `protects -a` and will
 // return a map of users
-func (p *Provider) scanProtectsAllUsers(ctx context.Context, rc io.ReadCloser) (map[string]struct{}, error) {
+func (p *Provider) scanAllUsers(ctx context.Context, rc io.ReadCloser) (map[string]struct{}, error) {
 	users := make(map[string]struct{})
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {

@@ -327,7 +327,7 @@ Users:
 	}
 }
 
-func TestScanProtects(t *testing.T) {
+func TestScanAllUsers(t *testing.T) {
 	ctx := context.Background()
 	f, err := os.Open("testdata/sample-protects.txt")
 	if err != nil {
@@ -357,7 +357,7 @@ func TestScanProtects(t *testing.T) {
 		"user2": "user2@example.com",
 	}
 
-	users, err := p.scanProtectsAllUsers(ctx, rc)
+	users, err := p.scanAllUsers(ctx, rc)
 	if err != nil {
 		t.Fatal(err)
 	}
