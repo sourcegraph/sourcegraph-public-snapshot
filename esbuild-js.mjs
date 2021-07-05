@@ -175,7 +175,10 @@ const sassPlugin = {
     },
 }
 
-await esbuild.build({
+const PORT = 3099
+
+/** @type esbuild.BuildOptions */
+const BUILD_OPTIONS = {
     entryPoints: ['client/web/src/enterprise/main.tsx'],
     bundle: true,
     format: 'esm',
@@ -195,6 +198,17 @@ await esbuild.build({
     },
     target: 'es2020',
     sourcemap: true,
-    watch: true,
-})
-cleanup()
+    incremental: true,
+}
+if (process.env.SERVE) {
+    await esbuild.serve(
+        {
+            port: PORT,
+            servedir: 'ui/assets/esbuild',
+        },
+        BUILD_OPTIONS
+    )
+} else {
+    await esbuild.build({ ...BUILD_OPTIONS, watch: true })
+}
+// cleanup()
