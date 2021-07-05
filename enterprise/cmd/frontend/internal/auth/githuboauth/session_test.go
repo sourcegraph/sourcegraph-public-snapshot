@@ -288,7 +288,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 
 	var got *types.ExternalService
 	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (*database.ExternalServiceStore, error) {
-		return database.GlobalExternalServices, nil
+		return database.ExternalServices(db), nil
 	}
 	database.Mocks.ExternalServices.Done = func(err error) error {
 		return nil
