@@ -31,9 +31,7 @@
 
     <!-- TODO(sqs): fix this after esbuild -->
 	    {{if not ".WebpackDevServer"}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
-                <link rel="stylesheet" href="/.assets/main3.css?{{version "main3.css"}}">
-	    <link rel="stylesheet" href="/.assets/main2.css?{{version "main2.css"}}">
-    <link rel="stylesheet" href="/.assets/esbuild/all.css?{{version "esbuild/all.css"}}">
+	    <link rel="stylesheet" href="/.assets/esbuild/main.css?{{version "esbuild/main.css"}}">
     <!-- end -->
 
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
