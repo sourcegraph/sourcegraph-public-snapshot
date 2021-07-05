@@ -31,6 +31,7 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 					"batch",
 					"preview",
 					"-f", "spec.yml",
+					"-text-only",
 				},
 				Dir: ".",
 				Env: []string{
