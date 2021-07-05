@@ -866,6 +866,8 @@ type SymbolUsage {
     referenceGroups: [ReferenceGroup!]!
 
     callers: [SymbolCallerEdge!]!
+
+    patterns: [SymbolUsagePattern!]!
 }
 
 type SymbolCallerEdge {
@@ -876,6 +878,17 @@ type SymbolCallerEdge {
 type ReferenceGroup {
     name: String!
     locations: LocationConnection!
+}
+
+type SymbolUsagePattern {
+    description: String!
+
+    exampleLocations: [SymbolUsagePatternExampleLocationEdge!]!
+}
+
+type SymbolUsagePatternExampleLocationEdge {
+    description: String!
+    location: Location!
 }
 
 input SymbolFilters {

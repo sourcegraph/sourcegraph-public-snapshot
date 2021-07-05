@@ -299,6 +299,7 @@ type SymbolUsageResolver interface {
 	References(context.Context) (LocationConnectionResolver, error)
 	ReferenceGroups(context.Context) ([]ReferenceGroupResolver, error)
 	Callers(context.Context) ([]SymbolCallerEdgeResolver, error)
+	Patterns(context.Context) ([]SymbolUsagePatternResolver, error)
 }
 
 type ReferenceGroupResolver interface {
@@ -309,4 +310,14 @@ type ReferenceGroupResolver interface {
 type SymbolCallerEdgeResolver interface {
 	Person() *PersonResolver
 	Locations() LocationConnectionResolver
+}
+
+type SymbolUsagePatternResolver interface {
+	Description() string
+	ExampleLocations() []SymbolUsagePatternExampleLocationEdgeResolver
+}
+
+type SymbolUsagePatternExampleLocationEdgeResolver interface {
+	Description() string
+	Location(context.Context) (LocationResolver, error)
 }
