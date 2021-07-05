@@ -11,7 +11,7 @@ const gulp = require('gulp')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const devServerPlugin = require('webpack-dev-server/utils/DevServerPlugin')
+const devServerPlugin = require('webpack-dev-server/lib/utils/DevServerPlugin')
 
 const {
   graphQlSchema,
