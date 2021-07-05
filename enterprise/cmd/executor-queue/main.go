@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/codeintel"
 	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
@@ -23,16 +24,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
-type config interface {
+type configuration interface {
 	Load()
 	Validate() error
 }
 
 func main() {
+	sharedConfig := &config.SharedConfig{}
+	sharedConfig.Load()
+
 	serviceConfig := &Config{}
-	codeintelConfig := &codeintel.Config{}
-	batchesConfig := &batches.Config{}
-	configs := []config{serviceConfig, codeintelConfig, batchesConfig}
+	codeintelConfig := &codeintel.Config{Shared: sharedConfig}
+	batchesConfig := &batches.Config{Shared: sharedConfig}
+	configs := []configuration{serviceConfig, codeintelConfig, batchesConfig}
 
 	for _, config := range configs {
 		config.Load()
