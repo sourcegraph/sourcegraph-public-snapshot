@@ -5,6 +5,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard/src'
@@ -12,16 +13,13 @@ import { PageHeader } from '@sourcegraph/wildcard/src'
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { Settings } from '../../../schema/settings.schema'
-import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
+import { CodeInsightsIcon, InsightsViewGrid } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
 import { DashboardSelect } from './components/dashboard-select/DashboardSelect'
 import { useDashboards } from './hooks/use-dashboards/use-dashboards'
 
-export interface DashboardsPageProps
-    extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
-        SettingsCascadeProps<Settings>,
-        ExtensionsControllerProps {
+export interface DashboardsPageProps extends TelemetryProps, SettingsCascadeProps<Settings>, ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -35,7 +33,7 @@ export interface DashboardsPageProps
  * Displays insights dashboard page - dashboard selector and grid of insights from the dashboard.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
-    const { dashboardID, settingsCascade, extensionsController } = props
+    const { dashboardID, settingsCascade, extensionsController, telemetryService } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const insightIds = useMemo(() => {
@@ -85,7 +83,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     <LoadingSpinner className="my-4" />
                 </div>
             ) : (
-                <InsightsViewGrid {...props} views={views} hasContextMenu={true} />
+                <InsightsViewGrid telemetryService={telemetryService} views={views} hasContextMenu={true} />
             )}
         </Page>
     )

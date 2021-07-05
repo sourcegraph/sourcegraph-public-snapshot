@@ -1,5 +1,4 @@
 import { ParentSize } from '@visx/responsive'
-import * as H from 'history'
 import React, { FunctionComponent, useCallback } from 'react'
 import { ChartContent } from 'sourcegraph'
 
@@ -17,8 +16,6 @@ import { getInsightTypeByViewId } from './utils/get-insight-type-by-view-id'
 export interface ChartViewContentProps {
     /** Data for chart (lines, bar, pie arcs)*/
     content: ChartContent
-    /** History object to redirect user if he clicked on bar point or arc with link */
-    history: H.History
     /** Extension view ID*/
     viewID: string
     telemetryService: TelemetryService
