@@ -16,7 +16,7 @@ import (
 func TestHeartbeat(t *testing.T) {
 	store1 := workerstoremocks.NewMockStore()
 	store2 := workerstoremocks.NewMockStore()
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
@@ -110,7 +110,7 @@ func TestHeartbeat(t *testing.T) {
 func TestCleanup(t *testing.T) {
 	store1 := workerstoremocks.NewMockStore()
 	store2 := workerstoremocks.NewMockStore()
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
