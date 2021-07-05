@@ -7,15 +7,13 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard/src'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { Settings } from '../../../schema/settings.schema'
-import { CodeInsightsIcon, InsightsViewGrid } from '../../components'
-import { InsightsApiContext } from '../../core/backend/api-provider'
+import { CodeInsightsIcon } from '../../components'
+import { InsightsDashboardType } from '../../core/types'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
@@ -56,7 +54,12 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     className="mb-3"
                 />
 
-                <DashboardsContent {...props} dashboardID={dashboardID} />
+                <DashboardsContent
+                    extensionsController={extensionsController}
+                    telemetryService={telemetryService}
+                    settingsCascade={settingsCascade}
+                    dashboardID={dashboardID}
+                />
             </Page>
         </div>
     )

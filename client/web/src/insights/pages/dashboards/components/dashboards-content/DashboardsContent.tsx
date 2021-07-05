@@ -5,11 +5,12 @@ import { useHistory } from 'react-router-dom'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { HeroPage } from '../../../../../components/HeroPage'
 import { Settings } from '../../../../../schema/settings.schema'
-import { InsightsViewGrid, InsightsViewGridProps } from '../../../../components'
+import { InsightsViewGrid } from '../../../../components'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { InsightDashboard, isVirtualDashboard } from '../../../../core/types'
 import { useDashboards } from '../../hooks/use-dashboards/use-dashboards'
@@ -18,9 +19,9 @@ import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 import styles from './DashboardsContent.module.scss'
 
 export interface DashboardsContentProps
-    extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
-        SettingsCascadeProps<Settings>,
-        ExtensionsControllerProps {
+    extends SettingsCascadeProps<Settings>,
+        ExtensionsControllerProps,
+        TelemetryProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -31,7 +32,7 @@ export interface DashboardsContentProps
 }
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
-    const { settingsCascade, dashboardID } = props
+    const { extensionsController, settingsCascade, dashboardID, telemetryService } = props
 
     const history = useHistory()
     const dashboards = useDashboards(settingsCascade)
@@ -62,18 +63,19 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             <hr className="mt-2 mb-3" />
 
             {currentDashboard ? (
-                <DashboardInsights {...props} insightIds={currentDashboard.insightIds} />
+                <DashboardInsights
+                    insightIds={currentDashboard.insightIds}
+                    extensionsController={extensionsController}
+                    telemetryService={telemetryService}
+                />
             ) : (
-                <HeroPage icon={MapSearchIcon} title="Hmm dashboard wasn't found." />
+                <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
             )}
         </div>
     )
 }
 
-// This strange props extending here (child props interface is extended by parent props)
-// is needed for the InsightsViewGrid component and related to '/views' specific component usage.
-// This problem will be resolved here https://github.com/sourcegraph/sourcegraph/issues/22462
-interface DashboardInsightsProps extends DashboardsContentProps {
+interface DashboardInsightsProps extends ExtensionsControllerProps, TelemetryProps {
     /**
      * Dashboard specific insight ids.
      */
@@ -84,7 +86,7 @@ interface DashboardInsightsProps extends DashboardsContentProps {
  * Renders code insight view grid.
  */
 const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { extensionsController, insightIds } = props
+    const { telemetryService, extensionsController, insightIds } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
@@ -102,7 +104,7 @@ const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props
                     <LoadingSpinner className="my-4" />
                 </div>
             ) : (
-                <InsightsViewGrid {...props} views={views} hasContextMenu={true} />
+                <InsightsViewGrid views={views} hasContextMenu={true} telemetryService={telemetryService} />
             )}
         </div>
     )
