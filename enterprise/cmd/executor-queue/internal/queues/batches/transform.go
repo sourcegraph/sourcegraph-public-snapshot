@@ -4,14 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // transformRecord transforms a *btypes.BatchSpecExecution into an apiclient.Job.
 func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecExecution, config *Config) (apiclient.Job, error) {
+	_, token, err := database.AccessTokens(db).Create(ctx, exec.UserID, []string{"user:all"}, "batchspecexecution", exec.UserID)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
 	srcEndpoint, err := makeURL(config.Shared.FrontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
 	if err != nil {
 		return apiclient.Job{}, err
@@ -20,6 +27,15 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 	redactedSrcEndpoint, err := makeURL(config.Shared.FrontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
 	if err != nil {
 		return apiclient.Job{}, err
+	}
+
+	cliEnv := []string{
+		fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
+		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
+
+		// TODO: This is wrong here, it should be set on the executor machine
+		fmt.Sprintf("HOME=%s", os.Getenv("HOME")),
+		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 	}
 
 	return apiclient.Job{
@@ -34,9 +50,7 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 					"-text-only",
 				},
 				Dir: ".",
-				Env: []string{
-					fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
-				},
+				Env: cliEnv,
 			},
 		},
 		RedactedValues: map[string]string{
