@@ -19,7 +19,7 @@ logger.info('Using mode', mode)
 
 const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
-const devtool = isProduction ? 'source-map' : 'cheap-module-eval-source-map'
+const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 
 const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
 if (shouldServeIndexHTML) {
@@ -56,11 +56,11 @@ const extensionHostWorker = /main\.worker\.ts$/
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
+  target: 'browserslist',
   optimization: {
     minimize: isProduction,
     minimizer: [
       new TerserPlugin({
-        sourceMap: true,
         terserOptions: {
           compress: {
             // Don't inline functions, which causes name collisions with uglify-es:
@@ -71,15 +71,11 @@ const config = {
       }),
       new CssMinimizerWebpackPlugin(),
     ],
-    namedModules: false,
-
-    ...(isDevelopment
-      ? {
-          removeAvailableModules: false,
-          removeEmptyChunks: false,
-          splitChunks: false,
-        }
-      : {}),
+    ...(isDevelopment && {
+      removeAvailableModules: false,
+      removeEmptyChunks: false,
+      splitChunks: false,
+    }),
   },
   entry: {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
@@ -110,6 +106,9 @@ const config = {
         ...(shouldServeIndexHTML && webServerEnvironmentVariables),
       },
     }),
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+    }),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
@@ -130,7 +129,7 @@ const config = {
         'suggest',
       ],
     }),
-    new webpack.IgnorePlugin(/\.flow$/, /.*/),
+    new webpack.IgnorePlugin({ resourceRegExp: /\.flow$/ }),
     new WebpackManifestPlugin({
       writeToFileEmit: true,
       fileName: 'webpack.manifest.json',
@@ -143,6 +142,11 @@ const config = {
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
+    fallback: {
+      crypto: require.resolve('crypto-browserify'),
+      stream: require.resolve('stream-browserify'),
+      vm: require.resolve('vm-browserify'),
+    },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
@@ -214,13 +218,13 @@ const config = {
         // TTF rule for monaco-editor
         test: /\.ttf$/,
         include: monacoEditorPaths,
-        use: ['file-loader'],
+        type: 'asset/resource',
       },
       {
         test: extensionHostWorker,
         use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, babelLoader],
       },
-      { test: /\.ya?ml$/, use: ['raw-loader'] },
+      { test: /\.ya?ml$/, type: 'asset/source' },
     ],
   },
 }

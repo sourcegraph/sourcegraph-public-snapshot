@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { Application } from 'express'
 import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
 import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
@@ -11,7 +12,6 @@ import {
     getCSRFTokenAndCookie,
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
-    WEBPACK_STATS_OPTIONS,
     WEB_SERVER_URL,
 } from '../utils'
 
@@ -33,7 +33,9 @@ export async function startDevelopmentServer(): Promise<void> {
         }),
     }
 
-    const options: WebpackDevServer.Configuration = {
+    // It's not possible to use `WebpackDevServer.Configuration` here yet, because
+    // type definitions for the `webpack-dev-server` are not updated to match v4.
+    const developmentServerConfig = {
         hot: IS_HOT_RELOAD_ENABLED,
         // TODO: resolve https://github.com/webpack/webpack-dev-server/issues/2313 and enable HTTPS.
         https: false,
@@ -41,21 +43,27 @@ export async function startDevelopmentServer(): Promise<void> {
             disableDotRule: true,
         },
         port: SOURCEGRAPH_HTTPS_PORT,
-        publicPath: STATIC_ASSETS_URL,
-        contentBase: STATIC_ASSETS_PATH,
-        contentBasePublicPath: [STATIC_ASSETS_URL, '/'],
-        stats: WEBPACK_STATS_OPTIONS,
-        noInfo: false,
-        disableHostCheck: true,
+        client: {
+            overlay: {
+                errors: true,
+                warnings: false,
+            },
+        },
+        static: {
+            directory: STATIC_ASSETS_PATH,
+            publicPath: [STATIC_ASSETS_URL, '/'],
+        },
+        firewall: false,
         proxy: [proxyConfig as ProxyConfigArrayItem],
-        before(app) {
+        onBeforeSetupMiddleware(app: Application) {
             app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
         },
     }
 
-    WebpackDevServer.addDevServerEntrypoints(webpackConfig, options)
-
-    const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
+    const server = new WebpackDevServer(
+        createWebpackCompiler(webpackConfig),
+        developmentServerConfig as WebpackDevServer.Configuration
+    )
 
     server.listen(SOURCEGRAPH_HTTPS_PORT, '0.0.0.0', () => {
         signale.success(`Development server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)

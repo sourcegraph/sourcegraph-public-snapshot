@@ -1,4 +1,3 @@
-// @ts-check
 const path = require('path')
 
 require('ts-node').register({
@@ -11,6 +10,8 @@ const log = require('fancy-log')
 const gulp = require('gulp')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const devServerPlugin = require('webpack-dev-server/utils/DevServerPlugin')
 
 const {
   graphQlSchema,
@@ -100,7 +101,13 @@ async function webpackDevelopmentServer() {
     sockHost,
     sockPort,
   }
-  WebpackDevServer.addDevServerEntrypoints(webpackConfig, options)
+
+  // Based on the description here: https://github.com/webpack/webpack-dev-server/pull/2844
+  if (!webpackConfig.plugins.find(plugin => plugin.constructor === devServerPlugin)) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    webpackConfig.plugins.push(new devServerPlugin(options))
+  }
+
   const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
   await new Promise((resolve, reject) => {
     server.listen(3080, '0.0.0.0', error => (error ? reject(error) : resolve()))
