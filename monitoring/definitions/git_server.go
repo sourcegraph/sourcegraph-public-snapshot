@@ -210,7 +210,8 @@ func GitServer() *monitoring.Container {
 							}),
 							Owner: monitoring.ObservableOwnerCoreApplication,
 						},
-					}, {
+					},
+					{
 						{
 							Name:        "repository_clone_queue_size",
 							Description: "repository clone queue size",
@@ -236,7 +237,8 @@ func GitServer() *monitoring.Container {
 								- **Check the gitserver logs for more information.**
 							`,
 						},
-					}, {
+					},
+					{
 						{
 							Name:        "echo_command_duration_test",
 							Description: "echo test command duration",
@@ -296,6 +298,11 @@ func GitServer() *monitoring.Container {
 						},
 					},
 				},
+			},
+			{
+				Title:  shared.TitleDatabaseConnectionsMonitoring,
+				Hidden: true,
+				Rows:   shared.DatabaseConnectionsMonitoring("gitserver"),
 			},
 			{
 				Title:  shared.TitleContainerMonitoring,

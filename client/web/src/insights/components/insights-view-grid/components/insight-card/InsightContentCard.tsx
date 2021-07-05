@@ -2,6 +2,7 @@ import { MdiReactIconComponentType } from 'mdi-react'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,15 +10,15 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../../components/alerts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
-import { ViewContent, ViewContentProps } from '../../../../../views/ViewContent'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../../../core/backend/types'
 import { InsightTypePrefix } from '../../../../core/types'
+import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 
 import { InsightDescription } from './components/insight-card-description/InsightCardDescription'
 import { InsightCardMenu } from './components/insight-card-menu/InsightCardMenu'
 import styles from './InsightCard.module.scss'
 
-export interface InsightCardProps extends Omit<ViewContentProps, 'viewContent' | 'viewID'>, TelemetryProps {
+export interface InsightCardProps extends TelemetryProps {
     /** Insight data (title, chart content) */
     insight: ViewInsightProviderResult
 
@@ -29,6 +30,9 @@ export interface InsightCardProps extends Omit<ViewContentProps, 'viewContent' |
      * Now only insight page has insights with context menu.
      * */
     hasContextMenu?: boolean
+
+    /** To get container to track hovers for pings */
+    containerClassName?: string
 }
 
 /**
@@ -37,10 +41,13 @@ export interface InsightCardProps extends Omit<ViewContentProps, 'viewContent' |
 export const InsightContentCard: React.FunctionComponent<InsightCardProps> = props => {
     const {
         insight: { id, view, source },
-        location,
+        containerClassName,
         hasContextMenu,
         onDelete,
+        telemetryService,
     } = props
+
+    const location = useLocation()
 
     // We should disable delete and any other actions if we already have started
     // operation over some insight.
@@ -101,7 +108,12 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
                         {hasMenu && <InsightCardMenu insightID={id} onDelete={handleDelete} />}
                     </header>
 
-                    <ViewContent {...props} viewContent={view.content} viewID={id} />
+                    <InsightViewContent
+                        telemetryService={telemetryService}
+                        viewContent={view.content}
+                        viewID={id}
+                        containerClassName={containerClassName}
+                    />
                 </>
             )}
         </ErrorBoundary>

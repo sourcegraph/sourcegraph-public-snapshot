@@ -9,6 +9,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/codeintel"
 	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,15 +24,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
-type config interface {
+type configuration interface {
 	Load()
 	Validate() error
 }
 
 func main() {
+	sharedConfig := &config.SharedConfig{}
+	sharedConfig.Load()
+
 	serviceConfig := &Config{}
-	codeintelConfig := &codeintel.Config{}
-	configs := []config{serviceConfig, codeintelConfig}
+	codeintelConfig := &codeintel.Config{Shared: sharedConfig}
+	batchesConfig := &batches.Config{Shared: sharedConfig}
+	configs := []configuration{serviceConfig, codeintelConfig, batchesConfig}
 
 	for _, config := range configs {
 		config.Load()
@@ -71,6 +77,7 @@ func main() {
 	// Initialize queues
 	queueOptions := map[string]apiserver.QueueOptions{
 		"codeintel": codeintel.QueueOptions(db, codeintelConfig, observationContext),
+		"batches":   batches.QueueOptions(db, batchesConfig, observationContext),
 	}
 
 	for queueName, options := range queueOptions {
@@ -101,7 +108,7 @@ func connectToDatabase() *sql.DB {
 		}
 	})
 
-	db, err := dbconn.New(postgresDSN, "")
+	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "executor-queue"})
 	if err != nil {
 		log.Fatalf("failed to initialize store: %s", err)
 	}

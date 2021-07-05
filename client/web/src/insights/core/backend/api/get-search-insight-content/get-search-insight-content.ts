@@ -4,7 +4,7 @@ import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import type { LineChartContent } from 'sourcegraph'
 
-import { EMPTY_DATA_POINT_VALUE } from '../../../../../views/ChartViewContent/charts/line/constants'
+import { EMPTY_DATA_POINT_VALUE } from '../../../../components/insight-view-content/chart-view-content/charts/line/constants'
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../../requests/fetch-search-insight'
 import { SearchInsightSettings } from '../../types'
 

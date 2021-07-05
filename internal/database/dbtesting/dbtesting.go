@@ -22,8 +22,10 @@ import (
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful
 // when running tests since we can use a faster implementation.
-var MockHashPassword func(password string) (sql.NullString, error)
-var MockValidPassword func(hash, password string) bool
+var (
+	MockHashPassword  func(password string) (sql.NullString, error)
+	MockValidPassword func(hash, password string) bool
+)
 
 func useFastPasswordMocks() {
 	// We can't care about security in tests, we care about speed.
@@ -158,7 +160,8 @@ func initTest(nameSuffix string) error {
 		}
 	}
 
-	if err := dbconn.SetupGlobalConnection("dbname=" + dbname); err != nil {
+	opts := dbconn.Opts{DSN: "dbname=" + dbname, DBName: dbname, AppName: "tests"}
+	if err := dbconn.SetupGlobalConnection(opts); err != nil {
 		return err
 	}
 

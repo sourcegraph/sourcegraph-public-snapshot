@@ -2,10 +2,6 @@
 
 This guide gives specific instructions for troubleshooting [extensions](https://docs.sourcegraph.com/extensions) developed by Sourcegraph.
 
-## Prerequisites
-
-* This document assumes that you already have the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension) installed
-
 ## FAQs
 
 #### How do I know if a Sourcegraph extension is running?

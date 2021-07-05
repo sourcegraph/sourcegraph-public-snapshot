@@ -1380,4 +1380,58 @@ mutation($batchChange: ID!, $changesets: [ID!]!, $squash: Boolean = false) {
 }
 `
 
+func TestResolver_CreateBatchSpecExecution(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+	cstore := store.New(db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testSpec := `testSpec: yeah`
+	input := map[string]interface{}{
+		"spec": testSpec,
+	}
+	var response struct {
+		CreateBatchSpecExecution apitest.BatchSpecExecution
+	}
+	apitest.MustExec(userCtx, t, s, input, &response, mutationCreateBatchSpecExecution)
+
+	if response.CreateBatchSpecExecution.ID == "" {
+		t.Fatalf("expected execution to be created, but was not")
+	}
+	want := apitest.BatchSpecExecution{
+		ID:        response.CreateBatchSpecExecution.ID,
+		InputSpec: testSpec,
+		State:     "QUEUED",
+	}
+	if diff := cmp.Diff(want, response.CreateBatchSpecExecution); diff != "" {
+		t.Fatalf("invalid execution returned, diff=%s", diff)
+	}
+}
+
+const mutationCreateBatchSpecExecution = `
+mutation($spec: String!) {
+    createBatchSpecExecution(spec: $spec) {
+		id
+		inputSpec
+		state
+		startedAt
+		finishedAt
+		failure
+		placeInQueue
+		batchSpec { id }
+	}
+}
+`
+
 func stringPtr(s string) *string { return &s }

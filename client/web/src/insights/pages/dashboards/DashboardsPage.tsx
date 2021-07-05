@@ -6,20 +6,20 @@ import { Redirect } from 'react-router-dom'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard/src'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { Settings } from '../../../schema/settings.schema'
-import { CodeInsightsIcon, InsightsViewGridProps } from '../../components'
-import { InsightsDashboardType } from '../../core/types'
+import { CodeInsightsIcon, InsightsViewGrid } from '../../components'
+import { InsightsApiContext } from '../../core/backend/api-provider'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
-export interface DashboardsPageProps
-    extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
-        SettingsCascadeProps<Settings>,
-        ExtensionsControllerProps {
+export interface DashboardsPageProps extends TelemetryProps, SettingsCascadeProps<Settings>, ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -33,7 +33,7 @@ export interface DashboardsPageProps
  * Displays insights dashboard page - dashboard selector and grid of dashboard insights.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
-    const { dashboardID } = props
+    const { dashboardID, settingsCascade, extensionsController, telemetryService } = props
     const { url } = useRouteMatch()
 
     if (!dashboardID) {
