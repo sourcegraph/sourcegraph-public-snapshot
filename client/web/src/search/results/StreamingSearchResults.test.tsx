@@ -51,6 +51,7 @@ describe('StreamingSearchResults', () => {
         authenticatedUser: null,
 
         navbarSearchQueryState: { query: '' },
+        onNavbarQueryChange: () => {},
 
         settingsCascade: {
             subjects: null,

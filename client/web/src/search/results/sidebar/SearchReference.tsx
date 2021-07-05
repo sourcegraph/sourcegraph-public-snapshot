@@ -196,7 +196,8 @@ searchReferenceInfo.forEach(augmentSearchReference)
 
 const commonFilters = searchReferenceInfo
     .filter(info => info.commonRank != null)
-    .sort((a, b) => a.commonRank - b.commonRank)
+    // commonRank will never be null here, but TS doesn't seem to know
+    .sort((a, b) => (a.commonRank as number) - (b.commonRank as number))
 
 /**
  * Returns true if the provided regular expressions all match the provided
@@ -374,26 +375,36 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
     const parseResult = parseSearchQuery(example)
     // We only use valid queries as examples, so this will always be true
     if (parseResult.type === 'success') {
-        return interleave(
-            parseResult.nodes
-                .map(node => {
-                    switch (node.type) {
-                        case 'parameter':
-                            return (
-                                <>
-                                    <span className="search-filter-keyword">
-                                        {node.negated ? '-' : ''}
-                                        {node.field}:
-                                    </span>
-                                    {node.value}
-                                </>
-                            )
-                        case 'pattern':
-                            return node.value
-                    }
-                })
-                .filter(Boolean),
-            ' '
+        return (
+            <>
+                {interleave(
+                    parseResult.nodes
+                        .map(node => {
+                            switch (node.type) {
+                                case 'parameter':
+                                    return (
+                                        <>
+                                            <span className="search-filter-keyword">
+                                                {node.negated ? '-' : ''}
+                                                {node.field}:
+                                            </span>
+                                            {node.value}
+                                        </>
+                                    )
+                                case 'pattern':
+                                    return node.value
+                                case 'operator':
+                                    // we currently don't use operators in examples,
+                                    // but we need an entry to make TS happy. Once
+                                    // we do support operators, the query needs to
+                                    // be parsed/rendered differently
+                                    return node.kind
+                            }
+                        })
+                        .filter(Boolean),
+                    ' '
+                )}
+            </>
         )
     }
     return null
@@ -502,7 +513,7 @@ const SearchReferenceList = ({ filters, onClick }: SearchReferenceListProps): Re
 }
 
 export interface SearchReferenceProps
-    extends PatternTypeProps,
+    extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {

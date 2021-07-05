@@ -1,8 +1,8 @@
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { assert } from 'chai'
 import { Selection } from 'monaco-editor'
-import { QueryChangeSource, QueryState } from '../../../helpers'
-import { parsePlaceholder, SearchReferenceInfo, updateQueryWithFilter } from './SearchReference'
+import { QueryChangeSource, QueryState } from '../../helpers'
+import { parsePlaceholder, updateQueryWithFilter } from './SearchReference'
 
 /**
  * Automatically sets cursor position and selections from example query.
@@ -10,7 +10,7 @@ import { parsePlaceholder, SearchReferenceInfo, updateQueryWithFilter } from './
 function queryStateFromExample(query: string, showSuggestions = false): QueryState {
     let cursorPosition
     let selectionStart: number
-    let selection: Selection
+    let selection: Selection | undefined = undefined
     let offset = 0
 
     const cleanedQuery = query.replaceAll(/[\[\]|]/g, (match, index) => {
@@ -39,17 +39,6 @@ function queryStateFromExample(query: string, showSuggestions = false): QuerySta
     }
 }
 
-type TestInput = [string, string, string, SearchReferenceInfo, typeof FILTERS]
-
-function runTest([name, expectedResult, currentQuery, searchReference, filters]: TestInput): void {
-    it(name, () => {
-        assert.deepStrictEqual(
-            updateQueryWithFilter({ query: currentQuery }, searchReference, filters),
-            queryStateFromExample(expectedResult)
-        )
-    })
-}
-
 function createSearchReference(type: FilterType, placeholder: string) {
     return {
         type,
@@ -61,14 +50,14 @@ function createSearchReference(type: FilterType, placeholder: string) {
 describe('repeatable filters', () => {
     it('appends placeholder filter and selects placeholder', () => {
         assert.deepStrictEqual(
-            updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.after, '{test}'), FILTERS),
+            updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.after, '{test}'), false, FILTERS),
             queryStateFromExample('foo after:[test]')
         )
     })
 
     it('appends suggestions filter', () => {
         assert.deepStrictEqual(
-            updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.lang, '{lang}'), FILTERS),
+            updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.lang, '{lang}'), false, FILTERS),
             queryStateFromExample('foo lang:', true)
         )
     })
@@ -77,7 +66,12 @@ describe('repeatable filters', () => {
 describe('unique filters', () => {
     it('appends placeholder filter and selects placeholder', () => {
         assert.deepStrictEqual(
-            updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.repogroup, '{test}'), FILTERS),
+            updateQueryWithFilter(
+                { query: 'foo' },
+                createSearchReference(FilterType.repogroup, '{test}'),
+                false,
+                FILTERS
+            ),
             queryStateFromExample('foo repogroup:[test]')
         )
     })
@@ -87,6 +81,7 @@ describe('unique filters', () => {
             updateQueryWithFilter(
                 { query: 'repogroup:value foo' },
                 createSearchReference(FilterType.repogroup, '{test}'),
+                false,
                 FILTERS
             ),
             queryStateFromExample('repogroup:[value]| foo')
@@ -95,14 +90,19 @@ describe('unique filters', () => {
 
     it('appends suggestions filter', () => {
         assert.deepStrictEqual(
-            updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.case, '{test}'), FILTERS),
+            updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.case, '{test}'), false, FILTERS),
             queryStateFromExample('foo case:', true)
         )
     })
 
     it('updates existing suggestions filter', () => {
         assert.deepStrictEqual(
-            updateQueryWithFilter({ query: 'case:yes foo' }, createSearchReference(FilterType.case, '{test}'), FILTERS),
+            updateQueryWithFilter(
+                { query: 'case:yes foo' },
+                createSearchReference(FilterType.case, '{test}'),
+                false,
+                FILTERS
+            ),
             queryStateFromExample('case:| foo', true)
         )
     })

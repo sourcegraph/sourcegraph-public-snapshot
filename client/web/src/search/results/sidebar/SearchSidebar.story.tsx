@@ -50,6 +50,8 @@ const defaultProps: SearchSidebarProps = {
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     featureFlags: EMPTY_FEATURE_FLAGS,
+    navbarSearchQueryState: { query: '' },
+    onNavbarQueryChange: () => {},
 }
 
 const quicklinks: QuickLink[] = [

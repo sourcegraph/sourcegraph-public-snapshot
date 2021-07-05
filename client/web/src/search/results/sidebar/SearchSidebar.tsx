@@ -24,7 +24,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 const SEARCH_SIDEBAR_VISIBILITY_KEY = 'SearchProduct.SearchSidebar.Visibility'
 
 export interface SearchSidebarProps
-    extends PatternTypeProps,
+    extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
