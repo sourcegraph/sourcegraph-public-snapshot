@@ -6,7 +6,15 @@ import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
+import {
+    DllReferencePlugin,
+    Configuration,
+    DefinePlugin,
+    ProgressPlugin,
+    RuleSetUseItem,
+    RuleSetUse,
+    RuleSetRule,
+} from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
@@ -62,9 +70,10 @@ const getDllScriptTag = (): string => {
 
     const dllManifest = readJsonFile(dllBundleManifestPath) as Record<string, string>
 
+    // TODO: fix redundant DLL bundle name `auto` prefix
     return `
         <!-- Load JS bundle created by DLL_PLUGIN  -->
-        <script src="/dll-bundle/${dllManifest['dll.js']}"></script>
+        <script src="/dll-bundle/${dllManifest['dll.js'].replace('auto', '')}"></script>
     `
 }
 
@@ -78,6 +87,10 @@ const config = {
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
     ],
+
+    core: {
+        builder: 'webpack5',
+    },
 
     features: {
         // Explicitly disable the deprecated, not used postCSS support,
@@ -101,7 +114,7 @@ const config = {
         config.mode = environment.shouldMinify ? 'production' : 'development'
 
         // Check the default config is in an expected shape.
-        if (!config.module || !config.plugins) {
+        if (!config.module?.rules || !config.plugins) {
             throw new Error(
                 'The format of the default storybook webpack config changed, please check if the config in ./src/main.ts is still valid'
             )
@@ -118,12 +131,10 @@ const config = {
             if (!config.optimization) {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
-            config.optimization.namedModules = false
             config.optimization.minimize = true
             config.optimization.minimizer = [
                 new TerserPlugin({
                     terserOptions: {
-                        sourceMap: true,
                         compress: {
                             // Don't inline functions, which causes name collisions with uglify-es:
                             // https://github.com/mishoo/UglifyJS2/issues/2842
@@ -174,7 +185,9 @@ const config = {
         })
 
         // Make sure Storybook style loaders are only evaluated for Storybook styles.
-        const cssRule = config.module.rules.find(rule => rule.test?.toString() === /\.css$/.toString())
+        const cssRule = config.module.rules.find(
+            rule => rule !== '...' && rule.test?.toString() === /\.css$/.toString()
+        ) as RuleSetRule
         if (!cssRule) {
             throw new Error('Cannot find original CSS rule')
         }
@@ -190,7 +203,7 @@ const config = {
 
         config.module.rules.push({
             test: /\.ya?ml$/,
-            use: ['raw-loader'],
+            type: 'asset/source',
         })
 
         // Disable `CaseSensitivePathsPlugin` by default to speed up development build.
