@@ -2,7 +2,13 @@ import * as vscode from 'vscode'
 import * as path from 'path'
 
 export function activate(context: vscode.ExtensionContext) {
-    const provider = new ColorsViewProvider(context.extensionUri)
+    const provider = new ViewProvider(context.extensionUri)
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.showExploreUsage', () => {
+            provider.show()
+        })
+    )
 
     context.subscriptions.push(
         vscode.window.onDidChangeTextEditorSelection(e => {
@@ -25,10 +31,10 @@ export function activate(context: vscode.ExtensionContext) {
         })
     )
 
-    context.subscriptions.push(vscode.window.registerWebviewViewProvider(ColorsViewProvider.viewType, provider))
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider(ViewProvider.viewType, provider))
 }
 
-class ColorsViewProvider implements vscode.WebviewViewProvider {
+class ViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'sourcegraph.exploreUsage'
 
     private _view?: vscode.WebviewView
@@ -64,6 +70,12 @@ class ColorsViewProvider implements vscode.WebviewViewProvider {
 
     public setCursor(url: string): void {
         this._view!.webview.postMessage({ type: 'cursor', url })
+    }
+
+    public show(): void {
+        if (!this._view?.visible) {
+            this._view!.show(true)
+        }
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {

@@ -20,10 +20,30 @@
     "Other"
   ],
   "activationEvents": [
+    "onCommand:sourcegraph.showExploreUsage",
     "onView:sourcegraph.exploreUsage"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "title": "Explore Usage",
+        "command": "sourcegraph.showExploreUsage"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "sourcegraph.showExploreUsage"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "sourcegraph.showExploreUsage",
+          "group": "navigation"
+        }
+      ]
+    },
     "views": {
       "explorer": [
         {
