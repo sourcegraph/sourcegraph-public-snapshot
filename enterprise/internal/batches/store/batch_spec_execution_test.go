@@ -38,7 +38,7 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 				UpdatedAt: clock.Now(),
 				State:     btypes.BatchSpecExecutionStateQueued,
 				BatchSpec: testBatchSpec,
-				UserID:          have.UserID,
+				UserID:    have.UserID,
 			}
 
 			if have.ID == 0 {
