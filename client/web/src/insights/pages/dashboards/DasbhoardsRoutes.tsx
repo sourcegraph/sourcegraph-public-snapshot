@@ -4,6 +4,7 @@ import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller';
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
 
+import { AuthenticatedUser } from '../../../auth';
 import { Settings } from '../../../schema/settings.schema';
 import { InsightsViewGridProps } from '../../components';
 
@@ -15,12 +16,14 @@ export interface DashboardsRoutesProps extends
     SettingsCascadeProps<Settings>,
     ExtensionsControllerProps {
 
+    authenticatedUser: AuthenticatedUser
 }
 
 /**
  * Displays Code Insights dashboard area.
  */
 export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = props => {
+    const { authenticatedUser, settingsCascade } = props
     const match = useRouteMatch()
 
     return (
@@ -35,7 +38,11 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
 
             <Route
                 path={`${match.url}/add-dashboard`}
-                render={() => <InsightsDashboardCreationPage/>}
+                render={() =>
+                    <InsightsDashboardCreationPage
+                        authenticatedUser={authenticatedUser}
+                        settingsCascade={settingsCascade}
+                    />}
             />
         </Switch>
     )

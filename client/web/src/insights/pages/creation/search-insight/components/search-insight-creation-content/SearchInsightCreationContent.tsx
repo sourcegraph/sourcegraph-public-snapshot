@@ -6,7 +6,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
+import { useInsightTitleValidator } from '../../../../../components/form/hooks/useInsightTitleValidator'
 import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
@@ -68,7 +68,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     })
 
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypePrefix.search })
+    const titleValidator = useInsightTitleValidator({ settings, insightType: InsightTypePrefix.search })
 
     const title = useField('title', formAPI, { sync: titleValidator })
     const repositories = useField('repositories', formAPI, {

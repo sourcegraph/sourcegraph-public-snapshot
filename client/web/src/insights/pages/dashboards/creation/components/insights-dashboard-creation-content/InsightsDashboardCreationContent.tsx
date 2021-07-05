@@ -2,12 +2,15 @@ import React from 'react'
 
 import { ErrorAlert } from '../../../../../../components/alerts';
 import { LoaderButton } from '../../../../../../components/LoaderButton';
+import { Settings } from '../../../../../../schema/settings.schema';
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup';
 import { FormInput } from '../../../../../components/form/form-input/FormInput';
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput';
 import { useField } from '../../../../../components/form/hooks/useField';
 import { FORM_ERROR, useForm } from '../../../../../components/form/hooks/useForm';
 import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker';
+
+import { useDashboardNameValidator } from './hooks/useDashboardNameValidator';
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -20,21 +23,42 @@ interface DashboardCreationFields {
 }
 
 interface InsightsDashboardCreationContentProps {
+    /**
+     * Initial values for the dashboard creation form.
+     */
     initialValues?: DashboardCreationFields
+
+    /**
+     * Organizations list used in the creation form for dashboard visibility setting.
+     */
+    organizations: Organization[]
+
+    settings: Settings
+
+    onSubmit: (values: DashboardCreationFields) => void
+    onCancel: () => void
 }
 
+/**
+ * Renders creation UI form content (fields, submit and cancel buttons).
+ */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues = DASHBOARD_INITIAL_VALUES } = props;
+    const {
+        initialValues = DASHBOARD_INITIAL_VALUES,
+        organizations,
+        settings,
+        onCancel,
+        onSubmit
+    } = props;
 
     const { ref, handleSubmit, formAPI,  } = useForm<DashboardCreationFields>({
         initialValues,
-        onSubmit: console.log
+        onSubmit,
     })
 
-    const name = useField('name', formAPI)
+    const nameValidator = useDashboardNameValidator({ settings })
+    const name = useField('name', formAPI, { sync: nameValidator })
     const visibility = useField('visibility', formAPI)
-
-    const organizations: Organization[] = []
 
     return (
         // eslint-disable-next-line react/forbid-elements
@@ -102,7 +126,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
             <div className="d-flex flex-wrap justify-content-end mt-3">
 
-                <button type="button" className="btn btn-outline-secondary mb-2">
+                <button type="button" className="btn btn-outline-secondary mb-2" onClick={onCancel}>
                     Cancel
                 </button>
 
