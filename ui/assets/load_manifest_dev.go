@@ -15,7 +15,7 @@ func LoadWebpackManifest() (m *WebpackManifest, err error) {
 	}
 
 	return &WebpackManifest{
-		AppJSBundlePath: "esbuild/main.js",
+		AppJSBundlePath: "main.js",
 	}, nil
 
 	// manifestContent, err := os.ReadFile("./ui/assets/webpack.manifest.json")

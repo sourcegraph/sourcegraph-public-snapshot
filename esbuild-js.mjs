@@ -10,18 +10,6 @@ import postcssModules from 'postcss-modules'
 import fs from 'fs'
 import os from 'os'
 
-/** @type esbuild.Plugin */
-const examplePlugin = {
-    name: 'example',
-    setup: build => {
-        build.onResolve({ filter: /./, namespace: 'file' }, args => {
-            if (args.path.endsWith('.css')) {
-                //console.log('onResolve', args)
-            }
-        })
-    },
-}
-
 const resolveFile = (modulePath, dir) => {
     if (modulePath.startsWith('.')) {
         return path.resolve(dir, modulePath)
@@ -63,8 +51,6 @@ const sassPlugin = {
         })
         build.onEnd(() => console.log(`> ${Date.now() - buildStarted}ms`))
 
-        const CWD = process.cwd()
-
         /** @type {path:string; map: {[key: string]: string}}[] */
         const modulesMap = new Map()
         const modulesPlugin = postcssModules({
@@ -74,25 +60,18 @@ const sassPlugin = {
             getJSON: (cssPath, json) => modulesMap.set(cssPath, json),
         })
 
-        build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
-            // Namespace is empty when using CSS as an entrypoint
-            if (args.namespace !== 'file' && args.namespace !== '') {
-                return
-            }
-
-            const sourceFullPath = cachedResolveFile(args.path, args.resolveDir)
-
+        const CWD = process.cwd()
+        const cssRender = async (sourceFullPath, fileContent) => {
             const sourceExt = path.extname(sourceFullPath)
             const sourceBaseName = path.basename(sourceFullPath, sourceExt)
             const sourceDir = path.dirname(sourceFullPath)
             const sourceRelDir = path.relative(CWD, sourceDir)
             const isModule = sourceBaseName.endsWith('.module')
             const tmpDir = path.resolve(tmpDirPath, sourceRelDir)
-            fs.mkdirSync(tmpDir, { recursive: true })
+            await fs.promises.mkdir(tmpDir, { recursive: true })
 
             const tmpFilePath = path.join(tmpDir, `${sourceBaseName}.css`)
 
-            const fileContent = await fs.promises.readFile(sourceFullPath)
             let css
             switch (sourceExt) {
                 case '.css':
@@ -103,6 +82,7 @@ const sassPlugin = {
                     css = sass
                         .renderSync({
                             file: sourceFullPath,
+                            data: fileContent,
                             importer: url => {
                                 return { file: cachedResolveFile(url) }
                             },
@@ -124,6 +104,33 @@ const sassPlugin = {
             })
 
             await fs.promises.writeFile(tmpFilePath, result.css)
+            return tmpFilePath
+        }
+        const cssRenderCache = new Map()
+        const cachedCSSRender = async (sourceFullPath, fileContent) => {
+            // TODO(sqs): invalidate
+            const key = sourceFullPath
+            const existing = cssRenderCache.get(key)
+            if (existing || false /* TODO(sqs): not actually caching */) {
+                return existing
+            }
+
+            const value = await cssRender(sourceFullPath, fileContent)
+            cssRenderCache.set(key, value)
+            return value
+        }
+
+        build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
+            // Namespace is empty when using CSS as an entrypoint
+            if (args.namespace !== 'file' && args.namespace !== '') {
+                return
+            }
+
+            const sourceFullPath = cachedResolveFile(args.path, args.resolveDir)
+            const fileContent = await fs.promises.readFile(sourceFullPath, 'utf8')
+            const tmpFilePath = await cachedCSSRender(sourceFullPath, fileContent)
+
+            const isModule = sourceFullPath.endsWith('.module.css') || sourceFullPath.endsWith('.module.scss')
 
             return {
                 namespace: isModule ? 'postcss-module' : 'file',
