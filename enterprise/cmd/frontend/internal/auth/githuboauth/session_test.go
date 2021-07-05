@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -257,8 +258,10 @@ func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *t
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
+	db := dbtesting.GetDB(t)
+
 	ctx := context.Background()
-	s := &sessionIssuerHelper{}
+	s := &sessionIssuerHelper{db: db}
 	t.Run("Unauthenticated request", func(t *testing.T) {
 		_, err := s.CreateCodeHostConnection(ctx, nil, "")
 		if err == nil {
@@ -267,7 +270,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	})
 	now := time.Now()
 
-	mockGitHubCom := newMockProvider(t, "githubcomclient", "githubcomsecret", "https://github.com/")
+	mockGitHubCom := newMockProvider(t, db, "githubcomclient", "githubcomsecret", "https://github.com/")
 	providers.MockProviders = []providers.Provider{mockGitHubCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
