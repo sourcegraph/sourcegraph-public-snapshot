@@ -12,12 +12,13 @@ import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { Selection } from 'monaco-editor'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { escapeRegExp } from 'lodash'
 import { updateFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
@@ -38,6 +39,7 @@ export interface SearchReferenceInfo {
      */
     commonRank?: number
     alias?: string
+    examples?: string[]
 }
 
 /**
@@ -56,16 +58,19 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         placeholder: parsePlaceholder('"{last week}"'),
         description: `Only include results from diffs or commits which have a commit date after the specified time frame.`,
         commonRank: 100,
+        examples: ['after:"6 weeks ago"', 'after:"november 1 2019"'],
     },
     {
         type: FilterType.archived,
         placeholder: parsePlaceholder('{yes or only}'),
         description: `The "yes" option includes archived repositories. The "only" option filters results to only archived repositories. Results in archived repositories are excluded by default.`,
+        examples: ['repo:sourcegraph/ archived:only'],
     },
     {
         type: FilterType.case,
         placeholder: parsePlaceholder('{yes}'),
         description: `Perform a case sensitive query. Without this, everything is matched case insensitively.`,
+        examples: ['OPEN_FILE case:yes'],
     },
     {
         type: FilterType.content,
@@ -73,6 +78,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         description:
             'Set the search pattern with a dedicated parameter. Useful when searching literally for a string that may conflict with the [search pattern syntax](https://docs.sourcegraph.com/code_search/reference/queries#search-pattern-syntax). In between the quotes, the `\\` character will need to be escaped (`\\\\` to evaluate for `\\`).',
         commonRank: 70,
+        examples: ['repo:sourcegraph content:"repo:sourcegraph"', 'file:Dockerfile alpine -content:alpine:latest'],
     },
     {
         type: FilterType.count,
@@ -80,12 +86,14 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         description:
             'Retrieve *N* results. By default, Sourcegraph stops searching early and returns if it finds a full page of results. This is desirable for most interactive searches. To wait for all results, use **count:all**.',
         commonRank: 60,
+        examples: ['count:1000 function', 'count:all err'],
     },
     {
         type: FilterType.file,
         placeholder: parsePlaceholder('{regexp-pattern}'),
         commonRank: 30,
         description: 'Only include results in files whose full path matches the regexp.',
+        examples: ['file:.js$ httptest', 'file:internal/ httptest', 'file:.js$ -file:test http'],
     },
     {
         type: FilterType.fork,
@@ -93,12 +101,14 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         description:
             'Include results from repository forks or filter results to only repository forks. Results in repository forks are exluded by default.',
         commonRank: 80,
+        examples: ['fork:yes repo:sourcegraph'],
     },
     {
         type: FilterType.lang,
         placeholder: parsePlaceholder('{language-name}'),
         description: 'Only include results from files in the specified programming language.',
         commonRank: 40,
+        examples: ['lang:typescript encoding', '-lang:typescript encoding'],
     },
     {
         type: FilterType.repo,
@@ -106,6 +116,12 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         description:
             'Only include results from repositories whose path matches the regexp-pattern. A repository’s path is a string such as *github.com/myteam/abc* or *code.example.com/xyz* that depends on your organization’s repository host. If the regexp ends in [`@rev`](https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions), that revision is searched instead of the default branch (usually `master`). `repo:regexp-pattern@rev` is equivalent to `repo:regexp-pattern rev:rev`.',
         commonRank: 10,
+        examples: [
+            'repo:gorilla/mux testroute',
+            'repo:^github.com/sourcegraph/sourcegraph$@v3.14.0 mux',
+            'repo:alice/ -repo:old-repo',
+            'repo:vscode@*refs/heads/:^refs/heads/master type:diff task',
+        ],
     },
     {
         type: FilterType.repogroup,
@@ -119,6 +135,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         showSuggestions: false,
         description:
             'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
+        examples: ['repo:contains.commit.after(yesterday)', 'repo:contains.commit.after(june 25 2017)'],
     },
     {
         type: FilterType.repo,
@@ -140,31 +157,38 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         commonRank: 50,
         description:
             'Shows only query results for a given type. For example, `select:repo` displays only distinct reopsitory paths from search results. See [language definition](https://docs.sourcegraph.com/code_search/reference/language#select) for possible values.',
+        examples: ['fmt.Errorf select:repo'],
     },
+    /*
+     * FIXME: Doesn't exist as filter type?
     {
         type: FilterType.stable,
         placeholder: parsePlaceholder('{yes}'),
         description:
             'Ensures a deterministic result order. Applies only to file contents. Limited to at max `count:5000` results. Note this field should be removed if you’re using the pagination API, which already ensures deterministic results.',
     },
+    */
     {
         type: FilterType.type,
         placeholder: parsePlaceholder('{symbol}'),
         commonRank: 90,
         description:
             'Specifies the type of search. By default, searches are executed on all code at a given point in time (a branch or a commit). Specify the `type:` if you want to search over changes to code or commit messages instead (diffs or commits).',
+        examples: ['type:symbol path', 'type:diff func', 'type:commit test'],
     },
     {
         type: FilterType.timeout,
         placeholder: parsePlaceholder('{golang-duration-value}'),
         description:
             'Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package’s `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 10 seconds, and the search will optimize for returning results as soon as possible. The timeout value cannot be set longer than 1 minute. When provided, the search is given the full timeout to complete.',
+        examples: ['repo:^github.com/sourcegraph timeout:15s func count:10000'],
     },
     {
         type: FilterType.visibility,
         placeholder: parsePlaceholder('{any}'),
         description:
             'Filter results to only public or private repositories. The default is to include both private and public repositories.',
+        examples: ['type:repo visibility:public'],
     },
 ]
 
@@ -219,6 +243,7 @@ function shouldShowSuggestions(searchReference: SearchReferenceInfo): boolean {
 export function updateQueryWithFilter(
     currentQueryState: QueryState,
     searchReference: SearchReferenceInfo,
+    negate: boolean,
     allFilters: typeof FILTERS
 ): QueryState {
     const { singular } = allFilters[searchReference.type]
@@ -226,10 +251,15 @@ export function updateQueryWithFilter(
     let showSuggestions = shouldShowSuggestions(searchReference)
     let cursorPosition
     let selection
+    let field: string = searchReference.type
+
+    if (negate && isNegatableFilter(searchReference.type)) {
+        field = '-' + field
+    }
 
     if (!singular) {
         // Always append to the query
-        query = appendFilter(query, searchReference.type, showSuggestions ? '' : searchReference.placeholder.text)
+        query = appendFilter(query, field, showSuggestions ? '' : searchReference.placeholder.text)
         // There is no need to update the cursor position in this case
         if (!showSuggestions) {
             selection = selectionsForPlaceholder(
@@ -247,9 +277,9 @@ export function updateQueryWithFilter(
         const existingFilter = findFilter(query, searchReference.type, FilterKind.Global)
 
         if (showSuggestions) {
-            query = updateFilter(query, searchReference.type, '')
+            query = updateFilter(query, field, '')
         } else if (!existingFilter) {
-            query = updateFilter(query, searchReference.type, searchReference.placeholder.text)
+            query = updateFilter(query, field, searchReference.placeholder.text)
             selection = selectionsForPlaceholder(
                 searchReference.placeholder,
                 query.length - searchReference.placeholder.text.length
@@ -318,19 +348,65 @@ export function parsePlaceholder(placeholder: string): Placeholder {
     return parsedPlaceholder
 }
 
+function interleave<T>(values: T[], filler: T) {
+    const result = []
+    if (values.length > 0) {
+        result.push(values[0])
+    }
+    for (let i = 1; i < values.length; i++) {
+        result.push(filler)
+        result.push(values[i])
+    }
+
+    return result
+}
+
 const classNameTokenMap = {
     text: 'search-filter-keyword',
     value: styles.placeholder,
 }
 
+interface SearchReferenceExampleProps {
+    example: string
+}
+
+const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example }) => {
+    const parseResult = parseSearchQuery(example)
+    // We only use valid queries as examples, so this will always be true
+    if (parseResult.type === 'success') {
+        return interleave(
+            parseResult.nodes
+                .map(node => {
+                    switch (node.type) {
+                        case 'parameter':
+                            return (
+                                <>
+                                    <span className="search-filter-keyword">
+                                        {node.negated ? '-' : ''}
+                                        {node.field}:
+                                    </span>
+                                    {node.value}
+                                </>
+                            )
+                        case 'pattern':
+                            return node.value
+                    }
+                })
+                .filter(Boolean),
+            ' '
+        )
+    }
+    return null
+}
+
 interface SearchReferenceEntryProps {
     searchReference: SearchReferenceInfo
-    onClick: (searchReference: SearchReferenceInfo) => void
+    onClick: (searchReference: SearchReferenceInfo, negate: boolean) => void
 }
 
 const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> = ({ searchReference, onClick }) => {
     const [collapsed, setCollapsed] = useState(true)
-    const CollapseIcon = collapsed ? ChevronRightIcon : ChevronDownIcon
+    const CollapseIcon = collapsed ? ChevronLeftIcon : ChevronDownIcon
 
     return (
         <li>
@@ -339,6 +415,20 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                     [styles.active]: !collapsed,
                 })}
             >
+                <button
+                    className="btn p-0 flex-1"
+                    type="button"
+                    onClick={event => onClick(searchReference, event.altKey)}
+                >
+                    <span className="text-monospace">
+                        <span className="search-filter-keyword">{searchReference.type}:</span>
+                        {searchReference.placeholder.tokens.map(token => (
+                            <span key={token.start} className={classNameTokenMap[token.type]}>
+                                {token.content}
+                            </span>
+                        ))}
+                    </span>
+                </button>
                 <button
                     type="button"
                     className={classNames('btn btn-icon mr-1', styles.collapseButton)}
@@ -350,16 +440,6 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                 >
                     <CollapseIcon className="icon-inline" />
                 </button>
-                <button className="btn p-0 flex-1" type="button" onClick={() => onClick(searchReference)}>
-                    <span className="text-monospace">
-                        <span className="search-filter-keyword">{searchReference.type}:</span>
-                        {searchReference.placeholder.tokens.map(token => (
-                            <span key={token.start} className={classNameTokenMap[token.type]}>
-                                {token.content}
-                            </span>
-                        ))}
-                    </span>
-                </button>
             </span>
             <Collapse isOpen={!collapsed}>
                 <div className={styles.description}>
@@ -368,19 +448,31 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                     )}
                     {searchReference.alias && (
                         <p>
-                            Alias: <span className="search-filter-keyword">{searchReference.alias}:</span>
+                            Alias: <span className="text-code search-filter-keyword">{searchReference.alias}:</span>
                         </p>
                     )}
                     {isNegatableFilter(searchReference.type) && (
                         <p>
-                            Negation: <span className="search-filter-keyword">-{searchReference.type}:</span>
+                            Negation: <span className="test-code search-filter-keyword">-{searchReference.type}:</span>
                             {searchReference.alias && (
                                 <>
                                     {' '}
-                                    | <span className="search-filter-keyword">-{searchReference.alias}:</span>
+                                    | <span className="test-code search-filter-keyword">-{searchReference.alias}:</span>
                                 </>
                             )}
                         </p>
+                    )}
+                    {searchReference.examples && (
+                        <>
+                            <div className="font-weight-medium">Examples</div>
+                            <div className={classNames('text-code', styles.examples)}>
+                                {searchReference.examples.map(example => (
+                                    <p>
+                                        <SearchReferenceExample key={example} example={example} />
+                                    </p>
+                                ))}
+                            </div>
+                        </>
                     )}
                 </div>
             </Collapse>
@@ -390,7 +482,7 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
 
 interface SearchReferenceListProps {
     filters: SearchReferenceInfo[]
-    onClick: (info: SearchReferenceInfo) => void
+    onClick: (info: SearchReferenceInfo, negate: boolean) => void
 }
 
 const SearchReferenceList = ({ filters, onClick }: SearchReferenceListProps): ReactElement => {
@@ -432,8 +524,10 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     }, [props.filter])
 
     const updateQuery = useCallback(
-        (searchReference: SearchReferenceInfo) => {
-            props.onNavbarQueryChange(updateQueryWithFilter(props.navbarSearchQueryState, searchReference, FILTERS))
+        (searchReference: SearchReferenceInfo, negate: boolean) => {
+            props.onNavbarQueryChange(
+                updateQueryWithFilter(props.navbarSearchQueryState, searchReference, negate, FILTERS)
+            )
         },
         [props.onNavbarQueryChange, props.navbarSearchQueryState]
     )

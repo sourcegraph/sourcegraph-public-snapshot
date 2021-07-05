@@ -68,24 +68,13 @@
     border: none;
     margin: 0;
     padding: 0;
-    width: 0;
-
-    // Force the button's box-shadow to always show over the sibling element's border
-    position: relative;
-    z-index: 1;
-    overflow: hidden;
-    transition: width 0.1s ease-in-out;
-
-    svg {
-        opacity: 0;
-        transition: opacity 0.1s ease-in-out;
-    }
+    display: none;
 }
 
 .collapse-button:focus {
-    width: 16px;
+    display: inline-block;
+}
 
-    svg {
-        opacity: 1;
-    }
+.examples {
+    white-space: break-spaces;
 }
