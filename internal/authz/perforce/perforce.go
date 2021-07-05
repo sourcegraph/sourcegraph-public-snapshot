@@ -186,7 +186,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 	user, err := perforce.GetExternalAccountData(&account.AccountData)
 	if err != nil {
-		return nil, errors.Wrap(err, "get external account data")
+		return nil, errors.Wrap(err, "getting external account data")
 	} else if user == nil {
 		return nil, errors.New("no user found in the external account data")
 	}
