@@ -27,6 +27,7 @@ import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNa
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 window.xyz = 2
+// TODO(sqs): esbuild doesn't include these in a bundle seemingly because they are in wildcard/
 import foo2 from '@sourcegraph/wildcard/src/components/NavBar/NavAction.module.scss'
 import foo from '@sourcegraph/wildcard/src/components/NavBar/NavBar.module.scss'
 import foo3 from '@sourcegraph/wildcard/src/components/NavBar/NavItem.module.scss'

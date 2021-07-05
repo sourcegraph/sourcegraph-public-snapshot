@@ -140,7 +140,8 @@ const sassPlugin = {
                 },
             }
         })
-        build.onResolve({ filter: /\.ttf$/ }, args => {
+
+        build.onResolve({ filter: /\.ttf$/, namespace: 'file' }, args => {
             // TODO(sqs): hack, need to resolve this from the original path
             if (args.path === './codicon.ttf') {
                 return {
@@ -148,7 +149,7 @@ const sassPlugin = {
                 }
             }
         })
-        build.onResolve({ filter: /\.png$/ }, args => {
+        build.onResolve({ filter: /\.png$/, namespace: 'file' }, args => {
             // TODO(sqs): hack, need to resolve this from the original path
             if (args.path === 'img/bg-sprinkles-2x.png') {
                 return {
@@ -187,7 +188,7 @@ esbuild
         format: 'esm',
         outdir: 'ui/assets/esbuild',
         logLevel: 'error',
-        splitting: false,
+        splitting: true,
         plugins: [sassPlugin],
         define: {
             'process.env.NODE_ENV': '"development"',
@@ -196,10 +197,8 @@ esbuild
         },
         loader: {
             '.yaml': 'text',
-            // '.scss': 'css',
-            // '.css': 'text',
-            '.ttf': 'dataurl',
-            '.png': 'dataurl',
+            '.ttf': 'file',
+            '.png': 'file',
         },
         target: 'es2020',
         sourcemap: true,
