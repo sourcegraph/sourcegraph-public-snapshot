@@ -280,7 +280,7 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	}
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
-	db.SetConnMaxLifetime(time.Minute)
+	db.SetConnMaxIdleTime(time.Minute)
 
 	return db, nil
 }
@@ -386,5 +386,5 @@ func configureConnectionPool(db *sql.DB) {
 	}
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
-	db.SetConnMaxLifetime(time.Minute)
+	db.SetConnMaxIdleTime(time.Minute)
 }
