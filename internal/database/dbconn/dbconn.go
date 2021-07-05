@@ -40,6 +40,21 @@ var (
 	_ = env.Ensure("TZ", "UTC", "timezone used by time instances")
 )
 
+// Opts contain arguments passed to database connection initialisation functions.
+type Opts struct {
+	// DSN (data source name) is a URI like string containing all data needed to connect to the database.
+	DSN string
+
+	// DBName is used only for Prometheus metrics instead of whatever actual database name is set in DSN.
+	// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
+	// logical databases.
+	DBName string
+
+	// AppName overrides the application_name in the DSN. This separate parameter is needed
+	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
+	AppName string
+}
+
 // SetupGlobalConnection connects to the given data source and stores the handle
 // globally.
 //
@@ -51,8 +66,8 @@ var (
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func SetupGlobalConnection(dataSource, dbname, app string) (err error) {
-	Global, err = New(dataSource, dbname, app)
+func SetupGlobalConnection(opts Opts) (err error) {
+	Global, err = New(opts)
 	return err
 }
 
@@ -66,8 +81,8 @@ func SetupGlobalConnection(dataSource, dbname, app string) (err error) {
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func New(dataSource, dbname, app string) (*sql.DB, error) {
-	cfg, err := buildConfig(dataSource, app)
+func New(opts Opts) (*sql.DB, error) {
+	cfg, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +92,7 @@ func New(dataSource, dbname, app string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	prometheus.MustRegister(newMetricsCollector(db, dbname, app))
+	prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
 	configureConnectionPool(db)
 
 	return db, nil

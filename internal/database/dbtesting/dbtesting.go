@@ -160,7 +160,8 @@ func initTest(nameSuffix string) error {
 		}
 	}
 
-	if err := dbconn.SetupGlobalConnection("dbname="+dbname, dbname, "tests"); err != nil {
+	opts := dbconn.Opts{DSN: "dbname=" + dbname, DBName: dbname, AppName: "tests"}
+	if err := dbconn.SetupGlobalConnection(opts); err != nil {
 		return err
 	}
 
