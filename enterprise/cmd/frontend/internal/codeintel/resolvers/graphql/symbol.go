@@ -93,6 +93,10 @@ func (r *SymbolResolver) References(ctx context.Context) (gql.LocationConnection
 	})
 }
 
+func (r *SymbolResolver) Usage(ctx context.Context) (gql.SymbolUsageResolver, error) {
+	return &symbolUsageResolver{symbol: r}, nil
+}
+
 func (r *SymbolResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
 	// if len(r.symbol.Locations) == 0 {
 	// 	// TODO(sqs): instead, look up by moniker

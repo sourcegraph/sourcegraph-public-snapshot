@@ -100,6 +100,10 @@ func (r *ExpSymbol) References(ctx context.Context) (LocationConnectionResolver,
 	return r.sym.References(ctx)
 }
 
+func (r *ExpSymbol) Usage(ctx context.Context) (SymbolUsageResolver, error) {
+	return r.sym.Usage(ctx)
+}
+
 func (r *ExpSymbol) Hover(ctx context.Context) (HoverResolver, error) {
 	return r.sym.Hover(ctx)
 }
@@ -209,4 +213,8 @@ func NewGitCommitConnectionResolver(revisionRange string, lineRanges []string, r
 		first:         &first,
 		repo:          NewRepositoryResolver(dbconn.Global, &types.Repo{ID: repo, Name: "github.com/hashicorp/go-multierror"}),
 	}
+}
+
+type SymbolUsageResolver interface {
+	References(context.Context) (LocationConnectionResolver, error)
 }

@@ -56,7 +56,7 @@ const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, watchWebapp
  */
 const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  /// //////// TODO(sqs): for speed; -------      codeGen,
+  codeGen,
   developmentWithoutInitialCodeGen
 )
 

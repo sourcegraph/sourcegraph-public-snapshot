@@ -282,6 +282,7 @@ type SymbolResolver interface {
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	DefinitionsFullRanges(ctx context.Context) (LocationConnectionResolver, error)
 	References(ctx context.Context) (LocationConnectionResolver, error)
+	Usage(context.Context) (SymbolUsageResolver, error)
 	Hover(context.Context) (HoverResolver, error)
 	RootAncestor() SymbolResolver
 	Children() []SymbolResolver

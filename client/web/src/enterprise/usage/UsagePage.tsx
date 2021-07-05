@@ -31,25 +31,27 @@ const UsagePageFieldsGQLFragment = gql`
         text
         url
 
-        references {
-            nodes {
-                range {
-                    start {
-                        line
-                        character
+        usage {
+            references {
+                nodes {
+                    range {
+                        start {
+                            line
+                            character
+                        }
+                        end {
+                            line
+                            character
+                        }
                     }
-                    end {
-                        line
-                        character
-                    }
-                }
-                resource {
-                    path
-                    commit {
-                        oid
-                    }
-                    repository {
-                        name
+                    resource {
+                        path
+                        commit {
+                            oid
+                        }
+                        repository {
+                            name
+                        }
                     }
                 }
             }
@@ -111,7 +113,7 @@ export const UsagePage: React.FunctionComponent<Props> = ({
         eventLogger.logViewEvent('Usage')
     }, [])
 
-    const usageInfo = useObservable(
+    const symbol = useObservable(
         useMemo(
             () =>
                 queryUsagePage({
@@ -127,19 +129,19 @@ export const UsagePage: React.FunctionComponent<Props> = ({
     useBreadcrumb(
         useMemo(
             () =>
-                usageInfo === null
+                symbol === null
                     ? null
                     : {
                           key: 'usage',
-                          element: usageInfo ? (
+                          element: symbol ? (
                               <>
-                                  Usage: <Link to={usageInfo.url}>{usageInfo.text}</Link>
+                                  Usage: <Link to={symbol.url}>{symbol.text}</Link>
                               </>
                           ) : (
                               <LoadingSpinner className="icon-inline" />
                           ),
                       },
-            [usageInfo]
+            [symbol]
         )
     )
 
@@ -147,13 +149,13 @@ export const UsagePage: React.FunctionComponent<Props> = ({
         window.parent.postMessage({ type: 'usageClick' }, '*')
     }, [])
 
-    return usageInfo === null ? (
+    return symbol === null ? (
         <p className="p-3 text-muted h3">Not found</p>
-    ) : usageInfo === undefined ? (
+    ) : symbol === undefined ? (
         <LoadingSpinner className="m-3" />
     ) : (
         <>
-            {usageInfo.references.nodes.length > 1 && (
+            {symbol.usage.references.nodes.length > 1 && (
                 <section id="refs" className="" onClick={onClick}>
                     {/* <h2 className="mt-0 mx-3 mb-0 h4">Examples</h2> */}
                     <style>
@@ -163,7 +165,7 @@ export const UsagePage: React.FunctionComponent<Props> = ({
                     </style>
                     <FileLocations
                         locations={of(
-                            usageInfo.references.nodes
+                            symbol.usage.references.nodes
                                 .slice(0, -1)
                                 .slice(0, 25)
                                 .map<Location>(reference => ({

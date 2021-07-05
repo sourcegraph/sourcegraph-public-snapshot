@@ -839,6 +839,11 @@ type ExpSymbol {
     references: LocationConnection!
 
     """
+    Information about how this symbol is used.
+    """
+    usage: SymbolUsage!
+
+    """
     The URL to this symbol (using the input revision specifier, which may not be immutable).
     """
     url: String!
@@ -853,6 +858,10 @@ type ExpSymbol {
     #children(filters: SymbolFilters): ExpSymbolConnection!
 
     editCommits: GitCommitConnection
+}
+
+type SymbolUsage {
+    references: LocationConnection!
 }
 
 input SymbolFilters {
