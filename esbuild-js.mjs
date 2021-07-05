@@ -23,56 +23,54 @@ const examplePlugin = {
 }
 
 const resolveFile = (modulePath, dir) => {
-    if (modulePath.startsWith('wildcard/')) {
-        return path.resolve(`node_modules/@sourcegraph/${modulePath}`)
+    if (modulePath.startsWith('.')) {
+        return path.resolve(dir, modulePath)
     }
 
-    if (modulePath.startsWith('wildcard/') || modulePath.startsWith('shared')) {
+    if (modulePath.startsWith('wildcard/') || modulePath.startsWith('shared/')) {
         return path.resolve(`client/${modulePath}`)
     }
-    if (
-        modulePath.startsWith('@reach') ||
-        modulePath.startsWith('graphiql') ||
-        modulePath.startsWith('@sourcegraph') ||
-        modulePath.startsWith('bootstrap') ||
-        modulePath.startsWith('open-color') ||
-        modulePath.startsWith('react-grid-layout') ||
-        !modulePath.startsWith('.')
-    ) {
-        let p = path.resolve(`node_modules/${modulePath}`)
-        try {
-            p = fs.realpathSync(p)
-        } catch (err) {}
-        return p
+
+    let p = path.resolve(`node_modules/${modulePath}`)
+    try {
+        p = fs.realpathSync(p)
+    } catch (err) {}
+    return p
+}
+const resolveCache = new Map()
+const cachedResolveFile = (modulePath, dir) => {
+    const key = `${modulePath}:${dir}`
+    const existing = resolveCache.get(key)
+    if (existing) {
+        return existing
     }
-    return path.resolve(dir, modulePath)
+
+    const resolvedPath = resolveFile(modulePath, dir)
+    resolveCache.set(key, resolvedPath)
+    return resolvedPath
 }
 
 /** @type esbuild.Plugin */
 const sassPlugin = {
     name: 'sass',
     setup: build => {
-        const tmpDirPath = fs.mkdtempSync(path.join(os.tmpdir(), 'esbuild-'))
-        // const tmpDirPath = '/tmp/esbuild-JeD7YX'
+        const tmpPrefix = path.join(os.tmpdir(), 'esbuild-')
+        const tmpDirPath = fs.mkdtempSync(tmpPrefix)
+        build.onEnd(() => {
+            // Check prefix just in case the Node.js mkdtempSync API is weird, to avoid `rm -rf`ing
+            // anything unintentional.
+            if (tmpDirPath.startsWith(tmpPrefix)) {
+                fs.rmdirSync(tmpDirPath, { recursive: true })
+            }
+        })
 
         /** @type {path:string; map: {[key: string]: string}}[] */
-        const modulesMap = []
+        const modulesMap = new Map()
         const modulesPlugin = postcssModules({
             generateScopedName: '[name]__[local]___[hash:base64:5]',
             localsConvention: 'camelCase',
             modules: true,
-            getJSON(filepath, json, outpath) {
-                // Make sure to replace json map instead of pushing new map everytime with edit file on watch
-                const mapIndex = modulesMap.findIndex(m => m.path === filepath)
-                if (mapIndex !== -1) {
-                    modulesMap[mapIndex].map = json
-                } else {
-                    modulesMap.push({
-                        path: filepath,
-                        map: json,
-                    })
-                }
-            },
+            getJSON: (cssPath, json) => modulesMap.set(cssPath, json),
         })
 
         build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
@@ -81,7 +79,7 @@ const sassPlugin = {
                 return
             }
 
-            const sourceFullPath = resolveFile(args.path, args.resolveDir)
+            const sourceFullPath = cachedResolveFile(args.path, args.resolveDir)
 
             const sourceExt = path.extname(sourceFullPath)
             const sourceBaseName = path.basename(sourceFullPath, sourceExt)
@@ -89,13 +87,12 @@ const sassPlugin = {
             const sourceRelDir = path.relative(path.dirname(process.cwd()), sourceDir)
             const isModule = sourceBaseName.endsWith('.module')
             const tmpDir = path.resolve(tmpDirPath, sourceRelDir)
+            fs.mkdirSync(tmpDir, { recursive: true })
 
             const tmpFilePath =
                 args.kind === 'entry-point'
                     ? path.join(tmpDir, `${sourceBaseName}.css`)
                     : path.resolve(tmpDir, `${Date.now()}-${sourceBaseName}.css`)
-
-            fs.mkdirSync(tmpDir, { recursive: true })
 
             const fileContent = fs.readFileSync(sourceFullPath)
             let css
@@ -159,11 +156,11 @@ const sassPlugin = {
         })
 
         build.onLoad({ filter: /./, namespace: 'postcss-module' }, async args => {
-            const mod = modulesMap.find(({ path }) => path === args.pluginData.originalPath)
+            const mod = modulesMap.get(args.pluginData.originalPath)
             const resolveDir = path.dirname(args.path)
 
             const contents = `import ${JSON.stringify(args.path)}
-            export default ${JSON.stringify(mod && mod.map ? mod.map : {})}`
+            export default ${JSON.stringify(mod || {})}`
 
             return {
                 resolveDir,
