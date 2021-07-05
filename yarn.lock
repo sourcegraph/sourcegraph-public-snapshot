@@ -20447,19 +20447,19 @@ sass@1.32.8:
   dependencies:
     chokidar ">=2.0.0 <4.0.0"
 
-sass@^1.26.10, sass@^1.34.1, sass@^1.35.1:
-  version "1.35.1"
-  resolved "https://registry.npmjs.org/sass/-/sass-1.35.1.tgz#90ecf774dfe68f07b6193077e3b42fb154b9e1cd"
-  integrity sha512-oCisuQJstxMcacOPmxLNiLlj4cUyN2+8xJnG7VanRoh2GOLr9RqkvI4AxA4a6LHVg/rsu+PmxXeGhrdSF9jCiQ==
-  dependencies:
-    chokidar ">=3.0.0 <4.0.0"
-
 sass@^1.32.4:
   version "1.32.4"
   resolved "https://registry.npmjs.org/sass/-/sass-1.32.4.tgz#308bf29dd7f53d44ae4f06580e9a910ad9aa411e"
   integrity sha512-N0BT0PI/t3+gD8jKa83zJJUb7ssfQnRRfqN+GIErokW6U4guBpfYl8qYB+OFLEho+QvnV5ZH1R9qhUC/Z2Ch9w==
   dependencies:
     chokidar ">=2.0.0 <4.0.0"
+
+sass@^1.34.1, sass@^1.35.1:
+  version "1.35.1"
+  resolved "https://registry.npmjs.org/sass/-/sass-1.35.1.tgz#90ecf774dfe68f07b6193077e3b42fb154b9e1cd"
+  integrity sha512-oCisuQJstxMcacOPmxLNiLlj4cUyN2+8xJnG7VanRoh2GOLr9RqkvI4AxA4a6LHVg/rsu+PmxXeGhrdSF9jCiQ==
+  dependencies:
+    chokidar ">=3.0.0 <4.0.0"
 
 sax@>=0.6.0, sax@~1.2.4:
   version "1.2.4"

@@ -136,7 +136,12 @@ const sassPlugin = {
             }
         })
         build.onResolve({ filter: /\.ttf$/ }, args => {
-            console.log('TTTTTTTTTTT', args)
+            // TODO(sqs): hack, need to resolve this from the original path
+            if (args.path === './codicon.ttf') {
+                return {
+                    path: path.resolve('node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon', args.path),
+                }
+            }
         })
         /*         build.onResolve({ filter: /\.css$/ }, args => {
             if (args.path.startsWith('wildcard/')) {
