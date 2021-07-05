@@ -864,6 +864,13 @@ type SymbolUsage {
     references: LocationConnection!
 
     referenceGroups: [ReferenceGroup!]!
+
+    callers: [SymbolCallerEdge!]!
+}
+
+type SymbolCallerEdge {
+    person: Person!
+    locations: LocationConnection!
 }
 
 type ReferenceGroup {

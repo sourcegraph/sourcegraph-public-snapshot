@@ -298,9 +298,15 @@ type MonikerResolver interface {
 type SymbolUsageResolver interface {
 	References(context.Context) (LocationConnectionResolver, error)
 	ReferenceGroups(context.Context) ([]ReferenceGroupResolver, error)
+	Callers(context.Context) ([]SymbolCallerEdgeResolver, error)
 }
 
 type ReferenceGroupResolver interface {
 	Name() string
 	Locations(context.Context) (LocationConnectionResolver, error)
+}
+
+type SymbolCallerEdgeResolver interface {
+	Person() *PersonResolver
+	Locations() LocationConnectionResolver
 }
