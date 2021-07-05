@@ -12,12 +12,12 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { CreationRoutes } from './pages/creation/CreationRoutes'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
+import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
 import { getExperimentalFeatures } from './utils/get-experimental-features'
 
-const InsightsLazyPage = lazyComponent(() => import('./pages/insights/InsightsPage'), 'InsightsPage')
-const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
+const InsightsLazyPage = lazyComponent(() => import('./pages/insights/insights-page/InsightsPage'), 'InsightsPage')
+const EditInsightLazyPage = lazyComponent(() => import('./pages/insights/edit-insight/EditInsightPage'), 'EditInsightPage')
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 

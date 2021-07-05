@@ -10,7 +10,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { Settings } from '../../../schema/settings.schema'
 
 import { InsightsDashboardCreationPage } from './creation/InsightsDashboardCreationPage'
-import { DashboardsPage } from './DashboardsPage'
+import { DashboardsPage } from './dashboard-page/DashboardsPage'
 
 export interface DashboardsRoutesProps
     extends TelemetryProps,
