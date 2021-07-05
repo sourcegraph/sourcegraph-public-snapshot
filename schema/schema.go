@@ -1404,6 +1404,8 @@ type SiteConfiguration struct {
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.
 	BatchChangesRolloutWindows *[]*BatchChangeRolloutWindow `json:"batchChanges.rolloutWindows,omitempty"`
+	// BatchChangesServerSideExecution description: Enables/disables the Batch Changes server side execution feature.
+	BatchChangesServerSideExecution *bool `json:"batchChanges.serverSideExecution,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
 	// Only available in Sourcegraph Enterprise.

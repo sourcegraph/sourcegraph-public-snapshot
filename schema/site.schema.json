@@ -300,6 +300,13 @@
       "group": "BatchChanges",
       "default": true
     },
+    "batchChanges.serverSideExecution": {
+      "description": "Enables/disables the Batch Changes server side execution feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "BatchChanges",
+      "default": false
+    },
     "batchChanges.restrictToAdmins": {
       "description": "When enabled, only site admins can create and apply batch changes.",
       "type": "boolean",

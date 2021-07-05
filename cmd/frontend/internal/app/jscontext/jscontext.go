@@ -87,6 +87,8 @@ type JSContext struct {
 
 	BatchChangesEnabled bool `json:"batchChangesEnabled"`
 
+	ServerSideBatchChangesEnabled bool `json:"serverSideBatchChangesEnabled"`
+
 	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
@@ -190,6 +192,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Branding: globals.Branding(),
 
 		BatchChangesEnabled: batchChangesEnabled,
+
+		ServerSideBatchChangesEnabled: conf.ServerSideBatchChangesEnabled(),
 
 		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
 

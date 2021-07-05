@@ -245,6 +245,13 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
+func ServerSideBatchChangesEnabled() bool {
+	if enabled := Get().BatchChangesServerSideExecution; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled

@@ -113,3 +113,13 @@ func (e ErrVerifyCredentialFailed) Error() string {
 func (e ErrVerifyCredentialFailed) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrVerifyCredentialFailed"}
 }
+
+type ErrBatchChangesExecutionDisabled struct{}
+
+func (e ErrBatchChangesExecutionDisabled) Error() string {
+	return "server side batch changes are disabled. Set 'batchChanges.serverSideExecution' in the site configuration to enable the feature."
+}
+
+func (e ErrBatchChangesExecutionDisabled) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrBatchChangesExecutionDisabled"}
+}
