@@ -57,6 +57,12 @@ const cleanup = () => fs.rmdirSync(tmpDirPath, { recursive: true })
 const sassPlugin = {
     name: 'sass',
     setup: build => {
+        let buildStarted
+        build.onStart(() => {
+            buildStarted = Date.now()
+        })
+        build.onEnd(() => console.log(`> ${Date.now() - buildStarted}ms`))
+
         const CWD = process.cwd()
 
         /** @type {path:string; map: {[key: string]: string}}[] */
@@ -84,10 +90,7 @@ const sassPlugin = {
             const tmpDir = path.resolve(tmpDirPath, sourceRelDir)
             fs.mkdirSync(tmpDir, { recursive: true })
 
-            const tmpFilePath =
-                args.kind === 'entry-point'
-                    ? path.join(tmpDir, `${sourceBaseName}.css`)
-                    : path.resolve(tmpDir, `${Date.now()}-${sourceBaseName}.css`)
+            const tmpFilePath = path.join(tmpDir, `${sourceBaseName}.css`)
 
             const fileContent = await fs.promises.readFile(sourceFullPath)
             let css
@@ -177,7 +180,7 @@ await esbuild.build({
     bundle: true,
     format: 'esm',
     outdir: 'ui/assets/esbuild',
-    logLevel: 'info',
+    logLevel: 'error',
     splitting: true,
     plugins: [sassPlugin],
     define: {
