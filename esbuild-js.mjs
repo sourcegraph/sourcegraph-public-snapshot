@@ -23,6 +23,16 @@ const examplePlugin = {
 }
 
 const resolveFile = (modulePath, dir) => {
+    /*     if (modulePath.startsWith('@sourcegraph/wildcard')) {
+        return path.resolve(`client/wildcard/${modulePath.slice('@sourcegraph/wildcard/'.length)}`)
+    }
+ */
+
+    console.log('MM', modulePath)
+    if (modulePath.startsWith('wildcard/')) {
+        return path.resolve(`node_modules/@sourcegraph/${modulePath}`)
+    }
+
     if (modulePath.startsWith('wildcard/') || modulePath.startsWith('shared')) {
         return path.resolve(`client/${modulePath}`)
     }
@@ -35,7 +45,11 @@ const resolveFile = (modulePath, dir) => {
         modulePath.startsWith('react-grid-layout') ||
         !modulePath.startsWith('.')
     ) {
-        return path.resolve(`node_modules/${modulePath}`)
+        let p = path.resolve(`node_modules/${modulePath}`)
+        try {
+            p = fs.realpathSync(p)
+        } catch (err) {}
+        return p
     }
     return path.resolve(dir, modulePath)
 }
@@ -51,7 +65,7 @@ const sassPlugin = {
         const modulesMap = []
         const modulesPlugin = postcssModules({
             generateScopedName: '[name]__[local]___[hash:base64:5]',
-            localsConvention: 'camelCaseOnly',
+            localsConvention: 'camelCase',
             modules: true,
             getJSON(filepath, json, outpath) {
                 // Make sure to replace json map instead of pushing new map everytime with edit file on watch
@@ -67,10 +81,9 @@ const sassPlugin = {
             },
         })
 
-        build.onResolve({ filter: /\.s?css$/ }, async args => {
+        build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
             // Namespace is empty when using CSS as an entrypoint
             if (args.namespace !== 'file' && args.namespace !== '') {
-                console.log('XXXXXXX', args)
                 return
             }
 
@@ -141,6 +154,14 @@ const sassPlugin = {
                 }
             }
         })
+        build.onResolve({ filter: /\.png$/ }, args => {
+            // TODO(sqs): hack, need to resolve this from the original path
+            if (args.path === 'img/bg-sprinkles-2x.png') {
+                return {
+                    path: path.resolve('ui/assets', args.path),
+                }
+            }
+        })
 
         const DATA_TEXT_CSS_PREFIX = 'data:text/css,'
         /*build.onResolve({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
@@ -157,9 +178,17 @@ const sassPlugin = {
         })
  */
         build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => {
+            console.log('QQQQQ', args.path)
             return {
                 path: args.path,
                 namespace: 'file',
+            }
+        })
+        build.onLoad({ filter: /./, namespace: 'x2' }, args => {
+            return {
+                contents: fs.readFileSync(args.path),
+                resolveDir: path.dirname(args.path),
+                loader: 'css',
             }
         })
 
@@ -185,21 +214,21 @@ esbuild
     .build({
         entryPoints: [
             // 'client/web/src/components/fuzzyFinder/HighlightedLink.tsx',
-            // 'client/web/src/enterprise/main.tsx',
-            'client/web/src/main.tsx',
+            'client/web/src/enterprise/main.tsx',
+            // 'client/web/src/main.tsx',
+            // 'client/wildcard/src/index.ts',
         ],
         bundle: true,
         format: 'esm',
         outdir: 'ui/assets/esbuild',
         logLevel: 'error',
-        splitting: true,
+        splitting: false,
         plugins: [sassPlugin],
         define: {
             'process.env.NODE_ENV': '"development"',
             global: 'window',
             'process.env.SOURCEGRAPH_API_URL': '"' + process.env.SOURCEGRAPH_API_URL + '"',
         },
-        splitting: true,
         loader: {
             '.yaml': 'text',
             // '.scss': 'css',
