@@ -228,6 +228,10 @@ type MergeChangesetsArgs struct {
 	Squash bool
 }
 
+type CreateBatchSpecExecutionArgs struct {
+	Spec string
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -258,6 +262,7 @@ type BatchChangesResolver interface {
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
+	CreateBatchSpecExecution(ctx context.Context, args *CreateBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
 
 	// Queries
 
@@ -691,4 +696,15 @@ type ChangesetCountsResolver interface {
 	OpenApproved() int32
 	OpenChangesRequested() int32
 	OpenPending() int32
+}
+
+type BatchSpecExecutionResolver interface {
+	ID() graphql.ID
+	InputSpec() string
+	State() string
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+	Failure() *string
+	PlaceInQueue() *int32
+	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
 }
