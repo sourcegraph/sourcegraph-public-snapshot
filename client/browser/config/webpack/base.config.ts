@@ -5,13 +5,15 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
-const buildEntry = (...files: string[]): string[] => files.map(file => path.join(__dirname, file))
+const rootPath = path.resolve(__dirname, '../../../../')
+const browserWorkspacePath = path.resolve(rootPath, 'client/browser')
+const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
 
-const contentEntry = '../../src/config/content.entry.js'
-const backgroundEntry = '../../src/config/background.entry.js'
-const optionsEntry = '../../src/config/options.entry.js'
-const pageEntry = '../../src/config/page.entry.js'
-const extensionEntry = '../../src/config/extension.entry.js'
+const contentEntry = path.resolve(browserSourcePath, 'config/content.entry.js')
+const backgroundEntry = path.resolve(browserSourcePath, 'config/background.entry.js')
+const optionsEntry = path.resolve(browserSourcePath, 'config/options.entry.js')
+const pageEntry = path.resolve(browserSourcePath, 'config/page.entry.js')
+const extensionEntry = path.resolve(browserSourcePath, 'config/extension.entry.js')
 
 const babelLoader = {
     loader: 'babel-loader',
@@ -22,7 +24,6 @@ const babelLoader = {
 }
 
 const extensionHostWorker = /main\.worker\.ts$/
-const rootPath = path.resolve(__dirname, '../../../../')
 
 const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse => [
     MiniCssExtractPlugin.loader,
@@ -41,28 +42,37 @@ const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse
 ]
 
 export const config: webpack.Configuration = {
+    target: 'browserslist',
     entry: {
         // Browser extension
-        background: buildEntry(
+        background: [
             extensionEntry,
             backgroundEntry,
-            '../../src/browser-extension/scripts/backgroundPage.main.ts'
-        ),
-        inject: buildEntry(extensionEntry, contentEntry, '../../src/browser-extension/scripts/contentPage.main.ts'),
-        options: buildEntry(extensionEntry, optionsEntry, '../../src/browser-extension/scripts/optionsPage.main.tsx'),
-        'after-install': path.resolve(__dirname, '../../src/browser-extension/scripts/afterInstallPage.main.tsx'),
+            path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
+        ],
+        inject: [
+            extensionEntry,
+            contentEntry,
+            path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
+        ],
+        options: [
+            extensionEntry,
+            optionsEntry,
+            path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
+        ],
+        'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
 
         // Common native integration entry point (Gitlab, Bitbucket)
-        integration: buildEntry(pageEntry, '../../src/native-integration/integration.main.ts'),
+        integration: [pageEntry, path.resolve(browserSourcePath, 'native-integration/integration.main.ts')],
         // Phabricator-only native integration entry point
-        phabricator: buildEntry(pageEntry, '../../src/native-integration/phabricator/integration.main.ts'),
+        phabricator: [pageEntry, path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.ts')],
 
         // Styles
-        style: path.join(__dirname, '../../src/app.scss'),
-        'branded-style': path.join(__dirname, '../../src/branded.scss'),
+        style: path.join(browserSourcePath, 'app.scss'),
+        'branded-style': path.join(browserSourcePath, 'branded.scss'),
     },
     output: {
-        path: path.join(__dirname, '../../build/dist/js'),
+        path: path.join(browserWorkspacePath, 'build/dist/js'),
         filename: '[name].bundle.js',
         chunkFilename: '[id].chunk.js',
     },
@@ -70,7 +80,6 @@ export const config: webpack.Configuration = {
     optimization: {
         minimizer: [
             new TerserPlugin({
-                sourceMap: true,
                 terserOptions: {
                     compress: {
                         // // Don't inline functions, which causes name collisions with uglify-es:
@@ -78,7 +87,7 @@ export const config: webpack.Configuration = {
                         inline: 1,
                     },
                 },
-            }),
+            }) as webpack.WebpackPluginInstance,
             new CssMinimizerWebpackPlugin(),
         ],
     },
@@ -90,6 +99,11 @@ export const config: webpack.Configuration = {
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
+        fallback: {
+            crypto: require.resolve('crypto-browserify'),
+            stream: require.resolve('stream-browserify'),
+            vm: require.resolve('vm-browserify'),
+        },
     },
     module: {
         rules: [
