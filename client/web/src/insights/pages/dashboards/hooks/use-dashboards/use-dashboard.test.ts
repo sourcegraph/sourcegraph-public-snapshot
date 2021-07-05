@@ -72,6 +72,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: InsightsDashboardType.Organization,
                     builtIn: true,
@@ -126,6 +127,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: InsightsDashboardType.Personal,
                     title: 'Emir Kusturica',
@@ -205,6 +207,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: InsightsDashboardType.Organization,
                     builtIn: true,
