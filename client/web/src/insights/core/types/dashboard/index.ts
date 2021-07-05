@@ -7,7 +7,7 @@ import { VirtualInsightsDashboard } from './virtual-dashboard'
  */
 export type InsightDashboard = RealInsightDashboard | VirtualInsightsDashboard
 
-export { InsightsDashboardType, RealInsightDashboard, VirtualInsightsDashboard }
+export { InsightsDashboardType }
 
 /**
  * Key for accessing insights dashboards in a subject settings.

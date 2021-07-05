@@ -4,16 +4,16 @@ import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { AuthenticatedUser } from '../../../auth'
 import { Settings } from '../../../schema/settings.schema'
-import { InsightsViewGridProps } from '../../components'
 
 import { InsightsDashboardCreationPage } from './creation/InsightsDashboardCreationPage'
 import { DashboardsPage } from './DashboardsPage'
 
 export interface DashboardsRoutesProps
-    extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
+    extends TelemetryProps,
         SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
         PlatformContextProps<'updateSettings'> {
@@ -24,7 +24,7 @@ export interface DashboardsRoutesProps
  * Displays Code Insights dashboard area.
  */
 export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = props => {
-    const { authenticatedUser, settingsCascade, platformContext, telemetryService } = props
+    const { authenticatedUser, settingsCascade, platformContext, telemetryService, extensionsController } = props
     const match = useRouteMatch()
 
     return (
@@ -32,7 +32,12 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
             <Route
                 path={`${match.url}/dashboard/:dashboardId?`}
                 render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
-                    <DashboardsPage dashboardID={routeProps.match.params.dashboardId} {...props} />
+                    <DashboardsPage
+                        telemetryService={telemetryService}
+                        extensionsController={extensionsController}
+                        settingsCascade={settingsCascade}
+                        dashboardID={routeProps.match.params.dashboardId}
+                    />
                 )}
             />
 
