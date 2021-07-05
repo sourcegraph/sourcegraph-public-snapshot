@@ -57,14 +57,6 @@ func batchChangesEnabled(ctx context.Context, db dbutil.DB) error {
 	return ErrBatchChangesDisabled{}
 }
 
-func serverSideBatchChangesEnabled() error {
-	if enabled := conf.ServerSideBatchChangesEnabled(); enabled {
-		return nil
-	}
-
-	return ErrBatchChangesExecutionDisabled{}
-}
-
 // batchChangesCreateAccess returns true if the current user can create
 // batchChanges/changesetSpecs/batchSpecs.
 func batchChangesCreateAccess(ctx context.Context) error {
@@ -1331,10 +1323,6 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 	}()
 
 	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	if err := serverSideBatchChangesEnabled(); err != nil {
 		return nil, err
 	}
 

@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNullIDResilience(t *testing.T) {
@@ -1385,10 +1384,6 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	ohYes := true
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{BatchChangesServerSideExecution: &ohYes}})
-	defer conf.Mock(nil)
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")

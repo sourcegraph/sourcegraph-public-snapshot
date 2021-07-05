@@ -86,9 +86,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the batch changes feature is enabled on the site. */
     batchChangesEnabled: boolean
 
-    /** Whether the batch changes server side execution feature is enabled on the site. */
-    serverSideBatchChangesEnabled: boolean
-
     /** Whether the code intel auto-indexer feature is enabled on the site. */
     codeIntelAutoIndexingEnabled: boolean
 

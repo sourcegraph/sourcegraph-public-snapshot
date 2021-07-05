@@ -17,7 +17,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     accessTokensAllow: 'all-users-create',
     allowSignup: false,
     batchChangesEnabled: true,
-    serverSideBatchChangesEnabled: true,
     codeIntelAutoIndexingEnabled: true,
     externalServicesUserMode: 'disabled',
     productResearchPageEnabled: true,
