@@ -27,11 +27,14 @@ node_modules/.bin/esbuild client/shared/src/api/extension/main.worker.ts --bundl
 node_modules/.bin/esbuild node_modules/monaco-editor/esm/vs/editor/editor.worker.js --bundle --outfile=$OUTDIR/esbuild/node_modules/monaco-editor/esm/vs/editor/editor.worker.js
 node_modules/.bin/esbuild node_modules/monaco-editor/esm/vs/language/json/json.worker.js --bundle --outfile=$OUTDIR/esbuild/node_modules/monaco-editor/esm/vs/language/json/json.worker.js
 
-node_modules/.bin/esbuild client/web/src/enterprise/main.tsx \
-                          '--define:process.env.NODE_ENV="development"' --define:global=window \
-                          '--define:process.env.SOURCEGRAPH_API_URL="'${SOURCEGRAPH_API_URL-}'"' \
-                          --outdir=$OUTDIR/esbuild \
-                          --format=esm --bundle --splitting \
-                          --loader:.yaml=text --loader:.scss=text --loader:.ttf=dataurl \
-                          $FLAGS
-cat $OUTDIR/esbuild/*.css > $OUTDIR/esbuild/all.css
+# node_modules/.bin/esbuild client/web/src/enterprise/main.tsx \
+#                           '--define:process.env.NODE_ENV="development"' --define:global=window \
+#                           '--define:process.env.SOURCEGRAPH_API_URL="'${SOURCEGRAPH_API_URL-}'"' \
+#                           --outdir=$OUTDIR/esbuild \
+#                           --format=esm --bundle --splitting \
+#                           --loader:.yaml=text --loader:.scss=text --loader:.ttf=dataurl \
+#                           $FLAGS
+node esbuild-js.mjs
+
+# cat $OUTDIR/esbuild/*.css > $OUTDIR/esbuild/all.css
+touch $OUTDIR/esbuild/all.css

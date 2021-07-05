@@ -3,6 +3,18 @@ import esbuild from 'esbuild'
 import { sassPlugin } from 'esbuild-sass-plugin'
 import cssModulesPlugin from 'esbuild-css-modules-plugin'
 
+/** @type esbuild.Plugin */
+const examplePlugin = {
+    name: 'example',
+    setup: build => {
+        build.onResolve({ filter: /./, namespace: 'file' }, args => {
+            if (args.path.includes('css')) {
+                console.log('onResolve', args)
+            }
+        })
+    },
+}
+
 esbuild
     .build({
         entryPoints: ['client/web/src/enterprise/main.tsx'],
@@ -12,22 +24,26 @@ esbuild
         plugins: [
             sassPlugin({
                 type: 'style',
-                includePaths: [
-                    '/home/sqs/src/github.com/sourcegraph/sourcegraph/node_modules',
-                    '/home/sqs/src/github.com/sourcegraph/sourcegraph/client',
-                ],
-                basedir: '/home/sqs/src/github.com/sourcegraph/sourcegraph/client',
-                transform: css => {
-                    // console.log('FOO', css)
-                    return css.replace(/'wildcard/g, "'~wildcard")
+                includePaths: ['node_modules', 'client'],
+
+                importer: (url, prev, done) => {
+                    if (url.startsWith('wildcard/')) {
+                        return { file: `client/${url}` }
+                    }
+                    if (url.startsWith('@reach') || url.startsWith('graphiql') || url.startsWith('@sourcegraph')) {
+                        return { file: `node_modules/${url}` }
+                    }
+                    return { file: url }
                 },
                 // resolveMap: { wildcard: '/home/sqs/src/github.com/sourcegraph/sourcegraph/client/wildcard' },
             }),
 
-            cssModulesPlugin({
+            examplePlugin,
+
+            /* cssModulesPlugin({
                 inject: false,
                 localsConvention: 'camelCaseOnly', // optional. value could be one of 'camelCaseOnly', 'camelCase', 'dashes', 'dashesOnly', default is 'camelCaseOnly'
-            }),
+            }), */
         ],
         define: {
             'process.env.NODE_ENV': '"development"',
