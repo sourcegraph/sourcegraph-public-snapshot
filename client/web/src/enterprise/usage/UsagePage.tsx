@@ -155,8 +155,8 @@ export const UsagePage: React.FunctionComponent<Props> = ({
     ) : (
         <>
             {usageInfo.references.nodes.length > 1 && (
-                <section id="refs" className="mt-2">
-                    <h2 className="mt-0 mx-3 mb-0 h4">Examples</h2>
+                <section id="refs" className="">
+                    {/* <h2 className="mt-0 mx-3 mb-0 h4">Examples</h2> */}
                     <style>
                         {
                             'td.line { display: none; } .code-excerpt .code { padding-left: 0.25rem !important; } .result-container__header { display: none; } .result-container { border: solid 1px var(--border-color) !important; border-width: 1px !important; margin: 1rem; }'
@@ -166,7 +166,7 @@ export const UsagePage: React.FunctionComponent<Props> = ({
                         locations={of(
                             usageInfo.references.nodes
                                 .slice(0, -1)
-                                .slice(0, 3)
+                                .slice(0, 7)
                                 .map<Location>(reference => ({
                                     uri: makeRepoURI({
                                         repoName: reference.resource.repository.name,

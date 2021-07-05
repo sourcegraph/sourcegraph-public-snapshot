@@ -139,6 +139,6 @@ func (r *QueryResolver) ExploreUsageURL(ctx context.Context, args *gql.LSIFQuery
 		return nil, err
 	}
 	// TODO(sqs): move this URL generation to the Guide package
-	u := repo.URL() + "@" + moniker.Dump.Commit + "/usage/" + moniker.Scheme + "/" + moniker.Identifier
+	u := repo.URL() + "@" + moniker.Dump.Commit + "/-/usage/symbol/" + moniker.Scheme + "/" + moniker.Identifier
 	return &u, nil
 }

@@ -15,5 +15,17 @@
         :global(.repo-revision-container) {
             padding-left: 0 !important;
         }
+        :global(.result-container) {
+            margin: 0 !important;
+            border: none !important;
+        }
+        :global(.file-match-children) {
+            border: none !important;
+            border-top: solid 1px var(--border-color-2) !important;
+            border-radius: 0 !important;
+        }
+        :global(.result-container):last-child :global(.file-match-children):last-child {
+            border-bottom: solid 1px var(--border-color-2) !important;
+        }
     }
 }
