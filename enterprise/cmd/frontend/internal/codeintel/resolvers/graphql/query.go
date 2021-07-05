@@ -69,21 +69,24 @@ func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPosi
 	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
 }
 
-func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (gql.LocationConnectionResolver, error) {
+func (r *QueryResolver) references(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (_ []resolvers.AdjustedLocation, cursor string, _ error) {
 	limit := derefInt32(args.First, DefaultReferencesPageSize)
 	if limit <= 0 {
-		return nil, ErrIllegalLimit
+		return nil, "", ErrIllegalLimit
 	}
 	cursor, err := decodeCursor(args.After)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	locations, cursor, err := r.resolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	return r.resolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+}
+
+func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (gql.LocationConnectionResolver, error) {
+	locations, cursor, err := r.references(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-
 	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
 }
 

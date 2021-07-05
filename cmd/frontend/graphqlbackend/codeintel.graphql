@@ -862,6 +862,13 @@ type ExpSymbol {
 
 type SymbolUsage {
     references: LocationConnection!
+
+    referenceGroups: [ReferenceGroup!]!
+}
+
+type ReferenceGroup {
+    name: String!
+    locations: LocationConnection!
 }
 
 input SymbolFilters {

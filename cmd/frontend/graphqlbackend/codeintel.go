@@ -294,3 +294,13 @@ type MonikerResolver interface {
 	Scheme() string
 	Identifier() string
 }
+
+type SymbolUsageResolver interface {
+	References(context.Context) (LocationConnectionResolver, error)
+	ReferenceGroups(context.Context) ([]ReferenceGroupResolver, error)
+}
+
+type ReferenceGroupResolver interface {
+	Name() string
+	Locations(context.Context) (LocationConnectionResolver, error)
+}

@@ -214,7 +214,3 @@ func NewGitCommitConnectionResolver(revisionRange string, lineRanges []string, r
 		repo:          NewRepositoryResolver(dbconn.Global, &types.Repo{ID: repo, Name: "github.com/hashicorp/go-multierror"}),
 	}
 }
-
-type SymbolUsageResolver interface {
-	References(context.Context) (LocationConnectionResolver, error)
-}

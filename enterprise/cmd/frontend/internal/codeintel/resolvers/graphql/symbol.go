@@ -76,16 +76,17 @@ func (r *SymbolResolver) definitions(ctx context.Context) (gql.LocationConnectio
 	return NewLocationConnectionResolver(adjustedLocations, nil, r.locationResolver), nil
 }
 
-func (r *SymbolResolver) References(ctx context.Context) (gql.LocationConnectionResolver, error) {
+func (r *SymbolResolver) references(ctx context.Context) (_ []resolvers.AdjustedLocation, cursor string, _ error) {
 	// if len(r.symbol.Locations) == 0 {
 	// 	// TODO(sqs): instead, look up by moniker
 	// 	return NewLocationConnectionResolver(nil, nil, nil), nil
 	// }
 	queryResolver, err := r.newQueryResolver(ctx, path.Clean(r.symbol.AdjustedLocation.Path))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return queryResolver.References(ctx, &gql.LSIFPagedQueryPositionArgs{
+
+	return queryResolver.references(ctx, &gql.LSIFPagedQueryPositionArgs{
 		LSIFQueryPositionArgs: gql.LSIFQueryPositionArgs{
 			Line:      int32(r.symbol.AdjustedLocation.AdjustedRange.Start.Line),
 			Character: int32(r.symbol.AdjustedLocation.AdjustedRange.Start.Character),
@@ -93,8 +94,19 @@ func (r *SymbolResolver) References(ctx context.Context) (gql.LocationConnection
 	})
 }
 
+func (r *SymbolResolver) References(ctx context.Context) (gql.LocationConnectionResolver, error) {
+	locations, cursor, err := r.references(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+}
+
 func (r *SymbolResolver) Usage(ctx context.Context) (gql.SymbolUsageResolver, error) {
-	return &symbolUsageResolver{symbol: r}, nil
+	return &symbolUsageResolver{
+		symbol:           r,
+		locationResolver: r.locationResolver,
+	}, nil
 }
 
 func (r *SymbolResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
