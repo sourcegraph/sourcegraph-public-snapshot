@@ -54,6 +54,8 @@ const cachedResolveFile = (modulePath, dir) => {
 const sassPlugin = {
     name: 'sass',
     setup: build => {
+        const CWD = process.cwd()
+
         const tmpPrefix = path.join(os.tmpdir(), 'esbuild-')
         const tmpDirPath = fs.mkdtempSync(tmpPrefix)
         build.onEnd(() => {
@@ -84,7 +86,7 @@ const sassPlugin = {
             const sourceExt = path.extname(sourceFullPath)
             const sourceBaseName = path.basename(sourceFullPath, sourceExt)
             const sourceDir = path.dirname(sourceFullPath)
-            const sourceRelDir = path.relative(path.dirname(process.cwd()), sourceDir)
+            const sourceRelDir = path.relative(CWD, sourceDir)
             const isModule = sourceBaseName.endsWith('.module')
             const tmpDir = path.resolve(tmpDirPath, sourceRelDir)
             fs.mkdirSync(tmpDir, { recursive: true })
@@ -94,7 +96,7 @@ const sassPlugin = {
                     ? path.join(tmpDir, `${sourceBaseName}.css`)
                     : path.resolve(tmpDir, `${Date.now()}-${sourceBaseName}.css`)
 
-            const fileContent = fs.readFileSync(sourceFullPath)
+            const fileContent = await fs.promises.readFile(sourceFullPath)
             let css
             switch (sourceExt) {
                 case '.css':
@@ -106,8 +108,8 @@ const sassPlugin = {
                         .renderSync({
                             file: sourceFullPath,
                             includePaths: ['node_modules', 'client'],
-                            importer: (url, prev, done) => {
-                                return { file: resolveFile(url) }
+                            importer: url => {
+                                return { file: cachedResolveFile(url) }
                             },
                             quiet: true,
                         })
@@ -126,7 +128,7 @@ const sassPlugin = {
                 to: tmpFilePath,
             })
 
-            fs.writeFileSync(tmpFilePath, result.css)
+            await fs.promises.writeFile(tmpFilePath, result.css)
 
             return {
                 namespace: isModule ? 'postcss-module' : 'file',
