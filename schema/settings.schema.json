@@ -486,7 +486,7 @@
     },
     "InsightDashboard": {
       "type": "object",
-      "required": ["id", "title", "insightIds"],
+      "required": ["id", "title"],
       "properties": {
         "title": {
           "description": "Title of the dashboard.",

@@ -1,90 +1,66 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useContext, useMemo } from 'react'
+import React from 'react'
+import { useRouteMatch } from 'react-router'
+import { Redirect } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard/src'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { Settings } from '../../../schema/settings.schema'
-import { CodeInsightsIcon, InsightsViewGrid } from '../../components'
-import { InsightsApiContext } from '../../core/backend/api-provider'
+import { CodeInsightsIcon } from '../../components'
+import { InsightsDashboardType } from '../../core/types'
 
-import { DashboardSelect } from './components/dashboard-select/DashboardSelect'
-import { useDashboards } from './hooks/use-dashboards/use-dashboards'
+import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
 export interface DashboardsPageProps extends TelemetryProps, SettingsCascadeProps<Settings>, ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
-     * In case the if id is undefined we get insights from the final
+     * In case if id is undefined we get insights from the final
      * version of merged settings (all insights)
      */
     dashboardID?: string
 }
 
 /**
- * Displays insights dashboard page - dashboard selector and grid of insights from the dashboard.
+ * Displays insights dashboard page - dashboard selector and grid of dashboard insights.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
     const { dashboardID, settingsCascade, extensionsController, telemetryService } = props
-    const { getInsightCombinedViews } = useContext(InsightsApiContext)
+    const { url } = useRouteMatch()
 
-    const insightIds = useMemo(() => {
-        if (isErrorLike(settingsCascade.final) || !settingsCascade.final || !dashboardID) {
-            return undefined
-        }
-
-        const dashboardConfiguration = settingsCascade.final['insights.dashboards']?.[dashboardID]
-
-        // if dashboard doesn't exist in the final settings we don't need to load anything
-        if (!dashboardConfiguration) {
-            return []
-        }
-
-        return dashboardConfiguration.insightIds
-    }, [dashboardID, settingsCascade])
-
-    const views = useObservable(
-        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, insightIds), [
-            extensionsController,
-            insightIds,
-            getInsightCombinedViews,
-        ])
-    )
-
-    const dashboards = useDashboards(settingsCascade)
-
-    // TODO use this dashboard data in https://github.com/sourcegraph/sourcegraph/issues/22225
-    console.log('Code insights dashboards', { dashboards })
+    if (!dashboardID) {
+        // In case if url doesn't have a dashboard id we should fallback on
+        // built-in "All insights" dashboard
+        return <Redirect to={`${url}/${InsightsDashboardType.All}`} />
+    }
 
     return (
-        <Page>
-            <PageHeader
-                annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-                path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
-                actions={
-                    <Link to="/insights/create" className="btn btn-secondary mr-1">
-                        <PlusIcon className="icon-inline" /> Create new insight
-                    </Link>
-                }
-                className="mb-3"
-            />
+        <div className="w-100">
+            <Page>
+                <PageHeader
+                    annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
+                    actions={
+                        <Link to="/insights/create" className="btn btn-secondary mr-1">
+                            <PlusIcon className="icon-inline" /> Create new insight
+                        </Link>
+                    }
+                    className="mb-3"
+                />
 
-            <DashboardSelect dashboards={dashboards} />
-            {views === undefined ? (
-                <div className="d-flex w-100">
-                    <LoadingSpinner className="my-4" />
-                </div>
-            ) : (
-                <InsightsViewGrid telemetryService={telemetryService} views={views} hasContextMenu={true} />
-            )}
-        </Page>
+                <DashboardsContent
+                    extensionsController={extensionsController}
+                    telemetryService={telemetryService}
+                    settingsCascade={settingsCascade}
+                    dashboardID={dashboardID}
+                />
+            </Page>
+        </div>
     )
 }
