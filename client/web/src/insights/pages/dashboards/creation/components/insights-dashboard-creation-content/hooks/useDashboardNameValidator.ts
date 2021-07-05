@@ -1,9 +1,9 @@
-import { camelCase } from 'lodash';
-import { useMemo } from 'react';
+import { camelCase } from 'lodash'
+import { useMemo } from 'react'
 
-import { Settings } from '../../../../../../../schema/settings.schema';
-import { Validator } from '../../../../../../components/form/hooks/useField';
-import { composeValidators, createRequiredValidator } from '../../../../../../components/form/validators';
+import { Settings } from '../../../../../../../schema/settings.schema'
+import { Validator } from '../../../../../../components/form/hooks/useField'
+import { composeValidators, createRequiredValidator } from '../../../../../../components/form/validators'
 
 interface useDashboardNameValidatorProps {
     settings: Settings
@@ -17,9 +17,7 @@ export function useDashboardNameValidator(props: useDashboardNameValidatorProps)
     const { settings } = props
 
     return useMemo(() => {
-        const alreadyExistDashboardNames = new Set(
-            Object.keys(settings['insights.dashboards'] ?? {})
-        )
+        const alreadyExistDashboardNames = new Set(Object.keys(settings['insights.dashboards'] ?? {}))
 
         return composeValidators<string>(createRequiredValidator('Name is a required field.'), value =>
             // According to our name dashboard convention, that dashboard id equals camel-cased name.

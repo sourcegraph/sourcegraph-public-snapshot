@@ -50,10 +50,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
-            if (!authenticatedUser) {
-                return
-            }
-
             const { id: userID } = authenticatedUser
 
             const subjectID =

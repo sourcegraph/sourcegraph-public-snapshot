@@ -19,7 +19,11 @@ export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props =>
     const { title, description, className, labelTooltipText, labelTooltipPosition, ...otherProps } = props
 
     return (
-        <label data-placement={labelTooltipPosition} data-tooltip={labelTooltipText} className={classnames('d-flex flex-wrap align-items-center', className)}>
+        <label
+            data-placement={labelTooltipPosition}
+            data-tooltip={labelTooltipText}
+            className={classnames('d-flex flex-wrap align-items-center', className)}
+        >
             <input type="radio" {...otherProps} />
 
             <span className="pl-2">{title}</span>

@@ -13,6 +13,7 @@ import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsViewGrid } from '../../../../components'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { InsightDashboard, isVirtualDashboard } from '../../../../core/types'
+import { isSettingsBasedInsightsDashboard } from '../../../../core/types/dashboard/real-dashboard'
 import { useDashboards } from '../../hooks/use-dashboards/use-dashboards'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 
@@ -44,7 +45,12 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             )
         }
 
-        return dashboard.id === dashboardID || dashboard.title.toLowerCase() === dashboardID?.toLowerCase()
+        return (
+            dashboard.id === dashboardID ||
+            dashboard.title.toLowerCase() === dashboardID?.toLowerCase() ||
+            (isSettingsBasedInsightsDashboard(dashboard) &&
+                dashboard.settingsKey.toLowerCase() === dashboardID?.toLowerCase())
+        )
     })
 
     const handleDashboardSelect = (dashboard: InsightDashboard): void => {
