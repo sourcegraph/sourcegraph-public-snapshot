@@ -15,6 +15,7 @@ import { SourcegraphContext } from '../jscontext'
 import { UserCodeHosts } from '../user/settings/codeHosts/UserCodeHosts'
 
 import { CloningStatusTerminal } from './CloningStatusTerminal'
+import { LogoAscii } from './LogoAscii'
 import { getReturnTo } from './SignInSignUpCommon'
 
 interface Props {
@@ -212,7 +213,6 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                                 </Steps>
                             </div>
                             <div className="mt-4 pb-3">{currentStep.content}</div>
-
                             <div className="mt-4">
                                 <button
                                     type="button"
@@ -233,7 +233,6 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                                     </button>
                                 )}
                             </div>
-
                             {/* debugging */}
                             <div className="pt-5">
                                 <hr />
@@ -257,6 +256,12 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                                     next tab
                                 </button>
                             </div>
+                            <p>🎨&nbsp; ASCII logo demo&nbsp;😲</p>
+                            <p>
+                                We can possibly makes this an SVG but it'll be not that ASCII anymore, and I'd rather
+                                not waste time on that. We can use <b>fontSize</b> prop to control the size of the logo.
+                            </p>
+                            <LogoAscii />
                         </div>
                     }
                 />
