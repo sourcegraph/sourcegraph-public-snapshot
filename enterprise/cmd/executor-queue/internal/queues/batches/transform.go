@@ -7,6 +7,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // transformRecord transforms a *btypes.BatchSpecExecution into an apiclient.Job.
