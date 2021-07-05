@@ -264,7 +264,7 @@
     "puppeteer-firefox": "^0.5.1",
     "react-spring": "^9.0.0",
     "react-test-renderer": "^16.14.0",
-    "sass": "^1.35.1",
+    "sass": "1.32.12",
     "shelljs": "^0.8.4",
     "signale": "^1.4.0",
     "simmerjs": "^0.5.6",

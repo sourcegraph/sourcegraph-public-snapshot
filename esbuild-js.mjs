@@ -44,8 +44,8 @@ const resolveFile = (modulePath, dir) => {
 const sassPlugin = {
     name: 'sass',
     setup: build => {
-        //const tmpDirPath = fs.mkdtempSync(path.join(os.tmpdir(), 'esbuild-'))
-        const tmpDirPath = '/tmp/esbuild-JeD7YX'
+        const tmpDirPath = fs.mkdtempSync(path.join(os.tmpdir(), 'esbuild-'))
+        // const tmpDirPath = '/tmp/esbuild-JeD7YX'
 
         /** @type {path:string; map: {[key: string]: string}}[] */
         const modulesMap = []
@@ -70,6 +70,7 @@ const sassPlugin = {
         build.onResolve({ filter: /\.s?css$/ }, async args => {
             // Namespace is empty when using CSS as an entrypoint
             if (args.namespace !== 'file' && args.namespace !== '') {
+                console.log('XXXXXXX', args)
                 return
             }
 
@@ -104,6 +105,7 @@ const sassPlugin = {
                             importer: (url, prev, done) => {
                                 return { file: resolveFile(url) }
                             },
+                            quiet: true,
                         })
                         .css.toString()
                     break
@@ -143,27 +145,42 @@ const sassPlugin = {
                 }
             }
         })
-        /*         build.onResolve({ filter: /\.css$/ }, args => {
-            if (args.path.startsWith('wildcard/')) {
-                return { path: path.resolve(`client/${args.path}`) }
-            }
-            if (
-                args.path.startsWith('@reach') ||
-                args.path.startsWith('graphiql') ||
-                args.path.startsWith('@sourcegraph')
-            ) {
-                return { path: path.resolve(`node_modules/${args.path}`) }
+
+        const DATA_TEXT_CSS_PREFIX = 'data:text/css,'
+        if (false)
+            build.onResolve({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
+                const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
+                return {}
+            })
+
+        build.onLoad({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
+            const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
+            return {
+                contents: css,
+                loader: 'css',
             }
         })
- */
+
+        build.onResolve({ filter: /^x:/, namespace: 'postcss-module' }, args => {
+            console.log('QQQQQQQQQQ', args)
+            return {
+                path:
+            }
+        })
+
         build.onLoad({ filter: /./, namespace: 'postcss-module' }, async args => {
             const mod = modulesMap.find(({ path }) => path === args.pluginData.originalPath)
             const resolveDir = path.dirname(args.path)
+
+            const css = fs.readFileSync(args.path)
+
+            const contents = `import ${JSON.stringify('x:' + args.path)}
+            // import "${DATA_TEXT_CSS_PREFIX}${encodeURI(css)}"
+            export default ${JSON.stringify(mod && mod.map ? mod.map : {})}`
+
             return {
                 resolveDir,
-                contents: `import ${JSON.stringify(args.path)}\nexport default ${JSON.stringify(
-                    mod && mod.map ? mod.map : {}
-                )}`,
+                contents,
             }
         })
     },
@@ -180,30 +197,8 @@ esbuild
         format: 'esm',
         outdir: 'ui/assets/esbuild',
         logLevel: 'error',
-        plugins: [
-            /* sassPlugin({
-                type: 'style',
-                includePaths: ['node_modules', 'client'],
-
-                importer: (url, prev, done) => {
-                    if (url.startsWith('wildcard/')) {
-                        return { file: `client/${url}` }
-                    }
-                    if (url.startsWith('@reach') || url.startsWith('graphiql') || url.startsWith('@sourcegraph')) {
-                        return { file: `node_modules/${url}` }
-                    }
-                    return { file: url }
-                },
-                // resolveMap: { wildcard: '/home/sqs/src/github.com/sourcegraph/sourcegraph/client/wildcard' },
-            }), */
-            sassPlugin,
-            // examplePlugin,
-
-            /* cssModulesPlugin({
-                inject: false,
-                localsConvention: 'camelCaseOnly', // optional. value could be one of 'camelCaseOnly', 'camelCase', 'dashes', 'dashesOnly', default is 'camelCaseOnly'
-            }), */
-        ],
+        splitting: true,
+        plugins: [sassPlugin],
         define: {
             'process.env.NODE_ENV': '"development"',
             global: 'window',
@@ -212,6 +207,7 @@ esbuild
         splitting: true,
         loader: {
             '.yaml': 'text',
+            // '.scss': 'css',
             // '.css': 'text',
             '.ttf': 'dataurl',
             '.png': 'dataurl',

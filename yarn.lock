@@ -20440,6 +20440,13 @@ sanitize-html@^2.0.0:
     parse-srcset "^1.0.2"
     postcss "^8.0.2"
 
+sass@1.32.12:
+  version "1.32.12"
+  resolved "https://registry.npmjs.org/sass/-/sass-1.32.12.tgz#a2a47ad0f1c168222db5206444a30c12457abb9f"
+  integrity sha512-zmXn03k3hN0KaiVTjohgkg98C3UowhL1/VSGdj4/VAAiMKGQOE80PFPxFP2Kyq0OUskPKcY5lImkhBKEHlypJA==
+  dependencies:
+    chokidar ">=3.0.0 <4.0.0"
+
 sass@1.32.8:
   version "1.32.8"
   resolved "https://registry.npmjs.org/sass/-/sass-1.32.8.tgz#f16a9abd8dc530add8834e506878a2808c037bdc"
