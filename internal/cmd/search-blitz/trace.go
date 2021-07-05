@@ -32,7 +32,7 @@ type traceStore struct {
 	MaxTotalTraceBytes int64
 
 	// MaxFetchAttempts is the maximum number of attempts to try fetching a trace
-	// before failing.
+	// before failing. Defaults to 1 when zero valued.
 	MaxFetchAttempts int
 
 	// JaegerServerURL if non-empty will be used as the non-path of the URL
