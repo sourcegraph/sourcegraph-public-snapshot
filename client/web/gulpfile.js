@@ -11,7 +11,7 @@ const gulp = require('gulp')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const devServerPlugin = require('webpack-dev-server/lib/utils/DevServerPlugin')
+const DevServerPlugin = require('webpack-dev-server/lib/utils/DevServerPlugin')
 
 const {
   graphQlSchema,
@@ -73,39 +73,44 @@ async function webpackDevelopmentServer() {
   const sockHost = process.env.SOURCEGRAPH_HTTPS_DOMAIN || 'sourcegraph.test'
   const sockPort = Number(process.env.SOURCEGRAPH_HTTPS_PORT || 3443)
 
-  /** @type {import('webpack-dev-server').Configuration & { liveReload?: boolean }} */
-  const options = {
-    hot: !process.env.NO_HOT,
-    inline: !process.env.NO_HOT,
-    allowedHosts: ['.host.docker.internal'],
-    host: 'localhost',
-    port: 3080,
-    publicPath: '/.assets/',
-    contentBase: './ui/assets',
-    stats: WEBPACK_STATS_OPTIONS,
-    noInfo: false,
-    disableHostCheck: true,
-    proxy: {
-      '/': {
-        target: 'http://localhost:3081',
-        // Avoid crashing on "read ECONNRESET".
-        onError: () => undefined,
-        // Don't log proxy errors, these usually just contain
-        // ECONNRESET errors caused by the browser cancelling
-        // requests. This should not be needed to actually debug something.
-        logLevel: 'silent',
-        onProxyReqWs: (_proxyRequest, _request, socket) =>
-          socket.on('error', error => console.error('WebSocket proxy error:', error)),
-      },
+  /** @type {import('webpack-dev-server').ProxyConfigMap } */
+  const proxyConfig = {
+    '/': {
+      target: 'http://localhost:3081',
+      // Avoid crashing on "read ECONNRESET".
+      onError: () => undefined,
+      // Don't log proxy errors, these usually just contain
+      // ECONNRESET errors caused by the browser cancelling
+      // requests. This should not be needed to actually debug something.
+      logLevel: 'silent',
+      onProxyReqWs: (_proxyRequest, _request, socket) =>
+        socket.on('error', error => console.error('WebSocket proxy error:', error)),
     },
-    sockHost,
-    sockPort,
   }
 
-  // Based on the description here: https://github.com/webpack/webpack-dev-server/pull/2844
-  if (!webpackConfig.plugins.find(plugin => plugin.constructor === devServerPlugin)) {
+  const options = {
+    hot: !process.env.NO_HOT,
+    firewall: false,
+    host: 'localhost',
+    port: 3080,
+    client: {
+      host: sockHost,
+      port: sockPort,
+    },
+    static: {
+      directory: './ui/assets',
+      publicPath: '/.assets/',
+    },
+    proxy: proxyConfig,
+    transportMode: {
+      client: 'ws',
+    },
+  }
+
+  // Based on the update: https://github.com/webpack/webpack-dev-server/pull/2844
+  if (!webpackConfig.plugins.find(plugin => plugin.constructor === DevServerPlugin)) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    webpackConfig.plugins.push(new devServerPlugin(options))
+    webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
   const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
