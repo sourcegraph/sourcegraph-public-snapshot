@@ -43,6 +43,18 @@ const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse
 
 export const config: webpack.Configuration = {
     target: 'browserslist',
+    cache: {
+        type: 'filesystem',
+        buildDependencies: {
+            // Invalidate cache on config change.
+            config: [
+                __filename,
+                path.resolve(browserWorkspacePath, 'babel.config.js'),
+                path.resolve(rootPath, 'babel.config.js'),
+                path.resolve(rootPath, 'postcss.config.js'),
+            ],
+        },
+    },
     entry: {
         // Browser extension
         background: [
