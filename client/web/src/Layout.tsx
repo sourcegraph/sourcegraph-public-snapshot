@@ -22,6 +22,7 @@ import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
+import styles from './enterprise/usage/UsagePage.module.scss'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -140,6 +141,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf' || props.location.pathname.includes('/-/symbols')
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
+
+    useEffect(() => {
+        document.body.classList.add(styles.usagePageBody)
+        return () => document.body.classList.remove(styles.usagePageBody)
+    })
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {

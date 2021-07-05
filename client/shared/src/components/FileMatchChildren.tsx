@@ -20,6 +20,7 @@ import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { MatchItem } from './FileMatch'
 import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
+import { LinkOrSpan } from './LinkOrSpan'
 
 export interface EventLogger {
     log: (eventLabel: string, eventProperties?: any) => void
@@ -54,6 +55,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     // The number of lines of context to show before and after each match.
     let context = 1
 
+    const isUsage = props.location.pathname.includes('/usage/')
+
     if (props.location.pathname === '/search') {
         // Check if search.contextLines is configured in settings.
         const contextLinesSetting =
@@ -64,6 +67,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
             context = contextLinesSetting
         }
+    } else if (isUsage) {
+        context = 2
     }
 
     const maxMatches = props.allMatches ? 0 : props.subsetMatches
@@ -146,8 +151,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             <div className="file-match-children">
                 {/* Symbols */}
                 {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
-                    <Link
-                        to={symbol.url}
+                    <LinkOrSpan
+                        to={isUsage ? null : symbol.url}
                         className="file-match-children__item test-file-match-children-item"
                         key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     >
@@ -156,7 +161,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             {symbol.name}{' '}
                             {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
                         </code>
-                    </Link>
+                    </LinkOrSpan>
                 ))}
 
                 {/* Line matches */}
@@ -165,8 +170,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
                         className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                     >
-                        <Link
-                            to={createCodeExcerptLink(group)}
+                        <LinkOrSpan
+                            to={isUsage ? null : createCodeExcerptLink(group)}
                             className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                             onClick={props.onSelect}
                         >
@@ -182,7 +187,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                 fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                 isFirst={index === 0}
                             />
-                        </Link>
+                        </LinkOrSpan>
                     </div>
                 ))}
             </div>

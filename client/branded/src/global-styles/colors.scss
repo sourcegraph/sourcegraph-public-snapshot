@@ -64,7 +64,7 @@ $theme-colors-light: (
 );
 
 $body-color: var(--body-color);
-$body-bg: var(--body-bg);
+$body-bg: black; // var(--body-bg);
 $text-muted: var(--text-muted);
 
 :root {

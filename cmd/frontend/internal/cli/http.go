@@ -2,6 +2,7 @@ package cli
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -160,7 +162,10 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// headers for security
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
-		w.Header().Set("X-Frame-Options", "DENY")
+		// TODO(sqs): hack, allow vscode extension iframe
+		if !(os.Getenv("USER") == "sqs" && env.InsecureDev) {
+			w.Header().Set("X-Frame-Options", "DENY")
+		}
 		// no cache by default
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 

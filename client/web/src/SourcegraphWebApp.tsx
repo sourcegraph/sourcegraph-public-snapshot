@@ -243,7 +243,7 @@ const readStoredThemePreference = (): ThemePreference => {
     switch (value) {
         case 'true':
         case 'light':
-            return ThemePreference.Light
+            return ThemePreference.Dark // TODO(sqs): force dark for vscode ThemePreference.Light
         case 'false':
         case 'dark':
             return ThemePreference.Dark
@@ -319,6 +319,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
     /** Returns whether Sourcegraph should be in light theme */
     private isLightTheme(): boolean {
+        return false // TODO(sqs): always dark
         return this.state.themePreference === 'system'
             ? this.state.systemIsLightTheme
             : this.state.themePreference === 'light'

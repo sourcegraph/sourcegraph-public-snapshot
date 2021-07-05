@@ -1,0 +1,75 @@
+{
+  "name": "calico-colors",
+  "description": "Calico Colors - A Webview View API Sample",
+  "version": "0.0.1",
+  "publisher": "vscode-samples",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-extension-samples"
+  },
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:calicoColors.colorsView",
+    "onCommand:calicoColors.addColor",
+    "onCommand:calicoColors.clearColors"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "calicoColors.colorsView",
+          "name": "Explore usage"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "calicoColors.addColor",
+        "category": "Calico Colors",
+        "title": "Add Color"
+      },
+      {
+        "command": "calicoColors.clearColors",
+        "category": "Calico Colors",
+        "title": "Clear Colors",
+        "icon": "$(clear-all)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "calicoColors.clearColors",
+          "group": "navigation",
+          "when": "view == calicoColors.colorsView"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint . --ext .ts,.tsx",
+    "watch": "tsc -w -p ./"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/vscode": "^1.50.0",
+    "@typescript-eslint/eslint-plugin": "^4.16.0",
+    "@typescript-eslint/parser": "^4.16.0",
+    "eslint": "^7.21.0",
+    "typescript": "^4.3.2"
+  }
+}

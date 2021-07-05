@@ -1,5 +1,5 @@
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
@@ -108,11 +108,6 @@ export const UsagePage: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     useEffect(() => {
-        document.body.classList.add(styles.usagePageBody)
-        return () => document.body.classList.remove(styles.usagePageBody)
-    })
-
-    useEffect(() => {
         eventLogger.logViewEvent('Usage')
     }, [])
 
@@ -148,6 +143,10 @@ export const UsagePage: React.FunctionComponent<Props> = ({
         )
     )
 
+    const onClick = useCallback<React.MouseEventHandler>(e => {
+        window.parent.postMessage({ type: 'usageClick' }, '*')
+    }, [])
+
     return usageInfo === null ? (
         <p className="p-3 text-muted h3">Not found</p>
     ) : usageInfo === undefined ? (
@@ -155,7 +154,7 @@ export const UsagePage: React.FunctionComponent<Props> = ({
     ) : (
         <>
             {usageInfo.references.nodes.length > 1 && (
-                <section id="refs" className="">
+                <section id="refs" className="" onClick={onClick}>
                     {/* <h2 className="mt-0 mx-3 mb-0 h4">Examples</h2> */}
                     <style>
                         {
@@ -166,7 +165,7 @@ export const UsagePage: React.FunctionComponent<Props> = ({
                         locations={of(
                             usageInfo.references.nodes
                                 .slice(0, -1)
-                                .slice(0, 7)
+                                .slice(0, 9)
                                 .map<Location>(reference => ({
                                     uri: makeRepoURI({
                                         repoName: reference.resource.repository.name,

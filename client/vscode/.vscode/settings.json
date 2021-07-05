@@ -1,0 +1,7 @@
+{
+    "editor.insertSpaces": false,
+    "files.exclude": {
+      "out": true,
+      "node_modules": true
+    }
+}
