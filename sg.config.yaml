@@ -402,19 +402,34 @@ commands:
       - enterprise/internal
       - enterprise/cmd/executor-queue
 
-  codeintel-executor:
-    cmd: .bin/executor
+  executor-template: &executor_template
+    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
       go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
     checkBinary: .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: codeintel
-      TMPDIR: $HOME/.sourcegraph/indexer-temp
+      EXECUTOR_QUEUE_NAME: TEMPLATE
     watch:
       - lib
       - internal
       - enterprise/internal
       - enterprise/cmd/executor
+
+  codeintel-executor:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: codeintel
+
+  batches-executor:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
 
   minio:
     cmd: |
@@ -575,6 +590,26 @@ commandsets:
     - zoekt-indexserver-1
     - zoekt-webserver-0
     - zoekt-webserver-1
+
+  batches:
+    - enterprise-frontend
+    - enterprise-worker
+    - enterprise-repo-updater
+    - enterprise-web
+    - gitserver
+    - searcher
+    - symbols
+    - query-runner
+    - caddy
+    - docsite
+    - syntect_server
+    - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
+    - executor-queue
+    - batches-executor
 
 tests:
   # These can be run with `sg test [name]`
