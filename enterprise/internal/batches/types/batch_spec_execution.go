@@ -31,6 +31,7 @@ type BatchSpecExecution struct {
 	UpdatedAt      time.Time
 	BatchSpec      string
 	BatchSpecID    int64
+	UserID         int32
 }
 
 func (i BatchSpecExecution) RecordID() int {
