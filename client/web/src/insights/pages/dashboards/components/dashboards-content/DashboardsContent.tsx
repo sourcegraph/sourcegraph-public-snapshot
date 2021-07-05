@@ -39,8 +39,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const currentDashboard = dashboards.find(dashboard => {
         if (isVirtualDashboard(dashboard)) {
             return (
-                dashboard.id === dashboardID.toLowerCase() ||
-                dashboard.type.toLowerCase() === dashboardID.toLowerCase()
+                dashboard.id === dashboardID.toLowerCase() || dashboard.type.toLowerCase() === dashboardID.toLowerCase()
             )
         }
 
