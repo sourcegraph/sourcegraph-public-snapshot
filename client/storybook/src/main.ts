@@ -6,7 +6,7 @@ import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import {
+import webpack, {
     DllReferencePlugin,
     Configuration,
     DefinePlugin,
@@ -137,6 +137,11 @@ const config = {
             new DefinePlugin({
                 NODE_ENV: JSON.stringify(config.mode),
                 'process.env.NODE_ENV': JSON.stringify(config.mode),
+            }),
+            new webpack.ProvidePlugin({
+                process: 'process/browser',
+                // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
+                Buffer: ['buffer', 'Buffer'],
             })
         )
 
