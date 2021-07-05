@@ -120,6 +120,8 @@ const config = {
     }),
     new webpack.ProvidePlugin({
       process: 'process/browser',
+      // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
+      Buffer: ['buffer', 'Buffer'],
     }),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
