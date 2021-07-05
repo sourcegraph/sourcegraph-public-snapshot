@@ -26,6 +26,14 @@ import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
+window.xyz = 2
+import foo2 from '@sourcegraph/wildcard/src/components/NavBar/NavAction.module.scss'
+import foo from '@sourcegraph/wildcard/src/components/NavBar/NavBar.module.scss'
+import foo3 from '@sourcegraph/wildcard/src/components/NavBar/NavItem.module.scss'
+if (foo && foo2 && foo3) {
+    window.xyz = 1
+}
+
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'

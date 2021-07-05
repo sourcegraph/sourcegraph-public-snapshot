@@ -23,12 +23,6 @@ const examplePlugin = {
 }
 
 const resolveFile = (modulePath, dir) => {
-    /*     if (modulePath.startsWith('@sourcegraph/wildcard')) {
-        return path.resolve(`client/wildcard/${modulePath.slice('@sourcegraph/wildcard/'.length)}`)
-    }
- */
-
-    console.log('MM', modulePath)
     if (modulePath.startsWith('wildcard/')) {
         return path.resolve(`node_modules/@sourcegraph/${modulePath}`)
     }
@@ -163,7 +157,7 @@ const sassPlugin = {
             }
         })
 
-        const DATA_TEXT_CSS_PREFIX = 'data:text/css,'
+        // const DATA_TEXT_CSS_PREFIX = 'data:text/css,'
         /*build.onResolve({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
             const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
             return {}
@@ -178,7 +172,6 @@ const sassPlugin = {
         })
  */
         build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => {
-            console.log('QQQQQ', args.path)
             return {
                 path: args.path,
                 namespace: 'file',
@@ -199,7 +192,6 @@ const sassPlugin = {
             const css = fs.readFileSync(args.path)
 
             const contents = `import ${JSON.stringify(args.path)}
-            // import "${DATA_TEXT_CSS_PREFIX}${encodeURI(css)}"
             export default ${JSON.stringify(mod && mod.map ? mod.map : {})}`
 
             return {
