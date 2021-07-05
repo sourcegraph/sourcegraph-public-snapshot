@@ -101,7 +101,7 @@ func connectToDatabase() *sql.DB {
 		}
 	})
 
-	db, err := dbconn.New(postgresDSN, "")
+	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "executor-queue"})
 	if err != nil {
 		log.Fatalf("failed to initialize store: %s", err)
 	}

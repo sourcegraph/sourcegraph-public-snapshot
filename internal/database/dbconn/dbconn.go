@@ -40,30 +40,61 @@ var (
 	_ = env.Ensure("TZ", "UTC", "timezone used by time instances")
 )
 
+// Opts contain arguments passed to database connection initialisation functions.
+type Opts struct {
+	// DSN (data source name) is a URI like string containing all data needed to connect to the database.
+	DSN string
+
+	// DBName is used only for Prometheus metrics instead of whatever actual database name is set in DSN.
+	// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
+	// logical databases.
+	DBName string
+
+	// AppName overrides the application_name in the DSN. This separate parameter is needed
+	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
+	AppName string
+}
+
 // SetupGlobalConnection connects to the given data source and stores the handle
 // globally.
+//
+// dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
+// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
+// logical databases. app, however is set as the application_name in the connection string. This is needed
+// because we have multiple apps connecting to the same database, but have a single shared DSN.
 //
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func SetupGlobalConnection(dataSource string) (err error) {
-	Global, err = New(dataSource, "_app")
+func SetupGlobalConnection(opts Opts) (err error) {
+	Global, err = New(opts)
 	return err
 }
 
 // New connects to the given data source and returns the handle.
 //
+// dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
+// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
+// logical databases. app, however is set as the application_name in the connection string. This is needed
+// because we have multiple apps connecting to the same database, but have a single shared DSN.
+//
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
-	db, err := NewRaw(dataSource)
+func New(opts Opts) (*sql.DB, error) {
+	cfg, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
 		return nil, err
 	}
 
-	registerPrometheusCollector(db, dbNameSuffix)
+	db, err := newWithConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
 	configureConnectionPool(db)
+
 	return db, nil
 }
 
@@ -72,11 +103,14 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 // Prefer to call New as it also configures a connection pool and metrics.
 // Use this method only in internal utilities (such as schemadoc).
 func NewRaw(dataSource string) (*sql.DB, error) {
-	cfg, err := buildConfig(dataSource)
+	cfg, err := buildConfig(dataSource, "")
 	if err != nil {
 		return nil, err
 	}
+	return newWithConfig(cfg)
+}
 
+func newWithConfig(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	db, err := openDBWithStartupWait(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "DB not available")
@@ -121,9 +155,13 @@ var startupTimeout = func() time.Duration {
 
 // buildConfig takes either a Postgres connection string or connection URI,
 // parses it, and returns a config with additional parameters.
-func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
+func buildConfig(dataSource, app string) (*pgx.ConnConfig, error) {
 	if dataSource == "" {
 		dataSource = defaultDataSource
+	}
+
+	if app == "" {
+		app = defaultApplicationName
 	}
 
 	cfg, err := pgx.ParseConfig(dataSource)
@@ -145,7 +183,7 @@ func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 	// by checking if application_name is set and setting a default
 	// value if not.
 	if _, ok := cfg.RuntimeParams["application_name"]; !ok {
-		cfg.RuntimeParams["application_name"] = defaultApplicationName
+		cfg.RuntimeParams["application_name"] = app
 	}
 
 	// Force PostgreSQL session timezone to UTC.
@@ -332,22 +370,6 @@ func (h *hook) OnError(ctx context.Context, err error, query string, args ...int
 		tr.Finish()
 	}
 	return err
-}
-
-func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
-	c := prometheus.NewGaugeFunc(
-		prometheus.GaugeOpts{
-			Namespace: "src",
-			Subsystem: "pgsql" + strings.ReplaceAll(dbNameSuffix, "-", "_"),
-			Name:      "open_connections",
-			Help:      "Number of open connections to pgsql DB, as reported by pgsql.DB.Stats()",
-		},
-		func() float64 {
-			s := db.Stats()
-			return float64(s.OpenConnections)
-		},
-	)
-	prometheus.MustRegister(c)
 }
 
 // configureConnectionPool sets reasonable sizes on the built in DB queue. By

@@ -33,7 +33,7 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 	}
 
 	// Create a connection to TimescaleDB, so we can record results.
-	timescale, err := insights.InitializeCodeInsightsDB()
+	timescale, err := insights.InitializeCodeInsightsDB("repo-updater")
 	if err != nil {
 		// e.g. migration failed, DB unavailable, etc. code insights is non-functional so we do not
 		// want to continue.
@@ -72,7 +72,7 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
 
-	//todo(insights) add setting to disable this indexer
+	// todo(insights) add setting to disable this indexer
 	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, timescale))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
