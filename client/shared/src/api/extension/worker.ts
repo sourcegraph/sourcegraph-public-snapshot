@@ -6,6 +6,12 @@ import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 // eslint-disable-next-line import/extensions
 // import ExtensionHostWorker from './main.worker.ts'
 
+// TODO(sqs): from https://stackoverflow.com/questions/21913673/execute-web-worker-from-different-origin
+function getWorkerURL(url) {
+    const content = `importScripts( "${url}" );`
+    return URL.createObjectURL(new Blob([content], { type: 'text/javascript' }))
+}
+
 /**
  * Creates a web worker with the extension host and sets up a bidirectional MessageChannel-based communication channel.
  *
@@ -15,7 +21,9 @@ import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 export function createExtensionHostWorker(workerBundleURL?: string): { worker: Worker; clientEndpoints: EndpointPair } {
     const clientAPIChannel = new MessageChannel()
     const extensionHostAPIChannel = new MessageChannel()
-    const worker = workerBundleURL ? new Worker(workerBundleURL) : new Worker('/.assets/worker.js')
+    const worker = workerBundleURL
+        ? new Worker(workerBundleURL)
+        : new Worker(getWorkerURL('http://localhost:3099/shared/src/api/extension/main.worker.js'))
     const workerEndpoints: EndpointPair = {
         proxy: clientAPIChannel.port2,
         expose: extensionHostAPIChannel.port2,

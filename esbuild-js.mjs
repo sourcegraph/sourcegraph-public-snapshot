@@ -186,12 +186,12 @@ const PORT = 3099
 
 /** @type esbuild.BuildOptions */
 const BUILD_OPTIONS = {
-    entryPoints: ['client/web/src/enterprise/main.tsx'],
+    entryPoints: ['client/web/src/enterprise/main.tsx', 'client/shared/src/api/extension/main.worker.ts'],
     bundle: true,
     format: 'esm',
     outdir: 'ui/assets/esbuild',
     logLevel: 'error',
-    splitting: true,
+    splitting: false, // TODO(sqs): need to have splitting:false for main.worker.ts entrypoint
     plugins: [sassPlugin],
     define: {
         'process.env.NODE_ENV': '"development"',
@@ -211,7 +211,6 @@ if (process.env.SERVE) {
     await esbuild.serve(
         {
             port: PORT,
-            servedir: 'ui/assets/esbuild',
         },
         BUILD_OPTIONS
     )

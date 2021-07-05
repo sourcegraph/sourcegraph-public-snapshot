@@ -15,7 +15,8 @@ func LoadWebpackManifest() (m *WebpackManifest, err error) {
 	}
 
 	return &WebpackManifest{
-		AppJSBundlePath: "main.js",
+		AppJSBundlePath:  "http://localhost:3099/web/src/enterprise/main.js",
+		AppCSSBundlePath: "http://localhost:3099/web/src/enterprise/main.css",
 	}, nil
 
 	// manifestContent, err := os.ReadFile("./ui/assets/webpack.manifest.json")

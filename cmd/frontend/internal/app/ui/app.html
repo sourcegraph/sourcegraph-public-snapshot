@@ -29,10 +29,7 @@
 	{{end}}
 	    <title>{{.Title}}</title>
 
-    <!-- TODO(sqs): fix this after esbuild -->
-	    {{if not ".WebpackDevServer"}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
-	    <link rel="stylesheet" href="http://localhost:3099/main.css">
-    <!-- end -->
+	    <link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">
 
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
@@ -68,7 +65,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	<script src="http://localhost:3099/{{.Manifest.AppJSBundlePath}}" type="module"></script>
+	<script src="{{.Manifest.AppJSBundlePath}}" type="module"></script>
 	{{.Injected.BodyBottom}}
 </body>
 

@@ -6,5 +6,5 @@ type WebpackManifest struct {
 	// for the webapp code.
 	AppJSBundlePath string `json:"app.js"`
 	// Main CSS bundle, only present in production.
-	AppCSSBundlePath *string `json:"app.css"`
+	AppCSSBundlePath string `json:"app.css"`
 }
