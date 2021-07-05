@@ -157,39 +157,9 @@ const sassPlugin = {
             }
         })
 
-        // const DATA_TEXT_CSS_PREFIX = 'data:text/css,'
-        /*build.onResolve({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
-            const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
-            return {}
-        })
-
-        build.onLoad({ filter: new RegExp(`^${DATA_TEXT_CSS_PREFIX}`) }, args => {
-            const css = decodeURI(args.path.slice(DATA_TEXT_CSS_PREFIX.length))
-            return {
-                contents: css,
-                loader: 'css',
-            }
-        })
- */
-        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => {
-            return {
-                path: args.path,
-                namespace: 'file',
-            }
-        })
-        build.onLoad({ filter: /./, namespace: 'x2' }, args => {
-            return {
-                contents: fs.readFileSync(args.path),
-                resolveDir: path.dirname(args.path),
-                loader: 'css',
-            }
-        })
-
         build.onLoad({ filter: /./, namespace: 'postcss-module' }, async args => {
             const mod = modulesMap.find(({ path }) => path === args.pluginData.originalPath)
             const resolveDir = path.dirname(args.path)
-
-            const css = fs.readFileSync(args.path)
 
             const contents = `import ${JSON.stringify(args.path)}
             export default ${JSON.stringify(mod && mod.map ? mod.map : {})}`
@@ -199,17 +169,20 @@ const sassPlugin = {
                 contents,
             }
         })
+
+        // Handle the `import`ed CSS files from the previous onLoad filter.
+        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => {
+            return {
+                path: args.path,
+                namespace: 'file',
+            }
+        })
     },
 }
 
 esbuild
     .build({
-        entryPoints: [
-            // 'client/web/src/components/fuzzyFinder/HighlightedLink.tsx',
-            'client/web/src/enterprise/main.tsx',
-            // 'client/web/src/main.tsx',
-            // 'client/wildcard/src/index.ts',
-        ],
+        entryPoints: ['client/web/src/enterprise/main.tsx'],
         bundle: true,
         format: 'esm',
         outdir: 'ui/assets/esbuild',
