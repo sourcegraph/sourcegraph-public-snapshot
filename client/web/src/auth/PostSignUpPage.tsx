@@ -6,6 +6,7 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
+import { Terminal } from '@sourcegraph/wildcard/src/components/Terminal'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { HeroPage } from '../components/HeroPage'
@@ -14,19 +15,32 @@ import { UserAreaUserFields, ExternalServicesVariables, ExternalServicesResult }
 import { SourcegraphContext } from '../jscontext'
 import { UserCodeHosts } from '../user/settings/codeHosts/UserCodeHosts'
 
-import { CloningStatusTerminal } from './CloningStatusTerminal'
 import { LogoAscii } from './LogoAscii'
 import { getReturnTo } from './SignInSignUpCommon'
+import { useRepoCloningStatus } from './useRepoCloningStatus'
 
 interface Props {
     authenticatedUser: UserAreaUserFields
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
 }
 
+interface Step {
+    content: React.ReactElement
+    isComplete: () => boolean
+    prefetch?: () => void
+}
+
 export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: user, context }) => {
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
     const location = useLocation()
     const history = useHistory()
+
+    const {
+        trigger: cloningTrigger,
+        repos: cloningLines,
+        loading: cloningLoading,
+        isDoneCloning,
+    } = useRepoCloningStatus({ userId: user.id, pollInterval: 2000 })
 
     /**
      * post sign-up flow is available only for .com and only in two cases, user:
@@ -125,21 +139,35 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                             We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first
                             search!
                         </p>
-                        <CloningStatusTerminal userId={user.id} pollInterval={3000} />
+                        <Terminal>
+                            {/* {cloningLoading && (<RepoLine key="loading" title="Loading..." /> )}
+                            {!cloningLoading && cloningLines?.map(({id, title, details, progress}) =>
+                                <RepoLine key={id} title={title} details={details} progress={progress} />
+                            )}
+                            {isDoneCloning && <LogoAscii />} */}
+                        </Terminal>
                     </>
                 )}
             </>
         ),
         isComplete: () => false,
+        prefetch: () => cloningTrigger(),
     }
 
-    const steps = [firstStep, secondStep, thirdStep]
+    const steps: Step[] = [firstStep, secondStep, thirdStep]
 
     // Steps helpers
     const isLastStep = currentStepNumber === steps.length
     const currentStep = steps[currentStepNumber - 1]
 
-    const goToNextTab = (): void => setCurrentStepNumber(currentStepNumber + 1)
+    const goToNextTab = (): void => {
+        const nextStep = steps[currentStepNumber]
+        if (nextStep.prefetch) {
+            nextStep.prefetch()
+        }
+
+        setCurrentStepNumber(currentStepNumber + 1)
+    }
     const goToSearch = (): void => history.push(getReturnTo(location))
     const isCurrentStepComplete = (): boolean => currentStep?.isComplete()
     const skipPostSignup = (): void => history.push(getReturnTo(location))
