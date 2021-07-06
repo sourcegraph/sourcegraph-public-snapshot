@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -44,15 +45,21 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
 func NewExecutorStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
-	return &executorStore{wrapped: dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext)}
+	return &executorStore{Store: dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext)}
 }
 
 var _ dbworkerstore.Store = &executorStore{}
 
+// executorStore is a thin wrapper around dbworkerstore.Store that allows us to
+// extract information out of the ExecutionLogEntry field and persisting it to
+// separate columns when marking a job as complete.
 type executorStore struct {
-	wrapped dbworkerstore.Store
+	dbworkerstore.Store
 }
 
+// markCompleteQuery is taken from internal/workerutil/dbworker/store/store.go
+//
+// If that one changes we need to update this one here too.
 const markCompleteQuery = `
 UPDATE batch_spec_executions
 SET state = 'completed', finished_at = clock_timestamp(), batch_spec_id = (SELECT id FROM batch_specs WHERE rand_id = %s)
@@ -61,27 +68,47 @@ RETURNING id
 `
 
 func (s *executorStore) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
-	batchesStore := store.New(s.wrapped.Handle().DB(), nil)
+	batchesStore := store.New(s.Store.Handle().DB(), nil)
 
 	exec, err := batchesStore.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: int64(id)})
-
-	lines := strings.Split(strings.ReplaceAll(exec.ExecutionLogs[0].Out, "stdout: ", ""), "\n")
-
-	type batchesLogEvent struct {
-		Operation string `json:"operation"` // "PREPARING_DOCKER_IMAGES"
-
-		Timestamp time.Time `json:"timestamp"`
-
-		Status  string `json:"status"`            // "STARTED", "PROGRESS", "SUCCESS", "FAILURE"
-		Message string `json:"message,omitempty"` // "70% done"
+	if err != nil {
+		return false, err
 	}
+
+	batchSpecRandID, err := extractBatchSpecRandID(exec.ExecutionLogs[0].Out)
+	if err != nil {
+		return false, err
+	}
+
+	h := basestore.NewWithHandle(s.Store.Handle())
+	_, ok, err := basestore.ScanFirstInt(h.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id)))
+
+	return ok, err
+}
+
+func (s *executorStore) DequeueWithIndependentTransactionContext(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
+	r, wrapped, b, err := s.Store.DequeueWithIndependentTransactionContext(ctx, workerHostname, conditions)
+
+	return r, &executorStore{Store: wrapped}, b, err
+}
+
+func (s *executorStore) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
+	r, wrapped, b, err := s.Store.Dequeue(ctx, workerHostname, conditions)
+
+	return r, &executorStore{Store: wrapped}, b, err
+}
+
+var ErrNoBatchSpecRandID = errors.New("no batch spec rand id found in execution logs")
+
+func extractBatchSpecRandID(executionLogOutput string) (string, error) {
+	lines := strings.Split(strings.ReplaceAll(executionLogOutput, "stdout: ", ""), "\n")
 
 	var batchSpecRandID string
 	for _, l := range lines {
-		var e batchesLogEvent
+		var e srcCLILogLine
 
 		if err := json.Unmarshal([]byte(l), &e); err != nil {
-			return false, err
+			return "", err
 		}
 
 		if e.Operation == "CREATING_BATCH_SPEC" && e.Status == "SUCCESS" {
@@ -89,52 +116,24 @@ func (s *executorStore) MarkComplete(ctx context.Context, id int) (_ bool, err e
 			batchSpecGraphQLID := graphql.ID(parts[len(parts)-1])
 
 			if err := relay.UnmarshalSpec(batchSpecGraphQLID, &batchSpecRandID); err != nil {
-				return false, err
+				return "", err
 			}
-			break
+			return batchSpecRandID, nil
 		}
 	}
 
-	h := basestore.NewWithHandle(s.wrapped.Handle())
-	_, ok, err := basestore.ScanFirstInt(h.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id)))
-
-	return ok, err
+	return batchSpecRandID, ErrNoBatchSpecRandID
 }
 
-func (s *executorStore) DequeueWithIndependentTransactionContext(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
-	r, wrapped, b, err := s.wrapped.DequeueWithIndependentTransactionContext(ctx, workerHostname, conditions)
+// srcCLILogLine matches the definition of log entries that are printed by
+// src-cli when used with the `-text-only` flag.
+type srcCLILogLine struct {
+	Operation string `json:"operation"` // "PREPARING_DOCKER_IMAGES"
 
-	return r, &executorStore{wrapped: wrapped}, b, err
-}
+	Timestamp time.Time `json:"timestamp"`
 
-func (s *executorStore) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (record workerutil.Record, tx dbworkerstore.Store, exists bool, err error) {
-	r, wrapped, b, err := s.wrapped.Dequeue(ctx, workerHostname, conditions)
-
-	return r, &executorStore{wrapped: wrapped}, b, err
-}
-func (s *executorStore) Handle() *basestore.TransactableHandle {
-	return s.wrapped.Handle()
-}
-func (s *executorStore) Done(err error) error {
-	return s.wrapped.Done(err)
-}
-func (s *executorStore) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error) {
-	return s.wrapped.QueuedCount(ctx, conditions)
-}
-func (s *executorStore) Requeue(ctx context.Context, id int, after time.Time) error {
-	return s.wrapped.Requeue(ctx, id, after)
-}
-func (s *executorStore) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {
-	return s.wrapped.AddExecutionLogEntry(ctx, id, entry)
-}
-func (s *executorStore) MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error) {
-	return s.wrapped.MarkErrored(ctx, id, failureMessage)
-}
-func (s *executorStore) MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error) {
-	return s.wrapped.MarkFailed(ctx, id, failureMessage)
-}
-func (s *executorStore) ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error) {
-	return s.wrapped.ResetStalled(ctx)
+	Status  string `json:"status"`            // "STARTED", "PROGRESS", "SUCCESS", "FAILURE"
+	Message string `json:"message,omitempty"` // "70% done"
 }
 
 // scanFirstExecutionRecord scans a slice of batch change executions and returns the first.
