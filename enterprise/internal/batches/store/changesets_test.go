@@ -728,18 +728,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			},
 			{
 				opts: ListChangesetsOpts{
-					ExternalState: &stateOpen,
-				},
-				wantCount: 3,
-			},
-			{
-				opts: ListChangesetsOpts{
-					ExternalState: &stateClosed,
-				},
-				wantCount: 0,
-			},
-			{
-				opts: ListChangesetsOpts{
 					ExternalStates: []btypes.ChangesetExternalState{stateOpen},
 				},
 				wantCount: 3,
@@ -782,14 +770,14 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			},
 			{
 				opts: ListChangesetsOpts{
-					ExternalState:      &stateOpen,
+					ExternalStates:     []btypes.ChangesetExternalState{stateOpen},
 					ExternalCheckState: &stateFailed,
 				},
 				wantCount: 0,
 			},
 			{
 				opts: ListChangesetsOpts{
-					ExternalState:       &stateOpen,
+					ExternalStates:      []btypes.ChangesetExternalState{stateOpen},
 					ExternalReviewState: &stateChangesRequested,
 				},
 				wantCount: 0,

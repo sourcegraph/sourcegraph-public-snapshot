@@ -971,7 +971,8 @@ func TestService(t *testing.T) {
 					store.ListChangesetsOpts{
 						PublicationState: &published,
 						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-						ExternalState:    &openState},
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
+					},
 				)
 				if err != nil {
 					t.Fatal(err)
@@ -994,7 +995,7 @@ func TestService(t *testing.T) {
 					store.ListChangesetsOpts{
 						PublicationState: &published,
 						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-						ExternalState:    &openState,
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
 					},
 				)
 				if err != ErrChangesetsForJobNotFound {
@@ -1033,7 +1034,8 @@ func TestService(t *testing.T) {
 					store.ListChangesetsOpts{
 						PublicationState: &published,
 						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-						ExternalState:    &openState},
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
+					},
 				)
 				if err != nil {
 					t.Fatal(err)
@@ -1056,7 +1058,7 @@ func TestService(t *testing.T) {
 					store.ListChangesetsOpts{
 						PublicationState: &published,
 						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-						ExternalState:    &openState,
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
 					},
 				)
 				if err != ErrChangesetsForJobNotFound {

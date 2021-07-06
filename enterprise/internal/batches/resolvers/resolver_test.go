@@ -722,7 +722,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				ExternalState:    &wantExternalStates[0],
+				ExternalStates:   wantExternalStates[0:1],
 				PublicationState: &wantPublicationStates[0],
 				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
 			},

@@ -778,31 +778,31 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		case btypes.ChangesetStateOpen:
 			externalState := btypes.ChangesetExternalStateOpen
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateDraft:
 			externalState := btypes.ChangesetExternalStateDraft
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateClosed:
 			externalState := btypes.ChangesetExternalStateClosed
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateMerged:
 			externalState := btypes.ChangesetExternalStateMerged
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateDeleted:
 			externalState := btypes.ChangesetExternalStateDeleted
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateUnpublished:
@@ -1305,7 +1305,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		store.ListChangesetsOpts{
 			PublicationState: &published,
 			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-			ExternalState:    &openState,
+			ExternalStates:   []btypes.ChangesetExternalState{openState},
 		},
 	)
 	if err != nil {
