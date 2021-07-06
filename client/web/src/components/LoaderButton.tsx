@@ -1,4 +1,4 @@
-import classnames from 'classnames';
+import classnames from 'classnames'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
