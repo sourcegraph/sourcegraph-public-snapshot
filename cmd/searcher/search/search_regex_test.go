@@ -422,6 +422,8 @@ func TestReadAll(t *testing.T) {
 }
 
 func TestMaxMatches(t *testing.T) {
+	t.Skip("TODO: Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/22560")
+
 	pattern := "foo"
 
 	// Create a zip archive which contains our limits + 1

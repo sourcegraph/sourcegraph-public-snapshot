@@ -432,17 +432,9 @@ This panel indicates idle.
 
 <br />
 
-#### frontend: waited_for
+#### frontend: mean_blocked_seconds_per_conn_request
 
-This panel indicates waited for.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: blocked_seconds
-
-This panel indicates blocked seconds (99th percentile).
+This panel indicates mean blocked seconds per conn request.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -982,17 +974,9 @@ This panel indicates idle.
 
 <br />
 
-#### gitserver: waited_for
+#### gitserver: mean_blocked_seconds_per_conn_request
 
-This panel indicates waited for.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### gitserver: blocked_seconds
-
-This panel indicates blocked seconds (99th percentile).
+This panel indicates mean blocked seconds per conn request.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1653,17 +1637,9 @@ This panel indicates idle.
 
 <br />
 
-#### precise-code-intel-worker: waited_for
+#### precise-code-intel-worker: mean_blocked_seconds_per_conn_request
 
-This panel indicates waited for.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### precise-code-intel-worker: blocked_seconds
-
-This panel indicates blocked seconds (99th percentile).
+This panel indicates mean blocked seconds per conn request.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -2191,17 +2167,9 @@ This panel indicates idle.
 
 <br />
 
-#### worker: waited_for
+#### worker: mean_blocked_seconds_per_conn_request
 
-This panel indicates waited for.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### worker: blocked_seconds
-
-This panel indicates blocked seconds (99th percentile).
+This panel indicates mean blocked seconds per conn request.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -2767,17 +2735,9 @@ This panel indicates idle.
 
 <br />
 
-#### repo-updater: waited_for
+#### repo-updater: mean_blocked_seconds_per_conn_request
 
-This panel indicates waited for.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### repo-updater: blocked_seconds
-
-This panel indicates blocked seconds (99th percentile).
+This panel indicates mean blocked seconds per conn request.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -3948,17 +3908,9 @@ This panel indicates idle.
 
 <br />
 
-#### executor-queue: waited_for
+#### executor-queue: mean_blocked_seconds_per_conn_request
 
-This panel indicates waited for.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: blocked_seconds
-
-This panel indicates blocked seconds (99th percentile).
+This panel indicates mean blocked seconds per conn request.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 

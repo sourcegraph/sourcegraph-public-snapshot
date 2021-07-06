@@ -53,18 +53,14 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 		},
 		{
 			{
-				Name:           "waited_for",
-				Description:    "waited for",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name=%q}[1m]))`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
-				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
-				Interpretation: "none",
-			},
-			{
-				Name:           "blocked_seconds",
-				Description:    "blocked seconds (99th percentile)",
-				Query:          fmt.Sprintf(`histogram_quantile(0.99, sum by (app_name, db_name, le) (rate(src_pgsql_conns_blocked_seconds_bucket{app_name=%q}[1m])))`, app),
+				// The stats produced by the database/sql package don't allow us to maintain a histogram of blocked
+				// durations. The best we can do with two ever increasing counters is an average / mean, which alright
+				// to detect trends, although it doesn't give us a good sense of outliers (which we'd want to use high
+				// percentiles for).
+				Name:        "mean_blocked_seconds_per_conn_request",
+				Description: "mean blocked seconds per conn request",
+				Query: fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name=%q}[5m])) / `+
+					`sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name=%q}[5m]))`, app, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}").Unit(monitoring.Seconds),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
@@ -75,7 +71,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "closed_max_idle",
 				Description:    "closed by SetMaxIdleConns",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
@@ -84,7 +80,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "closed_max_lifetime",
 				Description:    "closed by SetConnMaxLifetime",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
@@ -93,7 +89,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "closed_max_idle_time",
 				Description:    "closed by SetConnMaxIdleTime",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
