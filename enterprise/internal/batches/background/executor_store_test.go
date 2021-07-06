@@ -24,9 +24,10 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		specExec := &btypes.BatchSpecExecution{
-			State:     btypes.BatchSpecExecutionStateProcessing,
-			BatchSpec: `name: testing`,
-			UserID:    user.ID,
+			State:           btypes.BatchSpecExecutionStateProcessing,
+			BatchSpec:       `name: testing`,
+			UserID:          user.ID,
+			NamespaceUserID: user.ID,
 		}
 
 		if err := s.CreateBatchSpecExecution(context.Background(), specExec); err != nil {
@@ -63,9 +64,10 @@ stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z
 
 	t.Run("without log entry", func(t *testing.T) {
 		specExec := &btypes.BatchSpecExecution{
-			State:     btypes.BatchSpecExecutionStateProcessing,
-			BatchSpec: `name: testing`,
-			UserID:    user.ID,
+			State:           btypes.BatchSpecExecutionStateProcessing,
+			BatchSpec:       `name: testing`,
+			UserID:          user.ID,
+			NamespaceUserID: user.ID,
 		}
 
 		if err := s.CreateBatchSpecExecution(context.Background(), specExec); err != nil {

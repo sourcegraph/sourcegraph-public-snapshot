@@ -1390,8 +1390,9 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 	actor := actor.FromContext(ctx)
 
 	exec := &btypes.BatchSpecExecution{
-		BatchSpec: args.Spec,
-		UserID:    actor.UID,
+		BatchSpec:       args.Spec,
+		UserID:          actor.UID,
+		NamespaceUserID: actor.UID,
 	}
 
 	if err := r.store.CreateBatchSpecExecution(ctx, exec); err != nil {
