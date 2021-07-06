@@ -386,10 +386,7 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
                                 case 'parameter':
                                     return (
                                         <>
-                                            <span className="search-filter-keyword">
-                                                {node.negated ? '-' : ''}
-                                                {node.field}:
-                                            </span>
+                                            <span className="search-filter-keyword">{node.field}:</span>
                                             {node.value}
                                         </>
                                     )
