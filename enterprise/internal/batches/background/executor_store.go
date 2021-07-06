@@ -95,7 +95,7 @@ func (s *executorStore) Dequeue(ctx context.Context, workerHostname string, cond
 }
 
 func loadAndExtractBatchSpecRandID(ctx context.Context, s *store.Store, id int64) (string, error) {
-	exec, err := s.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: int64(id)})
+	exec, err := s.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: id})
 	if err != nil {
 		return "", err
 	}
