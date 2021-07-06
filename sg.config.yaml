@@ -41,7 +41,8 @@ env:
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
       { "Name": "executor-queue", "Host": "127.0.0.1:6091" },
-      { "Name": "executor", "Host": "127.0.0.1:6092" },
+      { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
+      { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-indexserver-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-indexserver-1", "Host": "127.0.0.1:6073" },
       { "Name": "zoekt-webserver-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
@@ -423,6 +424,8 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
+      EXECUTOR_HEALTH_SERVER_PORT: "3192"
+      SRC_PROF_HTTP: ":6092"
 
   batches-executor:
     <<: *executor_template
@@ -430,6 +433,8 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_HEALTH_SERVER_PORT: "3193"
+      SRC_PROF_HTTP: ":6093"
 
   minio:
     cmd: |
