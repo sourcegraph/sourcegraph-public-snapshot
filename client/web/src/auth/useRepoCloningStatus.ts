@@ -42,7 +42,7 @@ interface CloneProgressResult {
 let previousPercentage: { [key: string]: number } = {}
 
 const USER_AFFILIATED_REPOS_MIRROR_INFO = gql`
-    query UserRepositories(
+    query UserRepositoriesMirrorInfo(
         $id: ID!
         $first: Int
         $query: String
