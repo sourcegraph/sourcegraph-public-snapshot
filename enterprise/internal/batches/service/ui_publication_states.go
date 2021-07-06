@@ -51,10 +51,10 @@ type ListChangesetSpeccer interface {
 
 var _ ListChangesetSpeccer = &store.Store{}
 
-// prepare looks up the random changeset spec IDs, and ensures that the
+// prepareAndValidate looks up the random changeset spec IDs, and ensures that the
 // changeset specs are attached to the batch spec and are eligible for a UI
 // publication state.
-func (ps *UiPublicationStates) prepare(ctx context.Context, s ListChangesetSpeccer, batchSpecID int64) error {
+func (ps *UiPublicationStates) prepareAndValidate(ctx context.Context, s ListChangesetSpeccer, batchSpecID int64) error {
 	// If there are no publication states -- which is the normal case -- there's
 	// nothing to do here, and we can bail early.
 	if len(ps.rand) == 0 {

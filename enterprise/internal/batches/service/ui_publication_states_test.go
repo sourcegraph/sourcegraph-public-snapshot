@@ -127,7 +127,7 @@ func TestUiPublicationStates_prepare(t *testing.T) {
 				var ps UiPublicationStates
 				tc.setup(&ps)
 
-				if err := ps.prepare(ctx, bstore, tc.batchSpecID); err == nil {
+				if err := ps.prepareAndValidate(ctx, bstore, tc.batchSpecID); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -138,7 +138,7 @@ func TestUiPublicationStates_prepare(t *testing.T) {
 		var ps UiPublicationStates
 
 		ps.Add(changesetSpecA.RandID, batches.PublishedValue{Val: true})
-		if err := ps.prepare(ctx, &brokenListChangesetSpeccer{}, batchSpecA.ID); err == nil {
+		if err := ps.prepareAndValidate(ctx, &brokenListChangesetSpeccer{}, batchSpecA.ID); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -147,7 +147,7 @@ func TestUiPublicationStates_prepare(t *testing.T) {
 		var ps UiPublicationStates
 
 		ps.Add(changesetSpecA.RandID, batches.PublishedValue{Val: true})
-		if err := ps.prepare(ctx, bstore, batchSpecA.ID); err != nil {
+		if err := ps.prepareAndValidate(ctx, bstore, batchSpecA.ID); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
 		if len(ps.rand) != 0 {
@@ -171,7 +171,7 @@ func TestUiPublicationStates_prepareEmpty(t *testing.T) {
 		"empty": {rand: map[string]batches.PublishedValue{}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := ps.prepare(ctx, nil, 0); err != nil {
+			if err := ps.prepareAndValidate(ctx, nil, 0); err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 		})
