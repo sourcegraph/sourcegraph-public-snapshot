@@ -75,6 +75,8 @@ If you want to learn more about batch changes:
 
 - [src-cli](#src-cli)
   - Batch changes are currently executed client-side through the `src` CLI
+- [Search](#search)
+  - Repositories in which batch specs need to be executed are resolved through the search API
 
 ## Code insights
 
