@@ -8,7 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 )
 
-// GetVersion retrieves the version of the Gitlab instance.
+// GetVersion retrieves the version of the GitLab instance.
 func (c *Client) GetVersion(ctx context.Context) (string, error) {
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
