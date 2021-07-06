@@ -3,7 +3,6 @@ import {
     useMutation as useApolloMutation,
     DocumentNode,
     ApolloClient,
-    InMemoryCache,
     createHttpLink,
     NormalizedCacheObject,
     OperationVariables,
@@ -21,6 +20,7 @@ import { Omit } from 'utility-types'
 import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
 
+import { cache } from './cache'
 import { fixApolloObservable, getDocumentNode } from './utils'
 
 /**
@@ -111,7 +111,7 @@ export function watchQueryCommon<T, V = object>({
 export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
     new ApolloClient({
         uri: GRAPHQL_URI,
-        cache: new InMemoryCache(),
+        cache,
         link: createHttpLink({
             uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
             headers,
