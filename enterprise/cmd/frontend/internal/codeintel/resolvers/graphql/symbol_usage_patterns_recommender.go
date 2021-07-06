@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"time"
@@ -12,14 +13,14 @@ import (
 	"github.com/xeonx/timeago"
 )
 
-func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLocationResolver, exampleLocations []symbolUsagePatternExampleLocation) ([]symbolUsagePatternExampleLocation, error) {
-	infos := make([]exampleLocationInfo, len(exampleLocations))
+func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLocationResolver, symbol resolvers.AdjustedSymbol, exampleLocations []symbolUsagePatternExampleLocation) ([]symbolUsagePatternExampleLocation, error) {
+	infos := make([]*exampleLocationInfo, len(exampleLocations))
 	for i, exampleLocation := range exampleLocations {
 		info, err := lookupExampleLocationInfo(ctx, exampleLocation.location)
 		if err != nil {
 			return nil, err
 		}
-		infos[i] = *info
+		infos[i] = info
 	}
 
 	const (
@@ -88,32 +89,45 @@ func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLo
 			parts = append(parts, "by a community member")
 		}
 
-		symbolDefinitionRepo := exampleLocations[i].symbol.AdjustedLocation.Dump.RepositoryID
+		symbolDefinitionRepo := symbol.AdjustedLocation.Dump.RepositoryID
 		if isInExternalRepo := info.location.Dump.RepositoryID != symbolDefinitionRepo; isInExternalRepo {
 			parts = append(parts, "in a separate project")
 		} else if isInTestCode := strings.Contains(info.location.Path, "test"); isInTestCode {
 			parts = append(parts, "in test code")
 		}
 
-		exampleLocations[i].description = strings.Join(parts, ", ")
+		info.description = strings.Join(parts, ", ")
 	}
 
 	// Skip an example if the previous one was from the same author.
-	x := exampleLocations[:0]
-	for i, exampleLocation := range exampleLocations {
-		if i >= 1 && infos[i-1].author.Email == infos[i].author.Email {
+	keep := infos[:0]
+	for i, info := range infos {
+		if i >= 1 && infos[i-1].author.Email == info.author.Email {
 			continue
 		}
-		x = append(x, exampleLocation)
+		keep = append(keep, info)
 	}
-	exampleLocations = x
+	infos = keep
+
+	// Re-extract the exampleLocations.
+	log.Printf("was length %d", len(exampleLocations))
+	exampleLocations = exampleLocations[:0]
+	for _, info := range infos {
+		exampleLocations = append(exampleLocations, symbolUsagePatternExampleLocation{
+			symbol:      symbol,
+			description: info.description,
+			location:    info.location,
+		})
+	}
+	log.Printf("now length %d", len(exampleLocations))
 
 	return exampleLocations, nil
 }
 
 type exampleLocationInfo struct {
-	location resolvers.AdjustedLocation
-	author   git.Signature
+	description string
+	location    resolvers.AdjustedLocation
+	author      git.Signature
 }
 
 func lookupExampleLocationInfo(ctx context.Context, loc resolvers.AdjustedLocation) (*exampleLocationInfo, error) {

@@ -46,12 +46,12 @@ func (r *symbolUsageResolver) UsagePatterns(ctx context.Context) ([]gql.SymbolUs
 	}
 
 	// Sort and rank.
-	for _, pattern := range patterns {
-		exampleLocations, err := sortAndRankExampleLocations(ctx, r.locationResolver, pattern.exampleLocations)
+	for i := range patterns {
+		exampleLocations, err := sortAndRankExampleLocations(ctx, r.locationResolver, r.symbol.symbol, patterns[i].exampleLocations)
 		if err != nil {
 			return nil, err
 		}
-		pattern.exampleLocations = exampleLocations
+		patterns[i].exampleLocations = exampleLocations
 	}
 
 	resolvers := make([]gql.SymbolUsagePatternResolver, len(patterns))
