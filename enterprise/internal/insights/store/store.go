@@ -106,6 +106,14 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
 	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
 	// time series results. 🚨
+	// We think this is faster for a few reasons:
+	//
+	// 1. Any repos set 'public' show for everyone, and this is the default state without configuring otherwise
+	// 2. We have quite a bit of customer feedback that suggests they don't even use repo permissions - they just don't install their private repos onto that Sourcegraph instance.
+	// 3. Cloud will likely be one of best case scenarios for this - currently we have indexed 550k+ repos all of which are public. Even if we add 20,000 private repos that's only ~3.5% of the total set that needs to be fetched to do this authorization filter.
+	//
+	// Since Code Insights is in a different database, we can't trivially join the repo table directly, so this approach is preferred.
+
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
 	if err != nil {
 		return []SeriesPoint{}, err
