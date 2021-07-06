@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -534,36 +533,6 @@ func mkFileMatch(repo types.RepoName, path string, lineNumbers ...int32) *result
 			Repo: repo,
 		},
 		LineMatches: lines,
-	}
-}
-
-func repoRev(revSpec string) *search.RepositoryRevisions {
-	return &search.RepositoryRevisions{
-		Repo: types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
-		Revs: []search.RevisionSpecifier{
-			{RevSpec: revSpec},
-		},
-	}
-}
-
-func TestGetRepos(t *testing.T) {
-	in := []*search.RepositoryRevisions{repoRev("HEAD")}
-	rp := (&search.Promise{}).Resolve(in)
-	out, err := getRepos(context.Background(), rp)
-	if err != nil {
-		t.Error(err)
-	}
-	if ok := reflect.DeepEqual(in, out); !ok {
-		t.Errorf("got %+v, expected %+v", out, in)
-	}
-}
-
-func TestGetReposWrongUnderlyingType(t *testing.T) {
-	in := "anything"
-	rp := (&search.Promise{}).Resolve(in)
-	_, err := getRepos(context.Background(), rp)
-	if err == nil {
-		t.Errorf("Expected error, got nil")
 	}
 }
 

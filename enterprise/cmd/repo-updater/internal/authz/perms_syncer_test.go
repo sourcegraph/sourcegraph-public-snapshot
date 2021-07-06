@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -221,6 +222,27 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 			return nil, &github.APIError{Code: http.StatusUnauthorized}
+		}
+
+		err := s.syncUserPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !calledTouchExpired {
+			t.Fatal("!calledTouchExpired")
+		}
+	})
+
+	t.Run("forbidden", func(t *testing.T) {
+		calledTouchExpired := false
+		database.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
+			calledTouchExpired = true
+			return nil
+		}
+
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+			return nil, gitlab.NewHTTPError(http.StatusForbidden, nil)
 		}
 
 		err := s.syncUserPerms(context.Background(), 1, false)

@@ -28,7 +28,7 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 	return 0, errors.New("unimplemented")
 }
 
-func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, workerutil.Store, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, workerutil.Store, bool, error) {
 	var job executor.Job
 	dequeued, err := s.queueStore.Dequeue(ctx, s.queueName, &job)
 	if err != nil {

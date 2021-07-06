@@ -24,10 +24,6 @@ jest.mock('./ProductSubscriptionHistory', () => ({
     ProductSubscriptionHistory: 'ProductSubscriptionHistory',
 }))
 
-jest.mock('../../../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
-
 describe('UserSubscriptionsProductSubscriptionPage', () => {
     test('renders', () => {
         const component = renderer.create(

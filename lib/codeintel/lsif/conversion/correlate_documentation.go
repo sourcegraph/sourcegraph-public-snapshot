@@ -13,6 +13,12 @@ func correlateDocumentationResult(state *wrappedState, element Element) error {
 		return ErrUnexpectedPayload
 	}
 
+	if payload.Tags == nil {
+		// don't encode "null", instead encode an empty list. Null is forbidden for tags,
+		// but it can crop up in some languages (e.g. Go) due to JSON encoders so we handle
+		// it gracefully.
+		payload.Tags = []protocol.Tag{}
+	}
 	state.DocumentationResultsData[element.ID] = payload
 	return nil
 }

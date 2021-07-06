@@ -4,7 +4,6 @@ import (
 	crand "crypto/rand"
 	"database/sql"
 	"encoding/binary"
-	"errors"
 	"hash/fnv"
 	"math/rand"
 	"net/url"
@@ -13,7 +12,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -85,6 +83,7 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
+
 	testDB.SetMaxOpenConns(3)
 
 	t.Cleanup(func() {
@@ -114,18 +113,12 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 	templateOnce.Do(func() {
 		templateName := templateDBName()
 		db := dbConn(t, config)
-		_, err := db.Exec(`CREATE DATABASE ` + pq.QuoteIdentifier(templateName))
-		if err != nil {
-			pgErr := &pgconn.PgError{}
-			if errors.As(err, &pgErr) && pgErr.Code == "42P04" {
-				// Ignore database already exists errors.
-				// Postgres doesn't support CREATE DATABASE IF NOT EXISTS,
-				// so we just try to create it, and ignore the error if it's
-				// because the database already exists.
-			} else {
-				t.Fatalf("Failed to create database: %s", err)
-			}
-		}
+		// We must first drop the template database because
+		// migrations would not run on it if they had already ran,
+		// even if the content of the migrations had changed during development.
+		name := pq.QuoteIdentifier(templateName)
+		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
+		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
 		defer db.Close()
 
 		cfgCopy := *config
@@ -174,6 +167,7 @@ func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 }
 
 func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
+	t.Helper()
 	_, err := db.Exec(q, args...)
 	if err != nil {
 		t.Errorf("failed to exec %q: %s", q, err)

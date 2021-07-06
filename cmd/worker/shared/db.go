@@ -11,7 +11,11 @@ import (
 // InitDatabase initializes and returns a connection to the frontend database.
 func InitDatabase() (*sql.DB, error) {
 	conn, err := initDatabaseMemo.Init()
-	return conn.(*sql.DB), err
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.(*sql.DB), nil
 }
 
 var initDatabaseMemo = NewMemoizedConstructor(func() (interface{}, error) {
@@ -19,7 +23,8 @@ var initDatabaseMemo = NewMemoizedConstructor(func() (interface{}, error) {
 		return serviceConnections.PostgresDSN
 	})
 
-	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
+	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "worker"}
+	if err := dbconn.SetupGlobalConnection(opts); err != nil {
 		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
 	}
 

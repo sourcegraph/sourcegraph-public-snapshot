@@ -1,10 +1,16 @@
 package upload
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+type Client interface {
+	// Do runs an http.Request against the Sourcegraph API.
+	Do(req *http.Request) (*http.Response, error)
+}
 
 type UploadOptions struct {
 	SourcegraphInstanceOptions
@@ -21,6 +27,7 @@ type SourcegraphInstanceOptions struct {
 	MaxRetries          int               // The maximum number of retries per request
 	RetryInterval       time.Duration     // Sleep duration between retries
 	MaxPayloadSizeBytes int64             // The maximum number of bytes sent in a single request
+	HTTPClient          Client
 }
 
 type OutputOptions struct {

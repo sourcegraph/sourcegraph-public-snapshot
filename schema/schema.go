@@ -368,8 +368,8 @@ type ChangesetTemplate struct {
 	Branch string `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
-	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
-	Published interface{} `json:"published"`
+	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.
+	Published interface{} `json:"published,omitempty"`
 	// Title description: The title of the changeset.
 	Title string `json:"title"`
 }
@@ -853,6 +853,13 @@ type Insight struct {
 	// Title description: The short title of this insight
 	Title string `json:"title"`
 }
+type InsightDashboard struct {
+	Id string `json:"id"`
+	// InsightIds description: Insights ids that will be included in the dashboard.
+	InsightIds []string `json:"insightIds,omitempty"`
+	// Title description: Title of the dashboard.
+	Title string `json:"title"`
+}
 type InsightSeries struct {
 	// Label description: The label to use for the series in the graph.
 	Label string `json:"label"`
@@ -953,6 +960,7 @@ type NotifierOpsGenie struct {
 	Priority string `json:"priority,omitempty"`
 	// Responders description: List of responders responsible for notifications.
 	Responders []*Responders `json:"responders,omitempty"`
+	Tags       string        `json:"tags,omitempty"`
 	Type       string        `json:"type"`
 }
 
@@ -1262,10 +1270,12 @@ type Settings struct {
 	// ExtensionsActiveLoggers description: The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
-	Insights                            []*Insight `json:"insights,omitempty"`
-	InsightsDisplayLocationDirectory    *bool      `json:"insights.displayLocation.directory,omitempty"`
-	InsightsDisplayLocationHomepage     *bool      `json:"insights.displayLocation.homepage,omitempty"`
-	InsightsDisplayLocationInsightsPage *bool      `json:"insights.displayLocation.insightsPage,omitempty"`
+	Insights []*Insight `json:"insights,omitempty"`
+	// InsightsDashboards description: EXPERIMENTAL: Code Insights Dashboards
+	InsightsDashboards                  map[string]InsightDashboard `json:"insights.dashboards,omitempty"`
+	InsightsDisplayLocationDirectory    *bool                       `json:"insights.displayLocation.directory,omitempty"`
+	InsightsDisplayLocationHomepage     *bool                       `json:"insights.displayLocation.homepage,omitempty"`
+	InsightsDisplayLocationInsightsPage *bool                       `json:"insights.displayLocation.insightsPage,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
@@ -1302,7 +1312,7 @@ type Settings struct {
 	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
-	// SearchScopes description: Predefined search scopes
+	// SearchScopes description: Predefined search snippets that can be appended to any search (also known as search scopes)
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
 	// SearchUppercase description: REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.
 	SearchUppercase *bool `json:"search.uppercase,omitempty"`
@@ -1314,8 +1324,12 @@ type SettingsExperimentalFeatures struct {
 	AcceptSearchSuggestionOnEnter *bool `json:"acceptSearchSuggestionOnEnter,omitempty"`
 	// ApiDocs description: Enables API documentation.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
+	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
+	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
+	// CodeInsightsDashboards description: Enables code insights dashboards separation for the code insight page.
+	CodeInsightsDashboards *bool `json:"codeInsightsDashboards,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
@@ -1324,7 +1338,7 @@ type SettingsExperimentalFeatures struct {
 	DesignRefreshToggleEnabled *bool `json:"designRefreshToggleEnabled,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
-	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
+	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`

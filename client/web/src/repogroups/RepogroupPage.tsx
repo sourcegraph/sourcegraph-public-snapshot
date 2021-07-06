@@ -64,9 +64,6 @@ export interface RepogroupPageProps
 
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-
-    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
-    enableSmartQuery: boolean
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {
@@ -97,7 +94,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     }
 
     return (
-        <div className="web-content repogroup-page">
+        <div className="repogroup-page">
             <PageTitle title={props.repogroupMetadata.title} />
             <RepogroupPageLogo
                 className="repogroup-page__logo"
@@ -163,7 +160,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     <div className="repogroup-page__column col-xs-12 col-lg-5">
                         <div className="order-2-lg order-1-xs">
                             <div className="repogroup-page__repo-card card">
-                                <h2 className="web-content__title">
+                                <h2>
                                     <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                                     Repositories
                                 </h2>

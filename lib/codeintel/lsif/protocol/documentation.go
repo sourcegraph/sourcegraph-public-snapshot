@@ -115,37 +115,167 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 // "documentationString" should still be emitted - but with an empty string for the MarkupContent.
 // This enables validators to ensure the indexer knows how to emit both label and detail strings
 // properly, and just chose to emit none specifically.
+//
+// If this documentationResult is for the project root, the identifier and searchKey should be an
+// empty string.
+//
+// If a pages' only purpose is to connect other pages below it (i.e. it is an index page), it
+// should have empty label and detail strings attached.
 type Documentation struct {
-	// A human-readable URL slug identifier for this documentation. It should be unique relative to
-	// sibling Documentation.
-	Slug string `json:"slug"`
+	// A human readable identifier for this documentationResult, uniquely identifying it within the
+	// scope of the parent page (or an empty string, if this is the root documentationResult.)
+	//
+	// Clients may build a path identifiers to a specific documentationResult _page_ by joining the
+	// identifiers of each documentationResult with `newPage: true` starting from the desired root
+	// until the target page is reached. For example, if trying to build a paths from the workspace
+	// root to a Go method "ServeHTTP" on a "Router" struct, you may have the following
+	// documentationResults describing the Go package structure:
+	//
+	//  	[
+	//  	  {identifier: "",                 newPage: true},
+	//  	  {identifier: "internal",         newPage: true},
+	//  	  {identifier: "pkg",              newPage: true},
+	//  	  {identifier: "mux",              newPage: true},
+	//  	  {identifier: "Router",           newPage: false},
+	//  	  {identifier: "Router.ServeHTTP", newPage: false},
+	//  	]
+	//
+	// The first entry (identifier="") is root documentationResult of the workspace. Note that
+	// since identifiers are unique relative to the parent page, the `Router` struct and the
+	// `Router.ServeHTTP` method have unique identifiers relative to the parent `mux` page.
+	// Thus, to build a path to either simply join all the `newPage: true` identifiers
+	// ("/internal/pkg/mux") and use the identifier of any child once `newPage: false` is reached:
+	//
+	//  	/internal/pkg/mux#Router
+	//  	/internal/pkg/mux#Router.ServeHTTP
+	//
+	// The identifier is relative to the parent page so that language indexers may choose to format
+	// the effective e.g. URL hash in a way that makes sense in the given language, e.g. C++ for
+	// example could use `Router::ServeHTTP` instead of a "." joiner.
+	//
+	// An identifier may contain any characters, including slashes and "#". If clients intend to
+	// use identifiers in a context where those characters are forbidden (e.g. URLs) then they must
+	// replace them with something else.
+	Identifier string `json:"identifier"`
 
 	// Whether or not this Documentation is the beginning of a new major section, meaning it and its
 	// its children should be e.g. displayed on their own dedicated page.
 	NewPage bool `json:"newPage"`
 
+	// SearchKey is a key which can be used to implement search for a specific documentationResult.
+	// For example, in Go this may look like `mux.Router` or `mux.Router.ServeHTTP`. It should be
+	// of a format that makes sense to users of the language being documented.
+	//
+	// Search keys are not required to be unique. It is desirable for them to be generally unique
+	// within the scope of the workspace itself, or a project within the workspace (if the
+	// documentation is for something in a project.) However, it is not desirable for it to be unique
+	// globally across workspaces (you can think of the searchKey as always being prefixed with the
+	// workspace URI.)
+	//
+	// If a search key is describing a project within the workspace itself, it is encouraged for it
+	// to be unique within the context of the workspace. Sometimes this means using a full project
+	// path/name (e.g. `github.com/gorilla/mux/router` or `com.JodaOrg.JodaTime`) is required - while
+	// in other contexts the shortened name (`router` or `JodaTime`) may be sufficient.
+	//
+	// If a search key is describing a symbol within a project, a shortened project path/name prefix
+	// is usually sufficient: using `router.New` over `github.com/gorilla/mux/router.New` or
+	// `JodaTime.Time.now` over `com.JodaOrg.JodaTime.Time.now` is preferred. Clients will display
+	// enough additional information to disambiguiate between any conflicts (see below.)
+	//
+	// Clients are encouraged to treat matches towards the left of the string with higher relevance
+	// than matches towards the end of the string. For example, it is typically the case that search
+	// keys will start with the project/package/library/etc name, followed by namespaces, then a
+	// specific symbol. For example, if a user searches for `gorilla/mux.Error` the desired ranking
+	// for three theoretical semi-conflicting results would be:
+	//
+	// * github.com/gorilla/mux.Error (near exact match)
+	// * github.com/gorilla/router.Error (`mux` not matching on left, result ranked lower)
+	// * github.com/sourcegraph/mux.Error (`gorilla` not matching on left, result ranked lower)
+	//
+	// Clients are encouraged to use smart case sensitivity by default: if the user is searching for
+	// a mixed-case query, the search should be case-sensitive (and otherwise not.)
+	//
+	// Since search keys may not be unique, clients are encouraged to display alongside the search
+	// key other information about the documentation that will disambiguate identical keys. The
+	// following in specific is encouraged:
+	//
+	// * Always display the `label` string, which provides e.g. a one-line function signature.
+	// * Optionally display the `detail` string (e.g. when considering a specific result), as it
+	//   contains detailed information that can help disambiguate.
+	// * Always display the path identifier to the documentationResult _somewhere_, even if it is
+	//   a much more subtle location (see `identifier` docs), as it is a truly unique path to the
+	//   documentation and can be a final way for users to disambiguate if all other options fail.
+	//
+	// An empty string indicates this documentationResult should not be indexed by a search engine.
+	SearchKey string `json:"searchKey"`
+
 	// Tags about the type of content this documentation contains.
-	Tags []DocumentationTag `json:"tags"`
+	Tags []Tag `json:"tags"`
 }
 
-type DocumentationTag string
+type Tag string
 
 const (
-	// The documentation describes a concept that is exported externally.
-	DocumentationExported DocumentationTag = "exported"
-
-	// The documentation describes a concept that is unexported / internal.
-	DocumentationUnexported DocumentationTag = "unexported"
+	// The documentation describes a concept that is private/unexported, not a public/exported
+	// concept.
+	TagPrivate Tag = "private"
 
 	// The documentation describes a concept that is deprecated.
-	DocumentationDeprecated DocumentationTag = "deprecated"
+	TagDeprecated Tag = "deprecated"
+
+	// The documentation describes e.g. a test function or concept related to testing.
+	TagTest Tag = "test"
+
+	// The documentation describes e.g. a benchmark function or concept related to benchmarking.
+	TagBenchmark Tag = "benchmark"
+
+	// The documentation describes e.g. an example function or example code.
+	TagExample Tag = "example"
+
+	// The documentation describes license information.
+	TagLicense Tag = "license"
+
+	// The documentation describes owner information.
+	TagOwner Tag = "owner"
+
+	// The documentation describes package/library registry information, e.g. where a package is
+	// available for download.
+	TagRegistryInfo Tag = "owner"
+
+	// Tags derived from SymbolKind
+	TagFile          Tag = "file"
+	TagModule        Tag = "module"
+	TagNamespace     Tag = "namespace"
+	TagPackage       Tag = "package"
+	TagClass         Tag = "class"
+	TagMethod        Tag = "method"
+	TagProperty      Tag = "property"
+	TagField         Tag = "field"
+	TagConstructor   Tag = "constructor"
+	TagEnum          Tag = "enum"
+	TagInterface     Tag = "interface"
+	TagFunction      Tag = "function"
+	TagVariable      Tag = "variable"
+	TagConstant      Tag = "constant"
+	TagString        Tag = "string"
+	TagNumber        Tag = "number"
+	TagBoolean       Tag = "boolean"
+	TagArray         Tag = "array"
+	TagObject        Tag = "object"
+	TagKey           Tag = "key"
+	TagNull          Tag = "null"
+	TagEnumNumber    Tag = "enumNumber"
+	TagStruct        Tag = "struct"
+	TagEvent         Tag = "event"
+	TagOperator      Tag = "operator"
+	TagTypeParameter Tag = "typeParameter"
 )
 
 // A "documentationString" edge connects a "documentationResult" vertex to its label or detail
 // strings, which are "documentationString" vertices. The overall structure looks like the
 // following roughly:
 //
-// 	{id: 53, type:"vertex", label:"documentationResult", result:{slug:"httpserver", ...}}
+// 	{id: 53, type:"vertex", label:"documentationResult", result:{identifier:"httpserver", ...}}
 // 	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
 // 	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
 // 	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, kind:"label"}

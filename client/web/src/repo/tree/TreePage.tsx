@@ -265,7 +265,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs = !isErrorLike(settingsCascade.final) && !!settingsCascade.final?.experimentalFeatures?.apiDocs
+    const enableAPIDocs =
+        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
 
     const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
@@ -439,12 +440,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
                         {views && (
                             <InsightsViewGrid
-                                {...props}
+                                telemetryService={props.telemetryService}
                                 className="tree-page__section mb-3"
                                 views={views}
-                                patternType={patternType}
-                                settingsCascade={settingsCascade}
-                                caseSensitive={caseSensitive}
                             />
                         )}
                         <section className="tree-page__section test-tree-entries mb-3">

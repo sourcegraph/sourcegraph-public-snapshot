@@ -28,7 +28,6 @@ export enum FilterType {
     // eslint-disable-next-line unicorn/prevent-abbreviations
     rev = 'rev',
     select = 'select',
-    stable = 'stable',
     timeout = 'timeout',
     type = 'type',
     visibility = 'visibility',
@@ -48,6 +47,21 @@ export enum AliasedFilterType {
     until = 'before',
 }
 /* eslint-enable unicorn/prevent-abbreviations */
+
+export const ALIASES: Record<string, string> = {
+    r: 'repo',
+    g: 'repogroup',
+    f: 'file',
+    l: 'lang',
+    language: 'language',
+    since: 'after',
+    until: 'before',
+    m: 'message',
+    msg: 'message',
+    revision: 'rev',
+}
+
+export const resolveFieldAlias = (field: string): string => ALIASES[field] || field
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
 export const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
@@ -300,12 +314,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.select]: {
         discreteValues: value => selectorCompletion(value).map(value => ({ label: value })),
         description: 'Selects the kind of result to display.',
-        singular: true,
-    },
-    [FilterType.stable]: {
-        discreteValues: () => ['yes', 'no'].map(value => ({ label: value })),
-        default: 'no',
-        description: 'Forces search to return a stable result ordering (currently limited to file content matches).',
         singular: true,
     },
     [FilterType.timeout]: {

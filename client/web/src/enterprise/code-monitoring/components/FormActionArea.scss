@@ -1,5 +1,5 @@
 .action-area {
     &__test-action-error {
-        color: $danger;
+        color: var(--danger);
     }
 }

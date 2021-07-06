@@ -26,10 +26,11 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -65,10 +66,11 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -112,10 +114,11 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -152,6 +155,8 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 }
 
 func TestWorkerConcurrent(t *testing.T) {
+	t.Skip("Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/22595")
+
 	NumTestRecords := 50
 
 	for numHandlers := 1; numHandlers < NumTestRecords; numHandlers++ {
@@ -162,10 +167,11 @@ func TestWorkerConcurrent(t *testing.T) {
 			handler := NewMockHandlerWithHooks()
 			clock := glock.NewMockClock()
 			options := WorkerOptions{
-				Name:        "test",
-				NumHandlers: numHandlers,
-				Interval:    time.Second,
-				Metrics:     NewMetrics(&observation.TestContext, "", nil),
+				Name:           "test",
+				WorkerHostname: "test",
+				NumHandlers:    numHandlers,
+				Interval:       time.Second,
+				Metrics:        NewMetrics(&observation.TestContext, "", nil),
 			}
 
 			for i := 0; i < NumTestRecords; i++ {
@@ -247,10 +253,11 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -274,10 +281,11 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -305,7 +313,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 		t.Errorf("unexpected dequeue call count. want=%d have=%d", 3, callCount)
 	} else {
 		for i, expected := range []string{"A", "B", "C"} {
-			if extra := store.DequeueFunc.History()[i].Arg1; extra != expected {
+			if extra := store.DequeueFunc.History()[i].Arg2; extra != expected {
 				t.Errorf("unexpected extra argument for dequeue call %d. want=%q have=%q", i, expected, extra)
 			}
 		}

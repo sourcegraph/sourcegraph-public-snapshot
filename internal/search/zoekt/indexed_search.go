@@ -215,7 +215,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	repos, err := getRepos(ctx, args.RepoPromise)
+	repos, err := args.RepoPromise.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -352,8 +352,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	// Resolve repositories.
 	g.Go(func() error {
 		defer close(reposResolved)
-		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Type == filter.Repository {
-			repos, err := getRepos(ctx, args.RepoPromise)
+		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Root() == filter.Repository {
+			repos, err := args.RepoPromise.Get(ctx)
 			if err != nil {
 				return err
 			}
@@ -398,7 +398,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 
 		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 		// zoekt for only results of type repo.
-		if args.PatternInfo.Select.Type == filter.Repository {
+		if args.PatternInfo.Select.Root() == filter.Repository {
 			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
 				<-reposResolved
 				// getRepoInputRev is nil only if we encountered an error during repo resolution.
@@ -411,7 +411,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 
 		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
 		// while we wait for repo resolution.
-		bufSender, cleanup := bufferedSender(120, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		bufSender, cleanup := bufferedSender(240, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
 			foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 
@@ -431,7 +431,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 				return
 			}
 
-			matches := make([]*result.FileMatch, 0, len(files))
+			matches := make([]result.Match, 0, len(files))
 			for _, file := range files {
 				fileLimitHit := false
 				mu.Lock()
@@ -469,7 +469,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 			}
 
 			c.Send(streaming.SearchEvent{
-				Results: fileMatchesToMatches(matches),
+				Results: matches,
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
@@ -497,29 +497,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 		return nil
 	}
 	return nil
-}
-
-func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
-	matches := make([]result.Match, 0, len(fms))
-	for _, fm := range fms {
-		newFm := fm
-		matches = append(matches, newFm)
-	}
-	return matches
-}
-
-// getRepos is a wrapper around p.Get. It returns an error if the promise
-// contains an underlying type other than []*search.RepositoryRevisions.
-func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
-	v, err := p.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-	repoRevs, ok := v.([]*search.RepositoryRevisions)
-	if !ok {
-		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
-	}
-	return repoRevs, nil
 }
 
 // bufferedSender returns a buffered Sender with capacity cap, and a cleanup
@@ -550,7 +527,7 @@ func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
 func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
-	repoList, err := client.List(ctx, query)
+	repoList, err := client.List(ctx, query, nil)
 	if err != nil {
 		return err
 	}

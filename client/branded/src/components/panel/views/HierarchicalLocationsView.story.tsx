@@ -5,7 +5,7 @@ import { of } from 'rxjs'
 
 import { Location } from '@sourcegraph/extension-api-types'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
-import webStyles from '@sourcegraph/web/src/main.scss'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { BrandedStory } from '../../BrandedStory'
 

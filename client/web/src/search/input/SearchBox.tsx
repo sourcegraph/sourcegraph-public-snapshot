@@ -40,9 +40,6 @@ export interface SearchBoxProps
     /** Whether globbing is enabled for filters. */
     globbing: boolean
 
-    /** Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets. */
-    enableSmartQuery: boolean
-
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
 

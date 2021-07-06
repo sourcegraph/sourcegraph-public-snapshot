@@ -12,9 +12,9 @@ import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
+import { CodeHostScopeAlerts, GitLabScopeAlert } from '../site/CodeHostScopeAlerts/CodeHostScopeAlerts'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
-import { GitHubScopeAlert } from '../site/GitHubCodeHostScopeAlert/GitHubScopeAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 
@@ -64,7 +64,10 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
                         {window.context.sourcegraphDotComMode && (
-                            <GitHubScopeAlert authenticatedUser={this.props.authenticatedUser} />
+                            <CodeHostScopeAlerts authenticatedUser={this.props.authenticatedUser} />
+                        )}
+                        {window.context.sourcegraphDotComMode && (
+                            <GitLabScopeAlert authenticatedUser={this.props.authenticatedUser} />
                         )}
                         {this.state.siteFlags.alerts.map((alert, index) => (
                             <GlobalAlert key={index} alert={alert} className="global-alerts__alert" />

@@ -37,7 +37,7 @@ func RepoUpdater() *monitoring.Container {
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Interpretation: `
-								A high value here indicates issues synchronizing repository permissions.
+								A high value here indicates issues synchronizing repo metadata.
 								If the value is persistently high, make sure all external services have valid tokens.
 							`,
 						},
@@ -60,13 +60,13 @@ func RepoUpdater() *monitoring.Container {
 						},
 						{
 							Name:        "src_repoupdater_syncer_sync_errors_total",
-							Description: "sync error rate",
-							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
+							Description: "site level external service sync error rate",
+							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user"}[5m]))`,
 							Critical:    monitoring.Alert().Greater(0, nil).For(10 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
-								An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
+								An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
 								with your code hosts connections or networking issues affecting communication with your code hosts.
 								- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
 								- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
@@ -79,10 +79,10 @@ func RepoUpdater() *monitoring.Container {
 					{
 						{
 							Name:              "syncer_sync_start",
-							Description:       "sync was started",
-							Query:             `max by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
+							Description:       "repo metadata sync was started",
+							Query:             fmt.Sprintf(`max by (family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.SyncExternalService"}[%s]))`, syncDurationThreshold.String()),
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
-							Panel:             monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number),
+							Panel:             monitoring.Panel().LegendFormat("Family: {{family}} Owner: {{owner}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors.",
 						},
@@ -334,11 +334,11 @@ func RepoUpdater() *monitoring.Container {
 							PossibleSolutions: "Check repo-updater logs. Jobs older than 1 day should have been removed.",
 						},
 						{
-							Name:              "repoupdater_errored_sync_jobs_total",
-							Description:       "the total number of errored sync jobs",
-							Query:             `max(src_repoupdater_errored_sync_jobs_total)`,
-							Warning:           monitoring.Alert().GreaterOrEqual(100, nil).For(1 * time.Hour),
-							Panel:             monitoring.Panel().Unit(monitoring.Number),
+							Name:              "repoupdater_errored_sync_jobs_percentage",
+							Description:       "the percentage of external services that have failed their most recent sync",
+							Query:             `max(src_repoupdater_errored_sync_jobs_percentage)`,
+							Warning:           monitoring.Alert().Greater(10, nil).For(1 * time.Hour),
+							Panel:             monitoring.Panel().Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs. Check code host connectivity",
 						},
@@ -427,6 +427,11 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
+				Title:  shared.TitleDatabaseConnectionsMonitoring,
+				Hidden: true,
+				Rows:   shared.DatabaseConnectionsMonitoring("repo-updater"),
+			},
+			{
 				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
@@ -434,7 +439,7 @@ func RepoUpdater() *monitoring.Container {
 						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).
 							WithWarning(nil).
-							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil)).
+							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute)).
 							Observable(),
 					},
 					{

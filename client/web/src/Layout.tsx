@@ -12,7 +12,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { parseHash } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
@@ -26,6 +26,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
@@ -89,7 +90,8 @@ export interface LayoutProps
         SearchStreamingProps,
         CodeMonitoringProps,
         SearchContextProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps,
+        FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -126,7 +128,6 @@ export interface LayoutProps
     globbing: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
-    enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
     showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
@@ -322,13 +323,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
-                <ResizablePanel
-                    {...props}
-                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                />
-            )}
+            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+                props.location.pathname !== '/sign-in' && (
+                    <ResizablePanel
+                        {...props}
+                        repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                    />
+                )}
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}

@@ -210,8 +210,15 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
+// do is the default method for making API requests and will prepare the correct
+// base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
+	return c.doWithBaseURL(ctx, req, result)
+}
+
+// doWithBaseURL will not amend the request URL.
+func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.Auth != nil {
 		if err := c.Auth.Authenticate(req); err != nil {
@@ -283,6 +290,26 @@ func (c *Client) ValidateToken(ctx context.Context) error {
 	v := struct{}{}
 	_, _, err = c.do(ctx, req, &v)
 	return err
+}
+
+func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	// The oauth token info path is non standard so we need to build it manually
+	// without the default `/api/v4` prefix
+	u, _ := url.Parse(c.baseURL.String())
+	u.Path = "oauth/token/info"
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	v := struct {
+		Scopes []string `json:"scopes,omitempty"`
+	}{}
+	_, _, err = c.doWithBaseURL(ctx, req, &v)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting oauth scopes")
+	}
+	return v.Scopes, nil
 }
 
 type HTTPError struct {

@@ -67,8 +67,46 @@ type OutputOpts struct {
 // hook into NewOutput to perform any required setup.
 var newOutputPlatformQuirks func(o *Output) error
 
+// newCapabilityWatcher returns a channel that receives a message when
+// capabilities are updated. By default, no watching functionality is
+// available.
+var newCapabilityWatcher func() chan capabilities = func() chan capabilities { return nil }
+
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
-	caps := detectCapabilities()
+	caps, err := detectCapabilities()
+	o := &Output{caps: overrideCapabilitiesFromOptions(caps, opts), opts: opts, w: w}
+	if newOutputPlatformQuirks != nil {
+		if err := newOutputPlatformQuirks(o); err != nil {
+			o.Verbosef("Error handling platform quirks: %v", err)
+		}
+	}
+
+	// If we got an error earlier, now is where we'll report it to the user.
+	if err != nil {
+		block := o.Block(Linef(EmojiWarning, StyleWarning, "An error was returned when detecting the terminal size and capabilities:"))
+		block.Write("")
+		block.Write(err.Error())
+		block.Write("")
+		block.Write("Execution will continue, but please report this, along with your operating")
+		block.Write("system, terminal, and any other details, to:")
+		block.Write("  https://github.com/sourcegraph/sourcegraph/issues/new")
+		block.Close()
+	}
+
+	// Set up a watcher so we can adjust the size of the output if the terminal
+	// is resized.
+	if c := newCapabilityWatcher(); c != nil {
+		go func() {
+			for caps := range c {
+				o.caps = overrideCapabilitiesFromOptions(caps, o.opts)
+			}
+		}()
+	}
+
+	return o
+}
+
+func overrideCapabilitiesFromOptions(caps capabilities, opts OutputOpts) capabilities {
 	if opts.ForceColor {
 		caps.Color = true
 	}
@@ -82,14 +120,7 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 		caps.Width = opts.ForceWidth
 	}
 
-	o := &Output{caps: caps, opts: opts, w: w}
-	if newOutputPlatformQuirks != nil {
-		if err := newOutputPlatformQuirks(o); err != nil {
-			o.Verbosef("Error handling platform quirks: %v", err)
-		}
-	}
-
-	return o
+	return caps
 }
 
 func (o *Output) Lock() {

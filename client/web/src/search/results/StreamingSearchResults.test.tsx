@@ -21,6 +21,7 @@ import {
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchResult } from '../../components/SearchResult'
+import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import * as helpers from '../helpers'
 
@@ -62,6 +63,7 @@ describe('StreamingSearchResults', () => {
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
         enableCodeMonitoring: false,
+        featureFlags: EMPTY_FEATURE_FLAGS,
     }
 
     it('should call streaming search API with the right parameters from URL', () => {

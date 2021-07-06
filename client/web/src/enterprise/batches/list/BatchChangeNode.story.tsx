@@ -12,7 +12,7 @@ import { BatchChangeNode } from './BatchChangeNode'
 import { nodes, now } from './testData'
 
 const { add } = storiesOf('web/batches/BatchChangeNode', module).addDecorator(story => (
-    <div className={classNames(styles.batchChangeListPageGrid, 'p-3 container web-content')}>{story()}</div>
+    <div className={classNames(styles.batchChangeListPageGrid, 'p-3 container')}>{story()}</div>
 ))
 
 for (const key of Object.keys(nodes)) {

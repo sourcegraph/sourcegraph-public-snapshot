@@ -11,6 +11,7 @@ import { KeyPath, SettingsEdit, updateSettings } from '../api/client/services/se
 import { FlatExtensionHostAPI } from '../api/contract'
 import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
 import { PlatformContext } from '../platform/context'
+import { formatSearchParameters } from '../util/url'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
@@ -134,7 +135,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
     parameters.set('tab', viewID)
     // In the URL fragment, the 'L1:2-3:4' is treated as a parameter with no value. Undo the escaping of ':'
     // and the addition of the '=' for the empty value, for aesthetic reasons.
-    const parametersString = parameters.toString().replace(/%3A/g, ':').replace(/=&/g, '&')
+    const parametersString = formatSearchParameters(parameters)
     return `#${parametersString}`
 }
 

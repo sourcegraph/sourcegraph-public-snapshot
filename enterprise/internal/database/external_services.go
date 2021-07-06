@@ -1,19 +1,23 @@
 package database
 
 import (
+	"database/sql"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewExternalServicesStore returns an OSS database.ExternalServicesStore set with
 // enterprise validators.
-func NewExternalServicesStore(d dbutil.DB) *database.ExternalServiceStore {
-	es := database.ExternalServices(d)
+func NewExternalServicesStore(db dbutil.DB) *database.ExternalServiceStore {
+	es := &database.ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+
 	es.GitHubValidators = []func(*schema.GitHubConnection) error{
 		github.ValidateAuthz,
 	}

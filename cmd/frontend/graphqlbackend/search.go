@@ -15,11 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -32,8 +32,6 @@ type SearchArgs struct {
 	Version        string
 	PatternType    *string
 	Query          string
-	After          *string
-	First          *int32
 	VersionContext *string
 
 	// Stream if non-nil will stream all SearchEvents.
@@ -99,15 +97,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	}
 	tr.LazyPrintf("parsing done")
 
-	// If the request is a paginated one, decode those arguments now.
-	var pagination *run.SearchPaginationInfo
-	if args.First != nil {
-		pagination, err = processPaginationRequest(args, plan.ToParseTree())
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	defaultLimit := defaultMaxSearchResults
 	if args.Stream != nil {
 		defaultLimit = defaultMaxSearchResultsStreaming
@@ -115,12 +104,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	if searchType == query.SearchTypeStructural {
 		// Set a lower max result count until structural search supports true streaming.
 		defaultLimit = defaultMaxSearchResults
-	}
-
-	if sp, _ := plan.ToParseTree().StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
-		// Invariant: error already checked
-		selectPath, _ := filter.SelectPathFromString(sp)
-		args.Stream = streaming.WithSelect(args.Stream, selectPath)
 	}
 
 	return &searchResolver{
@@ -131,7 +114,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 			OriginalQuery:  args.Query,
 			VersionContext: args.VersionContext,
 			UserSettings:   settings,
-			Pagination:     pagination,
 			PatternType:    searchType,
 			DefaultLimit:   defaultLimit,
 		},
@@ -147,26 +129,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(ctx, r.db, args)
-}
-
-func processPaginationRequest(args *SearchArgs, q query.Q) (*run.SearchPaginationInfo, error) {
-	var pagination *run.SearchPaginationInfo
-	if args.First != nil {
-		cursor, err := unmarshalSearchCursor(args.After)
-		if err != nil {
-			return nil, err
-		}
-		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
-			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
-		}
-		pagination = &run.SearchPaginationInfo{
-			Cursor: cursor,
-			Limit:  *args.First,
-		}
-	} else if args.After != nil {
-		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
-	}
-	return pagination, nil
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
@@ -257,17 +219,10 @@ func (r *searchResolver) rawQuery() string {
 	return r.OriginalQuery
 }
 
-func (r *searchResolver) countIsSet() bool {
-	count := r.Query.Count()
-	return count != nil
-}
-
 // protocol returns what type of search we are doing (batch, stream,
 // paginated).
 func (r *searchResolver) protocol() search.Protocol {
-	if r.SearchInputs.Pagination != nil {
-		return search.Pagination
-	} else if r.stream != nil {
+	if r.stream != nil {
 		return search.Streaming
 	}
 	return search.Batch
@@ -275,7 +230,6 @@ func (r *searchResolver) protocol() search.Protocol {
 
 const defaultMaxSearchResults = 30
 const defaultMaxSearchResultsStreaming = 500
-const maxSearchResultsPerPaginatedRequest = 5000
 
 var mockDecodedViewerFinalSettings *schema.Settings
 
@@ -404,9 +358,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 		Limit:              opts.limit,
 	}
 	repositoryResolver := &searchrepos.Resolver{
-		DB:               r.db,
-		Zoekt:            r.zoekt,
-		DefaultReposFunc: backend.Repos.ListDefault,
+		DB:                  r.db,
+		Zoekt:               r.zoekt,
+		SearchableReposFunc: backend.Repos.ListSearchable,
 	}
 
 	return repositoryResolver.Resolve(ctx, options)
@@ -436,9 +390,9 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
+		RepoPromise:     (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
 		Query:           r.Query,
-		UseFullDeadline: r.searchTimeoutFieldSet(),
+		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil,
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
@@ -446,7 +400,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, err
 	}
 
-	fileMatches, _, err := run.SearchFilesInReposBatch(ctx, &args)
+	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err
 	}
@@ -481,18 +435,4 @@ func (e *badRequestError) Error() string {
 
 func (e *badRequestError) Cause() error {
 	return e.err
-}
-
-// getRepos is a wrapper around p.Get. It returns an error if the promise
-// contains an underlying type other than []*search.RepositoryRevisions.
-func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
-	v, err := p.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-	repoRevs, ok := v.([]*search.RepositoryRevisions)
-	if !ok {
-		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
-	}
-	return repoRevs, nil
 }

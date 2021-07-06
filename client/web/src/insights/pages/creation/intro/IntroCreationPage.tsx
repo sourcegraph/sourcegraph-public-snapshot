@@ -7,8 +7,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
-import { LineChart } from '../../../../views/ChartViewContent/charts/line/LineChart'
-import { PieChart } from '../../../../views/ChartViewContent/charts/pie/PieChart'
+import { LineChart } from '../../../components/insight-view-content/chart-view-content/charts/line/LineChart'
+import { PieChart } from '../../../components/insight-view-content/chart-view-content/charts/pie/PieChart'
 
 import { LINE_CHART_DATA, PIE_CHART_DATA } from './charts-mock'
 import styles from './IntroCreationPage.module.scss'

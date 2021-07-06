@@ -53,6 +53,7 @@ func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration,
 }
 
 // GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
+// This does NOT return repositories that are disabled for autoindexing
 func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) (_ []int, err error) {
 	ctx, traceLog, endObservation := s.operations.getRepositoriesWithIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -68,7 +69,29 @@ func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) (_ []
 
 const getRepositoriesWithIndexConfigurationQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:GetRepositoriesWithIndexConfiguration
-SELECT c.repository_id FROM lsif_index_configuration c
+SELECT c.repository_id
+FROM lsif_index_configuration c
+WHERE c.autoindex_enabled = TRUE
+`
+
+func (s *Store) GetAutoindexDisabledRepositories(ctx context.Context) (_ []int, err error) {
+	ctx, traceLog, endObservation := s.operations.getRepositoriesWithIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	repositories, err := basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(getAutoIndexDisabledRepositoriesQuery)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numRepositories", len(repositories)))
+
+	return repositories, nil
+}
+
+const getAutoIndexDisabledRepositoriesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:GetAutoindexDisabledRepositories
+SELECT c.repository_id
+FROM lsif_index_configuration c
+WHERE c.autoindex_enabled = FALSE
 `
 
 // GetIndexConfigurationByRepositoryID returns the index configuration for a repository.

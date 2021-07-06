@@ -1,52 +1,30 @@
-import React, { useLayoutEffect, useState } from 'react'
+import React from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
-import { useDarkMode } from 'storybook-dark-mode'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
+import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 
 import brandedStyles from '../global-styles/index.scss'
 
 import { Tooltip } from './tooltip/Tooltip'
 
-export interface WebStoryProps extends MemoryRouterProps {
+export interface BrandedProps extends MemoryRouterProps {
     children: React.FunctionComponent<ThemeProps>
-}
-
-// Prepend global CSS styles to document head to keep them before CSS modules
-export function prependCSSToDocumentHead(css: string): HTMLStyleElement {
-    const styleTag = document.createElement('style')
-    styleTag.textContent = css
-    document.head.prepend(styleTag)
-
-    return styleTag
+    styles?: string
 }
 
 /**
- * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
+ * Wrapper component for branded Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const BrandedStory: React.FunctionComponent<
-    WebStoryProps & {
-        styles?: string
-    }
-> = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
-    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
-
-    useLayoutEffect(() => {
-        const styleTag = prependCSSToDocumentHead(styles)
-
-        return () => {
-            styleTag.remove()
-        }
-    }, [styles])
-
-    useLayoutEffect(() => {
-        const listener = ((event: CustomEvent<boolean>): void => {
-            setIsLightTheme(event.detail)
-        }) as EventListener
-        document.body.addEventListener('chromatic-light-theme-toggled', listener)
-        return () => document.body.removeEventListener('chromatic-light-theme-toggled', listener)
-    }, [])
+export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
+    children: Children,
+    styles = brandedStyles,
+    ...memoryRouterProps
+}) => {
+    const isLightTheme = useTheme()
+    usePrependStyles('branded-story-styles', styles)
 
     return (
         <MemoryRouter {...memoryRouterProps}>

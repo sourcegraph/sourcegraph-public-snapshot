@@ -1,4 +1,4 @@
 export { CodeInsightsIcon } from './Icons'
-export { InsightsNavItem } from './InsightsNavLink/InsightsNavLink'
-export { InsightsViewGrid } from './InsightsViewGrid/InsightsViewGrid'
-export type { InsightsViewGridProps } from './InsightsViewGrid/InsightsViewGrid'
+export { InsightsNavItem } from './insights-nav-link/InsightsNavLink'
+export { InsightsViewGrid } from './insights-view-grid/InsightsViewGrid'
+export type { InsightsViewGridProps } from './insights-view-grid/InsightsViewGrid'

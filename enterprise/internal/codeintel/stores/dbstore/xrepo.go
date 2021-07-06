@@ -45,23 +45,23 @@ func (s *Store) DefinitionDumps(ctx context.Context, monikers []semantic.Qualifi
 const definitionDumpsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:DefinitionDumps
 SELECT
-	d.id,
-	d.commit,
-	d.root,
-	` + visibleAtTipFragment + ` AS visible_at_tip,
-	d.uploaded_at,
-	d.state,
-	d.failure_message,
-	d.started_at,
-	d.finished_at,
-	d.process_after,
-	d.num_resets,
-	d.num_failures,
-	d.repository_id,
-	d.repository_name,
-	d.indexer,
-	d.associated_index_id
-FROM lsif_dumps_with_repository_name d WHERE d.id IN (
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.associated_index_id
+FROM lsif_dumps_with_repository_name u WHERE u.id IN (
 	SELECT MAX(p.dump_id) FROM lsif_packages p WHERE (p.scheme, p.name, p.version) IN (%s) GROUP BY p.scheme, p.name, p.version LIMIT %s
 )
 `
@@ -132,7 +132,7 @@ WITH visible_uploads AS (
 
 const referenceIDsAndFiltersBaseQuery = `
 FROM lsif_references r
-LEFT JOIN lsif_dumps d ON d.id = r.dump_id
+LEFT JOIN lsif_dumps u ON u.id = r.dump_id
 WHERE (r.scheme, r.name, r.version) IN (%s) AND r.dump_id IN (SELECT * FROM visible_uploads)
 `
 

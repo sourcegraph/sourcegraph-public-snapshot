@@ -157,6 +157,20 @@ type DocumentationPageData struct {
 	Tree *DocumentationNode
 }
 
+// DocumentationPathInfoData describes a single documentation path, what is located there and what
+// pages are below it.
+type DocumentationPathInfoData struct {
+	// The pathID for this entry.
+	PathID string `json:"pathID"`
+
+	// IsIndex tells if the page at this path is an empty index page whose only purpose is to describe
+	// all the pages below it.
+	IsIndex bool `json:"isIndex"`
+
+	// Children is a list of the children page paths immediately below this one.
+	Children []string `json:"children,omitempty"`
+}
+
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	Scheme  string
@@ -176,14 +190,15 @@ type PackageReference struct {
 // and parallelizing the work, while the Maps version can be modified for e.g. local development
 // via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
-	Meta               MetaData
-	Documents          chan KeyedDocumentData
-	ResultChunks       chan IndexedResultChunkData
-	Definitions        chan MonikerLocations
-	References         chan MonikerLocations
-	Packages           []Package
-	PackageReferences  []PackageReference
-	DocumentationPages chan *DocumentationPageData
+	Meta                  MetaData
+	Documents             chan KeyedDocumentData
+	ResultChunks          chan IndexedResultChunkData
+	Definitions           chan MonikerLocations
+	References            chan MonikerLocations
+	Packages              []Package
+	PackageReferences     []PackageReference
+	DocumentationPages    chan *DocumentationPageData
+	DocumentationPathInfo chan *DocumentationPathInfoData
 }
 
 type GroupedBundleDataMaps struct {

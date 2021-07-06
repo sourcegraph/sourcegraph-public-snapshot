@@ -26,6 +26,14 @@ func TestUploadIndex(t *testing.T) {
 			t.Fatalf("unexpected error reading request body: %s", err)
 		}
 
+		if r.Header.Get("Content-Type") != "application/x-ndjson+lsif" {
+			t.Fatalf("Content-Type header expected to be '%s', got '%s'", "application/x-ndjson+lsif", r.Header.Get("Content-Type"))
+		}
+
+		if r.Header.Get("Authorization") != "token hunter2" {
+			t.Fatalf("Authorization header expected to be '%s', got '%s'", "token hunter2", r.Header.Get("Authorization"))
+		}
+
 		gzipReader, err := gzip.NewReader(bytes.NewReader(payload))
 		if err != nil {
 			t.Fatalf("unexpected error creating gzip.Reader: %s", err)
@@ -52,7 +60,7 @@ func TestUploadIndex(t *testing.T) {
 	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
 	_ = f.Close()
 
-	id, err := UploadIndex(f.Name(), UploadOptions{
+	id, err := UploadIndex(f.Name(), http.DefaultClient, UploadOptions{
 		UploadRecordOptions: UploadRecordOptions{
 			Repo:    "foo/bar",
 			Commit:  "deadbeef",
@@ -115,7 +123,7 @@ func TestUploadIndexMultipart(t *testing.T) {
 	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
 	_ = f.Close()
 
-	id, err := UploadIndex(f.Name(), UploadOptions{
+	id, err := UploadIndex(f.Name(), http.DefaultClient, UploadOptions{
 		UploadRecordOptions: UploadRecordOptions{
 			Repo:    "foo/bar",
 			Commit:  "deadbeef",

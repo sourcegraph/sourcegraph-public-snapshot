@@ -285,7 +285,7 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
                     iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
                     iconClassName="bg-transparent"
                     title="Reset your password"
-                    body={<div className="web-content mt-4 signin-page__container">{body}</div>}
+                    body={<div className="mt-4 signin-page__container">{body}</div>}
                 />
             </>
         )
