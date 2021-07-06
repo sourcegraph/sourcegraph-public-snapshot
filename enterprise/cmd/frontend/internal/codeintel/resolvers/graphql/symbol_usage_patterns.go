@@ -23,6 +23,11 @@ func (r *symbolUsageResolver) UsagePatterns(ctx context.Context) ([]gql.SymbolUs
 	}
 	locations = locations[1:] // remove "definition" location
 
+	const maxLocations = 25 // TODO(sqs)
+	if len(locations) > maxLocations {
+		locations = locations[:maxLocations]
+	}
+
 	// TODO(sqs): break them up into arbitrary patterns
 	numPatterns := 1 + len(locations)/7
 	const maxPatterns = 1 // TODO(sqs)

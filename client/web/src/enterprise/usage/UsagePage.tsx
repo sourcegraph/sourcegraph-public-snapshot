@@ -29,19 +29,19 @@ const UsagePageFieldsGQLFragment = gql`
         url
 
         usage {
-            referenceGroups {
-                ...SymbolReferenceGroup
-            }
-            callers {
-                ...SymbolCallerEdgeFields
-            }
+            #referenceGroups {
+            #    ...SymbolReferenceGroup
+            #}
+            #callers {
+            #    ...SymbolCallerEdgeFields
+            #}
             usagePatterns {
                 ...SymbolUsagePatternFields
             }
         }
     }
-    ${SymbolReferenceGroupGQLFragment}
-    ${SymbolCallerEdgeGQLFragment}
+    ${SymbolReferenceGroupGQLFragment && ''}
+    ${SymbolCallerEdgeGQLFragment && ''}
     ${SymbolUsagePatternGQLFragment}
 `
 const queryUsagePageUncached = (vars: UsagePageVariables): Observable<UsagePageFields | null> =>
