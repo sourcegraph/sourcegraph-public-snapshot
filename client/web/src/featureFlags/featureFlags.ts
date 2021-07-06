@@ -6,7 +6,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { FetchFeatureFlagsResult } from '../graphql-operations'
 
-export type FeatureFlagName = 'w0-signup-optimisation'
+export type FeatureFlagName = 'w0-signup-optimisation' | 'w1-signup-optimisation'
 
 export type FlagSet = Map<FeatureFlagName, boolean>
 
@@ -36,3 +36,12 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
         })
     )
 }
+
+export interface FeatureFlagProps {
+    /**
+     * Evaluated feature flags for the current viewer
+     */
+    featureFlags: FlagSet
+}
+
+export const EMPTY_FEATURE_FLAGS = new Map<FeatureFlagName, boolean>()

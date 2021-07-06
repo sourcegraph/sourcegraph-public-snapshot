@@ -42,7 +42,7 @@
     &__actions,
     &__triggers {
         &--disabled {
-            color: $gray-17 !important;
+            color: var(--gray-08) !important;
             opacity: 0.5;
 
             // Avoid applying opacity twice

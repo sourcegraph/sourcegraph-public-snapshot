@@ -82,7 +82,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const tour = useFeatureTour(
         'search-contexts-start-tour',
-        showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
+        !!authenticatedUser && showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
         getFeatureTourElement,
         HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY,
         getTourOptions({

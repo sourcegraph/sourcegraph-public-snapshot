@@ -437,16 +437,18 @@ func (ar *AssigneeRenderer) resetDisplayFlags() {
 
 // doRenderIssue returns the given issue rendered in markdown.
 func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string {
-	title := issue.SafeTitle()
+	url := issue.URL
 	if issue.Milestone != milestone && contains(issue.Labels, fmt.Sprintf("planned/%s", milestone)) {
 		// deprioritized
-		title = fmt.Sprintf("~%s~", title)
+		url = fmt.Sprintf("~%s~", url)
 	}
 
 	pullRequestFragment := ""
 	if len(issue.LinkedPullRequests) > 0 {
 		var parts []MarkdownByIntegerKeyPair
 		for _, pullRequest := range issue.LinkedPullRequests {
+			// Do not inline the whole title/URL, as that would be too long.
+			// Only inline a linked number, which can be hovered in GitHub to see details.
 			summary := fmt.Sprintf("[#%d](%s)", pullRequest.Number, pullRequest.URL)
 			if pullRequest.Done() {
 				summary = fmt.Sprintf("~%s~", summary)
@@ -459,7 +461,7 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 			})
 		}
 
-		pullRequestFragment = fmt.Sprintf("; PRs: %s", strings.Join(SortByIntegerKeyPair(parts), ", "))
+		pullRequestFragment = fmt.Sprintf("(PRs: %s)", strings.Join(SortByIntegerKeyPair(parts), ", "))
 	}
 
 	estimate := estimateFromLabelSet(issue.Labels)
@@ -485,11 +487,10 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 
 	if issue.Closed() {
 		return fmt.Sprintf(
-			"- [x] (🏁 %s) %s ([~#%d~](%s)%s)%s%s\n",
+			"- [x] (🏁 %s) %s %s%s%s\n",
 			formatTimeSince(issue.ClosedAt),
-			title,
-			issue.Number,
-			issue.URL,
+			// GitHub automatically expands the URL to a status icon + title
+			url,
 			pullRequestFragment,
 			estimateFragment,
 			emojis,
@@ -497,10 +498,9 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 	}
 
 	return fmt.Sprintf(
-		"- [ ] %s ([#%d](%s)%s)%s%s\n",
-		title,
-		issue.Number,
-		issue.URL,
+		"- [ ] %s %s%s%s\n",
+		// GitHub automatically expands the URL to a status icon + title
+		url,
 		pullRequestFragment,
 		estimateFragment,
 		emojis,
@@ -509,30 +509,21 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 
 // renderPullRequest returns the given pull request rendered in markdown.
 func renderPullRequest(pullRequest *PullRequest) string {
-	emojis := Emojis(pullRequest.SafeLabels(), pullRequest.Repository, pullRequest.Body, map[string]string{
-		"pull-request": ":shipit:",
-	})
+	emojis := Emojis(pullRequest.SafeLabels(), pullRequest.Repository, pullRequest.Body, map[string]string{})
 
 	if pullRequest.Done() {
-		title := pullRequest.SafeTitle()
-		if pullRequest.Closed() {
-			title = fmt.Sprintf("~%s~", title)
-		}
-
 		return fmt.Sprintf(
-			"- [x] (🏁 %s) %s ([~#%d~](%s)) %s\n",
+			"- [x] (🏁 %s) %s %s\n",
 			formatTimeSince(pullRequest.ClosedAt),
-			title,
-			pullRequest.Number,
+			// GitHub automatically expands the URL to a status icon + title
 			pullRequest.URL,
 			emojis,
 		)
 	}
 
 	return fmt.Sprintf(
-		"- [ ] %s ([#%d](%s)) %s\n",
-		pullRequest.SafeTitle(),
-		pullRequest.Number,
+		"- [ ] %s %s\n",
+		// GitHub automatically expands the URL to a status icon + title
 		pullRequest.URL,
 		emojis,
 	)

@@ -109,7 +109,7 @@ func reposAtEndpoint(ctx context.Context, endpoint string) map[string]struct{} {
 	cl := rpc.Client(endpoint)
 	defer cl.Close()
 
-	resp, err := cl.List(ctx, &query.Const{Value: true})
+	resp, err := cl.List(ctx, &query.Const{Value: true}, nil)
 	if err != nil {
 		return map[string]struct{}{}
 	}

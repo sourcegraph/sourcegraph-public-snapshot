@@ -1440,9 +1440,11 @@
         },
         "apiKey": { "type": "string" },
         "apiUrl": { "type": "string" },
+        "tags": {
+          "type": "string"
+        },
         "priority": {
-          "type": "string",
-          "enum": ["P1", "P2", "P3", "P4", "P5"]
+          "type": "string"
         },
         "responders": {
           "type": "array",

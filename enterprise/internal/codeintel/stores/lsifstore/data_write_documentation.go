@@ -78,3 +78,70 @@ INSERT INTO lsif_data_documentation_pages (dump_id, path_id, data)
 SELECT %s, source.path_id, source.data
 FROM t_lsif_data_documentation_pages source
 `
+
+// WriteDocumentationPathInfo is called (transactionally) from the precise-code-intel-worker.
+func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *semantic.DocumentationPathInfoData) (err error) {
+	ctx, traceLog, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Create temporary table symmetric to lsif_data_documentation_path_info without the dump id
+	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPathInfoTemporaryTableQuery)); err != nil {
+		return err
+	}
+
+	var count uint32
+	inserter := func(inserter *batch.Inserter) error {
+		for v := range documentationPathInfo {
+			data, err := s.serializer.MarshalDocumentationPathInfoData(v)
+			if err != nil {
+				return err
+			}
+
+			if err := inserter.Insert(ctx, v.PathID, data); err != nil {
+				return err
+			}
+
+			atomic.AddUint32(&count, 1)
+		}
+		return nil
+	}
+
+	// Bulk insert all the unique column values into the temporary table
+	if err := withBatchInserter(
+		ctx,
+		tx.Handle().DB(),
+		"t_lsif_data_documentation_path_info",
+		[]string{"path_id", "data"},
+		inserter,
+	); err != nil {
+		return err
+	}
+	traceLog(log.Int("numResultChunkRecords", int(count)))
+
+	// Insert the values from the temporary table into the target table. We select a
+	// parameterized dump id here since it is the same for all rows in this operation.
+	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPathInfoInsertQuery, bundleID))
+}
+
+const writeDocumentationPathInfoTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationPathInfo
+CREATE TEMPORARY TABLE t_lsif_data_documentation_path_info (
+	path_id TEXT NOT NULL,
+	data bytea NOT NULL
+) ON COMMIT DROP
+`
+
+const writeDocumentationPathInfoInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationPathInfo
+INSERT INTO lsif_data_documentation_path_info (dump_id, path_id, data)
+SELECT %s, source.path_id, source.data
+FROM t_lsif_data_documentation_path_info source
+`

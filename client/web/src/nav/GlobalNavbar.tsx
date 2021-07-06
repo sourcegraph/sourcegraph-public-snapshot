@@ -89,8 +89,6 @@ interface Props
     // Whether globbing is enabled for filters.
     globbing: boolean
 
-    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
-    enableSmartQuery: boolean
     userSettingsSideBarItems?: UserSettingsSidebarItems
 
     /**
@@ -315,9 +313,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                                 <NavAction>
                                     <StatusMessagesNavItem
-                                        isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
+                                        user={{
+                                            id: props.authenticatedUser.id,
+                                            username: props.authenticatedUser.username,
+                                            isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
+                                        }}
                                         history={history}
-                                        isRedesignEnabled={isRedesignEnabled}
                                     />
                                 </NavAction>
                             )}

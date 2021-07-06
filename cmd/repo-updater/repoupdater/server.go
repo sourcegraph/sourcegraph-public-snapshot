@@ -326,10 +326,10 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		repo = list[0]
 	}
 
-	// If we are sourcegraph.com we don't sync our site level code hosts in the background
-	// since there are too many repos. Instead we use an incremental approach where we check
-	// for changes everytime a user browses a repo. RepoLookup is the signal
-	// we rely on to check metadata.
+	// If we are sourcegraph.com we don't sync our "cloud_default" code hosts in the background
+	// since there are too many repos. Instead we use an incremental approach where we check for
+	// changes everytime a user browses a repo. RepoLookup is the signal we rely on to check
+	// metadata.
 
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 	if s.SourcegraphDotComMode && codehost != nil {

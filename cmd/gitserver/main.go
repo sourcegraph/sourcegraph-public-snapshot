@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
@@ -44,7 +45,6 @@ var (
 	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
-	envHostname                  = env.Get("HOSTNAME", "", "Hostname override")
 )
 
 func main() {
@@ -139,17 +139,17 @@ func main() {
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
-		Hostname: hostnameBestEffort(),
+		Hostname: hostname.Get(),
 		DB:       db,
 	}
 	gitserver.RegisterMetrics()
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
-	} else {
+	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 		// Additionally set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
-		os.Setenv("TMP_DIR", tmpDir)
+		log.Fatalf("Setting TMP_DIR: %s", err)
 	}
 
 	// Create Handler now since it also initializes state
@@ -192,19 +192,13 @@ func main() {
 	}()
 
 	// Stop accepting requests. In the future we should use graceful shutdown.
-	srv.Close()
+	if err := srv.Close(); err != nil {
+		log15.Error("closing http server", "error", err)
+	}
 
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
-}
-
-func hostnameBestEffort() string {
-	if envHostname != "" {
-		return envHostname
-	}
-	h, _ := os.Hostname()
-	return h
 }
 
 func getPercent(p int) (int, error) {
@@ -242,5 +236,5 @@ func getDB() (dbutil.DB, error) {
 		}
 	})
 
-	return dbconn.New(dsn, "gitserver")
+	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
 }

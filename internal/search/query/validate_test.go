@@ -34,10 +34,6 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			want:  `unknown language: "stephenhas9cats"`,
 		},
 		{
-			input: "stable:???",
-			want:  `invalid boolean "???"`,
-		},
-		{
 			input: "count:sedonuts",
 			want:  "field count has value sedonuts, sedonuts is not a number",
 		},
@@ -93,7 +89,7 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		},
 		{
 			input: "type:symbol select:symbol.timelime",
-			want:  "invalid field 'timelime' on select type 'symbol'",
+			want:  `invalid field "timelime" on select path "symbol.timelime"`,
 		},
 		{
 			input:      "nice try type:repo",

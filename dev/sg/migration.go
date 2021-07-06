@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -164,6 +165,18 @@ func parseMigrationIndex(name string) (int, bool) {
 	}
 
 	return index, true
+}
+
+// Returns the migration name from a filepath (e.g., 12341234_hello.up.sql -> hello).
+func parseMigrationName(name string) (string, bool) {
+	names := strings.SplitN(filepath.Base(name), "_", 2)
+	if len(names) < 2 {
+		return "", false
+	}
+
+	baseName := names[1]
+	migrationName := strings.ReplaceAll(strings.ReplaceAll(baseName, ".down.sql", ""), ".up.sql", "")
+	return migrationName, true
 }
 
 // parseLastMigrationIndex parses a list of filenames and returns the highest migration
@@ -436,4 +449,265 @@ func readFilenamesNamesInDirectory(dir string) ([]string, error) {
 	}
 
 	return names, nil
+}
+
+type migration struct {
+	ID   int
+	Name string
+
+	UpName   string
+	DownName string
+}
+
+type migrationConflict struct {
+	ID    int
+	Main  migration
+	Local migration
+}
+
+func getMigrationFilesFromGit(database Database, revision string) ([]string, error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
+	if err != nil {
+		return nil, err
+	}
+
+	output, err := runGitCmd("ls-tree", "--name-only", "-r", revision, baseDir)
+	if err != nil {
+		return nil, err
+	}
+	files := strings.Split(output, "\n")
+
+	return files, nil
+}
+
+func getMigrationFilesFromDisk(database Database) ([]string, error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make([]string, 0, len(entries))
+	for _, fileEntry := range entries {
+		files = append(files, fileEntry.Name())
+	}
+
+	return files, nil
+}
+
+func fixupMigrations(database Database, main string) error {
+	out.Write("")
+
+	mainFiles, err := getMigrationFilesFromGit(database, main)
+	if err != nil {
+		return err
+	}
+
+	mainMigrations, err := getMigrationsForRevision(mainFiles)
+	if err != nil {
+		return err
+	}
+
+	localFiles, err := getMigrationFilesFromDisk(database)
+	if err != nil {
+		return err
+	}
+
+	localMigrations, err := getMigrationsForRevision(localFiles)
+	if err != nil {
+		return err
+	}
+
+	block := out.Block(output.Linef(output.EmojiLightbulb, output.StyleItalic, "Checking for conflicting migrations..."))
+	defer block.Close()
+
+	conflicts, missing, err := findConflictingMigrations(mainMigrations, localMigrations)
+	if err != nil {
+		return err
+	}
+
+	for _, missed := range missing {
+		block.WriteLine(output.Linef(
+			output.EmojiWarning,
+			output.StyleReset,
+			"Missing migration '%d_%s' from %s branch. Consider rebasing.", missed.ID, missed.Name, main,
+		))
+	}
+
+	if len(conflicts) == 0 {
+		block.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "... No conflicting migrations"))
+		return nil
+	}
+
+	if err := resolveConflictingMigrations(database, conflicts, mainMigrations, block); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func findConflictingMigrations(mainMigrations, localMigrations map[int]migration) ([]migrationConflict, []migration, error) {
+	conflicts := []migrationConflict{}
+	missing := []migration{}
+
+	for migrationID, mainMigration := range mainMigrations {
+		localMigration, ok := localMigrations[migrationID]
+		if !ok {
+			missing = append(missing, mainMigration)
+			continue
+		}
+
+		if mainMigration.Name != localMigration.Name {
+			conflicts = append(conflicts, migrationConflict{
+				ID:    migrationID,
+				Main:  mainMigration,
+				Local: localMigration,
+			})
+		}
+	}
+
+	return conflicts, missing, nil
+}
+
+func getMigrationsForRevision(files []string) (map[int]migration, error) {
+	upMigrations := make(map[int]string)
+	downMigrations := make(map[int]string)
+
+	for _, file := range files {
+		if file == "" {
+			continue
+		}
+
+		migrationID, ok := parseMigrationIndex(file)
+		if !ok {
+			return nil, errors.Newf("bad migration file format: %s", file)
+		}
+
+		if strings.HasSuffix(file, ".down.sql") {
+			downMigrations[migrationID] = file
+		} else if strings.HasSuffix(file, ".up.sql") {
+			upMigrations[migrationID] = file
+		} else if strings.HasSuffix(file, ".sql") {
+			return nil, errors.Newf("sql file that doesn't fit migration file format: %s", file)
+		}
+	}
+
+	if len(upMigrations) != len(downMigrations) {
+		return nil, errors.Newf(
+			"not the same number of up (%d) and down (%d) migrations. Check for corresponding up & down scripts for each migration.",
+			len(upMigrations),
+			len(downMigrations),
+		)
+	}
+
+	migrations := make(map[int]migration)
+	for migrationID := range upMigrations {
+		upMigration, ok := upMigrations[migrationID]
+		if !ok {
+			return nil, errors.Newf("missing up migration for ID: %d", migrationID)
+		}
+
+		downMigration, ok := downMigrations[migrationID]
+		if !ok {
+			return nil, errors.Newf("missing down migration for ID: %d", migrationID)
+		}
+
+		migrationName, ok := parseMigrationName(upMigration)
+		if !ok {
+			return nil, errors.Newf("bad migration file name: %s", upMigration)
+		}
+
+		migrations[migrationID] = migration{
+			ID:       migrationID,
+			Name:     migrationName,
+			UpName:   upMigration,
+			DownName: downMigration,
+		}
+
+	}
+
+	return migrations, nil
+}
+
+func resolveConflictingMigrations(
+	database Database,
+	conflicts []migrationConflict,
+	mainMigrations map[int]migration,
+	block *output.Block,
+) error {
+	block.Writef("Database: %s\n", database.Name)
+
+	maxID := 0
+	for migrationID := range mainMigrations {
+		maxID = int(math.Max(float64(maxID), float64(migrationID)))
+	}
+
+	for _, conflict := range conflicts {
+		maxID = maxID + 1
+
+		newUpPath, newDownPath, err := makeMigrationFilenames(database, maxID, conflict.Local.Name)
+		if err != nil {
+			return err
+		}
+
+		oldUpPath, oldDownPath, err := makeMigrationFilenames(database, conflict.ID, conflict.Local.Name)
+		if err != nil {
+			return err
+		}
+
+		block.Writef("Changing migration: %d %s", conflict.ID, conflict.Main.Name)
+
+		// This is a bit annoying, but git ls-tree only checks commited files
+		upErr := checkFile(oldUpPath, block)
+		downErr := checkFile(oldDownPath, block)
+
+		if upErr != nil || downErr != nil {
+			// This should not be possible :) We should have died earlier but it's good to confirm
+			return errors.Newf(
+				"could not find both migration files for migration (%d): %s || %s",
+				conflict.ID,
+				oldUpPath,
+				oldDownPath,
+			)
+		}
+
+		if err := moveMigration(oldUpPath, newUpPath, block); err != nil {
+			return nil
+		}
+		if err := moveMigration(oldDownPath, newDownPath, block); err != nil {
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func checkFile(path string, block *output.Block) error {
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(path)
+	if os.IsNotExist(err) {
+		relativePath, _ := filepath.Rel(repoRoot, path)
+
+		block.WriteLine(output.Linef(output.EmojiFailure, output.StyleItalic, "File no longer exists: %s", relativePath))
+	}
+
+	return err
+
+}
+
+func moveMigration(oldpath, newpath string, block *output.Block) error {
+	if err := os.Rename(oldpath, newpath); err != nil {
+		return err
+	}
+
+	block.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "%s -> %s", filepath.Base(oldpath), filepath.Base(newpath)))
+	return nil
 }

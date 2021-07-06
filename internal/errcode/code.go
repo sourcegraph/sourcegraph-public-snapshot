@@ -170,6 +170,17 @@ func IsTemporary(err error) bool {
 	})
 }
 
+// IsBlocked will check if err or one of its causes is a blocked error.
+func IsBlocked(err error) bool {
+	type blocker interface {
+		Blocked() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(blocker)
+		return ok && e.Blocked()
+	})
+}
+
 // IsTimeout will check if err or one of its causes is a timeout. Many errors
 // in the go stdlib implement the timeout interface.
 func IsTimeout(err error) bool {

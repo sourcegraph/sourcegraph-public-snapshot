@@ -37,7 +37,7 @@ If you followed the installation instructions, `$SOURCEGRAPH_VERSION` should poi
 
 ## Upgrading with a forked repository
 
-When you upgrade, merge the corresponding `upstream release` tag into your `release` branch _(created from the [Fork this repository](#fork-this-repository) step)_. 
+When you upgrade, merge the corresponding `upstream release` tag into your `release` branch _(created from the [Fork this repository](#fork-this-repository) step)_.
 
 ```bash
 # to add the upstream remote.
@@ -71,11 +71,11 @@ For production environments, we recommend using the [ingress-nginx](https://kube
 
 - As part of our base configuration, we install an ingress for [sourcegraph-frontend](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml). It installs rules for the default ingress, see comments to restrict it to a specific host.
 
-- In addition to the sourcegraph-frontend ingress, you'll need to install the NGINX ingress controller (ingress-nginx). 
+- In addition to the sourcegraph-frontend ingress, you'll need to install the NGINX ingress controller (ingress-nginx).
 
-- Follow the instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to create the ingress controller. 
+- Follow the instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to create the ingress controller.
 
-- Add the files to [configure/ingress-nginx](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx), including an [install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) file which applies the relevant manifests. 
+- Add the files to [configure/ingress-nginx](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx), including an [install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) file which applies the relevant manifests.
 
 - We include sample generic-cloud manifests as part of this repository, but please follow the official instructions for your cloud provider.
 
@@ -85,7 +85,7 @@ For production environments, we recommend using the [ingress-nginx](https://kube
 echo ./configure/ingress-nginx/install.sh >> create-new-cluster.sh
 ```
 
-- Once the ingress has acquired an external address, you should be able to access Sourcegraph using that. 
+- Once the ingress has acquired an external address, you should be able to access Sourcegraph using that.
 
 - You can check the external address by running the following command and looking for the `LoadBalancer` entry:
 
@@ -170,7 +170,7 @@ Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL
 
 Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
 other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace (as described in our [Overlays docs](overlays.md) or below in the 
+then we recommend running Sourcegraph in a namespace (as described in our [Overlays docs](overlays.md) or below in the
 [Using NetworkPolicy with Namespaced Overlay Example](#using-networkpolicy-with-namespaced-overlay)).
 You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
 When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
@@ -224,7 +224,7 @@ spec:
 
 ### Using NetworkPolicy with Namespaced Overlay Example
 
-1. Create a yaml file (`networkPolicy.yaml` for example) in the root directory with the added namespace after 
+1. Create a yaml file (`networkPolicy.yaml` for example) in the root directory with the added namespace after
 applying the [Namespaced Overlay](overlays.md#namespaced-overlay):
 
    ```yaml
@@ -499,7 +499,10 @@ Sourcegraph expects there to be storage class named `sourcegraph` that it uses f
 
 - Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
 
-- The sourceraph storageclass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim.
+- The sourcegraph StorageClass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim.
+
+- The sourcegraph StorageClass also allows the persistent volumes to expand their storage capacity by increasing the
+ size of the related persistent volume claim.
 
 - This cannot be changed once the storage class has been created. Persistent volumes not created with the reclaimPolicy set to `Retain` can be patched with the following command:
 
@@ -508,7 +511,6 @@ kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Re
 ```
 
 See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
-
 
 ### Google Cloud Platform (GCP)
 
@@ -524,6 +526,7 @@ provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-ssd # This configures SSDs (recommended).
 reclaimPolicy: Retain
+allowVolumeExpansion: true
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#gce-pd).
@@ -542,6 +545,7 @@ provisioner: kubernetes.io/aws-ebs
 parameters:
   type: gp2 # This configures SSDs (recommended).
 reclaimPolicy: Retain
+allowVolumeExpansion: true
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
@@ -560,6 +564,7 @@ provisioner: kubernetes.io/azure-disk
 parameters:
   storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
 reclaimPolicy: Retain
+allowVolumeExpansion: true
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk).
@@ -575,6 +580,7 @@ metadata:
   labels:
     deploy: sourcegraph
 reclaimPolicy: Retain
+allowVolumeExpansion: true
 # Read https://kubernetes.io/docs/concepts/storage/storage-classes/ to configure the "provisioner" and "parameters" fields for your cloud provider.
 # SSDs are highly recommended!
 # provisioner:
@@ -602,8 +608,6 @@ for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
 for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
 ```
 
-
-
 ## Configure custom Redis
 
 Sourcegraph supports specifying a custom Redis server for:
@@ -616,22 +620,17 @@ If you want to specify a custom Redis server, you'll need specify the correspond
 - `sourcegraph-frontend`
 - `repo-updater`
 
-
-
 ## Configure custom PostgreSQL
 
 You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
 Simply edit the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) in [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml) to point to your existing PostgreSQL instance.
 
-
-
 ## Install without cluster-wide RBAC
 
 Sourcegraph communicates with the Kubernetes API for service discovery. It also has some janitor DaemonSets that clean up temporary cache data. To do that we need to create RBAC resources.
 
 If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [Overlays](#overlays) section below about overlays.
-
 
 
 ## Add license key
@@ -664,8 +663,6 @@ for all images under `base/`:
 ```bash
 for IMAGE in $(grep --include '*.yaml' -FR 'image:' base | awk '{ print $(NF) }'); do docker pull "$IMAGE"; done;
 ```
-
-
 
 ## Troubleshooting
 

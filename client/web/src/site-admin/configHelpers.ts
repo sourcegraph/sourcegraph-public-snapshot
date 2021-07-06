@@ -44,6 +44,6 @@ export const settingsActions: EditorAction[] = [
         label: 'Search: show # before/after lines',
         run: setSearchContextLines,
     },
-    { id: 'sourcegraph.settings.searchScopes', label: 'Add search scope', run: addSearchScopeToSettings },
+    { id: 'sourcegraph.settings.searchScopes', label: 'Add search snippet', run: addSearchScopeToSettings },
     { id: 'sourcegraph.settings.quickLinks', label: 'Add quick link', run: addQuickLinkToSettings },
 ]

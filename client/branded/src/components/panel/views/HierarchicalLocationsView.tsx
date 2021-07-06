@@ -220,7 +220,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 return group
             }
             return null
-        }).filter(Boolean) as LocationGroup[]
+        })
 
         return (
             <div>
@@ -238,37 +238,45 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 >
                     <div className="d-flex">
                         {selectedGroups &&
-                            groupsToDisplay.map((group, index) => (
-                                <Resizable
-                                    key={index}
-                                    className={styles.resizableGroup}
-                                    handleClassName={styles.resizableHandle}
-                                    handlePosition="right"
-                                    storageKey={`hierarchical-locations-view-resizable:${group.name}`}
-                                    defaultSize={group.defaultSize}
-                                    element={
-                                        <div
-                                            data-testid="hierarchical-locations-view-list"
-                                            className={classNames('list-group', styles.groupList)}
-                                        >
-                                            {groups[index].map((group, innerIndex) => (
-                                                <HierarchicalLocationsViewButton
-                                                    key={innerIndex}
-                                                    groupKey={group.key}
-                                                    groupCount={group.count}
-                                                    isActive={selectedGroups[index] === group.key}
-                                                    onClick={event =>
-                                                        this.onSelectTree(event, selectedGroups, index, group.key)
-                                                    }
-                                                />
-                                            ))}
-                                            {this.state.locationsOrError.isLoading && (
-                                                <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />
-                                            )}
-                                        </div>
-                                    }
-                                />
-                            ))}
+                            groupsToDisplay.map(
+                                (group, index) =>
+                                    group && (
+                                        <Resizable
+                                            key={index}
+                                            className={styles.resizableGroup}
+                                            handleClassName={styles.resizableHandle}
+                                            handlePosition="right"
+                                            storageKey={`hierarchical-locations-view-resizable:${group.name}`}
+                                            defaultSize={group.defaultSize}
+                                            element={
+                                                <div
+                                                    data-testid="hierarchical-locations-view-list"
+                                                    className={classNames('list-group', styles.groupList)}
+                                                >
+                                                    {groups[index].map((group, innerIndex) => (
+                                                        <HierarchicalLocationsViewButton
+                                                            key={innerIndex}
+                                                            groupKey={group.key}
+                                                            groupCount={group.count}
+                                                            isActive={selectedGroups[index] === group.key}
+                                                            onClick={event =>
+                                                                this.onSelectTree(
+                                                                    event,
+                                                                    selectedGroups,
+                                                                    index,
+                                                                    group.key
+                                                                )
+                                                            }
+                                                        />
+                                                    ))}
+                                                    {this.state.locationsOrError.isLoading && (
+                                                        <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />
+                                                    )}
+                                                </div>
+                                            }
+                                        />
+                                    )
+                            )}
                     </div>
                     <FileLocations
                         className={styles.fileLocations}

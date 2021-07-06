@@ -419,7 +419,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
 		}
 
-		r.ExternalServices, err = externalServiceKinds(ctx)
+		r.ExternalServices, err = externalServiceKinds(ctx, db)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
 		}
@@ -500,9 +500,9 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
+func externalServiceKinds(ctx context.Context, db dbutil.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = database.GlobalExternalServices.DistinctKinds(ctx)
+	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
 	return kinds, err
 }
 

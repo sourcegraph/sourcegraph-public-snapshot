@@ -1,6 +1,7 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
+import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -22,6 +23,7 @@ export interface FileLineMatch {
     type: 'file'
     name: string
     repository: string
+    repoStars?: number
     branches?: string[]
     version?: string
     lineMatches: LineMatch[]
@@ -31,12 +33,14 @@ interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+    aggregableBadges?: AggregableBadge[]
 }
 
 export interface FileSymbolMatch {
     type: 'symbol'
     name: string
     repository: string
+    repoStars?: number
     branches?: string[]
     version?: string
     symbols: SymbolMatch[]
@@ -63,6 +67,7 @@ export interface CommitMatch {
     url: string
     detail: MarkdownText
     repository: string
+    repoStars?: number
 
     content: MarkdownText
     ranges: number[][]
@@ -71,6 +76,10 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repoStars?: number
+    description?: string
+    fork?: boolean
+    archived?: boolean
     branches?: string[]
 }
 

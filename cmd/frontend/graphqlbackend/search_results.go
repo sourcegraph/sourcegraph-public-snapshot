@@ -115,7 +115,6 @@ type SearchResultsResolver struct {
 type SearchResults struct {
 	Matches []result.Match
 	Stats   streaming.Stats
-	Cursor  *run.SearchCursor
 	Alert   *searchAlert
 }
 
@@ -447,7 +446,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
 			go func() {
-				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags)
+				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -464,57 +463,6 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, er
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	// If the request specifies stable:truthy, use pagination to return a stable ordering.
-	if r.Query.BoolValue(query.FieldStable) {
-		var stableResultCount int32 = defaultMaxSearchResults
-		if count := r.Query.Count(); count != nil {
-			stableResultCount = int32(*count)
-			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrapResults(), nil
-			}
-		}
-
-		r.Pagination = &run.SearchPaginationInfo{
-			Limit: stableResultCount,
-		}
-
-		// Pagination only works for file content searches, and will
-		// raise an error otherwise. If stable is explicitly set, this
-		// is implied. So, force this query to only return file content
-		// results.
-		r.Query = query.OverrideField(r.Query, query.FieldType, "file")
-		result, err := r.paginatedResults(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if result == nil {
-			// Panic if paginatedResults does not ensure a non-nil search result.
-			panic("stable search: paginated search returned nil results")
-		}
-		if result.Cursor == nil {
-			// Perhaps an alert was raised.
-			return result, err
-		}
-		if !result.Cursor.Finished {
-			// For stable result queries limitHit = true implies
-			// there is a next cursor, and more results may exist.
-			result.Stats.IsLimitHit = true
-		}
-		if r.stream != nil {
-			r.stream.Send(streaming.SearchEvent{
-				Results: result.Matches,
-				Stats:   result.Stats,
-			})
-		}
-		return result, err
-	}
-
-	// If the request is a paginated one, we handle it separately. See
-	// paginatedResults for more details.
-	if r.Pagination != nil {
-		return r.paginatedResults(ctx)
-	}
 
 	return r.resultsWithTimeoutSuggestion(ctx)
 }
@@ -895,6 +843,11 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		}
 		return srr, err
 	}
+	if sp, _ := r.Plan.ToParseTree().StringValue(query.FieldSelect); sp != "" {
+		// Ensure downstream events sent on the stream are processed by `select:`.
+		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
+		r.stream = streaming.WithSelect(r.stream, selectPath)
+	}
 	sr, err := r.resultsRecursive(ctx, r.Plan)
 	srr := r.resultsToResolver(sr)
 	return srr, err
@@ -1257,18 +1210,13 @@ var (
 	defaultTimeout = 20 * time.Second
 )
 
-func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout := r.Query.Timeout()
-	return timeout != nil || r.countIsSet()
-}
-
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
 	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
 	timeout := r.Query.Timeout()
 	if timeout != nil {
 		d = *timeout
-	} else if r.countIsSet() {
+	} else if r.Query.Count() != nil {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
@@ -1318,9 +1266,6 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
 		return nil, r.errorForNoResolvedRepos(ctx)
-	}
-	if resolved.OverLimit {
-		return nil, r.errorForOverRepoLimit(ctx)
 	}
 	return &resolved, nil
 }
@@ -1387,11 +1332,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		Query:       r.Query,
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: r.searchTimeoutFieldSet() || r.stream != nil,
+		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil || r.stream != nil,
 
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
-		RepoPromise:  &search.Promise{},
+		RepoPromise:  &search.RepoPromise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}

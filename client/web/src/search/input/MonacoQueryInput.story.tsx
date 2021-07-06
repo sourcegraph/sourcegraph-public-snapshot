@@ -19,7 +19,6 @@ const defaultProps: MonacoQueryInputProps = {
     globbing: false,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
-    enableSmartQuery: false,
     patternType: SearchPatternType.literal,
     caseSensitive: false,
     versionContext: undefined,

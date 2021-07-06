@@ -40,7 +40,7 @@ func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		job, dequeued, err := h.dequeue(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName)
+		job, dequeued, err := h.dequeue(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.ExecutorHostname)
 		if !dequeued {
 			return http.StatusNoContent, nil, err
 		}

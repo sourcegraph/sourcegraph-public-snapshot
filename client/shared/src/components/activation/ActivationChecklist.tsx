@@ -1,6 +1,5 @@
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
 import classNames from 'classnames'
-import * as H from 'history'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -13,7 +12,6 @@ import { ActivationCompletionStatus, ActivationStep } from './Activation'
 
 interface ActivationChecklistItemProps extends ActivationStep {
     done: boolean
-    history: H.History
     className?: string
 }
 
@@ -45,7 +43,6 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
 )
 
 export interface ActivationChecklistProps {
-    history: H.History
     steps: ActivationStep[]
     completed?: ActivationCompletionStatus
     className?: string
@@ -55,31 +52,35 @@ export interface ActivationChecklistProps {
 /**
  * Renders an activation checklist.
  */
-export class ActivationChecklist extends React.PureComponent<ActivationChecklistProps, {}> {
-    public render(): JSX.Element {
-        return this.props.completed ? (
-            <div className={`activation-checklist list-group list-group-flush ${this.props.className || ''}`}>
-                <Accordion collapsible={true}>
-                    {this.props.steps.map(step => (
-                        <AccordionItem key={step.id} className="activation-checklist__container list-group-item">
-                            <AccordionButton className="activation-checklist__button list-group-item list-group-item-action btn-link">
-                                <ActivationChecklistItem
-                                    key={step.id}
-                                    {...step}
-                                    history={this.props.history}
-                                    done={this.props.completed?.[step.id] || false}
-                                    className={this.props.buttonClassName}
-                                />
-                            </AccordionButton>
-                            <AccordionPanel className="px-2">
-                                <div className="activation-checklist__detail pb-1">{step.detail}</div>
-                            </AccordionPanel>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-            </div>
-        ) : (
-            <LoadingSpinner className="icon-inline my-2" />
-        )
+export const ActivationChecklist: React.FunctionComponent<ActivationChecklistProps> = ({
+    className,
+    steps,
+    completed,
+    buttonClassName,
+}) => {
+    if (!completed) {
+        return <LoadingSpinner className="icon-inline my-2" />
     }
+
+    return (
+        <div className={`activation-checklist list-group list-group-flush ${className || ''}`}>
+            <Accordion collapsible={true}>
+                {steps.map(step => (
+                    <AccordionItem key={step.id} className="activation-checklist__container list-group-item">
+                        <AccordionButton className="activation-checklist__button list-group-item list-group-item-action btn-link">
+                            <ActivationChecklistItem
+                                key={step.id}
+                                {...step}
+                                done={completed?.[step.id] || false}
+                                className={buttonClassName}
+                            />
+                        </AccordionButton>
+                        <AccordionPanel className="px-2">
+                            <div className="activation-checklist__detail pb-1">{step.detail}</div>
+                        </AccordionPanel>
+                    </AccordionItem>
+                ))}
+            </Accordion>
+        </div>
+    )
 }

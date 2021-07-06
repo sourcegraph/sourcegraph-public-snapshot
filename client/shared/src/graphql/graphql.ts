@@ -1,3 +1,19 @@
+import {
+    gql as apolloGql,
+    useQuery as useApolloQuery,
+    useMutation as useApolloMutation,
+    DocumentNode,
+    ApolloClient,
+    InMemoryCache,
+    createHttpLink,
+    NormalizedCacheObject,
+    OperationVariables,
+    QueryHookOptions,
+    QueryResult,
+    MutationHookOptions,
+    MutationTuple,
+} from '@apollo/client'
+import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { Omit } from 'utility-types'
@@ -54,6 +70,8 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
+const GRAPHQL_URI = '/.api/graphql'
+
 /**
  * This function should not be called directly as it does not
  * add the necessary headers to authorize the GraphQL API call.
@@ -69,11 +87,71 @@ export function requestGraphQLCommon<T, V = object>({
     variables?: V
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
+    const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     return fromFetch(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
         ...options,
         method: 'POST',
         body: JSON.stringify({ query: request, variables }),
         selector: response => checkOk(response).json(),
     })
+}
+
+export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
+    new ApolloClient({
+        uri: GRAPHQL_URI,
+        cache: new InMemoryCache(),
+        link: createHttpLink({
+            uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
+            headers,
+        }),
+    })
+
+type RequestDocument = string | DocumentNode
+
+/**
+ * Returns a `DocumentNode` value to support integrations with GraphQL clients that require this.
+ *
+ * @param document The GraphQL operation payload
+ * @returns The created `DocumentNode`
+ */
+export const getDocumentNode = (document: RequestDocument): DocumentNode => {
+    if (typeof document === 'string') {
+        return apolloGql(document)
+    }
+    return document
+}
+
+const useDocumentNode = (document: RequestDocument): DocumentNode =>
+    useMemo(() => getDocumentNode(document), [document])
+
+/**
+ * Send a query to GraphQL and respond to updates.
+ * Wrapper around Apollo `useQuery` that supports `DocumentNode` and `string` types.
+ *
+ * @param query GraphQL operation payload.
+ * @param options Operation variables and request configuration
+ * @returns GraphQL response
+ */
+export function useQuery<TData = any, TVariables = OperationVariables>(
+    query: RequestDocument,
+    options: QueryHookOptions<TData, TVariables>
+): QueryResult<TData, TVariables> {
+    const documentNode = useDocumentNode(query)
+    return useApolloQuery(documentNode, options)
+}
+
+/**
+ * Send a mutation to GraphQL and respond to updates.
+ * Wrapper around Apollo `useMutation` that supports `DocumentNode` and `string` types.
+ *
+ * @param mutation GraphQL operation payload.
+ * @param options Operation variables and request configuration
+ * @returns GraphQL response
+ */
+export function useMutation<TData = any, TVariables = OperationVariables>(
+    mutation: RequestDocument,
+    options?: MutationHookOptions<TData, TVariables>
+): MutationTuple<TData, TVariables> {
+    const documentNode = useDocumentNode(mutation)
+    return useApolloMutation(documentNode, options)
 }

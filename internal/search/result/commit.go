@@ -50,22 +50,23 @@ func (r *CommitMatch) Limit(limit int) int {
 }
 
 func (r *CommitMatch) Select(path filter.SelectPath) Match {
-	switch path.Type {
+	switch path.Root() {
 	case filter.Repository:
 		return &RepoMatch{
 			Name: r.Repo.Name,
 			ID:   r.Repo.ID,
 		}
 	case filter.Commit:
-		if len(path.Fields) > 0 && path.Fields[0] == "diff" {
+		fields := path[1:]
+		if len(fields) > 0 && fields[0] == "diff" {
 			if r.DiffPreview == nil {
 				return nil // Not a diff result.
 			}
-			if len(path.Fields) == 1 {
+			if len(fields) == 1 {
 				return r
 			}
-			if len(path.Fields) == 2 {
-				return selectCommitDiffKind(r, path.Fields[1])
+			if len(fields) == 2 {
+				return selectCommitDiffKind(r, fields[1])
 			}
 			return nil
 		}

@@ -1,8 +1,8 @@
 .search-result-match {
     text-decoration: none; // don't use cascading link style
     display: flex;
-    align-items: center;
-    padding: 0.25rem 0;
+    align-items: flex-start;
+    padding: 0.5rem 0;
     overflow-x: auto;
     overflow-y: hidden;
 

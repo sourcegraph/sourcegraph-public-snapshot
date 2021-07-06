@@ -42,9 +42,6 @@ export interface MonacoQueryInputProps
     // Whether globbing is enabled for filters.
     globbing: boolean
 
-    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
-    enableSmartQuery: boolean
-
     // Whether comments are parsed and highlighted
     interpretComments?: boolean
 
@@ -73,7 +70,6 @@ export function addSourcegraphSearchCodeIntelligence(
         patternType: SearchPatternType
         globbing: boolean
         interpretComments?: boolean
-        enableSmartQuery: boolean
         isSourcegraphDotCom?: boolean
     }
 ): Subscription {
@@ -157,7 +153,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     versionContext,
     patternType,
     globbing,
-    enableSmartQuery,
     interpretComments,
     isSourcegraphDotCom,
     isLightTheme,
@@ -212,7 +207,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             {
                 patternType,
                 globbing,
-                enableSmartQuery,
                 interpretComments,
                 isSourcegraphDotCom,
             }
@@ -224,7 +218,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         fetchSuggestionsWithContext,
         patternType,
         globbing,
-        enableSmartQuery,
         interpretComments,
         isSourcegraphDotCom,
     ])

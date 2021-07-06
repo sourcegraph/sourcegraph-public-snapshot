@@ -28,6 +28,7 @@ export interface MatchItem extends Badge {
      * The 0-based line number of this match.
      */
     line: number
+    aggregableBadges?: AggregableBadge[]
 }
 
 interface Props extends SettingsCascadeProps {
@@ -92,6 +93,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                   })),
                   preview: match.line,
                   line: match.lineNumber,
+                  aggregableBadges: match.aggregableBadges,
               }))
             : []
 
@@ -156,6 +158,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             expandedChildren,
             allExpanded: props.allExpanded,
             matchCountLabel,
+            repoStars: result.repoStars,
         }
     } else {
         const length = items.length - subsetMatches
@@ -183,6 +186,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 : `Show ${length} more ${pluralize('match', length, 'matches')}`,
             allExpanded: props.allExpanded,
             matchCountLabel,
+            repoStars: result.repoStars,
         }
     }
 

@@ -23,7 +23,10 @@ type SiteCredential struct {
 	Key encryption.Key
 }
 
-const SiteCredentialPlaceholderEncryptionKeyID = "previously-migrated"
+const (
+	SiteCredentialPlaceholderEncryptionKeyID = "previously-migrated"
+	SiteCredentialUnmigratedEncryptionKeyID  = "unmigrated"
+)
 
 // Authenticator decrypts and creates the authenticator associated with the site
 // credential.
@@ -31,7 +34,7 @@ func (sc *SiteCredential) Authenticator(ctx context.Context) (auth.Authenticator
 	// The record includes a field indicating the encryption key ID. We don't
 	// really have a way to look up a key by ID right now, so this is used as a
 	// marker of whether we should expect a key or not.
-	if sc.EncryptionKeyID == "" {
+	if sc.EncryptionKeyID == "" || sc.EncryptionKeyID == SiteCredentialUnmigratedEncryptionKeyID {
 		return database.UnmarshalAuthenticator(string(sc.EncryptedCredential))
 	}
 	if sc.Key == nil {

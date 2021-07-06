@@ -17,7 +17,7 @@ var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, erro
 // external service sync errors we'll fetch any external services owned by the
 // user. In addition, if the user is a site admin we'll also fetch site level
 // external services.
-func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud bool) ([]StatusMessage, error) {
+func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]StatusMessage, error) {
 	if MockStatusMessages != nil {
 		return MockStatusMessages(ctx, u)
 	}
@@ -68,7 +68,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud
 	if notCloned > 0 {
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d %s not yet cloned", notCloned, getRepoNoun(notCloned)),
+				Message: fmt.Sprintf("%d %s cloning...", notCloned, getRepoNoun(notCloned)),
 			},
 		})
 	}
@@ -117,9 +117,14 @@ type SyncError struct {
 	Message string
 }
 
+type IndexingError struct {
+	Message string
+}
+
 type StatusMessage struct {
 	Cloning                  *CloningProgress          `json:"cloning"`
 	Indexing                 *IndexingProgress         `json:"indexing"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`
+	IndexingError            *IndexingError            `json:"indexing_error"`
 }

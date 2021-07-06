@@ -26,7 +26,28 @@ env:
   JAEGER_SERVER_URL: http://localhost:16686
   ZOEKT_HOST: localhost:3070
 
-  SRC_PROF_HTTP: '' # This needs to be empty?
+  SRC_PROF_HTTP: ''
+  SRC_PROF_SERVICES: |
+    [
+      { "Name": "frontend", "Host": "127.0.0.1:6063" },
+      { "Name": "enterprise-frontend", "Host": "127.0.0.1:6063" },
+      { "Name": "gitserver", "Host": "127.0.0.1:6068" },
+      { "Name": "searcher", "Host": "127.0.0.1:6069" },
+      { "Name": "symbols", "Host": "127.0.0.1:6071" },
+      { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
+      { "Name": "enterprise-repo-updater", "Host": "127.0.0.1:6074" },
+      { "Name": "query-runner", "Host": "127.0.0.1:6067" },
+      { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
+      { "Name": "worker", "Host": "127.0.0.1:6089" },
+      { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
+      { "Name": "executor-queue", "Host": "127.0.0.1:6091" },
+      { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
+      { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
+      { "Name": "zoekt-indexserver-0", "Host": "127.0.0.1:6072" },
+      { "Name": "zoekt-indexserver-1", "Host": "127.0.0.1:6073" },
+      { "Name": "zoekt-webserver-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
+      { "Name": "zoekt-webserver-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
+    ]
   OVERRIDE_AUTH_SECRET: sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
   # Settings/config
   SITE_CONFIG_FILE: ./dev/site-config.json
@@ -382,19 +403,38 @@ commands:
       - enterprise/internal
       - enterprise/cmd/executor-queue
 
-  codeintel-executor:
-    cmd: .bin/executor
+  executor-template: &executor_template
+    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
       go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
     checkBinary: .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: codeintel
-      TMPDIR: $HOME/.sourcegraph/indexer-temp
+      EXECUTOR_QUEUE_NAME: TEMPLATE
     watch:
       - lib
       - internal
       - enterprise/internal
       - enterprise/cmd/executor
+
+  codeintel-executor:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: codeintel
+      EXECUTOR_HEALTH_SERVER_PORT: "3192"
+      SRC_PROF_HTTP: ":6092"
+
+  batches-executor:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_HEALTH_SERVER_PORT: "3193"
+      SRC_PROF_HTTP: ":6093"
 
   minio:
     cmd: |
@@ -493,6 +533,7 @@ commandsets:
     - zoekt-indexserver-1
     - zoekt-webserver-0
     - zoekt-webserver-1
+    - executor-queue
 
   enterprise-codeintel:
     - enterprise-frontend
@@ -554,6 +595,26 @@ commandsets:
     - zoekt-indexserver-1
     - zoekt-webserver-0
     - zoekt-webserver-1
+
+  batches:
+    - enterprise-frontend
+    - enterprise-worker
+    - enterprise-repo-updater
+    - enterprise-web
+    - gitserver
+    - searcher
+    - symbols
+    - query-runner
+    - caddy
+    - docsite
+    - syntect_server
+    - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
+    - executor-queue
+    - batches-executor
 
 tests:
   # These can be run with `sg test [name]`

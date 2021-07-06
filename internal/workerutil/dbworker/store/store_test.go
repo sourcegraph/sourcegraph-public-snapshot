@@ -105,7 +105,7 @@ func TestStoreDequeueState(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), nil)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordResult(t, 4, record, tx, ok, err)
 }
 
@@ -124,7 +124,7 @@ func TestStoreDequeueOrder(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), nil)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordResult(t, 2, record, tx, ok, err)
 }
 
@@ -144,7 +144,7 @@ func TestStoreDequeueConditions(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
-	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), conditions)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), "test", conditions)
 	assertDequeueRecordResult(t, 3, record, tx, ok, err)
 }
 
@@ -163,7 +163,7 @@ func TestStoreDequeueDelay(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), nil)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordResult(t, 4, record, tx, ok, err)
 }
 
@@ -198,7 +198,7 @@ func TestStoreDequeueView(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("v.new_field < 15")}
-	record, tx, ok, err := testStore(db, options).Dequeue(context.Background(), conditions)
+	record, tx, ok, err := testStore(db, options).Dequeue(context.Background(), "test", conditions)
 	assertDequeueRecordViewResult(t, 2, 14, record, tx, ok, err)
 }
 
@@ -217,7 +217,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	store := testStore(db, defaultTestStoreOptions)
 
 	// Worker A
-	record1, tx1, ok, err := store.Dequeue(context.Background(), nil)
+	record1, tx1, ok, err := store.Dequeue(context.Background(), "test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -227,7 +227,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	defer func() { _ = tx1.Done(nil) }()
 
 	// Worker B
-	record2, tx2, ok, err := store.Dequeue(context.Background(), nil)
+	record2, tx2, ok, err := store.Dequeue(context.Background(), "test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -244,7 +244,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	}
 
 	// Worker C
-	_, _, ok, err = store.Dequeue(context.Background(), nil)
+	_, _, ok, err = store.Dequeue(context.Background(), "test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -286,15 +286,15 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	store := testStore(db, options)
 
 	// Dequeue errored record
-	record1, tx, ok, err := store.Dequeue(context.Background(), nil)
+	record1, tx, ok, err := store.Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordRetryResult(t, 1, record1, tx, ok, err)
 
 	// Dequeue non-errored record
-	record2, tx, ok, err := store.Dequeue(context.Background(), nil)
+	record2, tx, ok, err := store.Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordRetryResult(t, 4, record2, tx, ok, err)
 
 	// Does not dequeue old or max retried errored
-	if _, _, ok, _ := store.Dequeue(context.Background(), nil); ok {
+	if _, _, ok, _ := store.Dequeue(context.Background(), "test", nil); ok {
 		t.Fatalf("did not expect a third dequeueable record")
 	}
 }
@@ -332,11 +332,11 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	store := testStore(db, options)
 
 	// Dequeue non-errored record only
-	record2, tx, ok, err := store.Dequeue(context.Background(), nil)
+	record2, tx, ok, err := store.Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordRetryResult(t, 4, record2, tx, ok, err)
 
 	// Does not dequeue errored
-	if _, _, ok, _ := store.Dequeue(context.Background(), nil); ok {
+	if _, _, ok, _ := store.Dequeue(context.Background(), "test", nil); ok {
 		t.Fatalf("did not expect a second dequeueable record")
 	}
 }

@@ -264,7 +264,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := regexSearch(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		_, _, err := regexSearchBatch(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -454,7 +454,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := regexSearch(context.Background(), rg, zf, maxFileMatches, true, false, false)
+	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxFileMatches, true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -506,7 +506,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, _, err := regexSearch(context.Background(), rg, zf, 10, true, true, false)
+	fileMatches, _, err := regexSearchBatch(context.Background(), rg, zf, 10, true, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -581,7 +581,7 @@ func TestRegexSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
+			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return

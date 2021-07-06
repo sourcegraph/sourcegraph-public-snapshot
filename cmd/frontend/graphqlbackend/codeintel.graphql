@@ -231,6 +231,33 @@ interface TreeEntryLSIFData {
     may choose to create new pages if an API surface exceeds some threshold size.
     """
     documentationPage(pathID: String!): DocumentationPage!
+
+    """
+    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    See @documentationPage for information about what a pathID refers to.
+
+    This method is optimal for e.g. walking the entire documentation path structure of a repository,
+    whereas documentationPage would require you to fetch the content for all pages you walk (not true
+    of path info.)
+
+    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
+    is one (immediate child pages only.)
+
+    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
+    them) will not qualify as a page in relation to the maxDepth property: index pages will be
+    recursively followed and included until a page with actual content is found, and only then will
+    the depth be considered to increment. Default is false.
+
+    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of the return value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
+    """
+    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
 }
 
 """
@@ -334,6 +361,33 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     may choose to create new pages if an API surface exceeds some threshold size.
     """
     documentationPage(pathID: String!): DocumentationPage!
+
+    """
+    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    See @documentationPage for information about what a pathID refers to.
+
+    This method is optimal for e.g. walking the entire documentation path structure of a repository,
+    whereas documentationPage would require you to fetch the content for all pages you walk (not true
+    of path info.)
+
+    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
+    is one (immediate child pages only.)
+
+    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
+    them) will not qualify as a page in relation to the maxDepth property: index pages will be
+    recursively followed and included until a page with actual content is found, and only then will
+    the depth be considered to increment. Default is false.
+
+    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of the return value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
+    """
+    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
 }
 
 """

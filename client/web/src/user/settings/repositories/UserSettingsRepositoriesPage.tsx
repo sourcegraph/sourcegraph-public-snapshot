@@ -378,9 +378,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 return namespaceStartIndex !== -1 ? name.slice(0, namespaceStartIndex - 1) : name
             })
 
-            return `Synching ${names.join(', ')} code host${names.length > 1 ? 's' : ''}.`
+            return `Syncing ${names.join(', ')} code host${names.length > 1 ? 's' : ''}.`
         }
-        return 'Synching code hosts.'
+        return 'Syncing code hosts.'
     }
 
     return (

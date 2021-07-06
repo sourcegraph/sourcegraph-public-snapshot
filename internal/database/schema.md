@@ -76,6 +76,33 @@ Indexes:
 
 ```
 
+# Table "public.batch_spec_executions"
+```
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('batch_spec_executions_id_seq'::regclass)
+ state           | text                     |           |          | 'queued'::text
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ execution_logs  | json[]                   |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
+ created_at      | timestamp with time zone |           | not null | now()
+ updated_at      | timestamp with time zone |           | not null | now()
+ batch_spec      | text                     |           | not null | 
+ batch_spec_id   | integer                  |           |          | 
+ user_id         | integer                  |           |          | 
+Indexes:
+    "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
+    "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
+
+```
+
 # Table "public.batch_specs"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -98,6 +125,7 @@ Foreign-key constraints:
     "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```
@@ -146,6 +174,7 @@ Foreign-key constraints:
  execution_logs  | json[]                   |           |          | 
  created_at      | timestamp with time zone |           | not null | now()
  updated_at      | timestamp with time zone |           | not null | now()
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_bulk_group_idx" btree (bulk_group)
@@ -196,42 +225,44 @@ Referenced by:
 
 # Table "public.changesets"
 ```
-          Column          |           Type           | Collation | Nullable |                Default                 
---------------------------+--------------------------+-----------+----------+----------------------------------------
- id                       | bigint                   |           | not null | nextval('changesets_id_seq'::regclass)
- batch_change_ids         | jsonb                    |           | not null | '{}'::jsonb
- repo_id                  | integer                  |           | not null | 
- created_at               | timestamp with time zone |           | not null | now()
- updated_at               | timestamp with time zone |           | not null | now()
- metadata                 | jsonb                    |           |          | '{}'::jsonb
- external_id              | text                     |           |          | 
- external_service_type    | text                     |           | not null | 
- external_deleted_at      | timestamp with time zone |           |          | 
- external_branch          | text                     |           |          | 
- external_updated_at      | timestamp with time zone |           |          | 
- external_state           | text                     |           |          | 
- external_review_state    | text                     |           |          | 
- external_check_state     | text                     |           |          | 
- diff_stat_added          | integer                  |           |          | 
- diff_stat_changed        | integer                  |           |          | 
- diff_stat_deleted        | integer                  |           |          | 
- sync_state               | jsonb                    |           | not null | '{}'::jsonb
- current_spec_id          | bigint                   |           |          | 
- previous_spec_id         | bigint                   |           |          | 
- publication_state        | text                     |           |          | 'UNPUBLISHED'::text
- owned_by_batch_change_id | bigint                   |           |          | 
- reconciler_state         | text                     |           |          | 'queued'::text
- failure_message          | text                     |           |          | 
- started_at               | timestamp with time zone |           |          | 
- finished_at              | timestamp with time zone |           |          | 
- process_after            | timestamp with time zone |           |          | 
- num_resets               | integer                  |           | not null | 0
- closing                  | boolean                  |           | not null | false
- num_failures             | integer                  |           | not null | 0
- log_contents             | text                     |           |          | 
- execution_logs           | json[]                   |           |          | 
- syncer_error             | text                     |           |          | 
- external_title           | text                     |           |          | 
+          Column          |                     Type                     | Collation | Nullable |                Default                 
+--------------------------+----------------------------------------------+-----------+----------+----------------------------------------
+ id                       | bigint                                       |           | not null | nextval('changesets_id_seq'::regclass)
+ batch_change_ids         | jsonb                                        |           | not null | '{}'::jsonb
+ repo_id                  | integer                                      |           | not null | 
+ created_at               | timestamp with time zone                     |           | not null | now()
+ updated_at               | timestamp with time zone                     |           | not null | now()
+ metadata                 | jsonb                                        |           |          | '{}'::jsonb
+ external_id              | text                                         |           |          | 
+ external_service_type    | text                                         |           | not null | 
+ external_deleted_at      | timestamp with time zone                     |           |          | 
+ external_branch          | text                                         |           |          | 
+ external_updated_at      | timestamp with time zone                     |           |          | 
+ external_state           | text                                         |           |          | 
+ external_review_state    | text                                         |           |          | 
+ external_check_state     | text                                         |           |          | 
+ diff_stat_added          | integer                                      |           |          | 
+ diff_stat_changed        | integer                                      |           |          | 
+ diff_stat_deleted        | integer                                      |           |          | 
+ sync_state               | jsonb                                        |           | not null | '{}'::jsonb
+ current_spec_id          | bigint                                       |           |          | 
+ previous_spec_id         | bigint                                       |           |          | 
+ publication_state        | text                                         |           |          | 'UNPUBLISHED'::text
+ owned_by_batch_change_id | bigint                                       |           |          | 
+ reconciler_state         | text                                         |           |          | 'queued'::text
+ failure_message          | text                                         |           |          | 
+ started_at               | timestamp with time zone                     |           |          | 
+ finished_at              | timestamp with time zone                     |           |          | 
+ process_after            | timestamp with time zone                     |           |          | 
+ num_resets               | integer                                      |           | not null | 0
+ closing                  | boolean                                      |           | not null | false
+ num_failures             | integer                                      |           | not null | 0
+ log_contents             | text                                         |           |          | 
+ execution_logs           | json[]                                       |           |          | 
+ syncer_error             | text                                         |           |          | 
+ external_title           | text                                         |           |          | 
+ worker_hostname          | text                                         |           | not null | ''::text
+ ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -274,6 +305,7 @@ Referenced by:
  num_failures    | integer                  |           | not null | 0
  log_contents    | text                     |           |          | 
  trigger_event   | integer                  |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -391,6 +423,7 @@ Foreign-key constraints:
  query_string    | text                     |           |          | 
  results         | boolean                  |           |          | 
  num_results     | integer                  |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -534,6 +567,7 @@ Referenced by:
  version           | text                     |           | not null | 
  timestamp         | timestamp with time zone |           | not null | 
  feature_flags     | jsonb                    |           |          | 
+ cohort_id         | date                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -585,6 +619,7 @@ Foreign-key constraints:
  num_failures        | integer                  |           | not null | 0
  log_contents        | text                     |           |          | 
  execution_logs      | json[]                   |           |          | 
+ worker_hostname     | text                     |           | not null | ''::text
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -732,6 +767,7 @@ Indexes:
  num_failures    | integer                  |           | not null | 0
  execution_logs  | json[]                   |           |          | 
  record_time     | timestamp with time zone |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_state_btree" btree (state)
@@ -755,6 +791,7 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
  num_failures    | integer                  |           | not null | 0
  execution_logs  | json[]                   |           |          | 
  upload_id       | integer                  |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -862,6 +899,7 @@ Stores the number of code intel events for repositories. Used for auto-index sch
  execution_logs         | json[]                   |           |          | 
  local_steps            | text[]                   |           | not null | 
  commit_last_checked_at | timestamp with time zone |           |          | 
+ worker_hostname        | text                     |           | not null | ''::text
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -1009,6 +1047,7 @@ Associates an upload with the set of packages they require within a given packag
  associated_index_id    | bigint                   |           |          | 
  committed_at           | timestamp with time zone |           |          | 
  commit_last_checked_at | timestamp with time zone |           |          | 
+ worker_hostname        | text                     |           | not null | ''::text
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1395,14 +1434,17 @@ Referenced by:
  private               | boolean                  |           | not null | false
  cloned                | boolean                  |           | not null | false
  stars                 | integer                  |           |          | 
+ blocked               | jsonb                    |           |          | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
+    "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_cloned" btree (cloned)
     "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
+    "repo_is_not_blocked_idx" btree ((blocked IS NULL))
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
@@ -1422,6 +1464,17 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+Policies:
+    POLICY "sg_repo_access_policy"
+      TO sg_service
+      USING ((((NOT (current_setting('rls.use_permissions_user_mapping'::text))::boolean) AND ((private IS FALSE) OR (EXISTS ( SELECT
+   FROM (external_services es
+     JOIN external_service_repos esr ON (((esr.external_service_id = es.id) AND (esr.repo_id = repo.id) AND (es.unrestricted = true) AND (es.deleted_at IS NULL))))
+ LIMIT 1)))) OR (EXISTS ( SELECT 1
+   FROM external_service_repos
+  WHERE ((external_service_repos.repo_id = repo.id) AND (external_service_repos.user_id = (current_setting('rls.user_id'::text))::integer)))) OR ( SELECT (user_permissions.object_ids_ints @> intset(repo.id))
+   FROM user_permissions
+  WHERE ((user_permissions.user_id = (current_setting('rls.user_id'::text))::integer) AND (user_permissions.permission = current_setting('rls.permission'::text)) AND (user_permissions.object_type = 'repos'::text)))))
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
 
@@ -1592,6 +1645,7 @@ Contains security-relevant events with a long time horizon for storage.
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
     "settings_org_id_idx" btree (org_id)
+    "settings_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -1786,6 +1840,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
@@ -2125,41 +2180,44 @@ Triggers:
 
 # View "public.reconciler_changesets"
 ```
-          Column          |           Type           | Collation | Nullable | Default 
---------------------------+--------------------------+-----------+----------+---------
- id                       | bigint                   |           |          | 
- batch_change_ids         | jsonb                    |           |          | 
- repo_id                  | integer                  |           |          | 
- created_at               | timestamp with time zone |           |          | 
- updated_at               | timestamp with time zone |           |          | 
- metadata                 | jsonb                    |           |          | 
- external_id              | text                     |           |          | 
- external_service_type    | text                     |           |          | 
- external_deleted_at      | timestamp with time zone |           |          | 
- external_branch          | text                     |           |          | 
- external_updated_at      | timestamp with time zone |           |          | 
- external_state           | text                     |           |          | 
- external_review_state    | text                     |           |          | 
- external_check_state     | text                     |           |          | 
- diff_stat_added          | integer                  |           |          | 
- diff_stat_changed        | integer                  |           |          | 
- diff_stat_deleted        | integer                  |           |          | 
- sync_state               | jsonb                    |           |          | 
- current_spec_id          | bigint                   |           |          | 
- previous_spec_id         | bigint                   |           |          | 
- publication_state        | text                     |           |          | 
- owned_by_batch_change_id | bigint                   |           |          | 
- reconciler_state         | text                     |           |          | 
- failure_message          | text                     |           |          | 
- started_at               | timestamp with time zone |           |          | 
- finished_at              | timestamp with time zone |           |          | 
- process_after            | timestamp with time zone |           |          | 
- num_resets               | integer                  |           |          | 
- closing                  | boolean                  |           |          | 
- num_failures             | integer                  |           |          | 
- log_contents             | text                     |           |          | 
- execution_logs           | json[]                   |           |          | 
- syncer_error             | text                     |           |          | 
+          Column          |                     Type                     | Collation | Nullable | Default 
+--------------------------+----------------------------------------------+-----------+----------+---------
+ id                       | bigint                                       |           |          | 
+ batch_change_ids         | jsonb                                        |           |          | 
+ repo_id                  | integer                                      |           |          | 
+ created_at               | timestamp with time zone                     |           |          | 
+ updated_at               | timestamp with time zone                     |           |          | 
+ metadata                 | jsonb                                        |           |          | 
+ external_id              | text                                         |           |          | 
+ external_service_type    | text                                         |           |          | 
+ external_deleted_at      | timestamp with time zone                     |           |          | 
+ external_branch          | text                                         |           |          | 
+ external_updated_at      | timestamp with time zone                     |           |          | 
+ external_state           | text                                         |           |          | 
+ external_review_state    | text                                         |           |          | 
+ external_check_state     | text                                         |           |          | 
+ diff_stat_added          | integer                                      |           |          | 
+ diff_stat_changed        | integer                                      |           |          | 
+ diff_stat_deleted        | integer                                      |           |          | 
+ sync_state               | jsonb                                        |           |          | 
+ current_spec_id          | bigint                                       |           |          | 
+ previous_spec_id         | bigint                                       |           |          | 
+ publication_state        | text                                         |           |          | 
+ owned_by_batch_change_id | bigint                                       |           |          | 
+ reconciler_state         | text                                         |           |          | 
+ failure_message          | text                                         |           |          | 
+ started_at               | timestamp with time zone                     |           |          | 
+ finished_at              | timestamp with time zone                     |           |          | 
+ process_after            | timestamp with time zone                     |           |          | 
+ num_resets               | integer                                      |           |          | 
+ closing                  | boolean                                      |           |          | 
+ num_failures             | integer                                      |           |          | 
+ log_contents             | text                                         |           |          | 
+ execution_logs           | json[]                                       |           |          | 
+ syncer_error             | text                                         |           |          | 
+ external_title           | text                                         |           |          | 
+ worker_hostname          | text                                         |           |          | 
+ ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
 
 ```
 
@@ -2198,7 +2256,10 @@ Triggers:
     c.num_failures,
     c.log_contents,
     c.execution_logs,
-    c.syncer_error
+    c.syncer_error,
+    c.external_title,
+    c.worker_hostname,
+    c.ui_publication_state
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -2258,6 +2319,12 @@ Triggers:
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
   WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));
 ```
+
+# Type batch_changes_changeset_ui_publication_state
+
+- UNPUBLISHED
+- DRAFT
+- PUBLISHED
 
 # Type cm_email_priority
 

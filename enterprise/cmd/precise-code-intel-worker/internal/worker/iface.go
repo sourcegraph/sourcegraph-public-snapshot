@@ -55,6 +55,7 @@ type LSIFStore interface {
 	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
 	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
 	WriteDocumentationPages(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPageData) error
+	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPathInfoData) error
 }
 
 type LSIFStoreShim struct {

@@ -26,7 +26,6 @@ import { FlatExtensionHostAPI } from '../contract'
 import { ContributableViewContainer, TextDocumentPositionParameters } from '../protocol'
 import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
-import { callViewProvidersInParallel } from './api/callViewProvidersInParallel'
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
 import { computeContext, Context, ContributionScope } from './api/context/context'
@@ -38,6 +37,7 @@ import {
 } from './api/contribution'
 import { validateFileDecoration } from './api/decorations'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
+import { getInsightsViews } from './api/getInsightsViews'
 import { ExtensionDocument } from './api/textDocument'
 import { fromLocation, toPosition } from './api/types'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
@@ -425,8 +425,8 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
-        getInsightsViews: context =>
-            proxySubscribable(callViewProvidersInParallel(context, state.insightsPageViewProviders)),
+        getInsightsViews: (context, insightIds) =>
+            getInsightsViews(context, state.insightsPageViewProviders, insightIds),
         getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
         getDirectoryViews: context =>
