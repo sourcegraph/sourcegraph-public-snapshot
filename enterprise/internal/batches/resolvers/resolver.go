@@ -1358,6 +1358,7 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
 	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
