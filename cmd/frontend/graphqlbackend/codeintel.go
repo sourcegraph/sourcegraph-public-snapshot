@@ -299,7 +299,7 @@ type SymbolUsageResolver interface {
 	References(context.Context) (LocationConnectionResolver, error)
 	ReferenceGroups(context.Context) ([]ReferenceGroupResolver, error)
 	Callers(context.Context) ([]SymbolCallerEdgeResolver, error)
-	Patterns(context.Context) ([]SymbolUsagePatternResolver, error)
+	UsagePatterns(context.Context) ([]SymbolUsagePatternResolver, error)
 }
 
 type ReferenceGroupResolver interface {

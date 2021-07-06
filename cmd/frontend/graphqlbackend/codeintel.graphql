@@ -867,7 +867,7 @@ type SymbolUsage {
 
     callers: [SymbolCallerEdge!]!
 
-    patterns: [SymbolUsagePattern!]!
+    usagePatterns: [SymbolUsagePattern!]!
 }
 
 type SymbolCallerEdge {

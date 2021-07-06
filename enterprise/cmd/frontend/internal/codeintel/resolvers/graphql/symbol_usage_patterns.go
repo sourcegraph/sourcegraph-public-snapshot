@@ -7,7 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
-func (r *symbolUsageResolver) Patterns(ctx context.Context) ([]gql.SymbolUsagePatternResolver, error) {
+var sampleUsagePatternDescriptions = []string{
+	"Most popular",
+	"`nil` first arg",
+	"in `for` loop",
+}
+
+func (r *symbolUsageResolver) UsagePatterns(ctx context.Context) ([]gql.SymbolUsagePatternResolver, error) {
 	locations, _, err := r.symbol.references(ctx)
 	if err != nil {
 		return nil, err
@@ -22,6 +28,7 @@ func (r *symbolUsageResolver) Patterns(ctx context.Context) ([]gql.SymbolUsagePa
 	patterns := make([]symbolUsagePattern, numPatterns)
 	for i, loc := range locations {
 		p := &patterns[i%numPatterns]
+		p.description = sampleUsagePatternDescriptions[i%numPatterns]
 		p.exampleLocations = append(p.exampleLocations, symbolUsagePatternExampleLocation{
 			description: "foo",
 			location:    loc,

@@ -21,6 +21,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { SymbolCallerEdgeGQLFragment, SymbolCallersSection } from './symbol/SymbolCallers'
 import { SymbolReferenceGroupsSection, SymbolReferenceGroupGQLFragment } from './symbol/SymbolReferenceGroupsSection'
+import { SymbolUsagePatternGQLFragment, SymbolUsagePatternsSection } from './symbol/SymbolUsagePatternsSection'
 
 const UsagePageFieldsGQLFragment = gql`
     fragment UsagePageFields on ExpSymbol {
@@ -34,10 +35,14 @@ const UsagePageFieldsGQLFragment = gql`
             callers {
                 ...SymbolCallerEdgeFields
             }
+            usagePatterns {
+                ...SymbolUsagePatternFields
+            }
         }
     }
     ${SymbolReferenceGroupGQLFragment}
     ${SymbolCallerEdgeGQLFragment}
+    ${SymbolUsagePatternGQLFragment}
 `
 const queryUsagePageUncached = (vars: UsagePageVariables): Observable<UsagePageFields | null> =>
     requestGraphQL<UsagePageResult, UsagePageVariables>(
@@ -136,12 +141,17 @@ export const UsagePage: React.FunctionComponent<Props> = ({
         <LoadingSpinner className="m-3" />
     ) : (
         <>
-            {symbol.usage.callers.length > 0 && (
+            {symbol.usage.usagePatterns.length > 0 && (
+                <section>
+                    <SymbolUsagePatternsSection usagePatterns={symbol.usage.usagePatterns} {...props} />
+                </section>
+            )}
+            {false && symbol.usage.callers.length > 0 && (
                 <section>
                     <SymbolCallersSection symbolCallers={symbol.usage.callers} {...props} />
                 </section>
             )}
-            {symbol.usage.referenceGroups.length > 0 && (
+            {false && symbol.usage.referenceGroups.length > 0 && (
                 <section>
                     <SymbolReferenceGroupsSection referenceGroups={symbol.usage.referenceGroups} {...props} />
                 </section>
