@@ -25,9 +25,9 @@ func (r *symbolUsageResolver) UsagePatterns(ctx context.Context) ([]gql.SymbolUs
 
 	// TODO(sqs): break them up into arbitrary patterns
 	numPatterns := 1 + len(locations)/7
-	const maxPatterns = 3
+	const maxPatterns = 1 // TODO(sqs)
 	if numPatterns > maxPatterns {
-		numPatterns = 3
+		numPatterns = maxPatterns
 	}
 	patterns := make([]symbolUsagePattern, numPatterns)
 	for i, loc := range locations {

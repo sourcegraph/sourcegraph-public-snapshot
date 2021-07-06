@@ -89,7 +89,7 @@ func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLo
 		}
 
 		symbolDefinitionRepo := exampleLocations[i].symbol.AdjustedLocation.Dump.RepositoryID
-		if isInExternalRepo := info.location.Dump.RepositoryID == symbolDefinitionRepo; isInExternalRepo {
+		if isInExternalRepo := info.location.Dump.RepositoryID != symbolDefinitionRepo; isInExternalRepo {
 			parts = append(parts, "in a separate project")
 		} else if isInTestCode := strings.Contains(info.location.Path, "test"); isInTestCode {
 			parts = append(parts, "in test code")
@@ -99,7 +99,7 @@ func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLo
 	}
 
 	// Skip an example if the previous one was from the same author.
-	x := exampleLocations[0:]
+	x := exampleLocations[:0]
 	for i, exampleLocation := range exampleLocations {
 		if i >= 1 && infos[i-1].author.Email == infos[i].author.Email {
 			continue
