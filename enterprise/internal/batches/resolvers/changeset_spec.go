@@ -151,8 +151,11 @@ func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.Reposito
 func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateRef(r.desc.HeadRef) }
 func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
-func (r *changesetDescriptionResolver) Published() batches.PublishedValue {
-	return r.desc.Published
+func (r *changesetDescriptionResolver) Published() *batches.PublishedValue {
+	if published := r.desc.Published; !published.Nil() {
+		return &published
+	}
+	return nil
 }
 
 func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {

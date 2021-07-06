@@ -30,8 +30,7 @@ const (
 
 	// Temporary experimental fields:
 	FieldIndex     = "index"
-	FieldCount     = "count"  // Searches that specify `count:` will fetch at least that number of results, or the full result set
-	FieldStable    = "stable" // Forces search to return a stable result ordering (currently limited to file content matches).
+	FieldCount     = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
 	FieldTimeout   = "timeout"
 	FieldCombyRule = "rule"
 	FieldSelect    = "select"
@@ -68,7 +67,6 @@ var allFields = map[string]struct{}{
 	"msg":                   empty,
 	FieldIndex:              empty,
 	FieldCount:              empty,
-	FieldStable:             empty,
 	FieldTimeout:            empty,
 	FieldCombyRule:          empty,
 	FieldRev:                empty,

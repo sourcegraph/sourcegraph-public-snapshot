@@ -5,6 +5,7 @@ import { RouteComponentProps, Switch, Route } from 'react-router'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -54,7 +55,8 @@ interface Props
         ThemeProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        PlatformContextProps {
+        PlatformContextProps,
+        SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }

@@ -145,7 +145,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     },
     ...props
 }) => {
-    const { data, error, loading } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
+    const { data, error, loading, previousData } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
         USER_AREA_USER_PROFILE,
         {
             variables: { username, siteAdmin: Boolean(props.authenticatedUser?.siteAdmin) },
@@ -165,15 +165,16 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
         )
     )
 
-    if (loading) {
+    // Accept stale data if recently updated, avoids unmounting components due to a brief lack of data
+    const user = data?.user ?? previousData?.user
+
+    if (loading && !user) {
         return null
     }
 
     if (error) {
         throw new Error(error.message)
     }
-
-    const user = data?.user
 
     if (!user) {
         throw new Error(`User not found: ${JSON.stringify(username)}`)

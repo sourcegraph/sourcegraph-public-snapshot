@@ -47,10 +47,6 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 	t.Helper()
 
 	published := batches.PublishedValue{Val: opts.Published}
-	if opts.Published == nil {
-		// Set false as the default.
-		published.Val = false
-	}
 	if !published.Valid() {
 		t.Fatalf("invalid value for published passed, got %v (%T)", opts.Published, opts.Published)
 	}

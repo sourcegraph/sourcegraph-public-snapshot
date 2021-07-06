@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema'
 import {
     ConfiguredSubjectOrError,
     SettingsCascadeOrError,
@@ -11,13 +12,19 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { Settings } from '../../../../../schema/settings.schema'
 import {
     InsightDashboard,
-    InsightBuiltInDashboard,
-    InsightCustomDashboard,
-    InsightDashboardOwner,
+    INSIGHTS_DASHBOARDS_SETTINGS_KEY,
     InsightsDashboardType,
     isInsightSettingKey,
-    ALL_INSIGHTS_DASHBOARD,
 } from '../../../../core/types'
+import { InsightDashboardOwner } from '../../../../core/types/dashboard/core'
+
+/**
+ * Special virtual dashboard - "All Insights"
+ */
+export const ALL_INSIGHTS_DASHBOARD: InsightDashboard = {
+    id: 'all',
+    type: InsightsDashboardType.All,
+}
 
 /**
  * React hook that returns all valid and available insights dashboards.
@@ -36,88 +43,89 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
         return []
     }
 
-    const builtInDashboards = getBuiltInDashboards(subjects)
-    const customDashboards = getCustomDashboards(subjects)
-
-    return [...builtInDashboards, ...customDashboards]
-}
-
-/**
- * Returns built in types of insights dashboards (all, personal, org level dashboards).
- */
-function getBuiltInDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): InsightBuiltInDashboard[] {
-    const subjectDashboards = subjects.reduce<InsightBuiltInDashboard[]>((dashboards, configuredSubject) => {
+    const subjectDashboards = subjects.flatMap(configuredSubject => {
         const { settings, subject } = configuredSubject
 
-        if (isErrorLike(settings) || settings === null) {
-            return dashboards
+        if (isErrorLike(settings) || !settings || !isSubjectSupported(subject)) {
+            return []
         }
 
-        const dashboardOwner = getDashboardOwner(subject)
-        const subjectInsightIds = Object.keys(settings).filter(isInsightSettingKey)
-
-        const subjectDashboard: InsightBuiltInDashboard = {
-            type: InsightsDashboardType.BuiltIn,
-            owner: dashboardOwner,
-            insightIds: subjectInsightIds,
-        }
-
-        return [...dashboards, subjectDashboard]
-    }, [])
+        return getSubjectDashboards(subject, settings)
+    })
 
     return [ALL_INSIGHTS_DASHBOARD, ...subjectDashboards]
 }
 
 /**
- * Returns list of custom insights dashboards generated from settings cascade subjects.
+ * Currently we support only two types of subject that can have insights dashboard.
  */
-function getCustomDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): InsightCustomDashboard[] {
-    return subjects.reduce<InsightCustomDashboard[]>((dashboards, configuredSubject) => {
-        const { settings, subject } = configuredSubject
+type SupportedSubject = IUser | IOrg
 
-        if (isErrorLike(settings) || settings === null) {
-            return dashboards
-        }
+const SUPPORTED_TYPES_OF_SUBJECT = new Set<SettingsSubject['__typename']>(['User', 'Org'])
+const isSubjectSupported = (subject: SettingsSubject): subject is SupportedSubject =>
+    SUPPORTED_TYPES_OF_SUBJECT.has(subject.__typename)
 
-        const subjectDashboards = Object.keys(settings['insights.dashboards'] ?? {})
-            .map<InsightCustomDashboard | undefined>(dashboardKey => {
-                // Select dashboard configuration from the subject settings
-                const dashboardSettings = settings['insights.dashboards']?.[dashboardKey]
+/**
+ * Returns all subject dashboards and one special (built-in) dashboard that includes
+ * all insights from subject settings.
+ */
+function getSubjectDashboards(subject: SupportedSubject, settings: Settings): InsightDashboard[] {
+    const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
 
-                if (!dashboardSettings) {
-                    return undefined
-                }
+    const subjectBuiltInDashboard: InsightDashboard = {
+        owner,
+        id: owner.id,
+        builtIn: true,
+        title: owner.name,
+        type: dashboardType,
+        insightIds: Object.keys(settings).filter(isInsightSettingKey),
+    }
 
-                // Extend settings dashboard configuration with owner info
-                return {
-                    type: InsightsDashboardType.Custom,
-                    owner: getDashboardOwner(subject),
-                    ...dashboardSettings,
-                }
-            })
-            .filter(isDefined)
+    // Find all subject insights dashboards
+    const subjectDashboards = Object.keys(settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {})
+        .map<InsightDashboard | undefined>(dashboardKey => {
+            // Select dashboard configuration from the subject settings
+            const dashboardSettings = settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY]?.[dashboardKey]
 
-        return [...dashboards, ...subjectDashboards]
-    }, [])
+            if (!dashboardSettings) {
+                return undefined
+            }
+
+            return {
+                owner,
+                type: dashboardType,
+                settingsKey: dashboardKey,
+                ...dashboardSettings,
+            }
+        })
+        .filter(isDefined)
+
+    return [subjectBuiltInDashboard, ...subjectDashboards]
 }
 
-function getDashboardOwner(subject: SettingsSubject): InsightDashboardOwner {
-    if (subject.__typename === 'User') {
-        return {
-            id: subject.id,
-            name: subject.displayName ?? subject.username,
-        }
-    }
+interface DashboardOwnerInfo extends InsightDashboardOwner {
+    /** Currently we support only two types of subject that can have insights dashboard. */
+    dashboardType: InsightsDashboardType.Personal | InsightsDashboardType.Organization
+}
+/**
+ * Return dashboard owner info by subject configuration
+ *
+ * @param subject - subject settings (User, Organization, Site, Client)
+ */
+function getDashboardOwnerInfo(subject: SupportedSubject): DashboardOwnerInfo {
+    switch (subject.__typename) {
+        case 'Org':
+            return {
+                id: subject.id,
+                name: subject.displayName ?? subject.name,
+                dashboardType: InsightsDashboardType.Organization,
+            }
 
-    if (subject.__typename === 'Org') {
-        return {
-            id: subject.id,
-            name: subject.displayName ?? subject.name,
-        }
-    }
-
-    return {
-        id: null,
-        name: 'UNKNOWN SUBJECT',
+        case 'User':
+            return {
+                id: subject.id,
+                name: subject.displayName ?? subject.username,
+                dashboardType: InsightsDashboardType.Personal,
+            }
     }
 }

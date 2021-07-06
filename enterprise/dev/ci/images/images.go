@@ -60,7 +60,7 @@ var SourcegraphDockerImages = []string{
 	"codeintel-db",
 	"codeinsights-db",
 	"minio",
-	"postgres-12.6",
+	"postgres-12.6-alpine",
 	"postgres_exporter",
 }
 

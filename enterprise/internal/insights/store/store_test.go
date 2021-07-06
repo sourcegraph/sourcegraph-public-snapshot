@@ -54,7 +54,7 @@ SELECT time,
     2,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
-	FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '6 months', CURRENT_TIMESTAMP::date, '2 weeks') AS time;
+	FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '30 weeks', CURRENT_TIMESTAMP::date, '2 weeks') AS time;
 `)
 	if err != nil {
 		t.Fatal(err)

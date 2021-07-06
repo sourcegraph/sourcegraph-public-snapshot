@@ -71,6 +71,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		ranges:                     op("Ranges"),
 		references:                 op("References"),
 		documentationPage:          op("DocumentationPage"),
+		documentationPathInfo:      op("DocumentationPathInfo"),
 		writeDefinitions:           op("WriteDefinitions"),
 		writeDocuments:             op("WriteDocuments"),
 		writeMeta:                  op("WriteMeta"),

@@ -125,7 +125,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 	}
 
 	// We have a special flow enabled when a user added code host has been created
-	// without 'repo` scope and we then enable private code on the instance. In this
+	// without `repo` scope and we then enable private code on the instance. In this
 	// case we allow the user to request the additional scope. This means that at
 	// this point we may already have a code host and we just need to update the
 	// token with the new one.

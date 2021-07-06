@@ -50,6 +50,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.current_spec_id"),
 	sqlf.Sprintf("changesets.previous_spec_id"),
 	sqlf.Sprintf("changesets.publication_state"),
+	sqlf.Sprintf("changesets.ui_publication_state"),
 	sqlf.Sprintf("changesets.reconciler_state"),
 	sqlf.Sprintf("changesets.failure_message"),
 	sqlf.Sprintf("changesets.started_at"),
@@ -85,6 +86,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("current_spec_id"),
 	sqlf.Sprintf("previous_spec_id"),
 	sqlf.Sprintf("publication_state"),
+	sqlf.Sprintf("ui_publication_state"),
 	sqlf.Sprintf("reconciler_state"),
 	sqlf.Sprintf("failure_message"),
 	sqlf.Sprintf("started_at"),
@@ -124,6 +126,11 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 	// Not being able to find a title is fine, we just have a NULL in the database then.
 	title, _ := c.Title()
 
+	var uiPublicationState *string
+	if state := c.UiPublicationState; state != nil {
+		uiPublicationState = nullStringColumn(string(*state))
+	}
+
 	vars := []interface{}{
 		sqlf.Join(changesetInsertColumns, ", "),
 		c.RepoID,
@@ -147,6 +154,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		nullInt64Column(c.CurrentSpecID),
 		nullInt64Column(c.PreviousSpecID),
 		c.PublicationState,
+		uiPublicationState,
 		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
 		nullTimeColumn(c.StartedAt),
@@ -197,7 +205,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) error 
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -607,7 +615,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) error
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -822,6 +830,7 @@ func scanChangeset(t *btypes.Changeset, s scanner) error {
 		&dbutil.NullInt64{N: &t.CurrentSpecID},
 		&dbutil.NullInt64{N: &t.PreviousSpecID},
 		&t.PublicationState,
+		&t.UiPublicationState,
 		&reconcilerState,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &t.StartedAt},

@@ -423,10 +423,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal type:file`,
 			},
 			{
-				name:  "non-master branch, nonzero result stable",
-				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
-			},
-			{
 				name:  "indexed multiline search, nonzero result",
 				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp type:file`,
 			},
@@ -556,17 +552,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("stable search options", func(t *testing.T) {
-		results, err := client.SearchFiles(`router stable:yes count:5001`)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if results.Alert == nil {
-			t.Fatal("Want search alert but got nil")
-		}
-	})
-
 	t.Run("structural search", func(t *testing.T) {
 		tests := []struct {
 			name       string
@@ -655,10 +640,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `And operator, basic`,
 				query: `repo:^github\.com/sgtest/go-diff$ func and main type:file`,
-			},
-			{
-				name:  `And operator, basic with stable`,
-				query: `repo:^github\.com/sgtest/go-diff$ func and main stable:yes type:file`,
 			},
 			{
 				name:  `Or operator, single and double quoted`,
@@ -1108,6 +1089,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `or statement merges file`,
 				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
 				counts: counts{File: 1},
+			},
+			{
+				name:   `select file.directory`,
+				query:  `repo:go-diff HunkNoChunksize or diffFile *os.File select:file.directory`,
+				counts: counts{File: 2},
 			},
 			{
 				name:   `select content`,

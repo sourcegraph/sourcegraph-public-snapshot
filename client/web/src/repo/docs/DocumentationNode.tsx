@@ -1,6 +1,4 @@
 import * as H from 'history'
-import CancelIcon from 'mdi-react/CancelIcon'
-import LockIcon from 'mdi-react/LockIcon'
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -13,44 +11,26 @@ import { useScrollToLocationHash } from '../../components/useScrollToLocationHas
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-// Mirrors the same type on the backend:
-//
-// https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal
-export interface GQLDocumentationNode {
-    pathID: string
-    documentation: Documentation
-    label: MarkupContent
-    detail: MarkupContent
-    children: DocumentationNodeChild[]
-}
-
-export interface MarkupContent {
-    kind: MarkupKind
-    value: string
-}
-export type MarkupKind = 'plaintext' | 'markdown'
-
-export interface Documentation {
-    slug: string
-    newPage: boolean
-    tags: DocumentationTag[]
-}
-
-export type DocumentationTag = 'exported' | 'unexported' | 'deprecated'
-
-export interface DocumentationNodeChild {
-    node?: GQLDocumentationNode
-    pathID?: string
-}
+import { DocumentationIcons } from './DocumentationIcons'
+import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters {
     repo: RepositoryFields
 
     history: H.History
     location: H.Location
+
+    /** The documentation node to render */
     node: GQLDocumentationNode
+
+    /** How far deep we are in the tree of documentation nodes */
     depth: number
+
+    /** The pathID of the page containing this documentation node */
     pagePathID: string
+
+    /** A list of documentation tags, a section will not be rendered if it matches one of these. */
+    excludingTags: Tag[]
 }
 
 export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrumb, node, depth, ...props }) => {
@@ -61,7 +41,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
     }
     const hashIndex = node.pathID.indexOf('#')
     const hash = hashIndex !== -1 ? node.pathID.slice(hashIndex + '#'.length) : ''
-    const path = node.pathID.slice('/'.length, hashIndex)
+    let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
+    path = path === '/' ? '' : path
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
 
     useBreadcrumb(
@@ -71,17 +52,19 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             [depth, node.label.value, thisPage]
         )
     )
-
-    const tagIcons = {
-        exported: null,
-        unexported: <LockIcon className="icon-inline" data-tooltip="Unexported" />,
-        deprecated: <CancelIcon className="icon-inline" data-tooltip="Deprecated" />,
+    if (node.detail.value === '') {
+        const children = node.children.filter(child =>
+            !child.node ? false : !isExcluded(child.node, props.excludingTags)
+        )
+        if (children.length === 0) {
+            return null
+        }
     }
+
     return (
         <div className="documentation-node">
             <Link className={`h${depth + 1 < 4 ? depth + 1 : 4}`} id={hash} to={thisPage}>
-                {node.label.value}
-                {node.documentation.tags?.map(tag => tagIcons[tag])}
+                <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
             </Link>
             {node.detail.value !== '' && (
                 <div className="px-2 pt-2">
@@ -90,12 +73,13 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             )}
 
             {node.children?.map(
-                (child, index) =>
-                    child.node && (
+                child =>
+                    child.node &&
+                    !isExcluded(child.node, props.excludingTags) && (
                         <DocumentationNode
-                            key={`${depth}-${index}`}
+                            key={`${depth}-${child.node!.pathID}`}
                             {...props}
-                            node={child.node!}
+                            node={child.node}
                             depth={depth + 1}
                             useBreadcrumb={useBreadcrumb}
                         />

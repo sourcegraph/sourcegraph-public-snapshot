@@ -12,3 +12,4 @@
 - [How to troubleshoot a repository that is not being updated](repo-not-updated.md)
 - [How to configure submodules](submodule-configuration.md)
 - [How to remove users with GraphQL API](remove-user-api.md)
+- [How to setup HTTPS connection with Ingress controller on your Kubernetes instance](setup-https.md)

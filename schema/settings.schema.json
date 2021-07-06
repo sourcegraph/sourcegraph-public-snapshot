@@ -39,7 +39,7 @@
         "apiDocs": {
           "description": "Enables API documentation.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -133,7 +133,7 @@
           }
         },
         "enableSmartQuery": {
-          "description": "Enables contextual syntax highlighting and hovers for search queries in the web app",
+          "description": "REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -174,6 +174,14 @@
         },
         "acceptSearchSuggestionOnEnter": {
           "description": "Whether the search bar should select completion suggestions when pressing enter",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "batchChangesExecution": {
+          "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -478,7 +486,7 @@
     },
     "InsightDashboard": {
       "type": "object",
-      "required": ["id", "title", "insightIds"],
+      "required": ["id", "title"],
       "properties": {
         "title": {
           "description": "Title of the dashboard.",

@@ -8,7 +8,8 @@ import { useScrollToLocationHash } from '../../components/useScrollToLocationHas
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import { GQLDocumentationNode } from './DocumentationNode'
+import { DocumentationIcons } from './DocumentationIcons'
+import { GQLDocumentationNode, isExcluded, Tag } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields
@@ -25,11 +26,11 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     /** The pathID of the page containing this documentation node */
     pagePathID: string
 
-    /** If true, render subpage index only */
-    subpagesOnly: boolean
-
     /** If true, render content index only */
     contentOnly: boolean
+
+    /** A list of documentation tags, a section will not be rendered if it matches one of these. */
+    excludingTags: Tag[]
 }
 
 export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, depth, ...props }) => {
@@ -40,41 +41,35 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
     }
     const hashIndex = node.pathID.indexOf('#')
     const hash = hashIndex !== -1 ? node.pathID.slice(hashIndex + '#'.length) : ''
-    const path = node.pathID.slice('/'.length, hashIndex)
+    let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
+    path = path === '/' ? '' : path
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
-
-    if (props.subpagesOnly) {
-        return (
-            <div className="documentation-index-node">
-                <ul className="pl-3">
-                    {node.children?.map((child, index) =>
-                        child.pathID ? (
-                            <div key={`${depth}-${index}`} className="text-nowrap">
-                                <Link to={toDocumentationURL({ ...repoRevision, pathID: child.pathID })}>
-                                    {child.pathID.slice('/'.length) + '/'}
-                                </Link>
-                            </div>
-                        ) : null
-                    )}
-                </ul>
-            </div>
-        )
+    const excluded = isExcluded(node, props.excludingTags)
+    if (excluded) {
+        return null
     }
     if (props.contentOnly) {
+        if (node.detail.value === '') {
+            const children = node.children.filter(child =>
+                !child.node ? false : !isExcluded(child.node, props.excludingTags)
+            )
+            if (children.length === 0) {
+                return null
+            }
+        }
         return (
             <div className="documentation-index-node">
                 <Link id={'index-' + hash} to={thisPage} className="text-nowrap">
-                    {node.label.value}
+                    <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
                 </Link>
                 <ul className="pl-3">
-                    {node.children?.map((child, index) =>
+                    {node.children?.map(child =>
                         child.pathID ? null : (
                             <DocumentationIndexNode
-                                key={`${depth}-${index}`}
+                                key={`${depth}-${child.node!.pathID}`}
                                 {...props}
                                 node={child.node!}
                                 depth={depth + 1}
-                                subpagesOnly={false}
                                 contentOnly={true}
                             />
                         )
@@ -86,23 +81,11 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
 
     return (
         <div className="documentation-index-node">
-            <Link id="index-subpages" to={thisPage} className="text-nowrap">
-                Subpages
-            </Link>
-            <DocumentationIndexNode
-                key={`${depth}-subpages`}
-                {...props}
-                node={node}
-                depth={depth + 1}
-                subpagesOnly={true}
-                contentOnly={false}
-            />
             <DocumentationIndexNode
                 key={`${depth}-content`}
                 {...props}
                 node={node}
                 depth={depth + 1}
-                subpagesOnly={false}
                 contentOnly={true}
             />
         </div>

@@ -82,7 +82,7 @@ func (c *Zoekt) Enabled() bool {
 }
 
 func (c *Zoekt) list(ctx context.Context) (map[string]*zoekt.Repository, error) {
-	resp, err := c.Client.List(ctx, &zoektquery.Const{Value: true})
+	resp, err := c.Client.List(ctx, &zoektquery.Const{Value: true}, nil)
 	if err != nil {
 		return nil, err
 	}

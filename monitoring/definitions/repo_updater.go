@@ -37,7 +37,7 @@ func RepoUpdater() *monitoring.Container {
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Interpretation: `
-								A high value here indicates issues synchronizing repository permissions.
+								A high value here indicates issues synchronizing repo metadata.
 								If the value is persistently high, make sure all external services have valid tokens.
 							`,
 						},
@@ -427,6 +427,11 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
+				Title:  shared.TitleDatabaseConnectionsMonitoring,
+				Hidden: true,
+				Rows:   shared.DatabaseConnectionsMonitoring("repo-updater"),
+			},
+			{
 				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
@@ -434,7 +439,7 @@ func RepoUpdater() *monitoring.Container {
 						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).
 							WithWarning(nil).
-							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil)).
+							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute)).
 							Observable(),
 					},
 					{

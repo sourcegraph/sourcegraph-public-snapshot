@@ -91,7 +91,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, fetchSuggestions, {
             patternType,
             globbing,
-            enableSmartQuery: true,
             interpretComments: true,
         })
         return () => subscription.unsubscribe()
