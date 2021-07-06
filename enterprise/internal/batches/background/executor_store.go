@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -70,18 +71,13 @@ RETURNING id
 func (s *executorStore) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
 	batchesStore := store.New(s.Store.Handle().DB(), nil)
 
-	exec, err := batchesStore.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: int64(id)})
+	batchSpecRandID, err := loadAndExtractBatchSpecRandID(ctx, batchesStore, int64(id))
 	if err != nil {
-		return false, err
+		// If we couldn't extract the batch spec rand id, we mark the job as failed
+		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract batch spec ID: %s", err))
 	}
 
-	batchSpecRandID, err := extractBatchSpecRandID(exec.ExecutionLogs[0].Out)
-	if err != nil {
-		return false, err
-	}
-
-	h := basestore.NewWithHandle(s.Store.Handle())
-	_, ok, err := basestore.ScanFirstInt(h.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id)))
+	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id)))
 
 	return ok, err
 }
@@ -98,26 +94,49 @@ func (s *executorStore) Dequeue(ctx context.Context, workerHostname string, cond
 	return r, &executorStore{Store: wrapped}, b, err
 }
 
+func loadAndExtractBatchSpecRandID(ctx context.Context, s *store.Store, id int64) (string, error) {
+	exec, err := s.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: int64(id)})
+	if err != nil {
+		return "", err
+	}
+
+	if len(exec.ExecutionLogs) < 1 {
+		return "", errors.New("no execution logs")
+	}
+
+	return extractBatchSpecRandID(exec.ExecutionLogs[0].Out)
+}
+
 var ErrNoBatchSpecRandID = errors.New("no batch spec rand id found in execution logs")
 
 func extractBatchSpecRandID(executionLogOutput string) (string, error) {
-	lines := strings.Split(strings.ReplaceAll(executionLogOutput, "stdout: ", ""), "\n")
-
 	var batchSpecRandID string
-	for _, l := range lines {
-		var e srcCLILogLine
+	for _, l := range strings.Split(executionLogOutput, "\n") {
+		const outputLinePrefix = "stdout: "
 
-		if err := json.Unmarshal([]byte(l), &e); err != nil {
-			return "", err
+		if !strings.HasPrefix(l, outputLinePrefix) {
+			continue
 		}
 
-		if e.Operation == "CREATING_BATCH_SPEC" && e.Status == "SUCCESS" {
-			parts := strings.Split(e.Message, "/")
-			batchSpecGraphQLID := graphql.ID(parts[len(parts)-1])
+		jsonPart := l[len(outputLinePrefix):]
 
-			if err := relay.UnmarshalSpec(batchSpecGraphQLID, &batchSpecRandID); err != nil {
-				return "", err
+		var e srcCLILogLine
+		if err := json.Unmarshal([]byte(jsonPart), &e); err != nil {
+			return "", ErrNoBatchSpecRandID
+		}
+
+		if e.Operation == operationCreatingBatchSpec && e.Status == "SUCCESS" {
+			parts := strings.Split(e.Message, "/")
+			if len(parts) == 0 {
+				return "", ErrNoBatchSpecRandID
 			}
+
+			batchSpecGraphQLID := graphql.ID(parts[len(parts)-1])
+			if err := relay.UnmarshalSpec(batchSpecGraphQLID, &batchSpecRandID); err != nil {
+				// If we can't extract the ID we simply return our main error
+				return "", ErrNoBatchSpecRandID
+			}
+
 			return batchSpecRandID, nil
 		}
 	}
@@ -135,6 +154,8 @@ type srcCLILogLine struct {
 	Status  string `json:"status"`            // "STARTED", "PROGRESS", "SUCCESS", "FAILURE"
 	Message string `json:"message,omitempty"` // "70% done"
 }
+
+const operationCreatingBatchSpec = "CREATING_BATCH_SPEC"
 
 // scanFirstExecutionRecord scans a slice of batch change executions and returns the first.
 func scanFirstExecutionRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
