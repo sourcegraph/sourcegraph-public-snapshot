@@ -5,11 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -18,13 +20,15 @@ func TestSeriesPoints(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := dbtesting.TimescaleDB(t)
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	store := NewWithClock(timescale, clock)
+
+	postgres := dbtesting.GetDB(t)
+	permStore := NewInsightPermissionStore(postgres)
+	store := NewWithClock(timescale, permStore, clock)
 
 	// Confirm we get no results initially.
 	points, err := store.SeriesPoints(ctx, SeriesPointsOpts{})
@@ -101,19 +105,39 @@ SELECT time,
 		autogold.Want("SeriesPoints(4).len", int(3)).Equal(t, len(points))
 	})
 
+	t.Run("include list", func(t *testing.T) {
+		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{Included: []api.RepoID{2}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(14, len(points)); diff != "" {
+			t.Errorf("unexpected results from include list: %v", diff)
+		}
+	})
+	t.Run("exclude list", func(t *testing.T) {
+		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{Excluded: []api.RepoID{2}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(0, len(points)); diff != "" {
+			t.Errorf("unexpected results from include list: %v", diff)
+		}
+	})
+
 }
 
 func TestCountData(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := dbtesting.TimescaleDB(t)
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	store := NewWithClock(timescale, clock)
+	postgres := dbtesting.GetDB(t)
+	permStore := NewInsightPermissionStore(postgres)
+	store := NewWithClock(timescale, permStore, clock)
 
 	timeValue := func(s string) time.Time {
 		v, err := time.Parse(time.RFC3339, s)
@@ -199,13 +223,14 @@ func TestRecordSeriesPoints(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := dbtesting.TimescaleDB(t)
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	store := NewWithClock(timescale, clock)
+	postgres := dbtesting.GetDB(t)
+	permStore := NewInsightPermissionStore(postgres)
+	store := NewWithClock(timescale, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -303,4 +328,14 @@ func TestRecordSeriesPoints(t *testing.T) {
 	// }
 	// autogold.Want("len(forOriginalRepoNamePoints)", nil).Equal(t, len(forOriginalRepoNamePoints))
 	// autogold.Want("forOriginalRepoNamePoints[0].String()", nil).Equal(t, forOriginalRepoNamePoints[0].String())
+}
+
+func TestValues(t *testing.T) {
+	ids := []api.RepoID{1, 2, 3, 4, 5, 6}
+	got := values(ids)
+	want := "VALUES (1),(2),(3),(4),(5),(6)"
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("unexpected values string: %v", diff)
+	}
 }

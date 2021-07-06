@@ -43,7 +43,8 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 		// behave if the frontend had not yet migrated the main app DB.
 		log.Fatal("failed to initialize code insights (set DISABLE_CODE_INSIGHTS=true if needed)", err)
 	}
-	insightsStore := store.New(timescale)
+	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
+	insightsStore := store.New(timescale, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the TimescaleDB (which we use only for storing insights data.)
