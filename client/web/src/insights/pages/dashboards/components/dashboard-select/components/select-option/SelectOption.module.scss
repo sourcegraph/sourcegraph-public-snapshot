@@ -4,12 +4,11 @@
     display: flex;
     align-items: baseline;
     padding: 0.25rem 0.75rem;
-    justify-content: space-between;
     cursor: pointer;
 
     &[data-current] {
         font-weight: normal;
-        background-color: var(--color-bg-2);
+        background-color: var(--color-bg-3);
     }
 
     &[aria-selected] {

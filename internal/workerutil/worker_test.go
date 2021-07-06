@@ -155,6 +155,8 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 }
 
 func TestWorkerConcurrent(t *testing.T) {
+	t.Skip("Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/22595")
+
 	NumTestRecords := 50
 
 	for numHandlers := 1; numHandlers < NumTestRecords; numHandlers++ {

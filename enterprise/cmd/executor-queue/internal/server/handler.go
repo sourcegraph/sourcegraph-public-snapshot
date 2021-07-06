@@ -59,7 +59,7 @@ type QueueOptions struct {
 
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
-	RecordTransformer func(record workerutil.Record) (apiclient.Job, error)
+	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
 }
 
 type executorMeta struct {
@@ -129,7 +129,7 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 		return apiclient.Job{}, false, nil
 	}
 
-	job, err := queueOptions.RecordTransformer(record)
+	job, err := queueOptions.RecordTransformer(ctx, record)
 	if err != nil {
 		return apiclient.Job{}, false, tx.Done(err)
 	}

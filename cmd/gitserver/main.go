@@ -236,5 +236,5 @@ func getDB() (dbutil.DB, error) {
 		}
 	})
 
-	return dbconn.New(dsn, "gitserver")
+	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
 }
