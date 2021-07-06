@@ -22,7 +22,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface, func()) {
 		// Setup the GraphQL resolver.
