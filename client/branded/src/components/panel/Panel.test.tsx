@@ -1,7 +1,7 @@
 import { cleanup, fireEvent } from '@testing-library/react'
 import React from 'react'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-wth-router'
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { Panel } from './Panel'
 import { panels, panelProps } from './Panel.fixtures'
