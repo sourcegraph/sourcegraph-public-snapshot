@@ -31,7 +31,7 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
     return (
         <Switch>
             <Route
-                path={`${match.url}/dashboard/edit/:dashboardId`}
+                path={`${match.url}/dashboard/:dashboardId/edit`}
                 render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
                     <EditDashboardPage
                         platformContext={platformContext}

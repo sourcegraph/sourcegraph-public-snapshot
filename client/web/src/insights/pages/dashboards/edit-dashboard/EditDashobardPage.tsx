@@ -30,7 +30,7 @@ interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, Platfor
 }
 
 /**
- * Displays edit (configure) dashboard page.
+ * Displays the edit (configure) dashboard page.
  */
 export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
     const { dashboardId, settingsCascade, authenticatedUser, platformContext } = props
@@ -117,7 +117,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                                 spinnerClassName="mr-2"
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="d-flex btn btn-primary ml-2 mb-2"
                             />
                         </>
                     )}

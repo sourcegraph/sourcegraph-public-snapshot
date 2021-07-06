@@ -71,7 +71,7 @@ export function useUpdateDashboardCallback(props: useUpdateDashboardProps): Dash
 
             await updateSubjectSettings(platformContext, subjectID, settingsContent).toPromise()
 
-            history.push(`/insights/dashboard${previousDashboard.settingsKey}`)
+            history.push(`/insights/dashboard/${previousDashboard.settingsKey}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
