@@ -20,7 +20,7 @@ import (
 func TestUiPublicationStates_Add(t *testing.T) {
 	var ps UiPublicationStates
 
-	// Add a single changeset spec, ensuring that ps.rand is initialised.
+	// Add a single publication state, ensuring that ps.rand is initialised.
 	if err := ps.Add("foo", batches.PublishedValue{Val: true}); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestUiPublicationStates_Add(t *testing.T) {
 		t.Errorf("unexpected number of elements: %d", len(ps.rand))
 	}
 
-	// Add another changeset spec.
+	// Add another publication state.
 	if err := ps.Add("bar", batches.PublishedValue{Val: true}); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -36,7 +36,7 @@ func TestUiPublicationStates_Add(t *testing.T) {
 		t.Errorf("unexpected number of elements: %d", len(ps.rand))
 	}
 
-	// Try to add a duplicate changeset spec.
+	// Try to add a duplicate publication state.
 	if err := ps.Add("bar", batches.PublishedValue{Val: true}); err == nil {
 		t.Error("unexpected nil error")
 	}

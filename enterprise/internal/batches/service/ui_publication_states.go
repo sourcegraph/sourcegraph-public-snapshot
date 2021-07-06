@@ -15,15 +15,15 @@ import (
 // applyBatchChange mutation, and applies the required validation and processing
 // logic.
 //
-// External users must call Add() to add changeset specs to the struct, then
-// process() must be called before publication states can be retrieved using
-// get().
+// External users must call Add() to add changeset spec random IDs to the
+// struct, then process() must be called before publication states can be
+// retrieved using get().
 type UiPublicationStates struct {
 	rand map[string]batches.PublishedValue
 	id   map[int64]*btypes.ChangesetUiPublicationState
 }
 
-// Add adds a changeset spec to the publication states.
+// Add adds a changeset spec random ID to the publication states.
 func (ps *UiPublicationStates) Add(rand string, value batches.PublishedValue) error {
 	if ps.rand == nil {
 		ps.rand = map[string]batches.PublishedValue{rand: value}
