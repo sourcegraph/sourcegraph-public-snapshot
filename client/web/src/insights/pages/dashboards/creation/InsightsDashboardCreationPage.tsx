@@ -48,7 +48,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
         const subjectID =
             values.visibility === 'personal'
                 ? userID
-                : // If this is not a 'personal' value than we are dealing with org id
+                : // If this is not a 'personal' value than we are dealing with an org id
                   values.visibility
 
         try {

@@ -65,7 +65,17 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
         }
     }, [previousDashboard, authenticatedUser])
 
-    const finalDashboardSettings = useDashboardSettings({ settingsCascade, excludeDashboardIds: [dashboardId] })
+    const finalDashboardSettings = useDashboardSettings({
+        settingsCascade,
+
+        // Final settings used below as a store of all existing dashboards
+        // Usually we have a validation step for the title of dashboard because
+        // users can't have two dashboards with the same name/id. In edit mode
+        // we should allow users to have insight with id (camelCase(dashboard name))
+        // which already exists in the settings. For turning off this id/title
+        // validation we remove current dashboard from the final settings.
+        excludeDashboardIds: [dashboardId],
+    })
 
     const handleSubmit = useUpdateDashboardCallback({ authenticatedUser, platformContext, previousDashboard })
     const handleCancel = (): void => history.goBack()
