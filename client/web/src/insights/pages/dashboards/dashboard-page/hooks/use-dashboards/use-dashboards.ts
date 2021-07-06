@@ -5,6 +5,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
+
 import { getSubjectDashboards, isSubjectSupported } from './utils'
 
 /**
