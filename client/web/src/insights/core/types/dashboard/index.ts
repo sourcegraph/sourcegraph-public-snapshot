@@ -1,5 +1,5 @@
-import { InsightsDashboardType } from './core'
-import { RealInsightDashboard } from './real-dashboard'
+import { InsightsDashboardType, InsightDashboardOwner } from './core'
+import { RealInsightDashboard, SettingsBasedInsightDashboard } from './real-dashboard'
 import { VirtualInsightsDashboard } from './virtual-dashboard'
 
 /**
@@ -9,7 +9,7 @@ export type InsightDashboard = RealInsightDashboard | VirtualInsightsDashboard
 
 export { InsightsDashboardType }
 
-export type { RealInsightDashboard, VirtualInsightsDashboard }
+export type { RealInsightDashboard, VirtualInsightsDashboard, SettingsBasedInsightDashboard, InsightDashboardOwner }
 
 /**
  * Key for accessing insights dashboards in a subject settings.

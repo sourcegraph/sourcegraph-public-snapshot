@@ -6,10 +6,11 @@ import { useHistory } from 'react-router-dom'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { PageHeader, Container } from '@sourcegraph/wildcard/src'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { LoaderButton } from '../../../../components/LoaderButton';
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Settings } from '../../../../schema/settings.schema'
@@ -22,10 +23,9 @@ import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+import { useDashboardSettings } from './hooks/use-dashboard-settings';
 import styles from './InsightsDashboardCreationPage.module.scss'
 import { createSanitizedDashboard } from './utils/dashboard-sanitizer'
-
-const DEFAULT_FINAL_SETTINGS = {}
 
 interface InsightsDashboardCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -39,6 +39,8 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     const history = useHistory()
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
+
+    const finalSettings = useDashboardSettings({ settingsCascade })
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
         const { id: userID } = authenticatedUser
@@ -67,12 +69,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
         return
     }
 
-    const handleCancel = (): void => {
-        history.goBack()
-    }
-
-    const finalSettings =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final ? settingsCascade.final : DEFAULT_FINAL_SETTINGS
+    const handleCancel = (): void => history.goBack()
 
     return (
         <Page className={classnames('col-8', styles.page)}>
@@ -82,11 +79,27 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
             <Container className="mt-4">
                 <InsightsDashboardCreationContent
-                    settings={finalSettings}
+                    dashboardsSettings={finalSettings}
                     organizations={authenticatedUser.organizations.nodes}
                     onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                />
+                >
+                    { formAPI => <>
+                        <button type="button" className="btn btn-outline-secondary mb-2" onClick={handleCancel}>
+                            Cancel
+                        </button>
+
+                        <LoaderButton
+                            alwaysShowLabel={true}
+                            data-testid="insight-save-button"
+                            loading={formAPI.submitting}
+                            label={formAPI.submitting ? 'Submitting' : 'Create dashboard'}
+                            spinnerClassName='mr-2'
+                            type="submit"
+                            disabled={formAPI.submitting}
+                            className="d-flex btn btn-primary ml-2 mb-2"
+                        />
+                    </>}
+                </InsightsDashboardCreationContent>
             </Container>
         </Page>
     )
