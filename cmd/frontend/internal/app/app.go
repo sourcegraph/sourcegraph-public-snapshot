@@ -73,7 +73,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
 
 	r.Get(router.GDDORefs).Handler(trace.Route(errorutil.Handler(serveGDDORefs)))
-	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor)))
+	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 
 	r.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Del("Cookie")
