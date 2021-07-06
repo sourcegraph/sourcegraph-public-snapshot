@@ -2099,6 +2099,13 @@ extend type Mutation {
     mergeChangesets(batchChange: ID!, changesets: [ID!]!, squash: Boolean = false): BulkOperation!
 
     """
+    Close multiple changesets.
+
+    Experimental: This API is likely to change in the future.
+    """
+    closeChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
+
+    """
     Creates a new batch spec execution from a given batch spec yaml file input.
     The execution will be queued for processing by an executor. If some are available
     for work, they will pick this up eventually.
@@ -2386,6 +2393,10 @@ enum BulkOperationType {
     Bulk merge changesets.
     """
     MERGE
+    """
+    Bulk close changesets.
+    """
+    CLOSE
 }
 
 """
