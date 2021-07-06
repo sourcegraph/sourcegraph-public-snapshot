@@ -1,17 +1,11 @@
 import { useMemo } from 'react'
 
-import {
-    ConfiguredSubjectOrError,
-    SettingsCascadeOrError,
-} from '@sourcegraph/shared/src/settings/settings'
+import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../schema/settings.schema'
-import {
-    InsightDashboard,
-    InsightsDashboardType,
-} from '../../../../../core/types'
-import { getSubjectDashboards, isSubjectSupported } from './utils';
+import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
+import { getSubjectDashboards, isSubjectSupported } from './utils'
 
 /**
  * Special virtual dashboard - "All Insights"

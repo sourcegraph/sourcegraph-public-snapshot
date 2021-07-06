@@ -7,7 +7,7 @@ import { composeValidators, createRequiredValidator } from '../../../../../../co
 
 interface useDashboardNameValidatorProps {
     settings: {
-        [k: string]: InsightDashboard;
+        [k: string]: InsightDashboard
     }
 }
 

@@ -1,12 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo } from 'react'
 
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { InsightDashboard, Settings } from '../../../../../schema/settings.schema';
+import { InsightDashboard, Settings } from '../../../../../schema/settings.schema'
 
 export interface useDashboardSettingsProps extends SettingsCascadeProps<Settings> {
-
     /**
      * Final settings used below as a store of all existing dashboards
      * Usually we have a validation step for the title of dashboard because
@@ -22,7 +21,7 @@ export interface useDashboardSettingsProps extends SettingsCascadeProps<Settings
  * Returns dashboard final (merged) configurations map with all insight dashboards.
  */
 export function useDashboardSettings(props: useDashboardSettingsProps): Record<string, InsightDashboard> {
-    const { settingsCascade, excludeDashboardIds = [] } = props;
+    const { settingsCascade, excludeDashboardIds = [] } = props
 
     return useMemo(() => {
         if (isErrorLike(settingsCascade.final) || !settingsCascade.final) {

@@ -1,17 +1,17 @@
-import { useContext } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useContext } from 'react'
+import { useHistory } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
-import { asError } from '@sourcegraph/shared/src/util/errors';
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { AuthenticatedUser } from '../../../../../auth';
-import { InsightDashboard } from '../../../../../schema/settings.schema';
-import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm';
-import { InsightsApiContext } from '../../../../core/backend/api-provider';
-import { addDashboardToSettings, removeDashboardFromSettings } from '../../../../core/settings-action/dashboards';
-import { SettingsBasedInsightDashboard } from '../../../../core/types';
-import { DashboardCreationFields } from '../../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent';
-import { createSanitizedDashboard } from '../../creation/utils/dashboard-sanitizer';
+import { AuthenticatedUser } from '../../../../../auth'
+import { InsightDashboard } from '../../../../../schema/settings.schema'
+import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { InsightsApiContext } from '../../../../core/backend/api-provider'
+import { addDashboardToSettings, removeDashboardFromSettings } from '../../../../core/settings-action/dashboards'
+import { SettingsBasedInsightDashboard } from '../../../../core/types'
+import { DashboardCreationFields } from '../../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+import { createSanitizedDashboard } from '../../creation/utils/dashboard-sanitizer'
 
 interface useUpdateDashboardProps extends PlatformContextProps<'updateSettings'> {
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
@@ -64,7 +64,7 @@ export function useUpdateDashboardCallback(props: useUpdateDashboardProps): Dash
                 // We have to preserve id and insights IDs value since edit UI
                 // doesn't have these options.
                 id: previousDashboard.id,
-                insightIds: previousDashboard.insightIds
+                insightIds: previousDashboard.insightIds,
             }
 
             settingsContent = addDashboardToSettings(settingsContent, updatedDashboard)

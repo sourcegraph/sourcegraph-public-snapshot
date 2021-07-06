@@ -33,7 +33,7 @@ export interface InsightsDashboardCreationContentProps {
     organizations: Organization[]
 
     dashboardsSettings: {
-        [k: string]: InsightDashboard;
+        [k: string]: InsightDashboard
     }
 
     onSubmit: (values: DashboardCreationFields) => SubmissionErrors | Promise<SubmissionErrors> | void
@@ -44,13 +44,7 @@ export interface InsightsDashboardCreationContentProps {
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const {
-        initialValues = DASHBOARD_INITIAL_VALUES,
-        organizations,
-        dashboardsSettings,
-        onSubmit,
-        children,
-    } = props
+    const { initialValues = DASHBOARD_INITIAL_VALUES, organizations, dashboardsSettings, onSubmit, children } = props
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues,
@@ -122,9 +116,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} className="mt-2 mb-2" />
             )}
 
-            <div className="d-flex flex-wrap justify-content-end mt-3">
-                { children(formAPI) }
-            </div>
+            <div className="d-flex flex-wrap justify-content-end mt-3">{children(formAPI)}</div>
         </form>
     )
 }

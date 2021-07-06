@@ -1,16 +1,16 @@
-import { IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema';
-import { SettingsSubject } from '@sourcegraph/shared/src/settings/settings';
-import { isDefined } from '@sourcegraph/shared/src/util/types';
+import { IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema'
+import { SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings } from '../../../../../../schema/settings.schema';
+import { Settings } from '../../../../../../schema/settings.schema'
 import {
     INSIGHTS_DASHBOARDS_SETTINGS_KEY,
     InsightsDashboardType,
     InsightDashboard,
     isInsightSettingKey,
     SettingsBasedInsightDashboard,
-    InsightDashboardOwner
-} from '../../../../../core/types';
+    InsightDashboardOwner,
+} from '../../../../../core/types'
 
 /**
  * Currently we support only two types of subject that can have insights dashboard.
@@ -53,7 +53,11 @@ export function getSubjectDashboards(subject: SupportedSubject, settings: Settin
  * @param settings - settings map of current subject
  * @param dashboardKey - possible dashboard key (id)
  */
-export function getSubjectDashboardByID(subject: SettingsSubject, settings: Settings, dashboardKey: string): SettingsBasedInsightDashboard | undefined {
+export function getSubjectDashboardByID(
+    subject: SettingsSubject,
+    settings: Settings,
+    dashboardKey: string
+): SettingsBasedInsightDashboard | undefined {
     if (!isSubjectSupported(subject)) {
         return undefined
     }

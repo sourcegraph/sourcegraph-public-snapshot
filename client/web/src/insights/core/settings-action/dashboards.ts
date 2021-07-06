@@ -26,9 +26,5 @@ export function addDashboardToSettings(settings: string, dashboardConfiguration:
  * @param dashboardId - dashboard id to remove
  */
 export function removeDashboardFromSettings(settings: string, dashboardId: string): string {
-    return modify(
-        settings,
-        [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId],
-        undefined
-    )
+    return modify(settings, [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId], undefined)
 }

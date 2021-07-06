@@ -10,7 +10,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { PageHeader, Container } from '@sourcegraph/wildcard/src'
 
 import { AuthenticatedUser } from '../../../../auth'
-import { LoaderButton } from '../../../../components/LoaderButton';
+import { LoaderButton } from '../../../../components/LoaderButton'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Settings } from '../../../../schema/settings.schema'
@@ -23,7 +23,7 @@ import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
-import { useDashboardSettings } from './hooks/use-dashboard-settings';
+import { useDashboardSettings } from './hooks/use-dashboard-settings'
 import styles from './InsightsDashboardCreationPage.module.scss'
 import { createSanitizedDashboard } from './utils/dashboard-sanitizer'
 
@@ -83,22 +83,24 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                     organizations={authenticatedUser.organizations.nodes}
                     onSubmit={handleSubmit}
                 >
-                    { formAPI => <>
-                        <button type="button" className="btn btn-outline-secondary mb-2" onClick={handleCancel}>
-                            Cancel
-                        </button>
+                    {formAPI => (
+                        <>
+                            <button type="button" className="btn btn-outline-secondary mb-2" onClick={handleCancel}>
+                                Cancel
+                            </button>
 
-                        <LoaderButton
-                            alwaysShowLabel={true}
-                            data-testid="insight-save-button"
-                            loading={formAPI.submitting}
-                            label={formAPI.submitting ? 'Submitting' : 'Create dashboard'}
-                            spinnerClassName='mr-2'
-                            type="submit"
-                            disabled={formAPI.submitting}
-                            className="d-flex btn btn-primary ml-2 mb-2"
-                        />
-                    </>}
+                            <LoaderButton
+                                alwaysShowLabel={true}
+                                data-testid="insight-save-button"
+                                loading={formAPI.submitting}
+                                label={formAPI.submitting ? 'Submitting' : 'Create dashboard'}
+                                spinnerClassName="mr-2"
+                                type="submit"
+                                disabled={formAPI.submitting}
+                                className="d-flex btn btn-primary ml-2 mb-2"
+                            />
+                        </>
+                    )}
                 </InsightsDashboardCreationContent>
             </Container>
         </Page>
