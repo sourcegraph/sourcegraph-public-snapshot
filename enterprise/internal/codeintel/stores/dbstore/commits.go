@@ -222,6 +222,16 @@ func (s *Store) CalculateVisibleUploads(
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// Determine the retention policy for this repository
+	maxAgeForNonStaleBranches, maxAgeForNonStaleTags, err = refineRetentionConfiguration(ctx, tx, repositoryID, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+	if err != nil {
+		return err
+	}
+	traceLog(
+		log.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
+		log.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()),
+	)
+
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
 	commitGraphView, err := scanCommitGraphView(tx.Store.Query(ctx, sqlf.Sprintf(calculateVisibleUploadsCommitGraphQuery, repositoryID)))
@@ -277,6 +287,35 @@ SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance FROM lsif
 const calculateVisibleUploadsDirtyRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
 UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
+`
+
+// refineRetentionConfiguration returns the maximum age for no-stale branches and tags, effectively, as configured
+// for hte given repository. If there is no retention configuration for the given repository, the given default
+// values are returned unchanged.
+func refineRetentionConfiguration(ctx context.Context, store *Store, repositoryID int, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration) (_, _ time.Duration, err error) {
+	rows, err := store.Store.Query(ctx, sqlf.Sprintf(retentionConfigurationQuery, repositoryID))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var v1, v2 int
+		if err := rows.Scan(&v1, &v2); err != nil {
+			return 0, 0, err
+		}
+
+		maxAgeForNonStaleBranches = time.Second * time.Duration(v1)
+		maxAgeForNonStaleTags = time.Second * time.Duration(v2)
+	}
+
+	return maxAgeForNonStaleBranches, maxAgeForNonStaleTags, nil
+}
+
+const retentionConfigurationQuery = `
+SELECT max_age_for_non_stale_branches_seconds, max_age_for_non_stale_tags_seconds
+FROM lsif_retention_configuration
+WHERE repository_id = %s
 `
 
 // writeVisibleUploads serializes the given input into a the following set of temporary tables in the database.
@@ -663,9 +702,9 @@ func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
 	refDescriptions map[string]gitserver.RefDescription,
-	maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration,
+	maxAgeForNonStaleBranches time.Duration,
+	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
-	// TODO(efritz) - allow overrides per-repo in database
 	maxAges := map[gitserver.RefType]time.Duration{
 		gitserver.RefTypeBranch: maxAgeForNonStaleBranches,
 		gitserver.RefTypeTag:    maxAgeForNonStaleTags,
