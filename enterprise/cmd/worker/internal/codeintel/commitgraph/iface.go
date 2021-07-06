@@ -10,7 +10,7 @@ import (
 
 type DBStore interface {
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
-	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph *gitserver.CommitGraph, refDescriptions map[string]gitserver.RefDescription, dirtyToken int, now time.Time) error
+	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph *gitserver.CommitGraph, refDescriptions map[string]gitserver.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 }
 
