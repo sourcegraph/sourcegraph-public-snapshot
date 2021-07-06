@@ -201,6 +201,8 @@ func (s *Store) CalculateVisibleUploads(
 	repositoryID int,
 	commitGraph *gitserver.CommitGraph,
 	refDescriptions map[string]gitserver.RefDescription,
+	maxAgeForNonStaleBranches time.Duration,
+	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
 	now time.Time,
 ) (err error) {
@@ -235,7 +237,7 @@ func (s *Store) CalculateVisibleUploads(
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
 
 	// Write the graph into temporary tables in Postgres
-	if err := tx.writeVisibleUploads(ctx, sanitizeCommitInput(ctx, graph, refDescriptions)); err != nil {
+	if err := tx.writeVisibleUploads(ctx, sanitizeCommitInput(ctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)); err != nil {
 		return err
 	}
 
@@ -654,14 +656,15 @@ type sanitizedCommitInput struct {
 	numUploadsVisibleAtTipRecords uint32 // populated once uploadsVisibleAtTipRowValues is exhausted
 }
 
-// TODO(efritz) - make default configurable via envvars
-const maxAgeForNonStaleBranches = time.Hour * 24 * 30 * 3 // ~three months
-const maxAgeForNonStaleTags = time.Hour * 24 * 365        // ~one year
-
 // sanitizeCommitInput reads the data that needs to be persisted from the given graph and writes the
 // sanitized values (ensures values match the column types) into channels for insertion into a particular
 // table.
-func sanitizeCommitInput(ctx context.Context, graph *commitgraph.Graph, refDescriptions map[string]gitserver.RefDescription) *sanitizedCommitInput {
+func sanitizeCommitInput(
+	ctx context.Context,
+	graph *commitgraph.Graph,
+	refDescriptions map[string]gitserver.RefDescription,
+	maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration,
+) *sanitizedCommitInput {
 	// TODO(efritz) - allow overrides per-repo in database
 	maxAges := map[gitserver.RefType]time.Duration{
 		gitserver.RefTypeBranch: maxAgeForNonStaleBranches,
