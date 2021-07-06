@@ -45,7 +45,7 @@ export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalP
             aria-labelledby={MODAL_LABEL_ID}
         >
             <h3 id={MODAL_LABEL_ID}>Close changesets</h3>
-            <p className="mb-4">Are you sure you want to attempt to close all the selected changesets?</p>
+            <p className="mb-4">Are you sure you want to close all the selected changesets on the code hosts?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
                 <button
