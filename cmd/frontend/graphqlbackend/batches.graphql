@@ -2899,7 +2899,7 @@ input ChangesetSpecPublicationStateInput {
     """
     The changeset spec ID.
     """
-    changesetSpecID: ID!
+    changesetSpec: ID!
 
     """
     The desired publication state.
