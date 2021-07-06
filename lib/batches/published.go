@@ -2,7 +2,6 @@ package batches
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 )
 
