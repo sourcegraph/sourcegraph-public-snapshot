@@ -1,4 +1,5 @@
 import classnames from 'classnames'
+import { camelCase } from 'lodash'
 import React, { useContext } from 'react'
 import { useHistory } from 'react-router-dom'
 
@@ -24,7 +25,6 @@ import {
 } from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 import styles from './InsightsDashboardCreationPage.module.scss'
 import { createSanitizedDashboard } from './utils/dashboard-sanitizer'
-import { camelCase } from 'lodash'
 
 const DEFAULT_FINAL_SETTINGS = {}
 
