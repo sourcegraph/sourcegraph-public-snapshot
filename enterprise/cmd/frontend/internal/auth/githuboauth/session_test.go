@@ -13,6 +13,7 @@ import (
 	githublogin "github.com/dghubble/gologin/github"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -28,6 +29,7 @@ func init() {
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
+	dbtesting.DBNameSuffix = "githuboauth"
 }
 
 func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {

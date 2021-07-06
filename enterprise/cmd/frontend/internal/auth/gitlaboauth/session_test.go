@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -17,6 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+func init() {
+	dbtesting.DBNameSuffix = "gitlaboauth"
+}
 
 func Test_CreateCodeHostConnection(t *testing.T) {
 	createCodeHostConnectionHelper(t, false)
