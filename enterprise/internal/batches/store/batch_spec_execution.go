@@ -29,10 +29,12 @@ var BatchSpecExecutionColumns = []*sqlf.Query{
 	sqlf.Sprintf(`batch_spec_executions.updated_at`),
 	sqlf.Sprintf(`batch_spec_executions.batch_spec`),
 	sqlf.Sprintf(`batch_spec_executions.batch_spec_id`),
+	sqlf.Sprintf(`batch_spec_executions.user_id`),
 }
 
 var batchSpecExecutionInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_spec"),
+	sqlf.Sprintf("user_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
@@ -57,7 +59,7 @@ func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpe
 var createBatchSpecExecutionQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_executions.go:CreateBatchSpecExecution
 INSERT INTO batch_spec_executions (%s)
-VALUES (%s, %s, %s)
+VALUES (%s, %s, %s, %s)
 RETURNING %s`
 
 func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, error) {
@@ -65,6 +67,7 @@ func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, e
 		createBatchSpecExecutionQueryFmtstr,
 		sqlf.Join(batchSpecExecutionInsertColumns, ", "),
 		c.BatchSpec,
+		c.UserID,
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
@@ -132,6 +135,7 @@ func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {
 		&b.UpdatedAt,
 		&b.BatchSpec,
 		&dbutil.NullInt64{N: &b.BatchSpecID},
+		&b.UserID,
 	); err != nil {
 		return err
 	}

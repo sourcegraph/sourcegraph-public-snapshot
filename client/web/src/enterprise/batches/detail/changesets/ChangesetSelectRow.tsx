@@ -10,6 +10,7 @@ import { eventLogger } from '../../../../tracking/eventLogger'
 import { queryAllChangesetIDs } from '../backend'
 
 import styles from './ChangesetSelectRow.module.scss'
+import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
 import { MergeChangesetsModal } from './MergeChangesetsModal'
@@ -103,6 +104,22 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
         isAvailable: ({ state }) => state === ChangesetState.OPEN,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <MergeChangesetsModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
+            />
+        ),
+    },
+    {
+        type: 'close',
+        buttonLabel: 'Close changesets',
+        dropdownTitle: 'Close changesets',
+        dropdownDescription:
+            'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
+        isAvailable: ({ state }) => state === ChangesetState.OPEN || state === ChangesetState.DRAFT,
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <CloseChangesetsModal
                 batchChangeID={batchChangeID}
                 changesetIDs={changesetIDs}
                 afterCreate={onDone}

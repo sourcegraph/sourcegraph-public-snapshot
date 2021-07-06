@@ -39,6 +39,11 @@ const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
             <SourceBranchIcon className="icon-inline text-muted" /> Merge changesets
         </>
     ),
+    CLOSE: (
+        <>
+            <SourceBranchIcon className="icon-inline text-danger" /> Close changesets
+        </>
+    ),
 }
 
 export interface BulkOperationNodeProps {

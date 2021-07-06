@@ -1,6 +1,7 @@
 package batches
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -8,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/config"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestTransformRecord(t *testing.T) {
@@ -24,7 +26,7 @@ func TestTransformRecord(t *testing.T) {
 		},
 	}
 
-	job, err := transformRecord(index, config)
+	job, err := transformRecord(context.Background(), &dbtesting.MockDB{}, index, config)
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -35,7 +37,7 @@ func TestTransformRecord(t *testing.T) {
 		CliSteps: []apiclient.CliStep{
 			{
 				Commands: []string{
-					"batch", "preview", "-f", "spec.yml",
+					"batch", "preview", "-f", "spec.yml", "-text-only",
 				},
 				Dir: ".",
 				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},

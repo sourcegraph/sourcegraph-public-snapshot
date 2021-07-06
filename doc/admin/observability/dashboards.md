@@ -442,7 +442,7 @@ This panel indicates waited for.
 
 #### frontend: blocked_seconds
 
-This panel indicates blocked seconds.
+This panel indicates blocked seconds (99th percentile).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -992,7 +992,7 @@ This panel indicates waited for.
 
 #### gitserver: blocked_seconds
 
-This panel indicates blocked seconds.
+This panel indicates blocked seconds (99th percentile).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1663,7 +1663,7 @@ This panel indicates waited for.
 
 #### precise-code-intel-worker: blocked_seconds
 
-This panel indicates blocked seconds.
+This panel indicates blocked seconds (99th percentile).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -2201,7 +2201,7 @@ This panel indicates waited for.
 
 #### worker: blocked_seconds
 
-This panel indicates blocked seconds.
+This panel indicates blocked seconds (99th percentile).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -2777,7 +2777,7 @@ This panel indicates waited for.
 
 #### repo-updater: blocked_seconds
 
-This panel indicates blocked seconds.
+This panel indicates blocked seconds (99th percentile).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -3958,7 +3958,7 @@ This panel indicates waited for.
 
 #### executor-queue: blocked_seconds
 
-This panel indicates blocked seconds.
+This panel indicates blocked seconds (99th percentile).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 

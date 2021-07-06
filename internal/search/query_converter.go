@@ -1,7 +1,6 @@
 package search
 
 import (
-	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -77,8 +76,6 @@ func count(q query.Basic, p Protocol) int {
 		return DefaultMaxSearchResults
 	case Streaming:
 		return DefaultMaxSearchResultsStreaming
-	case Pagination:
-		return math.MaxInt32
 	}
 	panic("unreachable")
 }
@@ -88,7 +85,6 @@ type Protocol int
 const (
 	Streaming Protocol = iota
 	Batch
-	Pagination
 )
 
 // ToTextPatternInfo converts a an atomic query to internal values that drive

@@ -188,6 +188,7 @@ func main() {
 		Token:              os.Getenv(envToken),
 		JaegerServerURL:    os.Getenv("JAEGER_SERVER_URL"),
 		MaxTotalTraceBytes: 10 * 1024 * 1024 * 1024, // 10 GiB
+		MaxFetchAttempts:   10,
 	}
 	go traces.CleanupLoop(ctx)
 

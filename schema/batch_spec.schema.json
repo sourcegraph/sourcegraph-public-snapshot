@@ -1,4 +1,5 @@
 {
+  "$id": "batch_spec.schema.json#",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "BatchSpec",
   "description": "A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).",

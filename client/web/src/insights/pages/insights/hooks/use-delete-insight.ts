@@ -53,7 +53,7 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
                 const settings = await getSubjectSettings(subjectID).toPromise()
 
                 const editedSettings = removeInsightFromSettings({
-                    originSettings: settings.contents,
+                    originalSettings: settings.contents,
                     insightID,
                     isOldCodeStatsInsight,
                 })

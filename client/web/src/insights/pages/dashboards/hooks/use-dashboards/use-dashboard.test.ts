@@ -1,6 +1,6 @@
 import { InsightsDashboardType } from '../../../../core/types'
 
-import { getInsightsDashboards } from './use-dashboards'
+import { ALL_INSIGHTS_DASHBOARD, getInsightsDashboards } from './use-dashboards'
 
 describe('getInsightsDashboards', () => {
     describe('should return empty custom list', () => {
@@ -23,7 +23,7 @@ describe('getInsightsDashboards', () => {
                         lastID: null,
                     },
                 ])
-            ).toStrictEqual([])
+            ).toStrictEqual([ALL_INSIGHTS_DASHBOARD])
         })
 
         test('with unsupported types of settings cascade subject', () => {
@@ -40,7 +40,7 @@ describe('getInsightsDashboards', () => {
                         lastID: null,
                     },
                 ])
-            ).toStrictEqual([])
+            ).toStrictEqual([ALL_INSIGHTS_DASHBOARD])
         })
     })
 
@@ -72,6 +72,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: InsightsDashboardType.Organization,
                     builtIn: true,
@@ -126,6 +127,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: InsightsDashboardType.Personal,
                     title: 'Emir Kusturica',
@@ -141,6 +143,7 @@ describe('getInsightsDashboards', () => {
                     type: InsightsDashboardType.Personal,
                     id: '001',
                     title: 'Test Dashboard',
+                    settingsKey: 'insights.dashboard.testDashboard',
                     insightIds: ['insightID1', 'insightID2'],
                     owner: {
                         id: '101',
@@ -151,6 +154,7 @@ describe('getInsightsDashboards', () => {
                     type: InsightsDashboardType.Personal,
                     id: '002',
                     title: 'Another Test Dashboard',
+                    settingsKey: 'insights.dashboard.anotherTestDashboard',
                     insightIds: ['insightID3', 'insightID4'],
                     owner: {
                         id: '101',
@@ -203,6 +207,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: InsightsDashboardType.Organization,
                     builtIn: true,
@@ -218,6 +223,7 @@ describe('getInsightsDashboards', () => {
                     type: InsightsDashboardType.Organization,
                     id: '001',
                     title: 'Test Dashboard',
+                    settingsKey: 'insights.dashboard.testDashboard',
                     insightIds: ['insightID1', 'insightID2'],
                     owner: {
                         id: '102',
@@ -239,6 +245,7 @@ describe('getInsightsDashboards', () => {
                     type: InsightsDashboardType.Personal,
                     id: '002',
                     title: 'Another Test Dashboard',
+                    settingsKey: 'insights.dashboard.anotherTestDashboard',
                     insightIds: ['insightID3', 'insightID4'],
                     owner: {
                         id: '101',

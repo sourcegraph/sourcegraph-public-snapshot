@@ -1,6 +1,7 @@
 package batches
 
 import (
+	"context"
 	"database/sql"
 
 	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
@@ -14,8 +15,8 @@ import (
 )
 
 func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) apiserver.QueueOptions {
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
-		return transformRecord(record.(*btypes.BatchSpecExecution), config)
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return transformRecord(ctx, db, record.(*btypes.BatchSpecExecution), config)
 	}
 
 	return apiserver.QueueOptions{

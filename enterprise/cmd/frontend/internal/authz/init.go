@@ -33,6 +33,7 @@ var clock = timeutil.Now
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	// TODO(efritz) - de-globalize assignments in this function
 	database.GlobalExternalServices = edb.NewExternalServicesStore(db)
+	database.ExternalServices = edb.NewExternalServicesStore
 	database.GlobalAuthz = edb.NewAuthzStore(db, clock)
 
 	// Warn about usage of auth providers that are not enabled by the license.
