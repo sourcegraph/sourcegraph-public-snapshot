@@ -122,7 +122,7 @@ export const Panel = React.memo<Props>(props => {
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
-    const { hash, pathname } = location
+    const { hash, pathname, search } = location
     const history = useHistory()
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
@@ -214,9 +214,9 @@ export const Panel = React.memo<Props>(props => {
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${currentTabLabel}=${items[index].id}`)
+            history.replace(`${pathname}${search}${currentTabLabel}=${items[index].id}`)
         },
-        [currentTabLabel, history, items, pathname]
+        [currentTabLabel, history, items, pathname, search]
     )
 
     useEffect(() => {
