@@ -18,6 +18,10 @@ func (r *symbolUsageResolver) UsagePatterns(ctx context.Context) ([]gql.SymbolUs
 	if err != nil {
 		return nil, err
 	}
+	if len(locations) == 0 {
+		return nil, nil
+	}
+	locations = locations[1:] // remove "definition" location
 
 	// TODO(sqs): break them up into arbitrary patterns
 	numPatterns := 1 + len(locations)/7
@@ -28,11 +32,21 @@ func (r *symbolUsageResolver) UsagePatterns(ctx context.Context) ([]gql.SymbolUs
 	patterns := make([]symbolUsagePattern, numPatterns)
 	for i, loc := range locations {
 		p := &patterns[i%numPatterns]
+		p.symbol = r.symbol.symbol
 		p.description = sampleUsagePatternDescriptions[i%numPatterns]
 		p.exampleLocations = append(p.exampleLocations, symbolUsagePatternExampleLocation{
-			description: "foo",
-			location:    loc,
+			symbol:   r.symbol.symbol,
+			location: loc,
 		})
+	}
+
+	// Sort and rank.
+	for _, pattern := range patterns {
+		exampleLocations, err := sortAndRankExampleLocations(ctx, r.locationResolver, pattern.exampleLocations)
+		if err != nil {
+			return nil, err
+		}
+		pattern.exampleLocations = exampleLocations
 	}
 
 	resolvers := make([]gql.SymbolUsagePatternResolver, len(patterns))
@@ -46,6 +60,7 @@ func (r *symbolUsageResolver) UsagePatterns(ctx context.Context) ([]gql.SymbolUs
 }
 
 type symbolUsagePattern struct {
+	symbol           resolvers.AdjustedSymbol
 	description      string
 	exampleLocations []symbolUsagePatternExampleLocation
 }
@@ -70,6 +85,7 @@ func (r *symbolUsagePatternResolver) ExampleLocations() []gql.SymbolUsagePattern
 }
 
 type symbolUsagePatternExampleLocation struct {
+	symbol      resolvers.AdjustedSymbol
 	description string
 	location    resolvers.AdjustedLocation
 }

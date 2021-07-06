@@ -23,7 +23,7 @@ func (r *symbolUsageResolver) Callers(ctx context.Context) ([]gql.SymbolCallerEd
 	}
 	callers := map[string] /* email */ *callerInfo{}
 	for _, loc := range locations {
-		callerSigs, err := r.getCallerHunkAuthors(ctx, loc)
+		callerSigs, err := getLocationBlameAuthors(ctx, loc)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +63,7 @@ func (r *symbolUsageResolver) Callers(ctx context.Context) ([]gql.SymbolCallerEd
 	return edgeIfaces, nil
 }
 
-func (r *symbolUsageResolver) getCallerHunkAuthors(ctx context.Context, loc resolvers.AdjustedLocation) ([]git.Signature, error) {
+func getLocationBlameAuthors(ctx context.Context, loc resolvers.AdjustedLocation) ([]git.Signature, error) {
 	hunks, err := git.BlameFile(ctx, api.RepoName(loc.Dump.RepositoryName), loc.Path, &git.BlameOptions{
 		NewestCommit: api.CommitID(loc.Dump.Commit),
 		StartLine:    loc.AdjustedRange.Start.Line + 1,
