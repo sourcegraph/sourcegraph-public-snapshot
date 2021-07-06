@@ -3,11 +3,10 @@ import { camelCase } from 'lodash'
 import React, { useContext } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { PageHeader, Container } from '@sourcegraph/wildcard/src'
 
 import { AuthenticatedUser } from '../../../../auth'
