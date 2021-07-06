@@ -1,4 +1,5 @@
 import * as H from 'history'
+import { IRange } from 'monaco-editor'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -12,7 +13,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/StreamingSearchResults'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
-import { IRange } from 'monaco-editor'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,

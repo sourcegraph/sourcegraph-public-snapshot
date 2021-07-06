@@ -7,6 +7,7 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { AuthenticatedUser } from '../../../auth'
@@ -15,11 +16,10 @@ import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'
+import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
-import { getSearchReferenceFactory } from './SearchReference'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 const SEARCH_SIDEBAR_VISIBILITY_KEY = 'SearchProduct.SearchSidebar.Visibility'
 
@@ -103,7 +103,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     <SearchSidebarSection
                         className={styles.searchSidebarItem}
                         header="Search reference"
-                        showSearch
+                        showSearch={true}
                         open={openSections[SectionID.SEARCH_REFERENCE] ?? true}
                         onToggle={open => persistToggleState(SectionID.SEARCH_REFERENCE, open)}
                     >

@@ -19,7 +19,17 @@ export const SearchSidebarSection: React.FunctionComponent<{
     onCtaLinkClick?: () => void
     onToggle?: (open: boolean) => void
     open?: boolean
-}> = ({ header, children = [], className, showSearch = false, ctaLinkText, ctaLinkTo, onCtaLinkClick, onToggle, open }) => {
+}> = ({
+    header,
+    children = [],
+    className,
+    showSearch = false,
+    ctaLinkText,
+    ctaLinkTo,
+    onCtaLinkClick,
+    onToggle,
+    open,
+}) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
@@ -49,25 +59,25 @@ export const SearchSidebarSection: React.FunctionComponent<{
             : children
 
         body = (
-          <>
-            <ul className={styles.sidebarSectionList}>
-            {filteredChildren.map((child, index) => (
-                  <li key={child.key || index}>{child}</li>
-                  ))}
-            {filteredChildren.length === 0 && (
-                <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
+            <>
+                <ul className={styles.sidebarSectionList}>
+                    {filteredChildren.map((child, index) => (
+                        <li key={child.key || index}>{child}</li>
+                    ))}
+                    {filteredChildren.length === 0 && (
+                        <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
+                    )}
+                </ul>
+                {ctaLinkText && ctaLinkTo && (
+                    <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to={ctaLinkTo}>
+                        {ctaLinkText}
+                    </Link>
                 )}
-            </ul>
-            {ctaLinkText && ctaLinkTo && (
-                <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to={ctaLinkTo}>
-                {ctaLinkText}
-                </Link>
-                )}
-          </>
+            </>
         )
     }
 
-    const [collapsed, setCollapsed] = useState(open ? false : true)
+    const [collapsed, setCollapsed] = useState(!open)
 
     return visible ? (
         <div className={classNames(styles.sidebarSection, className)}>

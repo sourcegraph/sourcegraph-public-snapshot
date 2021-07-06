@@ -1,19 +1,22 @@
-import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { assert } from 'chai'
 import { Selection } from 'monaco-editor'
+
+import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+
 import { QueryChangeSource, QueryState } from '../../helpers'
+
 import { parsePlaceholder, updateQueryWithFilter } from './SearchReference'
 
 /**
  * Automatically sets cursor position and selections from example query.
  */
 function queryStateFromExample(query: string, showSuggestions = false): QueryState {
-    let cursorPosition
+    let cursorPosition: number | undefined
     let selectionStart: number
-    let selection: Selection | undefined = undefined
+    let selection: Selection | undefined
     let offset = 0
 
-    const cleanedQuery = query.replaceAll(/[\[\]|]/g, (match, index) => {
+    const cleanedQuery = query.replaceAll(/[[\]|]/g, (match, index: number) => {
         switch (match) {
             case '[':
                 selectionStart = index

@@ -1,27 +1,27 @@
-import React, { ReactElement, useCallback, useMemo, useState } from 'react'
-import classNames from 'classnames'
-import { Collapse } from 'reactstrap'
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
+import { escapeRegExp } from 'lodash'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
+import { Selection } from 'monaco-editor'
+import React, { ReactElement, useCallback, useMemo, useState } from 'react'
+import { Collapse } from 'reactstrap'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
+import { updateFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../index'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { QueryChangeSource, QueryState } from '../../helpers'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
-import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import { Selection } from 'monaco-editor'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { escapeRegExp } from 'lodash'
-import { updateFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
@@ -45,9 +45,9 @@ export interface SearchReferenceInfo {
 /**
  * Adds additional search reference information from the existing filters list.
  */
-function augmentSearchReference(searchReference: SearchReferenceInfo) {
+function augmentSearchReference(searchReference: SearchReferenceInfo): void {
     const filter = FILTERS[searchReference.type]
-    if (filter && filter.alias) {
+    if (filter?.alias) {
         searchReference.alias = filter.alias
     }
 }
@@ -56,20 +56,22 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     {
         type: FilterType.after,
         placeholder: parsePlaceholder('"{last week}"'),
-        description: `Only include results from diffs or commits which have a commit date after the specified time frame.`,
+        description:
+            'Only include results from diffs or commits which have a commit date after the specified time frame.',
         commonRank: 100,
         examples: ['after:"6 weeks ago"', 'after:"november 1 2019"'],
     },
     {
         type: FilterType.archived,
         placeholder: parsePlaceholder('{yes or only}'),
-        description: `The "yes" option includes archived repositories. The "only" option filters results to only archived repositories. Results in archived repositories are excluded by default.`,
+        description:
+            'The "yes" option includes archived repositories. The "only" option filters results to only archived repositories. Results in archived repositories are excluded by default.',
         examples: ['repo:sourcegraph/ archived:only'],
     },
     {
         type: FilterType.case,
         placeholder: parsePlaceholder('{yes}'),
-        description: `Perform a case sensitive query. Without this, everything is matched case insensitively.`,
+        description: 'Perform a case sensitive query. Without this, everything is matched case insensitively.',
         examples: ['OPEN_FILE case:yes'],
     },
     {
@@ -192,11 +194,13 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
 ]
 
-searchReferenceInfo.forEach(augmentSearchReference)
+for (const searchReference of searchReferenceInfo) {
+    augmentSearchReference(searchReference)
+}
 
 const commonFilters = searchReferenceInfo
-    .filter(info => info.commonRank != null)
-    // commonRank will never be null here, but TS doesn't seem to know
+    .filter(info => info.commonRank !== undefined)
+    // commonRank will never be undefined here, but TS doesn't seem to know
     .sort((a, b) => (a.commonRank as number) - (b.commonRank as number))
 
 /**
@@ -204,9 +208,7 @@ const commonFilters = searchReferenceInfo
  * filter information (name, description, ...)
  */
 function matches(searchTerms: RegExp[], info: SearchReferenceInfo): boolean {
-    return searchTerms.every(term => {
-        return term.test(info.type) || term.test(info.description || '')
-    })
+    return searchTerms.every(term => term.test(info.type) || term.test(info.description || ''))
 }
 
 /**
@@ -249,7 +251,7 @@ export function updateQueryWithFilter(
 ): QueryState {
     const { singular } = allFilters[searchReference.type]
     let { query } = currentQueryState
-    let showSuggestions = shouldShowSuggestions(searchReference)
+    const showSuggestions = shouldShowSuggestions(searchReference)
     let cursorPosition
     let selection
     let field: string = searchReference.type
@@ -310,14 +312,14 @@ export function updateQueryWithFilter(
 }
 
 interface Placeholder {
-    tokens: Array<{ type: 'text' | 'value'; content: string; start: number; end: number }>
+    tokens: { type: 'text' | 'value'; content: string; start: number; end: number }[]
     text: string
 }
 
 export function parsePlaceholder(placeholder: string): Placeholder {
-    const valuePattern = /\{([^}]+)\}/g
+    const valuePattern = /{([^}]+)}/g
     let currentIndex = 0
-    let parsedPlaceholder: Placeholder = { tokens: [], text: '' }
+    const parsedPlaceholder: Placeholder = { tokens: [], text: '' }
     let match
     while ((match = valuePattern.exec(placeholder))) {
         if (currentIndex !== match.index) {
@@ -349,14 +351,14 @@ export function parsePlaceholder(placeholder: string): Placeholder {
     return parsedPlaceholder
 }
 
-function interleave<T>(values: T[], filler: T) {
+function interleave<T>(values: T[], filler: T): T[] {
     const result = []
     if (values.length > 0) {
         result.push(values[0])
     }
-    for (let i = 1; i < values.length; i++) {
+    for (let index = 1; index < values.length; index++) {
         result.push(filler)
-        result.push(values[i])
+        result.push(values[index])
     }
 
     return result
@@ -478,8 +480,8 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                             <div className="font-weight-medium">Examples</div>
                             <div className={classNames('text-code', styles.examples)}>
                                 {searchReference.examples.map(example => (
-                                    <p>
-                                        <SearchReferenceExample key={example} example={example} />
+                                    <p key={example}>
+                                        <SearchReferenceExample example={example} />
                                     </p>
                                 ))}
                             </div>
@@ -496,21 +498,17 @@ interface SearchReferenceListProps {
     onClick: (info: SearchReferenceInfo, negate: boolean) => void
 }
 
-const SearchReferenceList = ({ filters, onClick }: SearchReferenceListProps): ReactElement => {
-    return (
-        <ul className={styles.list}>
-            {filters.map(filterInfo => {
-                return (
-                    <SearchReferenceEntry
-                        searchReference={filterInfo}
-                        key={filterInfo.type + filterInfo.placeholder.text}
-                        onClick={onClick}
-                    />
-                )
-            })}
-        </ul>
-    )
-}
+const SearchReferenceList = ({ filters, onClick }: SearchReferenceListProps): ReactElement => (
+    <ul className={styles.list}>
+        {filters.map(filterInfo => (
+            <SearchReferenceEntry
+                searchReference={filterInfo}
+                key={filterInfo.type + filterInfo.placeholder.text}
+                onClick={onClick}
+            />
+        ))}
+    </ul>
+)
 
 export interface SearchReferenceProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
@@ -534,13 +532,12 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
         return searchReferenceInfo.filter(info => matches(searchTerms, info))
     }, [props.filter])
 
+    const { onNavbarQueryChange, navbarSearchQueryState } = props
     const updateQuery = useCallback(
         (searchReference: SearchReferenceInfo, negate: boolean) => {
-            props.onNavbarQueryChange(
-                updateQueryWithFilter(props.navbarSearchQueryState, searchReference, negate, FILTERS)
-            )
+            onNavbarQueryChange(updateQueryWithFilter(navbarSearchQueryState, searchReference, negate, FILTERS))
         },
-        [props.onNavbarQueryChange, props.navbarSearchQueryState]
+        [onNavbarQueryChange, navbarSearchQueryState]
     )
 
     const filterList = <SearchReferenceList filters={selectedFilters} onClick={updateQuery} />
