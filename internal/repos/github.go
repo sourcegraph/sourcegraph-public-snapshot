@@ -198,8 +198,7 @@ func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
 }
 
 func (s GithubSource) Version(ctx context.Context) (string, error) {
-	v, err := s.v3Client.GetVersion(ctx)
-	return v, err
+	return s.v3Client.GetVersion(ctx)
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured

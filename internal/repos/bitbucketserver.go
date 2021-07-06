@@ -327,6 +327,5 @@ func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error
 }
 
 func (s *BitbucketServerSource) Version(ctx context.Context) (string, error) {
-	v, err := s.client.GetVersion(ctx)
-	return v, err
+	return s.client.GetVersion(ctx)
 }

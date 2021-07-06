@@ -270,8 +270,8 @@ func TestUniqueCodeHostIdentifier(t *testing.T) {
 		},
 		{
 			kind:   KindPerforce,
-			config: `{"p4port": "ssl:111.222.333.444:1666"}`,
-			want:   "",
+			config: `{"p4.port": "ssl:111.222.333.444:1666"}`,
+			want:   "ssl:111.222.333.444:1666",
 		},
 		{
 			kind:   KindPhabricator,
