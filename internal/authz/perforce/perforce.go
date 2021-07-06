@@ -205,7 +205,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		line := scanner.Text()
 
 		// Skip comments
-		if strings.HasPrefix(line, "#") {
+		if strings.HasPrefix(line, "##") {
 			continue
 		}
 
@@ -402,7 +402,7 @@ func (p *Provider) scanAllUsers(ctx context.Context, rc io.ReadCloser) (map[stri
 		line := scanner.Text()
 
 		// Skip comments
-		if strings.HasPrefix(line, "#") {
+		if strings.HasPrefix(line, "##") {
 			continue
 		}
 
