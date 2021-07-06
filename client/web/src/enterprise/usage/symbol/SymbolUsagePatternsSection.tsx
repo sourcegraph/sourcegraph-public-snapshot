@@ -15,6 +15,14 @@ import {
     SymbolUsagePatternExampleLocationGQLFragment,
 } from './SymbolUsagePatternExampleLocation'
 
+const HACK_CSS = (
+    <style>
+        {
+            'td.line { display: none; } .code-excerpt .code { padding-left: 0.25rem !important; } .result-container__header { display: none; } .result-container { border: solid 1px var(--border-color) !important; border-width: 1px !important; margin: 1rem; }'
+        }
+    </style>
+)
+
 export const SymbolUsagePatternGQLFragment = gql`
     fragment SymbolUsagePatternFields on SymbolUsagePattern {
         description
@@ -34,11 +42,14 @@ interface Props extends SettingsCascadeProps, ThemeProps, VersionContextProps {
 
 export const SymbolUsagePatternsSection: React.FunctionComponent<Props> = ({ usagePatterns, ...props }) => (
     <>
+        {HACK_CSS}
         {usagePatterns.map(({ description, exampleLocations }, index) => (
             <div key={index}>
-                <h4>
-                    <Markdown dangerousInnerHTML={renderMarkdown(description)} />
-                </h4>
+                {false && (
+                    <h4>
+                        <Markdown dangerousInnerHTML={renderMarkdown(description)} />
+                    </h4>
+                )}
                 {exampleLocations.map((exampleLocation, index) => (
                     <SymbolUsagePatternExampleLocation key={index} exampleLocation={exampleLocation} {...props} />
                 ))}

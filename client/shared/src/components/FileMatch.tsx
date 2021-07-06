@@ -69,6 +69,8 @@ interface Props extends SettingsCascadeProps {
 
     allExpanded?: boolean
 
+    hideHeader?: boolean
+
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -159,6 +161,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             allExpanded: props.allExpanded,
             matchCountLabel,
             repoStars: result.repoStars,
+            hideHeader: props.hideHeader,
         }
     } else {
         const length = items.length - subsetMatches
@@ -187,6 +190,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             allExpanded: props.allExpanded,
             matchCountLabel,
             repoStars: result.repoStars,
+            hideHeader: props.hideHeader,
         }
     }
 

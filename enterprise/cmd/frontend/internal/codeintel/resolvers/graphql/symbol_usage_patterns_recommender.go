@@ -3,7 +3,6 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -110,7 +109,6 @@ func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLo
 	infos = keep
 
 	// Re-extract the exampleLocations.
-	log.Printf("was length %d", len(exampleLocations))
 	exampleLocations = exampleLocations[:0]
 	for _, info := range infos {
 		exampleLocations = append(exampleLocations, symbolUsagePatternExampleLocation{
@@ -119,7 +117,6 @@ func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLo
 			location:    info.location,
 		})
 	}
-	log.Printf("now length %d", len(exampleLocations))
 
 	return exampleLocations, nil
 }

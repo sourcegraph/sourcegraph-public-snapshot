@@ -52,7 +52,10 @@ export const SymbolUsagePatternExampleLocation: React.FunctionComponent<Props> =
     const a = 1
     return (
         <div>
-            <Markdown dangerousInnerHTML={renderMarkdown(exampleLocation.description)} />
+            <Markdown
+                dangerousInnerHTML={renderMarkdown(exampleLocation.description)}
+                className="text-muted small p-1"
+            />
             <FileMatch
                 result={{
                     type: 'file',
@@ -61,7 +64,7 @@ export const SymbolUsagePatternExampleLocation: React.FunctionComponent<Props> =
                     name: exampleLocation.location.resource.path,
                     lineMatches: [
                         {
-                            line: 'foo',
+                            line: '',
                             lineNumber: exampleLocation.location.range!.start.line,
                             offsetAndLengths: [
                                 [

@@ -79,6 +79,8 @@ export interface Props {
      * The number of stars for the result's associated repo
      */
     repoStars?: number
+
+    hideHeader?: boolean
 }
 
 /**
@@ -98,6 +100,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     description,
     matchCountLabel,
     repoStars,
+    hideHeader,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -113,51 +116,55 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     const Icon = icon
     return (
         <div className="test-search-result result-container" data-testid="result-container">
-            <div className="result-container__header">
-                <Icon className="icon-inline flex-shrink-0" />
-                <div className="result-container__header-divider" />
-                <div
-                    className={classNames('result-container__header-title', titleClassName)}
-                    data-testid="result-container-header"
-                >
-                    {title}
-                    {description && <span className="result-container__header-description ml-2">{description}</span>}
-                </div>
-                {matchCountLabel && (
-                    <>
-                        <small className="mr-1">{matchCountLabel}</small>
-                        {collapsible && <div className="result-container__header-divider" />}
-                    </>
-                )}
-                {collapsible && (
-                    <button
-                        type="button"
-                        className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
-                        onClick={toggle}
+            {!hideHeader && (
+                <div className="result-container__header">
+                    <Icon className="icon-inline flex-shrink-0" />
+                    <div className="result-container__header-divider" />
+                    <div
+                        className={classNames('result-container__header-title', titleClassName)}
+                        data-testid="result-container-header"
                     >
-                        {expanded ? (
-                            <>
-                                {collapseLabel && <ArrowCollapseUpIcon className="icon-inline mr-1" />}
-                                {collapseLabel}
-                                {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
-                            </>
-                        ) : (
-                            <>
-                                {expandLabel && <ArrowExpandDownIcon className="icon-inline mr-1" />}
-                                {expandLabel}
-                                {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
-                            </>
+                        {title}
+                        {description && (
+                            <span className="result-container__header-description ml-2">{description}</span>
                         )}
-                    </button>
-                )}
-                {matchCountLabel && formattedRepositoryStarCount && <div className="search-result__divider" />}
-                {formattedRepositoryStarCount && (
-                    <>
-                        <StarIcon className="search-result__star" />
-                        {formattedRepositoryStarCount}
-                    </>
-                )}
-            </div>
+                    </div>
+                    {matchCountLabel && (
+                        <>
+                            <small className="mr-1">{matchCountLabel}</small>
+                            {collapsible && <div className="result-container__header-divider" />}
+                        </>
+                    )}
+                    {collapsible && (
+                        <button
+                            type="button"
+                            className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                            onClick={toggle}
+                        >
+                            {expanded ? (
+                                <>
+                                    {collapseLabel && <ArrowCollapseUpIcon className="icon-inline mr-1" />}
+                                    {collapseLabel}
+                                    {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
+                                </>
+                            ) : (
+                                <>
+                                    {expandLabel && <ArrowExpandDownIcon className="icon-inline mr-1" />}
+                                    {expandLabel}
+                                    {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
+                                </>
+                            )}
+                        </button>
+                    )}
+                    {matchCountLabel && formattedRepositoryStarCount && <div className="search-result__divider" />}
+                    {formattedRepositoryStarCount && (
+                        <>
+                            <StarIcon className="search-result__star" />
+                            {formattedRepositoryStarCount}
+                        </>
+                    )}
+                </div>
+            )}
             {!expanded && collapsedChildren}
             {expanded && expandedChildren}
         </div>
