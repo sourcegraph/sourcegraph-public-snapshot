@@ -36,9 +36,9 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const history = useHistory()
 
     const {
-        trigger: cloningTrigger,
-        repos: cloningLines,
-        loading: cloningLoading,
+        trigger: fetchCloningStatus,
+        repos: cloningStatusLines,
+        loading: cloningStatusLoading,
         isDoneCloning,
     } = useRepoCloningStatus({ userId: user.id, pollInterval: 2000 })
 
@@ -139,6 +139,11 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                             We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first
                             search!
                         </p>
+                        <p>{`cloningStatusLoading: ${cloningStatusLoading}`}</p>
+                        <p>{`isDoneCloning: ${isDoneCloning}`}</p>
+                        <p>{`cloningStatusLines count: ${
+                            cloningStatusLines ? cloningStatusLines.length : 'undefined'
+                        }`}</p>
                         <Terminal>
                             {/* {cloningLoading && (<RepoLine key="loading" title="Loading..." /> )}
                             {!cloningLoading && cloningLines?.map(({id, title, details, progress}) =>
@@ -151,7 +156,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
             </>
         ),
         isComplete: () => false,
-        prefetch: () => cloningTrigger(),
+        prefetch: fetchCloningStatus,
     }
 
     const steps: Step[] = [firstStep, secondStep, thirdStep]
@@ -161,6 +166,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const currentStep = steps[currentStepNumber - 1]
 
     const goToNextTab = (): void => {
+        // currentStepNumber is not zero based, it'll get the next step
         const nextStep = steps[currentStepNumber]
         if (nextStep.prefetch) {
             nextStep.prefetch()
