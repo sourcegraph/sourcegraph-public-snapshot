@@ -468,7 +468,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	if args.PublicationStates != nil && *args.PublicationStates != nil {
 		var errs *multierror.Error
 		for _, state := range *args.PublicationStates {
-			id, err := unmarshalChangesetSpecID(state.ChangesetSpecID)
+			id, err := unmarshalChangesetSpecID(state.ChangesetSpec)
 			if err != nil {
 				return nil, err
 			}

@@ -529,35 +529,35 @@ func TestApplyBatchChange(t *testing.T) {
 		for name, states := range map[string][]map[string]interface{}{
 			"other batch spec": {
 				{
-					"changesetSpecID":  marshalChangesetSpecRandID(otherChangesetSpec.RandID),
+					"changesetSpec":    marshalChangesetSpecRandID(otherChangesetSpec.RandID),
 					"publicationState": true,
 				},
 			},
 			"duplicate batch specs": {
 				{
-					"changesetSpecID":  marshalChangesetSpecRandID(changesetSpec.RandID),
+					"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
 					"publicationState": true,
 				},
 				{
-					"changesetSpecID":  marshalChangesetSpecRandID(changesetSpec.RandID),
+					"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
 					"publicationState": true,
 				},
 			},
 			"invalid publication state": {
 				{
-					"changesetSpecID":  marshalChangesetSpecRandID(changesetSpec.RandID),
+					"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
 					"publicationState": "foo",
 				},
 			},
 			"invalid changeset spec ID": {
 				{
-					"changesetSpecID":  "foo",
+					"changesetSpec":    "foo",
 					"publicationState": true,
 				},
 			},
 			"changeset spec with a published state": {
 				{
-					"changesetSpecID":  marshalChangesetSpecRandID(publishedChangesetSpec.RandID),
+					"changesetSpec":    marshalChangesetSpecRandID(publishedChangesetSpec.RandID),
 					"publicationState": true,
 				},
 			},
@@ -573,7 +573,7 @@ func TestApplyBatchChange(t *testing.T) {
 		// Finally, let's actually make a legit apply.
 		input["publicationStates"] = []map[string]interface{}{
 			{
-				"changesetSpecID":  marshalChangesetSpecRandID(changesetSpec.RandID),
+				"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
 				"publicationState": true,
 			},
 		}

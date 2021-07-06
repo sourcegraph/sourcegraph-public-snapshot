@@ -110,7 +110,7 @@ type ApplyBatchChangeArgs struct {
 }
 
 type ChangesetSpecPublicationStateInput struct {
-	ChangesetSpecID  graphql.ID
+	ChangesetSpec    graphql.ID
 	PublicationState batches.PublishedValue
 }
 

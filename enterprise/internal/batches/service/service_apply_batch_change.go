@@ -135,7 +135,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 
 	// Prepare the UI publication states. We need to do this within the
 	// transaction to avoid conflicting writes to the changeset specs.
-	if err := opts.PublicationStates.prepareAndValidate(ctx, tx, batchChange.BatchSpecID); err != nil {
+	if err := opts.PublicationStates.prepareAndValidate(mappings); err != nil {
 		return nil, err
 	}
 

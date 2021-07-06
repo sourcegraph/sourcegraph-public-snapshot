@@ -1,19 +1,12 @@
 package service
 
 import (
-	"context"
 	"strconv"
 	"testing"
-	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -72,82 +65,80 @@ func TestUiPublicationStates_get(t *testing.T) {
 	}
 }
 
-func TestUiPublicationStates_prepare(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
+	var (
+		changesetUI = &btypes.ChangesetSpec{
+			ID:     1,
+			RandID: "1",
+			Spec: &btypes.ChangesetSpecDescription{
+				Published: batches.PublishedValue{Val: nil},
+			},
+		}
+		changesetPublished = &btypes.ChangesetSpec{
+			ID:     2,
+			RandID: "2",
+			Spec: &btypes.ChangesetSpecDescription{
+				Published: batches.PublishedValue{Val: true},
+			},
+		}
+		changesetUnwired = &btypes.ChangesetSpec{
+			ID:     3,
+			RandID: "3",
+			Spec: &btypes.ChangesetSpecDescription{
+				Published: batches.PublishedValue{Val: true},
+			},
+		}
 
-	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
-
-	now := timeutil.Now()
-	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, nil, clock)
-
-	repos, _ := bt.CreateGitHubSSHTestRepos(t, ctx, db, 1)
-	repo := repos[0]
-	userID := bt.CreateTestUser(t, db, true).ID
-
-	batchSpecA := bt.CreateBatchSpec(t, ctx, bstore, "a", userID)
-	batchSpecB := bt.CreateBatchSpec(t, ctx, bstore, "b", userID)
-
-	changesetSpecA := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-		User:      userID,
-		Repo:      repo.ID,
-		BatchSpec: batchSpecA.ID,
-		HeadRef:   "main",
-	})
-	changesetSpecB := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-		User:      userID,
-		Repo:      repo.ID,
-		BatchSpec: batchSpecB.ID,
-		HeadRef:   "main",
-		Published: true,
-	})
+		mappings = btypes.RewirerMappings{
+			{
+				// This should be ignored, since it has a zero ChangesetSpecID.
+				ChangesetSpecID: 0,
+				ChangesetSpec:   changesetUnwired,
+			},
+			{
+				ChangesetSpecID: 1,
+				ChangesetSpec:   changesetUI,
+			},
+			{
+				ChangesetSpecID: 2,
+				ChangesetSpec:   changesetPublished,
+			},
+		}
+	)
 
 	t.Run("errors", func(t *testing.T) {
 		for name, tc := range map[string]struct {
-			batchSpecID int64
-			setup       func(ps *UiPublicationStates)
+			changesetUIs map[string]batches.PublishedValue
 		}{
-			"incorrect batch spec": {
-				batchSpecID: batchSpecB.ID,
-				setup: func(ps *UiPublicationStates) {
-					ps.Add(changesetSpecA.RandID, batches.PublishedValue{Val: true})
+			"spec not in mappings": {
+				changesetUIs: map[string]batches.PublishedValue{
+					changesetUnwired.RandID: batches.PublishedValue{Val: true},
 				},
 			},
 			"spec with published field": {
-				batchSpecID: batchSpecB.ID,
-				setup: func(ps *UiPublicationStates) {
-					ps.Add(changesetSpecB.RandID, batches.PublishedValue{Val: true})
+				changesetUIs: map[string]batches.PublishedValue{
+					changesetPublished.RandID: batches.PublishedValue{Val: true},
 				},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
 				var ps UiPublicationStates
-				tc.setup(&ps)
+				for rid, pv := range tc.changesetUIs {
+					ps.Add(rid, pv)
+				}
 
-				if err := ps.prepareAndValidate(ctx, bstore, tc.batchSpecID); err == nil {
+				if err := ps.prepareAndValidate(mappings); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
 		}
 	})
 
-	t.Run("database error", func(t *testing.T) {
-		var ps UiPublicationStates
-
-		ps.Add(changesetSpecA.RandID, batches.PublishedValue{Val: true})
-		if err := ps.prepareAndValidate(ctx, &brokenListChangesetSpeccer{}, batchSpecA.ID); err == nil {
-			t.Error("unexpected nil error")
-		}
-	})
-
 	t.Run("success", func(t *testing.T) {
 		var ps UiPublicationStates
 
-		ps.Add(changesetSpecA.RandID, batches.PublishedValue{Val: true})
-		if err := ps.prepareAndValidate(ctx, bstore, batchSpecA.ID); err != nil {
+		ps.Add(changesetUI.RandID, batches.PublishedValue{Val: true})
+		if err := ps.prepareAndValidate(mappings); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
 		if len(ps.rand) != 0 {
@@ -155,7 +146,7 @@ func TestUiPublicationStates_prepare(t *testing.T) {
 		}
 
 		want := map[int64]*btypes.ChangesetUiPublicationState{
-			changesetSpecA.ID: &btypes.ChangesetUiPublicationStatePublished,
+			changesetUI.ID: &btypes.ChangesetUiPublicationStatePublished,
 		}
 		if diff := cmp.Diff(want, ps.id); diff != "" {
 			t.Errorf("unexpected ps.id (-want +have):\n%s", diff)
@@ -164,24 +155,14 @@ func TestUiPublicationStates_prepare(t *testing.T) {
 }
 
 func TestUiPublicationStates_prepareEmpty(t *testing.T) {
-	ctx := context.Background()
-
 	for name, ps := range map[string]UiPublicationStates{
 		"nil":   {},
 		"empty": {rand: map[string]batches.PublishedValue{}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := ps.prepareAndValidate(ctx, nil, 0); err != nil {
+			if err := ps.prepareAndValidate(btypes.RewirerMappings{}); err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 		})
 	}
-}
-
-type brokenListChangesetSpeccer struct{}
-
-var _ ListChangesetSpeccer = &brokenListChangesetSpeccer{}
-
-func (*brokenListChangesetSpeccer) ListChangesetSpecs(context.Context, store.ListChangesetSpecsOpts) (btypes.ChangesetSpecs, int64, error) {
-	return nil, 0, errors.New("database error")
 }
