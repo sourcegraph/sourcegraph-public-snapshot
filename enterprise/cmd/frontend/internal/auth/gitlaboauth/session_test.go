@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -29,6 +30,8 @@ func Test_CreateCodeHostConnectionHandlesExistingService(t *testing.T) {
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
+	db := dbtesting.GetDB(t)
+
 	ctx := context.Background()
 	s := &sessionIssuerHelper{}
 	t.Run("Unauthenticated request", func(t *testing.T) {
@@ -38,7 +41,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 		}
 	})
 
-	mockGitLabCom := newMockProvider(t, "gitlabcomclient", "gitlabcomsecret", "https://gitlab.com/")
+	mockGitLabCom := newMockProvider(t, db, "gitlabcomclient", "gitlabcomsecret", "https://gitlab.com/")
 	providers.MockProviders = []providers.Provider{mockGitLabCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
@@ -63,7 +66,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	}
 
 	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (*database.ExternalServiceStore, error) {
-		return database.GlobalExternalServices, nil
+		return database.ExternalServices(db), nil
 	}
 	database.Mocks.ExternalServices.Done = func(err error) error {
 		return nil
