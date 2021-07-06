@@ -87,7 +87,7 @@ func (p *PublishedValue) UnmarshalYAML(unmarshal func(interface{}) error) error 
 func (p *PublishedValue) UnmarshalGraphQL(input interface{}) error {
 	p.Val = input
 	if !p.Valid() {
-		return errors.New("invalid PublishedValue")
+		return fmt.Errorf("invalid PublishedValue: %v", input)
 	}
 	return nil
 }
