@@ -32,7 +32,7 @@ type MockDBStore struct {
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
 		CalculateVisibleUploadsFunc: &DBStoreCalculateVisibleUploadsFunc{
-			defaultHook: func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error {
+			defaultHook: func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 				return nil
 			},
 		},
@@ -69,24 +69,24 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked.
 type DBStoreCalculateVisibleUploadsFunc struct {
-	defaultHook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error
-	hooks       []func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error
+	defaultHook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error
+	hooks       []func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error
 	history     []DBStoreCalculateVisibleUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // CalculateVisibleUploads delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 *gitserver.CommitGraph, v3 map[string]gitserver.RefDescription, v4 int, v5 time.Time) error {
-	r0 := m.CalculateVisibleUploadsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.CalculateVisibleUploadsFunc.appendCall(DBStoreCalculateVisibleUploadsFuncCall{v0, v1, v2, v3, v4, v5, r0})
+func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 *gitserver.CommitGraph, v3 map[string]gitserver.RefDescription, v4 time.Duration, v5 time.Duration, v6 int, v7 time.Time) error {
+	r0 := m.CalculateVisibleUploadsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6, v7)
+	m.CalculateVisibleUploadsFunc.appendCall(DBStoreCalculateVisibleUploadsFuncCall{v0, v1, v2, v3, v4, v5, v6, v7, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -94,7 +94,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Co
 // CalculateVisibleUploads method of the parent MockDBStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -103,7 +103,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error {
+	f.SetDefaultHook(func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
@@ -111,12 +111,12 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreCalculateVisibleUploadsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error {
+	f.PushHook(func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
 
-func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, int, time.Time) error {
+func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -164,10 +164,16 @@ type DBStoreCalculateVisibleUploadsFuncCall struct {
 	Arg3 map[string]gitserver.RefDescription
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 int
+	Arg4 time.Duration
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
-	Arg5 time.Time
+	Arg5 time.Duration
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Arg7 is the value of the 8th argument passed to this method
+	// invocation.
+	Arg7 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -176,7 +182,7 @@ type DBStoreCalculateVisibleUploadsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBStoreCalculateVisibleUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6, c.Arg7}
 }
 
 // Results returns an interface slice containing the results of this
