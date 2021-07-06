@@ -37,7 +37,7 @@ func TestTransformRecord(t *testing.T) {
 		CliSteps: []apiclient.CliStep{
 			{
 				Commands: []string{
-					"batch", "preview", "-f", "spec.yml",
+					"batch", "preview", "-f", "spec.yml", "-text-only",
 				},
 				Dir: ".",
 				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},

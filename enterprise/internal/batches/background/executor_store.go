@@ -1,9 +1,16 @@
 package background
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -39,8 +46,116 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
 func NewExecutorStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext)
+	return &executorStore{Store: dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext)}
 }
+
+var _ dbworkerstore.Store = &executorStore{}
+
+// executorStore is a thin wrapper around dbworkerstore.Store that allows us to
+// extract information out of the ExecutionLogEntry field and persisting it to
+// separate columns when marking a job as complete.
+type executorStore struct {
+	dbworkerstore.Store
+}
+
+// markCompleteQuery is taken from internal/workerutil/dbworker/store/store.go
+//
+// If that one changes we need to update this one here too.
+const markCompleteQuery = `
+UPDATE batch_spec_executions
+SET state = 'completed', finished_at = clock_timestamp(), batch_spec_id = (SELECT id FROM batch_specs WHERE rand_id = %s)
+WHERE id = %s AND state = 'processing'
+RETURNING id
+`
+
+func (s *executorStore) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
+	batchesStore := store.New(s.Store.Handle().DB(), nil)
+
+	batchSpecRandID, err := loadAndExtractBatchSpecRandID(ctx, batchesStore, int64(id))
+	if err != nil {
+		// If we couldn't extract the batch spec rand id, we mark the job as failed
+		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract batch spec ID: %s", err))
+	}
+
+	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id)))
+
+	return ok, err
+}
+
+func (s *executorStore) DequeueWithIndependentTransactionContext(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
+	r, wrapped, b, err := s.Store.DequeueWithIndependentTransactionContext(ctx, workerHostname, conditions)
+
+	return r, &executorStore{Store: wrapped}, b, err
+}
+
+func (s *executorStore) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
+	r, wrapped, b, err := s.Store.Dequeue(ctx, workerHostname, conditions)
+
+	return r, &executorStore{Store: wrapped}, b, err
+}
+
+func loadAndExtractBatchSpecRandID(ctx context.Context, s *store.Store, id int64) (string, error) {
+	exec, err := s.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: id})
+	if err != nil {
+		return "", err
+	}
+
+	if len(exec.ExecutionLogs) < 1 {
+		return "", errors.New("no execution logs")
+	}
+
+	return extractBatchSpecRandID(exec.ExecutionLogs[0].Out)
+}
+
+var ErrNoBatchSpecRandID = errors.New("no batch spec rand id found in execution logs")
+
+func extractBatchSpecRandID(executionLogOutput string) (string, error) {
+	var batchSpecRandID string
+	for _, l := range strings.Split(executionLogOutput, "\n") {
+		const outputLinePrefix = "stdout: "
+
+		if !strings.HasPrefix(l, outputLinePrefix) {
+			continue
+		}
+
+		jsonPart := l[len(outputLinePrefix):]
+
+		var e srcCLILogLine
+		if err := json.Unmarshal([]byte(jsonPart), &e); err != nil {
+			return "", ErrNoBatchSpecRandID
+		}
+
+		if e.Operation == operationCreatingBatchSpec && e.Status == "SUCCESS" {
+			parts := strings.Split(e.Message, "/")
+			if len(parts) == 0 {
+				return "", ErrNoBatchSpecRandID
+			}
+
+			batchSpecGraphQLID := graphql.ID(parts[len(parts)-1])
+			if err := relay.UnmarshalSpec(batchSpecGraphQLID, &batchSpecRandID); err != nil {
+				// If we can't extract the ID we simply return our main error
+				return "", ErrNoBatchSpecRandID
+			}
+
+			return batchSpecRandID, nil
+		}
+	}
+
+	return batchSpecRandID, ErrNoBatchSpecRandID
+}
+
+// srcCLILogLine matches the definition of log entries that are printed by
+// src-cli when used with the `-text-only` flag.
+type srcCLILogLine struct {
+	Operation string `json:"operation"` // "PREPARING_DOCKER_IMAGES"
+
+	Timestamp time.Time `json:"timestamp"`
+
+	Status  string `json:"status"`            // "STARTED", "PROGRESS", "SUCCESS", "FAILURE"
+	Message string `json:"message,omitempty"` // "70% done"
+}
+
+const operationCreatingBatchSpec = "CREATING_BATCH_SPEC"
 
 // scanFirstExecutionRecord scans a slice of batch change executions and returns the first.
 func scanFirstExecutionRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
