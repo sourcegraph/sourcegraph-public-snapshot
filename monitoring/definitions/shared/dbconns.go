@@ -55,7 +55,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "waited_for",
 				Description:    "waited for",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
@@ -64,7 +64,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "blocked_seconds",
 				Description:    "blocked seconds",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}").Unit(monitoring.Seconds),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
@@ -75,7 +75,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "closed_max_idle",
 				Description:    "closed by SetMaxIdleConns",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
@@ -84,7 +84,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "closed_max_lifetime",
 				Description:    "closed by SetConnMaxLifetime",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
@@ -93,7 +93,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			{
 				Name:           "closed_max_idle_time",
 				Description:    "closed by SetConnMaxIdleTime",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name=%q}[1m]))`, app),
+				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
