@@ -12,6 +12,10 @@ import (
 // InitCodeIntelDatabase initializes and returns a connection to the codeintel db.
 func InitCodeIntelDatabase() (*sql.DB, error) {
 	conn, err := initCodeIntelDatabaseMemo.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	return conn.(*sql.DB), err
 }
 
