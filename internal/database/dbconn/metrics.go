@@ -18,10 +18,10 @@ type metricsCollector struct {
 	inUseDesc             *prometheus.Desc
 	idleDesc              *prometheus.Desc
 	waitedForDesc         *prometheus.Desc
-	blockedSecondsDesc    *prometheus.Desc
 	closedMaxIdleDesc     *prometheus.Desc
 	closedMaxLifetimeDesc *prometheus.Desc
 	closedMaxIdleTimeDesc *prometheus.Desc
+	blockedSecondsHist    prometheus.Histogram
 }
 
 func newMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
@@ -67,12 +67,6 @@ func newMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
 			nil,
 			labels,
 		),
-		blockedSecondsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "blocked_seconds"),
-			"The total time blocked waiting for a new connection.",
-			nil,
-			labels,
-		),
 		closedMaxIdleDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, subsystem, "closed_max_idle"),
 			"The total number of connections closed due to SetMaxIdleConns.",
@@ -91,6 +85,14 @@ func newMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
 			nil,
 			labels,
 		),
+		blockedSecondsHist: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace:   namespace,
+			Subsystem:   subsystem,
+			Name:        "blocked_seconds",
+			Help:        "The total time blocked waiting for a new connection.",
+			ConstLabels: labels,
+			Buckets:     prometheus.DefBuckets,
+		}),
 	}
 }
 
@@ -101,10 +103,10 @@ func (c metricsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.inUseDesc
 	ch <- c.idleDesc
 	ch <- c.waitedForDesc
-	ch <- c.blockedSecondsDesc
 	ch <- c.closedMaxIdleDesc
 	ch <- c.closedMaxLifetimeDesc
 	ch <- c.closedMaxIdleTimeDesc
+	c.blockedSecondsHist.Describe(ch)
 }
 
 // Collect implements the prometheus.Collector interface.
@@ -137,11 +139,6 @@ func (c metricsCollector) Collect(ch chan<- prometheus.Metric) {
 		float64(stats.WaitCount),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		c.blockedSecondsDesc,
-		prometheus.CounterValue,
-		stats.WaitDuration.Seconds(),
-	)
-	ch <- prometheus.MustNewConstMetric(
 		c.closedMaxIdleDesc,
 		prometheus.CounterValue,
 		float64(stats.MaxIdleClosed),
@@ -156,4 +153,7 @@ func (c metricsCollector) Collect(ch chan<- prometheus.Metric) {
 		prometheus.CounterValue,
 		float64(stats.MaxIdleTimeClosed),
 	)
+
+	c.blockedSecondsHist.Observe(stats.WaitDuration.Seconds())
+	c.blockedSecondsHist.Collect(ch)
 }

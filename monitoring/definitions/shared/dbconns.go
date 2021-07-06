@@ -63,8 +63,8 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 			},
 			{
 				Name:           "blocked_seconds",
-				Description:    "blocked seconds",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name=%q}[1m]))`, app),
+				Description:    "blocked seconds (99th percentile)",
+				Query:          fmt.Sprintf(`histogram_quantile(0.99, sum by (app_name, db_name, le) (rate(src_pgsql_conns_blocked_seconds_bucket{app_name=%q}[1m])))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}").Unit(monitoring.Seconds),
 				NoAlert:        true,
 				Owner:          monitoring.ObservableOwnerCoreApplication,
