@@ -7,29 +7,16 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.showExploreUsage', () => {
             provider.show()
+            provider.updateToCurrent()
         })
     )
 
-    context.subscriptions.push(
-        vscode.window.onDidChangeTextEditorSelection(e => {
-            const wordRange = e.textEditor.document.getWordRangeAtPosition(e.selections[0].active)
-            if (!wordRange) {
-                return
-            }
-            const relpath = e.textEditor.document.fileName
-                .replace('/home/sqs/src/', '')
-                .replace('sourcegraph.tmp', 'sourcegraph')
-            const repo = relpath.split('/', 4).slice(0, 3).join('/')
-            const rev = repo === 'github.com/hashicorp/go-multierror' ? 'v1.1.0' : 'HEAD'
-            const filePath = relpath.slice(repo.length + 1)
-
-            const goModule = path.join(repo, path.dirname(filePath))
-            const moniker = { scheme: 'gomod', identifier: `${goModule}:${e.textEditor.document.getText(wordRange)}` }
-
-            const url = `https://sourcegraph.test:3443/${repo}@${rev}/-/usage/symbol/${moniker.scheme}/${moniker.identifier}`
-            provider.setCursor(url)
-        })
-    )
+    if (false)
+        context.subscriptions.push(
+            vscode.window.onDidChangeTextEditorSelection(e => {
+                provider.update(e.textEditor.document, e.selections)
+            })
+        )
 
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(ViewProvider.viewType, provider))
 }
@@ -66,15 +53,40 @@ class ViewProvider implements vscode.WebviewViewProvider {
                 }
             }
         })
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible) {
+                this.updateToCurrent()
+            }
+        })
     }
 
-    public setCursor(url: string): void {
+    public update(document: vscode.TextDocument, selections: vscode.Selection[]): void {
+        const wordRange = document.getWordRangeAtPosition(selections[0].active)
+        if (!wordRange) {
+            return
+        }
+        const relpath = document.fileName.replace('/home/sqs/src/', '').replace('sourcegraph.tmp', 'sourcegraph')
+        const repo = relpath.split('/', 4).slice(0, 3).join('/')
+        const rev = repo === 'github.com/hashicorp/go-multierror' ? 'v1.1.0' : 'HEAD'
+        const filePath = relpath.slice(repo.length + 1)
+
+        const goModule = path.join(repo, path.dirname(filePath))
+        const moniker = { scheme: 'gomod', identifier: `${goModule}:${document.getText(wordRange)}` }
+
+        const url = `https://sourcegraph.test:3443/${repo}@${rev}/-/usage/symbol/${moniker.scheme}/${moniker.identifier}`
         this._view!.webview.postMessage({ type: 'cursor', url })
+    }
+
+    public updateToCurrent(): void {
+        if (vscode.window.activeTextEditor) {
+            this.update(vscode.window.activeTextEditor.document, vscode.window.activeTextEditor.selections)
+        }
     }
 
     public show(): void {
         if (!this._view?.visible) {
             this._view!.show(true)
+            this.updateToCurrent()
         }
     }
 

@@ -49,7 +49,8 @@
         {
           "type": "webview",
           "id": "sourcegraph.exploreUsage",
-          "name": "Explore Usage"
+          "name": "Explore Usage",
+          "visibility": "visible"
         }
       ]
     }

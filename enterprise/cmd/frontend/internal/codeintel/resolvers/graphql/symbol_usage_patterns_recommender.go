@@ -23,9 +23,10 @@ func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLo
 	}
 
 	const (
-		currentUserEmail      = "quinn@slack.org"  // TODO(sqs): un-hardcode
-		teamMemberEmailDomain = "@sourcegraph.com" // TODO(sqs): un-hardcode
-		maintainerEmailDomain = "@hashicorp.com"   // TODO(sqs): un-hardcode; for go-multierror
+		currentUserEmail      = "quinn@slack.org"     // TODO(sqs): un-hardcode
+		currentUserEmail2     = "sqs@sourcegraph.com" // TODO(sqs): un-hardcode
+		teamMemberEmailDomain = "@sourcegraph.com"    // TODO(sqs): un-hardcode
+		maintainerEmailDomain = "@hashicorp.com"      // TODO(sqs): un-hardcode; for go-multierror
 	)
 
 	// Sort most recent first.
@@ -54,7 +55,7 @@ func sortAndRankExampleLocations(ctx context.Context, locationResolver *CachedLo
 			parts = append(parts, fmt.Sprintf("Old (%s)", timeAgo))
 		}
 
-		isByCurrentUser := info.author.Email == currentUserEmail
+		isByCurrentUser := info.author.Email == currentUserEmail || info.author.Email == currentUserEmail2
 		if isByCurrentUser {
 			if !seenCurrentUserMostRecent && i != 0 {
 				parts = append(parts, "most recent usage by you")

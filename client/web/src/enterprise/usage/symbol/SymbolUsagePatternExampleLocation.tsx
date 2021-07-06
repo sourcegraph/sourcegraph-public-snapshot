@@ -51,10 +51,10 @@ interface Props extends SettingsCascadeProps, ThemeProps, VersionContextProps {
 export const SymbolUsagePatternExampleLocation: React.FunctionComponent<Props> = ({ exampleLocation, ...props }) => {
     const a = 1
     return (
-        <div>
+        <div className="pb-2">
             <Markdown
                 dangerousInnerHTML={renderMarkdown(exampleLocation.description)}
-                className="text-muted small p-1"
+                className="text-muted py-1 px-2"
             />
             <FileMatch
                 result={{
