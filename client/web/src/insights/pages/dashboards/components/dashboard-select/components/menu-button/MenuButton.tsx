@@ -25,14 +25,14 @@ export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
     return (
         <ListboxButton className={classnames(styles.button, className)}>
             {({ value, isExpanded }) => {
-                if (value === InsightsDashboardType.All) {
-                    return <MenuButtonContent title="All Insights" isExpanded={isExpanded} />
-                }
-
                 const dashboard = dashboards.find(dashboard => dashboard.id === value)
 
                 if (!dashboard) {
                     return <MenuButtonContent title="Unknown value" isExpanded={isExpanded} />
+                }
+
+                if (dashboard.type === InsightsDashboardType.All) {
+                    return <MenuButtonContent title="All Insights" isExpanded={isExpanded} />
                 }
 
                 return (

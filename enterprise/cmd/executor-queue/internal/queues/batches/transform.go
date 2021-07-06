@@ -1,15 +1,17 @@
 package batches
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // transformRecord transforms a *btypes.BatchSpecExecution into an apiclient.Job.
-func transformRecord(exec *btypes.BatchSpecExecution, config *Config) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecExecution, config *Config) (apiclient.Job, error) {
 	srcEndpoint, err := makeURL(config.Shared.FrontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
 	if err != nil {
 		return apiclient.Job{}, err

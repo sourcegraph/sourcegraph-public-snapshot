@@ -5,7 +5,6 @@ import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, Wid
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
-import { ViewContentProps } from '../../../views/ViewContent'
 import { ViewInsightProviderResult } from '../../core/backend/types'
 
 import { InsightContentCard } from './components/insight-card/InsightContentCard'
@@ -51,9 +50,7 @@ const viewsToReactGridLayouts = (views: ViewInsightProviderResult[]): ReactGridL
     return reactGridLayouts
 }
 
-export interface InsightsViewGridProps
-    extends Omit<ViewContentProps, 'viewContent' | 'viewID' | 'containerClassName'>,
-        TelemetryProps {
+export interface InsightsViewGridProps extends TelemetryProps {
     /**
      * All insights to display in a grid.
      */
@@ -79,17 +76,17 @@ export interface InsightsViewGridProps
  * (backend, search based, lang stats)
  */
 export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = props => {
-    const { hasContextMenu, onDelete = () => Promise.resolve() } = props
+    const { hasContextMenu, telemetryService, onDelete = () => Promise.resolve() } = props
 
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
             try {
-                props.telemetryService.log('InsightUICustomization', { insightType: item.i.split('.')[0] })
+                telemetryService.log('InsightUICustomization', { insightType: item.i.split('.')[0] })
             } catch {
                 // noop
             }
         },
-        [props.telemetryService]
+        [telemetryService]
     )
 
     // For Firefox we can't use css transform/translate to put view grid item in right place.
@@ -124,7 +121,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                         className="card insights-view-grid__item"
                     >
                         <InsightContentCard
-                            {...props}
+                            telemetryService={telemetryService}
                             hasContextMenu={hasContextMenu}
                             insight={view}
                             containerClassName="insights-view-grid__item"

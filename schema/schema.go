@@ -856,7 +856,7 @@ type Insight struct {
 type InsightDashboard struct {
 	Id string `json:"id"`
 	// InsightIds description: Insights ids that will be included in the dashboard.
-	InsightIds []string `json:"insightIds"`
+	InsightIds []string `json:"insightIds,omitempty"`
 	// Title description: Title of the dashboard.
 	Title string `json:"title"`
 }
@@ -1324,6 +1324,8 @@ type SettingsExperimentalFeatures struct {
 	AcceptSearchSuggestionOnEnter *bool `json:"acceptSearchSuggestionOnEnter,omitempty"`
 	// ApiDocs description: Enables API documentation.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
+	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
+	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsDashboards description: Enables code insights dashboards separation for the code insight page.

@@ -19,6 +19,7 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 		c := &btypes.BatchSpecExecution{
 			State:     btypes.BatchSpecExecutionStateQueued,
 			BatchSpec: testBatchSpec,
+			UserID:    int32(i + 123),
 		}
 
 		execs = append(execs, c)
@@ -37,6 +38,7 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 				UpdatedAt: clock.Now(),
 				State:     btypes.BatchSpecExecutionStateQueued,
 				BatchSpec: testBatchSpec,
+				UserID:    have.UserID,
 			}
 
 			if have.ID == 0 {

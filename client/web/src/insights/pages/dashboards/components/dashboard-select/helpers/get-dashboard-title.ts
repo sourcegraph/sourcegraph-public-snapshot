@@ -1,9 +1,9 @@
-import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
+import { InsightsDashboardType, RealInsightDashboard } from '../../../../../core/types'
 
 /**
  * Get formatted dashboard title for the dashboard select option.
  */
-export const getDashboardTitle = (dashboard: InsightDashboard): string => {
+export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
     const { builtIn } = dashboard
 
     if (builtIn) {
@@ -16,7 +16,7 @@ export const getDashboardTitle = (dashboard: InsightDashboard): string => {
 /**
  * Get formatted dashboard owner name. Used for list option badge element.
  */
-export const getDashboardOwnerName = (dashboard: InsightDashboard): string => {
+export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string => {
     const { type } = dashboard
 
     if (type === InsightsDashboardType.Personal) {

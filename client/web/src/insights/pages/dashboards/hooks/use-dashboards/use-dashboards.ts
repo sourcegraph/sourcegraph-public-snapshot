@@ -12,20 +12,19 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { Settings } from '../../../../../schema/settings.schema'
 import {
     InsightDashboard,
-    InsightDashboardOwner,
     INSIGHTS_DASHBOARDS_SETTINGS_KEY,
     InsightsDashboardType,
     isInsightSettingKey,
 } from '../../../../core/types'
+import { InsightDashboardOwner } from '../../../../core/types/dashboard/core'
 
 /**
- * Currently we support only two types of subject that can have insights dashboard.
+ * Special virtual dashboard - "All Insights"
  */
-type SupportedSubject = IUser | IOrg
-
-const SUPPORTED_TYPES_OF_SUBJECT = new Set<SettingsSubject['__typename']>(['User', 'Org'])
-const isSubjectSupported = (subject: SettingsSubject): subject is SupportedSubject =>
-    SUPPORTED_TYPES_OF_SUBJECT.has(subject.__typename)
+export const ALL_INSIGHTS_DASHBOARD: InsightDashboard = {
+    id: 'all',
+    type: InsightsDashboardType.All,
+}
 
 /**
  * React hook that returns all valid and available insights dashboards.
@@ -44,7 +43,7 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
         return []
     }
 
-    return subjects.flatMap(configuredSubject => {
+    const subjectDashboards = subjects.flatMap(configuredSubject => {
         const { settings, subject } = configuredSubject
 
         if (isErrorLike(settings) || !settings || !isSubjectSupported(subject)) {
@@ -53,7 +52,18 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
 
         return getSubjectDashboards(subject, settings)
     })
+
+    return [ALL_INSIGHTS_DASHBOARD, ...subjectDashboards]
 }
+
+/**
+ * Currently we support only two types of subject that can have insights dashboard.
+ */
+type SupportedSubject = IUser | IOrg
+
+const SUPPORTED_TYPES_OF_SUBJECT = new Set<SettingsSubject['__typename']>(['User', 'Org'])
+const isSubjectSupported = (subject: SettingsSubject): subject is SupportedSubject =>
+    SUPPORTED_TYPES_OF_SUBJECT.has(subject.__typename)
 
 /**
  * Returns all subject dashboards and one special (built-in) dashboard that includes
@@ -71,7 +81,7 @@ function getSubjectDashboards(subject: SupportedSubject, settings: Settings): In
         insightIds: Object.keys(settings).filter(isInsightSettingKey),
     }
 
-    // Find all personal insights dashboards
+    // Find all subject insights dashboards
     const subjectDashboards = Object.keys(settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {})
         .map<InsightDashboard | undefined>(dashboardKey => {
             // Select dashboard configuration from the subject settings
@@ -84,6 +94,7 @@ function getSubjectDashboards(subject: SupportedSubject, settings: Settings): In
             return {
                 owner,
                 type: dashboardType,
+                settingsKey: dashboardKey,
                 ...dashboardSettings,
             }
         })

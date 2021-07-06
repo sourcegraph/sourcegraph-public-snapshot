@@ -2,11 +2,14 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
 import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../components/Sidebar'
+import { Settings } from '../../../schema/settings.schema'
 
 import combySample from './samples/comby.batch.yaml'
 import helloWorldSample from './samples/empty.batch.yaml'
@@ -53,11 +56,19 @@ const samples: Sample[] = [
     { name: 'Minimal', file: minimalSample },
 ]
 
-export interface CreateBatchChangePageProps {
+export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings> {
     headingElement: 'h1' | 'h2'
 }
 
-export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({ headingElement }) => {
+export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
+    settingsCascade,
+    headingElement,
+}) => {
+    const isBatchChangesExecutionEnabled = Boolean(
+        settingsCascade !== null &&
+            !isErrorLike(settingsCascade.final) &&
+            settingsCascade.final?.experimentalFeatures?.batchChangesExecution
+    )
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
     return (
         <>
@@ -111,7 +122,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 </Container>
             </div>
             <h2>2. Preview the batch change with Sourcegraph CLI</h2>
-            <Container>
+            <Container className="mb-3">
                 <p>
                     Use the{' '}
                     <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
@@ -125,6 +136,11 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                     change.
                 </p>
             </Container>
+            {isBatchChangesExecutionEnabled && (
+                <h2>
+                    <span className="badge badge-info">coming soon</span> Run your Batch Spec
+                </h2>
+            )}
         </>
     )
 }

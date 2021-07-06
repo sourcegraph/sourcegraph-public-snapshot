@@ -1210,18 +1210,13 @@ var (
 	defaultTimeout = 20 * time.Second
 )
 
-func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout := r.Query.Timeout()
-	return timeout != nil || r.countIsSet()
-}
-
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
 	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
 	timeout := r.Query.Timeout()
 	if timeout != nil {
 		d = *timeout
-	} else if r.countIsSet() {
+	} else if r.Query.Count() != nil {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
@@ -1337,7 +1332,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		Query:       r.Query,
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: r.searchTimeoutFieldSet() || r.stream != nil,
+		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil || r.stream != nil,
 
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,

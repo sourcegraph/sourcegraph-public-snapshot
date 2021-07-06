@@ -104,7 +104,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             if (insight.visibility !== newInsight.visibility) {
                 const settings = await getSubjectSettings(originSubjectID).toPromise()
                 const editedSettings = removeInsightFromSettings({
-                    originSettings: settings.contents,
+                    originalSettings: settings.contents,
                     insightID: insight.id,
                 })
 
@@ -122,7 +122,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             // we need remove old insight object from settings by insight old id
             if (insight.title !== newInsight.title) {
                 settingsContent = removeInsightFromSettings({
-                    originSettings: settingsContent,
+                    originalSettings: settingsContent,
                     insightID: insight.id,
                 })
             }

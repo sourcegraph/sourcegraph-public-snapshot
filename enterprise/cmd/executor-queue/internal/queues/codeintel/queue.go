@@ -1,6 +1,7 @@
 package codeintel
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -28,7 +29,7 @@ const StalledJobMaximumAge = time.Second * 5
 const MaximumNumResets = 3
 
 func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) apiserver.QueueOptions {
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return transformRecord(record.(store.Index), config)
 	}
 
