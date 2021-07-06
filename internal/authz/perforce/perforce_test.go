@@ -1,11 +1,13 @@
 package perforce
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -16,8 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -28,27 +28,16 @@ func TestProvider_FetchAccount(t *testing.T) {
 		Username: "alice",
 	}
 
-	server := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, err := w.Write([]byte(`
+	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+		data := `
 alice <alice@example.com> (Alice) accessed 2020/12/04
 cindy <cindy@example.com> (Cindy) accessed 2020/12/04
-`))
-			if err != nil {
-				t.Fatal(err)
-			}
-		}),
-	)
-
-	// Strip the protocol from the URI while patching the gitserver client's
-	// addresses, since the gitserver implementation does not want the protocol in
-	// the address.
-	gitserver.DefaultClient.Addrs = func() []string {
-		return []string{strings.TrimPrefix(server.URL, "http://")}
-	}
+`
+		return io.NopCloser(strings.NewReader(data)), nil, nil
+	})
 
 	t.Run("no matching account", func(t *testing.T) {
-		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+		p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
 		got, err := p.FetchAccount(ctx, user, nil, []string{"bob@example.com"})
 		if err != nil {
 			t.Fatal(err)
@@ -60,7 +49,7 @@ cindy <cindy@example.com> (Cindy) accessed 2020/12/04
 	})
 
 	t.Run("found matching account", func(t *testing.T) {
-		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+		p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
 		got, err := p.FetchAccount(ctx, user, nil, []string{"alice@example.com"})
 		if err != nil {
 			t.Fatal(err)
@@ -151,23 +140,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var mockResponse string
-	server := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, err := w.Write([]byte(mockResponse))
-			if err != nil {
-				t.Fatal(err)
-			}
-		}),
-	)
-
-	// Strip the protocol from the URI while patching the gitserver client's
-	// addresses, since the gitserver implementation does not want the protocol in
-	// the address.
-	gitserver.DefaultClient.Addrs = func() []string {
-		return []string{strings.TrimPrefix(server.URL, "http://")}
-	}
-
 	tests := []struct {
 		name      string
 		response  string
@@ -231,9 +203,11 @@ open user alice * -//Sourcegraph/Engineering/Backend/Credentials/... ## sub-matc
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockResponse = test.response
+			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+				return io.NopCloser(strings.NewReader(test.response)), nil, nil
+			})
 
-			p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+			p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
 			got, err := p.FetchUserPerms(ctx,
 				&extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
@@ -286,19 +260,13 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			t.Fatalf("err: want %q but got %q", want, got)
 		}
 	})
+	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+		var data string
 
-	server := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var req protocol.P4ExecRequest
-			err := jsoniter.NewDecoder(r.Body).Decode(&req)
-			if err != nil {
-				t.Fatal(err)
-			}
+		switch args[0] {
 
-			var response string
-			switch req.Args[0] {
-			case "protects":
-				response = `
+		case "protects":
+			data = `
 ## The actual depot prefix does not matter, the "-" sign does
 list user * * -//...
 write user alice * //Sourcegraph/...
@@ -310,47 +278,36 @@ read user cindy * -//Sourcegraph/...
 
 list user david * //Sourcegraph/...       ## "list" can't grant read access
 `
-			case "users":
-				response = `
+		case "users":
+			data = `
 alice <alice@example.com> (Alice) accessed 2020/12/04
 bob <bob@example.com> (Bob) accessed 2020/12/04
 cindy <cindy@example.com> (Cindy) accessed 2020/12/04
 david <david@example.com> (David) accessed 2020/12/04
 frank <frank@example.com> (Frank) accessed 2020/12/04
 `
-			case "group":
-				switch req.Args[2] {
-				case "Backend":
-					response = `
+		case "group":
+			switch args[2] {
+			case "Backend":
+				data = `
 Users:
 	alice
 	cindy
 `
-				case "Frontend":
-					response = `
+			case "Frontend":
+				data = `
 Users:
 	bob
 	david
 	frank
 `
-				}
 			}
+		}
 
-			_, err = w.Write([]byte(response))
-			if err != nil {
-				t.Fatal(err)
-			}
-		}),
-	)
+		return io.NopCloser(strings.NewReader(data)), nil, nil
+	})
 
-	// Strip the protocol from the URI while patching the gitserver client's
-	// addresses, since the gitserver implementation does not want the protocol in
-	// the address.
-	gitserver.DefaultClient.Addrs = func() []string {
-		return []string{strings.TrimPrefix(server.URL, "http://")}
-	}
-
-	p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
 	got, err := p.FetchRepoPerms(ctx,
 		&extsvc.Repository{
 			URI: "gitlab.com/user/repo",
@@ -368,4 +325,59 @@ Users:
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func TestScanAllUsers(t *testing.T) {
+	ctx := context.Background()
+	f, err := os.Open("testdata/sample-protects.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	rc := io.NopCloser(bytes.NewReader(data))
+
+	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+		return rc, nil, nil
+	})
+
+	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p.cachedGroupMembers = map[string][]string{
+		"dev": {"user1", "user2"},
+	}
+	p.cachedAllUserEmails = map[string]string{
+		"user1": "user1@example.com",
+		"user2": "user2@example.com",
+	}
+
+	users, err := p.scanAllUsers(ctx, rc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]struct{}{
+		"user1": {},
+		"user2": {},
+	}
+	if diff := cmp.Diff(want, users); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func NewTestProvider(urn, host, user, password string, execer p4Execer) *Provider {
+	p := NewProvider(urn, host, user, password)
+	p.p4Execer = execer
+	return p
+}
+
+type p4ExecFunc func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
+
+func (p p4ExecFunc) P4Exec(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+	return p(ctx, host, user, password, args...)
 }
