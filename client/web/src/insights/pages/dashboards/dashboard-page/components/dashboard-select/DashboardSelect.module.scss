@@ -4,7 +4,8 @@
     display: block;
     position: static;
     width: 100%;
-    overflow: hidden;
+    overflow: auto;
+    max-height: 24rem;
 
     &:focus {
         // Reach-ui implicitly reset box-shadow to none if list element is focused

@@ -11,7 +11,7 @@ import { DashboardCreationFields } from '../components/insights-dashboard-creati
 export function createSanitizedDashboard(values: DashboardCreationFields): InsightDashboard {
     return {
         id: uuid.v4(),
-        title: values.name,
+        title: values.name.trim(),
         insightIds: [],
     }
 }

@@ -18,3 +18,13 @@ export function addDashboardToSettings(settings: string, dashboardConfiguration:
         dashboardConfiguration
     )
 }
+
+/**
+ * Removes dashboard configurations from jsonc settings string
+ *
+ * @param settings - settings jsonc string
+ * @param dashboardId - dashboard id to remove
+ */
+export function removeDashboardFromSettings(settings: string, dashboardId: string): string {
+    return modify(settings, [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId], undefined)
+}

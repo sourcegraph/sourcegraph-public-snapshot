@@ -1,13 +1,12 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
-import { LoaderButton } from '../../../../../../components/LoaderButton'
-import { Settings } from '../../../../../../schema/settings.schema'
+import { InsightDashboard } from '../../../../../../schema/settings.schema'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
+import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 
 import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
@@ -33,24 +32,26 @@ export interface InsightsDashboardCreationContentProps {
      */
     organizations: Organization[]
 
-    settings: Settings
+    dashboardsSettings: {
+        [k: string]: InsightDashboard
+    }
 
     onSubmit: (values: DashboardCreationFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onCancel: () => void
+    children: (formAPI: FormAPI<DashboardCreationFields>) => ReactNode
 }
 
 /**
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues = DASHBOARD_INITIAL_VALUES, organizations, settings, onCancel, onSubmit } = props
+    const { initialValues = DASHBOARD_INITIAL_VALUES, organizations, dashboardsSettings, onSubmit, children } = props
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues,
         onSubmit,
     })
 
-    const nameValidator = useDashboardNameValidator({ settings })
+    const nameValidator = useDashboardNameValidator({ settings: dashboardsSettings })
     const name = useField('name', formAPI, { sync: nameValidator })
     const visibility = useField('visibility', formAPI)
 
@@ -115,21 +116,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} className="mt-2 mb-2" />
             )}
 
-            <div className="d-flex flex-wrap justify-content-end mt-3">
-                <button type="button" className="btn btn-outline-secondary mb-2" onClick={onCancel}>
-                    Cancel
-                </button>
-
-                <LoaderButton
-                    alwaysShowLabel={true}
-                    data-testid="insight-save-button"
-                    loading={formAPI.submitting}
-                    label={formAPI.submitting ? 'Submitting' : 'Create dashboard'}
-                    type="submit"
-                    disabled={formAPI.submitting && formAPI.touched}
-                    className="btn btn-primary ml-2 mb-2"
-                />
-            </div>
+            <div className="d-flex flex-wrap justify-content-end mt-3">{children(formAPI)}</div>
         </form>
     )
 }

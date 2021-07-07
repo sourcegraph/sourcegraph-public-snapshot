@@ -6,10 +6,11 @@ import { useHistory } from 'react-router-dom'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { PageHeader, Container } from '@sourcegraph/wildcard/src'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { LoaderButton } from '../../../../components/LoaderButton'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Settings } from '../../../../schema/settings.schema'
@@ -22,10 +23,9 @@ import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+import { useDashboardSettings } from './hooks/use-dashboard-settings'
 import styles from './InsightsDashboardCreationPage.module.scss'
 import { createSanitizedDashboard } from './utils/dashboard-sanitizer'
-
-const DEFAULT_FINAL_SETTINGS = {}
 
 interface InsightsDashboardCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -40,13 +40,15 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     const history = useHistory()
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
+    const finalSettings = useDashboardSettings({ settingsCascade })
+
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
         const { id: userID } = authenticatedUser
 
         const subjectID =
             values.visibility === 'personal'
                 ? userID
-                : // If this is not a 'personal' value than we are dealing with org id
+                : // If this is not a 'personal' value than we are dealing with an org id
                   values.visibility
 
         try {
@@ -59,7 +61,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
             // Navigate user to the dashboard page with new created dashboard
-            history.push(`/insights/dashboard/${camelCase(dashboard.title)}`)
+            history.push(`/insights/dashboards/${camelCase(dashboard.title)}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
@@ -67,26 +69,39 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
         return
     }
 
-    const handleCancel = (): void => {
-        history.goBack()
-    }
-
-    const finalSettings =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final ? settingsCascade.final : DEFAULT_FINAL_SETTINGS
+    const handleCancel = (): void => history.goBack()
 
     return (
-        <Page className={classnames('col-md-8', styles.page)}>
+        <Page className={classnames('col-8', styles.page)}>
             <PageTitle title="Create new code insight" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
 
-            <Container className="mt-4 container container-sm">
+            <Container className="mt-4">
                 <InsightsDashboardCreationContent
-                    settings={finalSettings}
+                    dashboardsSettings={finalSettings}
                     organizations={authenticatedUser.organizations.nodes}
                     onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                />
+                >
+                    {formAPI => (
+                        <>
+                            <button type="button" className="btn btn-outline-secondary mb-2" onClick={handleCancel}>
+                                Cancel
+                            </button>
+
+                            <LoaderButton
+                                alwaysShowLabel={true}
+                                data-testid="insight-save-button"
+                                loading={formAPI.submitting}
+                                label={formAPI.submitting ? 'Submitting' : 'Create dashboard'}
+                                spinnerClassName="mr-2"
+                                type="submit"
+                                disabled={formAPI.submitting}
+                                className="d-flex btn btn-primary ml-2 mb-2"
+                            />
+                        </>
+                    )}
+                </InsightsDashboardCreationContent>
             </Container>
         </Page>
     )

@@ -33,7 +33,7 @@ export interface EditInsightPageProps extends SettingsCascadeProps, PlatformCont
 
 interface ParsedInsightInfo {
     insight?: Insight | null
-    originSubjectID?: string
+    originalSubjectID?: string
 }
 
 export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = props => {
@@ -46,7 +46,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     // handler we will again try to find an insight that may no longer exist and
     // (if user changed visibility we remove insight first from previous subject)
     // show the wrong visual state.
-    const [{ insight, originSubjectID }] = useState<ParsedInsightInfo>(() => {
+    const [{ insight, originalSubjectID }] = useState<ParsedInsightInfo>(() => {
         if (!authenticatedUser) {
             return {}
         }
@@ -70,7 +70,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
 
         return {
             insight,
-            originSubjectID: subject.subject.id,
+            originalSubjectID: subject.subject.id,
         }
     })
 
@@ -93,7 +93,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     }, [settingsCascade.final, insight, insightID])
 
     const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
-        if (!insight || !originSubjectID || !authenticatedUser) {
+        if (!insight || !originalSubjectID) {
             return
         }
 
@@ -102,13 +102,13 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             // has been changed we need remove previous (old) insight from previous
             // subject settings (user or org) and create new insight to new setting file.
             if (insight.visibility !== newInsight.visibility) {
-                const settings = await getSubjectSettings(originSubjectID).toPromise()
+                const settings = await getSubjectSettings(originalSubjectID).toPromise()
                 const editedSettings = removeInsightFromSettings({
                     originalSettings: settings.contents,
                     insightID: insight.id,
                 })
 
-                await updateSubjectSettings(platformContext, originSubjectID, editedSettings).toPromise()
+                await updateSubjectSettings(platformContext, originalSubjectID, editedSettings).toPromise()
             }
 
             const { id: userID } = authenticatedUser

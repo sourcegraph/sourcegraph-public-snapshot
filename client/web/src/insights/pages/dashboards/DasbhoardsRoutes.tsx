@@ -11,6 +11,7 @@ import { Settings } from '../../../schema/settings.schema'
 
 import { InsightsDashboardCreationPage } from './creation/InsightsDashboardCreationPage'
 import { DashboardsPage } from './dashboard-page/DashboardsPage'
+import { EditDashboardPage } from './edit-dashboard/EditDashobardPage'
 
 export interface DashboardsRoutesProps
     extends TelemetryProps,
@@ -29,6 +30,18 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
 
     return (
         <Switch>
+            <Route
+                path={`${match.url}/dashboards/:dashboardId/edit`}
+                render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
+                    <EditDashboardPage
+                        platformContext={platformContext}
+                        authenticatedUser={authenticatedUser}
+                        settingsCascade={settingsCascade}
+                        dashboardId={routeProps.match.params.dashboardId}
+                    />
+                )}
+            />
+
             <Route
                 path={`${match.url}/dashboards/:dashboardId?`}
                 render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
