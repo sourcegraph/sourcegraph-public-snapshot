@@ -60,29 +60,29 @@ func TestDiscover(t *testing.T) {
 		t.Fatal(err)
 	}
 	autogold.Want("discovered", []insights.SearchInsight{
-		insights.SearchInsight{
+		{
 			Title:       "fmt usage",
 			Description: "fmt.Errorf/fmt.Printf usage",
 			Series: []insights.TimeSeries{
-				insights.TimeSeries{
+				{
 					Name:  "fmt.Errorf",
 					Query: "errorf",
 				},
-				insights.TimeSeries{
+				{
 					Name:  "printf",
 					Query: "fmt.Printf",
 				},
 			},
 		},
-		insights.SearchInsight{
+		{
 			Title:       "gitserver usage",
 			Description: "gitserver exec & close usage",
 			Series: []insights.TimeSeries{
-				insights.TimeSeries{
+				{
 					Name:  "exec",
 					Query: "gitserver.Exec",
 				},
-				insights.TimeSeries{
+				{
 					Name:  "close",
 					Query: "gitserver.Close",
 				},
