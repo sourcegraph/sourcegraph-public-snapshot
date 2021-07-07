@@ -97,14 +97,14 @@ When a different query requests similar data, Apollo will merge both responses i
 ### Should I always use the Apollo cache?
 Equally important to knowing how to use the cache is knowing when to use the cache, or when **not to**. Coming from a setup with no client-side caching, it's easy to not think about this question until after it's bitten you.
 
-The stale-while-revalidate strategy is very widely used these days, and with good reason, but it's not the best strategy for every type of data. When a user visits a page that can make use of data that's already in the cache, they'll see that data right away -- but it may be out-of-date. Apollo refetches that data in the background, but if something changed, there will be a flash of old data or [layout shift](https://web.dev/cls/), which can be jarring and unexpected to the user. In certain situations, a loading spinner might actually be preferable.
+The stale-while-revalidate strategy is very widely used these days, and with good reason, but it's not the best strategy for every type of data. By default when you hook your UI up to Apollo, a user who visits a page that can make use of data that's already in the cache will see that data right away. That data may be out-of-date, but Apollo will already be refetching it in the background. In many cases your data might not be changing, but if something **did** change, there will be a flash of old data, which can be jarring and unexpected to the user or cause significant [layout shift](https://web.dev/cls/). In certain situations, a loading spinner or a different transition from old to new data might actually be preferable.
 
-As a general rule of thumb, we should choose to leverage the cache if:
+As a general rule of thumb, we should choose to leverage the default cache behavior if:
 
 - Having content available immediately is more valuable than having all available content be completely up-to-date
 - The data we are caching is not expected to change significantly over the course of the user's visit to the site
 
-This will typically hold true for the majority of application data. However, there are plenty of exceptions when agreeing with what's on the server is a higher priority. Examples might include:
+This will typically hold true for the majority of application data. However, there are still exceptions, when agreeing with what's on the server is a higher priority. Examples might include:
 
 - One-off tokens
 - Data tied to the current date/time
@@ -115,13 +115,15 @@ This will typically hold true for the majority of application data. However, the
 
 If you find yourself wanting to bypass the cache, you can set a query [fetch policy](https://www.apollographql.com/docs/react/data/queries/#setting-a-fetch-policy) like `network-only` or `no-cache` to keep your data fresh.
 
-Lastly, for any request data that you *do* choose to cache, it's best to make decisions about showing that stale data while Apollo is refetching your query on a case-by-case basis. There are generally three strategies you can adopt with your UI components:
+Lastly, for the request data that you *do* choose to cache, it's best to make decisions about showing that stale data while Apollo is refetching your query on a case-by-case basis. There are generally four strategies you can adopt with your UI components:
 
 1. Show just the stale data
-    - Best for data that doesn't change and isn't harmful if out-of-date
+    - Best for data that doesn't change or isn't harmful if out-of-date
 2. Show the stale data *with a loading spinner*
     - Best for data that cares about being up-to-date but is not likely to cause user confusion or significant layout shift when it changes
-3. Show just a loading spinner
+3. Show the stale data *with a prompt to trigger a UI update when the new data is ready*
+    - Best for data that cares about being up-to-date but may cause confusion or significant layout shift when it changes, such as paginated data
+4. Show just a loading spinner
     - Best for data that is always changing or should always agree with the server; effectively, no caching
 
 ### How should I write tests that handle data-fetching?
