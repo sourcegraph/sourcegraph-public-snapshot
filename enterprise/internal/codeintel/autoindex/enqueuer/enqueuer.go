@@ -219,11 +219,5 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 }
 
 func isNotFoundError(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if errcode.IsNotFound(ex) {
-			return true
-		}
-	}
-
-	return false
+	return errcode.IsNotFound(errors.Cause(err))
 }

@@ -106,13 +106,13 @@ func (j *unknownCommitJanitor) handleSourcedCommits(ctx context.Context, tx DBSt
 func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int, repositoryName, commit string) error {
 	shouldDelete := true
 	_, err := git.ResolveRevision(ctx, api.RepoName(repositoryName), commit, git.ResolveRevisionOptions{})
-	if err == nil || isRepositoryNotFound(err) {
+	if err == nil || errors.Is(err, &vcs.RepoNotExistError{}) {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		// If we have a repository not found error, then we'll just update the timestamp
 		// of the record so we can move on to other data; we deleted records associated
 		// with deleted repositories in a separate janitor process.
 		shouldDelete = false
-	} else if !isRevisionNotFound(err) {
+	} else if !errors.Is(err, &basegitserver.RevisionNotFoundError{}) {
 		return errors.Wrap(err, "git.ResolveRevision")
 	}
 
@@ -133,24 +133,4 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 	}
 
 	return nil
-}
-
-func isRepositoryNotFound(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if vcs.IsRepoNotExist(ex) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isRevisionNotFound(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if basegitserver.IsRevisionNotFound(ex) {
-			return true
-		}
-	}
-
-	return false
 }

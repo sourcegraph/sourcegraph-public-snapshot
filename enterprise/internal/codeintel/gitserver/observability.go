@@ -36,13 +36,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			MetricLabels: []string{name},
 			Metrics:      metrics,
 			ErrorFilter: func(err error) bool {
-				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-					if gitserver.IsRevisionNotFound(ex) {
-						return true
-					}
-				}
-
-				return false
+				return errors.Is(err, &gitserver.RevisionNotFoundError{})
 			},
 		})
 	}
