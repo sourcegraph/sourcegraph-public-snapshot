@@ -1,0 +1,15 @@
+name: Move labeled or milestoned issue to a specific project colum
+on:
+  issues:
+    types: [labeled]
+jobs:
+  Move_Labeled_Issue_On_Project_Board:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: konradpabjan/move-labeled-or-milestoned-issue@v2.0
+      with:
+        action-token: "${{ secrets.GH_REPO_TOKEN }}"
+        project-url: "https://github.com/orgs/sourcegraph/projects/145"
+        column-name: "To Triage 📥"
+        label-name: "team/extensibility"
+        columns-to-ignore: "*"
