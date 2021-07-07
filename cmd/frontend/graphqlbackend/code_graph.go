@@ -15,7 +15,7 @@ type CodeGraphResolver interface {
 type CodeGraphPersonNodeResolver interface {
 	Symbols(context.Context) ([]string, error)
 	Dependencies() []string
-	Dependents() []string
+	Dependents(context.Context) ([]string, error)
 }
 
 func (r *UserResolver) CodeGraph(ctx context.Context) (CodeGraphPersonNodeResolver, error) {

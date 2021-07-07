@@ -43,6 +43,9 @@ type MockQueryResolver struct {
 	// SymbolFunc is an instance of a mock function object controlling the
 	// behavior of the method Symbol.
 	SymbolFunc *QueryResolverSymbolFunc
+	// SymbolsFunc is an instance of a mock function object controlling the
+	// behavior of the method Symbols.
+	SymbolsFunc *QueryResolverSymbolsFunc
 }
 
 // NewMockQueryResolver creates a new mock of the QueryResolver interface.
@@ -94,6 +97,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 				return nil, nil, nil
 			},
 		},
+		SymbolsFunc: &QueryResolverSymbolsFunc{
+			defaultHook: func(context.Context) ([]resolvers.AdjustedMonikerLocations, error) {
+				return nil, nil
+			},
+		},
 	}
 }
 
@@ -128,6 +136,9 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 		},
 		SymbolFunc: &QueryResolverSymbolFunc{
 			defaultHook: i.Symbol,
+		},
+		SymbolsFunc: &QueryResolverSymbolsFunc{
+			defaultHook: i.Symbols,
 		},
 	}
 }
@@ -1155,4 +1166,110 @@ func (c QueryResolverSymbolFuncCall) Args() []interface{} {
 // invocation.
 func (c QueryResolverSymbolFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// QueryResolverSymbolsFunc describes the behavior when the Symbols method
+// of the parent MockQueryResolver instance is invoked.
+type QueryResolverSymbolsFunc struct {
+	defaultHook func(context.Context) ([]resolvers.AdjustedMonikerLocations, error)
+	hooks       []func(context.Context) ([]resolvers.AdjustedMonikerLocations, error)
+	history     []QueryResolverSymbolsFuncCall
+	mutex       sync.Mutex
+}
+
+// Symbols delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockQueryResolver) Symbols(v0 context.Context) ([]resolvers.AdjustedMonikerLocations, error) {
+	r0, r1 := m.SymbolsFunc.nextHook()(v0)
+	m.SymbolsFunc.appendCall(QueryResolverSymbolsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Symbols method of
+// the parent MockQueryResolver instance is invoked and the hook queue is
+// empty.
+func (f *QueryResolverSymbolsFunc) SetDefaultHook(hook func(context.Context) ([]resolvers.AdjustedMonikerLocations, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Symbols method of the parent MockQueryResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *QueryResolverSymbolsFunc) PushHook(hook func(context.Context) ([]resolvers.AdjustedMonikerLocations, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverSymbolsFunc) SetDefaultReturn(r0 []resolvers.AdjustedMonikerLocations, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]resolvers.AdjustedMonikerLocations, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverSymbolsFunc) PushReturn(r0 []resolvers.AdjustedMonikerLocations, r1 error) {
+	f.PushHook(func(context.Context) ([]resolvers.AdjustedMonikerLocations, error) {
+		return r0, r1
+	})
+}
+
+func (f *QueryResolverSymbolsFunc) nextHook() func(context.Context) ([]resolvers.AdjustedMonikerLocations, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverSymbolsFunc) appendCall(r0 QueryResolverSymbolsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverSymbolsFuncCall objects
+// describing the invocations of this function.
+func (f *QueryResolverSymbolsFunc) History() []QueryResolverSymbolsFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverSymbolsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverSymbolsFuncCall is an object that describes an invocation of
+// method Symbols on an instance of MockQueryResolver.
+type QueryResolverSymbolsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []resolvers.AdjustedMonikerLocations
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverSymbolsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverSymbolsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

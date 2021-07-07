@@ -77,6 +77,7 @@ type QueryResolver interface {
 	DocumentationPathInfo(ctx context.Context, pathID string) (*semantic.DocumentationPathInfoData, error)
 	MonikersAtPosition(ctx context.Context, line, character int) ([]AdjustedMonikerData, error)
 	Symbol(ctx context.Context, scheme, identifier string) (*AdjustedSymbol, []int, error)
+	Symbols(ctx context.Context) ([]AdjustedMonikerLocations, error)
 }
 
 type queryResolver struct {
