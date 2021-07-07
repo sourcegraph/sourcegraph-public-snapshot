@@ -43,6 +43,10 @@ func (r *batchSpecExecutionResolver) State() string {
 	return strings.ToUpper(string(r.spec.State))
 }
 
+func (r *batchSpecExecutionResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.spec.CreatedAt}
+}
+
 func (r *batchSpecExecutionResolver) StartedAt() *graphqlbackend.DateTime {
 	if r.spec.StartedAt == nil {
 		return nil

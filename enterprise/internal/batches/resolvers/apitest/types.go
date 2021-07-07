@@ -372,6 +372,7 @@ type BatchSpecExecution struct {
 	ID           string
 	InputSpec    string
 	State        string
+	CreatedAt    graphqlbackend.DateTime
 	StartedAt    graphqlbackend.DateTime
 	FinishedAt   graphqlbackend.DateTime
 	Failure      string
