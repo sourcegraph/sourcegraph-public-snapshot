@@ -3,9 +3,6 @@ extend type Query {
     EXPERIMENTAL: Queries code insights
     """
 
-    """
-    Select only specific insight IDs.
-    """
     insights(ids: [ID!]): InsightConnection
 
 }
