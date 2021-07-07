@@ -1,0 +1,18 @@
+.add-block-buttons-wrapper {
+    position: relative;
+    height: 0.5rem;
+
+    &:global(.show-on-hover) > * {
+        visibility: hidden;
+    }
+
+    &:global(.show-on-hover):hover > * {
+        visibility: visible;
+    }
+}
+
+.add-block-buttons {
+    position: absolute;
+    top: -1rem;
+    left: 1rem;
+}

@@ -1,0 +1,24 @@
+.block {
+    padding: 1rem;
+    background-color: var(--body-bg);
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+
+    &:hover {
+        border: 1px solid var(--border-color);
+    }
+}
+
+.monaco-wrapper {
+    background-color: var(--color-bg-1);
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+}
+
+.results {
+    overflow: auto;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
+    max-height: 25rem;
+}
