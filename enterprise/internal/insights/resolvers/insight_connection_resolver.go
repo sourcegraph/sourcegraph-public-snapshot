@@ -83,7 +83,7 @@ type insightResolver struct {
 }
 
 func (r *insightResolver) ID() string {
-	return r.insight.Uuid
+	return r.insight.ID
 }
 
 func (r *insightResolver) Title() string { return r.insight.Title }
