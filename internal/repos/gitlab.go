@@ -41,6 +41,7 @@ type GitLabSource struct {
 var _ Source = &GitLabSource{}
 var _ UserSource = &GitLabSource{}
 var _ AffiliatedRepositorySource = &GitLabSource{}
+var _ VersionSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -144,6 +145,10 @@ func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
+}
+
+func (s GitLabSource) Version(ctx context.Context) (string, error) {
+	return s.client.GetVersion(ctx)
 }
 
 func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {

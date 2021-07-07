@@ -212,6 +212,21 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
+func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
+	if c.githubDotCom {
+		return "unknown", nil
+	}
+
+	var empty interface{}
+
+	header, err := c.requestGetWithHeader(ctx, "/", &empty)
+	if err != nil {
+		return "", err
+	}
+	v := header.Get("X-GitHub-Enterprise-Version")
+	return v, nil
+}
+
 func (c *V3Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {
 	var u User
 	err := c.requestGet(ctx, "/user", &u)

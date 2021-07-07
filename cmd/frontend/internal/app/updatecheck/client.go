@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -243,6 +244,16 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ 
 	return json.Marshal(codeMonitoringUsage)
 }
 
+func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
+
+	versions, err := versions.GetVersions()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(versions)
+}
+
 func getDependencyVersions(ctx context.Context, db dbutil.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
 	var (
 		err error
@@ -417,6 +428,11 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+		}
+
+		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeHostVersionsJSON failed", "error", err)
 		}
 
 		r.ExternalServices, err = externalServiceKinds(ctx, db)
