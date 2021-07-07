@@ -7,8 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -94,7 +92,6 @@ func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
 	series := r.insight.Series
 	resolvers := make([]graphqlbackend.InsightSeriesResolver, 0, len(series))
 	for _, series := range series {
-		log15.Info("building series")
 		resolvers = append(resolvers, &insightSeriesResolver{
 			insightsStore:   r.insightsStore,
 			workerBaseStore: r.workerBaseStore,
