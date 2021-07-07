@@ -112,12 +112,12 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 		}{
 			"spec not in mappings": {
 				changesetUIs: map[string]batches.PublishedValue{
-					changesetUnwired.RandID: batches.PublishedValue{Val: true},
+					changesetUnwired.RandID: {Val: true},
 				},
 			},
 			"spec with published field": {
 				changesetUIs: map[string]batches.PublishedValue{
-					changesetPublished.RandID: batches.PublishedValue{Val: true},
+					changesetPublished.RandID: {Val: true},
 				},
 			},
 		} {
