@@ -34,21 +34,32 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		logEntry := workerutil.ExecutionLogEntry{
-			Key:       "step.src.0",
-			Command:   []string{"src", "batch", "preview", "-f", "spec.yml", "-text-only"},
-			StartTime: time.Now().Add(-5 * time.Second),
-			Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
+		entries := []workerutil.ExecutionLogEntry{
+			{
+				Key:        "setup.firecracker.start",
+				Command:    []string{"ignite", "run"},
+				StartTime:  time.Now().Add(-5 * time.Second),
+				Out:        `stdout: cool`,
+				DurationMs: 200,
+			},
+			{
+				Key:       "step.src.0",
+				Command:   []string{"src", "batch", "preview", "-f", "spec.yml", "-text-only"},
+				StartTime: time.Now().Add(-5 * time.Second),
+				Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
 stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"SUCCESS"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.528Z","status":"STARTED"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z","status":"SUCCESS","message":"http://USERNAME_REMOVED:PASSWORD_REMOVED@localhost:3080/users/mrnugget/batch-changes/apply/QmF0Y2hTcGVjOiJBZFBMTDU5SXJmWCI="}
 `,
-			DurationMs: 200,
+				DurationMs: 200,
+			},
 		}
 
-		err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), logEntry)
-		if err != nil {
-			t.Fatal(err)
+		for _, e := range entries {
+			err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), e)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		want := "AdPLL59IrfX"
@@ -86,77 +97,116 @@ stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z
 }
 
 func TestExtractBatchSpecRandID(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		// Reduced log output because we don't care about _all_ lines
-		executionLogOut := `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
+	tests := []struct {
+		name       string
+		entries    []workerutil.ExecutionLogEntry
+		wantRandID string
+		wantErr    error
+	}{
+		{
+			name: "success",
+			entries: []workerutil.ExecutionLogEntry{
+				{Key: "setup.firecracker.start"},
+				// Reduced log output because we don't care about _all_ lines
+				{
+					Key: "step.src.0",
+					Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
 stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"SUCCESS"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.528Z","status":"STARTED"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z","status":"SUCCESS","message":"http://USERNAME_REMOVED:PASSWORD_REMOVED@localhost:3080/users/mrnugget/batch-changes/apply/QmF0Y2hTcGVjOiJBZFBMTDU5SXJmWCI="}
-`
-		// Run `echo "QmF0Y2hTcGVjOiJBZFBMTDU5SXJmWCI=" |base64 -d` to get this
-		want := "AdPLL59IrfX"
+`,
+				},
+			},
+			// Run `echo "QmF0Y2hTcGVjOiJBZFBMTDU5SXJmWCI=" |base64 -d` to get this
+			wantRandID: "AdPLL59IrfX",
+		},
+		{
 
-		have, err := extractBatchSpecRandID(executionLogOut)
-		if err != nil {
-			t.Fatal(err)
-		}
+			name:    "no step.src.0 log entry",
+			entries: []workerutil.ExecutionLogEntry{},
+			wantErr: ErrNoBatchSpecRandID,
+		},
 
-		if have != want {
-			t.Fatalf("wrong batch spec rand id extracted. want=%q, have=%q", want, have)
-		}
-	})
+		{
 
-	t.Run("no url in the output", func(t *testing.T) {
-		executionLogOut := `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
+			name: "no url in the output",
+			entries: []workerutil.ExecutionLogEntry{
+				{
+					Key: "step.src.0",
+					Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
 stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"SUCCESS"}
-`
-		_, err := extractBatchSpecRandID(executionLogOut)
-		if err != ErrNoBatchSpecRandID {
-			t.Fatalf("wrong error: %s", err)
-		}
-	})
-
-	t.Run("invalid url in the output", func(t *testing.T) {
-		executionLogOut := `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
+`,
+				},
+			},
+			wantErr: ErrNoBatchSpecRandID,
+		},
+		{
+			name: "invalid url in the output",
+			entries: []workerutil.ExecutionLogEntry{
+				{
+					Key: "step.src.0",
+					Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
 stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"SUCCESS"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.528Z","status":"STARTED"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z","status":"SUCCESS","message":"http://horse.txt"}
-`
-		_, err := extractBatchSpecRandID(executionLogOut)
-		if err != ErrNoBatchSpecRandID {
-			t.Fatalf("wrong error: %s", err)
-		}
-	})
+`,
+				},
+			},
+			wantErr: ErrNoBatchSpecRandID,
+		},
 
-	t.Run("additional text in log output", func(t *testing.T) {
-		executionLogOut := `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
+		{
+			name: "additional text in log output",
+			entries: []workerutil.ExecutionLogEntry{
+				{
+					Key: "step.src.0",
+					Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
 stderr: HORSE
 stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"SUCCESS"}
 stderr: HORSE
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.528Z","status":"STARTED"}
 stderr: HORSE
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z","status":"SUCCESS","message":"http://USERNAME_REMOVED:PASSWORD_REMOVED@localhost:3080/users/mrnugget/batch-changes/apply/QmF0Y2hTcGVjOiJBZFBMTDU5SXJmWCI="}
-`
-		want := "AdPLL59IrfX"
-		have, err := extractBatchSpecRandID(executionLogOut)
-		if err != nil {
-			t.Fatal(err)
-		}
+`,
+				},
+			},
+			wantRandID: "AdPLL59IrfX",
+		},
 
-		if have != want {
-			t.Fatalf("wrong batch spec rand id extracted. want=%q, have=%q", want, have)
-		}
-	})
-
-	t.Run("invalid json", func(t *testing.T) {
-		executionLogOut := `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
+		{
+			name: "invalid json",
+			entries: []workerutil.ExecutionLogEntry{
+				{
+					Key: "step.src.0",
+					Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
 stdout: {HOOOORSE}
 stdout: {HORSE}
 stdout: {HORSE}
-`
-		_, err := extractBatchSpecRandID(executionLogOut)
-		if err != ErrNoBatchSpecRandID {
-			t.Fatalf("wrong error: %s", err)
-		}
-	})
+`,
+				},
+			},
+			wantErr: ErrNoBatchSpecRandID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			have, err := extractBatchSpecRandID(tt.entries)
+			if tt.wantErr != nil {
+				if err != tt.wantErr {
+					t.Fatalf("wrong error. want=%s, got=%s", tt.wantErr, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if have != tt.wantRandID {
+				t.Fatalf("wrong batch spec rand id extracted. want=%q, have=%q", tt.wantRandID, have)
+			}
+		})
+	}
+
 }
