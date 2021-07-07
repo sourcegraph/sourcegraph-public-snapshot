@@ -94,7 +94,7 @@ export const Line: React.FunctionComponent<Line> = ({
                 </td>
             )}
             <td
-                className={`diff-hunk--split__line diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
+                className={`diff-hunk--split__line align-baseline diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
                 // eslint-disable-next-line react/forbid-dom-props
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
