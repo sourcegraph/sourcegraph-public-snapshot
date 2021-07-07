@@ -267,12 +267,12 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
-			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
+			unauthorized := errcode.IsUnauthorized(err)
 
-			forbidden := errcode.IsForbidden(errors.Cause(err))
+			forbidden := errcode.IsForbidden(err)
 
 			// Detect GitHub account suspension error
-			accountSuspended := errcode.IsAccountSuspended(errors.Cause(err))
+			accountSuspended := errcode.IsAccountSuspended(err)
 
 			if unauthorized || accountSuspended || forbidden {
 				err = accounts.TouchExpired(ctx, acct.ID)
