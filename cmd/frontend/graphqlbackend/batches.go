@@ -428,6 +428,8 @@ type ChangesetApplyPreviewConnectionStatsResolver interface {
 	Added() int32
 	Modified() int32
 	Removed() int32
+
+	UIPublished() int32
 }
 
 type ChangesetApplyPreviewConnectionResolver interface {

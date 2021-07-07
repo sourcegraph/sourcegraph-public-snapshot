@@ -1885,6 +1885,10 @@ type ChangesetApplyPreviewConnectionStats {
     The amount of changesets that are disassociated from the batch change in this operation.
     """
     removed: Int!
+    """
+    The number of changesets that have their publication state controlled from the UI.
+    """
+    uiPublished: Int!
 }
 
 """

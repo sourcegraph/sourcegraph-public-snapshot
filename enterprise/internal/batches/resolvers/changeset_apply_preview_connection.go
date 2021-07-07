@@ -113,6 +113,8 @@ type changesetApplyPreviewConnectionStatsResolver struct {
 	added    int32
 	modified int32
 	removed  int32
+
+	uiPublished int32
 }
 
 func (r *changesetApplyPreviewConnectionStatsResolver) Push() int32 {
@@ -160,6 +162,9 @@ func (r *changesetApplyPreviewConnectionStatsResolver) Modified() int32 {
 func (r *changesetApplyPreviewConnectionStatsResolver) Removed() int32 {
 	return r.removed
 }
+func (r *changesetApplyPreviewConnectionStatsResolver) UIPublished() int32 {
+	return r.uiPublished
+}
 
 var _ graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver = &changesetApplyPreviewConnectionStatsResolver{}
 
@@ -181,6 +186,11 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 		visRes, ok := res.ToVisibleChangesetApplyPreview()
 		if !ok {
 			return nil, errors.New("expected node to be a 'VisibleChangesetApplyPreview', but wasn't")
+		}
+		if cs := mapping.ChangesetSpec; cs != nil {
+			if spec := cs.Spec; spec != nil && spec.Published.Nil() {
+				stats.uiPublished++
+			}
 		}
 		ops, err = visRes.Operations(ctx)
 		if err != nil {
