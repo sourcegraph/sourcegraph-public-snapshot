@@ -135,7 +135,7 @@ func TestSetupFirecracker(t *testing.T) {
 		"docker pull img3",
 		"docker save -o /archives/image2.tar img3",
 		strings.Join([]string{
-			"sudo ignite run",
+			"ignite run",
 			"--runtime docker --network-plugin docker-bridge",
 			"--cpus 4 --memory 20G --size 1T",
 			"--copy-files /archives/image0.tar:/image0.tar",
