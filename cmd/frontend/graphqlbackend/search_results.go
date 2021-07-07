@@ -936,7 +936,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		}
 
 		if newResult != nil {
-			newResult.Matches = selectResults(newResult.Matches, q)
+			newResult.Matches = result.Select(newResult.Matches, q)
 			sr = union(sr, newResult)
 			if len(sr.Matches) > wantCount {
 				sr.Matches = sr.Matches[:wantCount]
@@ -1622,24 +1622,6 @@ func compareSearchResults(left, right result.Match, exactFilePatterns map[string
 		return compareFileLengths(afile, bfile, exactFilePatterns)
 	}
 	return arepo < brepo
-}
-
-func selectResults(results []result.Match, q query.Basic) []result.Match {
-	v, _ := q.ToParseTree().StringValue(query.FieldSelect)
-	if v == "" {
-		return results
-	}
-	sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-
-	dedup := result.NewDeduper()
-	for _, result := range results {
-		current := result.Select(sp)
-		if current == nil {
-			continue
-		}
-		dedup.Add(current)
-	}
-	return dedup.Results()
 }
 
 func (r *searchResolver) sortResults(results []result.Match) {
