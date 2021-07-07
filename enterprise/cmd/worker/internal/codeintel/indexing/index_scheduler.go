@@ -122,7 +122,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		}
 
 		if err := s.indexEnqueuer.QueueIndexesForRepository(ctx, repositoryID); err != nil {
-			if errors.Is(err, &vcs.RepoNotExistError{}) {
+			if vcs.IsRepoNotExist(err) {
 				continue
 			}
 
