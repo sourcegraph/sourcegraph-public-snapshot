@@ -89,11 +89,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                     <span>
                         We couldn't find that dashboard. Try to find the dashboard with ID:{' '}
                         <code className="badge badge-secondary">{dashboardId}</code> in your{' '}
-                        {authenticatedUser ? (
-                            <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
-                        ) : (
-                            <span>user or org settings</span>
-                        )}
+                        <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />
