@@ -30,7 +30,7 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
     return (
         <Switch>
             <Route
-                path={`${match.url}/dashboard/:dashboardId?`}
+                path={`${match.url}/dashboards/:dashboardId?`}
                 render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
                     <DashboardsPage
                         telemetryService={telemetryService}
