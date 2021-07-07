@@ -8,31 +8,30 @@
     flex: 1;
 }
 
-.download-progress-wrapper {
-    flex-direction: column;
-}
-
-.download-progress-item {
-    flex: 0 0 100%;
-    .download-progress-item-details {
-        display: flex;
-        flex: 1;
-    }
-}
-
-.wrapper {
+.main-wrapper {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
 }
 
-.repositories-info {
+.terminal-line {
+    display: flex;
+    width: 100%;
+}
+
+.terminal-wrapper {
     padding: 1.5rem;
     background-color: #214863;
     color: var(--light-text);
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.download-progress-wrapper {
+    flex-direction: column;
 }
 
 .header-title {
-    padding: 1.5rem;
+    flex: 1;
 }
 
 .download-status {
@@ -42,14 +41,9 @@
 }
 
 .download-progress {
-    span {
-        max-width: 400px;
-        white-space: nowrap;
-    }
     display: flex;
     flex: 1;
-    margin: 0 0.5rem;
-    max-width: 320px;
+    max-width: 100%;
     &::before {
         content: '[';
     }

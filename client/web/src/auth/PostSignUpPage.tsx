@@ -6,7 +6,13 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
-import { Terminal } from '@sourcegraph/wildcard/src/components/Terminal'
+import {
+    Terminal,
+    TerminalTitle,
+    TerminalLine,
+    TerminalDetails,
+    TerminalProgress,
+} from '@sourcegraph/wildcard/src/components/Terminal'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { HeroPage } from '../components/HeroPage'
@@ -145,11 +151,28 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                             cloningStatusLines ? cloningStatusLines.length : 'undefined'
                         }`}</p>
                         <Terminal>
-                            {/* {cloningLoading && (<RepoLine key="loading" title="Loading..." /> )}
-                            {!cloningLoading && cloningLines?.map(({id, title, details, progress}) =>
-                                <RepoLine key={id} title={title} details={details} progress={progress} />
+                            {cloningStatusLoading && (
+                                <TerminalLine>
+                                    <TerminalTitle>Loading...</TerminalTitle>
+                                </TerminalLine>
                             )}
-                            {isDoneCloning && <LogoAscii />} */}
+                            {!cloningStatusLoading &&
+                                cloningStatusLines?.map(({ id, title, details, progress }) => (
+                                    <>
+                                        <TerminalLine key={id}>
+                                            <TerminalTitle>{title}</TerminalTitle>
+                                            <TerminalDetails>{details}</TerminalDetails>
+                                        </TerminalLine>
+                                        <TerminalLine>
+                                            <TerminalProgress progress={progress} />
+                                        </TerminalLine>
+                                    </>
+                                ))}
+                            {isDoneCloning && (
+                                <TerminalLine>
+                                    <LogoAscii />
+                                </TerminalLine>
+                            )}
                         </Terminal>
                     </>
                 )}
