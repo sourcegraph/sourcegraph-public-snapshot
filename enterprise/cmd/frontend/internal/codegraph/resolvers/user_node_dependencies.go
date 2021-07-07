@@ -43,7 +43,7 @@ func (r *CodeGraphPersonNodeResolver) dependencies(ctx context.Context) ([]codei
 				return nil, err
 			}
 
-			for i, path := range files {
+			for _, path := range files {
 				if !strings.HasSuffix(path, ".go") {
 					continue
 				}
@@ -79,14 +79,29 @@ func (r *CodeGraphPersonNodeResolver) dependencies(ctx context.Context) ([]codei
 						return nil, err
 					}
 
-					for _, rng := range ranges {
+					for i, rng := range ranges {
+						// HACK skip tiny ranges
+						if rng.Range.Start.Line == rng.Range.End.Line && rng.Range.End.Character-rng.Range.Start.Character < 5 {
+							continue
+						}
+						if rng.HoverText == "" {
+							continue
+						}
+						if i > 500 {
+							continue
+						}
+
 						// TODO(sqs): slow
 						// Call references again to get external references as well.
 						locs, _, err := codeIntelResolver.References(ctx, rng.Range.Start.Line, rng.Range.Start.Character, 123, "")
 						if err != nil {
 							return nil, err
 						}
-						allRefs = append(allRefs, locs...)
+						for _, loc := range locs {
+							if loc.Dump.RepositoryID != int(repo.ID) { // xrefs only
+								allRefs = append(allRefs, locs...)
+							}
+						}
 					}
 				}
 
@@ -148,10 +163,19 @@ func (r *CodeGraphPersonNodeResolver) Authors(ctx context.Context) ([]*graphqlba
 	personSet := map[string] /* email */ *graphqlbackend.PersonResolver{}
 
 	// Blame reference locations to find callers.
-	if max := 100; len(dependencies) > max {
-		dependencies = dependencies[:max]
+	if max := 3000; len(dependencies) > max {
+		// dependencies = dependencies[:max]
 	}
-	for _, dependency := range dependencies {
+	// x := 100
+	log.Printf("dependencies: %d", dependencies)
+	for i, dependency := range dependencies {
+		// if !strings.Contains(dependency.Dump.RepositoryName, "blackfriday") {
+		// 	continue
+		// }
+		if i%17 != 0 {
+			continue
+		}
+
 		hunks, err := git.BlameFile(ctx, api.RepoName(dependency.Dump.RepositoryName), dependency.Path, &git.BlameOptions{
 			NewestCommit: api.CommitID(dependency.AdjustedCommit),
 			StartLine:    dependency.AdjustedRange.Start.Line + 1,

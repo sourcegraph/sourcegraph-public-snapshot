@@ -25,6 +25,7 @@ var repoNames = []api.RepoName{
 	"github.com/sourcegraph/go-jsonschema",
 	"github.com/sourcegraph/go-diff",
 	"github.com/sourcegraph/jsonx",
+	"github.com/sourcegraph/docsite",
 	// "github.com/sourcegraph/sourcegraph",
 }
 

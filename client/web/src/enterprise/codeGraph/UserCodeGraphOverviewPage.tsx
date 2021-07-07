@@ -37,7 +37,7 @@ const userCodeGraphOverDataGQLFragment = gql`
                 name
                 url
             }
-            callers {
+            authors {
                 ...PersonLinkFields
             }
 
