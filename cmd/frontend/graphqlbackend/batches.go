@@ -106,6 +106,12 @@ type CreateBatchChangeArgs struct {
 type ApplyBatchChangeArgs struct {
 	BatchSpec         graphql.ID
 	EnsureBatchChange *graphql.ID
+	PublicationStates *[]ChangesetSpecPublicationStateInput
+}
+
+type ChangesetSpecPublicationStateInput struct {
+	ChangesetSpec    graphql.ID
+	PublicationState batches.PublishedValue
 }
 
 type ListBatchChangesArgs struct {

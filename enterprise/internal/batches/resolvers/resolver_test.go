@@ -487,14 +487,130 @@ func TestApplyBatchChange(t *testing.T) {
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
 	}
+
+	t.Run("publication states", func(t *testing.T) {
+		// Service.ApplyBatchChange() (rightly) early returns if it's called
+		// with the same batch spec, so we need to create a new batch spec here.
+		batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "batch-spec", userID)
+		changesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+			User:      userID,
+			Repo:      repo.ID,
+			BatchSpec: batchSpec.ID,
+			HeadRef:   "main",
+		})
+
+		// We need a couple more changeset specs to make this useful: we need to
+		// be able to test that changeset specs attached to other batch specs
+		// cannot be modified, and that changeset specs with explicit published
+		// fields cause errors.
+		otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "other-batch-spec", userID)
+		otherChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+			User:      userID,
+			Repo:      repo.ID,
+			BatchSpec: otherBatchSpec.ID,
+			HeadRef:   "main",
+		})
+
+		publishedChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+			User:      userID,
+			Repo:      repo.ID,
+			BatchSpec: batchSpec.ID,
+			HeadRef:   "main",
+			Published: true,
+		})
+
+		// Reset input to a known state.
+		input := map[string]interface{}{
+			"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
+		}
+
+		// Handle the interesting error cases for different publicationStates
+		// inputs.
+		for name, states := range map[string][]map[string]interface{}{
+			"other batch spec": {
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(otherChangesetSpec.RandID),
+					"publicationState": true,
+				},
+			},
+			"duplicate batch specs": {
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+					"publicationState": true,
+				},
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+					"publicationState": true,
+				},
+			},
+			"invalid publication state": {
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+					"publicationState": "foo",
+				},
+			},
+			"invalid changeset spec ID": {
+				{
+					"changesetSpec":    "foo",
+					"publicationState": true,
+				},
+			},
+			"changeset spec with a published state": {
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(publishedChangesetSpec.RandID),
+					"publicationState": true,
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				input["publicationStates"] = states
+				if errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange); len(errs) == 0 {
+					t.Fatalf("expected errors, got none")
+				}
+			})
+		}
+
+		// Finally, let's actually make a legit apply.
+		input["publicationStates"] = []map[string]interface{}{
+			{
+				"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+				"publicationState": true,
+			},
+		}
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+		have := response.ApplyBatchChange
+		want := apitest.BatchChange{
+			ID:          have.ID,
+			Name:        batchSpec.Spec.Name,
+			Description: batchSpec.Spec.Description,
+			Namespace: apitest.UserOrg{
+				ID:         userAPIID,
+				DatabaseID: userID,
+				SiteAdmin:  true,
+			},
+			InitialApplier: apiUser,
+			LastApplier:    apiUser,
+			LastAppliedAt:  marshalDateTime(t, now),
+			Changesets: apitest.ChangesetConnection{
+				Nodes: []apitest.Changeset{
+					{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
+					{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
+				},
+				TotalCount: 2,
+			},
+		}
+		if diff := cmp.Diff(want, have); diff != "" {
+			t.Errorf("unexpected response (-want +have):\n%s", diff)
+		}
+	})
 }
 
 const mutationApplyBatchChange = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($batchSpec: ID!, $ensureBatchChange: ID){
-  applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange) {
+mutation($batchSpec: ID!, $ensureBatchChange: ID, $publicationStates: [ChangesetSpecPublicationStateInput!]){
+  applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange, publicationStates: $publicationStates) {
     id, name, description
     initialApplier    { ...u }
     lastApplier       { ...u }

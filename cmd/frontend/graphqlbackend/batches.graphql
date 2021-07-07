@@ -2011,6 +2011,17 @@ extend type Mutation {
         deleted). The returned error has the error code ErrEnsureBatchChangeFailed.
         """
         ensureBatchChange: ID
+
+        """
+        If set, these changeset specs will have their UI publication states set
+        to the given values. When updating an existing batch change, this will
+        overwrite existing publication states on the changesets.
+
+        An error will be returned if the same changeset spec ID is included
+        more than once in the array, or if a changeset spec ID is included with
+        a publication state set in its spec.
+        """
+        publicationStates: [ChangesetSpecPublicationStateInput!]
     ): BatchChange!
 
     """
@@ -2878,4 +2889,20 @@ type BatchSpecExecution implements Node {
     finished yet or if it failed.
     """
     batchSpec: BatchSpec
+}
+
+"""
+A ChangesetSpecPublicationStateInput is a tuple containing a changeset spec ID
+and its desired UI publication state.
+"""
+input ChangesetSpecPublicationStateInput {
+    """
+    The changeset spec ID.
+    """
+    changesetSpec: ID!
+
+    """
+    The desired publication state.
+    """
+    publicationState: PublishedValue!
 }
