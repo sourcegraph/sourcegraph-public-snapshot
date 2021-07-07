@@ -40,7 +40,7 @@ func SecurityEventLogs(db dbutil.DB) *SecurityEventLogStore {
 func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) error {
 	argument := e.Argument
 	if argument == nil {
-		argument = json.RawMessage([]byte(`{}`))
+		argument = []byte(`{}`)
 	}
 
 	_, err := s.Handle().DB().ExecContext(
@@ -61,11 +61,10 @@ func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) er
 	return nil
 }
 
-// LogAuthEvent will log an authentication or an authorization event. Examples are:
-// SignOutAttempted, SignOutScceeded, SignOutFailed.
-func (s *SecurityEventLogStore) LogAuthEvent(ctx context.Context, e *SecurityEvent) {
-	// We don't want to begin logging authentication or authorization events in on-premises
-	// installations yet.
+// LogEvent will log security events.
+func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) {
+	// We don't want to begin logging authentication or authorization events in
+	// on-premises installations yet.
 	if !envvar.SourcegraphDotComMode() {
 		return
 	}

@@ -74,5 +74,5 @@ func logSignOutEvent(r *http.Request, db dbutil.DB, name string) {
 		Timestamp:       time.Now(),
 	}
 
-	database.SecurityEventLogs(db).LogAuthEvent(ctx, event)
+	database.SecurityEventLogs(db).LogEvent(ctx, event)
 }
