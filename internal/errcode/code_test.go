@@ -2,39 +2,20 @@ package errcode_test
 
 import (
 	"errors"
-	"net/http"
-	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-func TestHTTP(t *testing.T) {
-	tests := []struct {
-		err  error
-		want int
-	}{
-		{os.ErrNotExist, http.StatusNotFound},
-		{&notFoundErr{}, http.StatusNotFound},
-		{nil, http.StatusOK},
-		{errors.New(""), http.StatusInternalServerError},
+func TestIsNotFound(t *testing.T) {
+	if !errcode.IsNotFound(&notFoundErr{}) {
+		t.Errorf("unexpectedly found")
 	}
-	for _, test := range tests {
-		c := errcode.HTTP(test.err)
-		if c != test.want {
-			t.Errorf("error %q: got %d, want %d", test.err, c, test.want)
-		}
+	if errcode.IsNotFound(&errcode.Mock{IsNotFound: false}) {
+		t.Errorf("unexpectedly not found")
 	}
-}
-
-func TestMakeNonRetryable(t *testing.T) {
-	err := errors.New("foo")
-	if errcode.IsNonRetryable(err) {
-		t.Errorf("unexpected non-retryable error: %+v", err)
-	}
-
-	if nrerr := errcode.MakeNonRetryable(err); !errcode.IsNonRetryable(nrerr) {
-		t.Errorf("unexpected retryable error: %+v", nrerr)
+	if errcode.IsNotFound(errors.New("test")) {
+		t.Errorf("unexpectedly not found")
 	}
 }
 
