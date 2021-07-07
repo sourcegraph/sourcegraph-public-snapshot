@@ -189,16 +189,6 @@ func (s *AccessTokenStore) get(ctx context.Context, conds []*sqlf.Query) (*Acces
 	return results[0], nil
 }
 
-// GetByUserIDAndNote retrieves the access token (if any) with the given subject_user_id and note.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
-func (s *AccessTokenStore) GetBySubjectUserIDAndNote(ctx context.Context, subjectUserID int32, note string) (*AccessToken, error) {
-	return s.get(ctx, []*sqlf.Query{
-		sqlf.Sprintf("subject_user_id = %s", subjectUserID),
-		sqlf.Sprintf("note = %s", note),
-	})
-}
-
 // AccessTokensListOptions contains options for listing access tokens.
 type AccessTokensListOptions struct {
 	SubjectUserID  int32 // only list access tokens with this user as the subject

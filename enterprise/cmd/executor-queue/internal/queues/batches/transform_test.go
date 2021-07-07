@@ -15,19 +15,19 @@ import (
 )
 
 func TestTransformRecord(t *testing.T) {
+	accessToken := "thisissecret-dont-tell-anyone"
 	database.Mocks.AccessTokens.Create = func(subjectUserID int32, scopes []string, note string, creatorID int32) (int64, string, error) {
-		return 1234, "secret-token", nil
+		return 1234, accessToken, nil
 	}
 	t.Cleanup(func() { database.Mocks.AccessTokens.Create = nil })
 
-	overWriteEnv := func(k, v string) {
+	overwriteEnv := func(k, v string) {
 		old := os.Getenv(k)
 		os.Setenv(k, v)
 		t.Cleanup(func() { os.Setenv(k, old) })
 	}
-	overWriteEnv("HOME", "/home/the-test-user")
-	overWriteEnv("PATH", "/home/the-test-user/bin")
-	overWriteEnv("SRC_ACCESS_TOKEN", "secret-token")
+	overwriteEnv("HOME", "/home/the-test-user")
+	overwriteEnv("PATH", "/home/the-test-user/bin")
 
 	testBatchSpec := `batchSpec: yeah`
 	index := &btypes.BatchSpecExecution{
@@ -58,7 +58,7 @@ func TestTransformRecord(t *testing.T) {
 				Dir: ".",
 				Env: []string{
 					"SRC_ENDPOINT=https://test%2A:hunter2@test.io",
-					"SRC_ACCESS_TOKEN=secret-token",
+					"SRC_ACCESS_TOKEN=" + accessToken,
 					"HOME=/home/the-test-user",
 					"PATH=/home/the-test-user/bin",
 				},
