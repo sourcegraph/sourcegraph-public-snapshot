@@ -79,7 +79,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     !isVirtualDashboard(currentDashboard) &&
                     isSettingsBasedInsightsDashboard(currentDashboard)
                 ) {
-                    history.push(`/insights/dashboard/${currentDashboard.settingsKey}/edit`)
+                    history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
                 }
 
                 return
