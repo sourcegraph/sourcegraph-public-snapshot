@@ -28,7 +28,7 @@ func (r *queryResolver) Symbols(ctx context.Context) (_ []AdjustedMonikerLocatio
 
 	var allAdjustedMonikers []AdjustedMonikerLocations
 	for _, dump := range r.uploads {
-		const limit = 100 // TODO(sqs): un-hardcode
+		const limit = 20 // TODO(sqs): un-hardcode
 		monikers, err := r.lsifStore.Monikers(ctx, dump.ID, 0, limit)
 		if err != nil {
 			return nil, errors.Wrap(err, "lsifStore.Monikers")

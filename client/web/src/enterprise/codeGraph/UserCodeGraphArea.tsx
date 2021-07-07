@@ -19,11 +19,9 @@ interface Props
 }
 
 export const UserCodeGraphArea: React.FunctionComponent<Props> = ({ match, namespaceID, ...outerProps }) => (
-    <div className="pb-3">
-        <Switch>
-            <Route path={match.url} exact={true}>
-                <UserCodeGraphOverviewPage {...outerProps} namespaceID={namespaceID} />
-            </Route>
-        </Switch>
-    </div>
+    <Switch>
+        <Route path={match.url} exact={true}>
+            <UserCodeGraphOverviewPage {...outerProps} namespaceID={namespaceID} />
+        </Route>
+    </Switch>
 )

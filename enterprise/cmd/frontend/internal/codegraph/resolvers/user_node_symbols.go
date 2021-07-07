@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -23,15 +22,21 @@ var (
 func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
 	do := func(ctx context.Context, email string) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
 		// TODO(sqs): un-hardcode
-		repos := []*types.Repo{
-			{ID: 1, Name: "github.com/sourcegraph/sourcegraph"},
-			{ID: 2, Name: "github.com/hashicorp/go-multierror"},
-			{ID: 3, Name: "github.com/hashicorp/errwrap"},
+		repoNames := []api.RepoName{
+			"github.com/sourcegraph/go-jsonschema",
+			"github.com/sourcegraph/jsonschemadoc",
+			"github.com/sourcegraph/docsite",
+			// "github.com/sourcegraph/sourcegraph",
 		}
 
 		// Get a list of all symbols authored by this person.
 		var authoredSymbols []codeintelresolvers.AdjustedMonikerLocations
-		for _, repo := range repos {
+		for _, repoName := range repoNames {
+			repo, err := backend.Repos.GetByName(ctx, repoName)
+			if err != nil {
+				return nil, err
+			}
+
 			commitID, err := backend.Repos.ResolveRev(ctx, repo, "HEAD")
 			if err != nil {
 				return nil, err
@@ -83,7 +88,7 @@ func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelr
 		return authoredSymbols, nil
 	}
 
-	symbolsOnce.Do(func() { symbolsResult, symbolsErr = do(ctx, "@sourcegraph.com") })
+	symbolsOnce.Do(func() { symbolsResult, symbolsErr = do(ctx, "aharvey@sourcegraph.com") })
 	return symbolsResult, symbolsErr
 }
 
