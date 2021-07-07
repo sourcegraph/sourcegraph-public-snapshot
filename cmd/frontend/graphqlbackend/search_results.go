@@ -1228,8 +1228,9 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func determineResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
-	// Determine which types of results to return.
+// withResultTypes populates the ResultTypes field of args, which drives the kind
+// of search to run (e.g., text search, symbol search).
+func withResultTypes(args search.TextParameters, forceTypes result.Types) search.TextParameters {
 	var rts result.Types
 	if forceTypes != 0 {
 		rts = forceTypes
@@ -1251,8 +1252,8 @@ func determineResultTypes(args search.TextParameters, forceTypes result.Types) r
 	if rts.Has(result.TypePath) {
 		args.PatternInfo.PatternMatchesPath = true
 	}
-
-	return rts
+	args.ResultTypes = rts
+	return args
 }
 
 // determineRepos wraps resolveRepositories. It interprets the response and
@@ -1343,8 +1344,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		return nil, &badRequestError{err}
 	}
 
-	resultTypes := determineResultTypes(args, forceResultTypes)
-	tr.LazyPrintf("resultTypes: %s", resultTypes)
+	args = withResultTypes(args, forceResultTypes)
+	tr.LazyPrintf("resultTypes: %s", args.ResultTypes)
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
@@ -1386,7 +1387,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		_, _, _ = agg.Get()
 	}()
 
-	isFileOrPath := resultTypes.Has(result.TypeFile) || resultTypes.Has(result.TypePath)
+	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
@@ -1442,7 +1443,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	// results before the above reporting.
 	args.RepoPromise.Resolve(resolved.RepoRevs)
 
-	if resultTypes.Has(result.TypeRepo) {
+	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1452,8 +1453,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	}
 
-	if resultTypes.Has(result.TypeSymbol) {
-		wg := waitGroup(resultTypes.Without(result.TypeSymbol) == 0)
+	if args.ResultTypes.Has(result.TypeSymbol) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
@@ -1461,7 +1462,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		})
 	}
 
-	if resultTypes.Has(result.TypeFile | result.TypePath) {
+	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 		if args.Mode != search.NoFilePath {
 			wg := waitGroup(true)
 			wg.Add(1)
@@ -1472,8 +1473,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		}
 	}
 
-	if resultTypes.Has(result.TypeDiff) {
-		wg := waitGroup(resultTypes.Without(result.TypeDiff) == 0)
+	if args.ResultTypes.Has(result.TypeDiff) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
@@ -1481,8 +1482,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		})
 	}
 
-	if resultTypes.Has(result.TypeCommit) {
-		wg := waitGroup(resultTypes.Without(result.TypeCommit) == 0)
+	if args.ResultTypes.Has(result.TypeCommit) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
