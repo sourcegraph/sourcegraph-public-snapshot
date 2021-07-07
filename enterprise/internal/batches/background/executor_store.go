@@ -104,14 +104,30 @@ func loadAndExtractBatchSpecRandID(ctx context.Context, s *store.Store, id int64
 		return "", errors.New("no execution logs")
 	}
 
-	return extractBatchSpecRandID(exec.ExecutionLogs[0].Out)
+	return extractBatchSpecRandID(exec.ExecutionLogs)
 }
 
 var ErrNoBatchSpecRandID = errors.New("no batch spec rand id found in execution logs")
 
-func extractBatchSpecRandID(executionLogOutput string) (string, error) {
+func extractBatchSpecRandID(logs []workerutil.ExecutionLogEntry) (string, error) {
+	var (
+		entry workerutil.ExecutionLogEntry
+		found bool
+	)
+
+	for _, e := range logs {
+		if e.Key == "step.src.0" {
+			entry = e
+			found = true
+			break
+		}
+	}
+	if !found {
+		return "", ErrNoBatchSpecRandID
+	}
+
 	var batchSpecRandID string
-	for _, l := range strings.Split(executionLogOutput, "\n") {
+	for _, l := range strings.Split(entry.Out, "\n") {
 		const outputLinePrefix = "stdout: "
 
 		if !strings.HasPrefix(l, outputLinePrefix) {
