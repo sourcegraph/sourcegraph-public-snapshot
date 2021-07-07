@@ -2,9 +2,7 @@ extend type Query {
     """
     EXPERIMENTAL: Queries code insights
     """
-
     insights(ids: [ID!]): InsightConnection
-
 }
 
 """
