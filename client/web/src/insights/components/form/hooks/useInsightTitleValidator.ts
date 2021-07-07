@@ -24,7 +24,7 @@ export function useInsightTitleValidator(props: useTitleValidatorProps): Validat
     const { settings, insightType } = props
 
     return useMemo(() => {
-        const alreadyExistInsightNames = new Set(
+        const existingInsightNames = new Set(
             Object.keys(settings ?? DEFAULT_FINAL_SETTINGS)
                 // According to our convention about insights name <insight type>.insight.<insight name>
                 .filter(key => key.startsWith(`${insightType}`))
@@ -32,7 +32,7 @@ export function useInsightTitleValidator(props: useTitleValidatorProps): Validat
         )
 
         return composeValidators<string>(createRequiredValidator('Title is a required field.'), value =>
-            alreadyExistInsightNames.has(camelCase(value))
+            existingInsightNames.has(camelCase(value))
                 ? 'An insight with this name already exists. Please set a different name for the new insight.'
                 : undefined
         )
