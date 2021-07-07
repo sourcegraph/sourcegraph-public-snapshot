@@ -1,23 +1,28 @@
-.menu {
-    &__panel {
-        display: flex;
-        flex-direction: column;
-        min-width: 8rem;
-        padding: 0;
-        margin: 0;
-        list-style: none;
-        background-color: var(--color-bg-1);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
+@import '~@reach/menu-button/styles.css';
 
-        // class .dropdown-menu brings position absolute and breaks
-        // Menu positioning in portal because of it we reset position
-        position: static;
-    }
+.panel[data-reach-menu-items] {
+    font-size: inherit;
+    overflow: hidden;
+    padding: 0.25rem 0;
 
-    &__item-button {
-        width: 100%;
-        text-align: start;
-        border: none;
+    // Explicit override @reach ui border styles
+    border: 1px solid var(--dropdown-border-color);
+
+    // class .dropdown-menu brings position absolute and breaks
+    // Menu positioning in portal because of it we reset position
+    position: static;
+}
+
+.item[data-reach-menu-item] {
+    padding: 0.25rem 0.75rem;
+    text-align: right;
+    width: 100%;
+    border-radius: 0;
+    transition: unset;
+    font-weight: unset;
+
+    &[data-selected] {
+        background-color: var(--link-color);
+        color: var(--light-text);
     }
 }
