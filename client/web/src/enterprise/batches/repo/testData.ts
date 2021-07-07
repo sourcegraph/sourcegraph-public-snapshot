@@ -11,15 +11,6 @@ import { ChangesetFields, RepoBatchChange } from '../../../graphql-operations'
 
 export const now = new Date()
 
-const HIDDEN_EXTERNAL_CHANGESET: ChangesetFields = {
-    __typename: 'HiddenExternalChangeset',
-    createdAt: subDays(now, 5).toISOString(),
-    state: ChangesetState.OPEN,
-    id: 'someh4',
-    nextSyncAt: null,
-    updatedAt: subDays(now, 5).toISOString(),
-}
-
 const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     __typename: 'ExternalChangeset',
     body: 'body',
@@ -94,29 +85,6 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     },
 }
 
-export const HIDDEN_NODES: RepoBatchChange[] = new Array<RepoBatchChange>(4).fill({
-    id: 'test',
-    url: '/users/alice/batch-change/test',
-    name: 'Awesome batch',
-    description: 'Wow so cool!',
-    createdAt: subDays(now, 5).toISOString(),
-    closedAt: null,
-    changesetsStats: {
-        open: 10,
-        closed: 0,
-        merged: 5,
-    },
-    changesets: {
-        totalCount: 2,
-        pageInfo: { endCursor: null, hasNextPage: false },
-        nodes: [HIDDEN_EXTERNAL_CHANGESET, HIDDEN_EXTERNAL_CHANGESET, HIDDEN_EXTERNAL_CHANGESET],
-    },
-    namespace: {
-        namespaceName: 'alice',
-        url: '/users/alice',
-    },
-})
-
 export const NODES: RepoBatchChange[] = [
     {
         id: 'test',
@@ -135,7 +103,12 @@ This is my thorough explanation. And it can also get very long, in that case the
         changesets: {
             totalCount: 2,
             pageInfo: { endCursor: null, hasNextPage: false },
-            nodes: [READY_EXTERNAL_CHANGESET, READY_EXTERNAL_CHANGESET],
+            nodes: [
+                READY_EXTERNAL_CHANGESET,
+                READY_EXTERNAL_CHANGESET,
+                READY_EXTERNAL_CHANGESET,
+                READY_EXTERNAL_CHANGESET,
+            ],
         },
         namespace: {
             namespaceName: 'alice',

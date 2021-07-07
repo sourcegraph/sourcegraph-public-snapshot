@@ -8,7 +8,7 @@ import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileD
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
-import { HIDDEN_NODES, NODES } from './testData'
+import { NODES } from './testData'
 
 const { add } = storiesOf('web/batches/BatchChangeRepoPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
@@ -38,7 +38,6 @@ const queryRepoBatchChanges = (nodes: RepoBatchChange[]): typeof _queryRepoBatch
     })
 
 const queryList = queryRepoBatchChanges(NODES)
-const queryHidden = queryRepoBatchChanges(HIDDEN_NODES)
 const queryNone = queryRepoBatchChanges([])
 
 const queryEmptyExternalChangesetWithFileDiffs: typeof _queryExternalChangesetWithFileDiffs = () =>
@@ -66,13 +65,6 @@ add('List of batch changes', () => (
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
             />
         )}
-    </EnterpriseWebStory>
-))
-
-// TODO: Is this possible?? Can a user view a repository if they don't have access to it on the code host?
-add('Hidden changesets', () => (
-    <EnterpriseWebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
-        {props => <BatchChangeRepoPage {...props} repo={repoDefaults} queryRepoBatchChanges={queryHidden} />}
     </EnterpriseWebStory>
 ))
 
