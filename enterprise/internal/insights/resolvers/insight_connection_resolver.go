@@ -50,7 +50,6 @@ func (r *insightConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 }
 
 func (r *insightConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	log15.Info("total_count", "ids", r.ids)
 	results, _, err := r.compute(ctx)
 	return int32(len(results)), err
 }

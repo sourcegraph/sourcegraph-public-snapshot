@@ -39,10 +39,11 @@ func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolv
 }
 
 func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
-	idList := make([]string, 0)
+	var idList []string
 	if args != nil && args.Ids != nil {
-		for _, id := range *args.Ids {
-			idList = append(idList, string(id))
+		idList = make([]string, len(*args.Ids))
+		for i, id := range *args.Ids {
+			idList[i] = string(id)
 		}
 	}
 	return &insightConnectionResolver{
