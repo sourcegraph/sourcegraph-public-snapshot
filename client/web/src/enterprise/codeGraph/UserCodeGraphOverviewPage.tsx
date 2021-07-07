@@ -67,23 +67,36 @@ export const UserCodeGraphOverviewPage: React.FunctionComponent<Props> = ({ name
         <div className="pb-3 mt-5 mx-3">
             <div className="row">
                 <Container className="col-4">
-                    <h2 className="text-center">Dependencies</h2>
-                    <h4 className="border-bottom pb-1">Packages</h4>
+                    <h2 className="text-center mb-4">Dependencies</h2>
+                    <h4 className="border-bottom pb-1">Packages you use</h4>
                     {codeGraphPersonNode.codeGraph.dependencies.join(' ')}
-                    <h4 className="border-bottom pb-1 mt-4">Authors</h4>
+                    <h4 className="border-bottom pb-1 mt-4">Authors whose code you use</h4>
                 </Container>
                 <div className="col-4 d-flex flex-column justify-content-center px-4">
+                    <hr
+                        className="border-white"
+                        // eslint-disable-next-line react/forbid-dom-props
+                        style={{
+                            position: 'relative',
+                            top: '52px',
+                            zIndex: -100,
+                            marginLeft: '-30px',
+                            marginRight: '-30px',
+                            width: '150%',
+                            opacity: '0.5',
+                        }}
+                    />
                     <h3 className="text-center h2">
-                        <UserAvatar user={codeGraphPersonNode} className="icon-inline" />
+                        <UserAvatar user={codeGraphPersonNode} className="icon-inline h2" size={100} />
                     </h3>
                     <h4 className="text-center">Contributions</h4>
                     {codeGraphPersonNode.codeGraph.symbols.join(' ')}
                 </div>
                 <Container className="col-4">
-                    <h2 className="text-center">Dependents</h2>
-                    <h4 className="border-bottom pb-1">Packages</h4>
+                    <h2 className="text-center mb-4">Dependents</h2>
+                    <h4 className="border-bottom pb-1">Packages using your code</h4>
                     {codeGraphPersonNode.codeGraph.dependencies.join(' ')}
-                    <h4 className="border-bottom pb-1 mt-4">Callers</h4>
+                    <h4 className="border-bottom pb-1 mt-4">People using your code</h4>
                 </Container>
             </div>
         </div>
