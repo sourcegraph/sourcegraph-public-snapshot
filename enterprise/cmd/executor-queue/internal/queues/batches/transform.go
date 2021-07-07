@@ -14,7 +14,22 @@ import (
 
 // transformRecord transforms a *btypes.BatchSpecExecution into an apiclient.Job.
 func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecExecution, config *Config) (apiclient.Job, error) {
-	_, token, err := database.AccessTokens(db).Create(ctx, exec.UserID, []string{"user:all"}, "batchspecexecution", exec.UserID)
+	// TODO: createAccessToken is a bit of technical debt until we figure out a
+	// better solution. The problem is that src-cli needs to make requests to
+	// the Sourcegraph instance *on behalf of the user*.
+	//
+	// Ideally we'd have something like one-time tokens that
+	// * we could hand to src-cli
+	// * are not visible to the user in the Sourcegraph web UI
+	// * valid only for the duration of the batch spec execution
+	// * and cleaned up after batch spec is executed
+	//
+	// Until then we create a fresh access token every time.
+	//
+	// GetOrCreate doesn't work because once an access token has been created
+	// in the database Sourcegraph can't access the plain-text token anymore.
+	// Only a hash for verification is kept in the database.
+	token, err := createAccessToken(ctx, db, exec.UserID)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
@@ -67,6 +82,19 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 			config.Shared.FrontendPassword: "PASSWORD_REMOVED",
 		},
 	}, nil
+}
+
+const (
+	accessTokenNote  = "batch-spec-execution"
+	accessTokenScope = "user:all"
+)
+
+func createAccessToken(ctx context.Context, db dbutil.DB, userID int32) (string, error) {
+	_, token, err := database.AccessTokens(db).Create(ctx, userID, []string{accessTokenNote}, accessTokenNote, userID)
+	if err != nil {
+		return "", err
+	}
+	return token, err
 }
 
 func makeURL(base, username, password string) (string, error) {
