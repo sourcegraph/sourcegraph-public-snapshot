@@ -330,7 +330,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, guide GuideRootResolver) (*graphql.Schema, error) {
+func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, guide GuideRootResolver, codeGraph CodeGraphResolver) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
 
@@ -400,6 +400,13 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 		// No NodeByID handlers currently.
 	}
 
+	if codeGraph != nil {
+		EnterpriseResolvers.codeGraphResolver = codeGraph
+		resolver.CodeGraphResolver = codeGraph
+		schemas = append(schemas, codeGraphSchema)
+		// No NodeByID handlers currently.
+	}
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -420,6 +427,7 @@ type schemaResolver struct {
 	LicenseResolver
 	DotcomRootResolver
 	GuideRootResolver
+	CodeGraphResolver
 
 	db                dbutil.DB
 	repoupdaterClient *repoupdater.Client
@@ -492,6 +500,7 @@ var EnterpriseResolvers = struct {
 	licenseResolver      LicenseResolver
 	dotcomResolver       DotcomRootResolver
 	guideResolver        GuideRootResolver
+	codeGraphResolver    CodeGraphResolver
 }{}
 
 // DEPRECATED

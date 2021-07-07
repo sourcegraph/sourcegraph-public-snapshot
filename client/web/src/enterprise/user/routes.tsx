@@ -13,6 +13,8 @@ const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 
     'NamespaceBatchChangesArea'
 )
 
+const UserCodeGraphArea = lazyComponent(() => import('../codeGraph/UserCodeGraphArea'), 'UserCodeGraphArea')
+
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     ...userAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
@@ -37,5 +39,9 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         path: '/batch-changes',
         render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.user.id} />,
         condition: props => !props.isSourcegraphDotCom && window.context.batchChangesEnabled,
+    },
+    {
+        path: '/graph',
+        render: props => <UserCodeGraphArea {...props} namespaceID={props.user.id} />,
     },
 ]

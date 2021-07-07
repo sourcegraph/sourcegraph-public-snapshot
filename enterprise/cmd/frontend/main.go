@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codegraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
@@ -47,6 +48,7 @@ var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBand
 	"codemonitors": codemonitors.Init,
 	"dotcom":       dotcom.Init,
 	"guide":        guide.Init,
+	"codegraph":    codegraph.Init,
 }
 
 func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {

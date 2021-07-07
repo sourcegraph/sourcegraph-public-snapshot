@@ -143,9 +143,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
 
     useEffect(() => {
-        document.body.classList.add(styles.usagePageBody)
+        if (props.location.pathname.includes('/usage/')) {
+            document.body.classList.add(styles.usagePageBody)
+        }
         return () => document.body.classList.remove(styles.usagePageBody)
-    })
+    }, [props.location.pathname])
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {

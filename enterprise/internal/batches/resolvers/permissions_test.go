@@ -41,7 +41,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	cstore := store.New(db, key)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil )
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -941,7 +941,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	cstore := store.New(db, nil)
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil )
 	if err != nil {
 		t.Fatal(err)
 	}

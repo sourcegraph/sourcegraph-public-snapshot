@@ -1,0 +1,15 @@
+extend type User {
+    codeGraph: CodeGraphPersonNode!
+}
+
+type CodeGraphPersonNode {
+    """
+    Packages used by the person.
+    """
+    dependencies: [String!]!
+
+    """
+    Packages that use the person's code.
+    """
+    dependents: [String!]!
+}

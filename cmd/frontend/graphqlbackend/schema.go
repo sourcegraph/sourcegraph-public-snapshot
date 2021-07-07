@@ -39,3 +39,7 @@ var authzSchema string
 // guideSchema is the Guide GraphQL schema.
 //go:embed guide.graphql
 var guideSchema string
+
+// codeGraphSchema is the code graph GraphQL schema.
+//go:embed code_graph.graphql
+var codeGraphSchema string
