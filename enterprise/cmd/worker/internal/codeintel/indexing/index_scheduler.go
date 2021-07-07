@@ -122,7 +122,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		}
 
 		if err := s.indexEnqueuer.QueueIndexesForRepository(ctx, repositoryID); err != nil {
-			if isRepoNotExist(err) {
+			if errors.Is(err, &vcs.RepoNotExistError{}) {
 				continue
 			}
 
@@ -157,16 +157,4 @@ func deduplicateRepositoryIDs(ids ...[]int) (repositoryIDs []int) {
 	}
 
 	return repositoryIDs
-}
-
-func isRepoNotExist(err error) bool {
-	for err != nil {
-		if vcs.IsRepoNotExist(err) {
-			return true
-		}
-
-		err = errors.Unwrap(err)
-	}
-
-	return false
 }

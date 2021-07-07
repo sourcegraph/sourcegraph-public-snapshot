@@ -116,15 +116,8 @@ func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
 			return true
 		}
 
-		quiet := false
-		for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-			var e *os.SyscallError
-			if errors.As(ex, &e) && e.Syscall == "connect" && time.Since(start) < time.Minute {
-				quiet = true
-			}
-		}
-
-		if !quiet {
+		var e *os.SyscallError
+		if !errors.As(err, &e) || e.Syscall != "connect" || time.Since(start) >= time.Minute {
 			log15.Error("Failed to connect to Sourcegraph instance", "error", err)
 		}
 
