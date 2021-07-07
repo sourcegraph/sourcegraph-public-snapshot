@@ -78,6 +78,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
+            <span className={classNames(styles.visibleChangesetApplyPreviewNodeListCell)}>
+                {canSetPublishedState(node) ? 'true' : 'false'}
+            </span>
             <VisibleChangesetApplyPreviewNodeStatusCell
                 node={node}
                 className={classNames(
@@ -541,4 +544,15 @@ const VisibleChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
         return <ChangesetStatusCell state={ChangesetState.UNPUBLISHED} className={className} />
     }
     return <ChangesetStatusCell state={node.targets.changeset.state} className={className} />
+}
+
+const canSetPublishedState = (node: VisibleChangesetApplyPreviewFields): boolean => {
+    if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+        return false
+    }
+    if (node.targets.changesetSpec.description.__typename !== 'GitBranchChangesetDescription') {
+        return false
+    }
+
+    return node.targets.changesetSpec.description.published === null
 }

@@ -17,6 +17,7 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     specID: string
     toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
+    showPublishUI: boolean
     viewerCanAdminister: boolean
     history: H.History
 }
@@ -25,6 +26,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
     specID,
     toBeArchived,
     batchChange,
+    showPublishUI,
     viewerCanAdminister,
     history,
     telemetryService,
@@ -80,20 +82,24 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     )}
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
-                    <button
-                        type="button"
-                        className={classNames(
-                            'btn btn-primary test-batches-confirm-apply-btn text-nowrap',
-                            isLoading === true || (!viewerCanAdminister && 'disabled')
-                        )}
-                        onClick={onApply}
-                        disabled={isLoading === true || !viewerCanAdminister}
-                        data-tooltip={
-                            !viewerCanAdminister ? 'You have no permission to apply this batch change.' : undefined
-                        }
-                    >
-                        Apply spec
-                    </button>
+                    {showPublishUI ? (
+                        <button type="button">PUBLISH</button>
+                    ) : (
+                        <button
+                            type="button"
+                            className={classNames(
+                                'btn btn-primary test-batches-confirm-apply-btn text-nowrap',
+                                isLoading === true || (!viewerCanAdminister && 'disabled')
+                            )}
+                            onClick={onApply}
+                            disabled={isLoading === true || !viewerCanAdminister}
+                            data-tooltip={
+                                !viewerCanAdminister ? 'You have no permission to apply this batch change.' : undefined
+                            }
+                        >
+                            Apply spec
+                        </button>
+                    )}
                 </div>
             </div>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}

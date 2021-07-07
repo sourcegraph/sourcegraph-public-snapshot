@@ -7,6 +7,7 @@ export interface PreviewListHeaderProps {
 export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = () => (
     <>
         <span className="p-2 d-none d-sm-block" />
+        <span className="p-2 d-none d-sm-block" />
         <h5 className="p-2 d-none d-sm-block text-uppercase text-center">Current state</h5>
         <h5 className="d-none d-sm-block text-uppercase text-center">
             +<br />-

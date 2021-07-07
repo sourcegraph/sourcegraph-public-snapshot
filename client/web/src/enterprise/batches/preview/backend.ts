@@ -76,6 +76,8 @@ export const batchSpecFragment = gql`
                 added
                 modified
                 removed
+
+                uiPublished
             }
             totalCount
         }

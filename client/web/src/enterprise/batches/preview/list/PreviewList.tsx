@@ -21,6 +21,7 @@ interface Props extends ThemeProps {
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
+    showPublishUI: boolean
 
     /** For testing only. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
@@ -38,6 +39,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     history,
     location,
     authenticatedUser,
+    showPublishUI,
     isLightTheme,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,

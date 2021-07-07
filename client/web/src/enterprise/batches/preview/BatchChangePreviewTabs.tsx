@@ -80,6 +80,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
                     history={history}
                     location={location}
                     authenticatedUser={authenticatedUser}
+                    showPublishUI={spec.applyPreview.stats.uiPublished > 0}
                     isLightTheme={isLightTheme}
                     queryChangesetApplyPreview={queryChangesetApplyPreview}
                     queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}

@@ -90,6 +90,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 specID={spec.id}
                 toBeArchived={spec.applyPreview.stats.archive}
                 batchChange={spec.appliesToBatchChange}
+                showPublishUI={spec.applyPreview.stats.uiPublished > 0}
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />
