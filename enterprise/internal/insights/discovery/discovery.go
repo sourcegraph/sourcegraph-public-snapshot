@@ -3,6 +3,8 @@ package discovery
 import (
 	"context"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -16,11 +18,16 @@ type SettingStore interface {
 	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 }
 
+// InsightFilterArgs contains arguments that will filter out insights when discovered if matched.
+type InsightFilterArgs struct {
+	Ids []string
+}
+
 // Discover uses the given settings store to look for insights in the global user settings.
 //
 // TODO(slimsag): future: include user/org settings and consider security implications of doing so.
 // In the future, this will be expanded to also include insights from users/orgs.
-func Discover(ctx context.Context, settingStore SettingStore) ([]insights.SearchInsight, error) {
+func Discover(ctx context.Context, settingStore SettingStore, args InsightFilterArgs) ([]insights.SearchInsight, error) {
 	// Get latest Global user settings.
 	subject := api.SettingsSubject{Site: true}
 	globalSettingsRaw, err := settingStore.GetLatest(ctx, subject)
@@ -31,12 +38,14 @@ func Discover(ctx context.Context, settingStore SettingStore) ([]insights.Search
 	if err != nil {
 		return nil, err
 	}
-
 	results := convertFromBackendInsight(globalSettings.Insights)
 
-	return results, nil
+	return applyFilters(results, args), nil
 }
 
+// convertFromBackendInsight is an adapter method that will transform the 'backend' insight schema to the schema that is
+// used by the extensions on the frontend, and will be used in the future. As soon as the backend and frontend are fully integrated these
+// 'backend' insights will be deprecated.
 func convertFromBackendInsight(backendInsights []*schema.Insight) []insights.SearchInsight {
 	converted := make([]insights.SearchInsight, 0)
 	for _, backendInsight := range backendInsights {
@@ -49,6 +58,7 @@ func convertFromBackendInsight(backendInsights []*schema.Insight) []insights.Sea
 				Query: series.Search,
 			})
 		}
+		temp.ID = backendInsight.Id
 		converted = append(converted, temp)
 	}
 
@@ -65,4 +75,33 @@ func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
 		return nil, err
 	}
 	return &v, nil
+}
+
+//applyFilters will apply any filters defined as arguments serially and return the intersection.
+func applyFilters(total []insights.SearchInsight, args InsightFilterArgs) []insights.SearchInsight {
+	filtered := total
+
+	if len(args.Ids) > 0 {
+		filtered = filterByIds(args.Ids, total)
+	}
+
+	return filtered
+}
+
+func filterByIds(ids []string, insight []insights.SearchInsight) []insights.SearchInsight {
+	filtered := make([]insights.SearchInsight, 0)
+	keys := make(map[string]bool)
+	for _, id := range ids {
+		log15.Info("filter", "key", id)
+		keys[id] = true
+	}
+
+	for _, searchInsight := range insight {
+		log15.Info("checking_filter", "insight", searchInsight.Title, "uuid", searchInsight.ID)
+		if _, ok := keys[searchInsight.ID]; ok {
+			log15.Info("adding", "insight", searchInsight.Title)
+			filtered = append(filtered, searchInsight)
+		}
+	}
+	return filtered
 }

@@ -60,7 +60,7 @@ func discoverAndEnqueueInsights(
 	settingStore discovery.SettingStore,
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error,
 ) error {
-	foundInsights, err := discovery.Discover(ctx, settingStore)
+	foundInsights, err := discovery.Discover(ctx, settingStore, discovery.InsightFilterArgs{})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}

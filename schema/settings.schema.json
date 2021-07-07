@@ -442,7 +442,7 @@
     "Insight": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["title", "description", "series"],
+      "required": ["title", "description", "series", "id"],
       "properties": {
         "title": {
           "type": "string",
@@ -458,6 +458,10 @@
           "items": {
             "$ref": "#/definitions/InsightSeries"
           }
+        },
+        "id": {
+          "type": "string",
+          "description": "A globally  unique identifier for this insight."
         }
       }
     },

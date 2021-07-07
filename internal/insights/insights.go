@@ -134,7 +134,6 @@ type SearchInsight struct {
 	Title        string
 	Description  string
 	Repositories []string
-	Uuid         string
 	Series       []TimeSeries
 	Step         Interval
 	Visibility   string
