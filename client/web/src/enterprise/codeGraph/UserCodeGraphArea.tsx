@@ -7,6 +7,8 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { UserCodeGraphOverviewPage } from './UserCodeGraphOverviewPage'
+
 interface Props
     extends RouteComponentProps<{}>,
         ThemeProps,
@@ -20,7 +22,7 @@ export const UserCodeGraphArea: React.FunctionComponent<Props> = ({ match, names
     <div className="pb-3">
         <Switch>
             <Route path={match.url} exact={true}>
-                <UserCodeGraphOverviewPage />
+                <UserCodeGraphOverviewPage {...outerProps} namespaceID={namespaceID} />
             </Route>
         </Switch>
     </div>

@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -12,26 +11,38 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { Scalars, UserCodeGraphVariables, UserCodeGraphResult } from '../../graphql-operations'
+import {
+    Scalars,
+    UserCodeGraphVariables,
+    UserCodeGraphResult,
+    UserCodeGraphOverviewData,
+} from '../../graphql-operations'
 
-const queryUserCodeGraph = (vars: UserCodeGraphVariables): Observable<UserCodeGraphResult['node']> =>
+const userCodeGraphOverDataGQLFragment = gql`
+    fragment UserCodeGraphOverviewData on User {
+        codeGraph {
+            dependencies
+            dependents
+        }
+    }
+`
+
+const queryUserCodeGraph = (vars: UserCodeGraphVariables): Observable<UserCodeGraphOverviewData | null> =>
     requestGraphQL<UserCodeGraphResult, UserCodeGraphVariables>(
         gql`
             query UserCodeGraph($userID: ID!) {
                 node(id: $userID) {
                     ... on User {
-                        codeGraph {
-                            dependencies
-                            dependents
-                        }
+                        ...UserCodeGraphOverviewData
                     }
                 }
             }
+            ${userCodeGraphOverDataGQLFragment}
         `,
         vars
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node?.codeGraph)
+        map(data => data.node || null)
     )
 
 interface Props extends ThemeProps, ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
@@ -39,7 +50,7 @@ interface Props extends ThemeProps, ExtensionsControllerProps, TelemetryProps, P
 }
 
 export const UserCodeGraphOverviewPage: React.FunctionComponent<Props> = ({ namespaceID, ...props }) => {
-    const codeGraphPersonNode = useObservable(useMemo(() => queryUserCodeGraph({}), []))
+    const codeGraphPersonNode = useObservable(useMemo(() => queryUserCodeGraph({ userID: namespaceID }), [namespaceID]))
 
     return codeGraphPersonNode === null ? (
         <p className="p-3 text-muted h3">Not found</p>

@@ -16,3 +16,7 @@ type CodeGraphPersonNodeResolver interface {
 	Dependencies() []string
 	Dependents() []string
 }
+
+func (r *UserResolver) CodeGraph(ctx context.Context) (CodeGraphPersonNodeResolver, error) {
+	return EnterpriseResolvers.codeGraphResolver.UserCodeGraph(ctx, r)
+}
