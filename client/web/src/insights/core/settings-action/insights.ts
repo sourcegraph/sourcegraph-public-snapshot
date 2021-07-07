@@ -1,6 +1,6 @@
-import { Insight, InsightTypePrefix, isLangStatsInsight, isSearchBasedInsight } from '../types'
+import { modify } from '@sourcegraph/shared/src/util/jsonc'
 
-import { modify } from './utils'
+import { Insight, InsightTypePrefix, isLangStatsInsight, isSearchBasedInsight } from '../types'
 
 /**
  * Returns insights extension name based on insight id.

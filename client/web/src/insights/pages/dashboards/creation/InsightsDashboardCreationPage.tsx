@@ -75,12 +75,12 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
         !isErrorLike(settingsCascade.final) && settingsCascade.final ? settingsCascade.final : DEFAULT_FINAL_SETTINGS
 
     return (
-        <Page className={classnames('col-8', styles.page)}>
+        <Page className={classnames('col-md-8', styles.page)}>
             <PageTitle title="Create new code insight" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
 
-            <Container className="mt-4">
+            <Container className="mt-4 container container-sm">
                 <InsightsDashboardCreationContent
                     settings={finalSettings}
                     organizations={authenticatedUser.organizations.nodes}
