@@ -290,7 +290,7 @@ UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), up
 `
 
 // refineRetentionConfiguration returns the maximum age for no-stale branches and tags, effectively, as configured
-// for hte given repository. If there is no retention configuration for the given repository, the given default
+// for the given repository. If there is no retention configuration for the given repository, the given default
 // values are returned unchanged.
 func refineRetentionConfiguration(ctx context.Context, store *Store, repositoryID int, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration) (_, _ time.Duration, err error) {
 	rows, err := store.Store.Query(ctx, sqlf.Sprintf(retentionConfigurationQuery, repositoryID))
