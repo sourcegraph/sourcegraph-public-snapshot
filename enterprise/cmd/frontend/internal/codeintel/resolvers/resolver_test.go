@@ -71,7 +71,7 @@ func TestFallbackIndexConfiguration(t *testing.T) {
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, mockRepoUpdater, &observation.TestContext)
 
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(dbstore.IndexConfiguration{}, false, nil)
-	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", nil)
+	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", true, nil)
 	gitServerClient.ListFilesFunc.SetDefaultReturn([]string{"go.mod"}, nil)
 
 	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, indexEnqueuer, nil, &observation.TestContext)

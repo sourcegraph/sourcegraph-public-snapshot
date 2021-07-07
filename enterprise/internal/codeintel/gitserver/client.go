@@ -51,14 +51,25 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	return false, err
 }
 
-// Head determines the tip commit of the default branch for the given repository.
-func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err error) {
+// Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
+// for the given repository (which occurs with empty repositories), a false-valued flag is returned along with
+// a nil error and empty revision.
+func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.head.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	if err != nil {
+		if isRevisionNotFound(err) {
+			err = nil
+		}
+
+		return "", false, err
+	}
+
+	return revision, true, nil
 }
 
 // CommitDate returns the time that the given commit was committed.
@@ -425,4 +436,8 @@ func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.
 	}
 
 	return api.RepoName(repoName), nil
+}
+
+func isRevisionNotFound(err error) bool {
+	return errors.Is(err, &gitserver.RevisionNotFoundError{})
 }
