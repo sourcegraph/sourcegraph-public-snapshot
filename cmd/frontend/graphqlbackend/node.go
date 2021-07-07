@@ -248,3 +248,8 @@ func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
 	n, ok := r.Node.(BulkOperationResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToBatchSpecExecution() (BatchSpecExecutionResolver, bool) {
+	n, ok := r.Node.(BatchSpecExecutionResolver)
+	return n, ok
+}

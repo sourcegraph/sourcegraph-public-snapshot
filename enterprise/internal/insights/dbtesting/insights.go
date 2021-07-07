@@ -66,7 +66,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, err = dbconn.New(timescaleDSN, dbname)
+	db, err = dbconn.NewRaw(timescaleDSN)
 	if err != nil {
 		t.Fatal(err)
 	}

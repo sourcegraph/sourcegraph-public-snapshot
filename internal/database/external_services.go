@@ -65,7 +65,7 @@ func (e *ExternalServiceStore) copy() *ExternalServiceStore {
 }
 
 // ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServices(db dbutil.DB) *ExternalServiceStore {
+var ExternalServices = func(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 

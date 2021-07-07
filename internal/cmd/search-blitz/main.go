@@ -78,6 +78,10 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 				log.Info("metrics", "trace", m.trace, "duration_ms", m.took, "first_result_ms", m.firstResultMs, "match_count", m.matchCount)
 				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, m.took, m.firstResultMs)
 				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
+
+				if err := traces.Fetch(ctx, m.trace); err != nil {
+					log.Error("failed to store trace", "error", err)
+				}
 			}
 
 			select {
@@ -146,11 +150,12 @@ func (t *tsvLogger) Log(a ...interface{}) {
 		t.buf.WriteByte('\t')
 		_, _ = fmt.Fprintf(&t.buf, "%v", v)
 	}
-	t.buf.WriteByte('\t')
+	t.buf.WriteByte('\n')
 	_, _ = t.buf.WriteTo(t.w)
 }
 
 var tsv *tsvLogger
+var traces *traceStore
 
 func main() {
 	logDir := os.Getenv(envLogDir)
@@ -164,6 +169,7 @@ func main() {
 			Filename: filepath.Join(logDir, "search_blitz.log"),
 			MaxSize:  10, // Megabyte
 			MaxAge:   90, // days
+			Compress: true,
 		}, log15.JsonFormat())))
 
 	// We also log to a TSV file since its easy to interact with via AWK.
@@ -171,10 +177,20 @@ func main() {
 		Filename:   filepath.Join(logDir, "search_blitz.tsv"),
 		MaxSize:    10, // Megabyte
 		MaxBackups: 90, // days
+		Compress:   true,
 	}}
 
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()
+
+	traces = &traceStore{
+		Dir:                filepath.Join(logDir, "traces"),
+		Token:              os.Getenv(envToken),
+		JaegerServerURL:    os.Getenv("JAEGER_SERVER_URL"),
+		MaxTotalTraceBytes: 10 * 1024 * 1024 * 1024, // 10 GiB
+		MaxFetchAttempts:   10,
+	}
+	go traces.CleanupLoop(ctx)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

@@ -314,7 +314,7 @@ func TestEditorRedirect(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			editorRequest, parseErr := parseEditorRequest(c.q)
+			editorRequest, parseErr := parseEditorRequest(nil, c.q)
 			if errStr(parseErr) != c.wantParseErr {
 				t.Fatalf("got parseErr %q want %q", parseErr, c.wantParseErr)
 			}

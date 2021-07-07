@@ -367,3 +367,16 @@ type BulkOperationConnection struct {
 	TotalCount int
 	PageInfo   PageInfo
 }
+
+type BatchSpecExecution struct {
+	ID           string
+	InputSpec    string
+	State        string
+	StartedAt    graphqlbackend.DateTime
+	FinishedAt   graphqlbackend.DateTime
+	Failure      string
+	PlaceInQueue int
+	BatchSpec    BatchSpec
+	Initiator    User
+	Namespace    UserOrg
+}

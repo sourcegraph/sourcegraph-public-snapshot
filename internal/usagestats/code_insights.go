@@ -2,16 +2,12 @@ package usagestats
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/inconshreveable/log15"
 
 	"github.com/lib/pq"
 
@@ -139,13 +135,13 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 }
 
 func GetTimeStepCounts(ctx context.Context, db dbutil.DB) ([]types.InsightTimeIntervalPing, error) {
-	insights, err := GetSearchInsights(ctx, db, All)
+	definedInsights, err := insights.GetSearchInsights(ctx, db, insights.All)
 	if err != nil {
 		return []types.InsightTimeIntervalPing{}, err
 	}
 
 	daysCounts := make(map[int]int)
-	for _, insight := range insights {
+	for _, insight := range definedInsights {
 		days := convertStepToDays(insight)
 		daysCounts[days] += 1
 	}
@@ -162,7 +158,7 @@ func GetTimeStepCounts(ctx context.Context, db dbutil.DB) ([]types.InsightTimeIn
 }
 
 // convertStepToDays converts the step interval defined in the insight settings to days, rounded down
-func convertStepToDays(insight SearchInsight) int {
+func convertStepToDays(insight insights.SearchInsight) int {
 	if insight.Step.Days != nil {
 		return *insight.Step.Days
 	} else if insight.Step.Hours != nil {
@@ -180,15 +176,15 @@ func convertStepToDays(insight SearchInsight) int {
 
 func GetOrgInsightCounts(ctx context.Context, db dbutil.DB) ([]types.OrgVisibleInsightPing, error) {
 
-	insights, err := GetSearchInsights(ctx, db, Org)
+	definedInsights, err := insights.GetSearchInsights(ctx, db, insights.Org)
 	if err != nil {
 		return []types.OrgVisibleInsightPing{}, err
 	}
 
 	search := types.OrgVisibleInsightPing{Type: "search"}
-	search.TotalCount = len(insights)
+	search.TotalCount = len(definedInsights)
 
-	langStatsInsights, err := GetLangStatsInsights(ctx, db, Org)
+	langStatsInsights, err := insights.GetLangStatsInsights(ctx, db, insights.Org)
 	if err != nil {
 		return []types.OrgVisibleInsightPing{}, err
 	}
@@ -298,147 +294,3 @@ WHERE name = ANY($2)
 AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
 GROUP BY name;
 `
-
-type TimeSeries struct {
-	Name   string
-	Stroke string
-	Query  string
-}
-
-type Interval struct {
-	Years  *int
-	Months *int
-	Weeks  *int
-	Days   *int
-	Hours  *int
-}
-
-type SearchInsight struct {
-	ID           string
-	Title        string
-	Repositories []string
-	Series       []TimeSeries
-	Step         Interval
-	Visibility   string
-}
-
-type LangStatsInsight struct {
-	ID             string
-	Title          string
-	Repository     string
-	OtherThreshold float32
-}
-
-type SettingFilter string
-
-const (
-	Org  SettingFilter = "org"
-	User SettingFilter = "user"
-	All  SettingFilter = "all"
-)
-
-// GetSettings returns all settings on the Sourcegraph installation that can be filtered by a type. This is useful for
-// generating aggregates for code insights which are currently stored in the settings.
-// 🚨 SECURITY: This method bypasses any user permissions to fetch a list of all settings on the Sourcegraph installation.
-//It is used for generating aggregated analytics that require an accurate view across all settings, such as for code insights🚨
-func GetSettings(ctx context.Context, db dbutil.DB, filter SettingFilter, prefix string) ([]*api.Settings, error) {
-	settingStore := database.Settings(db)
-	settings, err := settingStore.ListAll(ctx, prefix)
-	if err != nil {
-		return []*api.Settings{}, err
-	}
-	filtered := make([]*api.Settings, 0)
-
-	for _, setting := range settings {
-		if setting.Subject.Org != nil && filter == Org {
-			filtered = append(filtered, setting)
-		} else if setting.Subject.User != nil && filter == User {
-			filtered = append(filtered, setting)
-		} else if filter == All {
-			filtered = append(filtered, setting)
-		}
-	}
-
-	return filtered, nil
-}
-
-// FilterSettingJson will return a json map that only contains keys that match a prefix string, mapped to the keyed contents.
-func FilterSettingJson(settingJson string, prefix string) (map[string]json.RawMessage, error) {
-	var raw map[string]json.RawMessage
-
-	if err := jsonc.Unmarshal(settingJson, &raw); err != nil {
-		return map[string]json.RawMessage{}, err
-	}
-
-	filtered := make(map[string]json.RawMessage)
-	for key, val := range raw {
-		if strings.HasPrefix(key, prefix) {
-			filtered[key] = val
-		}
-	}
-
-	return filtered, nil
-}
-
-func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]SearchInsight, error) {
-	prefix := "searchInsights."
-	settings, err := GetSettings(ctx, db, filter, prefix)
-	if err != nil {
-		return []SearchInsight{}, err
-	}
-
-	var raw map[string]json.RawMessage
-	results := make([]SearchInsight, 0)
-
-	for _, setting := range settings {
-		raw, err = FilterSettingJson(setting.Contents, prefix)
-		if err != nil {
-			return []SearchInsight{}, err
-		}
-
-		var temp SearchInsight
-
-		for id, body := range raw {
-			temp.ID = id
-			if err := json.Unmarshal(body, &temp); err != nil {
-				// We would prefer to report some metrics if at all possible, so skip any deserialization errors
-				log15.Error("parsing error in setting body", "id", id, "error", err)
-				continue
-			}
-			results = append(results, temp)
-		}
-	}
-	return results, nil
-}
-
-func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]LangStatsInsight, error) {
-	prefix := "codeStatsInsights."
-
-	settings, err := GetSettings(ctx, db, filter, prefix)
-	if err != nil {
-		return []LangStatsInsight{}, err
-	}
-
-	var raw map[string]json.RawMessage
-	results := make([]LangStatsInsight, 0)
-
-	for _, setting := range settings {
-		raw, err = FilterSettingJson(setting.Contents, prefix)
-		if err != nil {
-			return []LangStatsInsight{}, err
-		}
-
-		var temp LangStatsInsight
-
-		for id, body := range raw {
-			temp.ID = id
-			if err := json.Unmarshal(body, &temp); err != nil {
-				// We would prefer to report some metrics if at all possible, so skip any deserialization errors
-				log15.Error("parsing error in setting body", "id", id, "error", err)
-				continue
-			}
-			results = append(results, temp)
-		}
-	}
-	return results, nil
-}

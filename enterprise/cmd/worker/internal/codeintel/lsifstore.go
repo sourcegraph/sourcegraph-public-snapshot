@@ -14,6 +14,10 @@ import (
 // InitLSIFStore initializes and returns an LSIF store instance.
 func InitLSIFStore() (*lsifstore.Store, error) {
 	conn, err := initLSFIStore.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	return conn.(*lsifstore.Store), err
 }
 

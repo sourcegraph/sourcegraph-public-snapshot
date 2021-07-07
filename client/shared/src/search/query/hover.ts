@@ -193,11 +193,17 @@ const toHover = (token: DecoratedToken): string => {
     return ''
 }
 
+const inside = (column: number) => ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
+    range.start + 1 <= column && range.end >= column
+
 /**
  * Returns the hover result for a hovered search token in the Monaco query input.
  */
-export const getHoverResult = (tokens: Token[]): Monaco.languages.Hover | null => {
-    const tokensAtCursor = tokens.flatMap(decorate)
+export const getHoverResult = (
+    tokens: Token[],
+    { column }: Pick<Monaco.Position, 'column'>
+): Monaco.languages.Hover | null => {
+    const tokensAtCursor = tokens.flatMap(decorate).filter(inside(column))
     if (tokensAtCursor.length === 0) {
         return null
     }

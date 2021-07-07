@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 
 	"github.com/google/go-cmp/cmp"
@@ -161,7 +163,7 @@ func TestFilterSettingJson(t *testing.T) {
 	}
 
 	input := insightInlineSettingStr
-	got, err := FilterSettingJson(input, "searchInsights.")
+	got, err := insights.FilterSettingJson(input, "searchInsights.")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,46 +197,46 @@ func TestGetSearchInsights(t *testing.T) {
 	}
 
 	step := 2
-	want := []SearchInsight{
+	want := []insights.SearchInsight{
 		{
 			ID:           "searchInsights.insight.global.first",
 			Title:        "my insight",
 			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
-			Series: []TimeSeries{{
+			Series: []insights.TimeSeries{{
 				Name:   "Redis",
 				Stroke: "var(--oc-red-7)",
 				Query:  "redis",
 			}},
-			Step:       Interval{Weeks: &step},
+			Step:       insights.Interval{Weeks: &step},
 			Visibility: "",
 		},
 		{
 			ID:           "searchInsights.insight.global.second",
 			Title:        "my insight",
 			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
-			Series: []TimeSeries{{
+			Series: []insights.TimeSeries{{
 				Name:   "Redis",
 				Stroke: "var(--oc-red-7)",
 				Query:  "redis",
 			}},
-			Step:       Interval{Weeks: &step},
+			Step:       insights.Interval{Weeks: &step},
 			Visibility: "",
 		},
 		{
 			ID:           "searchInsights.insight.global.simple",
 			Title:        "my insight",
 			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
-			Series: []TimeSeries{{
+			Series: []insights.TimeSeries{{
 				Name:   "Redis",
 				Stroke: "var(--oc-red-7)",
 				Query:  "redis",
 			}},
-			Step:       Interval{Weeks: &step},
+			Step:       insights.Interval{Weeks: &step},
 			Visibility: "",
 		},
 	}
 
-	got, err := GetSearchInsights(ctx, db, All)
+	got, err := insights.GetSearchInsights(ctx, db, insights.All)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +272,7 @@ func TestGetLangStatsInsights(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []LangStatsInsight{
+	want := []insights.LangStatsInsight{
 		{
 			ID:             "codeStatsInsights.insight.global.lang1",
 			Title:          "my insight",
@@ -279,7 +281,7 @@ func TestGetLangStatsInsights(t *testing.T) {
 		},
 	}
 
-	got, err := GetLangStatsInsights(ctx, db, All)
+	got, err := insights.GetLangStatsInsights(ctx, db, insights.All)
 	if err != nil {
 		t.Fatal(err)
 	}

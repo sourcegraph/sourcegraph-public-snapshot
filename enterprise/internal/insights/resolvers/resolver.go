@@ -32,7 +32,7 @@ func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
 // clock for timestamps.
 func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolver {
 	return &Resolver{
-		insightsStore:   store.NewWithClock(timescale, clock),
+		insightsStore:   store.NewWithClock(timescale, store.NewInsightPermissionStore(postgres), clock),
 		workerBaseStore: basestore.NewWithDB(postgres, sql.TxOptions{}),
 		settingStore:    database.Settings(postgres),
 	}

@@ -51,6 +51,7 @@ type GithubSource struct {
 var _ Source = &GithubSource{}
 var _ UserSource = &GithubSource{}
 var _ AffiliatedRepositorySource = &GithubSource{}
+var _ VersionSource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
@@ -194,6 +195,10 @@ type githubResult struct {
 func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.v3Client.GetAuthenticatedUser(ctx)
 	return err
+}
+
+func (s GithubSource) Version(ctx context.Context) (string, error) {
+	return s.v3Client.GetVersion(ctx)
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured

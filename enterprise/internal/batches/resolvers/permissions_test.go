@@ -748,6 +748,12 @@ func TestPermissionLevels(t *testing.T) {
 					return fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
 				},
 			},
+			{
+				name: "closeChangesets",
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
+				},
+			},
 		}
 
 		for _, m := range mutations {

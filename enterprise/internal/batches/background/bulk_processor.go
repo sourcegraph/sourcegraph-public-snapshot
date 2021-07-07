@@ -79,6 +79,8 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 		return b.reenqueueChangeset(ctx, job)
 	case btypes.ChangesetJobTypeMerge:
 		return b.mergeChangeset(ctx, job)
+	case btypes.ChangesetJobTypeClose:
+		return b.closeChangeset(ctx, job)
 
 	default:
 		return &unknownJobTypeErr{jobType: string(job.JobType)}
@@ -135,6 +137,35 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		Repo:      b.repo,
 	}
 	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
+		return err
+	}
+
+	events, err := cs.Changeset.Events()
+	if err != nil {
+		log15.Error("Events", "err", err)
+		return errcode.MakeNonRetryable(err)
+	}
+	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
+
+	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
+		log15.Error("UpsertChangesetEvents", "err", err)
+		return errcode.MakeNonRetryable(err)
+	}
+
+	if err := b.tx.UpdateChangeset(ctx, cs.Changeset); err != nil {
+		log15.Error("UpdateChangeset", "err", err)
+		return errcode.MakeNonRetryable(err)
+	}
+
+	return nil
+}
+
+func (b *bulkProcessor) closeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+	cs := &sources.Changeset{
+		Changeset: b.ch,
+		Repo:      b.repo,
+	}
+	if err := b.css.CloseChangeset(ctx, cs); err != nil {
 		return err
 	}
 

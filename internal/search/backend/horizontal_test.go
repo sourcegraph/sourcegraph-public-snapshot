@@ -87,7 +87,7 @@ func TestHorizontalSearcher(t *testing.T) {
 		}
 
 		// Our list results should be one per server
-		rle, err := searcher.List(context.Background(), nil)
+		rle, err := searcher.List(context.Background(), nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -307,7 +307,7 @@ func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
 				errC <- err
 				return
 			}
-			_, err = searcher.List(context.Background(), nil)
+			_, err = searcher.List(context.Background(), nil, nil)
 			if err != nil {
 				errC <- err
 				return
@@ -353,7 +353,7 @@ func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.
 	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts, streamer)
 }
 
-func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {
+func (s *mockSearcher) List(context.Context, query.Q, *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	return s.listResult, s.listError
 }
 

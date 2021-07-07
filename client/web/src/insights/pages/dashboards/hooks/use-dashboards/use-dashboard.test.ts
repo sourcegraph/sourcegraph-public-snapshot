@@ -1,6 +1,6 @@
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/types'
+import { InsightsDashboardType } from '../../../../core/types'
 
-import { getInsightsDashboards } from './use-dashboards'
+import { ALL_INSIGHTS_DASHBOARD, getInsightsDashboards } from './use-dashboards'
 
 describe('getInsightsDashboards', () => {
     describe('should return empty custom list', () => {
@@ -23,11 +23,24 @@ describe('getInsightsDashboards', () => {
                         lastID: null,
                     },
                 ])
-            ).toStrictEqual([
-                // Even with empty or errored value of user settings we still have
-                // generic built in insights dashboard - "All"
-                ALL_INSIGHTS_DASHBOARD,
-            ])
+            ).toStrictEqual([ALL_INSIGHTS_DASHBOARD])
+        })
+
+        test('with unsupported types of settings cascade subject', () => {
+            expect(
+                getInsightsDashboards([
+                    {
+                        subject: {
+                            __typename: 'Client',
+                            id: '101',
+                            displayName: 'Emir Kusturica',
+                            viewerCanAdminister: true,
+                        },
+                        settings: new Error(),
+                        lastID: null,
+                    },
+                ])
+            ).toStrictEqual([ALL_INSIGHTS_DASHBOARD])
         })
     })
 
@@ -61,7 +74,10 @@ describe('getInsightsDashboards', () => {
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
-                    type: 'built-in',
+                    type: InsightsDashboardType.Organization,
+                    builtIn: true,
+                    id: '102',
+                    title: 'Sourcegraph',
                     insightIds: [],
                     owner: {
                         id: '102',
@@ -69,7 +85,10 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: 'built-in',
+                    type: InsightsDashboardType.Personal,
+                    builtIn: true,
+                    title: 'Emir Kusturica',
+                    id: '101',
                     insightIds: [],
                     owner: {
                         id: '101',
@@ -110,7 +129,10 @@ describe('getInsightsDashboards', () => {
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
-                    type: 'built-in',
+                    type: InsightsDashboardType.Personal,
+                    title: 'Emir Kusturica',
+                    builtIn: true,
+                    id: '101',
                     insightIds: [],
                     owner: {
                         id: '101',
@@ -118,9 +140,10 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: 'custom',
+                    type: InsightsDashboardType.Personal,
                     id: '001',
                     title: 'Test Dashboard',
+                    settingsKey: 'insights.dashboard.testDashboard',
                     insightIds: ['insightID1', 'insightID2'],
                     owner: {
                         id: '101',
@@ -128,9 +151,10 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: 'custom',
+                    type: InsightsDashboardType.Personal,
                     id: '002',
                     title: 'Another Test Dashboard',
+                    settingsKey: 'insights.dashboard.anotherTestDashboard',
                     insightIds: ['insightID3', 'insightID4'],
                     owner: {
                         id: '101',
@@ -185,7 +209,10 @@ describe('getInsightsDashboards', () => {
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
-                    type: 'built-in',
+                    type: InsightsDashboardType.Organization,
+                    builtIn: true,
+                    id: '102',
+                    title: 'Sourcegraph',
                     insightIds: [],
                     owner: {
                         id: '102',
@@ -193,17 +220,10 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: 'built-in',
-                    insightIds: [],
-                    owner: {
-                        id: '101',
-                        name: 'Emir Kusturica',
-                    },
-                },
-                {
-                    type: 'custom',
+                    type: InsightsDashboardType.Organization,
                     id: '001',
                     title: 'Test Dashboard',
+                    settingsKey: 'insights.dashboard.testDashboard',
                     insightIds: ['insightID1', 'insightID2'],
                     owner: {
                         id: '102',
@@ -211,9 +231,21 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: 'custom',
+                    type: InsightsDashboardType.Personal,
+                    id: '101',
+                    title: 'Emir Kusturica',
+                    builtIn: true,
+                    insightIds: [],
+                    owner: {
+                        id: '101',
+                        name: 'Emir Kusturica',
+                    },
+                },
+                {
+                    type: InsightsDashboardType.Personal,
                     id: '002',
                     title: 'Another Test Dashboard',
+                    settingsKey: 'insights.dashboard.anotherTestDashboard',
                     insightIds: ['insightID3', 'insightID4'],
                     owner: {
                         id: '101',

@@ -186,10 +186,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             props.settingsCascade.final['insights.displayLocation.insightsPage'] !== false,
     },
     {
-        path: '/views',
-        render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
-    },
-    {
         path: '/contexts',
         render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
         exact: true,
