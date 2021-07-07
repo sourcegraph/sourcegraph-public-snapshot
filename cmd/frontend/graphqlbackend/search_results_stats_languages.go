@@ -37,7 +37,12 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
 	srs.once.Do(func() {
-		results, err := srs.sr.doResults(ctx, result.TypeEmpty)
+		args, err := srs.sr.toTextParameters(srs.sr.Query)
+		if err != nil {
+			srs.srsErr = err
+			return
+		}
+		results, err := srs.sr.doResults(ctx, args)
 		if err != nil {
 			srs.srsErr = err
 			return
