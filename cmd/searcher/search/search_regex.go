@@ -156,7 +156,7 @@ func (rg *readerGrep) matchString(s string) bool {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []protocol.LineMatch, err error) {
+func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile, limit int) (matches []protocol.LineMatch, err error) {
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
 	fileBuf := zf.DataFor(f)
@@ -186,7 +186,8 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		return nil, nil
 	}
 
-	locs := rg.re.FindAllIndex(fileMatchBuf, -1)
+	// find limit+1 matches so we know whether we hit the limit
+	locs := rg.re.FindAllIndex(fileMatchBuf, limit+1)
 	lastStart := 0
 	lastLineNumber := 0
 	lastMatchIndex := 0
@@ -278,8 +279,8 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.FileMatch, error) {
-	lm, err := rg.Find(zf, f)
+func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile, limit int) (protocol.FileMatch, error) {
+	lm, err := rg.Find(zf, f, limit)
 	return protocol.FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,
@@ -378,7 +379,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit i
 				filesSearched.Inc()
 
 				// process
-				fm, err := rg.FindZip(zf, f)
+				fm, err := rg.FindZip(zf, f, sender.Remaining())
 				if err != nil {
 					return err
 				}
