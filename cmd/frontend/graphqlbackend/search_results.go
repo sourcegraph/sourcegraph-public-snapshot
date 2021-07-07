@@ -455,6 +455,44 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 	}
 }
 
+func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, error) {
+	forceResultTypes := result.TypeEmpty
+	if r.PatternType == query.SearchTypeStructural {
+		forceResultTypes = result.TypeFile
+	}
+
+	b, err := query.ToBasicQuery(q)
+	if err != nil {
+		return search.TextParameters{}, err
+	}
+	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
+
+	// Fallback to literal search for searching repos and files if
+	// the structural search pattern is empty.
+	if r.PatternType == query.SearchTypeStructural && p.Pattern == "" {
+		r.PatternType = query.SearchTypeLiteral
+		p.IsStructuralPat = false
+		forceResultTypes = result.Types(0)
+	}
+
+	args := search.TextParameters{
+		PatternInfo: p,
+		Query:       r.Query, // TODO(rvantonder) remove setQuery and use q here.
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil || r.stream != nil,
+
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
+		RepoPromise:  &search.RepoPromise{},
+	}
+	if err := args.PatternInfo.Validate(); err != nil {
+		return search.TextParameters{}, &badRequestError{err}
+	}
+	args = withResultTypes(args, forceResultTypes)
+	return args, nil
+}
+
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
 func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, err error) {
@@ -981,7 +1019,11 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 // query with a longer timeout.
 func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResults, error) {
 	start := time.Now()
-	rr, err := r.doResults(ctx, result.TypeEmpty)
+	args, err := r.toTextParameters(r.Query)
+	if err != nil {
+		return nil, err
+	}
+	rr, err := r.doResults(ctx, args)
 
 	// If we encountered a context timeout, it indicates one of the many result
 	// type searchers (file, diff, symbol, etc) completely timed out and could not
@@ -1156,7 +1198,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		results, err := r.doResults(ctx, result.TypeEmpty)
+		args, err := r.toTextParameters(r.Query)
+		if err != nil {
+			return nil, err
+		}
+		results, err := r.doResults(ctx, args)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1295,7 +1341,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.Types) (_ *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, args search.TextParameters) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1311,40 +1357,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	defer cancel()
 
 	limit := r.MaxResults()
-	if r.PatternType == query.SearchTypeStructural {
-		forceResultTypes = result.TypeFile
-	}
-
-	q, err := query.ToBasicQuery(r.Query)
-	if err != nil {
-		return nil, err
-	}
-	p := search.ToTextPatternInfo(q, r.protocol(), query.Identity)
-
-	// Fallback to literal search for searching repos and files if
-	// the structural search pattern is empty.
-	if r.PatternType == query.SearchTypeStructural && p.Pattern == "" {
-		r.PatternType = query.SearchTypeLiteral
-		p.IsStructuralPat = false
-		forceResultTypes = result.Types(0)
-	}
-
-	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       r.Query,
-
-		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil || r.stream != nil,
-
-		Zoekt:        r.zoekt,
-		SearcherURLs: r.searcherURLs,
-		RepoPromise:  &search.RepoPromise{},
-	}
-	if err := args.PatternInfo.Validate(); err != nil {
-		return nil, &badRequestError{err}
-	}
-
-	args = withResultTypes(args, forceResultTypes)
 	tr.LazyPrintf("resultTypes: %s", args.ResultTypes)
 	var (
 		requiredWg sync.WaitGroup
