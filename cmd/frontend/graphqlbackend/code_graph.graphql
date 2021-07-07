@@ -11,7 +11,12 @@ type CodeGraphPersonNode {
     """
     Packages used by the person.
     """
-    dependencies: [String!]!
+    dependencies: [Repository!]!
+
+    """
+    Authors whose code the person uses.
+    """
+    authors: [Person!]!
 
     """
     Packages that use the person's code.

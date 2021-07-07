@@ -77,7 +77,7 @@ func (r *CodeGraphPersonNodeResolver) dependents(ctx context.Context) ([]codeint
 	defer func() { writeCache(dependentsResult) }()
 
 	dependentsOnce.Do(func() { dependentsResult, dependentsErr = do(ctx) })
-	return dependentsResult, symbolsErr
+	return dependentsResult, dependentsErr
 }
 
 func (r *CodeGraphPersonNodeResolver) Dependents(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {

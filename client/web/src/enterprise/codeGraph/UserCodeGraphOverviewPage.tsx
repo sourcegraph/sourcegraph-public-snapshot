@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { ListGroup, ListGroupItem, ListGroupItemHeading } from 'reactstrap'
+import { Card, CardHeader, CardTitle, ListGroup, ListGroupItem, ListGroupItemHeading } from 'reactstrap'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -31,7 +31,16 @@ const userCodeGraphOverDataGQLFragment = gql`
 
         codeGraph {
             symbols
-            dependencies
+
+            dependencies {
+                id
+                name
+                url
+            }
+            callers {
+                ...PersonLinkFields
+            }
+
             dependents {
                 id
                 name
@@ -80,8 +89,20 @@ export const UserCodeGraphOverviewPage: React.FunctionComponent<Props> = ({ name
                 <Container className="col-4">
                     <h2 className="text-center mb-4">Dependencies</h2>
                     <h4 className="border-bottom pb-1">Packages you use</h4>
-                    {codeGraphPersonNode.codeGraph.dependencies.join(' ')}
+                    <ListGroup className="mb-4">
+                        {codeGraphPersonNode.codeGraph.dependencies.map(dep => (
+                            <ListGroupItem key={dep.id}>
+                                <RepoLink repoName={dep.name} to={dep.url} />
+                            </ListGroupItem>
+                        ))}
+                    </ListGroup>
+
                     <h4 className="border-bottom pb-1 mt-4">Authors whose code you use</h4>
+                    {codeGraphPersonNode.codeGraph.authors.map(author => (
+                        <ListGroupItem key={author.email}>
+                            <PersonLink person={author} />
+                        </ListGroupItem>
+                    ))}
                 </Container>
                 <div className="col-4 d-flex flex-column justify-content-center px-4">
                     <hr
@@ -100,14 +121,22 @@ export const UserCodeGraphOverviewPage: React.FunctionComponent<Props> = ({ name
                     <h3 className="text-center h2">
                         <UserAvatar user={codeGraphPersonNode} className="icon-inline h2" size={100} />
                     </h3>
-                    <Container className="mx-3">
-                        <h4 className="text-center">Contributions</h4>
-                        {codeGraphPersonNode.codeGraph.symbols.join(' ')}
-                    </Container>
+                    <Card className="mx-2 bg-transparent">
+                        <CardHeader className="text-center bg-transparent h5 font-weight-bold mb-0">
+                            Contributions
+                        </CardHeader>
+                        <ListGroup flush={true}>
+                            {codeGraphPersonNode.codeGraph.symbols.slice(0, 10).map(symbol => (
+                                <ListGroupItem key={symbol} className="text-truncate text-monospace small">
+                                    {symbol}
+                                </ListGroupItem>
+                            ))}
+                        </ListGroup>
+                    </Card>
                 </div>
                 <Container className="col-4">
                     <h2 className="text-center mb-4">Dependents</h2>
-                    <h4>Packages using your code</h4>
+                    <h4 className="">Packages using your code</h4>
                     <ListGroup className="mb-4">
                         {codeGraphPersonNode.codeGraph.dependents.map(dep => (
                             <ListGroupItem key={dep.id}>
@@ -116,7 +145,7 @@ export const UserCodeGraphOverviewPage: React.FunctionComponent<Props> = ({ name
                         ))}
                     </ListGroup>
 
-                    <h4>People using your code</h4>
+                    <h4 className="">People using your code</h4>
                     <ListGroup>
                         {codeGraphPersonNode.codeGraph.callers.map(caller => (
                             <ListGroupItem key={caller.email}>

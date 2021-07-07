@@ -14,7 +14,10 @@ type CodeGraphResolver interface {
 
 type CodeGraphPersonNodeResolver interface {
 	Symbols(context.Context) ([]string, error)
-	Dependencies() []string
+
+	Dependencies(context.Context) ([]*RepositoryResolver, error)
+	Authors(context.Context) ([]*PersonResolver, error)
+
 	Dependents(context.Context) ([]*RepositoryResolver, error)
 	Callers(context.Context) ([]*PersonResolver, error)
 }

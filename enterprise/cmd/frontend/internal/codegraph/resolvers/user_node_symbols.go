@@ -24,15 +24,7 @@ var (
 
 // TODO(sqs): could also use ctags symbols then do find-references on those.
 func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
-	do := func(ctx context.Context, myEmails map[string]struct{}) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
-		// TODO(sqs): un-hardcode
-		repoNames := []api.RepoName{
-			"github.com/sourcegraph/go-jsonschema",
-			"github.com/sourcegraph/go-diff",
-			"github.com/sourcegraph/jsonx",
-			// "github.com/sourcegraph/sourcegraph",
-		}
-
+	do := func(ctx context.Context, myEmail string) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
 		// Get a list of all symbols authored by this person.
 		var authoredSymbols []codeintelresolvers.AdjustedMonikerLocations
 		for _, repoName := range repoNames {
@@ -79,7 +71,7 @@ func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelr
 				var isPersonAuthor bool
 				for _, hunk := range hunks {
 					normalizeHunkAuthor(hunk)
-					if _, ok := myEmails[hunk.Author.Email]; ok {
+					if hunk.Author.Email == myEmail {
 						isPersonAuthor = true
 						break
 					}
@@ -111,12 +103,7 @@ func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelr
 	}
 	defer func() { writeCache(symbolsResult) }()
 
-	myEmails := map[string]struct{}{
-		"sqs@sourcegraph.com": {},
-		"quinn@slack.org":     {},
-		"qslack@qslack.com":   {},
-	}
-	symbolsOnce.Do(func() { symbolsResult, symbolsErr = do(ctx, myEmails) })
+	symbolsOnce.Do(func() { symbolsResult, symbolsErr = do(ctx, myEmail) })
 	return symbolsResult, symbolsErr
 }
 

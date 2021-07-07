@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func (r *Resolver) UserCodeGraph(ctx context.Context, user *graphqlbackend.UserResolver) (graphqlbackend.CodeGraphPersonNodeResolver, error) {
@@ -19,6 +20,12 @@ type CodeGraphPersonNodeResolver struct {
 	resolver *Resolver
 }
 
-func (CodeGraphPersonNodeResolver) Dependencies() []string {
-	return []string{"mydependency1", "mydependency2", "mydependency3"}
+// TODO(sqs): un-hardcode
+var repoNames = []api.RepoName{
+	"github.com/sourcegraph/go-jsonschema",
+	"github.com/sourcegraph/go-diff",
+	"github.com/sourcegraph/jsonx",
+	// "github.com/sourcegraph/sourcegraph",
 }
+
+const myEmail = "quinn@slack.org"
