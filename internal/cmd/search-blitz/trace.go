@@ -43,12 +43,6 @@ type traceStore struct {
 	// internally access jaeger-query instead of needing an admin access token
 	// + the jaeger proxy. Environment variable we use is JAEGER_SERVER_URL.
 	JaegerServerURL string
-
-	// unexported Prometheus metrics, lazily initiated by calls to t.initMetrics
-	metrics struct {
-		sync.Once
-		fetchHist *prometheus.HistogramVec
-	}
 }
 
 // Fetch and store the trace.
