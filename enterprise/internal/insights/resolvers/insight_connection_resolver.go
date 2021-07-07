@@ -7,8 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -50,7 +48,6 @@ func (r *insightConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 }
 
 func (r *insightConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	log15.Info("total_count", "ids", r.ids)
 	results, _, err := r.compute(ctx)
 	return int32(len(results)), err
 }
@@ -84,7 +81,7 @@ type insightResolver struct {
 }
 
 func (r *insightResolver) ID() string {
-	return r.insight.Uuid
+	return r.insight.ID
 }
 
 func (r *insightResolver) Title() string { return r.insight.Title }
@@ -95,7 +92,6 @@ func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
 	series := r.insight.Series
 	resolvers := make([]graphqlbackend.InsightSeriesResolver, 0, len(series))
 	for _, series := range series {
-		log15.Info("building series")
 		resolvers = append(resolvers, &insightSeriesResolver{
 			insightsStore:   r.insightsStore,
 			workerBaseStore: r.workerBaseStore,

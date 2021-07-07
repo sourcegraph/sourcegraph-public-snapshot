@@ -427,6 +427,11 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
+				Title:  shared.TitleDatabaseConnectionsMonitoring,
+				Hidden: true,
+				Rows:   shared.DatabaseConnectionsMonitoring("repo-updater"),
+			},
+			{
 				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{

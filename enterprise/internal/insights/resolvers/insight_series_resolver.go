@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -31,8 +29,6 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	// Query data points only for the series we are representing.
 	seriesID := discovery.Encode(r.series)
 	opts.SeriesID = &seriesID
-
-	log15.Error("series_id", "series_id", seriesID)
 
 	if args.From == nil {
 		// Default to last 6mo of data.

@@ -76,6 +76,33 @@ Indexes:
 
 ```
 
+# Table "public.batch_spec_executions"
+```
+     Column      |           Type           | Collation | Nullable |                      Default                      
+-----------------+--------------------------+-----------+----------+---------------------------------------------------
+ id              | bigint                   |           | not null | nextval('batch_spec_executions_id_seq'::regclass)
+ state           | text                     |           |          | 'queued'::text
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ execution_logs  | json[]                   |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
+ created_at      | timestamp with time zone |           | not null | now()
+ updated_at      | timestamp with time zone |           | not null | now()
+ batch_spec      | text                     |           | not null | 
+ batch_spec_id   | integer                  |           |          | 
+ user_id         | integer                  |           |          | 
+Indexes:
+    "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
+    "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
+
+```
+
 # Table "public.batch_specs"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -98,6 +125,7 @@ Foreign-key constraints:
     "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```
@@ -1806,6 +1834,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE

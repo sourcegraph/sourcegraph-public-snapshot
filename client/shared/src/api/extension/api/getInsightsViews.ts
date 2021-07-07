@@ -22,14 +22,18 @@ export function getInsightsViews(
     providers: Observable<readonly RegisteredViewProvider<InsightsPageViewContextType>[]>,
     insightIds?: string[]
 ): ProxySubscribable<ViewProviderResult[]> {
-    const insightsIdSet = new Set(insightIds)
+    const insightsIdSet = new Set<string>(insightIds)
     const dashboardInsights = providers.pipe(
         map(providers =>
             providers.filter(provider => {
                 // If insight ids was specified we should resolve only
                 // insights from this list
                 if (insightIds) {
-                    return insightsIdSet.has(provider.id)
+                    // Get everything until last dot according to extension id naming convention
+                    // <type>.<name>.<view type = directory|insightPage|homePage>
+                    const providerId = provider.id.split('.').slice(0, -1).join('.')
+
+                    return insightsIdSet.has(providerId)
                 }
 
                 // Otherwise we are in all insights mode and have to resolve

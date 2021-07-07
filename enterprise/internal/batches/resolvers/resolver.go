@@ -144,6 +144,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		bulkOperationIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.bulkOperationByID(ctx, id)
 		},
+		batchSpecExecutionIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchSpecExecutionByID(ctx, id)
+		},
 	}
 }
 
@@ -359,6 +362,30 @@ func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (grap
 		return nil, err
 	}
 	return &bulkOperationResolver{store: r.store, bulkOperation: bulkOperation}, nil
+}
+
+func (r *Resolver) batchSpecExecutionByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecExecutionResolver, error) {
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalBatchSpecExecutionID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == 0 {
+		return nil, nil
+	}
+
+	spec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: dbID})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &batchSpecExecutionResolver{store: r.store, spec: spec}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -751,31 +778,31 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		case btypes.ChangesetStateOpen:
 			externalState := btypes.ChangesetExternalStateOpen
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateDraft:
 			externalState := btypes.ChangesetExternalStateDraft
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateClosed:
 			externalState := btypes.ChangesetExternalStateClosed
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateMerged:
 			externalState := btypes.ChangesetExternalStateMerged
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateDeleted:
 			externalState := btypes.ChangesetExternalStateDeleted
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateUnpublished:
@@ -1278,7 +1305,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		store.ListChangesetsOpts{
 			PublicationState: &published,
 			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-			ExternalState:    &openState,
+			ExternalStates:   []btypes.ChangesetExternalState{openState},
 		},
 	)
 	if err != nil {
@@ -1286,6 +1313,73 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 	}
 
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
+}
+
+func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.CloseChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CloseChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	published := btypes.ChangesetPublicationStatePublished
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeClose,
+		&btypes.ChangesetJobClosePayload{},
+		store.ListChangesetsOpts{
+			PublicationState: &published,
+			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+			ExternalStates:   []btypes.ChangesetExternalState{btypes.ChangesetExternalStateOpen, btypes.ChangesetExternalStateDraft},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
+}
+
+func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlbackend.CreateBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateBatchSpecExecution", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user is admin.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	actor := actor.FromContext(ctx)
+
+	exec := &btypes.BatchSpecExecution{
+		BatchSpec: args.Spec,
+		UserID:    actor.UID,
+	}
+
+	if err := r.store.CreateBatchSpecExecution(ctx, exec); err != nil {
+		return nil, err
+	}
+
+	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionID(exec.ID))
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

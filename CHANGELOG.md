@@ -17,6 +17,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Added support for `select:file.directory` in search queries, which returns unique directory paths for results that satisfy the query. [#22449](https://github.com/sourcegraph/sourcegraph/pull/22449)
 - An `sg_service` Postgres role has been introduced, as well as an `sg_repo_access_policy` policy on the `repo` table that restricts access to that role. The role that owns the `repo` table will continue to get unrestricted access. [#22303](https://github.com/sourcegraph/sourcegraph/pull/22303)
+- Every service that connects to the database (i.e. Postgres) now has a "Database connections" monitoring section in its Grafana dashboard. [#22570](https://github.com/sourcegraph/sourcegraph/pull/22570)
+- A new bulk operation to close many changesets at once has been added to Batch Changes. [#22547](https://github.com/sourcegraph/sourcegraph/pull/22547)
+- Backend Code Insights will aggregate viewable repositories based on the authenticated user. [#22471](https://github.com/sourcegraph/sourcegraph/pull/22471)
+- Added support for highlighting .frugal files as Thrift syntax.
 
 ### Changed
 
@@ -32,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The experimental paginated search feature (the `stable:` keyword) has been removed, to be replaced with streaming search. [#22428](https://github.com/sourcegraph/sourcegraph/pull/22428)
+- The experimental extensions view page [#22565](https://github.com/sourcegraph/sourcegraph/pull/22565)
 
 ### API docs (experimental)
 

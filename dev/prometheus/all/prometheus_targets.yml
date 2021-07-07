@@ -62,6 +62,11 @@
     # sourcegraph-code-intel-indexers
     - host.docker.internal:6092
 - labels:
+    job: executor-batches
+  targets:
+    # executor-batches
+    - host.docker.internal:6093
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter
