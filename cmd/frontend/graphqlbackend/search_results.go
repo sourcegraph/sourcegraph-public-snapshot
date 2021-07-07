@@ -455,7 +455,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 	}
 }
 
-func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, error) {
+func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, error) {
 	forceResultTypes := result.TypeEmpty
 	if r.PatternType == query.SearchTypeStructural {
 		forceResultTypes = result.TypeFile
@@ -463,7 +463,7 @@ func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, err
 
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
-		return search.TextParameters{}, err
+		return nil, err
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
@@ -487,10 +487,10 @@ func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, err
 		RepoPromise:  &search.RepoPromise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
-		return search.TextParameters{}, &badRequestError{err}
+		return nil, &badRequestError{err}
 	}
 	args = withResultTypes(args, forceResultTypes)
-	return args, nil
+	return &args, nil
 }
 
 // evaluateLeaf performs a single search operation and corresponds to the
@@ -1341,7 +1341,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, args search.TextParameters) (_ *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, args *search.TextParameters) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1405,7 +1405,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath {
-		argsIndexed := args
+		argsIndexed := *args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
 		wg.Add(1)
@@ -1460,7 +1460,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoRepoSearch(ctx, &args, int32(limit))
+			_ = agg.DoRepoSearch(ctx, args, int32(limit))
 		})
 
 	}
@@ -1470,7 +1470,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoSymbolSearch(ctx, &args, limit)
+			_ = agg.DoSymbolSearch(ctx, args, limit)
 		})
 	}
 
@@ -1480,7 +1480,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoFilePathSearch(ctx, &args)
+				_ = agg.DoFilePathSearch(ctx, args)
 			})
 		}
 	}
@@ -1490,7 +1490,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoDiffSearch(ctx, &args)
+			_ = agg.DoDiffSearch(ctx, args)
 		})
 	}
 
@@ -1499,7 +1499,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoCommitSearch(ctx, &args)
+			_ = agg.DoCommitSearch(ctx, args)
 		})
 
 	}
