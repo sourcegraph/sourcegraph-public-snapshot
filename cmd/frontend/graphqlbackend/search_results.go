@@ -1228,13 +1228,13 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func (r *searchResolver) determineResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
+func determineResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
 	// Determine which types of results to return.
 	var rts result.Types
 	if forceTypes != 0 {
 		rts = forceTypes
 	} else {
-		stringTypes, _ := r.Query.StringValues(query.FieldType)
+		stringTypes, _ := args.Query.StringValues(query.FieldType)
 		if len(stringTypes) == 0 {
 			rts = result.TypeFile | result.TypePath | result.TypeRepo
 		} else {
@@ -1343,7 +1343,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		return nil, &badRequestError{err}
 	}
 
-	resultTypes := r.determineResultTypes(args, forceResultTypes)
+	resultTypes := determineResultTypes(args, forceResultTypes)
 	tr.LazyPrintf("resultTypes: %s", resultTypes)
 	var (
 		requiredWg sync.WaitGroup
