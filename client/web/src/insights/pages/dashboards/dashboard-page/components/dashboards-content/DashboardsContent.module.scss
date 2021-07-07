@@ -1,3 +1,11 @@
 .dashboard-select {
     max-width: 22.75rem;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.dashboard-select-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    width: 100%;
 }
