@@ -1,5 +1,5 @@
 // Pages exports
-export { InsightsPage } from './pages/insights/InsightsPage'
+export { InsightsPage } from './pages/insights/insights-page/InsightsPage'
 
 // Core insights exports
 export { InsightsApiContext } from './core/backend/api-provider'

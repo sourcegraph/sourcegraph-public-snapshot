@@ -17,28 +17,30 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 	execs := make([]*btypes.BatchSpecExecution, 0, 2)
 	for i := 0; i < cap(execs); i++ {
 		c := &btypes.BatchSpecExecution{
-			State:     btypes.BatchSpecExecutionStateQueued,
-			BatchSpec: testBatchSpec,
-			UserID:    int32(i + 123),
+			State:           btypes.BatchSpecExecutionStateQueued,
+			BatchSpec:       testBatchSpec,
+			UserID:          int32(i + 123),
+			NamespaceUserID: int32(i + 345),
 		}
 
 		execs = append(execs, c)
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for _, exec := range execs {
+		for i, exec := range execs {
 			if err := s.CreateBatchSpecExecution(ctx, exec); err != nil {
 				t.Fatal(err)
 			}
 
 			have := exec
 			want := &btypes.BatchSpecExecution{
-				ID:        have.ID,
-				CreatedAt: clock.Now(),
-				UpdatedAt: clock.Now(),
-				State:     btypes.BatchSpecExecutionStateQueued,
-				BatchSpec: testBatchSpec,
-				UserID:    have.UserID,
+				ID:              have.ID,
+				CreatedAt:       clock.Now(),
+				UpdatedAt:       clock.Now(),
+				State:           btypes.BatchSpecExecutionStateQueued,
+				BatchSpec:       testBatchSpec,
+				UserID:          int32(i + 123),
+				NamespaceUserID: int32(i + 345),
 			}
 
 			if have.ID == 0 {

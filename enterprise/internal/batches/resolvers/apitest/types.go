@@ -377,4 +377,6 @@ type BatchSpecExecution struct {
 	Failure      string
 	PlaceInQueue int
 	BatchSpec    BatchSpec
+	Initiator    User
+	Namespace    UserOrg
 }

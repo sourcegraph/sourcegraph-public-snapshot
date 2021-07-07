@@ -692,6 +692,7 @@ WITH u AS (
 				%s - u.finished_at > (%s || ' second')::interval OR
 				(u.finished_at IS NULL AND %s - u.uploaded_at > (%s || ' second')::interval)
 			) AND
+				-- Anything visible from a non-stale branch or tag is protected from expiration
 				u.id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id)
 		RETURNING id, repository_id
 )

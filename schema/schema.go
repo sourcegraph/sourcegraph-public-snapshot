@@ -1414,7 +1414,7 @@ type SiteConfiguration struct {
 	CampaignsEnabled *bool `json:"campaigns.enabled,omitempty"`
 	// CampaignsRestrictToAdmins description: DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.
 	CampaignsRestrictToAdmins *bool `json:"campaigns.restrictToAdmins,omitempty"`
-	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature.
+	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`

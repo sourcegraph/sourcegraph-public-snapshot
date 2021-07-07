@@ -23,4 +23,4 @@ if [[ "${INSECURE_DEV:-}" == '1' ]]; then
 fi
 
 docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server
-exec docker run --name=syntect_server --rm -p9238:9238 -e WORKERS=1 "${addr[@]}" docker.io/sourcegraph/syntect_server:137d7de@sha256:36e5f85519052bc660345753cdb4774ea38f81b3b3ba65eec184ac53a3ad1c7b
+exec docker run --name=syntect_server --rm -p9238:9238 -e WORKERS=1 "${addr[@]}" docker.io/sourcegraph/syntect_server:71d2481@sha256:8854665264522a86b711c732d803395478dab30f6df6197b5d0c1c7c21cd6261

@@ -106,6 +106,12 @@ type CreateBatchChangeArgs struct {
 type ApplyBatchChangeArgs struct {
 	BatchSpec         graphql.ID
 	EnsureBatchChange *graphql.ID
+	PublicationStates *[]ChangesetSpecPublicationStateInput
+}
+
+type ChangesetSpecPublicationStateInput struct {
+	ChangesetSpec    graphql.ID
+	PublicationState batches.PublishedValue
 }
 
 type ListBatchChangesArgs struct {
@@ -712,4 +718,6 @@ type BatchSpecExecutionResolver interface {
 	Failure() *string
 	PlaceInQueue() *int32
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
+	Initiator(ctx context.Context) (*UserResolver, error)
+	Namespace(ctx context.Context) (*NamespaceResolver, error)
 }

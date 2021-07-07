@@ -303,6 +303,7 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 		Upload{ID: 5, Commit: makeCommit(5), RepositoryID: 54},
 		Upload{ID: 6, Commit: makeCommit(6), RepositoryID: 55},
 		Upload{ID: 7, Commit: makeCommit(6), RepositoryID: 56},
+		Upload{ID: 8, Commit: makeCommit(7), RepositoryID: 57},
 	)
 	insertVisibleAtTip(t, db, 50, 1)
 	insertVisibleAtTip(t, db, 51, 2)
@@ -310,6 +311,7 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 	insertVisibleAtTip(t, db, 53, 4)
 	insertVisibleAtTip(t, db, 54, 5)
 	insertVisibleAtTip(t, db, 56, 7)
+	insertVisibleAtTipNonDefaultBranch(t, db, 57, 8)
 
 	insertPackageReferences(t, store, []lsifstore.PackageReference{
 		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")}, // same repo, not visible in git
@@ -319,6 +321,7 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
 		{Package: lsifstore.Package{DumpID: 6, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f6")}, // remote repo not visible at tip
 		{Package: lsifstore.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f7")},
+		{Package: lsifstore.Package{DumpID: 8, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f8")}, // visible on non-default branch
 	})
 
 	moniker := semantic.QualifiedMonikerData{

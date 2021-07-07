@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 )
 
 func main() {
@@ -24,9 +25,10 @@ func main() {
 	go setAuthzProviders()
 
 	shared.Start(map[string]shared.Job{
-		"codeintel-commitgraph":   codeintel.NewCommitGraphJob(),
-		"codeintel-janitor":       codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
+		"codeintel-commitgraph":    codeintel.NewCommitGraphJob(),
+		"codeintel-janitor":        codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
+		"codehost-version-syncing": versions.NewSyncingJob(),
 	})
 }
 
