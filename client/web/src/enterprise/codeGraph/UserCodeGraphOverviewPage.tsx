@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react'
+import { ListGroup, ListGroupItem, ListGroupItemHeading } from 'reactstrap'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -18,6 +20,7 @@ import {
     UserCodeGraphResult,
     UserCodeGraphOverviewData,
 } from '../../graphql-operations'
+import { PersonLink, personLinkFieldsFragment } from '../../person/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
 
 const userCodeGraphOverDataGQLFragment = gql`
@@ -29,9 +32,17 @@ const userCodeGraphOverDataGQLFragment = gql`
         codeGraph {
             symbols
             dependencies
-            dependents
+            dependents {
+                id
+                name
+                url
+            }
+            callers {
+                ...PersonLinkFields
+            }
         }
     }
+    ${personLinkFieldsFragment}
 `
 
 const queryUserCodeGraph = (vars: UserCodeGraphVariables): Observable<UserCodeGraphOverviewData | null> =>
@@ -89,14 +100,30 @@ export const UserCodeGraphOverviewPage: React.FunctionComponent<Props> = ({ name
                     <h3 className="text-center h2">
                         <UserAvatar user={codeGraphPersonNode} className="icon-inline h2" size={100} />
                     </h3>
-                    <h4 className="text-center">Contributions</h4>
-                    {codeGraphPersonNode.codeGraph.symbols.join(' ')}
+                    <Container className="mx-3">
+                        <h4 className="text-center">Contributions</h4>
+                        {codeGraphPersonNode.codeGraph.symbols.join(' ')}
+                    </Container>
                 </div>
                 <Container className="col-4">
                     <h2 className="text-center mb-4">Dependents</h2>
-                    <h4 className="border-bottom pb-1">Packages using your code</h4>
-                    {codeGraphPersonNode.codeGraph.dependencies.join(' ')}
-                    <h4 className="border-bottom pb-1 mt-4">People using your code</h4>
+                    <h4>Packages using your code</h4>
+                    <ListGroup className="mb-4">
+                        {codeGraphPersonNode.codeGraph.dependents.map(dep => (
+                            <ListGroupItem key={dep.id}>
+                                <RepoLink repoName={dep.name} to={dep.url} />
+                            </ListGroupItem>
+                        ))}
+                    </ListGroup>
+
+                    <h4>People using your code</h4>
+                    <ListGroup>
+                        {codeGraphPersonNode.codeGraph.callers.map(caller => (
+                            <ListGroupItem key={caller.email}>
+                                <PersonLink person={caller} />
+                            </ListGroupItem>
+                        ))}
+                    </ListGroup>
                 </Container>
             </div>
         </div>

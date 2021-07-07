@@ -16,5 +16,10 @@ type CodeGraphPersonNode {
     """
     Packages that use the person's code.
     """
-    dependents: [String!]!
+    dependents: [Repository!]!
+
+    """
+    People that use the person's code.
+    """
+    callers: [Person!]!
 }

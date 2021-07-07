@@ -2,13 +2,17 @@ package resolvers
 
 import (
 	"context"
-	"strings"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"sort"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -20,12 +24,12 @@ var (
 
 // TODO(sqs): could also use ctags symbols then do find-references on those.
 func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
-	do := func(ctx context.Context, email string) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
+	do := func(ctx context.Context, myEmails map[string]struct{}) ([]codeintelresolvers.AdjustedMonikerLocations, error) {
 		// TODO(sqs): un-hardcode
 		repoNames := []api.RepoName{
 			"github.com/sourcegraph/go-jsonschema",
-			"github.com/sourcegraph/jsonschemadoc",
-			"github.com/sourcegraph/docsite",
+			"github.com/sourcegraph/go-diff",
+			"github.com/sourcegraph/jsonx",
 			// "github.com/sourcegraph/sourcegraph",
 		}
 
@@ -74,7 +78,8 @@ func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelr
 				}
 				var isPersonAuthor bool
 				for _, hunk := range hunks {
-					if strings.Contains(hunk.Author.Email, email) {
+					normalizeHunkAuthor(hunk)
+					if _, ok := myEmails[hunk.Author.Email]; ok {
 						isPersonAuthor = true
 						break
 					}
@@ -88,7 +93,30 @@ func (r *CodeGraphPersonNodeResolver) symbols(ctx context.Context) ([]codeintelr
 		return authoredSymbols, nil
 	}
 
-	symbolsOnce.Do(func() { symbolsResult, symbolsErr = do(ctx, "aharvey@sourcegraph.com") })
+	const cachePath = "/tmp/user-node-symbols.json"
+	readCache := func() (result []codeintelresolvers.AdjustedMonikerLocations) {
+		data, _ := ioutil.ReadFile(cachePath)
+		if data == nil {
+			return nil
+		}
+		json.Unmarshal(data, &result)
+		return result
+	}
+	writeCache := func(result []codeintelresolvers.AdjustedMonikerLocations) {
+		data, _ := json.Marshal(result)
+		ioutil.WriteFile(cachePath, data, 0600)
+	}
+	if result := readCache(); result != nil {
+		return result, nil
+	}
+	defer func() { writeCache(symbolsResult) }()
+
+	myEmails := map[string]struct{}{
+		"sqs@sourcegraph.com": {},
+		"quinn@slack.org":     {},
+		"qslack@qslack.com":   {},
+	}
+	symbolsOnce.Do(func() { symbolsResult, symbolsErr = do(ctx, myEmails) })
 	return symbolsResult, symbolsErr
 }
 
@@ -98,9 +126,44 @@ func (r *CodeGraphPersonNodeResolver) Symbols(ctx context.Context) ([]string, er
 		return nil, err
 	}
 
+	// Find the person's most-used symbols.
+	type monikerRefCount struct {
+		symbol codeintelresolvers.AdjustedMonikerLocations
+		count  int
+	}
+	symbolCounts := make([]monikerRefCount, len(authoredSymbols))
+	for i, symbol := range authoredSymbols {
+		loc := symbol.Locations[0]
+
+		codeIntelResolver, err := r.resolver.codeIntelResolver().QueryResolver(ctx, &graphqlbackend.GitBlobLSIFDataArgs{
+			Repo:   &types.Repo{ID: api.RepoID(symbol.Dump.RepositoryID), Name: api.RepoName(symbol.Dump.RepositoryName)},
+			Commit: api.CommitID(symbol.Locations[0].AdjustedCommit),
+			Path:   loc.Path,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if codeIntelResolver == nil {
+			continue
+		}
+
+		const limit = 50 // TODO(sqs): un-hardcode
+		locations, _, err := codeIntelResolver.References(ctx, loc.AdjustedRange.Start.Line, loc.AdjustedRange.Start.Character, limit, "")
+		if err != nil {
+			return nil, err
+		}
+
+		symbolCounts[i] = monikerRefCount{symbol, len(locations)}
+	}
+
+	sort.Slice(symbolCounts, func(i, j int) bool { return symbolCounts[i].count > symbolCounts[j].count })
+
 	var result []string
-	for _, s := range authoredSymbols {
-		result = append(result, s.Identifier)
+	for _, sc := range symbolCounts {
+		if sc.count == 0 {
+			continue
+		}
+		result = append(result, fmt.Sprintf("%s (%d)", sc.symbol.Identifier, sc.count))
 	}
 
 	return result, nil
