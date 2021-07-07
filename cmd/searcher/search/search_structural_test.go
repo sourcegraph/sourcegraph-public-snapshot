@@ -76,8 +76,9 @@ func foo(go string) {}
 					Languages:       tt.Languages,
 				}
 
-				sender := &collectingSender{}
-				_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "repo_foo", sender)
+				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
+				defer cancel()
+				err := structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -136,8 +137,9 @@ func foo(go.txt) {}
 		}
 
 		extensionHint := filepath.Ext(filename)
-		sender := &collectingSender{}
-		_, err := structuralSearch(context.Background(), zf, All, extensionHint, "foo(:[args])", "", languages, 1000000, "repo_foo", sender)
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+		defer cancel()
+		err := structuralSearch(ctx, zf, All, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
@@ -229,8 +231,9 @@ func foo(real string) {}
 		Pattern: pattern,
 		Limit:   30,
 	}
-	sender := &collectingSender{}
-	_, err = filteredStructuralSearch(context.Background(), zPath, zFile, p, "foo", sender)
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+	defer cancel()
+	err = filteredStructuralSearch(ctx, zPath, zFile, p, "foo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,8 +338,9 @@ func TestIncludePatterns(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: includePatterns,
 	}
-	sender := &collectingSender{}
-	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "foo", sender)
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+	defer cancel()
+	err = structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,8 +382,9 @@ func TestRule(t *testing.T) {
 		CombyRule:       `where :[args] == "success"`,
 	}
 
-	sender := &collectingSender{}
-	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "repo", sender)
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+	defer cancel()
+	err = structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,8 +454,9 @@ func bar() {
 
 	test := func(limit, wantCount int, p *protocol.PatternInfo) func(t *testing.T) {
 		return func(t *testing.T) {
-			sender := &collectingSender{}
-			_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, limit, "repo_foo", sender)
+			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
+			defer cancel()
+			err := structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 			require.NoError(t, err)
 
 			require.Equal(t, wantCount, count(sender.collected))
@@ -591,8 +597,9 @@ func bar() {
 	defer cleanup()
 
 	t.Run("Strutural search match count", func(t *testing.T) {
-		sender := &collectingSender{}
-		_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, 100000, "repo_foo", sender)
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+		defer cancel()
+		err := structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 		if err != nil {
 			t.Fatal(err)
 		}

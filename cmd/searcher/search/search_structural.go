@@ -176,7 +176,7 @@ func lookupMatcher(language string) string {
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
-func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *store.ZipFile, p *protocol.PatternInfo, repo api.RepoName, sender MatchSender) (limitHit bool, err error) {
+func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *store.ZipFile, p *protocol.PatternInfo, repo api.RepoName, sender *limitedStreamCollector) error {
 	// Make a copy of the pattern info to modify it to work for a regex search
 	rp := *p
 	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
@@ -184,12 +184,12 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *stor
 	rp.IsRegExp = true
 	rg, err := compile(&rp)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	fileMatches, _, err := regexSearchBatch(ctx, rg, zipFile, p.Limit, true, false, false)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	matchedPaths := make([]string, 0, len(fileMatches))
@@ -202,7 +202,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *stor
 		extensionHint = filepath.Ext(matchedPaths[0])
 	}
 
-	return structuralSearch(ctx, zipPath, Subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Limit, repo, sender)
+	return structuralSearch(ctx, zipPath, Subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
 }
 
 // toMatcher returns the matcher that parameterizes structural search. It
@@ -240,7 +240,7 @@ type Subset []string
 
 var All UniversalSet = struct{}{}
 
-func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, limit int, repo api.RepoName, sender MatchSender) (limitHit bool, err error) {
+func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender *limitedStreamCollector) error {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
@@ -265,40 +265,19 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 
 	combyMatches, err := comby.Matches(ctx, args)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	limitCounter := 0
 	for _, combyMatch := range combyMatches {
-		if limitCounter+len(combyMatch.Matches) > limit {
-			if limitCounter == limit {
-				// We're exactly at the limit, so skip this match
-				return true, nil
-			}
-
-			// Truncate the matches to fit inside our limit.
-			// We must do this before converting to a FileMatch because
-			// we lose information about what constitutes a "single match"
-			// when we convert comby's multi-line matches into line matches.
-			truncateTo := limit - limitCounter
-			if len(combyMatch.Matches) < truncateTo {
-				truncateTo = len(combyMatch.Matches)
-			}
-			combyMatch.Matches = combyMatch.Matches[:truncateTo]
-
-			fm := toFileMatch(combyMatch)
-			fm.LimitHit = true
-			sender.Send(fm)
-
-			return true, nil
+		if ctx.Err() != nil {
+			return nil
 		}
-		limitCounter += len(combyMatch.Matches)
 		sender.Send(toFileMatch(combyMatch))
 	}
-	return false, nil
+	return nil
 }
 
-func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender MatchSender) (limitHit, deadlineHit bool, err error) {
+func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender *limitedStreamCollector) (deadlineHit bool, err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -321,24 +300,24 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 	}
 	repoBranches := map[string][]string{string(p.Repo): {p.Branch}}
 	useFullDeadline := false
-	zoektMatches, limitHit, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
+	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 
 	if len(zoektMatches) == 0 {
-		return false, false, nil
+		return false, nil
 	}
 
 	zipFile, err := os.CreateTemp("", "*.zip")
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 	defer zipFile.Close()
 	defer os.Remove(zipFile.Name())
 
 	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
-		return false, false, err
+		return false, err
 	}
 
 	var extensionHint string
@@ -347,8 +326,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		extensionHint = filepath.Ext(filename)
 	}
 
-	limitHit, err = structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Limit, p.Repo, sender)
-	return limitHit, false, err
+	return false, structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
 }
 
 var requestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
