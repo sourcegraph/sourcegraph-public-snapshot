@@ -213,7 +213,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	setUpTest := func(ctx context.Context, t *testing.T) graphqlbackend.InsightConnectionResolver {
 
 		resolver := newWithClock(timescale, postgres, clock)
-		conn, err := resolver.Insights(ctx)
+		conn, err := resolver.Insights(ctx, &graphqlbackend.InsightsArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
