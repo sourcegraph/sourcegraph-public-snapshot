@@ -4733,6 +4733,9 @@ type MockLSIFStore struct {
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *LSIFStoreHoverFunc
+	// MonikersFunc is an instance of a mock function object controlling the
+	// behavior of the method Monikers.
+	MonikersFunc *LSIFStoreMonikersFunc
 	// MonikersByPositionFunc is an instance of a mock function object
 	// controlling the behavior of the method MonikersByPosition.
 	MonikersByPositionFunc *LSIFStoreMonikersByPositionFunc
@@ -4789,6 +4792,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return "", lsifstore.Range{}, false, nil
 			},
 		},
+		MonikersFunc: &LSIFStoreMonikersFunc{
+			defaultHook: func(context.Context, int, int, int) ([]semantic.MonikerLocations, error) {
+				return nil, nil
+			},
+		},
 		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
 			defaultHook: func(context.Context, int, string, int, int) ([][]semantic.MonikerData, error) {
 				return nil, nil
@@ -4841,6 +4849,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		HoverFunc: &LSIFStoreHoverFunc{
 			defaultHook: i.Hover,
+		},
+		MonikersFunc: &LSIFStoreMonikersFunc{
+			defaultHook: i.Monikers,
 		},
 		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
 			defaultHook: i.MonikersByPosition,
@@ -5691,6 +5702,120 @@ func (c LSIFStoreHoverFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// LSIFStoreMonikersFunc describes the behavior when the Monikers method of
+// the parent MockLSIFStore instance is invoked.
+type LSIFStoreMonikersFunc struct {
+	defaultHook func(context.Context, int, int, int) ([]semantic.MonikerLocations, error)
+	hooks       []func(context.Context, int, int, int) ([]semantic.MonikerLocations, error)
+	history     []LSIFStoreMonikersFuncCall
+	mutex       sync.Mutex
+}
+
+// Monikers delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLSIFStore) Monikers(v0 context.Context, v1 int, v2 int, v3 int) ([]semantic.MonikerLocations, error) {
+	r0, r1 := m.MonikersFunc.nextHook()(v0, v1, v2, v3)
+	m.MonikersFunc.appendCall(LSIFStoreMonikersFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Monikers method of
+// the parent MockLSIFStore instance is invoked and the hook queue is empty.
+func (f *LSIFStoreMonikersFunc) SetDefaultHook(hook func(context.Context, int, int, int) ([]semantic.MonikerLocations, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Monikers method of the parent MockLSIFStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *LSIFStoreMonikersFunc) PushHook(hook func(context.Context, int, int, int) ([]semantic.MonikerLocations, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreMonikersFunc) SetDefaultReturn(r0 []semantic.MonikerLocations, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int, int) ([]semantic.MonikerLocations, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreMonikersFunc) PushReturn(r0 []semantic.MonikerLocations, r1 error) {
+	f.PushHook(func(context.Context, int, int, int) ([]semantic.MonikerLocations, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreMonikersFunc) nextHook() func(context.Context, int, int, int) ([]semantic.MonikerLocations, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreMonikersFunc) appendCall(r0 LSIFStoreMonikersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreMonikersFuncCall objects
+// describing the invocations of this function.
+func (f *LSIFStoreMonikersFunc) History() []LSIFStoreMonikersFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreMonikersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreMonikersFuncCall is an object that describes an invocation of
+// method Monikers on an instance of MockLSIFStore.
+type LSIFStoreMonikersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []semantic.MonikerLocations
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreMonikersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreMonikersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LSIFStoreMonikersByPositionFunc describes the behavior when the
