@@ -32,3 +32,9 @@ interface SettingsBasedInsightDashboard extends ExtendedInsightDashboard {
  * Insights dashboards that were created in a user/org settings.
  */
 export type RealInsightDashboard = SettingsBasedInsightDashboard | BuiltInInsightDashboard
+
+export function isSettingsBasedInsightsDashboard(
+    dashboard: RealInsightDashboard
+): dashboard is SettingsBasedInsightDashboard {
+    return !!dashboard.settingsKey
+}

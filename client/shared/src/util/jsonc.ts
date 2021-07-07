@@ -1,3 +1,4 @@
+import { modify as jsoncModify, applyEdits, JSONPath, FormattingOptions } from '@sqs/jsonc-parser'
 import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser/lib/main'
 
 import { asError, createAggregateError, ErrorLike } from './errors'
@@ -32,4 +33,25 @@ function parseJSON(input: string): any {
         )
     }
     return parsed
+}
+
+const defaultFormattingOptions: FormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
+
+/**
+ * Simplified jsonc API method to modify jsonc object.
+ *
+ * @param originalContent Original content (settings)
+ * @param path - path to the field which will be modified
+ * @param value - new value for modify field
+ */
+export const modify = (originalContent: string, path: JSONPath, value: unknown): string => {
+    const addingExtensionKeyEdits = jsoncModify(originalContent, path, value, {
+        formattingOptions: defaultFormattingOptions,
+    })
+
+    return applyEdits(originalContent, addingExtensionKeyEdits)
 }

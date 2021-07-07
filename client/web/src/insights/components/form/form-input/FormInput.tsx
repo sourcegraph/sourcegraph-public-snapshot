@@ -49,7 +49,7 @@ export const FormInput = forwardRef((props, reference) => {
     } = props
 
     return (
-        <label className={classnames(className)}>
+        <label className={classnames('w-100', className)}>
             {title && <div className="mb-2">{title}</div>}
 
             <LoaderInput className="d-flex" loading={loading}>
