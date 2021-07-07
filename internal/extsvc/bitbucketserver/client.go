@@ -487,8 +487,7 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	)
 	_, err := c.send(ctx, "GET", path, nil, nil, pr)
 	if err != nil {
-		wrappedErr := errors.Unwrap(err)
-		if e, ok := wrappedErr.(*httpError); ok && e.NoSuchPullRequestException() {
+		if e, ok := errors.Cause(err).(*httpError); ok && e.NoSuchPullRequestException() {
 			return ErrPullRequestNotFound
 		}
 		return err
@@ -1536,8 +1535,7 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
 	if err != nil {
-		wrappedErr := errors.Unwrap(err)
-		if e, ok := wrappedErr.(*httpError); ok && e.MergePreconditionFailedException() {
+		if e, ok := errors.Cause(err).(*httpError); ok && e.MergePreconditionFailedException() {
 			return errors.Wrap(ErrNotMergeable, err.Error())
 		}
 		return err
