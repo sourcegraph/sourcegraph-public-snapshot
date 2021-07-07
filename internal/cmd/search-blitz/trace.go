@@ -13,11 +13,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // traceStore fetches jaeger traces and stores them gzipped locally for future
