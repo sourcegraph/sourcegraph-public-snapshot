@@ -99,7 +99,7 @@ export const Line: React.FunctionComponent<Line> = ({
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
-                <div className="diff-hunk--split__line--code d-inline-block">
+                <div className="diff-hunk--split__line--code">
                     <div dangerouslySetInnerHTML={{ __html: html }} data-diff-marker={diffHunkTypeIndicators[kind]} />
                     {decorations.map((decoration, index) => {
                         const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
