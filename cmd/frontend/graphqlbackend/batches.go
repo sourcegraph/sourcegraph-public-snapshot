@@ -718,4 +718,6 @@ type BatchSpecExecutionResolver interface {
 	Failure() *string
 	PlaceInQueue() *int32
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
+	Initiator(ctx context.Context) (*UserResolver, error)
+	Namespace(ctx context.Context) (*NamespaceResolver, error)
 }

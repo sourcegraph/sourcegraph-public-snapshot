@@ -2889,6 +2889,18 @@ type BatchSpecExecution implements Node {
     finished yet or if it failed.
     """
     batchSpec: BatchSpec
+
+    """
+    The user initiating this execution. Their permissions will be honored when
+    running the batch spec.
+    """
+    initiator: User!
+
+    """
+    The namespace this execution runs in. The resulting batch spec lives in this
+    namespace.
+    """
+    namespace: Namespace!
 }
 
 """
