@@ -13,6 +13,7 @@ type CodeGraphResolver interface {
 }
 
 type CodeGraphPersonNodeResolver interface {
+	Symbols(context.Context) ([]string, error)
 	Dependencies() []string
 	Dependents() []string
 }

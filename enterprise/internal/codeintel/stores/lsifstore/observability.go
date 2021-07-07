@@ -14,8 +14,8 @@ type operations struct {
 	diagnostics                *observation.Operation
 	exists                     *observation.Operation
 	hover                      *observation.Operation
-	monikerResults             *observation.Operation
 	monikersByPosition         *observation.Operation
+	monikers                   *observation.Operation
 	packageInformation         *observation.Operation
 	ranges                     *observation.Operation
 	references                 *observation.Operation
@@ -70,8 +70,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		diagnostics:                op("Diagnostics"),
 		exists:                     op("Exists"),
 		hover:                      op("Hover"),
-		monikerResults:             op("MonikerResults"),
 		monikersByPosition:         op("MonikersByPosition"),
+		monikers:                   op("Monikers"),
 		packageInformation:         op("PackageInformation"),
 		ranges:                     op("Ranges"),
 		references:                 op("References"),

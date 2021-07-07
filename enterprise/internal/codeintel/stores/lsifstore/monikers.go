@@ -5,12 +5,29 @@ import (
 	"fmt"
 	"strings"
 
+	pkgerrors "github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
+
+func (s *Store) Monikers(ctx context.Context, bundleID int, skip, take int) (_ []semantic.MonikerLocations, err error) {
+	ctx, endObservation := s.operations.monikers.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.Int("skip", skip),
+		log.Int("take", take),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	monikers, err := s.readMonikerLocations(ctx, bundleID, "definitions", skip, take)
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "store.readMonikerLocations")
+	}
+
+	return monikers, nil
+}
 
 // MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice

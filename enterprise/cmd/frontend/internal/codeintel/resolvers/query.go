@@ -41,6 +41,13 @@ type AdjustedMonikerData struct {
 	Dump store.Dump
 }
 
+type AdjustedMonikerLocations struct {
+	Scheme     string
+	Identifier string
+	Locations  []AdjustedLocation
+	Dump       store.Dump
+}
+
 // AdjustedSymbol describes a symbol. The location has been adjusted to fit the target (originally
 // requested) commit.
 type AdjustedSymbol struct {

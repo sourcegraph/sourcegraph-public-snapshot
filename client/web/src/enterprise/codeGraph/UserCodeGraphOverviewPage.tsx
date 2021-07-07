@@ -21,6 +21,7 @@ import {
 const userCodeGraphOverDataGQLFragment = gql`
     fragment UserCodeGraphOverviewData on User {
         codeGraph {
+            symbols
             dependencies
             dependents
         }

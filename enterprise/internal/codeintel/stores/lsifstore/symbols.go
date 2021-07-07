@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
-// symbols returns all symbols (subject to the filters).
-func (s *Store) symbols(ctx context.Context, bundleID int, skip, take int) (_ []SymbolNode, _ int, err error) {
+// Symbols returns all symbols (subject to the filters).
+func (s *Store) Symbols(ctx context.Context, bundleID int, skip, take int) (_ []SymbolNode, _ int, err error) {
 	ctx, endObservation := s.operations.symbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("skip", skip),
@@ -77,7 +77,7 @@ func (s *Store) Symbol(ctx context.Context, bundleID int, scheme, identifier str
 		}, nil, nil
 	}
 
-	rootSymbols, _, err := s.symbols(ctx, bundleID, 0, 0)
+	rootSymbols, _, err := s.Symbols(ctx, bundleID, 0, 0)
 	if err != nil {
 		return nil, nil, pkgerrors.Wrap(err, "store.Symbols")
 	}

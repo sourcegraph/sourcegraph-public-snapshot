@@ -4,6 +4,11 @@ extend type User {
 
 type CodeGraphPersonNode {
     """
+    Symbols authored by the person.
+    """
+    symbols: [String!]!
+
+    """
     Packages used by the person.
     """
     dependencies: [String!]!

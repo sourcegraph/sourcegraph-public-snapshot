@@ -49,12 +49,14 @@ type LSIFStore interface {
 	References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
 	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
+	Monikers(ctx context.Context, bundleID int, skip, take int) ([]semantic.MonikerLocations, error)
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]semantic.MonikerData, error)
 	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []semantic.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (semantic.PackageInformationData, bool, error)
 	DocumentationPage(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPageData, error)
 	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPathInfoData, error)
-	Symbol(ctx context.Context, uploadID int, scheme, identifier string) (*semantic.SymbolData, []int, error)
+
+	Symbol(ctx context.Context, bundleID int, scheme, identifier string) (*semantic.SymbolData, []int, error)
 }
 
 type IndexEnqueuer interface {
