@@ -1024,6 +1024,28 @@ Associates an upload with the set of packages they require within a given packag
 
 **version**: The package version.
 
+# Table "public.lsif_retention_configuration"
+```
+                 Column                 |  Type   | Collation | Nullable |                         Default                          
+----------------------------------------+---------+-----------+----------+----------------------------------------------------------
+ id                                     | integer |           | not null | nextval('lsif_retention_configuration_id_seq'::regclass)
+ repository_id                          | integer |           | not null | 
+ max_age_for_non_stale_branches_seconds | integer |           | not null | 
+ max_age_for_non_stale_tags_seconds     | integer |           | not null | 
+Indexes:
+    "lsif_retention_configuration_pkey" PRIMARY KEY, btree (id)
+    "lsif_retention_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+Foreign-key constraints:
+    "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
+Stores the retention policy of code intellience data for a repository.
+
+**max_age_for_non_stale_branches_seconds**: The number of seconds since the last modification of a branch until it is considered stale.
+
+**max_age_for_non_stale_tags_seconds**: The nujmber of seconds since the commit date of a tagged commit until it is considered stale.
+
 # Table "public.lsif_uploads"
 ```
          Column         |           Type           | Collation | Nullable |                Default                 
@@ -1462,6 +1484,7 @@ Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Policies:
