@@ -22,7 +22,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface, func()) {
 		// Setup the GraphQL resolver.
@@ -104,7 +103,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E","RepoID":null,"From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
+			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E","RepoID":null,"Excluded":null,"Included":null,"From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
 			return []store.SeriesPoint{
 				{Time: args.From.Time, Value: 1},
 				{Time: args.From.Time, Value: 2},

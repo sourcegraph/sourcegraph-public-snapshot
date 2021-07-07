@@ -12,9 +12,13 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // traceStore fetches jaeger traces and stores them gzipped locally for future
@@ -31,15 +35,44 @@ type traceStore struct {
 	// should take. CleanupLoop will remove old traces to keep this invariant.
 	MaxTotalTraceBytes int64
 
+	// MaxFetchAttempts is the maximum number of attempts to try fetching a trace
+	// before failing. Defaults to 1 when zero valued.
+	MaxFetchAttempts int
+
 	// JaegerServerURL if non-empty will be used as the non-path of the URL
 	// for queries. If set, Token will not be used. In production we can
 	// internally access jaeger-query instead of needing an admin access token
 	// + the jaeger proxy. Environment variable we use is JAEGER_SERVER_URL.
 	JaegerServerURL string
+
+	// unexported Prometheus metrics, lazily initiated by calls to t.initMetrics
+	metrics struct {
+		sync.Once
+		fetchHist *prometheus.HistogramVec
+	}
 }
 
 // Fetch and store the trace.
-func (t *traceStore) Fetch(ctx context.Context, traceURL string) error {
+func (t *traceStore) Fetch(ctx context.Context, traceURL string) (err error) {
+	attempts := t.MaxFetchAttempts
+	if attempts == 0 {
+		attempts = 1
+	}
+
+	defer t.observeFetch()(&attempts, &err)
+
+	for i := 0; i < attempts; i++ {
+		if err = t.fetch(ctx, traceURL); err != nil {
+			time.Sleep(time.Second)
+			continue
+		}
+		return nil
+	}
+
+	return fmt.Errorf("failed to fetch trace %q after %d attempts: %v", traceURL, t.MaxFetchAttempts, err)
+}
+
+func (t *traceStore) fetch(ctx context.Context, traceURL string) (err error) {
 	// prevent jaeger misbehaving stopping the next run of the query.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -79,7 +112,6 @@ func (t *traceStore) Fetch(ctx context.Context, traceURL string) error {
 	if t.JaegerServerURL == "" && t.Token != "" {
 		req.Header.Set("Authorization", "token "+t.Token)
 	}
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -92,8 +124,7 @@ func (t *traceStore) Fetch(ctx context.Context, traceURL string) error {
 	}
 
 	dst := filepath.Join(t.Dir, traceID+".json.gz")
-
-	if err := os.MkdirAll(filepath.Dir(dst), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0700); err != nil && !os.IsExist(err) {
 		return err
 	}
 
@@ -117,6 +148,30 @@ func (t *traceStore) Fetch(ctx context.Context, traceURL string) error {
 	}
 
 	return f.Close()
+}
+
+func (t *traceStore) initMetrics() {
+	t.metrics.Do(func() {
+		t.metrics.fetchHist = promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "src",
+			Subsystem: "search_blitz",
+			Name:      "trace_fetch_seconds",
+			Help:      "The time taken to fetch a trace from Jaeger",
+			Buckets:   prometheus.DefBuckets,
+		}, []string{"error", "attempts"})
+	})
+}
+
+func (t *traceStore) observeFetch() func(*int, *error) {
+	t.initMetrics()
+	began := time.Now()
+	return func(attempts *int, err *error) {
+		duration := time.Since(began)
+		t.metrics.fetchHist.WithLabelValues(
+			strconv.FormatBool(err != nil && *err != nil),
+			strconv.FormatInt(int64(*attempts), 10),
+		).Observe(duration.Seconds())
+	}
 }
 
 // CleanupLoop periodically will remove old traces from disk such that we are

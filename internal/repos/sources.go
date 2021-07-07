@@ -106,6 +106,11 @@ type AffiliatedRepositorySource interface {
 	AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
 }
 
+// A VersionSource is a source that can query the version of the code host.
+type VersionSource interface {
+	Version(context.Context) (string, error)
+}
+
 // UnsupportedAuthenticatorError is returned by WithAuthenticator if the
 // authenticator isn't supported on that code host.
 type UnsupportedAuthenticatorError struct {

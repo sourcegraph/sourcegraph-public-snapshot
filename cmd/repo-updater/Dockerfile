@@ -3,6 +3,12 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
+FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304 AS coursier
+
+RUN wget -O coursier https://github.com/coursier/coursier/releases/download/v2.0.16/cs-x86_64-pc-linux && \
+    mv coursier /usr/local/bin/coursier && \
+    chmod +x /usr/local/bin/coursier
+
 FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304
 
 ARG COMMIT_SHA="unknown"
@@ -13,6 +19,8 @@ LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
+COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/repo-updater"]

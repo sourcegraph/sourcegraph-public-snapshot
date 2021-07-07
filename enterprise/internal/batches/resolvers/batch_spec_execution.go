@@ -76,3 +76,28 @@ func (r *batchSpecExecutionResolver) BatchSpec(ctx context.Context) (graphqlback
 	}
 	return &batchSpecResolver{store: r.store, batchSpec: spec}, nil
 }
+
+func (r *batchSpecExecutionResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.spec.UserID)
+}
+
+func (r *batchSpecExecutionResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+	var (
+		namespace graphqlbackend.NamespaceResolver
+		err       error
+	)
+	if r.spec.NamespaceUserID != 0 {
+		namespace.Namespace, err = graphqlbackend.UserByIDInt32(
+			ctx,
+			r.store.DB(),
+			r.spec.NamespaceUserID,
+		)
+		return &namespace, err
+	}
+	namespace.Namespace, err = graphqlbackend.OrgByIDInt32(
+		ctx,
+		r.store.DB(),
+		r.spec.NamespaceOrgID,
+	)
+	return &namespace, err
+}

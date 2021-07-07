@@ -45,8 +45,8 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     <h3>Common use cases</h3>
                     <ul>
                         <li>Watch for secrets in commits</li>
-                        <li>Identify when bad patterns are commited </li>
-                        <li>Identify use of depricated libraries</li>
+                        <li>Identify when bad patterns are committed </li>
+                        <li>Identify use of deprecated libraries</li>
                     </ul>
                     {isSignedIn ? (
                         <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>

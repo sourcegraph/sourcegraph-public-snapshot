@@ -1274,6 +1274,21 @@ func TestClient_WithAuthenticator(t *testing.T) {
 	}
 }
 
+func TestClient_GetVersion(t *testing.T) {
+	fixture := "GetVersion"
+	cli, save := NewTestClient(t, fixture, *update)
+	defer save()
+
+	have, err := cli.GetVersion(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := "7.11.2"; have != want {
+		t.Fatalf("wrong version. want=%s, have=%s", want, have)
+	}
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -464,6 +465,24 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 		}
 	}
 
+	if args.PublicationStates != nil && *args.PublicationStates != nil {
+		var errs *multierror.Error
+		for _, state := range *args.PublicationStates {
+			id, err := unmarshalChangesetSpecID(state.ChangesetSpec)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := opts.PublicationStates.Add(id, state.PublicationState); err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		}
+
+		if err := errs.ErrorOrNil(); err != nil {
+			return nil, err
+		}
+	}
+
 	svc := service.New(r.store)
 	// 🚨 SECURITY: ApplyBatchChange checks whether the user has permission to
 	// apply the batch spec
@@ -778,31 +797,31 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		case btypes.ChangesetStateOpen:
 			externalState := btypes.ChangesetExternalStateOpen
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateDraft:
 			externalState := btypes.ChangesetExternalStateDraft
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateClosed:
 			externalState := btypes.ChangesetExternalStateClosed
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateMerged:
 			externalState := btypes.ChangesetExternalStateMerged
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateDeleted:
 			externalState := btypes.ChangesetExternalStateDeleted
 			publicationState := btypes.ChangesetPublicationStatePublished
-			opts.ExternalState = &externalState
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateUnpublished:
@@ -1305,7 +1324,44 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		store.ListChangesetsOpts{
 			PublicationState: &published,
 			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-			ExternalState:    &openState,
+			ExternalStates:   []btypes.ChangesetExternalState{openState},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
+}
+
+func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.CloseChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CloseChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	published := btypes.ChangesetPublicationStatePublished
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeClose,
+		&btypes.ChangesetJobClosePayload{},
+		store.ListChangesetsOpts{
+			PublicationState: &published,
+			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+			ExternalStates:   []btypes.ChangesetExternalState{btypes.ChangesetExternalStateOpen, btypes.ChangesetExternalStateDraft},
 		},
 	)
 	if err != nil {
@@ -1334,8 +1390,9 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 	actor := actor.FromContext(ctx)
 
 	exec := &btypes.BatchSpecExecution{
-		BatchSpec: args.Spec,
-		UserID:    actor.UID,
+		BatchSpec:       args.Spec,
+		UserID:          actor.UID,
+		NamespaceUserID: actor.UID,
 	}
 
 	if err := r.store.CreateBatchSpecExecution(ctx, exec); err != nil {

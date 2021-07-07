@@ -107,7 +107,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                         description="all users in your organization"
                         labelTooltipPosition="right"
                         className="d-inline-block mr-3"
-                        labelTooltipText="Create or join the Organization to share dashboard with others!"
+                        labelTooltipText="Create or join an organization to share the dashboard with others!"
                     />
                 )}
             </FormGroup>

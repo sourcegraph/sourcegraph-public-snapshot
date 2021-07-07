@@ -1,9 +1,9 @@
 import { camelCase } from 'lodash'
 
+import { modify } from '@sourcegraph/shared/src/util/jsonc'
+
 import { InsightDashboard } from '../../../schema/settings.schema'
 import { INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../types'
-
-import { modify } from './utils'
 
 /**
  * Adds sanitized dashboard configuration to the settings content.

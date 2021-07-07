@@ -19,11 +19,14 @@ import (
 
 // Init must be called by the frontend to initialize the auth middlewares.
 func Init(db dbutil.DB) {
+	githuboauth.Init(db)
+	gitlaboauth.Init(db)
+
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
-		openidconnect.Middleware,
-		saml.Middleware,
-		httpheader.Middleware,
+		openidconnect.Middleware(db),
+		saml.Middleware(db),
+		httpheader.Middleware(db),
 		githuboauth.Middleware(db),
 		gitlaboauth.Middleware(db),
 	)

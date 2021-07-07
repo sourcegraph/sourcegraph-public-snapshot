@@ -2,15 +2,22 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
+import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 import { BatchChangesIcon } from '../../../batches/icons'
+import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../components/Sidebar'
+import { BatchSpecExecutionFields } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
+import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 
+import { createBatchSpecExecution } from './backend'
 import combySample from './samples/comby.batch.yaml'
 import helloWorldSample from './samples/empty.batch.yaml'
 import goImportsSample from './samples/go-imports.batch.yaml'
@@ -56,12 +63,13 @@ const samples: Sample[] = [
     { name: 'Minimal', file: minimalSample },
 ]
 
-export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings> {
+export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     headingElement: 'h1' | 'h2'
 }
 
 export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
     settingsCascade,
+    isLightTheme,
     headingElement,
 }) => {
     const isBatchChangesExecutionEnabled = Boolean(
@@ -70,6 +78,21 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
             settingsCascade.final?.experimentalFeatures?.batchChangesExecution
     )
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
+    const [content, setContent] = useState<string>(selectedSample.file)
+    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields>()
+    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+    const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
+        setBatchSpecExecution(undefined)
+        setIsLoading(true)
+        try {
+            const exec = await createBatchSpecExecution(content)
+            setBatchSpecExecution(exec)
+            setIsLoading(false)
+        } catch (error) {
+            setIsLoading(error)
+        }
+    }, [content])
+
     return (
         <>
             <PageTitle title="Create batch change" />
@@ -137,9 +160,39 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 </p>
             </Container>
             {isBatchChangesExecutionEnabled && (
-                <h2>
-                    <span className="badge badge-info">coming soon</span> Run your Batch Spec
-                </h2>
+                <>
+                    <h2>
+                        <span className="badge badge-info text-uppercase">Experimental</span> Or run your batch spec
+                        server side
+                    </h2>
+                    <Container>
+                        <MonacoSettingsEditor
+                            isLightTheme={isLightTheme}
+                            language="yaml"
+                            value={content}
+                            jsonSchema={batchSpecSchemaJSON}
+                            className="mb-3"
+                            onChange={setContent}
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={submitBatchSpec}
+                            disabled={isLoading === true}
+                        >
+                            Run batch spec
+                        </button>
+                        {batchSpecExecution && (
+                            <div className="mt-3 mb-0 alert alert-success">
+                                Running batch spec.{' '}
+                                <Link to={`/users/erik/batch-changes/executions/${batchSpecExecution.id}`}>
+                                    Check it out here.
+                                </Link>
+                            </div>
+                        )}
+                        {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+                    </Container>
+                </>
             )}
         </>
     )

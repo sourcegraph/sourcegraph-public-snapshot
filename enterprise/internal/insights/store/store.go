@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -30,18 +31,19 @@ var _ Interface = &Store{}
 // persistent storage.
 type Store struct {
 	*basestore.Store
-	now func() time.Time
+	now       func() time.Time
+	permStore InsightPermissionStore
 }
 
 // New returns a new Store backed by the given Timescale db.
-func New(db dbutil.DB) *Store {
-	return NewWithClock(db, timeutil.Now)
+func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
+	return NewWithClock(db, permStore, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
+func NewWithClock(db dbutil.DB, permStore InsightPermissionStore, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock, permStore: permStore}
 }
 
 var _ basestore.ShareableStore = &Store{}
@@ -84,6 +86,9 @@ type SeriesPointsOpts struct {
 	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
 	RepoID *api.RepoID
 
+	Excluded []api.RepoID
+	Included []api.RepoID
+
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
@@ -98,8 +103,25 @@ type SeriesPointsOpts struct {
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
 
+	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
+	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
+	// time series results. 🚨
+	// We think this is faster for a few reasons:
+	//
+	// 1. Any repos set 'public' show for everyone, and this is the default state without configuring otherwise
+	// 2. We have quite a bit of customer feedback that suggests they don't even use repo permissions - they just don't install their private repos onto that Sourcegraph instance.
+	// 3. Cloud will likely be one of best case scenarios for this - currently we have indexed 550k+ repos all of which are public. Even if we add 20,000 private repos that's only ~3.5% of the total set that needs to be fetched to do this authorization filter.
+	//
+	// Since Code Insights is in a different database, we can't trivially join the repo table directly, so this approach is preferred.
+
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return []SeriesPoint{}, err
+	}
+	opts.Excluded = append(opts.Excluded, denylist...)
+
 	q := seriesPointsQuery(opts)
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
 			&point.SeriesID,
@@ -173,6 +195,14 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
+	if len(opts.Included) > 0 {
+		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
+		preds = append(preds, sqlf.Sprintf(s))
+	}
+	if len(opts.Excluded) > 0 {
+		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
+		preds = append(preds, sqlf.Sprintf(s))
+	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
@@ -181,6 +211,25 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		lastObservationCarriedPointsSql+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+//values constructs a SQL values statement out of an array of repository ids
+func values(ids []api.RepoID) string {
+	if len(ids) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString("VALUES ")
+	for _, repoID := range ids {
+		_, err := fmt.Fprintf(&b, "(%v),", repoID)
+		if err != nil {
+			return ""
+		}
+	}
+	query := b.String()
+	query = query[:b.Len()-1] // remove the trailing comma
+	return query
 }
 
 type CountDataOpts struct {
