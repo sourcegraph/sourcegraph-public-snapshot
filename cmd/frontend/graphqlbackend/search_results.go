@@ -681,16 +681,14 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	return result, nil
 }
 
-// setQuery sets a new query in the search resolver, for potentially repeated
-// calls in the search pipeline. The important part is it takes care of
-// invalidating cached repo info.
-func (r *searchResolver) setQuery(q []query.Node) {
+// invalidateCache invalidates the repo cache if we are preparing to evaluate
+// subexpressions that require resolving potentially disjoint repository data.
+func (r *searchResolver) invalidateCache() {
 	if r.invalidateRepoCache {
 		r.resolved.RepoRevs = nil
 		r.resolved.MissingRepoRevs = nil
 		r.repoErr = nil
 	}
-	r.Query = q
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -707,11 +705,13 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
-			r.setQuery(q.ToParseTree())
+			r.invalidateCache()
+			r.Query = q.ToParseTree()
 			return r.evaluateLeaf(ctx)
 		}
 	case query.Pattern:
-		r.setQuery(q.ToParseTree())
+		r.invalidateCache()
+		r.Query = q.ToParseTree()
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
@@ -724,18 +724,19 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
-		r.setQuery(query.ToNodes(q.Parameters))
+		r.invalidateCache()
+		r.Query = query.ToNodes(q.Parameters)
 		return r.evaluateLeaf(ctx)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
 
-// invalidateRepoCache returns whether resolved repos should be invalidated when
+// shouldInvalidateRepoCache returns whether resolved repos should be invalidated when
 // evaluating subexpressions. If a query contains more than one repo, revision,
 // or repogroup field, we should invalidate resolved repos, since multiple
 // repos, revisions, or repogroups imply that different repos may need to be
 // resolved.
-func invalidateRepoCache(plan query.Plan) bool {
+func shouldInvalidateRepoCache(plan query.Plan) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
 	query.VisitParameter(plan.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
 		switch field {
@@ -898,7 +899,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		tr.Finish()
 	}()
 
-	if invalidateRepoCache(plan) {
+	if shouldInvalidateRepoCache(plan) {
 		r.invalidateRepoCache = true
 	}
 
