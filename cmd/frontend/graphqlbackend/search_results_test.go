@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	"github.com/hexops/autogold"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -31,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1018,189 +1016,6 @@ func TestSearchContext(t *testing.T) {
 			}
 		})
 	}
-}
-
-func commitResult(repo, commit string) *result.CommitMatch {
-	return &result.CommitMatch{
-		Repo: types.RepoName{Name: api.RepoName(repo)},
-		Commit: git.Commit{
-			ID: api.CommitID(commit),
-		},
-	}
-}
-
-func diffResult(repo, commit string) *result.CommitMatch {
-	return &result.CommitMatch{
-		DiffPreview: &result.HighlightedString{},
-		Repo:        types.RepoName{Name: api.RepoName(repo)},
-		Commit: git.Commit{
-			ID: api.CommitID(commit),
-		},
-	}
-}
-
-func repoResult(name string) *result.RepoMatch {
-	return &result.RepoMatch{
-		Name: api.RepoName(name),
-	}
-}
-
-func fileResult(repo string, lineMatches []*result.LineMatch, symbolMatches []*result.SymbolMatch) *result.FileMatch {
-	return &result.FileMatch{
-		File: result.File{
-			Repo: types.RepoName{Name: api.RepoName(repo)},
-		},
-		Symbols:     symbolMatches,
-		LineMatches: lineMatches,
-	}
-}
-
-func TestUnionMerge(t *testing.T) {
-	cases := []struct {
-		left  SearchResults
-		right SearchResults
-		want  autogold.Value
-	}{
-		{
-			left: SearchResults{
-				Matches: []result.Match{
-					diffResult("a", "a"),
-					commitResult("a", "a"),
-					repoResult("a"),
-					fileResult("a", nil, nil),
-				},
-			},
-			right: SearchResults{},
-			want:  autogold.Want("LeftOnly", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a"),
-		},
-		{
-			left: SearchResults{},
-			right: SearchResults{
-				Matches: []result.Match{
-					diffResult("a", "a"),
-					commitResult("a", "a"),
-					repoResult("a"),
-					fileResult("a", nil, nil),
-				},
-			},
-			want: autogold.Want("RightOnly", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a"),
-		},
-		{
-			left: SearchResults{
-				Matches: []result.Match{
-					diffResult("a", "a"),
-					commitResult("a", "a"),
-					repoResult("a"),
-					fileResult("a", nil, nil),
-				},
-			},
-			right: SearchResults{
-				Matches: []result.Match{
-					diffResult("b", "b"),
-					commitResult("b", "b"),
-					repoResult("b"),
-					fileResult("b", nil, nil),
-				},
-			},
-			want: autogold.Want("MergeAllDifferent", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a, File{url:b/,symbols:[],lineMatches:[]}, Repo:/b, Commit:/b/-/commit/b, Diff:/b/-/commit/b"),
-		},
-		{
-			left: SearchResults{
-				Matches: []result.Match{
-					fileResult("b", []*result.LineMatch{
-						{Preview: "a"},
-						{Preview: "b"},
-					}, nil),
-				},
-			},
-			right: SearchResults{
-				Matches: []result.Match{
-					fileResult("b", []*result.LineMatch{
-						{Preview: "c"},
-						{Preview: "d"},
-					}, nil),
-				},
-			},
-			want: autogold.Want("MergeFileLineMatches", "File{url:b/,symbols:[],lineMatches:[a,b,c,d]}"),
-		},
-		{
-			left: SearchResults{
-				Matches: []result.Match{
-					fileResult("a", []*result.LineMatch{
-						{Preview: "a"},
-						{Preview: "b"},
-					}, nil),
-				},
-			},
-			right: SearchResults{
-				Matches: []result.Match{
-					fileResult("b", []*result.LineMatch{
-						{Preview: "c"},
-						{Preview: "d"},
-					}, nil),
-				},
-			},
-			want: autogold.Want("NoMergeFileSymbols", "File{url:a/,symbols:[],lineMatches:[a,b]}, File{url:b/,symbols:[],lineMatches:[c,d]}"),
-		},
-		{
-			left: SearchResults{
-				Matches: []result.Match{
-					fileResult("a", nil, []*result.SymbolMatch{
-						{Symbol: result.Symbol{Name: "a"}},
-						{Symbol: result.Symbol{Name: "b"}},
-					}),
-				},
-			},
-			right: SearchResults{
-				Matches: []result.Match{
-					fileResult("a", nil, []*result.SymbolMatch{
-						{Symbol: result.Symbol{Name: "c"}},
-						{Symbol: result.Symbol{Name: "d"}},
-					}),
-				},
-			},
-			want: autogold.Want("MergeFileSymbols", "File{url:a/,symbols:[a,b,c,d],lineMatches:[]}"),
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run("", func(t *testing.T) {
-			got := unionMerge(&tc.left, &tc.right)
-			sort.Sort(result.Matches(got.Matches))
-			tc.want.Equal(t, searchResultResolversToString(got.Matches))
-		})
-	}
-}
-
-func searchResultResolversToString(matches []result.Match) string {
-	toString := func(match result.Match) string {
-		switch v := match.(type) {
-		case *result.FileMatch:
-			symbols := []string{}
-			for _, symbol := range v.Symbols {
-				symbols = append(symbols, symbol.Symbol.Name)
-			}
-			lines := []string{}
-			for _, line := range v.LineMatches {
-				lines = append(lines, line.Preview)
-			}
-			return fmt.Sprintf("File{url:%s/%s,symbols:[%s],lineMatches:[%s]}", v.Repo.Name, v.Path, strings.Join(symbols, ","), strings.Join(lines, ","))
-		case *result.CommitMatch:
-			if v.DiffPreview != nil {
-				return fmt.Sprintf("Diff:%s", v.URL())
-			}
-			return fmt.Sprintf("Commit:%s", v.URL())
-		case *result.RepoMatch:
-			return fmt.Sprintf("Repo:%s", v.URL())
-		}
-		return ""
-	}
-
-	var searchResultStrings []string
-	for _, srr := range matches {
-		searchResultStrings = append(searchResultStrings, toString(srr))
-	}
-	return strings.Join(searchResultStrings, ", ")
 }
 
 func TestIsGlobalSearch(t *testing.T) {
