@@ -1,3 +1,4 @@
+import { camelCase } from 'lodash'
 import { useContext } from 'react'
 import { useHistory } from 'react-router-dom'
 
@@ -71,7 +72,7 @@ export function useUpdateDashboardCallback(props: useUpdateDashboardProps): Dash
 
             await updateSubjectSettings(platformContext, subjectID, settingsContent).toPromise()
 
-            history.push(`/insights/dashboard/${previousDashboard.settingsKey}`)
+            history.push(`/insights/dashboards/${camelCase(updatedDashboard.title)}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }

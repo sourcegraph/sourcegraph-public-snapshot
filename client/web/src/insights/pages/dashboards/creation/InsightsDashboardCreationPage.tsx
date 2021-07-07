@@ -61,7 +61,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
             // Navigate user to the dashboard page with new created dashboard
-            history.push(`/insights/dashboard/${camelCase(dashboard.title)}`)
+            history.push(`/insights/dashboards/${camelCase(dashboard.title)}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }

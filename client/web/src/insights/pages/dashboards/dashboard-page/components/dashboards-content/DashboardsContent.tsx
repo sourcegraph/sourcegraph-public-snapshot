@@ -54,7 +54,19 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     })
 
     const handleDashboardSelect = (dashboard: InsightDashboard): void => {
-        history.push(`/insights/dashboard/${dashboard.id}`)
+        if (isVirtualDashboard(dashboard)) {
+            history.push(`/insights/dashboards/${dashboard.type}`)
+
+            return
+        }
+
+        if (isSettingsBasedInsightsDashboard(dashboard)) {
+            history.push(`/insights/dashboards/${dashboard.settingsKey}`)
+
+            return
+        }
+
+        history.push(`/insights/dashboards/${dashboard.id}`)
     }
 
     return (

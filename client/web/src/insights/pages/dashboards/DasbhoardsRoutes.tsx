@@ -43,7 +43,7 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
             />
 
             <Route
-                path={`${match.url}/dashboard/:dashboardId?`}
+                path={`${match.url}/dashboards/:dashboardId?`}
                 render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
                     <DashboardsPage
                         telemetryService={telemetryService}
