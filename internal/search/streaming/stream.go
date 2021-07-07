@@ -72,6 +72,9 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	dedup := result.NewDeduper()
 
 	return StreamFunc(func(e SearchEvent) {
+		if parent == nil {
+			return
+		}
 		mux.Lock()
 
 		selected := e.Results[:0]
@@ -95,9 +98,7 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 		e.Results = selected
 
 		mux.Unlock()
-		if parent != nil {
-			parent.Send(e)
-		}
+		parent.Send(e)
 	})
 }
 
