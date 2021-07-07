@@ -60,7 +60,7 @@ func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebho
 		ExternalServices: database.ExternalServices(db),
 	}
 
-	webhookhandlers.Init(&gh)
+	webhookhandlers.Init(db, &gh)
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(&gh))
 
