@@ -53,6 +53,21 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 	}
 
+	var namespaceName string
+	if exec.NamespaceUserID != 0 {
+		user, err := database.Users(db).GetByID(ctx, exec.NamespaceUserID)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		namespaceName = user.Username
+	} else {
+		org, err := database.Orgs(db).GetByID(ctx, exec.NamespaceOrgID)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		namespaceName = org.Name
+	}
+
 	return apiclient.Job{
 		ID:                  int(exec.ID),
 		VirtualMachineFiles: map[string]string{"spec.yml": exec.BatchSpec},
@@ -63,6 +78,7 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 					"preview",
 					"-f", "spec.yml",
 					"-text-only",
+					"-n", namespaceName,
 				},
 				Dir: ".",
 				Env: cliEnv,
