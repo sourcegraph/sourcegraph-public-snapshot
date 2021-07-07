@@ -24,10 +24,9 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		specExec := &btypes.BatchSpecExecution{
-			State:         btypes.BatchSpecExecutionStateProcessing,
-			BatchSpec:     `name: testing`,
-			UserID:        user.ID,
-			ExecutionLogs: []workerutil.ExecutionLogEntry{},
+			State:     btypes.BatchSpecExecutionStateProcessing,
+			BatchSpec: `name: testing`,
+			UserID:    user.ID,
 		}
 
 		if err := s.CreateBatchSpecExecution(context.Background(), specExec); err != nil {
@@ -38,7 +37,6 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 			Key:       "step.src.0",
 			Command:   []string{"src", "batch", "preview", "-f", "spec.yml", "-text-only"},
 			StartTime: time.Now().Add(-5 * time.Second),
-			ExitCode:  0,
 			Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
 stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"SUCCESS"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.528Z","status":"STARTED"}
@@ -65,10 +63,9 @@ stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z
 
 	t.Run("without log entry", func(t *testing.T) {
 		specExec := &btypes.BatchSpecExecution{
-			State:         btypes.BatchSpecExecutionStateProcessing,
-			BatchSpec:     `name: testing`,
-			UserID:        user.ID,
-			ExecutionLogs: []workerutil.ExecutionLogEntry{},
+			State:     btypes.BatchSpecExecutionStateProcessing,
+			BatchSpec: `name: testing`,
+			UserID:    user.ID,
 		}
 
 		if err := s.CreateBatchSpecExecution(context.Background(), specExec); err != nil {
