@@ -3,7 +3,8 @@ import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import { Selection } from 'monaco-editor'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import { Selection, SelectionDirection } from 'monaco-editor'
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
@@ -133,18 +134,14 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.repo,
-        placeholder: parsePlaceholder('contains.commit.after({time})'),
-        showSuggestions: false,
+        placeholder: parsePlaceholder('contains.{file or content or commit}'),
         description:
-            'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
-        examples: ['repo:contains.commit.after(yesterday)', 'repo:contains.commit.after(june 25 2017)'],
-    },
-    {
-        type: FilterType.repo,
-        placeholder: parsePlaceholder('contains({file:foo content:bar})'),
-        showSuggestions: false,
-        description:
-            'Search only inside repositories that contain a file matching the `file:` with `content:` filters.',
+            'Conditionally search inside repositories only if contain certain files or commits after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats.',
+        examples: [
+            'repo:contains.commit.after(yesterday)',
+            'repo:contains.commit.after(june 25 2017)',
+            'repo:contains.file(.py) file:Dockerfile pip',
+        ],
     },
     {
         type: FilterType.rev,
@@ -172,7 +169,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     */
     {
         type: FilterType.type,
-        placeholder: parsePlaceholder('{symbol}'),
+        placeholder: parsePlaceholder('{diff or commit...}'),
         commonRank: 90,
         description:
             'Specifies the type of search. By default, searches are executed on all code at a given point in time (a branch or a commit). Specify the `type:` if you want to search over changes to code or commit messages instead (diffs or commits).',
@@ -224,10 +221,14 @@ function parseSearchInput(searchInput: string): RegExp[] {
  * Given a Placeholder object, this function returns the Monaco Selections
  * corresponding to each value in the Placeholder.
  */
-function selectionsForPlaceholder(placeholder: Placeholder, offset: number = 0): Selection[] {
+function selectionsForPlaceholder(
+    placeholder: Placeholder,
+    offset: number = 0,
+    direction: SelectionDirection = SelectionDirection.LTR
+): Selection[] {
     return placeholder.tokens
         .filter(token => token.type === 'value')
-        .map(token => new Selection(1, offset + token.start + 1, 1, offset + token.end))
+        .map(token => Selection.createWithDirection(1, offset + token.start + 1, 1, offset + token.end, direction))
 }
 
 /**
@@ -262,14 +263,15 @@ export function updateQueryWithFilter(
 
     if (!singular) {
         // Always append to the query
-        query = appendFilter(query, field, showSuggestions ? '' : searchReference.placeholder.text)
-        // There is no need to update the cursor position in this case
-        if (!showSuggestions) {
-            selection = selectionsForPlaceholder(
-                searchReference.placeholder,
-                query.length - searchReference.placeholder.text.length
-            )[0]
-        }
+        query = appendFilter(query, field, searchReference.placeholder.text)
+        selection = selectionsForPlaceholder(
+            searchReference.placeholder,
+            query.length - searchReference.placeholder.text.length,
+            // If we need to trigger the suggestion popover we have to make
+            // sure the input cursor is positioned at the beginning of the
+            // selection (it usually is at the end)
+            showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
+        )[0]
     } else {
         // Filter can only appear once
         // If we should show suggestions, update (or add) the filter with an
@@ -279,26 +281,24 @@ export function updateQueryWithFilter(
 
         const existingFilter = findFilter(query, searchReference.type, FilterKind.Global)
 
-        if (showSuggestions) {
-            query = updateFilter(query, field, '')
-        } else if (!existingFilter) {
+        if (!existingFilter) {
             query = updateFilter(query, field, searchReference.placeholder.text)
             selection = selectionsForPlaceholder(
                 searchReference.placeholder,
-                query.length - searchReference.placeholder.text.length
+                query.length - searchReference.placeholder.text.length,
+                // If we need to trigger the suggestion popover we have to make
+                // sure the input cursor is positioned at the beginning of the
+                // selection (it usually is at the end)
+                showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
             )[0]
         } else {
-            selection = new Selection(
+            selection = Selection.createWithDirection(
                 1,
                 (existingFilter.value?.range.start || existingFilter.field.range.end) + 1,
                 1,
-                existingFilter.range.end + 1
+                existingFilter.range.end + 1,
+                showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
             )
-        }
-
-        // The cursor position has to be adjusted accordingly
-        if (existingFilter) {
-            cursorPosition = (showSuggestions ? existingFilter.field.range.end + 1 : existingFilter.range.end) + 1
         }
     }
 
@@ -516,6 +516,7 @@ export interface SearchReferenceProps
     filter: string
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
+    isSourcegraphDotCom: boolean
 }
 
 const SearchReference = (props: SearchReferenceProps): ReactElement => {
@@ -558,7 +559,11 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
                 </Tabs>
             )}
             <p className={styles.footer}>
-                <Link to="https://docs.sourcegraph.com/code_search/reference/queries">Search syntax</Link>
+                <small>
+                    <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
+                        Search syntax <ExternalLinkIcon className="icon-inline" />
+                    </Link>
+                </small>
             </p>
         </div>
     )

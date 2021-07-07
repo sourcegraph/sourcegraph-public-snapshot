@@ -52,6 +52,7 @@ describe('StreamingSearchResults', () => {
 
         navbarSearchQueryState: { query: '' },
         onNavbarQueryChange: () => {},
+        isSourcegraphDotCom: false,
 
         settingsCascade: {
             subjects: null,

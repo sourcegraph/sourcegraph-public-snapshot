@@ -52,6 +52,7 @@ const defaultProps: SearchSidebarProps = {
     featureFlags: EMPTY_FEATURE_FLAGS,
     navbarSearchQueryState: { query: '' },
     onNavbarQueryChange: () => {},
+    isSourcegraphDotCom: false,
 }
 
 const quicklinks: QuickLink[] = [

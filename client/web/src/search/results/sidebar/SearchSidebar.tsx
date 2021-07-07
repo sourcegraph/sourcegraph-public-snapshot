@@ -37,6 +37,7 @@ export interface SearchSidebarProps
     className?: string
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
+    isSourcegraphDotCom: boolean
 }
 
 enum SectionID {
