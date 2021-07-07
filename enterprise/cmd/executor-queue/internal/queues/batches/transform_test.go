@@ -68,6 +68,7 @@ func TestTransformRecord(t *testing.T) {
 			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
 			"test*":                           "USERNAME_REMOVED",
 			"hunter2":                         "PASSWORD_REMOVED",
+			accessToken:                       "SRC_ACCESS_TOKEN_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {

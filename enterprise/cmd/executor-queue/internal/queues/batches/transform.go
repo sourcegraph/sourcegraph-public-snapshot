@@ -80,6 +80,10 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 			// from the command's stdout or stderr streams.
 			config.Shared.FrontendUsername: "USERNAME_REMOVED",
 			config.Shared.FrontendPassword: "PASSWORD_REMOVED",
+
+			// 🚨 SECURITY: Redact the access token used for src-cli to talk to
+			// Sourcegraph instance.
+			token: "SRC_ACCESS_TOKEN_REMOVED",
 		},
 	}, nil
 }
