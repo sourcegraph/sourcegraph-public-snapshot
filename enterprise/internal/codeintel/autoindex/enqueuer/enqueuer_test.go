@@ -59,8 +59,8 @@ func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
-		return fmt.Sprintf("c%d", repositoryID), nil
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
+		return fmt.Sprintf("c%d", repositoryID), true, nil
 	})
 
 	scheduler := &IndexEnqueuer{
@@ -180,8 +180,8 @@ func TestQueueIndexesForRepositoryInRepository(t *testing.T) {
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
-		return fmt.Sprintf("c%d", repositoryID), nil
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
+		return fmt.Sprintf("c%d", repositoryID), true, nil
 	})
 	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) (bool, error) {
 		return file == "sourcegraph.yaml", nil
@@ -269,8 +269,8 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
-		return fmt.Sprintf("c%d", repositoryID), nil
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
+		return fmt.Sprintf("c%d", repositoryID), true, nil
 	})
 	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		switch repositoryID {
@@ -339,8 +339,8 @@ func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
 	}
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
-		return fmt.Sprintf("c%d", repositoryID), nil
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
+		return fmt.Sprintf("c%d", repositoryID), true, nil
 	})
 	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		if repositoryID == 42 {

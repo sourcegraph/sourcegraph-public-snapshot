@@ -43,7 +43,7 @@ type RepoUpdaterClient interface {
 }
 
 type GitserverClient interface {
-	Head(ctx context.Context, repositoryID int) (string, error)
+	Head(ctx context.Context, repositoryID int) (string, bool, error)
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)

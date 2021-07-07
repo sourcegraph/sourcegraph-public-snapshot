@@ -60,8 +60,8 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil {
+	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
+	if err != nil || !ok {
 		return nil, errors.Wrap(err, "gitserver.Head")
 	}
 	traceLog(log.String("commit", commit))
@@ -130,8 +130,8 @@ func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryI
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil {
+	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
+	if err != nil || !ok {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 	traceLog(log.String("commit", commit))
