@@ -292,33 +292,35 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         }
     }, [editor, selectedSearchContextSpec])
 
-    // If an edit wasn't triggered by the user,
-    // place the cursor at the end of the query.
     useEffect(() => {
-        if (!editor || queryState.changeSource === QueryChangeSource.userInput) {
+        if (!editor) {
             return
         }
-        const position = {
-            // +2 as Monaco is 1-indexed.
-            column: queryState.cursorPosition ?? editor.getValue().length + 2,
-            lineNumber: 1,
-        }
-        editor.setPosition(position)
 
-        if (queryState.changeSource === QueryChangeSource.searchReference) {
-            if (queryState.selection) {
+        switch (queryState.changeSource) {
+            case QueryChangeSource.userInput:
+                // Don't react to user input
+                break
+            case QueryChangeSource.searchReference: {
                 editor.setSelection(queryState.selection)
+                if (queryState.showSuggestions) {
+                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                }
+                editor.revealRange(queryState.revealRange)
+                break
             }
-            if (queryState.showSuggestions) {
-                editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+            default: {
+                // Place the cursor at the end of the query.
+                const position = {
+                    // +2 as Monaco is 1-indexed.
+                    column: editor.getValue().length + 2,
+                    lineNumber: 1,
+                }
+                editor.setPosition(position)
+                editor.revealPosition(position)
             }
-            editor.focus()
         }
-
-        // It seems that revealPosition has to happen _after_ potentially
-        // triggering the suggestions popover, otherwise the filter might not be
-        // completely visible
-        editor.revealPosition(position)
+        editor.focus()
     }, [editor, queryState])
 
     // Prevent newline insertion in model, and surface query changes with stripped newlines.

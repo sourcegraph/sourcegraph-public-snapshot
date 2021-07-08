@@ -183,21 +183,28 @@ export enum QueryChangeSource {
 }
 
 /**
- * The search query and cursor position of where the last character was inserted.
- * Cursor position is used to correctly insert the suggestion when it's selected,
- * and set the cursor to the end of where the suggestion was inserted.
+ * The search query and additional information depending on how the query was
+ * changed. See MonacoQueryInput for how this data is applied to the editor.
  */
-export interface QueryState {
-    query: string
-    /** Used to know how search was changed and how to update the search input */
-    changeSource?: QueryChangeSource
-    /** Whether or not to trigger the completion popover */
-    showSuggestions?: boolean
-    /** Which column to move the cursor to */
-    cursorPosition?: number
-    /** If set, the query input will apply these selections */
-    selection?: IRange
-}
+export type QueryState =
+    | {
+          /** Used to know how search was changed and how to update the search input */
+          changeSource: QueryChangeSource.userInput
+          query: string
+      }
+    | {
+          /** Used to know how search was changed and how to update the search input */
+          changeSource: QueryChangeSource.searchReference
+          query: string
+          /** The query input will apply this selection */
+          selection: IRange
+          /** Ensure that newly added or updated filters are completely visible in
+           * the query input. */
+          revealRange: IRange
+          /** Whether or not to trigger the completion popover. The popover is
+           * triggered at the end of the selection. */
+          showSuggestions?: boolean
+      }
 
 /**
  * Some filters should use an alias just for search so they receive the expected suggestions.

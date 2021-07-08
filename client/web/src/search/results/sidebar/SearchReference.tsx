@@ -4,7 +4,7 @@ import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import { Selection, SelectionDirection } from 'monaco-editor'
+import { Range, Selection, SelectionDirection } from 'monaco-editor'
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
@@ -64,7 +64,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.archived,
-        placeholder: parsePlaceholder('{yes or only}'),
+        placeholder: parsePlaceholder('{yes/only}'),
         description:
             'The "yes" option includes archived repositories. The "only" option filters results to only archived repositories. Results in archived repositories are excluded by default.',
         examples: ['repo:sourcegraph/ archived:only'],
@@ -85,7 +85,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.count,
-        placeholder: parsePlaceholder('{N or all}'),
+        placeholder: parsePlaceholder('{N/all}'),
         description:
             'Retrieve *N* results. By default, Sourcegraph stops searching early and returns if it finds a full page of results. This is desirable for most interactive searches. To wait for all results, use **count:all**.',
         commonRank: 60,
@@ -100,7 +100,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.fork,
-        placeholder: parsePlaceholder('{yes or only}'),
+        placeholder: parsePlaceholder('{yes/only}'),
         description:
             'Include results from repository forks or filter results to only repository forks. Results in repository forks are exluded by default.',
         commonRank: 80,
@@ -134,7 +134,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.repo,
-        placeholder: parsePlaceholder('contains.{file or content or commit}'),
+        placeholder: parsePlaceholder('contains.{file/content/commit}'),
         description:
             'Conditionally search inside repositories only if contain certain files or commits after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats.',
         examples: [
@@ -169,7 +169,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     */
     {
         type: FilterType.type,
-        placeholder: parsePlaceholder('{diff or commit...}'),
+        placeholder: parsePlaceholder('{diff//commit/...}'),
         commonRank: 90,
         description:
             'Specifies the type of search. By default, searches are executed on all code at a given point in time (a branch or a commit). Specify the `type:` if you want to search over changes to code or commit messages instead (diffs or commits).',
@@ -221,14 +221,16 @@ function parseSearchInput(searchInput: string): RegExp[] {
  * Given a Placeholder object, this function returns the Monaco Selections
  * corresponding to each value in the Placeholder.
  */
-function selectionsForPlaceholder(
+function selectionForPlaceholder(
     placeholder: Placeholder,
     offset: number = 0,
     direction: SelectionDirection = SelectionDirection.LTR
-): Selection[] {
-    return placeholder.tokens
-        .filter(token => token.type === 'value')
-        .map(token => Selection.createWithDirection(1, offset + token.start + 1, 1, offset + token.end, direction))
+): Selection {
+    const token = placeholder.tokens.find(token => token.type === 'value')
+    if (!token) {
+        throw new Error('Search reference does not contain placeholder.')
+    }
+    return Selection.createWithDirection(1, offset + token.start + 1, 1, offset + token.end, direction)
 }
 
 /**
@@ -253,61 +255,50 @@ export function updateQueryWithFilter(
     const { singular } = allFilters[searchReference.type]
     let { query } = currentQueryState
     const showSuggestions = shouldShowSuggestions(searchReference)
-    let cursorPosition
-    let selection
+    let selection: Selection | undefined
+    let revealRange: Range
     let field: string = searchReference.type
 
     if (negate && isNegatableFilter(searchReference.type)) {
         field = '-' + field
     }
 
-    if (!singular) {
-        // Always append to the query
+    const existingFilter = findFilter(query, searchReference.type, FilterKind.Global)
+
+    if (existingFilter && singular) {
+        // Filter can only appear once
+        // Select the existing filter value or append the filter and select the
+        // placeholder
+        selection = Selection.createWithDirection(
+            1,
+            (existingFilter.value?.range.start || existingFilter.field.range.end) + 1,
+            1,
+            existingFilter.range.end + 1,
+            showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
+        )
+        revealRange = new Range(1, existingFilter.range.start, 1, existingFilter.range.end)
+    } else {
+        // Filter can appear multiple times or doesn't exist yet. Always
+        // append.
+        const rangeStart = query.length
         query = appendFilter(query, field, searchReference.placeholder.text)
-        selection = selectionsForPlaceholder(
+        selection = selectionForPlaceholder(
             searchReference.placeholder,
             query.length - searchReference.placeholder.text.length,
             // If we need to trigger the suggestion popover we have to make
             // sure the input cursor is positioned at the beginning of the
             // selection (it usually is at the end)
             showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
-        )[0]
-    } else {
-        // Filter can only appear once
-        // If we should show suggestions, update (or add) the filter with an
-        // empty value.
-        // If we should select the filter value, select the existing one or
-        // append the filter and select the placeholder
-
-        const existingFilter = findFilter(query, searchReference.type, FilterKind.Global)
-
-        if (!existingFilter) {
-            query = updateFilter(query, field, searchReference.placeholder.text)
-            selection = selectionsForPlaceholder(
-                searchReference.placeholder,
-                query.length - searchReference.placeholder.text.length,
-                // If we need to trigger the suggestion popover we have to make
-                // sure the input cursor is positioned at the beginning of the
-                // selection (it usually is at the end)
-                showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
-            )[0]
-        } else {
-            selection = Selection.createWithDirection(
-                1,
-                (existingFilter.value?.range.start || existingFilter.field.range.end) + 1,
-                1,
-                existingFilter.range.end + 1,
-                showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
-            )
-        }
+        )
+        revealRange = new Range(1, rangeStart, 1, query.length)
     }
 
     return {
         changeSource: QueryChangeSource.searchReference,
         query,
         selection,
-        cursorPosition,
         showSuggestions,
+        revealRange,
     }
 }
 
