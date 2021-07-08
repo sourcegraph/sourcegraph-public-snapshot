@@ -62,9 +62,9 @@ var (
 	resolvedTitleTemplate     = "[RESOLVED] {{ .CommonLabels.description }}"
 	notificationTitleTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingTitleTemplate, resolvedTitleTemplate)
 
-	priorityTemplateDefault = `{{ range .Alerts }}{{ if eq .Labels.severity "critical"}}P1{{else if eq .Labels.severity "warning"}}P2{{else if eq .Labels.severity "info"}}P3{{else}}P4{{end}}{{end}}`
+	priorityTemplateDefault = `{{ if eq .CommonLabels.level "critical"}}P1{{else if eq .CommonLabels.level "warning"}}P2{{else if eq .CommonLabels.level "info"}}P3{{else}}P4{{end}}`
 
-	tagsTemplateDefault = "{{ range $index, $element := $labels}}{{if $index}},{{end}}{{$element}}{{end}}"
+	tagsTemplateDefault = "{{ range $index, $element := .CommonLabels }}{{if $index}},{{end}}{{$element}}{{end}}"
 )
 
 // newRoutesAndReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers
