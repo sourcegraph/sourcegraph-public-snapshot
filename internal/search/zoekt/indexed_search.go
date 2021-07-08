@@ -543,7 +543,6 @@ func sendMatches(files []zoekt.FileMatch, getRepoInputRev repoRevFunc, typ Index
 			if typ == SymbolRequest {
 				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 			}
-			// TODO: Why do we always set LimitHit to false?
 			fm := result.FileMatch{
 				LineMatches: lines,
 				Symbols:     symbols,
