@@ -1,11 +1,14 @@
+import classNames from 'classnames'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
+import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
+import { useBlockMonacoInput } from './useBlockMonacoEditor'
 
 import { BlockProps, MarkdownBlock } from '.'
 
@@ -50,59 +53,71 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     id,
     input,
     output,
+    isSelected,
     isLightTheme,
     onRunBlock,
     onBlockInputChange,
+    onSelectBlock,
 }) => {
     const [isEditing, setIsEditing] = useState(false)
+    const [, setMonacoInstance] = useState<typeof Monaco>()
+    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+
+    const runBlock = useCallback(
+        (id: string) => {
+            onRunBlock(id)
+            setIsEditing(false)
+        },
+        [onRunBlock, setIsEditing]
+    )
+
+    const { isInputFocused } = useBlockMonacoInput({
+        editor,
+        id,
+        onRunBlock: runBlock,
+        onBlockInputChange,
+        onSelectBlock,
+    })
 
     const onDoubleClick = useCallback(() => {
         if (!isEditing) {
             setIsEditing(true)
+            onSelectBlock(id)
         }
-    }, [isEditing, setIsEditing])
+    }, [id, isEditing, setIsEditing, onSelectBlock])
 
-    const [, setMonacoInstance] = useState<typeof Monaco>()
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
-
-    useEffect(() => {
-        if (!editor) {
-            return
-        }
-        const disposable = editor.addAction({
-            id: 'render-on-cmd-enter',
-            label: 'Render markdown',
-            keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
-            run: () => {
-                onRunBlock(id)
-                setIsEditing(false)
-            },
-        })
-        return () => disposable.dispose()
-    }, [editor, id, setIsEditing, onRunBlock])
-
-    useEffect(() => {
-        if (!editor) {
-            return
-        }
-        const disposable = editor.onDidChangeModelContent(() => {
-            onBlockInputChange(id, editor.getValue())
-        })
-        return () => disposable.dispose()
-    }, [editor, id, onBlockInputChange])
+    const onSelect = useCallback(() => {
+        onSelectBlock(id)
+    }, [id, onSelectBlock])
 
     if (!isEditing) {
         return (
-            <div className={styles.outputWrapper}>
-                <div className={styles.output} onDoubleClick={onDoubleClick}>
+            <div
+                className={classNames(blockStyles.block, isSelected && blockStyles.selected, styles.outputWrapper)}
+                onClick={onSelect}
+                onDoubleClick={onDoubleClick}
+                role="presentation"
+                data-block-id={id}
+            >
+                <div className={styles.output}>
                     <Markdown dangerousInnerHTML={output ?? ''} />
                 </div>
             </div>
         )
     }
     return (
-        <div className={styles.input}>
-            <div className={styles.monacoWrapper}>
+        <div
+            className={classNames(
+                blockStyles.block,
+                styles.input,
+                isSelected && !isInputFocused && blockStyles.selected,
+                isSelected && isInputFocused && blockStyles.selectedNotFocused
+            )}
+            onClick={onSelect}
+            role="presentation"
+            data-block-id={id}
+        >
+            <div className={classNames(blockStyles.monacoWrapper, isInputFocused && blockStyles.selected)}>
                 <MonacoEditor
                     language="markdown"
                     value={input}

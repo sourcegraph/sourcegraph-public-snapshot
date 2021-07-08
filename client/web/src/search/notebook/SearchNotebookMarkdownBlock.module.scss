@@ -1,26 +1,10 @@
 .input {
     padding: 1rem;
     background-color: var(--body-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
-}
-
-.monaco-wrapper {
-    background-color: var(--color-bg-1);
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
 }
 
 .output-wrapper {
     width: 100%;
-    // Prevents moving content
-    border: 1px solid transparent;
-
-    &:hover {
-        border: 1px solid var(--border-color);
-        border-radius: 0.25rem;
-    }
 }
 
 .output {

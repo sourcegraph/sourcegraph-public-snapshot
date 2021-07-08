@@ -26,16 +26,20 @@ export interface MarkdownBlock extends BaseBlock<string> {
 
 export type Block = QueryBlock | MarkdownBlock
 
+export type BlockInitializer = Pick<Block, 'type' | 'input'>
+
 export interface BlockProps {
+    isSelected: boolean
     onRunBlock(id: string): void
     onBlockInputChange(id: string, value: string): void
+    onSelectBlock(id: string | null): void
 }
 
 export class Notebook {
     private idToBlock: Map<string, Block>
     private blockOrder: string[]
 
-    constructor(initializerBlocks: Omit<Block, 'id' | 'output'>[]) {
+    constructor(initializerBlocks: BlockInitializer[]) {
         const blocks = initializerBlocks.map(block => ({ ...block, id: uuid.v4(), output: null }))
 
         this.idToBlock = new Map(blocks.map(block => [block.id, block]))

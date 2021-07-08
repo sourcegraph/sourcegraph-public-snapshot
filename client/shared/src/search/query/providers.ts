@@ -118,3 +118,72 @@ export function getProviders(
         ),
     }
 }
+
+export function getProvidersNoCache(
+    fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
+    options: {
+        patternType: SearchPatternType
+        globbing: boolean
+        interpretComments?: boolean
+        isSourcegraphDotCom?: boolean
+    }
+): Omit<SearchFieldProviders, 'diagnostics'> {
+    return {
+        tokens: {
+            getInitialState: () => SCANNER_STATE,
+            tokenize: line => {
+                const result = scanSearchQuery(line, options.interpretComments ?? false, options.patternType)
+                if (result.type === 'success') {
+                    return {
+                        tokens: getMonacoTokens(result.term),
+                        endState: SCANNER_STATE,
+                    }
+                }
+                return { endState: SCANNER_STATE, tokens: [] }
+            },
+        },
+        hover: {
+            provideHover: (textModel, position, token) =>
+                of(textModel.getValue())
+                    .pipe(
+                        map(value => scanSearchQuery(value, options.interpretComments ?? false, options.patternType)),
+                        map(scanResult =>
+                            scanResult.type === 'error' ? null : getHoverResult(scanResult.term, position)
+                        ),
+                        takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
+                    )
+                    .toPromise(),
+        },
+        completion: {
+            // An explicit list of trigger characters is needed for the Monaco editor to show completions.
+            triggerCharacters: [...printable, ...latin1Alpha],
+            provideCompletionItems: (textModel, position, context, token) =>
+                of(textModel.getValue())
+                    .pipe(
+                        map(value => scanSearchQuery(value, options.interpretComments ?? false, options.patternType)),
+                        switchMap(scanResult =>
+                            scanResult.type === 'error'
+                                ? of(null)
+                                : getCompletionItems(
+                                      scanResult.term,
+                                      position,
+                                      of(textModel.getValue()).pipe(
+                                          debounceTime(300),
+                                          switchMap(fetchSuggestions),
+                                          share()
+                                      ),
+                                      options.globbing,
+                                      options.isSourcegraphDotCom
+                                  )
+                        ),
+                        observeOn(asyncScheduler),
+                        map(completions => (token.isCancellationRequested ? undefined : completions))
+                    )
+                    .toPromise(),
+        },
+        // TODO
+        // diagnostics: scannedQueries.pipe(
+        //     map(({ scanned }) => (scanned.type === 'success' ? getDiagnostics(scanned.term, options.patternType) : []))
+        // ),
+    }
+}

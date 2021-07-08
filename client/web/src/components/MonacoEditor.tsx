@@ -197,6 +197,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         if (!element) {
             return
         }
+        // TODO: this is not a monaco "instance", this is the entire monaco module!
         this.props.editorWillMount(monaco)
         const editor = monaco.editor.create(element, {
             value: this.props.value,

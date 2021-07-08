@@ -1,23 +1,23 @@
 import classNames from 'classnames'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useLocation } from 'react-router'
-import { BehaviorSubject, Observable, of } from 'rxjs'
+import { Observable, of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
-import { fetchSuggestions } from '../backend'
-import { addSourcegraphSearchCodeIntelligence, SOURCEGRAPH_SEARCH } from '../input/MonacoQueryInput'
+import { SOURCEGRAPH_SEARCH } from '../input/MonacoQueryInput'
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
 
+import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookQueryBlock.module.scss'
+import { useBlockMonacoInput } from './useBlockMonacoEditor'
 
 import { BlockProps, QueryBlock } from '.'
 
@@ -27,7 +27,6 @@ interface SearchNotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps {
-    globbing: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -71,85 +70,51 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     id,
     input,
     output,
-    globbing,
     isLightTheme,
     telemetryService,
     settingsCascade,
+    isSelected,
     fetchHighlightedFileLineRanges,
     onRunBlock,
     onBlockInputChange,
+    onSelectBlock,
 }) => {
-    const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
-    const searchQueryInput = useMemo(() => new BehaviorSubject<string>(input), [input])
 
-    useEffect(() => {
-        if (!editor) {
-            return
-        }
-        const disposable = editor.addAction({
-            id: 'render-on-cmd-enter',
-            label: 'Submit search',
-            keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
-            run: () => {
-                onRunBlock(id)
-            },
-        })
-        return () => disposable.dispose()
-    }, [editor, id, onRunBlock])
-
-    useEffect(() => {
-        if (!editor) {
-            return
-        }
-        const disposable = editor.onDidChangeModelContent(() => {
-            const value = editor.getValue()
-            onBlockInputChange(id, value)
-            searchQueryInput.next(value)
-        })
-        return () => disposable.dispose()
-    }, [editor, id, searchQueryInput, onBlockInputChange])
-
-    useEffect(() => {
-        if (!monacoInstance) {
-            return
-        }
-        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQueryInput, fetchSuggestions, {
-            // TODO?
-            patternType: SearchPatternType.literal,
-            globbing,
-            interpretComments: true,
-        })
-        return () => subscription.unsubscribe()
-    }, [monacoInstance, searchQueryInput, globbing])
-
-    useEffect(() => {
-        if (!editor) {
-            return
-        }
-        const disposable = editor.addAction({
-            id: 'run-on-cmd-enter',
-            label: 'Run query',
-            keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
-            run: () => {
-                onRunBlock(id)
-            },
-        })
-        return () => disposable.dispose()
-    }, [editor, id, onRunBlock])
+    const { isInputFocused } = useBlockMonacoInput({
+        editor,
+        id,
+        onRunBlock,
+        onBlockInputChange,
+        onSelectBlock,
+    })
 
     const searchResults = useObservable(output ?? of(undefined))
-
     const location = useLocation()
+
+    const onSelect = useCallback(() => {
+        onSelectBlock(id)
+    }, [id, onSelectBlock])
+
     return (
-        <div className={styles.block}>
-            <div className={styles.monacoWrapper}>
+        <div
+            className={classNames(
+                blockStyles.block,
+                styles.block,
+                isSelected && !isInputFocused && blockStyles.selected,
+                isSelected && isInputFocused && blockStyles.selectedNotFocused
+            )}
+            onClick={onSelect}
+            role="presentation"
+            data-block-id={id}
+        >
+            <div className={classNames(blockStyles.monacoWrapper, isInputFocused && blockStyles.selected)}>
                 <MonacoEditor
                     language={SOURCEGRAPH_SEARCH}
                     value={input}
                     height={75}
                     isLightTheme={isLightTheme}
-                    editorWillMount={setMonacoInstance}
+                    editorWillMount={() => {}}
                     onEditorCreated={setEditor}
                     options={options}
                     border={false}

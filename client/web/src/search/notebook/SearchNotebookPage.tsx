@@ -14,7 +14,7 @@ import { StreamingSearchResultsListProps } from '../results/StreamingSearchResul
 import { SearchNotebook } from './SearchNotebook'
 import styles from './SearchNotebookPage.module.scss'
 
-import { Block } from '.'
+import { Block, BlockInitializer } from '.'
 
 interface SearchNotebookPageProps
     extends SearchStreamingProps,
@@ -37,7 +37,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
         [history]
     )
 
-    const blocks: Omit<Block, 'id' | 'output'>[] = useMemo(() => {
+    const blocks: BlockInitializer[] = useMemo(() => {
         const serializedBlocks = location.hash.slice(1)
         if (serializedBlocks.length === 0) {
             return [
