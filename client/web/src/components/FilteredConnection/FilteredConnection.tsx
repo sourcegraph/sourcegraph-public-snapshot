@@ -301,14 +301,20 @@ export class FilteredConnection<
                             .pipe(
                                 catchError(error => [asError(error)]),
                                 map(
-                                    (connectionOrError): PartialStateUpdate => ({
-                                        connectionOrError,
-                                        connectionQuery: query,
-                                        loading: false,
-                                    })
+                                    (connectionOrError): PartialStateUpdate => {
+                                        console.log('connectionOrError', connectionOrError)
+                                        return {
+                                            connectionOrError,
+                                            connectionQuery: query,
+                                            loading: false,
+                                        }
+                                    }
                                 ),
                                 share()
                             )
+
+                        console.log('result')
+                        console.log(result)
 
                         return (shouldRefresh
                             ? merge(
@@ -323,23 +329,17 @@ export class FilteredConnection<
                     }),
                     scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(
                         ({ previousPage }, { shouldRefresh, connectionOrError, ...rest }) => {
-                            if (!connectionOrError || isErrorLike(connectionOrError)) {
-                                return {
-                                    connectionOrError,
-                                    previousPage,
-                                    ...rest,
-                                }
-                            }
-
+                            let nodes: N[] = previousPage
                             let after: string | undefined
-                            let { nodes } = connectionOrError
 
-                            if (this.props.cursorPaging) {
+                            if (this.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
                                 if (!shouldRefresh) {
-                                    nodes = previousPage.concat(nodes)
+                                    connectionOrError.nodes = previousPage.concat(connectionOrError.nodes)
                                 }
 
-                                after = connectionOrError.pageInfo?.endCursor || undefined
+                                const pageInfo = connectionOrError.pageInfo
+                                nodes = connectionOrError.nodes
+                                after = pageInfo?.endCursor || undefined
                             }
 
                             return {
@@ -510,6 +510,8 @@ export class FilteredConnection<
         ) {
             errors.push(this.state.connectionOrError.error)
         }
+        console.log('in FC')
+        console.log(this.state.connectionOrError)
 
         // const shouldShowControls =
         //     this.state.connectionOrError &&

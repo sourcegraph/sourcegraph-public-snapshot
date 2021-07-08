@@ -1,142 +1,83 @@
 import { ApolloError } from '@apollo/client'
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { Connection } from '@sourcegraph/web/src/components/FilteredConnection'
 
 import {
-    BatchChangesCodeHostsFields,
+    BatchChangesCodeHostFields,
     GlobalBatchChangesCodeHostsResult,
     GlobalBatchChangesCodeHostsVariables,
     UserBatchChangesCodeHostsResult,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
+import { usePaginatedConnection } from '../../../user/settings/accessTokens/usePaginatedConnection'
 
 import { GLOBAL_BATCH_CHANGES_CODE_HOSTS, USER_BATCH_CHANGES_CODE_HOSTS } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
-
-const getBatchChangesCodeHosts = (
-    data: UserBatchChangesCodeHostsResult | GlobalBatchChangesCodeHostsResult
-): BatchChangesCodeHostsFields => {
-    if ('batchChangesCodeHosts' in data) {
-        return data.batchChangesCodeHosts
-    }
-
-    if (data.node === null) {
-        throw new Error('User not found')
-    }
-
-    if (data.node.__typename !== 'User') {
-        throw new Error(`Node is a ${data.node.__typename}, not a User`)
-    }
-
-    return data.node.batchChangesCodeHosts
-}
 
 interface CodeHostConnectionNodesProps {
     userID: Scalars['ID']
 }
 
 export const CodeHostConnectionNodes: React.FunctionComponent<CodeHostConnectionNodesProps> = ({ userID }) => {
-    const variables = useMemo(
-        () => ({
+    const response = usePaginatedConnection<
+        UserBatchChangesCodeHostsResult,
+        UserBatchChangesCodeHostsVariables,
+        BatchChangesCodeHostFields
+    >({
+        query: USER_BATCH_CHANGES_CODE_HOSTS,
+        variables: {
             user: userID,
             first: 15,
             after: null,
-        }),
-        [userID]
-    )
+        },
+        getConnection: data => {
+            if (data.node === null) {
+                throw new Error('User not found')
+            }
 
-    const response = useQuery<UserBatchChangesCodeHostsResult, UserBatchChangesCodeHostsVariables>(
-        USER_BATCH_CHANGES_CODE_HOSTS,
-        { variables }
-    )
+            if (data.node.__typename !== 'User') {
+                throw new Error(`Node is a ${data.node.__typename}, not a User`)
+            }
 
-    const fetchMoreResults = useCallback(
-        (cursor: string) =>
-            response.fetchMore({
-                variables: {
-                    ...variables,
-                    after: cursor,
-                },
-                updateQuery: (previousData, { fetchMoreResult }) => {
-                    if (!fetchMoreResult?.node) {
-                        return previousData
-                    }
+            return data.node.batchChangesCodeHosts
+        },
+    })
 
-                    const previousCodeHosts = getBatchChangesCodeHosts(previousData)
-                    const fetchMoreCodeHosts = getBatchChangesCodeHosts(fetchMoreResult)
-                    fetchMoreCodeHosts.nodes = previousCodeHosts.nodes.concat(fetchMoreCodeHosts.nodes)
-
-                    return {
-                        node: {
-                            __typename: 'User',
-                            id: userID,
-                            batchChangesCodeHosts: fetchMoreCodeHosts,
-                        },
-                    }
-                },
-            }),
-        [response, variables, userID]
-    )
-
-    return <CodeHostConnectionNodesUI {...response} fetchMoreResults={fetchMoreResults} userID={userID} />
+    return <CodeHostConnectionNodesUI userID={userID} {...response} />
 }
 
 export const GlobalCodeHostConnectionNodes: React.FunctionComponent = () => {
-    const variables = useMemo(
-        () => ({
+    const response = usePaginatedConnection<
+        GlobalBatchChangesCodeHostsResult,
+        GlobalBatchChangesCodeHostsVariables,
+        BatchChangesCodeHostFields
+    >({
+        query: GLOBAL_BATCH_CHANGES_CODE_HOSTS,
+        variables: {
             first: 15,
             after: null,
-        }),
-        []
-    )
+        },
+        getConnection: result => result.batchChangesCodeHosts,
+    })
 
-    const response = useQuery<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables>(
-        GLOBAL_BATCH_CHANGES_CODE_HOSTS,
-        { variables }
-    )
-
-    const fetchMoreResults = useCallback(
-        (cursor: string) =>
-            response.fetchMore({
-                variables: {
-                    ...variables,
-                    after: cursor,
-                },
-                updateQuery: (previousData, { fetchMoreResult }) => {
-                    if (!fetchMoreResult) {
-                        return previousData
-                    }
-
-                    const previousCodeHosts = getBatchChangesCodeHosts(previousData)
-                    const fetchMoreCodeHosts = getBatchChangesCodeHosts(fetchMoreResult)
-                    fetchMoreCodeHosts.nodes = previousCodeHosts.nodes.concat(fetchMoreCodeHosts.nodes)
-
-                    return {
-                        batchChangesCodeHosts: fetchMoreCodeHosts,
-                    }
-                },
-            }),
-        [response, variables]
-    )
-
-    return <CodeHostConnectionNodesUI {...response} fetchMoreResults={fetchMoreResults} userID={null} />
+    return <CodeHostConnectionNodesUI userID={null} {...response} />
 }
 
 const CodeHostConnectionNodesUI: React.FunctionComponent<{
-    data?: UserBatchChangesCodeHostsResult | GlobalBatchChangesCodeHostsResult
+    connection?: Connection<BatchChangesCodeHostFields>
     error?: ApolloError
     loading: boolean
     userID: Scalars['ID'] | null
-    fetchMoreResults: (cursor: string) => void
-}> = ({ data, error, loading, userID, fetchMoreResults }) => {
+    fetchMore: () => void
+}> = ({ connection, error, loading, userID, fetchMore }) => {
     if (error) {
         throw error
     }
 
-    if (!data) {
+    if (!connection) {
         return null
     }
 
@@ -144,19 +85,13 @@ const CodeHostConnectionNodesUI: React.FunctionComponent<{
         return <LoadingSpinner className="icon-inline" />
     }
 
-    const { nodes, pageInfo } = getBatchChangesCodeHosts(data)
-
     return (
         <>
-            {nodes.map((node, index) => (
+            {connection.nodes.map((node, index) => (
                 <CodeHostConnectionNode key={index} node={node} userID={userID} />
             ))}
-            {pageInfo.hasNextPage && (
-                <button
-                    type="button"
-                    className="btn btn-sm btn-link"
-                    onClick={() => fetchMoreResults(pageInfo.endCursor || '')}
-                >
+            {connection?.pageInfo?.hasNextPage && (
+                <button type="button" className="btn btn-sm btn-link" onClick={fetchMore}>
                     Show more
                 </button>
             )}
