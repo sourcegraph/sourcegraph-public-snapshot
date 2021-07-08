@@ -15,16 +15,11 @@ import { ViewCredentialModal } from './ViewCredentialModal'
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
     userID: Scalars['ID'] | null
-    updateList: Subject<void>
 }
 
 type OpenModal = 'add' | 'view' | 'delete'
 
-export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
-    node,
-    userID,
-    updateList,
-}) => {
+export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({ node, userID }) => {
     const Icon = defaultExternalServices[node.externalServiceKind].icon
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
@@ -42,10 +37,10 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     const closeModal = useCallback(() => {
         setOpenModal(undefined)
     }, [])
-    const afterAction = useCallback(() => {
-        setOpenModal(undefined)
-        updateList.next()
-    }, [updateList])
+    // const afterAction = useCallback(() => {
+    //     setOpenModal(undefined)
+    //     updateList.next()
+    // }, [updateList])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
 

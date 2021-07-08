@@ -1,17 +1,11 @@
 import React from 'react'
-import { RouteComponentProps } from 'react-router'
 
 import { PageTitle } from '../../../components/PageTitle'
 
-import { queryGlobalBatchChangesCodeHosts } from './backend'
 import { CodeHostConnections } from './CodeHostConnections'
 
-export interface BatchChangesSiteConfigSettingsAreaProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    queryGlobalBatchChangesCodeHosts?: typeof queryGlobalBatchChangesCodeHosts
-}
-
 /** The page area for all batch changes settings. It's shown in the site admin settings sidebar. */
-export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchChangesSiteConfigSettingsAreaProps> = props => (
+export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent = () => (
     <>
         <PageTitle title="Batch changes settings" />
         <CodeHostConnections
@@ -25,7 +19,6 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchCh
                 </>
             }
             userID={null}
-            {...props}
         />
     </>
 )
