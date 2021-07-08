@@ -32,6 +32,10 @@ var DefaultPredicateRegistry = predicateRegistry{
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 	},
+	FieldFile: {
+		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
+		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
+	},
 }
 
 type predicateRegistry map[string]map[string]func() Predicate
@@ -233,6 +237,41 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	}, Parameter{
 		Field: FieldRepoHasCommitAfter,
 		Value: f.TimeRef,
+	})
+
+	nodes = append(nodes, nonPredicateRepos(parent)...)
+	return ToPlan(Dnf(nodes))
+}
+
+type FileContainsContentPredicate struct {
+	Pattern string
+}
+
+func (f *FileContainsContentPredicate) ParseParams(params string) error {
+	if _, err := regexp.Compile(params); err != nil {
+		return fmt.Errorf("file:contains.content argument: %w", err)
+	}
+	if params == "" {
+		return fmt.Errorf("file:contains.content argument should not be empty")
+	}
+	f.Pattern = params
+	return nil
+}
+
+func (f FileContainsContentPredicate) Field() string { return FieldFile }
+func (f FileContainsContentPredicate) Name() string  { return "contains.content" }
+
+func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
+	nodes := make([]Node, 0, 3)
+	nodes = append(nodes, Parameter{
+		Field: FieldCount,
+		Value: "99999",
+	}, Parameter{
+		Field: FieldType,
+		Value: "file",
+	}, Pattern{
+		Value:      f.Pattern,
+		Annotation: Annotation{Labels: Regexp},
 	})
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
