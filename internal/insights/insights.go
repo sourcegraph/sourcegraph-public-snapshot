@@ -115,6 +115,50 @@ func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilte
 	return results, nil
 }
 
+// GetIntegratedInsights returns all of the insights defined by the extension based Code Insights that are compatible
+// running over all repositories. These are located in a specific setting object `insights.allrepos` which is a
+// dictionary of unique keys to extension setting body. This is intended to be deprecated as soon as code insights migrates
+// fully to a persistent database.
+func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, error) {
+	prefix := "insights.allrepos"
+
+	settings, err := GetSettings(ctx, db, All, prefix)
+	if err != nil {
+		return []SearchInsight{}, err
+	}
+
+	results := make([]SearchInsight, 0)
+	for _, setting := range settings {
+		var raw map[string]json.RawMessage
+		raw, err = FilterSettingJson(setting.Contents, prefix)
+
+		for _, val := range raw {
+			// iterate for each instance of the prefix key in the settings. This should never be len > 1, but it's technically a map.
+			var temp IntegratedInsights
+			if err := json.Unmarshal(val, &temp); err != nil {
+				return []SearchInsight{}, err
+			}
+
+			results = append(results, temp.Insights()...)
+		}
+	}
+
+	return results, nil
+}
+
+// IntegratedInsights represents a settings dictionary of valid insights that are integrated across the extensions API and the backend.
+type IntegratedInsights map[string]SearchInsight
+
+// Insights returns an array of contained insights.
+func (i IntegratedInsights) Insights() []SearchInsight {
+	results := make([]SearchInsight, 0)
+	for key, insight := range i {
+		insight.ID = key // the insight ID is the value of the dict key
+		results = append(results, insight)
+	}
+	return results
+}
+
 type TimeSeries struct {
 	Name   string
 	Stroke string
