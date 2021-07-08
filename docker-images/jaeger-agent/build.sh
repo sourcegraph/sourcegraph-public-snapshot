@@ -4,7 +4,7 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-export JAEGER_VERSION="${JAEGER_VERSION:-1.17.1}"
+export JAEGER_VERSION="${JAEGER_VERSION:-1.24.0}"
 IMAGE=${IMAGE:-sourcegraph/jaeger-agent}
 
 echo "Building image ${IMAGE} from Jaeger ${JAEGER_VERSION}"
