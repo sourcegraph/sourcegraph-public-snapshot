@@ -3,6 +3,7 @@ package locker
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -56,6 +57,11 @@ type UnlockFunc func(err error) error
 // Lock attempts to take an advisory lock on the given key. If successful, this method will
 // return a true-valued flag along with a function that must be called to release the lock.
 func (l *Locker) Lock(ctx context.Context, key int, blocking bool) (locked bool, _ UnlockFunc, err error) {
+	l, err = l.Transact(ctx)
+	if err != nil {
+		return false, nil, err
+	}
+
 	if blocking {
 		locked, err = l.lock(ctx, key)
 	} else {
@@ -63,15 +69,15 @@ func (l *Locker) Lock(ctx context.Context, key int, blocking bool) (locked bool,
 	}
 
 	if err != nil || !locked {
-		return false, nil, err
+		return false, nil, l.Done(err)
 	}
 
 	unlock := func(err error) error {
-		if unlockErr := l.unlock(key); unlockErr != nil {
+		if unlockErr := l.unlock(context.Background(), key); unlockErr != nil {
 			err = multierror.Append(err, unlockErr)
 		}
 
-		return err
+		return l.Done(err)
 	}
 
 	return true, unlock, nil
@@ -107,10 +113,20 @@ const tryLockQuery = `
 SELECT pg_try_advisory_lock(%s, %s)
 `
 
+var ErrUnlock = errors.New("Failed to unlock")
+
 // unlock releases the advisory lock on the given key.
-func (l *Locker) unlock(key int) error {
-	err := l.Store.Exec(context.Background(), sqlf.Sprintf(unlockQuery, l.namespace, key))
-	return err
+func (l *Locker) unlock(ctx context.Context, key int) error {
+	ok, _, err := basestore.ScanFirstBool(l.Store.Query(ctx, sqlf.Sprintf(unlockQuery, l.namespace, key)))
+	if !ok {
+		if err == nil {
+			err = ErrUnlock
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 const unlockQuery = `
