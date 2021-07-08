@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -12,7 +14,11 @@ import (
 
 // InsightsResolver is the root resolver.
 type InsightsResolver interface {
-	Insights(ctx context.Context) (InsightConnectionResolver, error)
+	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
+}
+
+type InsightsArgs struct {
+	Ids *[]graphql.ID
 }
 
 type InsightsDataPointResolver interface {
@@ -42,6 +48,7 @@ type InsightResolver interface {
 	Title() string
 	Description() string
 	Series() []InsightSeriesResolver
+	ID() string
 }
 
 type InsightConnectionResolver interface {

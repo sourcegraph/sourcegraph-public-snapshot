@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,40 +55,40 @@ func TestDiscover(t *testing.T) {
 		return settingsExample, nil
 	})
 	ctx := context.Background()
-	insights, err := Discover(ctx, settingStore)
+	discovered, err := Discover(ctx, settingStore)
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("insights", []*schema.Insight{
+	autogold.Want("discovered", []insights.SearchInsight{
 		{
+			Title:       "fmt usage",
 			Description: "fmt.Errorf/fmt.Printf usage",
-			Series: []*schema.InsightSeries{
+			Series: []insights.TimeSeries{
 				{
-					Label:  "fmt.Errorf",
-					Search: "errorf",
+					Name:  "fmt.Errorf",
+					Query: "errorf",
 				},
 				{
-					Label:  "printf",
-					Search: "fmt.Printf",
+					Name:  "printf",
+					Query: "fmt.Printf",
 				},
 			},
-			Title: "fmt usage",
 		},
 		{
+			Title:       "gitserver usage",
 			Description: "gitserver exec & close usage",
-			Series: []*schema.InsightSeries{
+			Series: []insights.TimeSeries{
 				{
-					Label:  "exec",
-					Search: "gitserver.Exec",
+					Name:  "exec",
+					Query: "gitserver.Exec",
 				},
 				{
-					Label:  "close",
-					Search: "gitserver.Close",
+					Name:  "close",
+					Query: "gitserver.Close",
 				},
 			},
-			Title: "gitserver usage",
 		},
-	}).Equal(t, insights)
+	}).Equal(t, discovered)
 }
 
 func Test_parseUserSettings(t *testing.T) {

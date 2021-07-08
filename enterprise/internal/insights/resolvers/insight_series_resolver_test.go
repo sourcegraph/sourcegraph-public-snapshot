@@ -38,7 +38,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		resolver.insightsStore = mockStore
 
 		// Create the insights connection resolver and query series.
-		conn, err := resolver.Insights(ctx)
+		conn, err := resolver.Insights(ctx, nil)
 		if err != nil {
 			cleanup()
 			t.Fatal(err)

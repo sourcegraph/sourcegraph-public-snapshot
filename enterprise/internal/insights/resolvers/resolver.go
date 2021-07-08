@@ -38,11 +38,19 @@ func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolv
 	}
 }
 
-func (r *Resolver) Insights(ctx context.Context) (graphqlbackend.InsightConnectionResolver, error) {
+func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
+	var idList []string
+	if args != nil && args.Ids != nil {
+		idList = make([]string, len(*args.Ids))
+		for i, id := range *args.Ids {
+			idList[i] = string(id)
+		}
+	}
 	return &insightConnectionResolver{
 		insightsStore:   r.insightsStore,
 		workerBaseStore: r.workerBaseStore,
 		settingStore:    r.settingStore,
+		ids:             idList,
 	}, nil
 }
 
@@ -54,6 +62,6 @@ func NewDisabledResolver(reason string) graphqlbackend.InsightsResolver {
 	return &disabledResolver{reason}
 }
 
-func (r *disabledResolver) Insights(ctx context.Context) (graphqlbackend.InsightConnectionResolver, error) {
+func (r *disabledResolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
 	return nil, errors.New(r.reason)
 }
