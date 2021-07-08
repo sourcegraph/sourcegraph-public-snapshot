@@ -1,9 +1,11 @@
-import * as path from 'path'
+import path from 'path'
 
 import CssMinimizerWebpackPlugin from 'css-minimizer-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import * as webpack from 'webpack'
+import webpack, { optimize } from 'webpack'
+
+import { subtypeOf } from '../../../shared/src/util/types'
 
 const rootPath = path.resolve(__dirname, '../../../../')
 const browserWorkspacePath = path.resolve(rootPath, 'client/browser')
@@ -41,7 +43,7 @@ const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse
     },
 ]
 
-export const config: webpack.Configuration = {
+export const config = subtypeOf<webpack.Configuration>()({
     target: 'browserslist',
     cache: {
         type: 'filesystem',
@@ -94,7 +96,7 @@ export const config: webpack.Configuration = {
             new TerserPlugin({
                 terserOptions: {
                     compress: {
-                        // // Don't inline functions, which causes name collisions with uglify-es:
+                        // Don't inline functions, which causes name collisions with uglify-es:
                         // https://github.com/mishoo/UglifyJS2/issues/2842
                         inline: 1,
                     },
@@ -107,7 +109,7 @@ export const config: webpack.Configuration = {
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),
         // Code splitting doesn't make sense/work in the browser extension, but we still want to use dynamic import()
-        new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
+        new optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
@@ -157,4 +159,4 @@ export const config: webpack.Configuration = {
             },
         ],
     },
-}
+})
