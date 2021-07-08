@@ -21,7 +21,7 @@ function queryStateFromExample(query: string, showSuggestions = false): QuerySta
     }
     let offset = 0
 
-    const cleanedQuery = query.replaceAll(/[{}[\]|]/g, (match, index: number) => {
+    const cleanedQuery = query.replaceAll(/[[\]{|}]/g, (match, index: number) => {
         positions[match] = index + offset + 1
         offset -= 1
         return ''
