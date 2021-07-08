@@ -266,6 +266,9 @@ func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
 	nodes = append(nodes, Parameter{
 		Field: FieldCount,
 		Value: "99999",
+	}, Parameter{
+		Field: FieldType,
+		Value: "file",
 	}, Pattern{
 		Value:      f.Pattern,
 		Annotation: Annotation{Labels: Regexp},
