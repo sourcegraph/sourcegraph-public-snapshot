@@ -20,8 +20,10 @@ export interface ChangesetNodeProps extends ThemeProps {
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    onSelect?: (id: string, selected: boolean) => void
-    isSelected?: (id: string) => boolean
+    selectable?: {
+        onSelect: (id: string, selected: boolean) => void
+        isSelected: (id: string) => boolean
+    }
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps

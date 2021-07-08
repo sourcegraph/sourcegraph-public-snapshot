@@ -16,8 +16,6 @@ export interface BatchChangeNodeProps extends ThemeProps {
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    onSelectChangeset: (id: string, selected: boolean) => void
-    isChangesetSelected: (id: string) => boolean
     /** For testing purposes. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing purposes. */
@@ -27,8 +25,6 @@ export interface BatchChangeNodeProps extends ThemeProps {
 }
 
 export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
-    isChangesetSelected,
-    onSelectChangeset,
     node: initialNode,
     now = () => new Date(),
     ...props
@@ -63,14 +59,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 </div>
             </div>
             {node.changesets.nodes.map(changeset => (
-                <ChangesetNode
-                    {...props}
-                    isSelected={isChangesetSelected}
-                    onSelect={onSelectChangeset}
-                    key={changeset.id}
-                    node={changeset}
-                    separator={null}
-                />
+                <ChangesetNode {...props} key={changeset.id} node={changeset} separator={null} />
             ))}
             <div className={styles.nodeBottomSpacer} />
         </>
