@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"

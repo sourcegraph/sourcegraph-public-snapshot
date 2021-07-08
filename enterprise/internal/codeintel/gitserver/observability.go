@@ -1,7 +1,6 @@
 package gitserver
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -35,9 +34,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			Name:         fmt.Sprintf("codeintel.gitserver.%s", name),
 			MetricLabels: []string{name},
 			Metrics:      metrics,
-			ErrorFilter: func(err error) bool {
-				return errors.Is(err, &gitserver.RevisionNotFoundError{})
-			},
+			ErrorFilter:  gitserver.IsRevisionNotFound,
 		})
 	}
 

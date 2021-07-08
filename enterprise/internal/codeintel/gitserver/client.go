@@ -62,7 +62,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 
 	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
 	if err != nil {
-		if isRevisionNotFound(err) {
+		if gitserver.IsRevisionNotFound(err) {
 			err = nil
 		}
 
@@ -436,8 +436,4 @@ func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.
 	}
 
 	return api.RepoName(repoName), nil
-}
-
-func isRevisionNotFound(err error) bool {
-	return errors.Is(err, &gitserver.RevisionNotFoundError{})
 }
