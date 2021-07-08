@@ -2,11 +2,6 @@
     display: inline-flex;
     align-items: center;
 
-    &__total {
-        padding-right: 0.125rem;
-        padding-bottom: 0.25rem;
-    }
-
     &__squares {
         display: flex;
         flex-wrap: nowrap;

@@ -42,14 +42,12 @@
             font-family: $code-font-family;
             color: var(--body-color);
             font-size: $code-font-size;
+            margin-left: 0.5rem;
             .theme-redesign & {
                 color: var(--link-color);
                 font-family: inherit;
                 font-size: 0.875rem;
             }
-        }
-        &-stat {
-            margin-right: 0.5rem;
         }
 
         &-actions {
