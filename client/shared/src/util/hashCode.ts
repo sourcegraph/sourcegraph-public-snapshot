@@ -1,4 +1,4 @@
-import { createHash } from 'crypto'
+import sjcl from 'sjcl'
 
 /**
  * Returns a hash code value for a string.
@@ -6,9 +6,8 @@ import { createHash } from 'crypto'
  * The hash algorithm here is using Base64 encoding of a SHA256 hash
  *
  */
-
 export function hashCode(input: string): string {
-    const hash = createHash('sha256').update(input).digest('base64')
+    const hashBitArray = sjcl.hash.sha256.hash(input)
 
-    return hash
+    return sjcl.codec.base64.fromBits(hashBitArray)
 }
