@@ -2,8 +2,9 @@ package registry
 
 import (
 	"context"
-	"errors"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"

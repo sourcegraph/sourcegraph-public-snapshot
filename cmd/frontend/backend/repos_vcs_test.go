@@ -1,10 +1,11 @@
 package backend
 
 import (
-	"errors"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"

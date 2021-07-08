@@ -1,10 +1,11 @@
 package query
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )

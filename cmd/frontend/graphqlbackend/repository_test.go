@@ -2,12 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"

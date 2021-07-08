@@ -1,11 +1,11 @@
 package sysreq
 
 import (
-	"errors"
+	"context"
 	"reflect"
 	"testing"
 
-	"context"
+	"github.com/cockroachdb/errors"
 )
 
 func TestCheck(t *testing.T) {

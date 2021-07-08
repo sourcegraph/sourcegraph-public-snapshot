@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"

@@ -2,9 +2,9 @@ package registry
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 

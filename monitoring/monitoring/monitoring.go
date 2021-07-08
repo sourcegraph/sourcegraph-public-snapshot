@@ -1,13 +1,13 @@
 package monitoring
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/grafana-tools/sdk"
 )
 

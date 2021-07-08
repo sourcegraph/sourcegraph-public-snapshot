@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 

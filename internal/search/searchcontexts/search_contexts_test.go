@@ -2,13 +2,13 @@ package searchcontexts
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"

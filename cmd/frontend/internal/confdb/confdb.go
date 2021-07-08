@@ -3,12 +3,11 @@ package confdb
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 

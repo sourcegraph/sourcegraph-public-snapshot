@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
 

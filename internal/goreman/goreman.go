@@ -2,13 +2,14 @@
 package goreman
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )

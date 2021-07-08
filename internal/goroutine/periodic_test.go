@@ -2,10 +2,10 @@ package goroutine
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 )
 

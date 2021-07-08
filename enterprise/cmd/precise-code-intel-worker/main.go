@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
