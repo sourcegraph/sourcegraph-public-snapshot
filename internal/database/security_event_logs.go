@@ -7,15 +7,25 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
+type SecurityEventName string
+
+const (
+	SecurityEventNameSignOutAttempted SecurityEventName = "SignOutAttempted"
+	SecurityEventNameSignOutFailed    SecurityEventName = "SignOutFailed"
+	SecurityEventNameSignOutSucceeded SecurityEventName = "SignOutSucceeded"
+)
+
 // SecurityEvent contains information needed for logging a security-relevant event.
 type SecurityEvent struct {
-	Name            string
+	Name            SecurityEventName
 	URL             string
 	UserID          uint32
 	AnonymousUserID string
@@ -38,7 +48,7 @@ func SecurityEventLogs(db dbutil.DB) *SecurityEventLogStore {
 func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) error {
 	argument := e.Argument
 	if argument == nil {
-		argument = json.RawMessage([]byte(`{}`))
+		argument = []byte(`{}`)
 	}
 
 	_, err := s.Handle().DB().ExecContext(
@@ -57,4 +67,17 @@ func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) er
 		return errors.Wrap(err, "INSERT")
 	}
 	return nil
+}
+
+// LogEvent will log security events.
+func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) {
+	// We don't want to begin logging authentication or authorization events in
+	// on-premises installations yet.
+	if !envvar.SourcegraphDotComMode() {
+		return
+	}
+
+	if err := s.Insert(ctx, e); err != nil {
+		log15.Error(string(e.Name), "err", err)
+	}
 }
