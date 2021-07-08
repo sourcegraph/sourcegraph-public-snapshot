@@ -4,8 +4,8 @@ package schema
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/cockroachdb/errors"
 )
 
 // AWSCodeCommitConnection description: Configuration for a connection to AWS CodeCommit.
