@@ -8,6 +8,12 @@ import { map } from 'rxjs/operators'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    ConnectionContainer,
+    ConnectionList,
+    ConnectionSummary,
+    ShowMoreButton,
+} from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -46,8 +52,6 @@ interface Props
  */
 export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
     telemetryService,
-    history,
-    location,
     match,
     user,
     newToken,
@@ -78,7 +82,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
     >({
         query: ACCESS_TOKENS,
         variables: {
-            first: 20,
+            first: 5,
             user: user.id,
         },
         getConnection: data => {
@@ -107,36 +111,28 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                 className="mb-3"
             />
             <Container>
-                {loading && <LoadingSpinner className="icon-inline" />}
-                {connection?.nodes?.map((node, index) => (
-                    <AccessTokenNode key={index} node={node} showSubject={false} afterDelete={onDeleteAccessToken} />
-                ))}
-                {connection?.pageInfo?.hasNextPage && (
-                    <button type="button" className="btn btn-sm btn-link" onClick={fetchMore}>
-                        Show more
-                    </button>
-                )}
-                {/* <FilteredConnection<AccessTokenFields, Omit<AccessTokenNodeProps, 'node'>>
-                    listClassName="list-group list-group-flush"
-                    noun="access token"
-                    pluralNoun="access tokens"
-                    queryConnection={queryUserAccessTokens}
-                    nodeComponent={AccessTokenNode}
-                    nodeComponentProps={{
-                        afterDelete: onDeleteAccessToken,
-                        showSubject: false,
-                        newToken,
-                    }}
-                    defaultFirst={5}
-                    updates={accessTokenUpdates}
-                    hideSearch={true}
-                    noSummaryIfAllNodesVisible={true}
-                    history={history}
-                    location={location}
-                    emptyElement={
-                        <p className="text-muted text-center w-100 mb-0">You don't have any access tokens.</p>
-                    }
-                /> */}
+                <ConnectionContainer>
+                    {loading && <LoadingSpinner className="icon-inline" />}
+                    <ConnectionList className="list-group list-group-flush">
+                        {connection?.nodes?.map((node, index) => (
+                            <AccessTokenNode
+                                key={index}
+                                node={node}
+                                showSubject={false}
+                                afterDelete={onDeleteAccessToken}
+                            />
+                        ))}
+                    </ConnectionList>
+                    {connection && (
+                        <div className="filtered-connection__summary-container">
+                            {!connection?.pageInfo?.hasNextPage && (
+                                // TODO: check if valid with noSummaryIfAllNodesVisible
+                                <p className="text-muted text-center w-100 mb-0">You don't have any access tokens.</p>
+                            )}
+                            {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        </div>
+                    )}
+                </ConnectionContainer>
             </Container>
         </div>
     )

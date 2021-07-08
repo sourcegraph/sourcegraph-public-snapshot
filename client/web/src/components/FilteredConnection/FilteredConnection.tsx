@@ -313,9 +313,6 @@ export class FilteredConnection<
                                 share()
                             )
 
-                        console.log('result')
-                        console.log(result)
-
                         return (shouldRefresh
                             ? merge(
                                   result,

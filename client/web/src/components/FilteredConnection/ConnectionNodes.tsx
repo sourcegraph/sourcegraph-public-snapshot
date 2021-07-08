@@ -6,6 +6,7 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 
 import { ConnectionNodesSummary } from './ConnectionNodesSummary'
 import { Connection } from './ConnectionType'
+import { ConnectionList, ShowMoreButton } from './generic-ui'
 import { hasID } from './utils'
 
 /**
@@ -118,7 +119,7 @@ export const getTotalCount = <N,>({ totalCount, nodes, pageInfo }: Connection<N>
 export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     nodeComponent: NodeComponent,
     nodeComponentProps,
-    listComponent: ListComponent = 'ul',
+    listComponent = 'ul',
     listClassName,
     summaryClassName,
     headComponent: HeadComponent,
@@ -168,7 +169,7 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
         <>
             <div className={summaryContainerClassName}>{connectionQuery && summary}</div>
             {connection.nodes.length > 0 && (
-                <ListComponent className={classNames('filtered-connection__nodes', listClassName)} data-testid="nodes">
+                <ConnectionList as={listComponent} className={listClassName}>
                     {HeadComponent && (
                         <HeadComponent
                             nodes={connection.nodes}
@@ -176,25 +177,15 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
                             {...headComponentProps!}
                         />
                     )}
-                    {ListComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
+                    {listComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
                     {FootComponent && <FootComponent nodes={connection.nodes} />}
-                </ListComponent>
+                </ConnectionList>
             )}
             {!loading && (
                 <div className={summaryContainerClassName}>
                     {!connectionQuery && summary}
                     {!noShowMore && hasNextPage && (
-                        <button
-                            type="button"
-                            className={classNames(
-                                'btn btn-sm filtered-connection__show-more',
-                                isRedesignEnabled ? 'btn-link' : 'btn-secondary',
-                                showMoreClassName
-                            )}
-                            onClick={onShowMore}
-                        >
-                            Show more
-                        </button>
+                        <ShowMoreButton onClick={onShowMore} className={showMoreClassName} />
                     )}
                 </div>
             )}

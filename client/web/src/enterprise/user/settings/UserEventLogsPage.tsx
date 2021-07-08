@@ -11,6 +11,12 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
+import {
+    ConnectionContainer,
+    ConnectionSummary,
+    ShowMoreButton,
+    ConnectionList,
+} from '../../../components/FilteredConnection/generic-ui'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
@@ -92,6 +98,7 @@ export interface UserEventLogsPageProps
  */
 export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> = ({
     telemetryService,
+    // TODO: Support URL updating
     history,
     location,
     user,
@@ -100,6 +107,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])
 
+    // TODO: Support loading
     const { connection, loading, error, fetchMore } = usePaginatedConnection<
         UserEventLogsResult,
         UserEventLogsVariables,
@@ -124,26 +132,24 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
             <PageHeader path={[{ text: 'Event log' }]} headingElement="h2" className="mb-3" />
 
             <Container className="mb-3">
-                {connection?.nodes.map((node, index) => (
-                    <UserEventNode key={index} node={node} />
-                ))}
-                {connection?.pageInfo?.hasNextPage && (
-                    <button type="button" className="btn btn-sm btn-link" onClick={fetchMore}>
-                        Show more
-                    </button>
-                )}
-                {/* <FilteredConnection<UserEventLogFields, {}>
-                    key="chronological"
-                    defaultFirst={50}
-                    className="list-group list-group-flush"
-                    hideSearch={true}
-                    noun="user event"
-                    pluralNoun="user events"
-                    queryConnection={queryUserEventLogs}
-                    nodeComponent={UserEventNode}
-                    history={history}
-                    location={location}
-                /> */}
+                <ConnectionContainer className="list-group list-group-flush">
+                    <ConnectionList>
+                        {connection?.nodes.map((node, index) => (
+                            <UserEventNode key={index} node={node} />
+                        ))}
+                    </ConnectionList>
+                    {connection && (
+                        <div className="filtered-connection__summary-container">
+                            <ConnectionSummary
+                                connection={connection}
+                                noun="user event"
+                                pluralNoun="user events"
+                                totalCount={connection.totalCount}
+                            />
+                            {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        </div>
+                    )}
+                </ConnectionContainer>
             </Container>
         </>
     )
