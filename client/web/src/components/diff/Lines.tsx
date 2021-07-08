@@ -94,12 +94,12 @@ export const Line: React.FunctionComponent<Line> = ({
                 </td>
             )}
             <td
-                className={`diff-hunk--split__line diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
+                className={`diff-hunk--split__line align-baseline diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
                 // eslint-disable-next-line react/forbid-dom-props
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
-                <div className="diff-hunk--split__line--code d-inline-block">
+                <div className="diff-hunk--split__line--code d-inline">
                     <div dangerouslySetInnerHTML={{ __html: html }} data-diff-marker={diffHunkTypeIndicators[kind]} />
                     {decorations.map((decoration, index) => {
                         const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)

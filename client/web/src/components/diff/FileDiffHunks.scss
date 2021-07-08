@@ -74,6 +74,9 @@ $color-deletion: $red;
             // This cell is always empty opacity will not affect any content
             opacity: 0.5;
         }
+        div {
+            display: inline;
+        }
     }
 
     &--split {
