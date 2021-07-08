@@ -1,9 +1,15 @@
 import { ApolloError } from '@apollo/client'
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Connection } from '@sourcegraph/web/src/components/FilteredConnection'
+import {
+    ConnectionContainer,
+    ConnectionList,
+    ConnectionSummary,
+    ShowMoreButton,
+} from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
 
 import {
     BatchChangesCodeHostFields,
@@ -85,16 +91,29 @@ const CodeHostConnectionNodesUI: React.FunctionComponent<{
         return <LoadingSpinner className="icon-inline" />
     }
 
+    // TODO: Check useUrlQuery; false
+
     return (
-        <>
-            {connection.nodes.map((node, index) => (
-                <CodeHostConnectionNode key={index} node={node} userID={userID} />
-            ))}
-            {connection?.pageInfo?.hasNextPage && (
-                <button type="button" className="btn btn-sm btn-link" onClick={fetchMore}>
-                    Show more
-                </button>
+        <ConnectionContainer className="mb-3">
+            <ConnectionList className="list-group">
+                {connection.nodes.map((node, index) => (
+                    <CodeHostConnectionNode key={index} node={node} userID={userID} />
+                ))}
+            </ConnectionList>
+            {connection && (
+                <div className="filtered-connection__summary-container">
+                    {!connection.pageInfo?.hasNextPage && (
+                        // TODO does this hide summary if all nodes visible?
+                        <ConnectionSummary
+                            connection={connection}
+                            noun="code host"
+                            pluralNoun="code hosts"
+                            totalCount={connection.totalCount}
+                        />
+                    )}
+                    {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                </div>
             )}
-        </>
+        </ConnectionContainer>
     )
 }

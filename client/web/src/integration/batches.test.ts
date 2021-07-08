@@ -809,33 +809,32 @@ describe('Batches', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/settings/batch-changes')
             // View settings page.
             await driver.page.waitForSelector('.test-batches-settings-page')
-            await new Promise(resolve => setTimeout(resolve, 20000))
-            // // Wait for list to load.
-            // await driver.page.waitForSelector('.test-code-host-connection-node')
-            // // Check no credential is configured.
-            // assert.strictEqual(await driver.page.$('.test-code-host-connection-node-enabled'), null)
-            // // Click "Add token".
-            // await driver.page.click('.test-code-host-connection-node-btn-add')
-            // // Wait for modal to appear.
-            // await driver.page.waitForSelector('.test-add-credential-modal')
-            // // Enter token.
-            // await driver.page.type('.test-add-credential-modal-input', 'SUPER SECRET')
-            // // Click add.
-            // await driver.page.click('.test-add-credential-modal-submit')
-            // // Await list reload and expect to be enabled.
-            // await driver.page.waitForSelector('.test-code-host-connection-node-enabled')
-            // // No modal open.
-            // assert.strictEqual(await driver.page.$('.test-add-credential-modal'), null)
-            // // Click "Remove" to remove the token.
-            // await driver.page.click('.test-code-host-connection-node-btn-remove')
-            // // Wait for modal to appear.
-            // await driver.page.waitForSelector('.test-remove-credential-modal')
-            // // Click confirmation.
-            // await driver.page.click('.test-remove-credential-modal-submit')
-            // // Await list reload and expect to be disabled again.
-            // await driver.page.waitForSelector('.test-code-host-connection-node-disabled')
-            // // No modal open.
-            // assert.strictEqual(await driver.page.$('.test-remove-credential-modal'), null)
+            // Wait for list to load.
+            await driver.page.waitForSelector('.test-code-host-connection-node')
+            // Check no credential is configured.
+            assert.strictEqual(await driver.page.$('.test-code-host-connection-node-enabled'), null)
+            // Click "Add token".
+            await driver.page.click('.test-code-host-connection-node-btn-add')
+            // Wait for modal to appear.
+            await driver.page.waitForSelector('.test-add-credential-modal')
+            // Enter token.
+            await driver.page.type('.test-add-credential-modal-input', 'SUPER SECRET')
+            // Click add.
+            await driver.page.click('.test-add-credential-modal-submit')
+            // Await list reload and expect to be enabled.
+            await driver.page.waitForSelector('.test-code-host-connection-node-enabled')
+            // No modal open.
+            assert.strictEqual(await driver.page.$('.test-add-credential-modal'), null)
+            // Click "Remove" to remove the token.
+            await driver.page.click('.test-code-host-connection-node-btn-remove')
+            // Wait for modal to appear.
+            await driver.page.waitForSelector('.test-remove-credential-modal')
+            // Click confirmation.
+            await driver.page.click('.test-remove-credential-modal-submit')
+            // Await list reload and expect to be disabled again.
+            await driver.page.waitForSelector('.test-code-host-connection-node-disabled')
+            // No modal open.
+            assert.strictEqual(await driver.page.$('.test-remove-credential-modal'), null)
         })
     })
 })
