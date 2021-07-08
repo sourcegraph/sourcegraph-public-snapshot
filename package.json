@@ -253,7 +253,7 @@
     "license-checker": "^25.0.1",
     "message-port-polyfill": "^0.2.0",
     "mime-types": "^2.1.28",
-    "mini-css-extract-plugin": "^2.0.0",
+    "mini-css-extract-plugin": "^2.1.0",
     "mocha": "^8.3.2",
     "mockdate": "^3.0.2",
     "monaco-editor-webpack-plugin": "^3.1.0",
@@ -301,7 +301,7 @@
     "utc-version": "^2.0.2",
     "vm-browserify": "^1.1.2",
     "web-ext": "^4.2.0",
-    "webpack": "5.41.0",
+    "webpack": "5.42.1",
     "webpack-bundle-analyzer": "^4.4.2",
     "webpack-cli": "^4.7.2",
     "webpack-dev-server": "4.0.0-beta.3",
@@ -404,7 +404,6 @@
   },
   "resolutions": {
     "history": "4.5.1",
-    "cssnano": "4.1.10",
-    "webpack": "5.41.0"
+    "cssnano": "4.1.10"
   }
 }
