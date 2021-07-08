@@ -50,7 +50,7 @@ var ErrNotFound = errors.New("AWS CodeCommit repository not found")
 // IsNotFound reports whether err is a AWS CodeCommit API not-found error or the
 // equivalent cached response error.
 func IsNotFound(err error) bool {
-	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
+	if errors.Is(err, ErrNotFound) {
 		return true
 	}
 	var rdnee codecommittypes.RepositoryDoesNotExistException
@@ -60,8 +60,5 @@ func IsNotFound(err error) bool {
 // IsUnauthorized reports whether err is a AWS CodeCommit API unauthorized error.
 func IsUnauthorized(err error) bool {
 	var ae smithy.APIError
-	if errors.As(err, &ae) {
-		return ae.ErrorCode() == "SignatureDoesNotMatch"
-	}
-	return false
+	return errors.As(err, &ae) && ae.ErrorCode() == "SignatureDoesNotMatch"
 }

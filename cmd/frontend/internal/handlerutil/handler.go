@@ -67,7 +67,7 @@ func httpErrCode(r *http.Request, err error) int {
 	// the connection. If that is the case, return 499. We do not just check
 	// if the client closed the connection, in case we failed due to another
 	// reason leading to the client closing the connection.
-	if errors.Cause(err) == context.Canceled && r.Context().Err() == context.Canceled {
+	if errors.Is(err, context.Canceled) && errors.Is(r.Context().Err(), context.Canceled) {
 		return 499
 	}
 	return errcode.HTTP(err)
