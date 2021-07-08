@@ -110,7 +110,7 @@ const (
 )
 
 func createAccessToken(ctx context.Context, db dbutil.DB, userID int32) (string, error) {
-	_, token, err := database.AccessTokens(db).Create(ctx, userID, []string{accessTokenNote}, accessTokenNote, userID)
+	_, token, err := database.AccessTokens(db).Create(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
 	if err != nil {
 		return "", err
 	}

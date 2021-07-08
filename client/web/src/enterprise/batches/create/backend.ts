@@ -2,22 +2,25 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    BatchSpecExecutionFields,
+    BatchSpecExecutionCreateFields,
     CreateBatchSpecExecutionResult,
     CreateBatchSpecExecutionVariables,
 } from '../../../graphql-operations'
 
-export async function createBatchSpecExecution(spec: string): Promise<BatchSpecExecutionFields> {
+export async function createBatchSpecExecution(spec: string): Promise<BatchSpecExecutionCreateFields> {
     const result = await requestGraphQL<CreateBatchSpecExecutionResult, CreateBatchSpecExecutionVariables>(
         gql`
             mutation CreateBatchSpecExecution($spec: String!) {
                 createBatchSpecExecution(spec: $spec) {
-                    ...BatchSpecExecutionFields
+                    ...BatchSpecExecutionCreateFields
                 }
             }
 
-            fragment BatchSpecExecutionFields on BatchSpecExecution {
+            fragment BatchSpecExecutionCreateFields on BatchSpecExecution {
                 id
+                namespace {
+                    url
+                }
             }
         `,
         { spec }

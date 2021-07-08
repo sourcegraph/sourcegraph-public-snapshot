@@ -2861,6 +2861,12 @@ type BatchSpecExecution implements Node {
     state: BatchSpecExecutionState!
 
     """
+    The time when the execution was created at. At this time, it is also added to
+    the queue for execution.
+    """
+    createdAt: DateTime!
+
+    """
     The time when the execution started. Null, if the execution hasn't started yet.
     """
     startedAt: DateTime

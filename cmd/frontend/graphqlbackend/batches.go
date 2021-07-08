@@ -713,6 +713,7 @@ type BatchSpecExecutionResolver interface {
 	ID() graphql.ID
 	InputSpec() string
 	State() string
+	CreatedAt() DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	Failure() *string
