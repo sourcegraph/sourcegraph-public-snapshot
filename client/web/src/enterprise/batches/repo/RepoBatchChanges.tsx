@@ -8,6 +8,7 @@ import { Container } from '@sourcegraph/wildcard'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import { BatchChangesListEmpty } from '../list/BatchChangesListEmpty'
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
@@ -73,7 +74,6 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                 nodeComponent={BatchChangeNode}
                 nodeComponentProps={{
                     isLightTheme,
-                    viewerCanAdminister,
                     history,
                     location,
                     queryExternalChangesetWithFileDiffs,
@@ -89,13 +89,7 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={
-                    <div className="w-100 py-5 text-center">
-                        <p>
-                            <strong>No batch changes have been created</strong>
-                        </p>
-                    </div>
-                }
+                emptyElement={<BatchChangesListEmpty />}
             />
         </Container>
     )

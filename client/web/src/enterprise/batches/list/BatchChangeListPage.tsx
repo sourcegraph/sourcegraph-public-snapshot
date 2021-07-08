@@ -133,9 +133,9 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
             />
             <BatchChangesListIntro licensed={licensed} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-            {selectedTab === 'gettingStarted' && <BatchChangesListEmpty />}
-            {selectedTab === 'batchChanges' && (
-                <Container className="mb-4">
+            <Container className="mb-4">
+                {selectedTab === 'gettingStarted' && <BatchChangesListEmpty />}
+                {selectedTab === 'batchChanges' && (
                     <FilteredConnection<ListBatchChange, Omit<BatchChangeNodeProps, 'node'>>
                         {...props}
                         location={location}
@@ -154,8 +154,8 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         noSummaryIfAllNodesVisible={true}
                         emptyElement={<BatchChangeListEmptyElement location={location} />}
                     />
-                </Container>
-            )}
+                )}
+            </Container>
         </>
     )
 }
