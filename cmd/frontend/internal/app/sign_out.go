@@ -64,11 +64,18 @@ func logSignOutEvent(r *http.Request, db dbutil.DB, name database.SecurityEventN
 	ctx := r.Context()
 	a := actor.FromContext(ctx)
 
+	var anonymousID string
+	// TODO: We have multiple places in our codebase where we grab this cookie, we
+	// should centralise it
+	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil && cookie.Value != "" {
+		anonymousID = cookie.Value
+	}
+
 	event := &database.SecurityEvent{
 		Name:            name,
 		URL:             r.URL.Path,
 		UserID:          uint32(a.UID),
-		AnonymousUserID: "",
+		AnonymousUserID: anonymousID,
 		Argument:        nil,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
