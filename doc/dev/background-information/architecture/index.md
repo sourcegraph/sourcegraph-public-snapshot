@@ -115,7 +115,7 @@ If you want to learn more about code insights:
   - Commit search to find historical commits to search over
 - [Code Syncing](#code-syncing)
   - The WIP code insights backend has direct dependencies on `gitserver` and `repo-updater`
-- Future: [Batch changes](#batch-changes)
+- Future: [Batch Changes](#batch-changes)
   - "Create a batch change from a code insight" flow
 - Future: [Code monitoring](#code-monitoring)
   - "Create a code monitor from a code insight" flow
