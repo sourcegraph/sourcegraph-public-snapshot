@@ -1000,14 +1000,14 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 	nodes := make([]query.Node, 0, len(matches))
 	for _, match := range matches {
-		repoResolver, ok := match.(*result.RepoMatch)
+		repoMatch, ok := match.(*result.RepoMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected type %T, but got %T", &RepositoryResolver{}, match)
+			return nil, fmt.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
 		}
 
 		nodes = append(nodes, query.Parameter{
 			Field: query.FieldRepo,
-			Value: "^" + regexp.QuoteMeta(string(repoResolver.Name)) + "$",
+			Value: "^" + regexp.QuoteMeta(string(repoMatch.Name)) + "$",
 		})
 	}
 
