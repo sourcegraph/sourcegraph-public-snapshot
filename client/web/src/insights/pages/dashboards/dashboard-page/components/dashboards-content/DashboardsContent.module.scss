@@ -1,4 +1,6 @@
 .dashboard-select {
+    // This max-width value is synced with max width of dropdown panel
+    // of the dropdown component.
     max-width: 22.75rem;
     flex-grow: 1;
     flex-shrink: 1;
