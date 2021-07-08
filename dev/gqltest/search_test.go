@@ -1086,6 +1086,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{File: 1},
 			},
 			{
+				name:   `file contains content predicate`, // should be the same as the `select file` test
+				query:  `repo:go-diff patterntype:literal file:contains.content(HunkNoChunkSize)`,
+				counts: counts{File: 1},
+			},
+			{
 				name:   `or statement merges file`,
 				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
 				counts: counts{File: 1},
