@@ -19,6 +19,7 @@ import {
     ChangesetStatusClosed,
     ChangesetStatusMerged,
 } from '../detail/changesets/ChangesetStatusCell'
+import { NewBatchChangeButton } from '../list/NewBatchChangeButton'
 
 import {
     queryRepoBatchChanges as _queryRepoBatchChanges,
@@ -30,6 +31,7 @@ interface BatchChangeRepoPageProps extends ThemeProps {
     history: H.History
     location: H.Location
     repo: RepositoryFields
+    isSourcegraphDotCom: boolean
     /** For testing only. */
     queryRepoBatchChangeStats?: typeof _queryRepoBatchChangeStats
     /** For testing only. */
@@ -40,6 +42,7 @@ interface BatchChangeRepoPageProps extends ThemeProps {
 
 export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPageProps> = ({
     repo,
+    isSourcegraphDotCom,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
     ...context
 }) => {
@@ -50,17 +53,32 @@ export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPagePro
     )
     const hasChangesets = stats?.changesetsStats.total
 
+    const createButton = (
+        <NewBatchChangeButton
+            to={`${isSourcegraphDotCom ? 'https://about.sourcegraph.com' : ''}/batch-changes/create`}
+        />
+    )
+
     return (
         <Page>
             <PageTitle title="Batch Changes" />
-            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]} headingElement="h1" />
-            {hasChangesets && stats?.batchChangesDiffStat && stats?.changesetsStats && (
+            <PageHeader
+                path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
+                headingElement="h1"
+                actions={hasChangesets ? undefined : createButton}
+                description={
+                    hasChangesets
+                        ? undefined
+                        : 'Run custom code over this repository and others, and manage the resulting changesets.'
+                }
+            />
+            {hasChangesets && stats?.batchChangesDiffStat && stats?.changesetsStats ? (
                 <div className="d-flex align-items-center mt-4 mb-3">
                     <h2 className="mb-0 pb-1">{repoDisplayName}</h2>
                     <DiffStat className="d-flex flex-1 ml-2" expandedCounts={true} {...stats.batchChangesDiffStat} />
                     <StatsBar stats={stats.changesetsStats} />
                 </div>
-            )}
+            ) : null}
             {hasChangesets ? (
                 <p>
                     Batch changes has created {stats?.changesetsStats.total} changesets on {repoDisplayName}

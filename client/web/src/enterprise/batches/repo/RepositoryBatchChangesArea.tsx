@@ -26,6 +26,7 @@ export interface RepositoryBatchChangesAreaPageProps
      */
     repo: RepositoryFields
     globbing: boolean
+    isSourcegraphDotCom: boolean
 }
 
 /**

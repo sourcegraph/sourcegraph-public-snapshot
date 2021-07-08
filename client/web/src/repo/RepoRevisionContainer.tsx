@@ -109,7 +109,7 @@ interface RepoRevisionContainerProps
     history: H.History
 
     globbing: boolean
-
+    isSourcegraphDotCom: boolean
     showBatchChanges: boolean
 }
 

@@ -1,11 +1,9 @@
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
@@ -30,6 +28,7 @@ import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
+import { NewBatchChangeButton } from './NewBatchChangeButton'
 
 export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'location'> {
     headingElement: 'h1' | 'h2'
@@ -127,7 +126,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
-                actions={<NewBatchChangeButton location={location} />}
+                actions={<NewBatchChangeButton to={`${location.pathname}/create`} />}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             />
@@ -193,16 +192,8 @@ const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyE
         <p>
             <strong>No batch changes have been created</strong>
         </p>
-        <NewBatchChangeButton location={location} />
+        <NewBatchChangeButton to={`${location.pathname}/create`} />
     </div>
-)
-
-interface NewBatchChangeButtonProps extends Pick<RouteComponentProps, 'location'> {}
-
-const NewBatchChangeButton: React.FunctionComponent<NewBatchChangeButtonProps> = ({ location }) => (
-    <Link to={`${location.pathname}/create`} className="btn btn-primary">
-        <PlusIcon className="icon-inline" /> Create
-    </Link>
 )
 
 const BatchChangeListTabHeader: React.FunctionComponent<{
