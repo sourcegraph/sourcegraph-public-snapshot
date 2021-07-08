@@ -1148,8 +1148,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:   `file contains content predicate type diff`,
-				query:  `type:diff repo:go-diff file:contains(after_success)`, // matches .travis.yml and its 8 commits
-				counts: counts{Commit: 8},
+				query:  `type:diff repo:go-diff file:contains(after_success)`, // matches .travis.yml and its 10 commits
+				counts: counts{Commit: 10},
 			},
 		}
 
