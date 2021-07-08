@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"syscall"
 	"time"
 
@@ -158,15 +157,11 @@ type roundTripper struct{}
 func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultTransport.RoundTrip(req)
 
-	// there isn't a great way to check for conn refused, sadly https://github.com/golang/go/issues/9424
-	// so check for specific syscall errors to detect if the provided prometheus server is
-	// not accessible in this deployment. we also treat deadline exceeds as an indicator.
-	var syscallErr *os.SyscallError
-	if errors.As(err, &syscallErr) {
-		if syscallErr.Err == syscall.ECONNREFUSED || syscallErr.Err == syscall.EHOSTUNREACH {
-			err = ErrPrometheusUnavailable
-		}
-	} else if errors.Is(err, context.DeadlineExceeded) {
+	// Check for specific syscall errors to detect if the provided prometheus server is
+	// not accessible in this deployment. Treat deadline exceeded as an indicator as well.
+	//
+	// See https://github.com/golang/go/issues/9424
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.EHOSTUNREACH) {
 		err = ErrPrometheusUnavailable
 	}
 

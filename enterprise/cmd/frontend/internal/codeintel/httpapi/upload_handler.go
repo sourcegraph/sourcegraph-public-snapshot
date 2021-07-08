@@ -419,10 +419,10 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 // formatAWSError returns the unwrapped, root AWS/S3 error. This method returns
 // an empty string when the given error value is neither an AWS nor an S3 error.
 func formatAWSError(err error) string {
-	var multipartErr manager.MultiUploadFailure
-	if !errors.As(err, &multipartErr) {
-		return ""
+	var e manager.MultiUploadFailure
+	if errors.As(err, &e) {
+		return e.Error()
 	}
 
-	return multipartErr.Error()
+	return ""
 }

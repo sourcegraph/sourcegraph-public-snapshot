@@ -28,9 +28,5 @@ func (RevisionNotFoundError) NotFound() bool {
 
 // IsRevisionNotFound reports if err is a RevisionNotFoundError.
 func IsRevisionNotFound(err error) bool {
-	// Note we use As instead of Is here to ensure that we do not try
-	// compare struct fields for equality; we only care that the type
-	// of the error value matches.
-	var e *RevisionNotFoundError
-	return errors.As(err, &e)
+	return errors.HasType(err, &RevisionNotFoundError{})
 }

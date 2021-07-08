@@ -284,12 +284,7 @@ func (s *s3Store) create(ctx context.Context) error {
 		Bucket: aws.String(s.bucket),
 	})
 
-	var bae *s3types.BucketAlreadyExists
-	if errors.As(err, &bae) {
-		return nil
-	}
-	var baoby *s3types.BucketAlreadyOwnedByYou
-	if errors.As(err, &baoby) {
+	if errors.HasType(err, &s3types.BucketAlreadyExists{}) || errors.HasType(err, &s3types.BucketAlreadyOwnedByYou{}) {
 		return nil
 	}
 
