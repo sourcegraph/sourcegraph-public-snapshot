@@ -17,6 +17,10 @@ export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
+    selectionEnabled: boolean
+    allSelected: boolean
+    onSelection: (id: string, checked: boolean) => void
+
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
@@ -29,6 +33,9 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
     location,
     authenticatedUser,
     isLightTheme,
+    selectionEnabled,
+    allSelected,
+    onSelection,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
@@ -49,6 +56,9 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
                 location={location}
                 isLightTheme={isLightTheme}
                 authenticatedUser={authenticatedUser}
+                selectionEnabled={selectionEnabled}
+                allSelected={allSelected}
+                onSelection={onSelection}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />

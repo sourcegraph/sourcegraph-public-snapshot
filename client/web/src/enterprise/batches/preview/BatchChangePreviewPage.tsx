@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -14,7 +14,12 @@ import { PageTitle } from '../../../components/PageTitle'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
-import { applyBatchChange, createBatchChange, fetchBatchSpecById as _fetchBatchSpecById } from './backend'
+import {
+    applyBatchChange,
+    createBatchChange,
+    fetchBatchSpecById as _fetchBatchSpecById,
+    queryAllChangesetSpecIDs,
+} from './backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
@@ -46,6 +51,25 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 ),
             [specID, fetchBatchSpecById]
         )
+    )
+
+    const [selectedChangesetSpecs, setSelectedChangesetSpecs] = useState<Set<string> | 'all'>(new Set())
+    const onSelectAllChangesetSpecs = useCallback(() => setSelectedChangesetSpecs('all'), [setSelectedChangesetSpecs])
+    const onDeselectAllChangesetSpecs = useCallback(() => setSelectedChangesetSpecs(new Set()), [
+        setSelectedChangesetSpecs,
+    ])
+    const onToggleChangesetSpec = useCallback(
+        (id: string, selected: boolean) => {
+            const updated = new Set(selectedChangesetSpecs)
+            if (selected) {
+                updated.add(id)
+            } else {
+                updated.delete(id)
+            }
+
+            setSelectedChangesetSpecs(updated)
+        },
+        [selectedChangesetSpecs, setSelectedChangesetSpecs]
     )
 
     useEffect(() => {
@@ -124,7 +148,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 viewerCanAdminister={spec.viewerCanAdminister}
             />
             <Description description={spec.description.description} />
-            <BatchChangePreviewTabs spec={spec} {...props} />
+            <BatchChangePreviewTabs spec={spec} allSelected={selectedChangesetSpecs === 'all'} {...props} />
         </div>
     )
 }

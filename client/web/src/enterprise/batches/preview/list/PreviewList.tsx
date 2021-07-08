@@ -21,7 +21,12 @@ interface Props extends ThemeProps {
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
-    showPublishUI: boolean
+
+    selectionEnabled: boolean
+    allSelected: boolean
+    onSelection: (id: string, checked: boolean) => void
+    onSelectAll: () => void
+    onDeselectAll: () => void
 
     /** For testing only. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
@@ -39,8 +44,13 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     history,
     location,
     authenticatedUser,
-    showPublishUI,
     isLightTheme,
+
+    selectionEnabled,
+    allSelected,
+    onSelection,
+    onSelectAll,
+    onDeselectAll,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
@@ -78,6 +88,9 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                     authenticatedUser,
                     queryChangesetSpecFileDiffs,
                     expandChangesetDescriptions,
+                    selectionEnabled,
+                    allSelected,
+                    onSelection,
                 }}
                 queryConnection={queryChangesetApplyPreviewConnection}
                 hideSearch={true}
@@ -90,6 +103,11 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 listComponent="div"
                 listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}
+                headComponentProps={{
+                    allSelected,
+                    onSelectAll,
+                    onDeselectAll,
+                }}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
                 emptyElement={

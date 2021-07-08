@@ -39,6 +39,10 @@ export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
+    selectionEnabled: boolean
+    allSelected: boolean
+    onSelection: (id: string, checked: boolean) => void
+
     /** Used for testing. **/
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. **/
@@ -51,6 +55,10 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     history,
     location,
     authenticatedUser,
+
+    selectionEnabled,
+    allSelected,
+    onSelection,
 
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions = false,
@@ -78,9 +86,11 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
+            {selectionEnabled &&()
             <span className={classNames(styles.visibleChangesetApplyPreviewNodeListCell)}>
-                {canSetPublishedState(node) ? 'true' : 'false'}
+                <input type="checkbox"></input>
             </span>
+}
             <VisibleChangesetApplyPreviewNodeStatusCell
                 node={node}
                 className={classNames(
@@ -115,7 +125,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
             </div>
             <div className="d-flex justify-content-center align-content-center align-self-stretch">
                 {node.delta.commitMessageChanged && (
-                    <div
+                    <di
                         className={classNames(
                             styles.visibleChangesetApplyPreviewNodeCommitChangeEntry,
                             'd-flex justify-content-center align-items-center flex-column mx-1'
