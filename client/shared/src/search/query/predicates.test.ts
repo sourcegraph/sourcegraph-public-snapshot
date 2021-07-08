@@ -41,6 +41,12 @@ describe('scanPredicate', () => {
             '{"path":["contains","file"],"parameters":"(stuff)"}'
         )
     })
+
+    test('scan recognized file.contains syntax', () => {
+        expect(scanPredicate('file', 'contains(stuff)')).toMatchInlineSnapshot(
+            '{"path":["contains"],"parameters":"(stuff)"}'
+        )
+    })
 })
 
 describe('resolveAccess', () => {
