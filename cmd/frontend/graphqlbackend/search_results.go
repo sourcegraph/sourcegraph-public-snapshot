@@ -477,10 +477,10 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 
 	args := search.TextParameters{
 		PatternInfo: p,
-		Query:       r.Query, // TODO(rvantonder) remove setQuery and use q here.
+		Query:       q,
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil || r.stream != nil,
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || r.stream != nil,
 
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
@@ -495,14 +495,14 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextParameters) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	return r.resultsWithTimeoutSuggestion(ctx)
+	return r.resultsWithTimeoutSuggestion(ctx, args)
 }
 
 // union returns the union of two sets of search results and merges common search data.
@@ -701,12 +701,20 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Concat:
 			r.invalidateCache()
 			r.Query = q.ToParseTree()
-			return r.evaluateLeaf(ctx)
+			args, err := r.toTextParameters(q.ToParseTree())
+			if err != nil {
+				return &SearchResults{}, err
+			}
+			return r.evaluateLeaf(ctx, args)
 		}
 	case query.Pattern:
 		r.invalidateCache()
 		r.Query = q.ToParseTree()
-		return r.evaluateLeaf(ctx)
+		args, err := r.toTextParameters(q.ToParseTree())
+		if err != nil {
+			return &SearchResults{}, err
+		}
+		return r.evaluateLeaf(ctx, args)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -719,8 +727,12 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.invalidateCache()
-		r.Query = query.ToNodes(q.Parameters)
-		return r.evaluateLeaf(ctx)
+		r.Query = q.ToParseTree()
+		args, err := r.toTextParameters(query.ToNodes(q.Parameters))
+		if err != nil {
+			return &SearchResults{}, err
+		}
+		return r.evaluateLeaf(ctx, args)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1003,12 +1015,8 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResults, error) {
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args *search.TextParameters) (*SearchResults, error) {
 	start := time.Now()
-	args, err := r.toTextParameters(r.Query)
-	if err != nil {
-		return nil, err
-	}
 	rr, err := r.doResults(ctx, args)
 
 	// If we encountered a context timeout, it indicates one of the many result
