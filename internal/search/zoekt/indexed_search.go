@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -329,8 +328,6 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 
 	// We use reposResolved to synchronize repo resolution and event processing.
 	reposResolved := make(chan struct{})
-
-	mu := sync.Mutex{}
 	var getRepoInputRev repoRevFunc
 	var repoRevMap map[string]*search.RepositoryRevisions
 
@@ -391,7 +388,6 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
 		// while we wait for repo resolution.
 		bufSender, cleanup := bufferedSender(240, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-
 			foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 
 			files := event.Files
@@ -410,49 +406,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 				return
 			}
 
-			matches := make([]result.Match, 0, len(files))
-			for _, file := range files {
-				fileLimitHit := false
-				mu.Lock()
-				repo, inputRevs, ok := getRepoInputRev(&file)
-				mu.Unlock()
-				if !ok {
-					continue
-				}
-
-				var lines []*result.LineMatch
-				if typ != SymbolRequest {
-					lines = zoektFileMatchToLineMatches(&file)
-				}
-
-				for _, inputRev := range inputRevs {
-					inputRev := inputRev // copy so we can take the pointer
-
-					var symbols []*result.SymbolMatch
-					if typ == SymbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
-					}
-					fm := result.FileMatch{
-						LineMatches: lines,
-						LimitHit:    fileLimitHit,
-						Symbols:     symbols,
-						File: result.File{
-							InputRev: &inputRev,
-							CommitID: api.CommitID(file.Version),
-							Repo:     repo,
-							Path:     file.FileName,
-						},
-					}
-					matches = append(matches, &fm)
-				}
-			}
-
-			c.Send(streaming.SearchEvent{
-				Results: matches,
-				Stats: streaming.Stats{
-					IsLimitHit: limitHit,
-				},
-			})
+			sendMatches(files, getRepoInputRev, typ, c, limitHit)
 		}))
 		defer cleanup()
 
@@ -546,43 +500,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 			return
 		}
 
-		matches := make([]result.Match, 0, len(files))
-		for _, file := range files {
-			repo, inputRevs := repos.getRepoInputRev(&file)
-
-			var lines []*result.LineMatch
-			if typ != SymbolRequest {
-				lines = zoektFileMatchToLineMatches(&file)
-			}
-
-			for _, inputRev := range inputRevs {
-				inputRev := inputRev // copy so we can take the pointer
-
-				var symbols []*result.SymbolMatch
-				if typ == SymbolRequest {
-					symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
-				}
-				fm := result.FileMatch{
-					LineMatches: lines,
-					LimitHit:    false, // TODO: Why do we always set LimitHit to false?
-					Symbols:     symbols,
-					File: result.File{
-						InputRev: &inputRev,
-						CommitID: api.CommitID(file.Version),
-						Repo:     repo,
-						Path:     file.FileName,
-					},
-				}
-				matches = append(matches, &fm)
-			}
-		}
-
-		c.Send(streaming.SearchEvent{
-			Results: matches,
-			Stats: streaming.Stats{
-				IsLimitHit: limitHit,
-			},
-		})
+		sendMatches(files, func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
+			repo, inputRevs := repos.getRepoInputRev(file)
+			return repo, inputRevs, true
+		}, typ, c, limitHit)
 	}))
 	if err != nil {
 		return err
@@ -600,6 +521,49 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 		c.Send(streaming.SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 	}
 	return nil
+}
+
+func sendMatches(files []zoekt.FileMatch, getRepoInputRev repoRevFunc, typ IndexedRequestType, c streaming.Sender, limitHit bool) {
+	matches := make([]result.Match, 0, len(files))
+	for _, file := range files {
+		repo, inputRevs, ok := getRepoInputRev(&file)
+		if !ok {
+			continue
+		}
+
+		var lines []*result.LineMatch
+		if typ != SymbolRequest {
+			lines = zoektFileMatchToLineMatches(&file)
+		}
+
+		for _, inputRev := range inputRevs {
+			inputRev := inputRev // copy so we can take the pointer
+
+			var symbols []*result.SymbolMatch
+			if typ == SymbolRequest {
+				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
+			}
+			// TODO: Why do we always set LimitHit to false?
+			fm := result.FileMatch{
+				LineMatches: lines,
+				Symbols:     symbols,
+				File: result.File{
+					InputRev: &inputRev,
+					CommitID: api.CommitID(file.Version),
+					Repo:     repo,
+					Path:     file.FileName,
+				},
+			}
+			matches = append(matches, &fm)
+		}
+	}
+
+	c.Send(streaming.SearchEvent{
+		Results: matches,
+		Stats: streaming.Stats{
+			IsLimitHit: limitHit,
+		},
+	})
 }
 
 // bufferedSender returns a buffered Sender with capacity cap, and a cleanup
