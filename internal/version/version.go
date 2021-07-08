@@ -1,13 +1,14 @@
 package version
 
 import (
-	"errors"
 	"expvar"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 const devVersion = "0.0.0+dev"                              // version string for unreleased development builds

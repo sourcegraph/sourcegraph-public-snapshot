@@ -2,11 +2,11 @@ package oobmigration
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 

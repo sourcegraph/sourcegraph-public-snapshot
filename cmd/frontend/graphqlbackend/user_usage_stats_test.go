@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -19,7 +17,7 @@ func TestUser_UsageStatistics(t *testing.T) {
 		}, nil
 	}
 	defer func() { usagestatsdeprecated.MockGetByUserID = nil }()
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `

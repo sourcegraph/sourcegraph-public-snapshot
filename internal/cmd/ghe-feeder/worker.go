@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v31/github"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"

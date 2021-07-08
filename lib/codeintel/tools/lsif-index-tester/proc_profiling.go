@@ -1,8 +1,9 @@
 package main
 
 import (
-	"errors"
 	"syscall"
+
+	"github.com/cockroachdb/errors"
 )
 
 // This whole file probably needs work to handle things like being run on different OSes

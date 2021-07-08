@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 

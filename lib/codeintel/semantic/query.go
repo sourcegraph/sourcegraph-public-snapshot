@@ -1,8 +1,6 @@
 package semantic
 
-import (
-	"errors"
-)
+import "github.com/cockroachdb/errors"
 
 type QueryResult struct {
 	Definitions []LocationData

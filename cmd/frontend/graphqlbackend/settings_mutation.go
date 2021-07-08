@@ -3,10 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/jsonx"
 

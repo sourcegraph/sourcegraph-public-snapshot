@@ -3,14 +3,14 @@ package httptestutil
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 func NewTest(h http.Handler) *Client {

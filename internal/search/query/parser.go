@@ -1,13 +1,14 @@
 package query
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/cockroachdb/errors"
 )
 
 /*

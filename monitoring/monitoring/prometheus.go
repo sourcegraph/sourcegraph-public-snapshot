@@ -1,10 +1,10 @@
 package monitoring
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/prometheus/common/model"
 )
 

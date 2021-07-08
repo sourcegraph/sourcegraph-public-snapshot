@@ -3,7 +3,6 @@ package search
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"regexp"
 	"regexp/syntax"
@@ -13,6 +12,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
