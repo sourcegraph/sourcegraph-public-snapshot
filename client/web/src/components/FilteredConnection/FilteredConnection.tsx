@@ -301,14 +301,20 @@ export class FilteredConnection<
                             .pipe(
                                 catchError(error => [asError(error)]),
                                 map(
-                                    (connectionOrError): PartialStateUpdate => ({
-                                        connectionOrError,
-                                        connectionQuery: query,
-                                        loading: false,
-                                    })
+                                    (connectionOrError): PartialStateUpdate => {
+                                        console.log('connectionOrError', connectionOrError)
+                                        return {
+                                            connectionOrError,
+                                            connectionQuery: query,
+                                            loading: false,
+                                        }
+                                    }
                                 ),
                                 share()
                             )
+
+                        console.log('result')
+                        console.log(result)
 
                         return (shouldRefresh
                             ? merge(
@@ -504,6 +510,8 @@ export class FilteredConnection<
         ) {
             errors.push(this.state.connectionOrError.error)
         }
+        console.log('in FC')
+        console.log(this.state.connectionOrError)
 
         // const shouldShowControls =
         //     this.state.connectionOrError &&
