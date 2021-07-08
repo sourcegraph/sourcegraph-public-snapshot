@@ -13,12 +13,18 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- Starting with Sourcegraph 3.30.0, the `published` field is optional in batch specs. If omitted, the publication state will be controlled through the Batch Changes UI. [#538](https://github.com/sourcegraph/src-cli/pull/538)
-- For internal use only: `-text-only` flag added to `src batch [apply|preview]`. [#562](https://github.com/sourcegraph/src-cli/pull/562)
-
 ### Changed
 
 ### Fixed
+
+### Removed
+
+## 3.29.2
+
+### Added
+
+- Starting with Sourcegraph 3.30.0, the `published` field is optional in batch specs. If omitted, the publication state will be controlled through the Batch Changes UI. [#538](https://github.com/sourcegraph/src-cli/pull/538)
+- For internal use only: `-text-only` flag added to `src batch [apply|preview]`. [#562](https://github.com/sourcegraph/src-cli/pull/562)
 
 ## 3.29.1
 
@@ -26,13 +32,9 @@ All notable changes to `src-cli` are documented in this file.
 
 - LSIF uploads now respect the `-insecure-skip-verify` flag to insecurely (surprise!) skip TLS certificate validation when communicating with Sourcegraph. [#559](https://github.com/sourcegraph/src-cli/pull/559)
 
-### Changed
-
 ### Fixed
 
 - Various terminal handling fixes, especially for Batch Changes users with regards to resizing terminals and Windows support. [#560](https://github.com/sourcegraph/src-cli/pull/560)
-
-### Removed
 
 ## 3.29.0
 
