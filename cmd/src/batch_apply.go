@@ -38,22 +38,35 @@ Examples:
 			return &usageError{errors.New("additional arguments not allowed")}
 		}
 
-		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		err := executeBatchSpec(ctx, executeBatchSpecOpts{
-			flags:  flags,
-			out:    out,
-			client: cfg.apiClient(flags.api, flagSet.Output()),
+		var err error
+		if flags.textOnly {
+			err = textOnlyExecuteBatchSpec(ctx, executeBatchSpecOpts{
+				flags:  flags,
+				client: cfg.apiClient(flags.api, flagSet.Output()),
 
-			applyBatchSpec: true,
-		})
-		if err != nil {
-			printExecutionError(out, err)
-			out.Write("")
-			return &exitCodeError{nil, 1}
+				applyBatchSpec: true,
+			})
+			if err != nil {
+				fmt.Printf("ERROR: %s\n", err)
+				return &exitCodeError{nil, 1}
+			}
+		} else {
+			out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
+			err = executeBatchSpec(ctx, executeBatchSpecOpts{
+				flags:  flags,
+				out:    out,
+				client: cfg.apiClient(flags.api, flagSet.Output()),
+
+				applyBatchSpec: true,
+			})
+			if err != nil {
+				printExecutionError(out, err)
+				out.Write("")
+				return &exitCodeError{nil, 1}
+			}
 		}
 
 		return nil
