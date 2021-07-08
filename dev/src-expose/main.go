@@ -280,7 +280,7 @@ See https://github.com/sourcegraph/sourcegraph/tree/main/dev/src-expose/examples
 	shortenErrHelp(root, "")
 
 	if err := root.Run(os.Args[1:]); err != nil {
-		if !errors.Is(err, flag.ErrHelp) && !errors.Is(err, errSilent) {
+		if !errors.IsAny(err, flag.ErrHelp, errSilent) {
 			_, _ = fmt.Fprintf(root.FlagSet.Output(), "\nerror: %v\n", err)
 		}
 		os.Exit(1)

@@ -562,7 +562,7 @@ func errorToAlert(err error) (*searchAlert, error) {
 		return multierrorToAlert(me)
 	}
 
-	if errors.Is(err, authz.ErrStalePermissions{}) {
+	if errors.HasType(err, authz.ErrStalePermissions{}) {
 		return alertForStalePermissions(), nil
 	}
 

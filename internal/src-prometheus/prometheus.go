@@ -161,7 +161,7 @@ func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// not accessible in this deployment. Treat deadline exceeded as an indicator as well.
 	//
 	// See https://github.com/golang/go/issues/9424
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.EHOSTUNREACH) {
+	if errors.IsAny(err, context.DeadlineExceeded, syscall.ECONNREFUSED, syscall.EHOSTUNREACH) {
 		err = ErrPrometheusUnavailable
 	}
 

@@ -189,7 +189,7 @@ func doLogDiffSearchStream(ctx context.Context, repo api.RepoName, opt RawLogDif
 	defer func() {
 		// We do best-effort in case of timeout. So we clear out the error and
 		// indicate the results are incomplete.
-		if err != nil && errors.Is(err, context.DeadlineExceeded) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			c <- LogCommitSearchEvent{Complete: false}
 			complete = false
 			err = nil
