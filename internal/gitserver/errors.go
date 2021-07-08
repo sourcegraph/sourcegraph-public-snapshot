@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,6 +27,9 @@ func (RevisionNotFoundError) NotFound() bool {
 
 // IsRevisionNotFound reports if err is a RevisionNotFoundError.
 func IsRevisionNotFound(err error) bool {
-	_, ok := err.(*RevisionNotFoundError)
-	return ok
+	// Note we use As instead of Is here to ensure that we do not try
+	// compare struct fields for equality; we only care that the type
+	// of the error value matches.
+	var e *RevisionNotFoundError
+	return errors.As(err, &e)
 }

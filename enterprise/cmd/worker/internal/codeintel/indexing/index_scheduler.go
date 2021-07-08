@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type IndexScheduler struct {
@@ -122,7 +122,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		}
 
 		if err := s.indexEnqueuer.QueueIndexesForRepository(ctx, repositoryID); err != nil {
-			if errors.Is(err, &vcs.RepoNotExistError{}) {
+			if gitserver.IsRevisionNotFound(err) {
 				continue
 			}
 
