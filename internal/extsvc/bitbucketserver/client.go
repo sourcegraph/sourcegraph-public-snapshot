@@ -1367,36 +1367,27 @@ func IsNotFound(err error) bool {
 // IsUnauthorized reports whether err is a Bitbucket Server API 401 error.
 func IsUnauthorized(err error) bool {
 	var e *httpError
-	if !errors.As(err, &e) {
-		return e.Unauthorized()
-	}
-	return false
+	return errors.As(err, &e) && e.Unauthorized()
 }
 
 // IsNoSuchLabel reports whether err is a Bitbucket Server API "No Such Label"
 // error.
 func IsNoSuchLabel(err error) bool {
 	var e *httpError
-	if !errors.As(err, &e) {
-		return e.NoSuchLabelException()
-	}
-	return false
+	return errors.As(err, &e) && e.NoSuchLabelException()
 }
 
 // IsDuplicatePullRequest reports whether err is a Bitbucket Server API
 // "Duplicate Pull Request" error.
 func IsDuplicatePullRequest(err error) bool {
 	var e *httpError
-	if !errors.As(err, &e) {
-		return e.DuplicatePullRequest()
-	}
-	return false
+	return errors.As(err, &e) && e.DuplicatePullRequest()
 }
 
 // ExtractDuplicatePullRequest will attempt to extract a duplicate PR
 func ExtractDuplicatePullRequest(err error) (*PullRequest, error) {
 	var e *httpError
-	if !errors.As(err, &e) {
+	if errors.As(err, &e) {
 		return e.ExtractExistingPullRequest()
 	}
 	return nil, fmt.Errorf("error does not contain existing PR")
