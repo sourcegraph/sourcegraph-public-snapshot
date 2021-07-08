@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { Selection } from 'monaco-editor'
+import { Range, Selection, SelectionDirection } from 'monaco-editor'
 
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 
@@ -11,34 +11,38 @@ import { parsePlaceholder, updateQueryWithFilter } from './SearchReference'
  * Automatically sets cursor position and selections from example query.
  */
 function queryStateFromExample(query: string, showSuggestions = false): QueryState {
-    let cursorPosition: number | undefined
-    let selectionStart: number
-    let selection: Selection | undefined
+    const positions: { [char: string]: number } = {}
+    const magicCharacters = {
+        cursor: '|',
+        selectionStart: '[',
+        selectionEnd: ']',
+        rangeStart: '{',
+        rangeEnd: '}',
+    }
     let offset = 0
 
-    const cleanedQuery = query.replaceAll(/[[\]|]/g, (match, index: number) => {
-        switch (match) {
-            case '[':
-                selectionStart = index
-                offset -= 1
-                break
-            case ']':
-                selection = new Selection(1, selectionStart + 1, 1, index + offset + 1)
-                offset -= 1
-                break
-            case '|':
-                cursorPosition = index + offset + 1
-                break
-        }
+    const cleanedQuery = query.replaceAll(/[{}[\]|]/g, (match, index: number) => {
+        positions[match] = index + offset + 1
+        offset -= 1
         return ''
     })
+
+    const { [magicCharacters.selectionStart]: selectionStart, [magicCharacters.cursor]: cursor } = positions
+
+    const selection = Selection.createWithDirection(
+        1,
+        selectionStart,
+        1,
+        positions[magicCharacters.selectionEnd],
+        cursor != null && cursor <= selectionStart ? SelectionDirection.RTL : SelectionDirection.LTR
+    )
 
     return {
         query: cleanedQuery,
         changeSource: QueryChangeSource.searchReference,
-        cursorPosition,
-        showSuggestions,
         selection,
+        showSuggestions,
+        revealRange: new Range(1, positions[magicCharacters.rangeStart], 1, positions[magicCharacters.rangeEnd]),
     }
 }
 
@@ -54,14 +58,14 @@ describe('repeatable filters', () => {
     it('appends placeholder filter and selects placeholder', () => {
         assert.deepStrictEqual(
             updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.after, '{test}'), false, FILTERS),
-            queryStateFromExample('foo after:[test]')
+            queryStateFromExample('foo {after:[test]|}')
         )
     })
 
     it('appends suggestions filter', () => {
         assert.deepStrictEqual(
             updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.lang, '{lang}'), false, FILTERS),
-            queryStateFromExample('foo lang:', true)
+            queryStateFromExample('foo {lang:|[lang]}', true)
         )
     })
 })
@@ -75,11 +79,11 @@ describe('unique filters', () => {
                 false,
                 FILTERS
             ),
-            queryStateFromExample('foo repogroup:[test]')
+            queryStateFromExample('foo {repogroup:[test]|}')
         )
     })
 
-    it('updates existing placeholder filter and selects placeholder', () => {
+    it('updates existing placeholder filter and selects value', () => {
         assert.deepStrictEqual(
             updateQueryWithFilter(
                 { query: 'repogroup:value foo' },
@@ -87,14 +91,14 @@ describe('unique filters', () => {
                 false,
                 FILTERS
             ),
-            queryStateFromExample('repogroup:[value]| foo')
+            queryStateFromExample('{repogroup:[value]|} foo')
         )
     })
 
     it('appends suggestions filter', () => {
         assert.deepStrictEqual(
             updateQueryWithFilter({ query: 'foo' }, createSearchReference(FilterType.case, '{test}'), false, FILTERS),
-            queryStateFromExample('foo case:', true)
+            queryStateFromExample('foo {case:|[test]}', true)
         )
     })
 
@@ -106,7 +110,7 @@ describe('unique filters', () => {
                 false,
                 FILTERS
             ),
-            queryStateFromExample('case:| foo', true)
+            queryStateFromExample('{case:|[yes]} foo', true)
         )
     })
 })

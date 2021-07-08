@@ -12,7 +12,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
-import { updateFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
@@ -276,11 +276,14 @@ export function updateQueryWithFilter(
             existingFilter.range.end + 1,
             showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
         )
-        revealRange = new Range(1, existingFilter.range.start, 1, existingFilter.range.end)
+        revealRange = new Range(1, existingFilter.range.start + 1, 1, existingFilter.range.end + 1)
     } else {
         // Filter can appear multiple times or doesn't exist yet. Always
         // append.
-        const rangeStart = query.length
+
+        // +1 because appendFilter inserts a whitespace character at the end of
+        // the query
+        const rangeStart = query.length + 1
         query = appendFilter(query, field, searchReference.placeholder.text)
         selection = selectionForPlaceholder(
             searchReference.placeholder,
@@ -290,7 +293,7 @@ export function updateQueryWithFilter(
             // selection (it usually is at the end)
             showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
         )
-        revealRange = new Range(1, rangeStart, 1, query.length)
+        revealRange = new Range(1, rangeStart + 1, 1, query.length + 1)
     }
 
     return {

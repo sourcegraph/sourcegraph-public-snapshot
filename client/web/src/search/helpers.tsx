@@ -188,12 +188,13 @@ export enum QueryChangeSource {
  */
 export type QueryState =
     | {
-          /** Used to know how search was changed and how to update the search input */
-          changeSource: QueryChangeSource.userInput
+          /** Used to know how a change comes to be. This needs to be defined as
+           * optional so that unknown sources can make changes. */
+          changeSource?: QueryChangeSource.userInput
           query: string
       }
     | {
-          /** Used to know how search was changed and how to update the search input */
+          /** Changes from the search reference side bar */
           changeSource: QueryChangeSource.searchReference
           query: string
           /** The query input will apply this selection */
