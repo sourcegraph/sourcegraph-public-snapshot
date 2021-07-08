@@ -34,6 +34,7 @@ var DefaultPredicateRegistry = predicateRegistry{
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
+		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
 	},
 }
 
