@@ -4,22 +4,52 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { RepoBatchChangesResult, RepoBatchChangesVariables } from '../../../graphql-operations'
+import {
+    RepoBatchChangesResult,
+    RepoBatchChangesVariables,
+    RepoBatchChangeStatsVariables,
+    RepoBatchChangeStatsResult,
+} from '../../../graphql-operations'
 import { changesetFieldsFragment } from '../detail/backend'
 
-// TODO: Changeset stats/diff stats queries
-// const changesetsStatsFragment = gql`
-//     fragment ChangesetsStatsFields on ChangesetsStats {
-//         total
-//         closed
-//         deleted
-//         draft
-//         merged
-//         open
-//         unpublished
-//         archived
-//     }
-// `
+const repoBatchChangeStatsFragment = gql`
+    fragment RepoBatchChangeStats on Repository {
+        batchChangesDiffStat {
+            added
+            changed
+            deleted
+        }
+        changesetsStats {
+            unpublished
+            open
+            merged
+            closed
+            total
+        }
+    }
+`
+
+export const queryRepoBatchChangeStats = ({
+    name,
+}: RepoBatchChangeStatsVariables): Observable<RepoBatchChangeStatsResult['repository']> =>
+    requestGraphQL<RepoBatchChangeStatsResult, RepoBatchChangeStatsVariables>(
+        gql`
+            query RepoBatchChangeStats($name: String!) {
+                repository(name: $name) {
+                    ...RepoBatchChangeStats
+                }
+            }
+
+            ${repoBatchChangeStatsFragment}
+        `,
+        { name }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            console.log(data)
+            return data.repository
+        })
+    )
 
 const repoBatchChangeFragment = gql`
     fragment RepoBatchChange on BatchChange {
