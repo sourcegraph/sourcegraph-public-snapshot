@@ -3,8 +3,6 @@ package gitserver
 import (
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -24,9 +22,4 @@ func (e *RevisionNotFoundError) HTTPStatusCode() int {
 
 func (RevisionNotFoundError) NotFound() bool {
 	return true
-}
-
-// IsRevisionNotFound reports if err is a RevisionNotFoundError.
-func IsRevisionNotFound(err error) bool {
-	return errors.HasType(err, &RevisionNotFoundError{})
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -1358,14 +1359,12 @@ type Commit struct {
 
 // IsNotFound reports whether err is a Bitbucket Server API not found error.
 func IsNotFound(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.NotFound()
+	return errcode.IsNotFound(err)
 }
 
 // IsUnauthorized reports whether err is a Bitbucket Server API 401 error.
 func IsUnauthorized(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.Unauthorized()
+	return errcode.IsUnauthorized(err)
 }
 
 // IsNoSuchLabel reports whether err is a Bitbucket Server API "No Such Label"

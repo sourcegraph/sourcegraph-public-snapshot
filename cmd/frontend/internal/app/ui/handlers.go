@@ -155,7 +155,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && gitserver.IsRevisionNotFound(err) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitserver.RevisionNotFoundError{}) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
@@ -177,7 +177,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if gitserver.IsRevisionNotFound(err) {
+			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil

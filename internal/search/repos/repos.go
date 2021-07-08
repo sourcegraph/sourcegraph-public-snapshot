@@ -280,7 +280,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 				if errors.HasType(err, &git.BadCommitError{}) {
 					return Resolved{}, err
 				}
-				if gitserver.IsRevisionNotFound(err) {
+				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -693,7 +693,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
+					if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 						continue
 					}
 
@@ -756,7 +756,7 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		} else {
 			status |= search.RepoStatusMissing
 		}
-	} else if gitserver.IsRevisionNotFound(searchErr) {
+	} else if errors.HasType(searchErr, &gitserver.RevisionNotFoundError{}) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {

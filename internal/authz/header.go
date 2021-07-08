@@ -22,7 +22,7 @@ var errUnrecognizedScheme = fmt.Errorf("unrecognized HTTP Authorization request 
 // IsUnrecognizedScheme reports whether err indicates that the request's Authorization header scheme
 // is unrecognized or unparseable (i.e., is neither "token" nor "token-sudo").
 func IsUnrecognizedScheme(err error) bool {
-	return err == errUnrecognizedScheme || err == errHTTPAuthParamsDuplicateKey || err == errHTTPAuthParamsNoEquals
+	return errors.IsAny(errUnrecognizedScheme, errHTTPAuthParamsDuplicateKey, errHTTPAuthParamsNoEquals)
 }
 
 // ParseAuthorizationHeader parses the HTTP Authorization request header for supported credentials

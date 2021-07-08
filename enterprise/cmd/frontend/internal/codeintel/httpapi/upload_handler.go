@@ -399,7 +399,7 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	}
 
 	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
-		if gitserver.IsRevisionNotFound(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 			return nil, false
 		}

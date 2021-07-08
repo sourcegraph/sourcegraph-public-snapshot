@@ -13,6 +13,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -111,8 +112,7 @@ func TestPrepareZip_errHeader(t *testing.T) {
 	if got, want := err, tar.ErrHeader; !errors.Is(got, want) {
 		t.Fatalf("expected PrepareZip to fail with tar.ErrHeader, failed with %v", got)
 	}
-	var e interface{ Temporary() bool }
-	if !errors.As(err, &e) || !e.Temporary() {
+	if !errcode.IsTemporary(err) {
 		t.Fatalf("expected PrepareZip to fail with a temporary error, failed with %v", err)
 	}
 }

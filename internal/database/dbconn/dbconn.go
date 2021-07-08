@@ -233,14 +233,19 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 // isDatabaseLikelyStartingUp returns whether the err likely just means the PostgreSQL database is
 // starting up, and it should not be treated as a fatal error during program initialization.
 func isDatabaseLikelyStartingUp(err error) bool {
-	msg := err.Error()
-	if strings.Contains(msg, "the database system is starting up") {
+	substrings := []string{
 		// Wait for DB to start up.
-		return true
-	}
-	if strings.Contains(msg, "connection refused") || strings.Contains(msg, "failed to receive message") {
+		"the database system is starting up",
 		// Wait for DB to start listening.
-		return true
+		"connection refused",
+		"failed to receive message",
+	}
+
+	msg := err.Error()
+	for _, substring := range substrings {
+		if strings.Contains(msg, substring) {
+			return true
+		}
 	}
 
 	return false

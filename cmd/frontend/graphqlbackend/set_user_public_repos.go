@@ -96,7 +96,7 @@ func getRepo(ctx context.Context, repoStore *database.RepoStore, repoURI string)
 	// note: if the user provides the URL without a scheme (eg just 'github.com/foo/bar')
 	// the host is '', but the path contains the host instead, so this works both ways 😅
 	repo, err = repoStore.GetByName(ctx, repoName)
-	if err != nil && !database.IsRepoNotFoundErr(err) {
+	if err != nil && !errors.HasType(err, &database.RepoNotFoundErr{}) {
 		return nil, errors.Wrap(err, "Error checking if repo exists already")
 	} else if repo != nil {
 		// repo already exists, nice.

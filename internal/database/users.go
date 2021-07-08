@@ -127,14 +127,14 @@ func (err errCannotCreateUser) Code() string {
 
 // IsUsernameExists reports whether err is an error indicating that the intended username exists.
 func IsUsernameExists(err error) bool {
-	e, ok := err.(errCannotCreateUser)
-	return ok && e.code == errorCodeUsernameExists
+	var e errCannotCreateUser
+	return errors.As(err, &e) && e.code == errorCodeUsernameExists
 }
 
 // IsEmailExists reports whether err is an error indicating that the intended email exists.
 func IsEmailExists(err error) bool {
-	e, ok := err.(errCannotCreateUser)
-	return ok && e.code == errorCodeEmailExists
+	var e errCannotCreateUser
+	return errors.As(err, &e) && e.code == errorCodeEmailExists
 }
 
 // NewUser describes a new to-be-created user.
