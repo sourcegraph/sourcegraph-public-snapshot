@@ -1,22 +1,21 @@
 import React, { FunctionComponent, useState } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
 
-import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { UserAreaUserFields, ExternalServicesVariables, ExternalServicesResult } from '../graphql-operations'
+import { UserAreaUserFields } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 
 import { getReturnTo } from './SignInSignUpCommon'
+import { useExternalServices } from './useExternalServices'
 import { useRepoCloningStatus } from './useRepoCloningStatus'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { StartSearching } from './welcome/StartSearching'
+
 interface Props {
     authenticatedUser: UserAreaUserFields
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
@@ -40,6 +39,8 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
         isDoneCloning,
     } = useRepoCloningStatus({ userId: user.id, pollInterval: 2000 })
 
+    const { externalServices, loadingServices, errorServices, refetchExternalServices } = useExternalServices(user.id)
+
     /**
      * post sign-up flow is available only for .com and only in two cases, user:
      * 1. is authenticated and has AllowUserViewPostSignup tag
@@ -56,45 +57,23 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     //     history.push(getReturnTo(location))
     // }
 
-    const { data, loading, error, refetch } = useQuery<ExternalServicesResult, ExternalServicesVariables>(
-        EXTERNAL_SERVICES,
-        {
-            variables: {
-                namespace: user.id,
-                first: null,
-                after: null,
-            },
-        }
-    )
-
-    if (loading) {
-        return (
-            <div className="d-flex justify-content-center">
-                <LoadingSpinner className="icon-inline" />
-            </div>
-        )
-    }
-
-    if (error) {
-        console.log(error)
-    }
-
     const firstStep = {
         content: (
             <>
-                {currentStepNumber === 1 && data?.externalServices.nodes && (
+                {currentStepNumber === 1 && externalServices && (
                     <CodeHostsConnection
+                        loading={loadingServices}
                         user={user}
-                        externalServices={data.externalServices.nodes}
+                        error={errorServices}
+                        externalServices={externalServices}
                         context={context}
-                        refetch={refetch}
+                        refetch={refetchExternalServices}
                     />
                 )}
             </>
         ),
         // step is considered complete when user has at least one external service connected.
-        isComplete: (): boolean =>
-            !!data && Array.isArray(data?.externalServices?.nodes) && data.externalServices.nodes.length > 0,
+        isComplete: (): boolean => !!externalServices && externalServices?.length > 1,
     }
 
     const secondStep = {
