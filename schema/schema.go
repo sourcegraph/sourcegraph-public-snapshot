@@ -848,6 +848,8 @@ type ImportChangesets struct {
 type Insight struct {
 	// Description description: The description of this insight
 	Description string `json:"description"`
+	// Id description: A globally  unique identifier for this insight.
+	Id string `json:"id"`
 	// Series description: Series of data to show for this insight
 	Series []*InsightSeries `json:"series"`
 	// Title description: The short title of this insight
