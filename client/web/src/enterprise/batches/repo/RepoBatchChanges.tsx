@@ -77,6 +77,7 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                     history,
                     location,
                     queryExternalChangesetWithFileDiffs,
+                    viewerCanAdminister,
                 }}
                 queryConnection={query}
                 hideSearch={true}
