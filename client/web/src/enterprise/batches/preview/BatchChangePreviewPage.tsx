@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -14,11 +14,11 @@ import { PageTitle } from '../../../components/PageTitle'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
-import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
+import { applyBatchChange, createBatchChange, fetchBatchSpecById as _fetchBatchSpecById } from './backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
-import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
+import { CreateUpdateBatchChangeAlert, CreateUpdateBatchChangeAlertAction } from './CreateUpdateBatchChangeAlert'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
@@ -51,6 +51,38 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
+
+    const onApply = useCallback(
+        async (action: CreateUpdateBatchChangeAlertAction, setIsLoading: (loadingOrError: boolean | Error) => void) => {
+            if (!spec) {
+                return
+            }
+
+            if (!confirm(`Are you sure you want to ${spec.id ? 'update' : 'create'} this batch change?`)) {
+                return
+            }
+            setIsLoading(true)
+            try {
+                const batchChangeID = spec.appliesToBatchChange?.id
+                const toBeArchived = spec.applyPreview.stats.archive
+
+                // TODO: switch on action and use the current selections if necessary.
+                const batchChange = batchChangeID
+                    ? await applyBatchChange({ batchSpec: spec.id, batchChange: batchChangeID })
+                    : await createBatchChange({ batchSpec: spec.id })
+
+                if (toBeArchived > 0) {
+                    history.push(`${batchChange.url}?archivedCount=${toBeArchived}&archivedBy=${spec.id}`)
+                } else {
+                    history.push(batchChange.url)
+                }
+                telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
+            } catch (error) {
+                setIsLoading(error)
+            }
+        },
+        [spec, history, telemetryService]
+    )
 
     if (spec === undefined) {
         return (
@@ -86,13 +118,10 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
             <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
             <BatchChangePreviewStatsBar batchSpec={spec} />
             <CreateUpdateBatchChangeAlert
-                history={history}
-                specID={spec.id}
-                toBeArchived={spec.applyPreview.stats.archive}
                 batchChange={spec.appliesToBatchChange}
                 showPublishUI={spec.applyPreview.stats.uiPublished > 0}
+                onApply={onApply}
                 viewerCanAdminister={spec.viewerCanAdminister}
-                telemetryService={telemetryService}
             />
             <Description description={spec.description.description} />
             <BatchChangePreviewTabs spec={spec} {...props} />

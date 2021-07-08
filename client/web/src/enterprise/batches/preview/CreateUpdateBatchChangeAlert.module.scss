@@ -1,5 +1,9 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+.create-update-batch-change-alert {
+    overflow: visible;
+}
+
 @media (--sm-breakpoint-down) {
     .create-update-batch-change-alert {
         &__badge,
