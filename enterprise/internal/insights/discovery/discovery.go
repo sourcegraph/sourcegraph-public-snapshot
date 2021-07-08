@@ -3,8 +3,6 @@ package discovery
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -92,14 +90,11 @@ func filterByIds(ids []string, insight []insights.SearchInsight) []insights.Sear
 	filtered := make([]insights.SearchInsight, 0)
 	keys := make(map[string]bool)
 	for _, id := range ids {
-		log15.Info("filter", "key", id)
 		keys[id] = true
 	}
 
 	for _, searchInsight := range insight {
-		log15.Info("checking_filter", "insight", searchInsight.Title, "uuid", searchInsight.ID)
 		if _, ok := keys[searchInsight.ID]; ok {
-			log15.Info("adding", "insight", searchInsight.Title)
 			filtered = append(filtered, searchInsight)
 		}
 	}
