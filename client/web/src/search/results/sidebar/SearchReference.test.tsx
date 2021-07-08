@@ -34,7 +34,7 @@ function queryStateFromExample(query: string, showSuggestions = false): QuerySta
         selectionStart,
         1,
         positions[magicCharacters.selectionEnd],
-        cursor != null && cursor <= selectionStart ? SelectionDirection.RTL : SelectionDirection.LTR
+        cursor !== undefined && cursor <= selectionStart ? SelectionDirection.RTL : SelectionDirection.LTR
     )
 
     return {
