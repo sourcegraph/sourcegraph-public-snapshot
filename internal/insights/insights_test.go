@@ -149,6 +149,9 @@ const integratedInsightSimple = `{
 			"step": {
 			  "weeks": 2
 			}
+		},
+		"invalid-schema": {
+			"title": {}
 		}
   	},
 	"random-setting": {}
