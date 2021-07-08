@@ -41,7 +41,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	defer cancel()
 
 	wrapError := func(err error, message string) error {
-		if errors.Cause(err) == context.DeadlineExceeded {
+		if errors.Is(err, context.DeadlineExceeded) {
 			err = fmt.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
 		}
 

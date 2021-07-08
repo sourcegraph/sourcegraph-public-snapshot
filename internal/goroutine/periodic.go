@@ -141,7 +141,7 @@ func runPeriodicHandler(ctx context.Context, handler Handler, operation *observa
 
 	err = handler.Handle(ctx)
 
-	if err != nil && errors.Cause(err) == ctx.Err() {
+	if err != nil && errors.Is(err, ctx.Err()) {
 		// If the error is due to the loop being shut down, break
 		// from the run loop in the calling function
 		return true, nil

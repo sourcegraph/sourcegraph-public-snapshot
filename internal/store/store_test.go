@@ -108,10 +108,11 @@ func TestPrepareZip_errHeader(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 	}
 	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
-	if got, want := errors.Cause(err).Error(), tar.ErrHeader.Error(); got != want {
+	if got, want := err, tar.ErrHeader; !errors.Is(got, want) {
 		t.Fatalf("expected PrepareZip to fail with tar.ErrHeader, failed with %v", got)
 	}
-	if !errors.Cause(err).(interface{ Temporary() bool }).Temporary() {
+	var e interface{ Temporary() bool }
+	if !errors.As(err, &e) || !e.Temporary() {
 		t.Fatalf("expected PrepareZip to fail with a temporary error, failed with %v", err)
 	}
 }

@@ -293,15 +293,11 @@ func (e badRequestError) Error() string    { return e.msg }
 func (e badRequestError) BadRequest() bool { return true }
 
 func isBadRequest(err error) bool {
-	e, ok := errors.Cause(err).(interface {
-		BadRequest() bool
-	})
-	return ok && e.BadRequest()
+	var e interface{ BadRequest() bool }
+	return errors.As(err, &e) && e.BadRequest()
 }
 
 func isTemporary(err error) bool {
-	e, ok := errors.Cause(err).(interface {
-		Temporary() bool
-	})
-	return ok && e.Temporary()
+	var e interface{ Temporary() bool }
+	return errors.As(err, &e) && e.Temporary()
 }

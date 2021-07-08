@@ -67,9 +67,9 @@ type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
-func IsPostgresError(err error, codename string) bool {
-	e, ok := errors.Cause(err).(*pgconn.PgError)
-	return ok && e.Code == codename
+func IsPostgresError(err error, coodename string) bool {
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == codename
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the

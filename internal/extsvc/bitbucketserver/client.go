@@ -487,9 +487,11 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	)
 	_, err := c.send(ctx, "GET", path, nil, nil, pr)
 	if err != nil {
-		if e, ok := errors.Cause(err).(*httpError); ok && e.NoSuchPullRequestException() {
+		var e *httpError
+		if errors.As(err, &e) && e.NoSuchPullRequestException() {
 			return ErrPullRequestNotFound
 		}
+
 		return err
 	}
 	return nil
@@ -1356,48 +1358,37 @@ type Commit struct {
 
 // IsNotFound reports whether err is a Bitbucket Server API not found error.
 func IsNotFound(err error) bool {
-	switch e := errors.Cause(err).(type) {
-	case *httpError:
-		return e.NotFound()
-	}
-	return false
+	var e *httpError
+	return errors.As(err, &e) && e.NotFound()
 }
 
 // IsUnauthorized reports whether err is a Bitbucket Server API 401 error.
 func IsUnauthorized(err error) bool {
-	switch e := errors.Cause(err).(type) {
-	case *httpError:
-		return e.Unauthorized()
-	}
-	return false
+	var e *httpError
+	return errors.As(err, &e) && e.Unauthorized()
 }
 
 // IsNoSuchLabel reports whether err is a Bitbucket Server API "No Such Label"
 // error.
 func IsNoSuchLabel(err error) bool {
-	switch e := errors.Cause(err).(type) {
-	case *httpError:
-		return e.NoSuchLabelException()
-	}
-	return false
+	var e *httpError
+	return errors.As(err, &e) && e.NoSuchLabelException()
 }
 
 // IsDuplicatePullRequest reports whether err is a Bitbucket Server API
 // "Duplicate Pull Request" error.
 func IsDuplicatePullRequest(err error) bool {
-	switch e := errors.Cause(err).(type) {
-	case *httpError:
-		return e.DuplicatePullRequest()
-	}
-	return false
+	var e *httpError
+	return errors.As(err, &e) && e.DuplicatePullRequest()
 }
 
 // ExtractDuplicatePullRequest will attempt to extract a duplicate PR
 func ExtractDuplicatePullRequest(err error) (*PullRequest, error) {
-	switch e := errors.Cause(err).(type) {
-	case *httpError:
+	var e *httpError
+	if errors.As(err, &e) {
 		return e.ExtractExistingPullRequest()
 	}
+
 	return nil, fmt.Errorf("error does not contain existing PR")
 }
 
@@ -1535,7 +1526,8 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
 	if err != nil {
-		if e, ok := errors.Cause(err).(*httpError); ok && e.MergePreconditionFailedException() {
+		var e *httpError
+		if errors.As(err, &e) && e.MergePreconditionFailedException() {
 			return errors.Wrap(ErrNotMergeable, err.Error())
 		}
 		return err

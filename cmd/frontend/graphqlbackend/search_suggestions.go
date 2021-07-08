@@ -559,7 +559,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				allSuggestions = append(allSuggestions, suggestions...)
 				mu.Unlock()
 			} else {
-				if errors.Cause(err) == context.DeadlineExceeded || errors.Cause(err) == context.Canceled {
+				if errors.IsAny(err, context.DeadlineExceeded, context.Canceled) {
 					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.rawQuery())
 				} else if !errcode.IsBadRequest(err) {
 					// We exclude bad user input. Note that this means that we

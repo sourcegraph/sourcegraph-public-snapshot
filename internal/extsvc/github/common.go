@@ -1541,34 +1541,29 @@ var ErrRepoNotFound = errors.New("GitHub repository not found")
 // IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if err == ErrRepoNotFound || errors.Cause(err) == ErrRepoNotFound {
+	if errors.Is(err, ErrRepoNotFound) || errors.HasType(err, ErrPullRequestNotFound(0)) || HTTPErrorCode(err) == http.StatusNotFound {
 		return true
 	}
-	if _, ok := err.(ErrPullRequestNotFound); ok {
-		return true
-	}
-	if HTTPErrorCode(err) == http.StatusNotFound {
-		return true
-	}
-	errs, ok := err.(graphqlErrors)
-	if !ok {
-		return false
-	}
-	for _, err := range errs {
-		if err.Type == "NOT_FOUND" {
-			return true
+
+	if errs, ok := err.(graphqlErrors); ok {
+		for _, err := range errs {
+			if err.Type == "NOT_FOUND" {
+				return true
+			}
 		}
 	}
+
 	return false
 }
 
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
 // limit was exceeded.
 func IsRateLimitExceeded(err error) bool {
-	if err == errInternalRateLimitExceeded {
+	if errors.Is(err, errInternalRateLimitExceeded) {
 		return true
 	}
-	if e, ok := errors.Cause(err).(*APIError); ok {
+	var e *APIError
+	if errors.As(err, &e) {
 		return strings.Contains(e.Message, "API rate limit exceeded") || strings.Contains(e.DocumentationURL, "#rate-limiting")
 	}
 
