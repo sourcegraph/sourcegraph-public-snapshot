@@ -19,6 +19,7 @@ import {
     UserEventLogsResult,
     UserEventLogsVariables,
 } from '../../../graphql-operations'
+import { usePaginatedConnection } from '../../../user/settings/accessTokens/usePaginatedConnection'
 import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
 import styles from './UserEventLogsPage.module.scss'
@@ -51,6 +52,36 @@ export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ nod
     </li>
 )
 
+const USER_EVENT_LOGS = gql`
+    query UserEventLogs($user: ID!, $first: Int) {
+        node(id: $user) {
+            __typename
+            ... on User {
+                eventLogs(first: $first) {
+                    ...UserEventLogsConnectionFields
+                }
+            }
+        }
+    }
+
+    fragment UserEventLogsConnectionFields on EventLogsConnection {
+        nodes {
+            ...UserEventLogFields
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+        }
+    }
+
+    fragment UserEventLogFields on EventLog {
+        name
+        source
+        url
+        timestamp
+    }
+`
+
 export interface UserEventLogsPageProps
     extends Pick<UserSettingsAreaRouteContext, 'user'>,
         Pick<RouteComponentProps, 'history' | 'location'>,
@@ -69,60 +100,39 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])
 
-    const queryUserEventLogs = useCallback(
-        (args: { first?: number }): Observable<UserEventLogsConnectionFields> =>
-            requestGraphQL<UserEventLogsResult, UserEventLogsVariables>(
-                gql`
-                    query UserEventLogs($user: ID!, $first: Int) {
-                        node(id: $user) {
-                            __typename
-                            ... on User {
-                                eventLogs(first: $first) {
-                                    ...UserEventLogsConnectionFields
-                                }
-                            }
-                        }
-                    }
-
-                    fragment UserEventLogsConnectionFields on EventLogsConnection {
-                        nodes {
-                            ...UserEventLogFields
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
-                    }
-
-                    fragment UserEventLogFields on EventLog {
-                        name
-                        source
-                        url
-                        timestamp
-                    }
-                `,
-                { first: args.first ?? null, user: user.id }
-            ).pipe(
-                map(dataOrThrowErrors),
-                map(data => {
-                    if (!data.node) {
-                        throw new Error('User not found')
-                    }
-                    if (data.node.__typename !== 'User') {
-                        throw new Error(`Requested node is a ${data.node.__typename}, not a User`)
-                    }
-                    return data.node.eventLogs
-                })
-            ),
-        [user.id]
-    )
+    const { connection, loading, error, fetchMore } = usePaginatedConnection<
+        UserEventLogsResult,
+        UserEventLogsVariables,
+        UserEventLogFields
+    >({
+        query: USER_EVENT_LOGS,
+        variables: { first: 50, user: user.id },
+        getConnection: data => {
+            if (!data.node) {
+                throw new Error('User not found')
+            }
+            if (data.node.__typename !== 'User') {
+                throw new Error(`Requested node is a ${data.node.__typename}, not a User`)
+            }
+            return data.node.eventLogs
+        },
+    })
 
     return (
         <>
             <PageTitle title="User event log" />
             <PageHeader path={[{ text: 'Event log' }]} headingElement="h2" className="mb-3" />
+
             <Container className="mb-3">
-                <FilteredConnection<UserEventLogFields, {}>
+                {connection?.nodes.map((node, index) => (
+                    <UserEventNode key={index} node={node} />
+                ))}
+                {connection?.pageInfo?.hasNextPage && (
+                    <button type="button" className="btn btn-sm btn-link" onClick={fetchMore}>
+                        Show more
+                    </button>
+                )}
+                {/* <FilteredConnection<UserEventLogFields, {}>
                     key="chronological"
                     defaultFirst={50}
                     className="list-group list-group-flush"
@@ -133,7 +143,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
                     nodeComponent={UserEventNode}
                     history={history}
                     location={location}
-                />
+                /> */}
             </Container>
         </>
     )
