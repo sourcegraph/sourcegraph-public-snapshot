@@ -13,12 +13,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // traceStore fetches jaeger traces and stores them gzipped locally for future
@@ -44,12 +41,6 @@ type traceStore struct {
 	// internally access jaeger-query instead of needing an admin access token
 	// + the jaeger proxy. Environment variable we use is JAEGER_SERVER_URL.
 	JaegerServerURL string
-
-	// unexported Prometheus metrics, lazily initiated by calls to t.initMetrics
-	metrics struct {
-		sync.Once
-		fetchHist *prometheus.HistogramVec
-	}
 }
 
 // Fetch and store the trace.
@@ -59,9 +50,17 @@ func (t *traceStore) Fetch(ctx context.Context, traceURL string) (err error) {
 		attempts = 1
 	}
 
-	defer t.observeFetch()(&attempts, &err)
+	began := time.Now()
+	attempt := 0
 
-	for i := 0; i < attempts; i++ {
+	defer func() {
+		fetchDurationSeconds.WithLabelValues(
+			strconv.FormatBool(err != nil),
+			strconv.FormatInt(int64(attempt), 10),
+		).Observe(time.Since(began).Seconds())
+	}()
+
+	for ; attempt < attempts; attempt++ {
 		if err = t.fetch(ctx, traceURL); err != nil {
 			time.Sleep(time.Second)
 			continue
@@ -124,11 +123,11 @@ func (t *traceStore) fetch(ctx context.Context, traceURL string) (err error) {
 	}
 
 	dst := filepath.Join(t.Dir, traceID+".json.gz")
-	if err := os.MkdirAll(filepath.Dir(dst), 0700); err != nil && !os.IsExist(err) {
+	if err := os.MkdirAll(filepath.Dir(dst), 0o700); err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	f, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}
@@ -148,30 +147,6 @@ func (t *traceStore) fetch(ctx context.Context, traceURL string) (err error) {
 	}
 
 	return f.Close()
-}
-
-func (t *traceStore) initMetrics() {
-	t.metrics.Do(func() {
-		t.metrics.fetchHist = promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: "src",
-			Subsystem: "search_blitz",
-			Name:      "trace_fetch_seconds",
-			Help:      "The time taken to fetch a trace from Jaeger",
-			Buckets:   prometheus.DefBuckets,
-		}, []string{"error", "attempts"})
-	})
-}
-
-func (t *traceStore) observeFetch() func(*int, *error) {
-	t.initMetrics()
-	began := time.Now()
-	return func(attempts *int, err *error) {
-		duration := time.Since(began)
-		t.metrics.fetchHist.WithLabelValues(
-			strconv.FormatBool(err != nil && *err != nil),
-			strconv.FormatInt(int64(*attempts), 10),
-		).Observe(duration.Seconds())
-	}
 }
 
 // CleanupLoop periodically will remove old traces from disk such that we are
