@@ -15,9 +15,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
+type SecurityEventName string
+
+const (
+	SecurityEventNameSignOutAttempted SecurityEventName = "SignOutAttempted"
+	SecurityEventNameSignOutFailed    SecurityEventName = "SignOutFailed"
+	SecurityEventNameSignOutSucceeded SecurityEventName = "SignOutSucceeded"
+)
+
 // SecurityEvent contains information needed for logging a security-relevant event.
 type SecurityEvent struct {
-	Name            string
+	Name            SecurityEventName
 	URL             string
 	UserID          uint32
 	AnonymousUserID string
@@ -70,6 +78,6 @@ func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) 
 	}
 
 	if err := s.Insert(ctx, e); err != nil {
-		log15.Error(e.Name, "err", err)
+		log15.Error(string(e.Name), "err", err)
 	}
 }

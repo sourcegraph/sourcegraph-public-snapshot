@@ -32,18 +32,18 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 
 func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logSignOutEvent(r, db, "SignOutAttempted")
+		logSignOutEvent(r, db, database.SecurityEventNameSignOutAttempted)
 
 		// Invalidate all user sessions first
 		// This way, any other signout failures should not leave a valid session
 		var err error
 		if err = session.InvalidateSessionCurrentUser(w, r); err != nil {
-			logSignOutEvent(r, db, "SignOutFailed")
+			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed)
 			log15.Error("serveSignOutHandler", "err", err)
 		}
 
 		if err = session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
-			logSignOutEvent(r, db, "SignOutFailed")
+			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed)
 			log15.Error("serveSignOutHandler", "err", err)
 		}
 
@@ -52,7 +52,7 @@ func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Reque
 		}
 
 		if err == nil {
-			logSignOutEvent(r, db, "SignOutSucceeded")
+			logSignOutEvent(r, db, database.SecurityEventNameSignOutSucceeded)
 		}
 
 		http.Redirect(w, r, "/search", http.StatusSeeOther)
@@ -60,14 +60,14 @@ func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Reque
 }
 
 // logSignOutEvent records an event into the security event log.
-func logSignOutEvent(r *http.Request, db dbutil.DB, name string) {
+func logSignOutEvent(r *http.Request, db dbutil.DB, name database.SecurityEventName) {
 	ctx := r.Context()
-	actor := actor.FromContext(ctx)
+	a := actor.FromContext(ctx)
 
 	event := &database.SecurityEvent{
 		Name:            name,
 		URL:             r.URL.Path,
-		UserID:          uint32(actor.UID),
+		UserID:          uint32(a.UID),
 		AnonymousUserID: "",
 		Argument:        nil,
 		Source:          "BACKEND",
