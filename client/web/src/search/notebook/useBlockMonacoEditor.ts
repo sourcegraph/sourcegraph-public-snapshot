@@ -3,34 +3,83 @@ import { useState, useEffect } from 'react'
 
 import { BlockProps } from '.'
 
-type UseBlockMonacoEditorOptions = { editor: Monaco.editor.IStandaloneCodeEditor | undefined; id: string } & Omit<
+type UseMonacoBlockEditorOptions = { editor: Monaco.editor.IStandaloneCodeEditor | undefined; id: string } & Omit<
     BlockProps,
     'isSelected'
 >
 
-export const useBlockMonacoInput = ({
+function blurActiveElement(): void {
+    if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur()
+    }
+}
+
+export const useMonacoBlockInput = ({
     editor,
     id,
     onRunBlock,
     onBlockInputChange,
     onSelectBlock,
-}: UseBlockMonacoEditorOptions): {
+    onMoveBlockSelection,
+}: UseMonacoBlockEditorOptions): {
     isInputFocused: boolean
 } => {
+    const [isInputFocused, setIsInputFocused] = useState(false)
+
     useEffect(() => {
         if (!editor) {
             return
         }
-        const disposable = editor.addAction({
-            id: 'run-on-cmd-enter',
+        const addRunBlockActionDisposable = editor.addAction({
+            id: 'run-block-on-cmd-enter',
             label: 'Run block',
             keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
-            run: () => {
-                onRunBlock(id)
+            run: () => onRunBlock(id),
+        })
+        const moveUpOnFirstLineDisposable = editor.addAction({
+            id: 'move-up-on-first-line',
+            label: 'Move up on first line',
+            keybindings: [Monaco.KeyCode.UpArrow],
+            run: editor => {
+                const position = editor.getPosition()
+                if (!position) {
+                    return
+                }
+                if (position.lineNumber === 1) {
+                    onMoveBlockSelection(id, 'up')
+                    blurActiveElement()
+                } else {
+                    editor.setPosition({ lineNumber: position.lineNumber - 1, column: position.column })
+                }
             },
         })
-        return () => disposable.dispose()
-    }, [editor, id, onRunBlock])
+        const moveDownOnLastLineDisposable = editor.addAction({
+            id: 'move-down-on-last-line',
+            label: 'Move down on last line',
+            keybindings: [Monaco.KeyCode.DownArrow],
+            run: editor => {
+                const position = editor.getPosition()
+                if (!position) {
+                    return
+                }
+                const lineCount = editor.getModel()?.getLineCount()
+                if (!lineCount) {
+                    return
+                }
+                if (position.lineNumber === lineCount) {
+                    onMoveBlockSelection(id, 'down')
+                    blurActiveElement()
+                } else {
+                    editor.setPosition({ lineNumber: position.lineNumber + 1, column: position.column })
+                }
+            },
+        })
+        return () => {
+            addRunBlockActionDisposable.dispose()
+            moveUpOnFirstLineDisposable.dispose()
+            moveDownOnLastLineDisposable.dispose()
+        }
+    }, [editor, id, onRunBlock, onMoveBlockSelection])
 
     useEffect(() => {
         if (!editor) {
@@ -42,7 +91,6 @@ export const useBlockMonacoInput = ({
         return () => disposable.dispose()
     }, [editor, id, onBlockInputChange])
 
-    const [isInputFocused, setIsInputFocused] = useState(false)
     useEffect(() => {
         if (!editor) {
             setIsInputFocused(false)

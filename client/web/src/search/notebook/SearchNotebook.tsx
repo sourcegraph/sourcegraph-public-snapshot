@@ -107,6 +107,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         [setSelectedBlockId]
     )
 
+    const onMoveBlockSelection = useCallback(
+        (id: string, direction: 'up' | 'down') => {
+            const blockId = direction === 'up' ? notebook.getPreviousBlockId(id) : notebook.getNextBlockId(id)
+            if (blockId) {
+                setSelectedBlockId(blockId)
+            }
+        },
+        [notebook, setSelectedBlockId]
+    )
+
     // Check all clicks on the document and deselect the currently selected block
     // if it was triggered outside of a block.
     useEffect(() => {
@@ -121,12 +131,22 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                 setSelectedBlockId(null)
             }
         }
+        const handleKeyDown = (event: KeyboardEvent): void => {
+            if (selectedBlockId && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+                onMoveBlockSelection(selectedBlockId, event.key === 'ArrowUp' ? 'up' : 'down')
+            }
+            if (!selectedBlockId && event.key === 'ArrowDown') {
+                setSelectedBlockId(notebook.getFirstBlockId())
+            }
+        }
 
         document.addEventListener('mousedown', handleClickOutside)
+        document.addEventListener('keydown', handleKeyDown)
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
+            document.removeEventListener('keydown', handleKeyDown)
         }
-    }, [setSelectedBlockId])
+    }, [notebook, selectedBlockId, onMoveBlockSelection])
 
     useEffect(() => {
         // Initialize Sourcegraph Monaco code intelligence (hovers, completions)
@@ -154,6 +174,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 onSelectBlock={onSelectBlock}
                                 onRunBlock={onRunBlock}
                                 onBlockInputChange={onBlockInputChange}
+                                onMoveBlockSelection={onMoveBlockSelection}
                             />
                         )}
                         {block.type === 'query' && (
@@ -164,6 +185,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 onSelectBlock={onSelectBlock}
                                 onRunBlock={onRunBlock}
                                 onBlockInputChange={onBlockInputChange}
+                                onMoveBlockSelection={onMoveBlockSelection}
                             />
                         )}
                     </>

@@ -33,6 +33,7 @@ export interface BlockProps {
     onRunBlock(id: string): void
     onBlockInputChange(id: string, value: string): void
     onSelectBlock(id: string | null): void
+    onMoveBlockSelection(id: string, direction: 'up' | 'down'): void
 }
 
 export class Notebook {
@@ -109,5 +110,19 @@ export class Notebook {
         this.blockOrder.splice(index, 0, id)
         this.idToBlock.set(id, block)
         return block
+    }
+
+    public getFirstBlockId(): string | null {
+        return this.blockOrder.length > 0 ? this.blockOrder[0] : null
+    }
+
+    public getPreviousBlockId(id: string): string | null {
+        const index = this.blockOrder.indexOf(id)
+        return index >= 1 ? this.blockOrder[index - 1] : null
+    }
+
+    public getNextBlockId(id: string): string | null {
+        const index = this.blockOrder.indexOf(id)
+        return index >= 0 && index < this.blockOrder.length - 1 ? this.blockOrder[index + 1] : null
     }
 }

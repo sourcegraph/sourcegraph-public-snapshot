@@ -17,7 +17,7 @@ import { StreamingSearchResultsList } from '../results/StreamingSearchResultsLis
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookQueryBlock.module.scss'
-import { useBlockMonacoInput } from './useBlockMonacoEditor'
+import { useMonacoBlockInput } from './useBlockMonacoEditor'
 
 import { BlockProps, QueryBlock } from '.'
 
@@ -78,15 +78,17 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     onRunBlock,
     onBlockInputChange,
     onSelectBlock,
+    onMoveBlockSelection,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
-    const { isInputFocused } = useBlockMonacoInput({
+    const { isInputFocused } = useMonacoBlockInput({
         editor,
         id,
         onRunBlock,
         onBlockInputChange,
         onSelectBlock,
+        onMoveBlockSelection,
     })
 
     const searchResults = useObservable(output ?? of(undefined))

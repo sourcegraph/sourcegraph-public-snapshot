@@ -8,7 +8,7 @@ import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
-import { useBlockMonacoInput } from './useBlockMonacoEditor'
+import { useMonacoBlockInput } from './useBlockMonacoEditor'
 
 import { BlockProps, MarkdownBlock } from '.'
 
@@ -58,6 +58,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     onRunBlock,
     onBlockInputChange,
     onSelectBlock,
+    onMoveBlockSelection,
 }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [, setMonacoInstance] = useState<typeof Monaco>()
@@ -71,12 +72,13 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         [onRunBlock, setIsEditing]
     )
 
-    const { isInputFocused } = useBlockMonacoInput({
+    const { isInputFocused } = useMonacoBlockInput({
         editor,
         id,
         onRunBlock: runBlock,
         onBlockInputChange,
         onSelectBlock,
+        onMoveBlockSelection,
     })
 
     const onDoubleClick = useCallback(() => {
