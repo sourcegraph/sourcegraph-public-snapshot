@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -238,7 +238,7 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, &basegitserver.RevisionNotFoundError{}
+				return time.Time{}, &gitserver.RevisionNotFoundError{}
 			}
 
 			return allDates[i], nil

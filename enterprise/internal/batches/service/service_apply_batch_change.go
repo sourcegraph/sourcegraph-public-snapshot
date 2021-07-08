@@ -34,6 +34,8 @@ type ApplyBatchChangeOpts struct {
 	// When FailIfBatchChangeExists is true, ApplyBatchChange will fail if a batch change
 	// matching the given batch spec already exists.
 	FailIfBatchChangeExists bool
+
+	PublicationStates UiPublicationStates
 }
 
 func (o ApplyBatchChangeOpts) String() string {
@@ -131,8 +133,18 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 		return nil, err
 	}
 
+	// Prepare the UI publication states. We need to do this within the
+	// transaction to avoid conflicting writes to the changeset specs.
+	if err := opts.PublicationStates.prepareAndValidate(mappings); err != nil {
+		return nil, err
+	}
+
 	// Upsert all changesets.
 	for _, changeset := range changesets {
+		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
+			changeset.UiPublicationState = state
+		}
+
 		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
 			return nil, err
 		}

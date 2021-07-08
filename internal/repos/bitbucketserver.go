@@ -33,6 +33,7 @@ type BitbucketServerSource struct {
 
 var _ Source = &BitbucketServerSource{}
 var _ UserSource = &BitbucketServerSource{}
+var _ VersionSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
@@ -323,4 +324,8 @@ func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (stri
 func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.AuthenticatedUsername(ctx)
 	return err
+}
+
+func (s *BitbucketServerSource) Version(ctx context.Context) (string, error) {
+	return s.client.GetVersion(ctx)
 }

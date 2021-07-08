@@ -7,17 +7,21 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
-import { submitSearch, toggleSearchFilter } from '../../helpers'
+import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'
+import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
+
+const SEARCH_SIDEBAR_VISIBILITY_KEY = 'SearchProduct.SearchSidebar.Visibility'
 
 export interface SearchSidebarProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
@@ -31,10 +35,26 @@ export interface SearchSidebarProps
     query: string
     filters?: Filter[]
     className?: string
+    navbarSearchQueryState: QueryState
+    onNavbarQueryChange: (queryState: QueryState) => void
+    isSourcegraphDotCom: boolean
+}
+
+enum SectionID {
+    SEARCH_REFERENCE,
+    SEARCH_TYPES,
+    DYNAMIC_FILTERS,
+    REPOSITORIES,
+    SEARCH_SNIPPETS,
+    QUICK_LINKS,
 }
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
+    const [openSections, setOpenSections] = useLocalStorage<{ [key in SectionID]?: boolean }>(
+        SEARCH_SIDEBAR_VISIBILITY_KEY,
+        {}
+    )
 
     const onFilterClicked = useCallback(
         (value: string) => {
@@ -69,16 +89,53 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     const showSnippetsCtaLink = !props.authenticatedUser && props.featureFlags.get('w0-signup-optimisation')
 
+    const persistToggleState = useCallback(
+        (id: SectionID, open: boolean) => {
+            setOpenSections(openSections => ({ ...openSections, [id]: open }))
+        },
+        [setOpenSections]
+    )
+    console.log(props.featureFlags)
+
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
-                <SearchSidebarSection className={styles.searchSidebarItem} header="Search types">
-                    {getSearchTypeLinks(props)}
-                </SearchSidebarSection>
-                <SearchSidebarSection className={styles.searchSidebarItem} header="Dynamic filters">
+                {props.featureFlags.get('search-reference') && (
+                    <SearchSidebarSection
+                        className={styles.searchSidebarItem}
+                        header="Search reference"
+                        showSearch={true}
+                        open={openSections[SectionID.SEARCH_REFERENCE] ?? true}
+                        onToggle={open => persistToggleState(SectionID.SEARCH_REFERENCE, open)}
+                    >
+                        {getSearchReferenceFactory(props)}
+                    </SearchSidebarSection>
+                )}
+                {!props.featureFlags.get('search-reference') && (
+                    <SearchSidebarSection
+                        className={styles.searchSidebarItem}
+                        header="Search types"
+                        open={openSections[SectionID.SEARCH_TYPES] ?? true}
+                        onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
+                    >
+                        {getSearchTypeLinks(props)}
+                    </SearchSidebarSection>
+                )}
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Dynamic filters"
+                    open={openSections[SectionID.DYNAMIC_FILTERS] ?? true}
+                    onToggle={open => persistToggleState(SectionID.DYNAMIC_FILTERS, open)}
+                >
                     {getDynamicFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection className={styles.searchSidebarItem} header="Repositories" showSearch={true}>
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Repositories"
+                    open={openSections[SectionID.REPOSITORIES] ?? true}
+                    onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
+                    showSearch={true}
+                >
                     {getRepoFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
@@ -91,10 +148,17 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                             : undefined
                     }
                     onCtaLinkClick={onSearchSnippetsCtaLinkClick}
+                    open={openSections[SectionID.REPOSITORIES] ?? true}
+                    onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
                 >
                     {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection className={styles.searchSidebarItem} header="Quicklinks">
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Quicklinks"
+                    open={openSections[SectionID.QUICK_LINKS] ?? true}
+                    onToggle={open => persistToggleState(SectionID.QUICK_LINKS, open)}
+                >
                     {getQuickLinks(props.settingsCascade)}
                 </SearchSidebarSection>
             </StickyBox>

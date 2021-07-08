@@ -56,3 +56,12 @@ export const updateFilters = (query: string, field: string, value: string): stri
     }
     return `${query} ${field}:${value}`
 }
+
+/**
+ * Appends the provided filter.
+ */
+export const appendFilter = (query: string, field: string, value: string): string => {
+    const trimmedQuery = query.trim()
+    const filter = `${field}:${value}`
+    return trimmedQuery.length === 0 ? filter : `${query.trimEnd()} ${filter}`
+}

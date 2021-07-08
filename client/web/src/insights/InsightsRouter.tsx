@@ -12,12 +12,15 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { CreationRoutes } from './pages/creation/CreationRoutes'
+import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
+import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
 import { getExperimentalFeatures } from './utils/get-experimental-features'
 
-const InsightsLazyPage = lazyComponent(() => import('./pages/insights/InsightsPage'), 'InsightsPage')
-const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
-const DashboardsLazyPage = lazyComponent(() => import('./pages/dashboards/DashboardsPage'), 'DashboardsPage')
+const InsightsLazyPage = lazyComponent(() => import('./pages/insights/insights-page/InsightsPage'), 'InsightsPage')
+const EditInsightLazyPage = lazyComponent(
+    () => import('./pages/insights/edit-insight/EditInsightPage'),
+    'EditInsightPage'
+)
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -80,16 +83,12 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
             />
 
             {codeInsightsDashboards && (
-                <Route
-                    path={`${match.url}/dashboard/:dashboardId?`}
-                    render={(props: RouteComponentProps<{ dashboardId: string }>) => (
-                        <DashboardsLazyPage
-                            telemetryService={telemetryService}
-                            extensionsController={extensionsController}
-                            settingsCascade={settingsCascade}
-                            dashboardID={props.match.params.dashboardId}
-                        />
-                    )}
+                <DashboardsRoutes
+                    authenticatedUser={authenticatedUser}
+                    telemetryService={telemetryService}
+                    extensionsController={extensionsController}
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
                 />
             )}
 

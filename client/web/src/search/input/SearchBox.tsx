@@ -7,6 +7,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContext } from '../../schema/site.schema'
 import { QueryState, submitSearch } from '../helpers'
@@ -19,6 +20,7 @@ import { Toggles, TogglesProps } from './toggles/Toggles'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
+        FeatureFlagProps,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -50,7 +52,7 @@ export interface SearchBoxProps
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
-    const { queryState } = props
+    const { queryState, featureFlags } = props
 
     return (
         <div className={styles.searchBox}>
@@ -84,7 +86,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>
             </div>
-            <SearchButton className={styles.searchBoxButton} />
+            <SearchButton noHelp={featureFlags.get('search-reference')} className={styles.searchBoxButton} />
         </div>
     )
 }

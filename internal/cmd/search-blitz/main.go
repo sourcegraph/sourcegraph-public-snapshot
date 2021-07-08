@@ -19,8 +19,10 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-const port = "8080"
-const envLogDir = "LOG_DIR"
+const (
+	port      = "8080"
+	envLogDir = "LOG_DIR"
+)
 
 func run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -75,13 +77,26 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			if err != nil {
 				log.Error(err.Error())
 			} else {
-				log.Info("metrics", "trace", m.trace, "duration_ms", m.took, "first_result_ms", m.firstResultMs, "match_count", m.matchCount)
-				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, m.took, m.firstResultMs)
-				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
 
-				if err := traces.Fetch(ctx, m.trace); err != nil {
-					log.Error("failed to store trace", "error", err)
-				}
+				log.Info("metrics", "trace", m.trace, "duration", m.took, "first_result", m.firstResult, "match_count", m.matchCount)
+
+				tookSeconds, firstResultSeconds := m.took.Seconds(), m.firstResult.Seconds()
+
+				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
+				durationSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(tookSeconds)
+				firstResultSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(firstResultSeconds)
+
+				go func() {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(qc.Interval / 2):
+					}
+
+					if err := traces.Fetch(ctx, m.trace); err != nil {
+						log.Error("failed to store trace", "error", err)
+					}
+				}()
 			}
 
 			select {
@@ -154,8 +169,10 @@ func (t *tsvLogger) Log(a ...interface{}) {
 	_, _ = t.buf.WriteTo(t.w)
 }
 
-var tsv *tsvLogger
-var traces *traceStore
+var (
+	tsv    *tsvLogger
+	traces *traceStore
+)
 
 func main() {
 	logDir := os.Getenv(envLogDir)

@@ -9,6 +9,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -125,6 +126,7 @@ func (m GlobalSearchMode) String() string {
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
+	ResultTypes result.Types
 
 	// Performance optimization: For global queries, resolving repositories and
 	// querying zoekt happens concurrently.

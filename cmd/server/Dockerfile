@@ -11,6 +11,12 @@ RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
+FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304 AS coursier
+
+RUN wget -O coursier https://github.com/coursier/coursier/releases/download/v2.0.16/cs-x86_64-pc-linux && \
+    mv coursier /usr/local/bin/coursier && \
+    chmod +x /usr/local/bin/coursier
+
 FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304
 # TODO(security): This container should not be running as root!
 #
@@ -92,6 +98,8 @@ COPY . /
 
 # hadolint ignore=DL3022
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
+
+COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 
 # This is a trick to include libraries required by p4,
 # please refer to https://blog.tilander.org/docker-perforce/

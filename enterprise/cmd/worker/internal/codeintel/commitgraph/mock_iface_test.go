@@ -32,7 +32,7 @@ type MockDBStore struct {
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
 		CalculateVisibleUploadsFunc: &DBStoreCalculateVisibleUploadsFunc{
-			defaultHook: func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error {
+			defaultHook: func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 				return nil
 			},
 		},
@@ -69,24 +69,24 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked.
 type DBStoreCalculateVisibleUploadsFunc struct {
-	defaultHook func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error
-	hooks       []func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error
+	defaultHook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error
+	hooks       []func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error
 	history     []DBStoreCalculateVisibleUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // CalculateVisibleUploads delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 *gitserver.CommitGraph, v3 string, v4 int, v5 time.Time) error {
-	r0 := m.CalculateVisibleUploadsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.CalculateVisibleUploadsFunc.appendCall(DBStoreCalculateVisibleUploadsFuncCall{v0, v1, v2, v3, v4, v5, r0})
+func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 *gitserver.CommitGraph, v3 map[string]gitserver.RefDescription, v4 time.Duration, v5 time.Duration, v6 int, v7 time.Time) error {
+	r0 := m.CalculateVisibleUploadsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6, v7)
+	m.CalculateVisibleUploadsFunc.appendCall(DBStoreCalculateVisibleUploadsFuncCall{v0, v1, v2, v3, v4, v5, v6, v7, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -94,7 +94,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Co
 // CalculateVisibleUploads method of the parent MockDBStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -103,7 +103,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error {
+	f.SetDefaultHook(func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
@@ -111,12 +111,12 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreCalculateVisibleUploadsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error {
+	f.PushHook(func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
 
-func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, *gitserver.CommitGraph, string, int, time.Time) error {
+func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, *gitserver.CommitGraph, map[string]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -161,13 +161,19 @@ type DBStoreCalculateVisibleUploadsFuncCall struct {
 	Arg2 *gitserver.CommitGraph
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
+	Arg3 map[string]gitserver.RefDescription
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 int
+	Arg4 time.Duration
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
-	Arg5 time.Time
+	Arg5 time.Duration
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Arg7 is the value of the 8th argument passed to this method
+	// invocation.
+	Arg7 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -176,7 +182,7 @@ type DBStoreCalculateVisibleUploadsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBStoreCalculateVisibleUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6, c.Arg7}
 }
 
 // Results returns an interface slice containing the results of this
@@ -411,9 +417,9 @@ type MockGitserverClient struct {
 	// CommitGraphFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitGraph.
 	CommitGraphFunc *GitserverClientCommitGraphFunc
-	// HeadFunc is an instance of a mock function object controlling the
-	// behavior of the method Head.
-	HeadFunc *GitserverClientHeadFunc
+	// RefDescriptionsFunc is an instance of a mock function object
+	// controlling the behavior of the method RefDescriptions.
+	RefDescriptionsFunc *GitserverClientRefDescriptionsFunc
 }
 
 // NewMockGitserverClient creates a new mock of the GitserverClient
@@ -426,9 +432,9 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return nil, nil
 			},
 		},
-		HeadFunc: &GitserverClientHeadFunc{
-			defaultHook: func(context.Context, int) (string, error) {
-				return "", nil
+		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
+			defaultHook: func(context.Context, int) (map[string]gitserver.RefDescription, error) {
+				return nil, nil
 			},
 		},
 	}
@@ -442,8 +448,8 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
 			defaultHook: i.CommitGraph,
 		},
-		HeadFunc: &GitserverClientHeadFunc{
-			defaultHook: i.Head,
+		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
+			defaultHook: i.RefDescriptions,
 		},
 	}
 }
@@ -560,35 +566,36 @@ func (c GitserverClientCommitGraphFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientHeadFunc describes the behavior when the Head method of
-// the parent MockGitserverClient instance is invoked.
-type GitserverClientHeadFunc struct {
-	defaultHook func(context.Context, int) (string, error)
-	hooks       []func(context.Context, int) (string, error)
-	history     []GitserverClientHeadFuncCall
+// GitserverClientRefDescriptionsFunc describes the behavior when the
+// RefDescriptions method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientRefDescriptionsFunc struct {
+	defaultHook func(context.Context, int) (map[string]gitserver.RefDescription, error)
+	hooks       []func(context.Context, int) (map[string]gitserver.RefDescription, error)
+	history     []GitserverClientRefDescriptionsFuncCall
 	mutex       sync.Mutex
 }
 
-// Head delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) Head(v0 context.Context, v1 int) (string, error) {
-	r0, r1 := m.HeadFunc.nextHook()(v0, v1)
-	m.HeadFunc.appendCall(GitserverClientHeadFuncCall{v0, v1, r0, r1})
+// RefDescriptions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) RefDescriptions(v0 context.Context, v1 int) (map[string]gitserver.RefDescription, error) {
+	r0, r1 := m.RefDescriptionsFunc.nextHook()(v0, v1)
+	m.RefDescriptionsFunc.appendCall(GitserverClientRefDescriptionsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the Head method of the
-// parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+// SetDefaultHook sets function that is called when the RefDescriptions
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientRefDescriptionsFunc) SetDefaultHook(hook func(context.Context, int) (map[string]gitserver.RefDescription, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Head method of the parent MockGitserverClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, error)) {
+// RefDescriptions method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientRefDescriptionsFunc) PushHook(hook func(context.Context, int) (map[string]gitserver.RefDescription, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -596,21 +603,21 @@ func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, int) (stri
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (string, error) {
+func (f *GitserverClientRefDescriptionsFunc) SetDefaultReturn(r0 map[string]gitserver.RefDescription, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (map[string]gitserver.RefDescription, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientHeadFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, int) (string, error) {
+func (f *GitserverClientRefDescriptionsFunc) PushReturn(r0 map[string]gitserver.RefDescription, r1 error) {
+	f.PushHook(func(context.Context, int) (map[string]gitserver.RefDescription, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientHeadFunc) nextHook() func(context.Context, int) (string, error) {
+func (f *GitserverClientRefDescriptionsFunc) nextHook() func(context.Context, int) (map[string]gitserver.RefDescription, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -623,26 +630,27 @@ func (f *GitserverClientHeadFunc) nextHook() func(context.Context, int) (string,
 	return hook
 }
 
-func (f *GitserverClientHeadFunc) appendCall(r0 GitserverClientHeadFuncCall) {
+func (f *GitserverClientRefDescriptionsFunc) appendCall(r0 GitserverClientRefDescriptionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitserverClientHeadFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientHeadFunc) History() []GitserverClientHeadFuncCall {
+// History returns a sequence of GitserverClientRefDescriptionsFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientRefDescriptionsFunc) History() []GitserverClientRefDescriptionsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverClientHeadFuncCall, len(f.history))
+	history := make([]GitserverClientRefDescriptionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverClientHeadFuncCall is an object that describes an invocation of
-// method Head on an instance of MockGitserverClient.
-type GitserverClientHeadFuncCall struct {
+// GitserverClientRefDescriptionsFuncCall is an object that describes an
+// invocation of method RefDescriptions on an instance of
+// MockGitserverClient.
+type GitserverClientRefDescriptionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -651,7 +659,7 @@ type GitserverClientHeadFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 string
+	Result0 map[string]gitserver.RefDescription
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -659,13 +667,13 @@ type GitserverClientHeadFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverClientHeadFuncCall) Args() []interface{} {
+func (c GitserverClientRefDescriptionsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverClientHeadFuncCall) Results() []interface{} {
+func (c GitserverClientRefDescriptionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

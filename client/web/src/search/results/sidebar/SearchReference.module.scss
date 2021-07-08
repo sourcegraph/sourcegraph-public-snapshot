@@ -1,0 +1,81 @@
+.tablist {
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.header {
+    margin-top: 0.75rem;
+}
+
+.footer {
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+    margin: 0;
+}
+
+.filter-form {
+    margin-bottom: 0.75rem;
+}
+
+.list {
+    list-style-type: none;
+    margin: 0 -0.125rem;
+    padding: 0.125rem;
+    max-height: 18rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.item {
+    &.active {
+        background-color: var(--color-bg-3);
+    }
+
+    &.active,
+    &:hover {
+        .collapse-button {
+            @extend .collapse-button, :focus;
+        }
+    }
+
+    button {
+        font-size: inherit;
+        text-align: left;
+    }
+}
+
+.description {
+    background-color: var(--color-bg-1);
+    border-top: 1px solid #dbe2f0;
+    border-bottom: 1px solid #dbe2f0;
+    margin-top: 0.25rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.description > * {
+    margin-bottom: 0.5rem;
+}
+
+.description > :last-child {
+    margin-bottom: 0;
+}
+
+.placeholder {
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+.collapse-button {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: none;
+}
+
+.collapse-button:focus {
+    display: inline-block;
+}
+
+.examples {
+    white-space: break-spaces;
+}
