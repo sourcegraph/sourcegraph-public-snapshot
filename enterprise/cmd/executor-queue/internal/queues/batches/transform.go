@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"strings"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -35,15 +34,12 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 		return apiclient.Job{}, err
 	}
 
-	// HACK:
-	localHackFrontendURL := strings.ReplaceAll(config.Shared.FrontendURL, "localhost", "192.168.1.34")
-
-	srcEndpoint, err := makeURL(localHackFrontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
+	srcEndpoint, err := makeURL(config.Shared.FrontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
 
-	redactedSrcEndpoint, err := makeURL(localHackFrontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
+	redactedSrcEndpoint, err := makeURL(config.Shared.FrontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
 	if err != nil {
 		return apiclient.Job{}, err
 	}
