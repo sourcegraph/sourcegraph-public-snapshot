@@ -72,6 +72,13 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 		var published interface{} = nil
 		if task.Template.Published != nil {
 			published = task.Template.Published.ValueWithSuffix(repo, branch)
+
+			// Backward compatibility: before optional published fields were
+			// allowed, ValueWithSuffix() would fall back to false, not nil. We
+			// need to replicate this behaviour here.
+			if published == nil && !features.AllowOptionalPublished {
+				published = false
+			}
 		} else if !features.AllowOptionalPublished {
 			return nil, errOptionalPublishedUnsupported
 		}

@@ -127,6 +127,21 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			result:   defaultResult,
 			want: []*batches.ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
+					s.Published = nil
+				}),
+			},
+			wantErr: "",
+		},
+		{
+			name: "publish by branch not matching on an old Sourcegraph version",
+			task: taskWith(defaultTask, func(task *Task) {
+				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
+				task.Template.Published = parsePublishedFieldString(t, published)
+			}),
+			features: featuresWithoutOptionalPublished,
+			result:   defaultResult,
+			want: []*batches.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
 					s.Published = false
 				}),
 			},
