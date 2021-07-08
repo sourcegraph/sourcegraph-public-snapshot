@@ -6,7 +6,10 @@ import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
-import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
+import {
+    queryRepoBatchChanges as _queryRepoBatchChanges,
+    queryRepoBatchChangeStats as _queryRepoBatchChangeStats,
+} from './backend'
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 import { NODES } from './testData'
 
@@ -27,6 +30,38 @@ const repoDefaults: RepositoryFields = {
     name: 'github.com/sourcegraph/awesome',
     url: 'http://test.test/awesome',
 }
+
+const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
+    of({
+        batchChangesDiffStat: {
+            added: 247,
+            changed: 1896,
+            deleted: 990,
+        },
+        changesetsStats: {
+            unpublished: 1,
+            open: 2,
+            merged: 47,
+            closed: 9,
+            total: 59,
+        },
+    })
+
+const queryEmptyRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
+    of({
+        batchChangesDiffStat: {
+            added: 0,
+            changed: 0,
+            deleted: 0,
+        },
+        changesetsStats: {
+            unpublished: 0,
+            open: 0,
+            merged: 0,
+            closed: 0,
+            total: 0,
+        },
+    })
 
 const queryRepoBatchChanges = (nodes: RepoBatchChange[]): typeof _queryRepoBatchChanges => () =>
     of({
@@ -60,7 +95,9 @@ add('List of batch changes', () => (
         {props => (
             <BatchChangeRepoPage
                 {...props}
+                isSourcegraphDotCom={false}
                 repo={repoDefaults}
+                queryRepoBatchChangeStats={queryRepoBatchChangeStats}
                 queryRepoBatchChanges={queryList}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
             />
@@ -70,6 +107,14 @@ add('List of batch changes', () => (
 
 add('No batch changes', () => (
     <EnterpriseWebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
-        {props => <BatchChangeRepoPage {...props} repo={repoDefaults} queryRepoBatchChanges={queryNone} />}
+        {props => (
+            <BatchChangeRepoPage
+                {...props}
+                isSourcegraphDotCom={false}
+                repo={repoDefaults}
+                queryRepoBatchChangeStats={queryEmptyRepoBatchChangeStats}
+                queryRepoBatchChanges={queryNone}
+            />
+        )}
     </EnterpriseWebStory>
 ))
