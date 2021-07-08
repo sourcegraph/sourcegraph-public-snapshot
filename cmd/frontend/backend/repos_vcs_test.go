@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 
@@ -157,7 +156,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	defer git.ResetMocks()
 
 	_, err := Repos.ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
-	if !reflect.DeepEqual(err, want) {
+	if !errors.Is(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
 	if calledRepoLookup {

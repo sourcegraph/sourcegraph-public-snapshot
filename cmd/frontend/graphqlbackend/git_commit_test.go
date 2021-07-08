@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -131,7 +130,7 @@ func TestGitCommitFileNames(t *testing.T) {
 
 	defer git.ResetMocks()
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `

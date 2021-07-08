@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,7 +38,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 		}
 		defer func() { gitserver.MockIsRepoCloneable = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -81,7 +79,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 		}
 		defer func() { gitserver.MockIsRepoCloneable = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -199,7 +197,7 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 			}
 			defer func() { repoupdater.MockRepoLookup = nil }()
 
-			gqltesting.RunTests(t, []*gqltesting.Test{
+			RunTests(t, []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
