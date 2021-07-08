@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 	"unicode/utf8"
 
 	"github.com/cockroachdb/errors"
@@ -367,9 +368,25 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}
+
+		logAccountCreatedEvent(ctx, u.Handle().DB(), id)
 	}
 
 	return user, nil
+}
+
+func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, id int32) {
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccountCreated,
+		URL:             "",
+		UserID:          uint32(id),
+		AnonymousUserID: "",
+		Argument:        nil,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
