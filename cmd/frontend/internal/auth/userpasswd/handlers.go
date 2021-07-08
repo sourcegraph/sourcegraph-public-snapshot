@@ -209,16 +209,17 @@ func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var actor actor.Actor
 		var usr types.User
-		var result = "SignInAttempted"
-		logSignInEvent(r, db, &actor, &usr, &result)
+		var actor actor.Actor
 
-		// We have more failure scenarios and ONLY one successful scenario. By default assume a
-		// SigninFailed state so that the deffered logSignInEvent function call will log the correct
-		// security event in case of a failure.
-		result = "SignInFailed"
-		defer logSignInEvent(r, db, &actor, &usr, &result)
+		var signInResult = database.SecurityEventNameSignInAttempted
+		logSignInEvent(r, db, &usr, &signInResult)
+
+		// We have more failure scenarios and ONLY one successful scenario. By default
+		// assume a SigninFailed state so that the deferred logSignInEvent function call
+		// will log the correct security event in case of a failure.
+		signInResult = database.SecurityEventNameSignInFailed
+		defer logSignInEvent(r, db, &usr, &signInResult)
 
 		ctx := r.Context()
 
@@ -241,7 +242,7 @@ func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 		usr = *u
 
 		// 🚨 SECURITY: check password
-		correct, err := database.GlobalUsers.IsPassword(ctx, usr.ID, creds.Password)
+		correct, err := database.Users(db).IsPassword(ctx, usr.ID, creds.Password)
 		if err != nil {
 			httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
 			return
@@ -260,34 +261,32 @@ func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// IMPORTANT: If we reached here, it implies that sign in was succesful. We must set this to
-		// log the right security event with the deferred logSignInEvent function call.
-		result = "SignInSucceeded"
-		// log15.Warn("loginSuccessful", "userID", string(usr.ID), "actor", actor)
+		signInResult = database.SecurityEventNameSignInSucceeded
 	}
 }
 
-func logSignInEvent(r *http.Request, db dbutil.DB, actor *actor.Actor, usr *types.User, name *string) {
-	anon := ""
-	if usr.ID == 0 {
-		anon = "true"
+func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *database.SecurityEventName) {
+	var anonymousID string
+
+	// TODO: We have multiple places in our codebase where we grab this cookie, we
+	// should centralise it
+	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil && cookie.Value != "" {
+		anonymousID = cookie.Value
 	}
 
 	event := &database.SecurityEvent{
 		Name:            *name,
 		URL:             r.URL.Path,
 		UserID:          uint32(usr.ID),
-		AnonymousUserID: anon,
+		AnonymousUserID: anonymousID,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
 
-	log15.Warn("security_event", fmt.Sprintf("%#v", event))
-
-	database.SecurityEventLogs(db).LogAuthEvent(r.Context(), event)
+	database.SecurityEventLogs(db).LogEvent(r.Context(), event)
 }
 
-// Check availability of username for signup form
+// HandleCheckUsernameTaken checks availability of username for signup form
 func HandleCheckUsernameTaken(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

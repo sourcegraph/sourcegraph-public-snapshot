@@ -21,6 +21,10 @@ const (
 	SecurityEventNameSignOutAttempted SecurityEventName = "SignOutAttempted"
 	SecurityEventNameSignOutFailed    SecurityEventName = "SignOutFailed"
 	SecurityEventNameSignOutSucceeded SecurityEventName = "SignOutSucceeded"
+
+	SecurityEventNameSignInAttempted SecurityEventName = "SignInAttempted"
+	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
+	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -70,6 +74,8 @@ func (s *SecurityEventLogStore) Insert(ctx context.Context, e *SecurityEvent) er
 }
 
 // LogEvent will log security events.
+//
+// Note that it does not return an error and will instead simply log it.
 func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) {
 	// We don't want to begin logging authentication or authorization events in
 	// on-premises installations yet.
