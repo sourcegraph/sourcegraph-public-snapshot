@@ -1014,6 +1014,36 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
+// searchResultsToFileNodes converts a set of search results into repo/file nodes so that they
+// can replace a file predicate
+func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
+	nodes := make([]query.Node, 0, len(matches))
+	for _, match := range matches {
+		fileMatch, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, fmt.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
+		}
+
+		// We create AND nodes to match both the repo and the file at the same time so
+		// we don't get files of the same name from different repositories.
+		nodes = append(nodes, query.Operator{
+			Kind: query.And,
+			Operands: []query.Node{
+				query.Parameter{
+					Field: query.FieldRepo,
+					Value: "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$",
+				},
+				query.Parameter{
+					Field: query.FieldFile,
+					Value: "^" + regexp.QuoteMeta(fileMatch.Path) + "$",
+				},
+			},
+		})
+	}
+
+	return nodes, nil
+}
+
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
@@ -1077,6 +1107,12 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 		switch predicate.Field() {
 		case query.FieldRepo:
 			nodes, err = searchResultsToRepoNodes(srr.Matches)
+			if err != nil {
+				topErr = err
+				return nil
+			}
+		case query.FieldFile:
+			nodes, err = searchResultsToFileNodes(srr.Matches)
 			if err != nil {
 				topErr = err
 				return nil
