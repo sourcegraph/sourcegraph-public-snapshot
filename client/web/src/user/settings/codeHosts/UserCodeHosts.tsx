@@ -12,7 +12,7 @@ import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
-interface Props {
+export interface UserCodeHosts {
     user: UserAreaUserFields
     externalServices: ListExternalServiceFields[]
     onDidError: (error: ErrorLike) => void
@@ -29,7 +29,7 @@ const cloudSupportedServices = {
     gitlabcom: codeHostExternalServices.gitlabcom,
 }
 
-export const UserCodeHosts: React.FunctionComponent<Props> = ({
+export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
     user,
     externalServices,
     context,

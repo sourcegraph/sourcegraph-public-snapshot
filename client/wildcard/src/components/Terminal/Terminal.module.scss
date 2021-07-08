@@ -1,6 +1,5 @@
 .download-progress-wrapper,
-.download-progress-item,
-.title {
+.download-progress-item {
     margin: 0;
     padding: 0;
     list-style: none;
@@ -8,9 +7,12 @@
     flex: 1;
 }
 
-.main-wrapper {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+.terminal-wrapper {
+    padding: 1.5rem;
+    background-color: #214863;
+    color: var(--light-text);
+    height: 14.25rem;
+    overflow-y: auto;
 }
 
 .terminal-line {
@@ -18,26 +20,14 @@
     width: 100%;
 }
 
-.terminal-wrapper {
-    padding: 1.5rem;
-    background-color: #214863;
-    color: var(--light-text);
-    max-height: 600px;
-    overflow-y: auto;
+.terminal-title {
+    flex: 1;
+    font-weight: bold;
+    color: var(--oc-green-4);
 }
 
 .download-progress-wrapper {
     flex-direction: column;
-}
-
-.header-title {
-    flex: 1;
-}
-
-.download-status {
-    color: var(--oc-lime-7);
-    flex: 0;
-    min-width: 6.25rem;
 }
 
 .download-progress {

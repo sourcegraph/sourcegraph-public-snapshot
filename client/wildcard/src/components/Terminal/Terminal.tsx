@@ -4,19 +4,16 @@ import terminalStyles from './Terminal.module.scss'
 
 // 73 '=' characters are the 100% of the progress bar
 const CHARACTERS_LENGTH = 73
-const CHARACTER = '='
 
 export const Terminal: React.FunctionComponent = ({ children }) => (
-    <div className={terminalStyles.mainWrapper}>
-        <section className={terminalStyles.terminalWrapper}>
-            <code>Cloning Repositories...</code>
-            <ul className={terminalStyles.downloadProgressWrapper}>{children}</ul>
-        </section>
-    </div>
+    <section className={terminalStyles.terminalWrapper}>
+        <code>Cloning Repositories...</code>
+        <ul className={terminalStyles.downloadProgressWrapper}>{children}</ul>
+    </section>
 )
 
 export const TerminalTitle: React.FunctionComponent = ({ children }) => (
-    <header className={terminalStyles.headerTitle}>
+    <header className={terminalStyles.terminalTitle}>
         <code>{children}</code>
     </header>
 )
@@ -25,15 +22,17 @@ export const TerminalLine: React.FunctionComponent = ({ children }) => (
     <li className={terminalStyles.terminalLine}>{children}</li>
 )
 
-export const TerminalDetails: React.FunctionComponent = ({ children }) => <code>{children}</code>
+export const TerminalDetails: React.FunctionComponent = ({ children }) => (
+    <div>
+        <code>{children}</code>
+    </div>
+)
 
-export const TerminalProgress: React.FunctionComponent<{ progress: number }> = ({ progress = 0 }) => {
+export const TerminalProgress: React.FunctionComponent<{ progress: number; character: string }> = ({
+    progress = 0,
+    character = '#',
+}) => {
     const numberOfChars = Math.ceil((progress / 100) * CHARACTERS_LENGTH)
 
-    return (
-        <code className={terminalStyles.downloadProgress}>
-            {CHARACTER.repeat(numberOfChars)}
-            {'>'}
-        </code>
-    )
+    return <code className={terminalStyles.downloadProgress}>{character.repeat(numberOfChars)}</code>
 }

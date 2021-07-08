@@ -17,7 +17,7 @@ interface RepoLine {
     progress: number
 }
 
-interface RepoCloningStatus {
+export interface RepoCloningStatus {
     trigger: (options?: QueryLazyOptions<Exact<UserRepositoriesVariables>>) => void
     repos: RepoLine[] | undefined
     loading: boolean

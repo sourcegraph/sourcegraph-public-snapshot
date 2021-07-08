@@ -6,25 +6,17 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
-import {
-    Terminal,
-    TerminalTitle,
-    TerminalLine,
-    TerminalDetails,
-    TerminalProgress,
-} from '@sourcegraph/wildcard/src/components/Terminal'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { UserAreaUserFields, ExternalServicesVariables, ExternalServicesResult } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { UserCodeHosts } from '../user/settings/codeHosts/UserCodeHosts'
 
-import { LogoAscii } from './LogoAscii'
 import { getReturnTo } from './SignInSignUpCommon'
 import { useRepoCloningStatus } from './useRepoCloningStatus'
-
+import { CodeHostsConnection } from './welcome/CodeHostsConnection'
+import { StartSearching } from './welcome/StartSearching'
 interface Props {
     authenticatedUser: UserAreaUserFields
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
@@ -90,29 +82,17 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const firstStep = {
         content: (
             <>
-                {currentStepNumber === 1 && (
-                    <>
-                        <div className="mb-4">
-                            <h3>Connect with code hosts</h3>
-                            <p className="text-muted">
-                                Connect with providers where your source code is hosted. Then, choose the repositories
-                                you’d like to search with Sourcegraph.
-                            </p>
-                        </div>
-                        {data?.externalServices?.nodes && (
-                            <UserCodeHosts
-                                user={user}
-                                externalServices={data.externalServices.nodes}
-                                context={context}
-                                onDidError={error => console.warn('<UserCodeHosts .../>', error)}
-                                onDidRemove={() => refetch()}
-                            />
-                        )}
-                    </>
+                {currentStepNumber === 1 && data?.externalServices.nodes && (
+                    <CodeHostsConnection
+                        user={user}
+                        externalServices={data.externalServices.nodes}
+                        context={context}
+                        refetch={refetch}
+                    />
                 )}
             </>
         ),
-        // step is considered complete when user has at least one external service
+        // step is considered complete when user has at least one external service connected.
         isComplete: (): boolean =>
             !!data && Array.isArray(data?.externalServices?.nodes) && data.externalServices.nodes.length > 0,
     }
@@ -139,42 +119,11 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
         content: (
             <>
                 {currentStepNumber === 3 && (
-                    <>
-                        <h3>Start searching...</h3>
-                        <p className="text-muted">
-                            We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first
-                            search!
-                        </p>
-                        <p>{`cloningStatusLoading: ${cloningStatusLoading}`}</p>
-                        <p>{`isDoneCloning: ${isDoneCloning}`}</p>
-                        <p>{`cloningStatusLines count: ${
-                            cloningStatusLines ? cloningStatusLines.length : 'undefined'
-                        }`}</p>
-                        <Terminal>
-                            {cloningStatusLoading && (
-                                <TerminalLine>
-                                    <TerminalTitle>Loading...</TerminalTitle>
-                                </TerminalLine>
-                            )}
-                            {!cloningStatusLoading &&
-                                cloningStatusLines?.map(({ id, title, details, progress }) => (
-                                    <>
-                                        <TerminalLine key={id}>
-                                            <TerminalTitle>{title}</TerminalTitle>
-                                            <TerminalDetails>{details}</TerminalDetails>
-                                        </TerminalLine>
-                                        <TerminalLine>
-                                            <TerminalProgress progress={progress} />
-                                        </TerminalLine>
-                                    </>
-                                ))}
-                            {isDoneCloning && (
-                                <TerminalLine>
-                                    <LogoAscii />
-                                </TerminalLine>
-                            )}
-                        </Terminal>
-                    </>
+                    <StartSearching
+                        isDoneCloning={isDoneCloning}
+                        cloningStatusLines={cloningStatusLines}
+                        cloningStatusLoading={cloningStatusLoading}
+                    />
                 )}
             </>
         ),
@@ -313,12 +262,6 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                                     next tab
                                 </button>
                             </div>
-                            <p>🎨&nbsp; ASCII logo demo&nbsp;😲</p>
-                            <p>
-                                We can possibly makes this an SVG but it'll be not that ASCII anymore, and I'd rather
-                                not waste time on that. We can use <b>fontSize</b> prop to control the size of the logo.
-                            </p>
-                            <LogoAscii />
                         </div>
                     }
                 />
