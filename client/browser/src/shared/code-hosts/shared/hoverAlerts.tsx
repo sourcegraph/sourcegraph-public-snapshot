@@ -8,7 +8,6 @@ import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combin
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
 import { isInPage } from '../../context'
-import { isDefaultSourcegraphUrl } from '../../util/context'
 
 import { CodeHost } from './codeHost'
 
@@ -66,13 +65,3 @@ export const createPrivateCodeHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverl
             }" target="_blank" rel="noopener norefferer">Show more info</a>`,
     },
 })
-
-/**
- * Determines if the user should be shown an alert to setup a private instance
- * (and whether we should keep the code hosts native tooltips).
- */
-export const userNeedsToSetupPrivateInstance = (
-    codeHost: Pick<CodeHost, 'getContext'>,
-    sourcegraphURL: string
-): boolean =>
-    isDefaultSourcegraphUrl(sourcegraphURL) && (!codeHost.getContext || codeHost.getContext().privateRepository)
