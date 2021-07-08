@@ -321,6 +321,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 	}
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
+	// for globalSearches we set k = 1.
 	searchOpts := SearchOpts(ctx, 1, args.PatternInfo)
 
 	// Start event stream.
@@ -500,7 +501,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 
-	k := ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, false)
+	k := ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit)
 	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
 
 	// Start event stream.
