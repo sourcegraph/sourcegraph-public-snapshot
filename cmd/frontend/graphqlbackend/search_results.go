@@ -505,24 +505,6 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, er
 	return r.resultsWithTimeoutSuggestion(ctx)
 }
 
-// unionMerge performs a merge of file match results, merging line matches when
-// they occur in the same file.
-func unionMerge(left, right *SearchResults) *SearchResults {
-	dedup := result.NewDeduper()
-
-	// Add results to maps for deduping
-	for _, leftResult := range left.Matches {
-		dedup.Add(leftResult)
-	}
-	for _, rightResult := range right.Matches {
-		dedup.Add(rightResult)
-	}
-
-	left.Matches = dedup.Results()
-	left.Stats.Update(&right.Stats)
-	return left
-}
-
 // union returns the union of two sets of search results and merges common search data.
 func union(left, right *SearchResults) *SearchResults {
 	if right == nil {
@@ -533,40 +515,12 @@ func union(left, right *SearchResults) *SearchResults {
 	}
 
 	if left.Matches != nil && right.Matches != nil {
-		return unionMerge(left, right)
+		left.Matches = result.Union(left.Matches, right.Matches)
+		left.Stats.Update(&right.Stats)
+		return left
 	} else if right.Matches != nil {
 		return right
 	}
-	return left
-}
-
-// intersectMerge performs a merge of file match results, merging line matches
-// for files contained in both result sets, and updating counts.
-func intersectMerge(left, right *SearchResults) *SearchResults {
-	rightFileMatches := make(map[result.Key]*result.FileMatch)
-	for _, r := range right.Matches {
-		if fileMatch, ok := r.(*result.FileMatch); ok {
-			rightFileMatches[fileMatch.Key()] = fileMatch
-		}
-	}
-
-	var merged []result.Match
-	for _, leftMatch := range left.Matches {
-		leftFileMatch, ok := leftMatch.(*result.FileMatch)
-		if !ok {
-			continue
-		}
-
-		rightFileMatch := rightFileMatches[leftFileMatch.Key()]
-		if rightFileMatch == nil {
-			continue
-		}
-
-		leftFileMatch.AppendMatches(rightFileMatch)
-		merged = append(merged, leftMatch)
-	}
-	left.Matches = merged
-	left.Stats.Update(&right.Stats)
 	return left
 }
 
@@ -576,7 +530,9 @@ func intersect(left, right *SearchResults) *SearchResults {
 	if left == nil || right == nil {
 		return nil
 	}
-	return intersectMerge(left, right)
+	left.Matches = result.Intersect(left.Matches, right.Matches)
+	left.Stats.Update(&right.Stats)
+	return left
 }
 
 // evaluateAnd performs set intersection on result sets. It collects results for
