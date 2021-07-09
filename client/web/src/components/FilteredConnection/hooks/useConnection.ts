@@ -1,19 +1,13 @@
 import { GraphQLError } from 'graphql'
 import { useCallback, useEffect, useState } from 'react'
-import { useLocation } from 'react-router'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
-import { hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
+import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
-import { Connection } from '../../../components/FilteredConnection/ConnectionType'
+import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 
+import { useSearchParameters } from './useSearchParameters'
 import { useUrlQuery } from './useUrlQuery'
-
-interface PaginationConnectionQueryArguments {
-    first?: number
-    after?: string | null
-    query?: string
-}
 
 interface PaginationConnectionResult<TData> {
     connection?: Connection<TData>
@@ -28,45 +22,25 @@ interface UsePaginationConnectionOptions {
 }
 interface UsePaginationConnectionParameters<TResult, TVariables, TData> {
     query: string
-    variables: TVariables & PaginationConnectionQueryArguments
+    variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
     options?: UsePaginationConnectionOptions
 }
 
-const useSearchParameters = (): URLSearchParams => {
-    const location = useLocation()
-    return new URLSearchParams(location.search)
-}
-
-interface asGraphQLResultParameters<TResult> {
-    data: TResult | null
-    errors: readonly GraphQLError[]
-}
-
-const asGraphQLResult = <T>({ data, errors }: asGraphQLResultParameters<T>): GraphQLResult<T> => {
-    if (!data) {
-        return { data: undefined, errors }
-    }
-    return {
-        data,
-        errors: undefined,
-    }
-}
-
 export const usePaginatedConnection = <TResult, TVariables, TData>({
     query,
-    variables: _variables,
+    variables: uncontrolledVariables,
     getConnection: getConnectionFromGraphQLResult,
     options,
 }: UsePaginationConnectionParameters<TResult, TVariables, TData>): PaginationConnectionResult<TData> => {
     const searchParameters = useSearchParameters()
 
-    const [variables, setVariables] = useState<TVariables & PaginationConnectionQueryArguments>({
-        ..._variables,
-        first: (options?.useURLQuery && parseQueryInt(searchParameters, 'first')) || _variables.first,
+    const [controlledVariables, setControlledVariables] = useState<TVariables & ConnectionQueryArguments>({
+        ...uncontrolledVariables,
+        first: (options?.useURLQuery && parseQueryInt(searchParameters, 'first')) || uncontrolledVariables.first,
     })
 
-    const { data, loading, error, fetchMore } = useQuery<TResult, TVariables>(query, { variables })
+    const { data, loading, error, fetchMore } = useQuery<TResult, TVariables>(query, { variables: controlledVariables })
     const errors = error?.graphQLErrors || []
 
     // Mapping over Apollo results to valid GraphQLResults for consumers
@@ -82,33 +56,33 @@ export const usePaginatedConnection = <TResult, TVariables, TData>({
 
     // Support allowing consumers to control the query variable
     useEffect(() => {
-        if (_variables.query !== variables.query) {
-            setVariables(previous => ({
+        if (uncontrolledVariables.query !== controlledVariables.query) {
+            setControlledVariables(previous => ({
                 ...previous,
-                query: _variables.query,
+                query: uncontrolledVariables.query,
             }))
         }
-    }, [_variables.query, variables.query])
+    }, [uncontrolledVariables.query, controlledVariables.query])
 
     useUrlQuery({
         enabled: options?.useURLQuery,
-        first: variables.first,
-        initialFirst: _variables.first,
-        query: variables.query,
+        first: uncontrolledVariables.first,
+        defaultFirst: controlledVariables.first,
+        query: controlledVariables.query,
     })
 
     const fetchMoreData = useCallback(() => {
         const cursor = connection?.pageInfo?.endCursor
 
-        if (!cursor && !variables.first) {
+        if (!cursor && !controlledVariables.first) {
             throw new Error('Cannot fetch more data with no endCursor or first variable present')
         }
 
         return fetchMore({
             variables: {
-                ...variables,
+                ...controlledVariables,
                 // Use cursor paging if possible, otherwise fallback to multiplying `first`
-                ...(cursor ? { after: cursor } : { first: variables.first! * 2 }),
+                ...(cursor ? { after: cursor } : { first: controlledVariables.first! * 2 }),
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
                 if (!fetchMoreResult) {
@@ -121,16 +95,16 @@ export const usePaginatedConnection = <TResult, TVariables, TData>({
                     getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
                 } else {
                     // Increment paging, update variable state for next fetch
-                    setVariables(previous => ({
+                    setControlledVariables(previous => ({
                         ...previous,
-                        first: variables.first! * 2,
+                        first: controlledVariables.first! * 2,
                     }))
                 }
 
                 return fetchMoreResult
             },
         })
-    }, [connection?.pageInfo?.endCursor, fetchMore, getConnection, variables])
+    }, [connection?.pageInfo?.endCursor, fetchMore, getConnection, controlledVariables])
 
     return {
         connection,
