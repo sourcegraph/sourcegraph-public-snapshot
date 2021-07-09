@@ -18,7 +18,6 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
             <head>
                 <meta charset="UTF-8">
                 <title>Sourcegraph Development build</title>
-                ${htmlWebpackPlugin.tags.headTags.toString()}
             </head>
             <body>
                 <div id="root"></div>
@@ -29,6 +28,7 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
                     // Required mock of the JS context object.
                     window.context = ${JSON.stringify(jsContext)}
                 </script>
+                ${htmlWebpackPlugin.tags.headTags.toString()}
             </body>
         </html>
       `
@@ -38,6 +38,7 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
         templateContent: templateContent as Options['templateContent'],
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),
         alwaysWriteToDisk: true,
+        inject: false,
     })
 
     // Write index.html to the disk so it can be served by dev/prod servers.
