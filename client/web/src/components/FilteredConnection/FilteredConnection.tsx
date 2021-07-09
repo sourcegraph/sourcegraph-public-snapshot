@@ -27,8 +27,9 @@ import { ErrorMessage } from '../alerts'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection } from './ConnectionType'
+import { QUERY_KEY } from './constants'
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
-import { getFilterFromURL, parseQueryInt } from './utils'
+import { getFilterFromURL, getUrlQuery, parseQueryInt } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
@@ -149,9 +150,6 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
      */
     visible?: number
 }
-
-/** The URL query parameter where the search query for FilteredConnection is stored. */
-const QUERY_KEY = 'query'
 
 /**
  * Displays a collection of items with filtering and pagination. It is called
@@ -454,34 +452,16 @@ export class FilteredConnection<
         if (!values) {
             values = this.state.activeValues
         }
-        const searchParameters = new URLSearchParams(this.props.location.search)
-        if (query) {
-            searchParameters.set(QUERY_KEY, query)
-        }
 
-        if (first !== this.props.defaultFirst) {
-            searchParameters.set('first', String(first))
-        }
-        if (values && this.props.filters) {
-            for (const filter of this.props.filters) {
-                if (values === undefined) {
-                    continue
-                }
-                const value = values.get(filter.id)
-                if (value === undefined) {
-                    continue
-                }
-                if (value !== filter.values[0]) {
-                    searchParameters.set(filter.id, value.value)
-                } else {
-                    searchParameters.delete(filter.id)
-                }
-            }
-        }
-        if (visible !== 0 && visible !== first) {
-            searchParameters.set('visible', String(visible))
-        }
-        return searchParameters.toString()
+        return getUrlQuery({
+            query,
+            values,
+            first,
+            visible,
+            location: this.props.location,
+            filters: this.props.filters,
+            defaultFirst: this.props.defaultFirst,
+        })
     }
 
     public componentDidUpdate(): void {
