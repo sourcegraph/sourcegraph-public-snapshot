@@ -15,6 +15,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
+type Loader interface {
+	LoadAll(ctx context.Context) ([]SearchInsight, error)
+}
+
+type DBLoader struct {
+	db dbutil.DB
+}
+
+func (d *DBLoader) LoadAll(ctx context.Context) ([]SearchInsight, error) {
+	return GetIntegratedInsights(ctx, d.db)
+}
+
+func NewLoader(db dbutil.DB) Loader {
+	return &DBLoader{db: db}
+}
+
 // GetSettings returns all settings on the Sourcegraph installation that can be filtered by a type. This is useful for
 // generating aggregates for code insights which are currently stored in the settings.
 // 🚨 SECURITY: This method bypasses any user permissions to fetch a list of all settings on the Sourcegraph installation.
@@ -58,6 +74,8 @@ func FilterSettingJson(settingJson string, prefix string) (map[string]json.RawMe
 	return filtered, nil
 }
 
+// GetSearchInsights returns insights stored in user / org / global settings that match the extensions schema. This schema is planned for deprecation
+// and currently only exists to service pings.
 func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]SearchInsight, error) {
 	prefix := "searchInsights."
 	settings, err := GetSettings(ctx, db, filter, prefix)
