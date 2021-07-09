@@ -1,4 +1,3 @@
-
 BEGIN;
 
 DROP INDEX IF EXISTS batch_spec_executions_rand_id;

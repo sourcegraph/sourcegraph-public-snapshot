@@ -99,10 +99,13 @@ type GetBatchSpecExecutionOpts struct {
 
 // GetBatchSpecExecution gets a BatchSpecExecution matching the given options.
 func (s *Store) GetBatchSpecExecution(ctx context.Context, opts GetBatchSpecExecutionOpts) (*btypes.BatchSpecExecution, error) {
-	q := getBatchSpecExecutionQuery(&opts)
+	q, err := getBatchSpecExecutionQuery(&opts)
+	if err != nil {
+		return nil, err
+	}
 
 	var b btypes.BatchSpecExecution
-	err := s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBatchSpecExecution(&b, sc)
 	})
 	if err != nil {
@@ -123,7 +126,7 @@ WHERE %s
 LIMIT 1
 `
 
-func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) *sqlf.Query {
+func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) (*sqlf.Query, error) {
 	var preds []*sqlf.Query
 
 	if opts.ID != 0 {
@@ -134,11 +137,15 @@ func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("rand_id = %s", opts.RandID))
 	}
 
+	if len(preds) == 0 {
+		return nil, errors.New("no predicates given")
+	}
+
 	return sqlf.Sprintf(
 		getBatchSpecExecutionQueryFmtstr,
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
-	)
+	), nil
 }
 
 func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {

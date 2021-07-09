@@ -97,7 +97,7 @@ Indexes:
  user_id           | integer                  |           |          | 
  namespace_user_id | integer                  |           |          | 
  namespace_org_id  | integer                  |           |          | 
- rand_id           | text                     |           |          | 
+ rand_id           | text                     |           | not null | 
 Indexes:
     "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
     "batch_spec_executions_rand_id" btree (rand_id)
