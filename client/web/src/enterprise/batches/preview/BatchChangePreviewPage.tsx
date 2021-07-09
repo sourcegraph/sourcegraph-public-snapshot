@@ -13,6 +13,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
+import { MultiSelectContext, MultiSelectContextSelected } from '../MultiSelectContext'
 
 import {
     applyBatchChange,
@@ -53,19 +54,24 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
         )
     )
 
-    const [selectedChangesetSpecs, setSelectedChangesetSpecs] = useState<Set<string> | 'all'>(new Set())
+    const [selectedChangesetSpecs, setSelectedChangesetSpecs] = useState<MultiSelectContextSelected>(new Set())
     const onSelectAllChangesetSpecs = useCallback(() => setSelectedChangesetSpecs('all'), [setSelectedChangesetSpecs])
     const onDeselectAllChangesetSpecs = useCallback(() => setSelectedChangesetSpecs(new Set()), [
         setSelectedChangesetSpecs,
     ])
-    const onToggleChangesetSpec = useCallback(
-        (id: string, selected: boolean) => {
+    const onSelectChangesetSpec = useCallback(
+        (id: string) => {
             const updated = new Set(selectedChangesetSpecs)
-            if (selected) {
-                updated.add(id)
-            } else {
-                updated.delete(id)
-            }
+            updated.add(id)
+
+            setSelectedChangesetSpecs(updated)
+        },
+        [selectedChangesetSpecs, setSelectedChangesetSpecs]
+    )
+    const onDeselectChangesetSpec = useCallback(
+        (id: string) => {
+            const updated = new Set(selectedChangesetSpecs)
+            updated.delete(id)
 
             setSelectedChangesetSpecs(updated)
         },
@@ -120,35 +126,45 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     }
 
     return (
-        <div className="pb-5">
-            <PageTitle title="Apply batch spec" />
-            <PageHeader
-                path={[
-                    {
-                        icon: BatchChangesIcon,
-                        to: '/batch-changes',
-                    },
-                    { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
-                    { text: spec.description.name },
-                ]}
-                byline={<BatchSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
-                headingElement="h2"
-                className="test-batch-change-apply-page mb-3"
-            />
-            <MissingCredentialsAlert
-                authenticatedUser={authenticatedUser}
-                viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
-            />
-            <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
-            <BatchChangePreviewStatsBar batchSpec={spec} />
-            <CreateUpdateBatchChangeAlert
-                batchChange={spec.appliesToBatchChange}
-                showPublishUI={spec.applyPreview.stats.uiPublished > 0}
-                onApply={onApply}
-                viewerCanAdminister={spec.viewerCanAdminister}
-            />
-            <Description description={spec.description.description} />
-            <BatchChangePreviewTabs spec={spec} allSelected={selectedChangesetSpecs === 'all'} {...props} />
-        </div>
+        <MultiSelectContext.Provider
+            value={{
+                selected: selectedChangesetSpecs,
+                onDeselectAll: onDeselectAllChangesetSpecs,
+                onDeselect: onDeselectChangesetSpec,
+                onSelectAll: onSelectAllChangesetSpecs,
+                onSelect: onSelectChangesetSpec,
+            }}
+        >
+            <div className="pb-5">
+                <PageTitle title="Apply batch spec" />
+                <PageHeader
+                    path={[
+                        {
+                            icon: BatchChangesIcon,
+                            to: '/batch-changes',
+                        },
+                        { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
+                        { text: spec.description.name },
+                    ]}
+                    byline={<BatchSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
+                    headingElement="h2"
+                    className="test-batch-change-apply-page mb-3"
+                />
+                <MissingCredentialsAlert
+                    authenticatedUser={authenticatedUser}
+                    viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
+                />
+                <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
+                <BatchChangePreviewStatsBar batchSpec={spec} />
+                <CreateUpdateBatchChangeAlert
+                    batchChange={spec.appliesToBatchChange}
+                    showPublishUI={spec.applyPreview.stats.uiPublished > 0}
+                    onApply={onApply}
+                    viewerCanAdminister={spec.viewerCanAdminister}
+                />
+                <Description description={spec.description.description} />
+                <BatchChangePreviewTabs spec={spec} {...props} />
+            </div>
+        </MultiSelectContext.Provider>
     )
 }

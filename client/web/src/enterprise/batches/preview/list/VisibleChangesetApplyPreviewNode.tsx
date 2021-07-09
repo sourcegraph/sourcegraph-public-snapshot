@@ -6,7 +6,7 @@ import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
@@ -25,6 +25,7 @@ import { PersonLink } from '../../../../person/PersonLink'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
+import { MultiSelectContext, MultiSelectContextState } from '../../MultiSelectContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
@@ -40,8 +41,6 @@ export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     authenticatedUser: PreviewPageAuthenticatedUser
 
     selectionEnabled: boolean
-    allSelected: boolean
-    onSelection: (id: string, checked: boolean) => void
 
     /** Used for testing. **/
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
@@ -57,8 +56,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     authenticatedUser,
 
     selectionEnabled,
-    allSelected,
-    onSelection,
 
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions = false,
@@ -71,6 +68,8 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
         },
         [isExpanded]
     )
+
+    const canPublish = useMemo(() => canSetPublishedState(node), [node])
 
     return (
         <>
@@ -86,11 +85,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            {selectionEnabled &&()
-            <span className={classNames(styles.visibleChangesetApplyPreviewNodeListCell)}>
-                <input type="checkbox"></input>
-            </span>
-}
+            {selectionEnabled ? (
+                <span className={classNames(styles.visibleChangesetApplyPreviewNodeListCell)}>
+                    {canPublish !== null ? (
+                        <MultiSelectContext.Consumer>
+                            {props => <SelectCheckbox id={canPublish} {...props} />}
+                        </MultiSelectContext.Consumer>
+                    ) : undefined}
+                </span>
+            ) : undefined}
             <VisibleChangesetApplyPreviewNodeStatusCell
                 node={node}
                 className={classNames(
@@ -125,7 +128,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
             </div>
             <div className="d-flex justify-content-center align-content-center align-self-stretch">
                 {node.delta.commitMessageChanged && (
-                    <di
+                    <div
                         className={classNames(
                             styles.visibleChangesetApplyPreviewNodeCommitChangeEntry,
                             'd-flex justify-content-center align-items-center flex-column mx-1'
@@ -556,13 +559,37 @@ const VisibleChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
     return <ChangesetStatusCell state={node.targets.changeset.state} className={className} />
 }
 
-const canSetPublishedState = (node: VisibleChangesetApplyPreviewFields): boolean => {
+interface SelectCheckboxProps extends Pick<MultiSelectContextState, 'onDeselect' | 'onSelect' | 'selected'> {
+    id: string
+}
+
+const SelectCheckbox: React.FunctionComponent<SelectCheckboxProps> = ({ id, onDeselect, onSelect, selected }) => {
+    const checked = useMemo(() => selected === 'all' || selected.has(id), [id, selected])
+    const disabled = useMemo(() => selected === 'all', [selected])
+    const onClick = useCallback(() => {
+        if (checked) {
+            onDeselect(id)
+        } else {
+            onSelect(id)
+        }
+    }, [checked, id, onDeselect, onSelect])
+
+    return (
+        <span className={classNames(styles.visibleChangesetApplyPreviewNodeListCell)}>
+            <input type="checkbox" disabled={disabled} checked={checked} onClick={onClick} />
+        </span>
+    )
+}
+
+const canSetPublishedState = (node: VisibleChangesetApplyPreviewFields): string | null => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-        return false
+        return null
     }
     if (node.targets.changesetSpec.description.__typename !== 'GitBranchChangesetDescription') {
-        return false
+        return null
     }
-
-    return node.targets.changesetSpec.description.published === null
+    if (node.targets.changesetSpec.description.published !== null) {
+        return null
+    }
+    return node.targets.changesetSpec.id
 }

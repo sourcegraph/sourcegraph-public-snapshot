@@ -23,10 +23,6 @@ interface Props extends ThemeProps {
     authenticatedUser: PreviewPageAuthenticatedUser
 
     selectionEnabled: boolean
-    allSelected: boolean
-    onSelection: (id: string, checked: boolean) => void
-    onSelectAll: () => void
-    onDeselectAll: () => void
 
     /** For testing only. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
@@ -47,10 +43,6 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     isLightTheme,
 
     selectionEnabled,
-    allSelected,
-    onSelection,
-    onSelectAll,
-    onDeselectAll,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
@@ -89,8 +81,6 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                     queryChangesetSpecFileDiffs,
                     expandChangesetDescriptions,
                     selectionEnabled,
-                    allSelected,
-                    onSelection,
                 }}
                 queryConnection={queryChangesetApplyPreviewConnection}
                 hideSearch={true}
@@ -104,9 +94,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}
                 headComponentProps={{
-                    allSelected,
-                    onSelectAll,
-                    onDeselectAll,
+                    selectionEnabled,
                 }}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}

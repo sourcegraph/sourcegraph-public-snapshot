@@ -18,8 +18,6 @@ export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     authenticatedUser: PreviewPageAuthenticatedUser
 
     selectionEnabled: boolean
-    allSelected: boolean
-    onSelection: (id: string, checked: boolean) => void
 
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
@@ -34,8 +32,6 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
     authenticatedUser,
     isLightTheme,
     selectionEnabled,
-    allSelected,
-    onSelection,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
@@ -57,8 +53,6 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
                 isLightTheme={isLightTheme}
                 authenticatedUser={authenticatedUser}
                 selectionEnabled={selectionEnabled}
-                allSelected={allSelected}
-                onSelection={onSelection}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />
