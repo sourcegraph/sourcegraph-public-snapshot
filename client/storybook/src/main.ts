@@ -204,8 +204,8 @@ const config = {
 
         // Make sure Storybook style loaders are only evaluated for Storybook styles.
         const cssRule = config.module.rules.find(
-            rule => rule !== '...' && rule.test?.toString() === /\.css$/.toString()
-        ) as RuleSetRule
+            (rule): rule is RuleSetRule => typeof rule !== 'string' && rule.test?.toString() === /\.css$/.toString()
+        )
         if (!cssRule) {
             throw new Error('Cannot find original CSS rule')
         }
