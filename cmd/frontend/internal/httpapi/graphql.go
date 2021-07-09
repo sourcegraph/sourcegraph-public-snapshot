@@ -206,7 +206,7 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 	if !anonymous {
 		return a.UIDString(), false, anonymous
 	}
-	if uid, err := cookie.AnonymousUID(r); err == nil && uid != "" {
+	if uid, ok := cookie.AnonymousUID(r); ok && uid != "" {
 		return uid, false, anonymous
 	}
 	// The user is anonymous with no cookie, use IP
