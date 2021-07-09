@@ -76,6 +76,9 @@ func TestGetIntegrationInsights(t *testing.T) {
 	}
 
 	got, err := GetIntegratedInsights(ctx, db)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// sorting for deterministic test
 	sort.Slice(got, func(i, j int) bool {
