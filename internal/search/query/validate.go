@@ -344,10 +344,17 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	return nil
 }
 
-// A query is invalid if it contains a rev: filter and a repo is specified with @.
+// A query with a rev: filter is invalid if:
+// (1) a repo is specified with @, OR
+// (2) no repo is specified, OR
+// (3) an empty repo value is specified (i.e., repo:"").
 func validateRepoRevPair(nodes []Node) error {
 	var seenRepoWithCommit bool
+	var seenRepo bool
+	var seenEmptyRepo bool
 	VisitField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) {
+		seenRepo = true
+		seenEmptyRepo = value == ""
 		if !negated && strings.ContainsRune(value, '@') {
 			seenRepoWithCommit = true
 		}
@@ -362,6 +369,12 @@ func validateRepoRevPair(nodes []Node) error {
 	if seenRepoWithCommit && revSpecified {
 		return errors.New("invalid syntax. You specified both @ and rev: for a" +
 			" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
+	}
+	if !seenRepo && revSpecified {
+		return errors.New("invalid syntax. The query contains `rev:` without `repo:`. Add a `repo:` filter and try again")
+	}
+	if seenEmptyRepo && revSpecified {
+		return errors.New("invalid syntax. The query contains `rev:` but `repo:` is empty. Add a non-empty `repo:` filter and try again")
 	}
 	return nil
 }
