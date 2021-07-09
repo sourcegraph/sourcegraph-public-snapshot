@@ -38,3 +38,7 @@ export function isSettingsBasedInsightsDashboard(
 ): dashboard is SettingsBasedInsightDashboard {
     return !!dashboard.settingsKey
 }
+
+export function isBuiltInDashboard(dashboard: RealInsightDashboard): dashboard is BuiltInInsightDashboard {
+    return !!dashboard.builtIn
+}

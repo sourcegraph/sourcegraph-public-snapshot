@@ -1,38 +1,46 @@
 import { Duration } from 'date-fns'
 
+import { ConfiguredSubject } from '@sourcegraph/shared/src/settings/settings';
+
 import { DataSeries } from '../backend/types'
+
+import { RealInsightDashboard } from './dashboard';
 
 export enum InsightTypePrefix {
     search = 'searchInsights.insight',
     langStats = 'codeStatsInsights.insight',
 }
 
-/**
- * Visibility setting which responsible for where insight will appear.
- * possible value 'personal' | '<org id 1> ... | ... <org id N>'
- * */
-export type InsightVisibility = string
-
 export type Insight = SearchBasedInsight | LangStatsInsight
+export type InsightSettings = SearchBasedInsightOrigin | LangStatsInsightOrigin
+
+/**
+ * [Synthetic] fields that are needed only for the code insight logic but not for extension API
+ */
+interface SyntheticInsightFields {
+    /**
+     * ID of insight <type of insight>.insight.<name of insight>
+     * */
+    id: string
+
+    /**
+     * List of all dashboard that store an insight id.
+     * */
+    dashboards: RealInsightDashboard[]
+
+    /**
+     * Subject that has an insight configuration in its subject settings.
+     */
+    storeSubject: ConfiguredSubject
+
+}
 
 /**
  * Extended Search Insight.
  * Some fields and settings (id, visibility) do not exist implicitly in user/org settings but
  * we have to have these to operate with insight properly.
  * */
-export interface SearchBasedInsight extends SearchBasedInsightOrigin {
-    /**
-     * [Synthetic] field needed only for code insight logic but not for extension
-     * ID of insight <type of insight>.insight.<name of insight>
-     * */
-    id: string
-
-    /**
-     * [Synthetic] field needed only for code insight logic but not for extension
-     * Visibility of insight. Personal or organization setting cascade.
-     * */
-    visibility: InsightVisibility
-}
+export interface SearchBasedInsight extends SearchBasedInsightOrigin, SyntheticInsightFields {}
 
 /**
  * See public API of search insight extension
@@ -50,19 +58,7 @@ export interface SearchBasedInsightOrigin {
  * Some fields and settings (id, visibility) do not exist implicitly in user/org settings but
  * we have to have these to operate with insight properly.
  * */
-export interface LangStatsInsight extends LangStatsInsightOrigin {
-    /**
-     * [Synthetic] field needed only for code insight logic but not for extension
-     * ID of insight <type of insight>.insight.<name of insight>
-     * */
-    id: string
-
-    /**
-     * [Synthetic] field needed only for code insight logic but not for extension
-     * Visibility of insight. Personal or organization setting cascade.
-     * */
-    visibility: InsightVisibility
-}
+export interface LangStatsInsight extends LangStatsInsightOrigin, SyntheticInsightFields {}
 
 /**
  * Lang stats insight as it is presented in user/org settings cascade.

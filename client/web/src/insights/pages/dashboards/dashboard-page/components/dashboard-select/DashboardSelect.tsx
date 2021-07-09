@@ -6,10 +6,9 @@ import React from 'react'
 import {
     InsightDashboard,
     InsightsDashboardType,
-    isOrganizationDashboard,
     isPersonalDashboard,
-    RealInsightDashboard,
 } from '../../../../../core/types'
+import { getGroupedOrganizationDashboards } from './utils/get-grouped-org-dashboards';
 
 import { MenuButton } from './components/menu-button/MenuButton'
 import { SelectDashboardOption, SelectOption } from './components/select-option/SelectOption'
@@ -39,7 +38,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         }
     }
 
-    const organizationGroups = getDashboardOrganizationsGroups(dashboards)
+    const organizationGroups = getGroupedOrganizationDashboards(dashboards)
 
     return (
         <div className={className}>
@@ -90,33 +89,4 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
             </ListboxInput>
         </div>
     )
-}
-
-interface DashboardOrganizationGroup {
-    id: string
-    name: string
-    dashboards: RealInsightDashboard[]
-}
-
-/**
- * Returns organization dashboards grouped by dashboard owner id
- */
-const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): DashboardOrganizationGroup[] => {
-    const groupsDictionary = dashboards
-        .filter(isOrganizationDashboard)
-        .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
-            if (!store[dashboard.owner.id]) {
-                store[dashboard.owner.id] = {
-                    id: dashboard.owner.id,
-                    name: dashboard.owner.name,
-                    dashboards: [],
-                }
-            }
-
-            store[dashboard.owner.id].dashboards.push(dashboard)
-
-            return store
-        }, {})
-
-    return Object.values(groupsDictionary)
 }

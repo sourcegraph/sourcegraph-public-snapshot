@@ -15,7 +15,7 @@ import { InsightsViewGrid } from '../../../../../components'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
-import { useDashboards } from '../../hooks/use-dashboards/use-dashboards'
+import { useDashboards } from '../../../../../hooks/use-dashboards/use-dashboards'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 

@@ -1,11 +1,11 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo, useState } from 'react'
+import React, { useContext, useMemo } from 'react'
 import { useHistory, Link } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { HeroPage } from '../../../../components/HeroPage'
@@ -15,6 +15,7 @@ import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/use
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { addInsightToSettings, removeInsightFromSettings } from '../../../core/settings-action/insights'
 import { Insight, isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
+import { useInsight } from '../../../hooks/use-insight/use-insight';
 
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
@@ -31,11 +32,6 @@ export interface EditInsightPageProps extends SettingsCascadeProps, PlatformCont
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
-interface ParsedInsightInfo {
-    insight?: Insight | null
-    originalSubjectID?: string
-}
-
 export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = props => {
     const { insightID, settingsCascade, authenticatedUser, platformContext } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
@@ -46,33 +42,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     // handler we will again try to find an insight that may no longer exist and
     // (if user changed visibility we remove insight first from previous subject)
     // show the wrong visual state.
-    const [{ insight, originalSubjectID }] = useState<ParsedInsightInfo>(() => {
-        if (!authenticatedUser) {
-            return {}
-        }
-
-        const subjects = settingsCascade.subjects
-        const { id: userID } = authenticatedUser
-
-        const subject = subjects?.find(({ settings }) => settings && !isErrorLike(settings) && !!settings[insightID])
-
-        if (!subject?.settings || isErrorLike(subject.settings)) {
-            return {}
-        }
-
-        // Form insight object from user/org settings to pass that info as
-        // initial values for edit components
-        const insight: Insight = {
-            id: insightID,
-            visibility: userID === subject.subject.id ? 'personal' : subject.subject.id,
-            ...subject.settings[insightID],
-        }
-
-        return {
-            insight,
-            originalSubjectID: subject.subject.id,
-        }
-    })
+    const insight = useInsight({ settingsCascade, insightId: insightID })
 
     const finalSettings = useMemo(() => {
         if (!insight) {
@@ -93,7 +63,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     }, [settingsCascade.final, insight, insightID])
 
     const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
-        if (!insight || !originalSubjectID) {
+        if (!insight) {
             return
         }
 
@@ -101,7 +71,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             // Since insights live in user/org settings if visibility setting
             // has been changed we need remove previous (old) insight from previous
             // subject settings (user or org) and create new insight to new setting file.
-            if (insight.visibility !== newInsight.visibility) {
+            if (insight.dashboards !== newInsight.dashboards) {
                 const settings = await getSubjectSettings(originalSubjectID).toPromise()
                 const editedSettings = removeInsightFromSettings({
                     originalSettings: settings.contents,

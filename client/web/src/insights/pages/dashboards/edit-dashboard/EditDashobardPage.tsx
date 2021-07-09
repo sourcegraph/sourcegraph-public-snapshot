@@ -18,7 +18,7 @@ import { Settings } from '../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
 import { InsightsDashboardCreationContent } from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 import { useDashboardSettings } from '../creation/hooks/use-dashboard-settings'
-import { getSubjectDashboardByID } from '../dashboard-page/hooks/use-dashboards/utils'
+import { getSubjectDashboardByID } from '../../../hooks/use-dashboards/utils'
 
 import styles from './EditDashboardPage.module.scss'
 import { useUpdateDashboardCallback } from './hooks/use-update-dashboard'

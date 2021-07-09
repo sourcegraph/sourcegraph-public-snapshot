@@ -2,7 +2,7 @@ import { IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings } from '../../../../../../schema/settings.schema'
+import { Settings } from '../../../schema/settings.schema'
 import {
     INSIGHTS_DASHBOARDS_SETTINGS_KEY,
     InsightsDashboardType,
@@ -10,7 +10,7 @@ import {
     isInsightSettingKey,
     SettingsBasedInsightDashboard,
     InsightDashboardOwner,
-} from '../../../../../core/types'
+} from '../../core/types'
 
 /**
  * Currently we support only two types of subject that can have insights dashboard.
