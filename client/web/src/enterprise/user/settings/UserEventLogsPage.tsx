@@ -16,6 +16,8 @@ import {
     ShowMoreButton,
     ConnectionList,
     SummaryContainer,
+    ConnectionLoading,
+    ConnectionError,
 } from '../../../components/FilteredConnection/generic-ui'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -101,8 +103,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])
 
-    // TODO: Show loading
-    const { connection, loading, error, fetchMore, hasNextPage } = usePaginatedConnection<
+    const { connection, loading, errors, fetchMore, hasNextPage } = usePaginatedConnection<
         UserEventLogsResult,
         UserEventLogsVariables,
         UserEventLogFields
@@ -130,11 +131,13 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
 
             <Container className="mb-3">
                 <ConnectionContainer className="list-group list-group-flush">
+                    {errors.length && <ConnectionError errors={errors} />}
                     <ConnectionList>
                         {connection?.nodes.map((node, index) => (
                             <UserEventNode key={index} node={node} />
                         ))}
                     </ConnectionList>
+                    {loading && <ConnectionLoading />}
                     {connection && (
                         <SummaryContainer>
                             <ConnectionSummary

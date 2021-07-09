@@ -1,4 +1,3 @@
-import { ApolloError } from '@apollo/client'
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 
@@ -17,7 +16,7 @@ interface PaginationConnectionQueryArguments {
 
 interface PaginationConnectionResult<TData> {
     connection?: Connection<TData>
-    error?: ApolloError
+    errors: string[]
     fetchMore: () => void
     loading: boolean
     hasNextPage: boolean
@@ -110,7 +109,7 @@ export const usePaginatedConnection = <TResult, TVariables, TData>({
     return {
         connection,
         loading,
-        error,
+        errors: error?.graphQLErrors.map(({ message }) => message) || [],
         fetchMore: fetchMoreData,
         hasNextPage: connection ? hasNextPage(connection) : false,
     }

@@ -3,11 +3,13 @@ import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { Connection } from '@sourcegraph/web/src/components/FilteredConnection'
-import { ConnectionNodesSummary } from '@sourcegraph/web/src/components/FilteredConnection/ConnectionNodesSummary'
 import {
     ConnectionContainer,
+    ConnectionError,
     ConnectionList,
+    ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
@@ -77,14 +79,15 @@ export const GlobalCodeHostConnectionNodes: React.FunctionComponent = () => {
 
 const CodeHostConnectionNodesUI: React.FunctionComponent<{
     connection?: Connection<BatchChangesCodeHostFields>
-    error?: ApolloError
+    errors: string[]
     loading: boolean
     hasNextPage: boolean
     userID: Scalars['ID'] | null
     fetchMore: () => void
-}> = ({ connection, error, loading, hasNextPage, userID, fetchMore }) => {
-    if (error) {
-        throw error
+}> = ({ connection, errors, loading, hasNextPage, userID, fetchMore }) => {
+    if (errors) {
+        // TODO: Support this better
+        // throw createAggregateError(errors)
     }
 
     if (!connection) {
@@ -97,11 +100,13 @@ const CodeHostConnectionNodesUI: React.FunctionComponent<{
 
     return (
         <ConnectionContainer className="mb-3">
+            {errors.length && <ConnectionError errors={errors} />}
             <ConnectionList className="list-group">
                 {connection.nodes.map((node, index) => (
                     <CodeHostConnectionNode key={index} node={node} userID={userID} />
                 ))}
             </ConnectionList>
+            {loading && <ConnectionLoading />}
             {connection && (
                 <SummaryContainer>
                     <ConnectionSummary

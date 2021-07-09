@@ -20,14 +20,12 @@ import {
 } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-
-import { ErrorMessage } from '../alerts'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection } from './ConnectionType'
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
+import { ConnectionError, ConnectionLoading } from './generic-ui'
 import { getFilterFromURL, parseQueryInt } from './utils'
 
 /**
@@ -555,15 +553,7 @@ export class FilteredConnection<
                         </Form>
                     )
                 }
-                {errors.length > 0 && (
-                    <div className="alert alert-danger filtered-connection__error">
-                        {errors.map((error, index) => (
-                            <React.Fragment key={index}>
-                                <ErrorMessage error={error} />
-                            </React.Fragment>
-                        ))}
-                    </div>
-                )}
+                {errors.length > 0 && <ConnectionError errors={errors} />}
                 {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
                     <ConnectionNodes
                         connection={this.state.connectionOrError}
@@ -590,16 +580,7 @@ export class FilteredConnection<
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                     />
                 )}
-                {this.state.loading && (
-                    <span
-                        className={classNames(
-                            'filtered-connection__loader test-filtered-connection__loader',
-                            this.props.loaderClassName
-                        )}
-                    >
-                        <LoadingSpinner className="icon-inline" />
-                    </span>
-                )}
+                {this.state.loading && <ConnectionLoading className={this.props.loaderClassName} />}
             </div>
         )
     }

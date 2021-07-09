@@ -7,10 +7,11 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { ConnectionNodesSummary } from '@sourcegraph/web/src/components/FilteredConnection/ConnectionNodesSummary'
 import {
     ConnectionContainer,
+    ConnectionError,
     ConnectionList,
+    ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
@@ -72,7 +73,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
 
     const [query, setQuery] = useState('')
     console.log('query is', query)
-    const { connection, fetchMore, hasNextPage } = usePaginatedConnection<
+    const { connection, errors, loading, fetchMore, hasNextPage } = usePaginatedConnection<
         CustomersResult,
         CustomersVariables,
         CustomerFields
@@ -84,6 +85,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
         },
         getConnection: data => {
             if (!data || !data.users) {
+                // TODO: Support errors
                 throw new Error('bleh')
                 // throw createAggregateError(errors)
             }
@@ -102,6 +104,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
             </div>
             <p>User accounts may be linked to a customer on the billing system.</p>
             <ConnectionContainer className="list-group list-group-flush mt-3">
+                {/* TODO: Make form reusable */}
                 <Form
                     className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
                     onSubmit={event => event.preventDefault()}
@@ -120,11 +123,13 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
                         spellCheck={false}
                     />
                 </Form>
+                {errors.length && <ConnectionError errors={errors} />}
                 <ConnectionList>
                     {connection?.nodes?.map(node => (
                         <SiteAdminCustomerNode key={node.id} {...nodeProps} node={node} />
                     ))}
                 </ConnectionList>
+                {loading && <ConnectionLoading />}
                 {connection && (
                     <SummaryContainer>
                         <ConnectionSummary

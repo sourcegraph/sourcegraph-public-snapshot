@@ -10,7 +10,9 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     ConnectionContainer,
+    ConnectionError,
     ConnectionList,
+    ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
@@ -76,7 +78,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
         accessTokenUpdates.next()
     }, [accessTokenUpdates])
 
-    const { connection, loading, fetchMore } = usePaginatedConnection<
+    const { connection, errors, loading, fetchMore, hasNextPage } = usePaginatedConnection<
         AccessTokensResult,
         AccessTokensVariables,
         AccessTokenFields
@@ -113,7 +115,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
             />
             <Container>
                 <ConnectionContainer>
-                    {loading && <LoadingSpinner className="icon-inline" />}
+                    {errors.length && <ConnectionError errors={errors} />}
                     <ConnectionList className="list-group list-group-flush">
                         {connection?.nodes?.map((node, index) => (
                             <AccessTokenNode
@@ -124,13 +126,23 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                             />
                         ))}
                     </ConnectionList>
+                    {loading && <ConnectionLoading />}
                     {connection && (
                         <SummaryContainer>
-                            {!connection?.pageInfo?.hasNextPage && (
-                                // TODO: check if valid with noSummaryIfAllNodesVisible
-                                <p className="text-muted text-center w-100 mb-0">You don't have any access tokens.</p>
-                            )}
-                            {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                            <ConnectionSummary
+                                noSummaryIfAllNodesVisible={true}
+                                connection={connection}
+                                noun="access token"
+                                pluralNoun="access tokens"
+                                totalCount={connection.totalCount ?? null}
+                                hasNextPage={hasNextPage}
+                                emptyElement={
+                                    <p className="text-muted text-center w-100 mb-0">
+                                        You don't have any access tokens.
+                                    </p>
+                                }
+                            />
+                            {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                         </SummaryContainer>
                     )}
                 </ConnectionContainer>
