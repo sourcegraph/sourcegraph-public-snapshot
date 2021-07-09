@@ -2,7 +2,6 @@ package handlerutil
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -44,7 +43,7 @@ func (h HandlerWithErrorReturn) ServeHTTP(w http.ResponseWriter, r *http.Request
 			_, _ = io.WriteString(os.Stderr, "\nstack trace:\n")
 			_, _ = os.Stderr.Write(stack)
 
-			err := fmt.Errorf("panic: %v\n\nstack trace:\n%s", e, stack)
+			err := errors.Errorf("panic: %v\n\nstack trace:\n%s", e, stack)
 			status := http.StatusInternalServerError
 			reportError(r, status, err, true)
 			h.Error(w, r, status, err) // No need to handle a possible panic in h.Error because it's required not to panic.

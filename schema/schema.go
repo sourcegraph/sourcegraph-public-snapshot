@@ -134,7 +134,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
+	return errors.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
 type BatchChangeRolloutWindow struct {
@@ -296,7 +296,7 @@ func (v *BitbucketServerIdentityProvider) UnmarshalJSON(data []byte) error {
 	case "username":
 		return json.Unmarshal(data, &v.Username)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"username"})
+	return errors.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"username"})
 }
 
 // BitbucketServerOAuth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
@@ -449,7 +449,7 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 	case "noop":
 		return json.Unmarshal(data, &v.Noop)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "awskms", "mounted", "noop"})
+	return errors.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "awskms", "mounted", "noop"})
 }
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
@@ -836,7 +836,7 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 	case "username":
 		return json.Unmarshal(data, &v.Username)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
+	return errors.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
 }
 
 type ImportChangesets struct {
@@ -945,7 +945,7 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 	case "webhook":
 		return json.Unmarshal(data, &v.Webhook)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "email", "opsgenie"})
+	return errors.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "email", "opsgenie"})
 }
 
 // NotifierEmail description: Email notifier

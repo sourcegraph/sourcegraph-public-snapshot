@@ -378,7 +378,7 @@ func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
 	var errors []error
 	for userPattern, orgs := range userOrgMap {
 		if userPattern != "*" {
-			errors = append(errors, fmt.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
+			errors = append(errors, errors.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
 			continue
 		}
 		return orgs, errors
@@ -421,7 +421,7 @@ func (u *UserStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 		if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE names SET name=%s WHERE user_id=%s", update.Username, id)); err != nil {
 			var e *pgconn.PgError
 			if errors.As(err, &e) && e.ConstraintName == "names_pkey" {
-				return fmt.Errorf("Username is already in use.")
+				return errors.Errorf("Username is already in use.")
 			}
 			return err
 		}
@@ -936,7 +936,7 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 		return false, err
 	}
 	if ct > 1 {
-		return false, fmt.Errorf("illegal state: found more than one user matching ID %d", id)
+		return false, errors.Errorf("illegal state: found more than one user matching ID %d", id)
 	}
 	if ct == 0 {
 		return false, nil

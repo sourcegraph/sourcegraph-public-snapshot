@@ -134,11 +134,11 @@ func checkVersion(db *sql.DB) error {
 
 	match := versionPattern.FindStringSubmatch(version)
 	if len(match) == 0 {
-		return fmt.Errorf("unexpected version string: %q", version)
+		return errors.Errorf("unexpected version string: %q", version)
 	}
 
 	if majorVersion, _ := strconv.Atoi(match[1]); majorVersion < 12 {
-		return fmt.Errorf("Sourcegraph requires PostgreSQL 12+")
+		return errors.Errorf("Sourcegraph requires PostgreSQL 12+")
 	}
 
 	return nil
@@ -216,7 +216,7 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	startupDeadline := time.Now().Add(startupTimeout)
 	for {
 		if time.Now().After(startupDeadline) {
-			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
+			return nil, errors.Errorf("database did not start up within %s (%v)", startupTimeout, err)
 		}
 		db, err = open(cfg)
 		if err == nil {

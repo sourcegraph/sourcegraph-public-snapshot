@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"hash/fnv"
 	"strings"
 
@@ -179,7 +178,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalSer
 		cache.Set(key, []byte(strings.Join(scopes, ",")))
 		return scopes, nil
 	default:
-		return nil, fmt.Errorf("unsupported config type: %T", v)
+		return nil, errors.Errorf("unsupported config type: %T", v)
 	}
 }
 

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -57,7 +58,7 @@ func printDeployedVersion(e environment) error {
 
 	elems := strings.Split(string(body), "_")
 	if len(elems) != 3 {
-		return fmt.Errorf("unknown format of /__version response: %q", body)
+		return errors.Errorf("unknown format of /__version response: %q", body)
 	}
 
 	buildDate := elems[1]

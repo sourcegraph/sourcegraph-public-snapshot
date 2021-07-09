@@ -466,7 +466,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	// separately (since log15 prints the escaped sequence).
 	var e recoverError
 	if errors.As(err, &e) {
-		err = fmt.Errorf("ui: recovered from panic %v\n\n%s", e.recover, e.stack)
+		err = errors.Errorf("ui: recovered from panic %v\n\n%s", e.recover, e.stack)
 		log.Println(err)
 	}
 

@@ -5,7 +5,6 @@ package srcprometheus
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"syscall"
@@ -51,7 +50,7 @@ func NewClient(prometheusURL string) (Client, error) {
 	}
 	promURL, err := url.Parse(prometheusURL)
 	if err != nil {
-		return nil, fmt.Errorf("invalid URL: %w", err)
+		return nil, errors.Errorf("invalid URL: %w", err)
 	}
 	return &client{
 		http: http.Client{
@@ -69,7 +68,7 @@ func (c *client) newRequest(endpoint string, query url.Values) (*http.Request, e
 	}
 	req, err := http.NewRequest(http.MethodGet, target.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("prometheus misconfigured: %w", err)
+		return nil, errors.Errorf("prometheus misconfigured: %w", err)
 	}
 	return req, nil
 }
@@ -77,11 +76,11 @@ func (c *client) newRequest(endpoint string, query url.Values) (*http.Request, e
 func (c *client) do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("src-prometheus: %w", err)
+		return nil, errors.Errorf("src-prometheus: %w", err)
 	}
 	if resp.StatusCode != 200 {
 		log15.Error("src-prometheus request made but failed with non-zero status", "request", req, "resp", resp)
-		return nil, fmt.Errorf("src-prometheus: %s %q: failed with status %d", req.Method, req.URL.String(), resp.StatusCode)
+		return nil, errors.Errorf("src-prometheus: %s %q: failed with status %d", req.Method, req.URL.String(), resp.StatusCode)
 	}
 	return resp, nil
 }

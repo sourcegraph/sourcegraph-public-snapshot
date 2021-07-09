@@ -957,7 +957,7 @@ loop:
 			if parameter, ok, _ := p.ParseParameter(); ok {
 				// we don't support NOT -field:value
 				if parameter.Negated {
-					return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
+					return nil, errors.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
 						parameter.Field, parameter.Value)
 				}
 				parameter.Negated = true

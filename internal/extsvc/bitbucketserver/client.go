@@ -1388,7 +1388,7 @@ func ExtractDuplicatePullRequest(err error) (*PullRequest, error) {
 		return e.ExtractExistingPullRequest()
 	}
 
-	return nil, fmt.Errorf("error does not contain existing PR")
+	return nil, errors.Errorf("error does not contain existing PR")
 }
 
 type httpError struct {

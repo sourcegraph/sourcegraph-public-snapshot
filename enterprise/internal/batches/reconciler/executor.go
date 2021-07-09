@@ -103,7 +103,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 			e.archiveChangeset()
 
 		default:
-			err = fmt.Errorf("executor operation %q not implemented", op)
+			err = errors.Errorf("executor operation %q not implemented", op)
 		}
 
 		if err != nil {

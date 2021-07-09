@@ -126,7 +126,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 	case "REJECT":
 		// noop
 	default:
-		return nil, fmt.Errorf("invalid OrganizationInvitationResponseType value %q", args.ResponseType)
+		return nil, errors.Errorf("invalid OrganizationInvitationResponseType value %q", args.ResponseType)
 	}
 
 	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the

@@ -12,7 +12,6 @@
 package types
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -71,7 +70,7 @@ func (e *ExternalService) RedactConfigSecrets() error {
 		newCfg, err = redactField(e.Config, "url")
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
-		err = fmt.Errorf("RedactExternalServiceConfig: kind %q not implemented", e.Kind)
+		err = errors.Errorf("RedactExternalServiceConfig: kind %q not implemented", e.Kind)
 	}
 	if err != nil {
 		return err
@@ -102,7 +101,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		return nil
 	}
 	if old.Kind != e.Kind {
-		return fmt.Errorf(
+		return errors.Errorf(
 			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
 			old.Kind,
 			e.Kind,
@@ -146,7 +145,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"url", &cfg.Url})
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
-		err = fmt.Errorf("UnRedactExternalServiceConfig: kind %q not implemented", e.Kind)
+		err = errors.Errorf("UnRedactExternalServiceConfig: kind %q not implemented", e.Kind)
 	}
 	if err != nil {
 		return err

@@ -42,7 +42,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	wrapError := func(err error, message string) error {
 		if errors.Is(err, context.DeadlineExceeded) {
-			err = fmt.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
+			err = errors.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
 		}
 
 		return errors.Wrap(err, message)
@@ -104,7 +104,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		}
 
 		if !strings.HasPrefix(path, workingDirectory) {
-			return fmt.Errorf("refusing to write outside of working directory")
+			return errors.Errorf("refusing to write outside of working directory")
 		}
 
 		if err := os.WriteFile(path, []byte(content), os.ModePerm); err != nil {

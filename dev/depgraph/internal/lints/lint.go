@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )
 
@@ -39,7 +41,7 @@ func Run(graph *graph.DependencyGraph, names []string) error {
 	for _, name := range names {
 		lint, ok := lintsByName[name]
 		if !ok {
-			return fmt.Errorf("unknown lint '%s'", name)
+			return errors.Errorf("unknown lint '%s'", name)
 		}
 
 		lints = append(lints, lint)
@@ -84,5 +86,5 @@ func formatErrors(errors []lintError) error {
 		items = append(items, fmt.Sprintf("%3d. %s\n     %s\n", i+1, pkg, strings.Join(err.message, "\n     ")))
 	}
 
-	return fmt.Errorf("%s:\n\n%s", preamble, strings.Join(items, "\n"))
+	return errors.Errorf("%s:\n\n%s", preamble, strings.Join(items, "\n"))
 }

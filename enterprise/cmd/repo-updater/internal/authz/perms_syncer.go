@@ -3,7 +3,6 @@ package authz
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -557,7 +556,7 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	case requestTypeRepo:
 		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms)
 	default:
-		err = fmt.Errorf("unexpected request type: %v", request.Type)
+		err = errors.Errorf("unexpected request type: %v", request.Type)
 	}
 
 	return err
@@ -866,7 +865,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 		case requestTypeUser:
 			typLabel = "user"
 		default:
-			tr.SetError(fmt.Errorf("unexpected request type: %v", typ))
+			tr.SetError(errors.Errorf("unexpected request type: %v", typ))
 			return
 		}
 

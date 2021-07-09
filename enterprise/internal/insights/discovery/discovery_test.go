@@ -16,11 +16,11 @@ var settingsExample = &api.Settings{ID: 1, Contents: `{
 	"insights": [
 		{
 		  "title": "fmt usage",
-		  "description": "fmt.Errorf/fmt.Printf usage",
+		  "description": "errors.Errorf/fmt.Printf usage",
 		  "id": "1",
 		  "series": [
 			{
-			  "label": "fmt.Errorf",
+			  "label": "errors.Errorf",
 			  "search": "errorf",
 			},
 			{
@@ -67,10 +67,10 @@ func TestDiscover(t *testing.T) {
 			{
 				ID:          "1",
 				Title:       "fmt usage",
-				Description: "fmt.Errorf/fmt.Printf usage",
+				Description: "errors.Errorf/fmt.Printf usage",
 				Series: []insights.TimeSeries{
 					{
-						Name:  "fmt.Errorf",
+						Name:  "errors.Errorf",
 						Query: "errorf",
 					},
 					{
@@ -106,10 +106,10 @@ func TestDiscover(t *testing.T) {
 			{
 				ID:          "1",
 				Title:       "fmt usage",
-				Description: "fmt.Errorf/fmt.Printf usage",
+				Description: "errors.Errorf/fmt.Printf usage",
 				Series: []insights.TimeSeries{
 					{
-						Name:  "fmt.Errorf",
+						Name:  "errors.Errorf",
 						Query: "errorf",
 					},
 					{
@@ -146,11 +146,11 @@ func Test_parseUserSettings(t *testing.T) {
 			want: autogold.Want("real", [2]interface{}{
 				&schema.Settings{Insights: []*schema.Insight{
 					{
-						Description: "fmt.Errorf/fmt.Printf usage",
+						Description: "errors.Errorf/fmt.Printf usage",
 						Id:          "1",
 						Series: []*schema.InsightSeries{
 							{
-								Label:  "fmt.Errorf",
+								Label:  "errors.Errorf",
 								Search: "errorf",
 							},
 							{

@@ -27,7 +27,7 @@ func TestRunWorkersN(t *testing.T) {
 
 	err := RunWorkersN(n, SimplePoolWorker(func() error {
 		if v := <-ch; v%3 == 0 {
-			return fmt.Errorf("err: %d", v)
+			return errors.Errorf("err: %d", v)
 		}
 		return nil
 	}))
