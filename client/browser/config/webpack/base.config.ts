@@ -113,11 +113,6 @@ export const config = subtypeOf<webpack.Configuration>()({
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
-        fallback: {
-            crypto: require.resolve('crypto-browserify'),
-            stream: require.resolve('stream-browserify'),
-            vm: require.resolve('vm-browserify'),
-        },
     },
     module: {
         rules: [
