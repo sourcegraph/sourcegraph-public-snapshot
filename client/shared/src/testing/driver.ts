@@ -176,7 +176,6 @@ export class Driver {
                                         !message
                                             .text()
                                             .includes('Warning: componentWillReceiveProps has been renamed') &&
-                                        !message.text().includes('React-Hot-Loader') &&
                                         // These requests are expected to fail, we use them to check if the browser extension is installed.
                                         message.location().url !== 'chrome-extension://invalid/'
                                 ),

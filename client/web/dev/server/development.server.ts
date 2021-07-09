@@ -36,6 +36,8 @@ export async function startDevelopmentServer(): Promise<void> {
     // It's not possible to use `WebpackDevServer.Configuration` here yet, because
     // type definitions for the `webpack-dev-server` are not updated to match v4.
     const developmentServerConfig = {
+        // react-refresh plugin triggers page reload if needed.
+        liveReload: false,
         hot: IS_HOT_RELOAD_ENABLED,
         // TODO: resolve https://github.com/webpack/webpack-dev-server/issues/2313 and enable HTTPS.
         https: false,
@@ -44,10 +46,7 @@ export async function startDevelopmentServer(): Promise<void> {
         },
         port: SOURCEGRAPH_HTTPS_PORT,
         client: {
-            overlay: {
-                errors: true,
-                warnings: false,
-            },
+            overlay: false,
         },
         static: {
             directory: STATIC_ASSETS_PATH,

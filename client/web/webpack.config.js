@@ -2,6 +2,7 @@
 
 const path = require('path')
 
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -36,6 +37,9 @@ if (shouldAnalyze) {
 }
 
 const rootPath = path.resolve(__dirname, '..', '..')
+const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace =>
+  path.resolve(rootPath, 'client', workspace, 'src')
+)
 const nodeModulesPath = path.resolve(rootPath, 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
@@ -84,6 +88,9 @@ const config = {
       new CssMinimizerWebpackPlugin(),
     ],
     ...(isDevelopment && {
+      // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
+      // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
+      runtimeChunk: 'single',
       removeAvailableModules: false,
       removeEmptyChunks: false,
       splitChunks: false,
@@ -92,11 +99,7 @@ const config = {
   entry: {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint.
-    app: [
-      'react-hot-loader/patch',
-      isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-    ],
-
+    app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
     'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
     'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
   },
@@ -143,15 +146,18 @@ const config = {
         'suggest',
       ],
     }),
-    new WebpackManifestPlugin({
-      writeToFileEmit: true,
-      fileName: 'webpack.manifest.json',
-      // Only output files that are required to run the application
-      filter: ({ isInitial }) => isInitial,
-    }),
-    ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
-    ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
-  ],
+    !shouldServeIndexHTML &&
+      new WebpackManifestPlugin({
+        writeToFileEmit: true,
+        fileName: 'webpack.manifest.json',
+        // Only output files that are required to run the application
+        filter: ({ isInitial }) => isInitial,
+      }),
+    ...(shouldServeIndexHTML && getHTMLWebpackPlugins()),
+    shouldAnalyze && new BundleAnalyzerPlugin(),
+    isDevelopment && new webpack.HotModuleReplacementPlugin(),
+    isDevelopment && new ReactRefreshWebpackPlugin({ overlay: false }),
+  ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
@@ -159,7 +165,6 @@ const config = {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
       'react-visibility-sensor': path.resolve(rootPath, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
-      'react-dom': '@hot-loader/react-dom',
     },
   },
   module: {
@@ -168,7 +173,7 @@ const config = {
       // slow to run on all JavaScript code).
       {
         test: /\.[jt]sx?$/,
-        include: path.join(__dirname, 'src'),
+        include: hotLoadablePaths,
         exclude: extensionHostWorker,
         use: [
           ...(isProduction ? ['thread-loader'] : []),
@@ -176,23 +181,14 @@ const config = {
             loader: 'babel-loader',
             options: {
               cacheDirectory: true,
-              plugins: [
-                'react-hot-loader/babel',
-                [
-                  '@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper',
-                  {
-                    modulePattern: 'web/src/.*\\.tsx$',
-                    componentNamePattern: '(Page|Area)$',
-                  },
-                ],
-              ],
+              ...(isDevelopment && { plugins: [isDevelopment && 'react-refresh/babel'] }),
             },
           },
         ],
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: [path.join(__dirname, 'src'), extensionHostWorker],
+        exclude: [...hotLoadablePaths, extensionHostWorker],
         use: [...(isProduction ? ['thread-loader'] : []), babelLoader],
       },
       {
