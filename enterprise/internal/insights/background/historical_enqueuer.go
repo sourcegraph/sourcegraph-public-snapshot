@@ -116,6 +116,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		now:           time.Now,
 		settingStore:  settingStore,
 		insightsStore: insightsStore,
+		loader:        insights.NewLoader(repoStore.Handle().DB()),
 		repoStore:     database.Repos(workerBaseStore.Handle().DB()),
 		limiter:       limiter,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
@@ -212,6 +213,7 @@ type historicalEnqueuer struct {
 	now                   func() time.Time
 	settingStore          discovery.SettingStore
 	insightsStore         store.Interface
+	loader                insights.Loader
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
@@ -231,7 +233,7 @@ type historicalEnqueuer struct {
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Discover all insights on the instance.
-	foundInsights, err := discovery.Discover(ctx, h.settingStore, discovery.InsightFilterArgs{})
+	foundInsights, err := discovery.Discover(ctx, h.settingStore, h.loader, discovery.InsightFilterArgs{})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}

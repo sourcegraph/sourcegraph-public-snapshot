@@ -58,8 +58,10 @@ func TestDiscover(t *testing.T) {
 	})
 	ctx := context.Background()
 
+	loader := insights.NewMockLoader()
+
 	t.Run("test_with_no_id_filter", func(t *testing.T) {
-		discovered, err := Discover(ctx, settingStore, InsightFilterArgs{})
+		discovered, err := Discover(ctx, settingStore, loader, InsightFilterArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -98,7 +100,7 @@ func TestDiscover(t *testing.T) {
 	})
 
 	t.Run("test_with_id_filter", func(t *testing.T) {
-		discovered, err := Discover(ctx, settingStore, InsightFilterArgs{Ids: []string{"1"}})
+		discovered, err := Discover(ctx, settingStore, loader, InsightFilterArgs{Ids: []string{"1"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -119,6 +121,36 @@ func TestDiscover(t *testing.T) {
 				},
 			},
 		}).Equal(t, discovered)
+	})
+
+	t.Run("test_with_loader", func(t *testing.T) {
+		integrated := []insights.SearchInsight{{
+			ID:          "1234",
+			Title:       "my insight",
+			Description: "woooo!!!!",
+		}}
+
+		loader.LoadAllFunc.SetDefaultReturn(integrated, nil)
+		discovered, err := Discover(ctx, settingStore, loader, InsightFilterArgs{Ids: []string{"1"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Want("discovered_with_loader", []insights.SearchInsight{{
+			ID:          "1",
+			Title:       "fmt usage",
+			Description: "fmt.Errorf/fmt.Printf usage",
+			Series: []insights.TimeSeries{
+				{
+					Name:  "fmt.Errorf",
+					Query: "errorf",
+				},
+				{
+					Name:  "printf",
+					Query: "fmt.Printf",
+				},
+			},
+		}}).Equal(t, discovered)
 	})
 }
 
