@@ -455,7 +455,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 	}
 }
 
-func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, error) {
+func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, error) {
 	forceResultTypes := result.TypeEmpty
 	if r.PatternType == query.SearchTypeStructural {
 		forceResultTypes = result.TypeFile
@@ -463,7 +463,7 @@ func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, err
 
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
-		return search.TextParameters{}, err
+		return nil, err
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
@@ -477,32 +477,32 @@ func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, err
 
 	args := search.TextParameters{
 		PatternInfo: p,
-		Query:       r.Query, // TODO(rvantonder) remove setQuery and use q here.
+		Query:       q,
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil || r.stream != nil,
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || r.stream != nil,
 
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
 		RepoPromise:  &search.RepoPromise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
-		return search.TextParameters{}, &badRequestError{err}
+		return nil, &badRequestError{err}
 	}
 	args = withResultTypes(args, forceResultTypes)
-	return args, nil
+	return &args, nil
 }
 
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextParameters) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	return r.resultsWithTimeoutSuggestion(ctx)
+	return r.resultsWithTimeoutSuggestion(ctx, args)
 }
 
 // union returns the union of two sets of search results and merges common search data.
@@ -701,12 +701,20 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Concat:
 			r.invalidateCache()
 			r.Query = q.ToParseTree()
-			return r.evaluateLeaf(ctx)
+			args, err := r.toTextParameters(q.ToParseTree())
+			if err != nil {
+				return &SearchResults{}, err
+			}
+			return r.evaluateLeaf(ctx, args)
 		}
 	case query.Pattern:
 		r.invalidateCache()
 		r.Query = q.ToParseTree()
-		return r.evaluateLeaf(ctx)
+		args, err := r.toTextParameters(q.ToParseTree())
+		if err != nil {
+			return &SearchResults{}, err
+		}
+		return r.evaluateLeaf(ctx, args)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -719,8 +727,12 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.invalidateCache()
-		r.Query = query.ToNodes(q.Parameters)
-		return r.evaluateLeaf(ctx)
+		r.Query = q.ToParseTree()
+		args, err := r.toTextParameters(query.ToNodes(q.Parameters))
+		if err != nil {
+			return &SearchResults{}, err
+		}
+		return r.evaluateLeaf(ctx, args)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1003,12 +1015,8 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResults, error) {
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args *search.TextParameters) (*SearchResults, error) {
 	start := time.Now()
-	args, err := r.toTextParameters(r.Query)
-	if err != nil {
-		return nil, err
-	}
 	rr, err := r.doResults(ctx, args)
 
 	// If we encountered a context timeout, it indicates one of the many result
@@ -1297,8 +1305,8 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 // determineRepos wraps resolveRepositories. It interprets the response and
 // error to see if an alert needs to be returned. Only one of the return
 // values will be non-nil.
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
-	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
+func (r *searchResolver) determineRepos(ctx context.Context, q query.Q, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
+	resolved, err := r.resolveRepositories(ctx, q, resolveRepositoriesOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -1333,7 +1341,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, args search.TextParameters) (_ *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, args *search.TextParameters) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1397,7 +1405,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath {
-		argsIndexed := args
+		argsIndexed := *args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
 		wg.Add(1)
@@ -1415,7 +1423,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		}
 	}
 
-	resolved, err := r.determineRepos(ctx, tr, start)
+	resolved, err := r.determineRepos(ctx, args.Query, tr, start)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return alert.wrapResults(), err
@@ -1452,7 +1460,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoRepoSearch(ctx, &args, int32(limit))
+			_ = agg.DoRepoSearch(ctx, args, int32(limit))
 		})
 
 	}
@@ -1462,7 +1470,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoSymbolSearch(ctx, &args, limit)
+			_ = agg.DoSymbolSearch(ctx, args, limit)
 		})
 	}
 
@@ -1472,7 +1480,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoFilePathSearch(ctx, &args)
+				_ = agg.DoFilePathSearch(ctx, args)
 			})
 		}
 	}
@@ -1482,7 +1490,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoDiffSearch(ctx, &args)
+			_ = agg.DoDiffSearch(ctx, args)
 		})
 	}
 
@@ -1491,7 +1499,7 @@ func (r *searchResolver) doResults(ctx context.Context, args search.TextParamete
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoCommitSearch(ctx, &args)
+			_ = agg.DoCommitSearch(ctx, args)
 		})
 
 	}

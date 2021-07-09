@@ -463,7 +463,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			IncludePrivate: true,
 		}
 		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
-			log15.Error("Listing default repos", "error", err)
+			log15.Error("Listing indexable repos", "error", err)
 			return
 		} else {
 			// Ensure that uncloned indexable repos are known to the scheduler

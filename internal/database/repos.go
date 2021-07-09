@@ -859,7 +859,7 @@ SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
 type ListIndexableReposOptions struct {
-	// If true, will only include uncloned default repos
+	// If true, will only include uncloned indexable repos
 	OnlyUncloned bool
 	// If true, we include user added private repos
 	IncludePrivate bool
@@ -903,19 +903,19 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying for indexed repos")
+		return nil, errors.Wrap(err, "querying indexable repos")
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var r types.RepoName
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
-			return nil, errors.Wrap(err, "scanning row from default_repos table")
+			return nil, errors.Wrap(err, "scanning indexable repos")
 		}
 		results = append(results, r)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanning rows for default repos")
+		return nil, errors.Wrap(err, "scanning indexable repos")
 	}
 
 	return results, nil

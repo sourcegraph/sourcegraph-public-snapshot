@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -463,11 +464,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		sourceURL = sourceURLCookie.Value
 	}
 
-	anonymousUIDCookie, err := r.Cookie("sourcegraphAnonymousUid")
-	var anonymousUserId string
-	if err == nil && anonymousUIDCookie != nil {
-		anonymousUserId = anonymousUIDCookie.Value
-	}
+	anonymousUserId, _ := cookie.AnonymousUID(r)
 
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
 		IsServerAdmin:   true,

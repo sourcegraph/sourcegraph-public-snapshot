@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
@@ -33,8 +35,8 @@ func contextWithFeatureFlags(ffs FeatureFlagStore, r *http.Request) context.Cont
 		// Continue if err != nil
 	}
 
-	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil {
-		flags, err := ffs.GetAnonymousUserFlags(r.Context(), cookie.Value)
+	if uid, ok := cookie.AnonymousUID(r); ok {
+		flags, err := ffs.GetAnonymousUserFlags(r.Context(), uid)
 		if err == nil {
 			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 		}
