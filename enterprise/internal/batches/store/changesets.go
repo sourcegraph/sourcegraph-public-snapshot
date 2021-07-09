@@ -1105,7 +1105,7 @@ FROM (
 		-- split each relevant changeset into a separate row with the archived status per owning batch change id
 		SELECT
 			changesets.id,
-			COALESCE((value -> 'isArchived')::boolean, FALSE) AS is_archived
+			COALESCE((value -> 'isArchived')::boolean, (value -> 'archive')::boolean, FALSE) AS is_archived
 		FROM
 			changesets,
 			jsonb_each(batch_change_ids),

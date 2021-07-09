@@ -207,8 +207,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 				t.Fatal(err)
 			}
 
-			t.Logf("batch change ids: %v, %v", cs[0].ID, cs[1].ID)
-
 			// 1 batch change + changeset is associated with the first repo
 			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 				Repo:         repo1.ID,
@@ -261,10 +259,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 						if have, want := next, int64(0); have != want {
 							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-						}
-
-						for _, res := range ts {
-							t.Logf("res %v", *&res.ID)
 						}
 
 						if len(ts) != tc.listLen {
