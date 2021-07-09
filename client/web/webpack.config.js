@@ -61,7 +61,8 @@ const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
   target: 'browserslist',
-  cache: {
+  // Use cache only in `development` mode to speed up production build.
+  cache: isDevelopment && {
     type: 'filesystem',
     buildDependencies: {
       // Invalidate cache on config change.

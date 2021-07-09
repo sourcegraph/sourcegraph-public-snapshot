@@ -7,8 +7,8 @@ import webpack, { optimize } from 'webpack'
 
 import { subtypeOf } from '../../../shared/src/util/types'
 
-const rootPath = path.resolve(__dirname, '../../../../')
-const browserWorkspacePath = path.resolve(rootPath, 'client/browser')
+export const rootPath = path.resolve(__dirname, '../../../../')
+export const browserWorkspacePath = path.resolve(rootPath, 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
 
 const contentEntry = path.resolve(browserSourcePath, 'config/content.entry.js')
@@ -45,18 +45,6 @@ const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse
 
 export const config = subtypeOf<webpack.Configuration>()({
     target: 'browserslist',
-    cache: {
-        type: 'filesystem',
-        buildDependencies: {
-            // Invalidate cache on config change.
-            config: [
-                __filename,
-                path.resolve(browserWorkspacePath, 'babel.config.js'),
-                path.resolve(rootPath, 'babel.config.js'),
-                path.resolve(rootPath, 'postcss.config.js'),
-            ],
-        },
-    },
     entry: {
         // Browser extension
         background: [

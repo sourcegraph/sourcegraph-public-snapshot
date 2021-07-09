@@ -113,18 +113,6 @@ const config = {
     webpackFinal: (config: Configuration, options: Options) => {
         config.stats = 'errors-warnings'
         config.mode = environment.shouldMinify ? 'production' : 'development'
-        config.cache = {
-            type: 'filesystem',
-            buildDependencies: {
-                // Invalidate cache on config change.
-                config: [
-                    __filename,
-                    path.resolve(storybookWorkspacePath, 'babel.config.js'),
-                    path.resolve(rootPath, 'babel.config.js'),
-                    path.resolve(rootPath, 'postcss.config.js'),
-                ],
-            },
-        }
 
         // Check the default config is in an expected shape.
         if (!config.module?.rules || !config.plugins) {
@@ -161,6 +149,20 @@ const config = {
                     },
                 }),
             ]
+        } else {
+            // Use cache only in `development` mode to speed up production build.
+            config.cache = {
+                type: 'filesystem',
+                buildDependencies: {
+                    // Invalidate cache on config change.
+                    config: [
+                        __filename,
+                        path.resolve(storybookWorkspacePath, 'babel.config.js'),
+                        path.resolve(rootPath, 'babel.config.js'),
+                        path.resolve(rootPath, 'postcss.config.js'),
+                    ],
+                },
+            }
         }
 
         // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
