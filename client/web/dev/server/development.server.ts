@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import { Application } from 'express'
+import { once } from 'lodash'
 import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
 import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
@@ -23,7 +24,7 @@ const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, IS_HOT_RELOAD_ENABLED } = e
 export async function startDevelopmentServer(): Promise<void> {
     // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
     const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
-    signale.await('Development server', { ...environmentConfig, csrfContextValue, csrfCookieValue })
+    signale.start('Starting webpack-dev-server with environment config:\n', environmentConfig)
 
     const proxyConfig = {
         context: PROXY_ROUTES,
@@ -59,13 +60,19 @@ export async function startDevelopmentServer(): Promise<void> {
         },
     }
 
-    const server = new WebpackDevServer(
-        createWebpackCompiler(webpackConfig),
-        developmentServerConfig as WebpackDevServer.Configuration
+    const compiler = createWebpackCompiler(webpackConfig)
+    const server = new WebpackDevServer(compiler, developmentServerConfig as WebpackDevServer.Configuration)
+
+    compiler.hooks.afterEmit.tap(
+        'development-server-logger',
+        once(() => {
+            signale.success('Webpack build is ready!')
+        })
     )
 
     server.listen(SOURCEGRAPH_HTTPS_PORT, '0.0.0.0', () => {
         signale.success(`Development server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+        signale.await('Waiting for Webpack to compile assets')
     })
 }
 

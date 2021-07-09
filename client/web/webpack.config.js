@@ -60,6 +60,16 @@ const extensionHostWorker = /main\.worker\.ts$/
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
+  stats: {
+    // Minimize logging in case if Webpack is used along with multiple other services.
+    // Use `normal` output preset in case of running standalone web server.
+    preset: shouldServeIndexHTML ? 'normal' : 'errors-warnings',
+    errorDetails: true,
+  },
+  infrastructureLogging: {
+    // Controls webpack-dev-server logging level.
+    level: 'warn',
+  },
   target: 'browserslist',
   // Use cache only in `development` mode to speed up production build.
   cache: isDevelopment && {
