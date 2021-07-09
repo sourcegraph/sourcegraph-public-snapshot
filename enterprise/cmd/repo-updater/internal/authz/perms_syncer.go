@@ -448,7 +448,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	// when the owner of the token only has READ access. However, we don't want to fail
 	// so the scheduler won't keep trying to fetch permissions of this same repository, so we
 	// return a nil error and log a warning message.
-	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
+	var e *github.APIError
+	if errors.As(err, &e) && e.Code == http.StatusNotFound {
 		log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err, "suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions")
 		return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
 	}

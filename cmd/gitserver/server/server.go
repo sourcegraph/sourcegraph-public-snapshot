@@ -1903,7 +1903,8 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	if err != nil {
 		// Ignore the failure for an empty repository: show-ref fails with
 		// empty output and an exit code of 1
-		if e, ok := err.(*exec.ExitError); !ok || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(syscall.WaitStatus).ExitStatus() != 1 {
+		var e *exec.ExitError
+		if !errors.As(err, &e) || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(syscall.WaitStatus).ExitStatus() != 1 {
 			return nil, err
 		}
 	}

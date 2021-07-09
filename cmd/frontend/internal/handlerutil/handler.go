@@ -78,8 +78,10 @@ func httpErrCode(r *http.Request, err error) int {
 // unchanged. This lets us return the proper HTTP status code for
 // single errors.
 func collapseMultipleErrors(err error) error {
-	if errs, ok := err.(parallel.Errors); ok && len(errs) == 1 {
-		return errs[0]
+	var e parallel.Errors
+	if errors.As(err, &e) && len(e) == 1 {
+		return e[0]
 	}
+
 	return err
 }

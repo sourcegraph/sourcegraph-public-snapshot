@@ -369,5 +369,5 @@ var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	return errors.IsAny(ErrProjectNotFound, ErrMergeRequestNotFound) || HTTPErrorCode(err) == http.StatusNotFound
+	return errors.IsAny(err, ErrProjectNotFound, ErrMergeRequestNotFound) || HTTPErrorCode(err) == http.StatusNotFound
 }

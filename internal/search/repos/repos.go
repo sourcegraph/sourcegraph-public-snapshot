@@ -277,7 +277,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 				if errors.Is(err, context.DeadlineExceeded) {
 					return Resolved{}, context.DeadlineExceeded
 				}
-				if errors.HasType(err, &git.BadCommitError{}) {
+				if errors.HasType(err, git.BadCommitError{}) {
 					return Resolved{}, err
 				}
 				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {

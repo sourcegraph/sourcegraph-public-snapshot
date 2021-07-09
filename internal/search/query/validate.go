@@ -222,7 +222,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	isNumber := func() error {
 		count, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			if err.(*strconv.NumError).Err == strconv.ErrRange {
+			if errors.Is(err, strconv.ErrRange) {
 				return fmt.Errorf("field %s has a value that is out of range, try making it smaller", field)
 			}
 			return fmt.Errorf("field %s has value %[2]s, %[2]s is not a number", field, value)

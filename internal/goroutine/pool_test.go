@@ -5,6 +5,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
 )
@@ -31,13 +32,13 @@ func TestRunWorkersN(t *testing.T) {
 		return nil
 	}))
 
-	merr, ok := err.(*multierror.Error)
-	if err == nil || !ok {
+	var e *multierror.Error
+	if err == nil || !errors.As(err, &e) {
 		t.Errorf("unexpected error wrapper: %v", err)
 	}
 
 	var errStrings []string
-	for _, err := range merr.WrappedErrors() {
+	for _, err := range e.WrappedErrors() {
 		errStrings = append(errStrings, err.Error())
 	}
 	sort.Strings(errStrings)

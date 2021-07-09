@@ -80,7 +80,7 @@ func shortenErrHelp(cmd *ffcli.Command, cmdPath string) {
 	exec := cmd.Exec
 	cmd.Exec = func(args []string) error {
 		err := exec(args)
-		if _, ok := err.(*usageError); ok {
+		if errors.HasType(err, &usageError{}) {
 			var w io.Writer
 			if cmd.FlagSet != nil {
 				w = cmd.FlagSet.Output()

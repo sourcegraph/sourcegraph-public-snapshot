@@ -572,13 +572,11 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 	input := map[string]interface{}{"input": compatibleInput}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
-			e := gqlErrs[0]
-			if strings.Contains(e.Message, "A pull request already exists for") {
-				return nil, ErrPullRequestAlreadyExists
-			}
+		var errs graphqlErrors
+		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+			return nil, ErrPullRequestAlreadyExists
 		}
-		return nil, err
+		return nil, errs
 	}
 
 	ti := result.CreatePullRequest.PullRequest.TimelineItems
@@ -637,11 +635,9 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 	input := map[string]interface{}{"input": in}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
-			e := gqlErrs[0]
-			if strings.Contains(e.Message, "A pull request already exists for") {
-				return nil, ErrPullRequestAlreadyExists
-			}
+		var errs graphqlErrors
+		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+			return nil, ErrPullRequestAlreadyExists
 		}
 		return nil, err
 	}
@@ -840,16 +836,17 @@ query($owner: String!, $name: String!, $number: Int!) {
 
 	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
 	if err != nil {
-		if gqlErrs, ok := err.(graphqlErrors); ok {
-			for _, err2 := range gqlErrs {
-				if err2.Type == graphqlErrTypeNotFound && len(err2.Path) >= 1 {
-					if repoPath, ok := err2.Path[0].(string); !ok || repoPath != "repository" {
+		var errs graphqlErrors
+		if errors.As(err, &errs) {
+			for _, err := range errs {
+				if err.Type == graphqlErrTypeNotFound && len(err.Path) >= 1 {
+					if repoPath, ok := err.Path[0].(string); !ok || repoPath != "repository" {
 						continue
 					}
-					if len(err2.Path) == 1 {
+					if len(err.Path) == 1 {
 						return ErrRepoNotFound
 					}
-					if prPath, ok := err2.Path[1].(string); !ok || prPath != "pullRequest" {
+					if prPath, ok := err.Path[1].(string); !ok || prPath != "pullRequest" {
 						continue
 					}
 					return ErrPullRequestNotFound(pr.Number)
@@ -1545,14 +1542,14 @@ func IsNotFound(err error) bool {
 		return true
 	}
 
-	if errs, ok := err.(graphqlErrors); ok {
+	var errs graphqlErrors
+	if errors.As(err, &errs) {
 		for _, err := range errs {
 			if err.Type == "NOT_FOUND" {
 				return true
 			}
 		}
 	}
-
 	return false
 }
 
@@ -1567,15 +1564,14 @@ func IsRateLimitExceeded(err error) bool {
 		return strings.Contains(e.Message, "API rate limit exceeded") || strings.Contains(e.DocumentationURL, "#rate-limiting")
 	}
 
-	errs, ok := err.(graphqlErrors)
-	if !ok {
-		return false
-	}
-	for _, err := range errs {
-		// This error is not documented, so be lenient here (instead of just checking for exact
-		// error type match.)
-		if err.Type == "RATE_LIMITED" || strings.Contains(err.Message, "API rate limit exceeded") {
-			return true
+	var errs graphqlErrors
+	if errors.As(err, &errs) {
+		for _, err := range errs {
+			// This error is not documented, so be lenient here (instead of just checking for exact
+			// error type match.)
+			if err.Type == "RATE_LIMITED" || strings.Contains(err.Message, "API rate limit exceeded") {
+				return true
+			}
 		}
 	}
 	return false
@@ -1584,15 +1580,15 @@ func IsRateLimitExceeded(err error) bool {
 // IsNotMergeable reports whether err is a GitHub API error reporting that a PR
 // was not in a mergeable state.
 func IsNotMergeable(err error) bool {
-	errs, ok := err.(graphqlErrors)
-	if !ok {
-		return false
-	}
-	for _, err := range errs {
-		if strings.Contains(strings.ToLower(err.Message), "pull request is not mergeable") {
-			return true
+	var errs graphqlErrors
+	if errors.As(err, &errs) {
+		for _, err := range errs {
+			if strings.Contains(strings.ToLower(err.Message), "pull request is not mergeable") {
+				return true
+			}
 		}
 	}
+
 	return false
 }
 

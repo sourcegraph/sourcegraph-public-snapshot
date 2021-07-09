@@ -64,7 +64,8 @@ func GetByExtensionID(ctx context.Context, registry *url.URL, extensionID string
 func getBy(ctx context.Context, registry *url.URL, op, field, value string) (*Extension, error) {
 	var x *Extension
 	if err := httpGet(ctx, op, toURL(registry, path.Join("extensions", field, value), nil), &x); err != nil {
-		if e, ok := err.(*url.Error); ok && e.Err == httpError(http.StatusNotFound) {
+		var e *url.Error
+		if errors.As(err, &e) && e.Err == httpError(http.StatusNotFound) {
 			err = &notFoundError{field: field, value: value}
 		}
 		return nil, err

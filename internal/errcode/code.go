@@ -26,8 +26,7 @@ func HTTP(err error) int {
 		return http.StatusOK
 	}
 
-	switch err {
-	case context.DeadlineExceeded:
+	if errors.Is(err, context.DeadlineExceeded) {
 		return http.StatusRequestTimeout
 	}
 
@@ -37,20 +36,21 @@ func HTTP(err error) int {
 		return http.StatusNotFound
 	}
 
-	switch e := err.(type) {
-	case interface {
-		HTTPStatusCode() int
-	}:
+	var e interface{ HTTPStatusCode() int }
+	if errors.As(err, &e) {
 		return e.HTTPStatusCode()
-	case schema.ConversionError:
+	}
+
+	if errors.HasType(err, schema.ConversionError{}) {
 		return http.StatusBadRequest
-	case schema.MultiError:
+	}
+	if errors.HasType(err, schema.MultiError{}) {
 		return http.StatusBadRequest
 	}
 
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return http.StatusNotFound
-	} else if os.IsPermission(err) {
+	} else if errors.Is(err, os.ErrPermission) {
 		return http.StatusForbidden
 	} else if IsNotFound(err) {
 		return http.StatusNotFound

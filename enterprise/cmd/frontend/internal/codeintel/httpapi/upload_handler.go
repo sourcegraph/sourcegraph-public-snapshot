@@ -78,8 +78,9 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := h.handleEnqueueErr(w, r, repositoryID)
 	if err != nil {
-		if cerr, ok := err.(*ClientError); ok {
-			http.Error(w, cerr.Error(), http.StatusBadRequest)
+		var e *ClientError
+		if errors.As(err, &e) {
+			http.Error(w, e.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -331,8 +332,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 // trying to modify the record, it will be logged but will not be directly visible to the user.
 func (h *UploadHandler) markUploadAsFailed(ctx context.Context, tx DBStore, uploadID int, err error) {
 	var reason string
-
-	if _, ok := err.(*ClientError); ok {
+	if errors.HasType(err, &ClientError{}) {
 		reason = fmt.Sprintf("client misbehaving:\n* %s", err)
 	} else if awsErr := formatAWSError(err); awsErr != "" {
 		reason = fmt.Sprintf("object store error:\n* %s", awsErr)

@@ -70,7 +70,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			branch:  "doesntexist",
-			wantErr: errors.HasType(err, &gitserver.RevisionNotFoundError{}),
+			wantErr: func(err error) bool { return errors.HasType(err, &gitserver.RevisionNotFoundError{}) },
 		},
 	}
 
@@ -133,7 +133,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			tag:     "doesntexist",
-			wantErr: errors.HasType(err, &gitserver.RevisionNotFoundError{}),
+			wantErr: func(err error) bool { return errors.HasType(err, &gitserver.RevisionNotFoundError{}) },
 		},
 	}
 

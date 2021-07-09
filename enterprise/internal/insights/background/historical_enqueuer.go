@@ -290,7 +290,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		if err != nil {
 			// Ignore RepoNotFoundErr because it could just be that the repository was actually
 			// deleted and allReposIterator had it cached.
-			if _, ok := err.(*database.RepoNotFoundErr); !ok {
+			if errors.HasType(err, &database.RepoNotFoundErr{}) {
 				return err // hard DB error
 			} else {
 				return nil

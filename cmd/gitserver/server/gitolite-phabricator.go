@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -76,8 +77,9 @@ func getGitolitePhabCallsign(ctx context.Context, gconf *schema.GitoliteConnecti
 	cmd.Env = append(os.Environ(), "REPO="+repo)
 	stdout, err := cmd.Output()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return "", fmt.Errorf("Command failed: %s, stderr: %s", exitErr, string(exitErr.Stderr))
+		var e *exec.ExitError
+		if errors.As(err, &e) {
+			return "", fmt.Errorf("Command failed: %s, stderr: %s", e, string(e.Stderr))
 		}
 		return "", fmt.Errorf("Command failed: %s", err)
 	}

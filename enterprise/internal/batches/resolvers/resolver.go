@@ -1420,7 +1420,7 @@ func checkSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, userID int32) (
 	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
 	// admin rights.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
-		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 			return false, nil
 		}
 

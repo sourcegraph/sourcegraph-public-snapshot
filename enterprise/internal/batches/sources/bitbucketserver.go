@@ -118,12 +118,13 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
-		if ae, ok := err.(*bitbucketserver.ErrAlreadyExists); ok && ae != nil {
-			if ae.Existing == nil {
+		var e *bitbucketserver.ErrAlreadyExists
+		if errors.As(err, &e) {
+			if e.Existing == nil {
 				return exists, fmt.Errorf("existing PR is nil")
 			}
-			log15.Info("Existing PR extracted", "ID", ae.Existing.ID)
-			pr = ae.Existing
+			log15.Info("Existing PR extracted", "ID", e.Existing.ID)
+			pr = e.Existing
 			exists = true
 		} else {
 			return exists, err

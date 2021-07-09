@@ -73,7 +73,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 		for _, svc := range services {
 			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
 			if err != nil {
-				if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
+				if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
 					continue
 				}
 				return errors.Wrap(err, "getting rate limit configuration")

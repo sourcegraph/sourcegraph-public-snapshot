@@ -81,11 +81,13 @@ func (c Client) DoNoFollowRedirects(req *http.Request) (*http.Response, error) {
 	noRedir := errors.New("x")
 	c.CheckRedirect = func(r *http.Request, via []*http.Request) error { return noRedir }
 	resp, err := c.Do(req)
-	if urlErr, ok := err.(*url.Error); ok && urlErr != nil {
-		if urlErr.Err == noRedir {
+	if err != nil {
+		var e *url.Error
+		if errors.As(err, &e) && e.Err == noRedir {
 			err = nil
 		}
 	}
+
 	return resp, err
 }
 
