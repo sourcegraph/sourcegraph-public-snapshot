@@ -3,7 +3,7 @@ import { useLocation, useHistory } from 'react-router'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { Steps, Step, StepList } from '@sourcegraph/wildcard/src/components/Steps'
+import { Steps, Step, StepList, StepPanels, StepPanel, useSteps } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
@@ -29,8 +29,11 @@ interface Step {
 
 export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authenticatedUser: user, context }) => {
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
+    const toLog = useSteps()
     const location = useLocation()
     const history = useHistory()
+
+    console.log('useSteps =>>>>', toLog)
 
     const {
         trigger: fetchCloningStatus,
@@ -191,19 +194,47 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
                                 Three quick steps to add your repositories and get searching with Sourcegraph
                             </p>
                             <div className="mt-4 pb-3">
-                                <Steps current={currentStepNumber} numbered={true} onTabClick={onStepTabClick}>
-                                    <StepList>
-                                        <Step title="Connect with code hosts" borderColor="purple" />
-                                        <Step title="Add repositories" borderColor="blue" />
-                                        <Step title="Start searching" borderColor="orange" />
+                                <Steps current={currentStepNumber}>
+                                    <StepList numeric={true}>
+                                        <Step borderColor="purple">Connect with code hosts</Step>
+                                        <Step borderColor="blue">Add repositories</Step>
+                                        <Step borderColor="orange">Start searching</Step>
                                     </StepList>
-                                    {/* <StepPanels> */}
-                                    {/* <StepPanel></StepPanel> */}
-                                    {/* </StepPanels> */}
+                                    <StepPanels>
+                                        <StepPanel>
+                                            {externalServices && (
+                                                <CodeHostsConnection
+                                                    loading={loadingServices}
+                                                    user={user}
+                                                    error={errorServices}
+                                                    externalServices={externalServices}
+                                                    context={context}
+                                                    refetch={refetchExternalServices}
+                                                />
+                                            )}
+                                        </StepPanel>
+                                        <StepPanel>
+                                            <>
+                                                <h3>Add repositories</h3>
+                                                <p className="text-muted">
+                                                    Choose repositories you own or collaborate on from your code hosts
+                                                    to search with Sourcegraph. We’ll sync and index these repositories
+                                                    so you can search your code all in one place.
+                                                </p>
+                                            </>
+                                        </StepPanel>
+                                        <StepPanel>
+                                            <StartSearching
+                                                isDoneCloning={isDoneCloning}
+                                                cloningStatusLines={cloningStatusLines}
+                                                cloningStatusLoading={cloningStatusLoading}
+                                            />
+                                        </StepPanel>
+                                    </StepPanels>
                                 </Steps>
                             </div>
                             {/* This should be part of step panel */}
-                            <div className="mt-4 pb-3">{currentStep.content}</div>
+                            {/* <div className="mt-4 pb-3">{currentStep.content}</div> */}
                             <div className="mt-4">
                                 <button
                                     type="button"
