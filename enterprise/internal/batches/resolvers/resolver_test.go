@@ -796,6 +796,9 @@ mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
 `
 
 func TestListChangesetOptsFromArgs(t *testing.T) {
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+
 	var wantFirst int32 = 10
 	wantPublicationStates := []btypes.ChangesetPublicationState{
 		"PUBLISHED",
@@ -810,6 +813,9 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
+	repoID := rs[0].ID
+	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -930,6 +936,16 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
 				OnlyArchived: true,
+			},
+		},
+		// Setting Repo
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				Repo: &repoGraphQLID,
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				RepoID: repoID,
 			},
 		},
 	}
