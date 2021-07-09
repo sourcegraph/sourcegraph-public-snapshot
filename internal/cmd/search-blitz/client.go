@@ -59,7 +59,6 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -78,13 +77,13 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 		return nil, err
 	}
 
-	durationMs := time.Since(start).Milliseconds()
+	duration := time.Since(start)
 
 	return &metrics{
-		took:          durationMs,
-		firstResultMs: durationMs,
-		matchCount:    respDec.Data.Search.Results.ResultCount,
-		trace:         resp.Header.Get("x-trace"),
+		took:        duration,
+		firstResult: duration,
+		matchCount:  respDec.Data.Search.Results.ResultCount,
+		trace:       resp.Header.Get("x-trace"),
 	}, nil
 }
 

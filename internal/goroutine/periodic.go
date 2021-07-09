@@ -2,9 +2,9 @@ package goroutine
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 
@@ -141,11 +141,10 @@ func runPeriodicHandler(ctx context.Context, handler Handler, operation *observa
 
 	err = handler.Handle(ctx)
 
-	// If the error is due to the loop being shut down, just break
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if err == ctx.Err() {
-			return true, nil
-		}
+	if err != nil && errors.Cause(err) == ctx.Err() {
+		// If the error is due to the loop being shut down, break
+		// from the run loop in the calling function
+		return true, nil
 	}
 
 	return false, err

@@ -1141,6 +1141,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.removed sample_binary_inline`,
 				counts: counts{Commit: 0},
 			},
+			{
+				name:   `file contains content predicate`, // equivalent to the `select file` test
+				query:  `repo:go-diff patterntype:literal file:contains.content(HunkNoChunkSize)`,
+				counts: counts{File: 1},
+			},
+			{
+				name:   `file contains content predicate type diff`,
+				query:  `type:diff repo:go-diff file:contains(after_success)`, // matches .travis.yml and its 10 commits
+				counts: counts{Commit: 10},
+			},
 		}
 
 		for _, test := range tests {

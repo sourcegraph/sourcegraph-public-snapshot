@@ -23,7 +23,7 @@ In case of a Kubernetes deployment this can be done as follows:
 ```
 bash
 kubectl delete pods -l app=sourcegraph-frontend
-``` 
+```
 
 ## Reference
 
@@ -43,12 +43,12 @@ Notices can be added in global, organization, or user settings. The `notices` se
 
 ### Example settings:
 
-```
+```json
 "notices": [
-      {
-        "message": "Your message here! [Include a link for more information]().",
-        "location": "top",
-        "dismissible": true
-      }
-    ]
+  {
+    "message": "Your message here! [Include a link for more information](http://example.com).",
+    "location": "top",
+    "dismissible": true
+  }
+]
 ```

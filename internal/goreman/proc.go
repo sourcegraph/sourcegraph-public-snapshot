@@ -1,13 +1,14 @@
 package goreman
 
 import (
-	"errors"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 var (

@@ -3545,8 +3545,8 @@ func NewMockEnqueuerGitserverClient() *MockEnqueuerGitserverClient {
 			},
 		},
 		HeadFunc: &EnqueuerGitserverClientHeadFunc{
-			defaultHook: func(context.Context, int) (string, error) {
-				return "", nil
+			defaultHook: func(context.Context, int) (string, bool, error) {
+				return "", false, nil
 			},
 		},
 		ListFilesFunc: &EnqueuerGitserverClientListFilesFunc{
@@ -3711,24 +3711,24 @@ func (c EnqueuerGitserverClientFileExistsFuncCall) Results() []interface{} {
 // EnqueuerGitserverClientHeadFunc describes the behavior when the Head
 // method of the parent MockEnqueuerGitserverClient instance is invoked.
 type EnqueuerGitserverClientHeadFunc struct {
-	defaultHook func(context.Context, int) (string, error)
-	hooks       []func(context.Context, int) (string, error)
+	defaultHook func(context.Context, int) (string, bool, error)
+	hooks       []func(context.Context, int) (string, bool, error)
 	history     []EnqueuerGitserverClientHeadFuncCall
 	mutex       sync.Mutex
 }
 
 // Head delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockEnqueuerGitserverClient) Head(v0 context.Context, v1 int) (string, error) {
-	r0, r1 := m.HeadFunc.nextHook()(v0, v1)
-	m.HeadFunc.appendCall(EnqueuerGitserverClientHeadFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockEnqueuerGitserverClient) Head(v0 context.Context, v1 int) (string, bool, error) {
+	r0, r1, r2 := m.HeadFunc.nextHook()(v0, v1)
+	m.HeadFunc.appendCall(EnqueuerGitserverClientHeadFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Head method of the
 // parent MockEnqueuerGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *EnqueuerGitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+func (f *EnqueuerGitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -3736,7 +3736,7 @@ func (f *EnqueuerGitserverClientHeadFunc) SetDefaultHook(hook func(context.Conte
 // Head method of the parent MockEnqueuerGitserverClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *EnqueuerGitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, error)) {
+func (f *EnqueuerGitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3744,21 +3744,21 @@ func (f *EnqueuerGitserverClientHeadFunc) PushHook(hook func(context.Context, in
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *EnqueuerGitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (string, error) {
-		return r0, r1
+func (f *EnqueuerGitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *EnqueuerGitserverClientHeadFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, int) (string, error) {
-		return r0, r1
+func (f *EnqueuerGitserverClientHeadFunc) PushReturn(r0 string, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *EnqueuerGitserverClientHeadFunc) nextHook() func(context.Context, int) (string, error) {
+func (f *EnqueuerGitserverClientHeadFunc) nextHook() func(context.Context, int) (string, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3802,7 +3802,10 @@ type EnqueuerGitserverClientHeadFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -3814,7 +3817,7 @@ func (c EnqueuerGitserverClientHeadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnqueuerGitserverClientHeadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // EnqueuerGitserverClientListFilesFunc describes the behavior when the

@@ -8,8 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -52,7 +51,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: false}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -117,7 +116,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -150,7 +149,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -163,7 +162,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				}
 			`,
 				ExpectedResult: `null`,
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Path:          []interface{}{"createAccessToken"},
 						Message:       "Must be authenticated as user with id 1",
@@ -186,7 +185,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
 		defer func() { conf.Get().AuthAccessTokens = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -304,7 +303,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: false}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -335,7 +334,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
 				Schema:  mustParseGraphQLSchema(t),

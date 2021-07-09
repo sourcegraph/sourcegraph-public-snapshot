@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 )

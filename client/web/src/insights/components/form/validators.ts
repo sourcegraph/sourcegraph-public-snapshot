@@ -10,6 +10,11 @@ export const createRequiredValidator = <Value>(errorMessage: string): Validator<
         return errorMessage
     }
 
+    // Handle the string value case.
+    if (typeof value === 'string' && value.trim() === '') {
+        return errorMessage
+    }
+
     return
 }
 

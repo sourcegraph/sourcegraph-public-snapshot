@@ -2,8 +2,8 @@ package dbworker
 
 import (
 	"context"
-	"errors"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"

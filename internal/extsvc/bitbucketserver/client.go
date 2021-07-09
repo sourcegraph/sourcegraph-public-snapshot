@@ -487,8 +487,7 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	)
 	_, err := c.send(ctx, "GET", path, nil, nil, pr)
 	if err != nil {
-		wrappedErr := errors.Unwrap(err)
-		if e, ok := wrappedErr.(*httpError); ok && e.NoSuchPullRequestException() {
+		if e, ok := errors.Cause(err).(*httpError); ok && e.NoSuchPullRequestException() {
 			return ErrPullRequestNotFound
 		}
 		return err
@@ -1536,11 +1535,22 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
 	if err != nil {
-		wrappedErr := errors.Unwrap(err)
-		if e, ok := wrappedErr.(*httpError); ok && e.MergePreconditionFailedException() {
+		if e, ok := errors.Cause(err).(*httpError); ok && e.MergePreconditionFailedException() {
 			return errors.Wrap(ErrNotMergeable, err.Error())
 		}
 		return err
 	}
 	return nil
+}
+
+func (c *Client) GetVersion(ctx context.Context) (string, error) {
+	var v struct {
+		Version     string
+		BuildNumber string
+		BuildDate   string
+		DisplayName string
+	}
+
+	_, err := c.send(ctx, "GET", "/rest/api/1.0/application-properties", nil, nil, &v)
+	return v.Version, err
 }

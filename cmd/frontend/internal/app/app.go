@@ -56,7 +56,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 
 	r.Get(router.SignUp).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignUp)))
 	r.Get(router.SiteInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSiteInit)))
-	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn)))
+	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db))))
 	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOutHandler(db))))
 	r.Get(router.VerifyEmail).Handler(trace.Route(http.HandlerFunc(serveVerifyEmail)))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit)))
@@ -73,7 +73,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
 
 	r.Get(router.GDDORefs).Handler(trace.Route(errorutil.Handler(serveGDDORefs)))
-	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor)))
+	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 
 	r.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Del("Cookie")

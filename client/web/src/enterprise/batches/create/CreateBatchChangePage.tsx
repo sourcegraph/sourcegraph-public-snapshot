@@ -13,7 +13,7 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../components/Sidebar'
-import { BatchSpecExecutionFields } from '../../../graphql-operations'
+import { BatchSpecExecutionCreateFields } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 
@@ -79,7 +79,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
     )
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
     const [content, setContent] = useState<string>(selectedSample.file)
-    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields>()
+    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionCreateFields>()
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
         setBatchSpecExecution(undefined)
@@ -185,7 +185,9 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                         {batchSpecExecution && (
                             <div className="mt-3 mb-0 alert alert-success">
                                 Running batch spec.{' '}
-                                <Link to={`/users/erik/batch-changes/executions/${batchSpecExecution.id}`}>
+                                <Link
+                                    to={`${batchSpecExecution.namespace.url}/batch-changes/executions/${batchSpecExecution.id}`}
+                                >
                                     Check it out here.
                                 </Link>
                             </div>

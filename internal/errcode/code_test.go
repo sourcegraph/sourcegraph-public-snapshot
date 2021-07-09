@@ -1,10 +1,11 @@
 package errcode_test
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )

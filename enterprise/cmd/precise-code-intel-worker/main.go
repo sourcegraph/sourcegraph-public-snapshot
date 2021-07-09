@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -136,7 +136,7 @@ func mustInitializeDB() *sql.DB {
 	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(5 * time.Second).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.GlobalExternalServices)
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(dbconn.Global))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

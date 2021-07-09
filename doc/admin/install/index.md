@@ -11,11 +11,12 @@ The Sourcegraph team can host and manage a Sourcegraph instance for you. This ma
 |-------------------------------------------------------|-----------------------------------------------------|------------|----------------|---------------|-------------|
 | [Single-container server](../install/docker/index.md) | Local testing                                       | 60 seconds | No             | No            | No          |
 | [Docker Compose](../install/docker-compose/index.md)  | Small & medium production deployments               | 5 minutes  | Not Supported  | No            | Yes         |
-| [Kubernetes](../install/kubernetes/index.md)          | Medium & large highly-available cluster deployments | 30 minutes | Yes            | Yes           | Yes         |
+| [Kubernetes](../install/kubernetes/index.md)          | Medium & large highly-available cluster deployments | 30-90 minutes | Yes            | Yes           | Yes         |
 
 
 * If you're just starting out, we recommend [running Sourcegraph locally](docker/index.md). It takes only a few minutes and lets you try out all of the features.
 * If you need scalability and high-availability beyond what a single-node [Docker Compose](https://docs.docker.com/compose/) can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
+* Note that for a Kubernetes deployment, you are expected to have a team that is familiar with operating Kubernetes clusters, including but not limited to the use of persistent storage. If in any doubt about your team's ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 
 ### Resource estimator
 

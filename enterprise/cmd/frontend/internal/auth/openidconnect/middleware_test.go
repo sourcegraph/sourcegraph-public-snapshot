@@ -168,8 +168,8 @@ func TestMiddleware(t *testing.T) {
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware.API(h))
-	authedHandler.Handle("/", Middleware.App(h))
+	authedHandler.Handle("/.api/", Middleware(nil).API(h))
+	authedHandler.Handle("/", Middleware(nil).App(h))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -346,7 +346,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	defer func() { database.Mocks = database.MockStores{} }()
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := Middleware.App(h)
+	authedHandler := Middleware(nil).App(h)
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))

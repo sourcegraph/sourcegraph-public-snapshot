@@ -14,6 +14,10 @@ import (
 // InitGitserverClient initializes and returns a gitserver client.
 func InitGitserverClient() (*gitserver.Client, error) {
 	conn, err := initGitserverClient.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	return conn.(*gitserver.Client), err
 }
 

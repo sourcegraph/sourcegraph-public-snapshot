@@ -30,13 +30,11 @@ type configuration interface {
 }
 
 func main() {
-	sharedConfig := &config.SharedConfig{}
-	sharedConfig.Load()
-
 	serviceConfig := &Config{}
+	sharedConfig := &config.SharedConfig{}
 	codeintelConfig := &codeintel.Config{Shared: sharedConfig}
 	batchesConfig := &batches.Config{Shared: sharedConfig}
-	configs := []configuration{serviceConfig, codeintelConfig, batchesConfig}
+	configs := []configuration{serviceConfig, sharedConfig, codeintelConfig, batchesConfig}
 
 	for _, config := range configs {
 		config.Load()

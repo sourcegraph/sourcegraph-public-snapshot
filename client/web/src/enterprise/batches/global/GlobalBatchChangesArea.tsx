@@ -14,11 +14,12 @@ import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../components/HeroPage'
 import { Page } from '../../../components/Page'
 import { lazyComponent } from '../../../util/lazyComponent'
-import { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
-import { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
-import { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
-import { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
-import { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
+import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
+import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
+import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
+import type { BatchSpecExecutionDetailsPageProps } from '../execution/BatchSpecExecutionDetailsPage'
+import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
+import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
@@ -44,6 +45,10 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     () => import('../close/BatchChangeClosePage'),
     'BatchChangeClosePage'
 )
+const BatchSpecExecutionDetailsPage = lazyComponent<
+    BatchSpecExecutionDetailsPageProps,
+    'BatchSpecExecutionDetailsPage'
+>(() => import('../execution/BatchSpecExecutionDetailsPage'), 'BatchSpecExecutionDetailsPage')
 
 const RedirectToMarketing: React.FunctionComponent<{}> = () => {
     window.location.href = 'https://about.sourcegraph.com/batch-changes'
@@ -113,6 +118,12 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
             <Route
                 path={`${match.url}/create`}
                 render={props => <CreateBatchChangePage headingElement="h2" {...outerProps} {...props} />}
+            />
+            <Route
+                path={`${match.url}/executions/:executionID`}
+                render={({ match, ...props }: RouteComponentProps<{ executionID: string }>) => (
+                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} executionID={match.params.executionID} />
+                )}
             />
             <Route
                 path={`${match.url}/:batchChangeName/close`}

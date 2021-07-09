@@ -10,7 +10,7 @@ import (
 
 type DBStore interface {
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
-	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph *gitserver.CommitGraph, tipCommit string, dirtyToken int, now time.Time) error
+	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph *gitserver.CommitGraph, refDescriptions map[string]gitserver.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 }
 
@@ -19,6 +19,6 @@ type Locker interface {
 }
 
 type GitserverClient interface {
-	Head(ctx context.Context, repositoryID int) (string, error)
+	RefDescriptions(ctx context.Context, repositoryID int) (map[string]gitserver.RefDescription, error)
 	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
 }

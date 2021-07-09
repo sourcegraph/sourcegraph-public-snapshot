@@ -925,7 +925,7 @@ const listIndexableReposQuery = `
 WITH s AS (
 	SELECT id as repo_id
 	FROM repo
-	WHERE stars >= 20
+	WHERE stars >= 12
 
 	UNION ALL
 

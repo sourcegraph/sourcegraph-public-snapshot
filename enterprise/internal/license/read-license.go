@@ -10,12 +10,12 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 
+	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"

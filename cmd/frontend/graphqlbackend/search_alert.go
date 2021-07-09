@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path"
 	"regexp"
@@ -12,6 +11,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 

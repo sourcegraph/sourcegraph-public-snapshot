@@ -1,8 +1,9 @@
 package webhooks
 
 import (
-	"errors"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
