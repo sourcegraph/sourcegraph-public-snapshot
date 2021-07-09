@@ -16,7 +16,7 @@ import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 
-import { Block, BlockInitializer, BlockType, Notebook } from '.'
+import { Block, BlockDirection, BlockInitializer, BlockType, Notebook } from '.'
 
 interface SearchNotebookProps
     extends SearchStreamingProps,
@@ -120,7 +120,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
     )
 
     const onMoveBlockSelection = useCallback(
-        (id: string, direction: 'up' | 'down') => {
+        (id: string, direction: BlockDirection) => {
             const blockId = direction === 'up' ? notebook.getPreviousBlockId(id) : notebook.getNextBlockId(id)
             if (blockId) {
                 setSelectedBlockId(blockId)
@@ -129,9 +129,31 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         [notebook, setSelectedBlockId]
     )
 
-    // Check all clicks on the document and deselect the currently selected block
-    // if it was triggered outside of a block.
+    const onMoveBlock = useCallback(
+        (id: string, direction: BlockDirection) => {
+            notebook.moveBlockById(id, direction)
+            setBlocks(notebook.getBlocks())
+        },
+        [notebook, setBlocks]
+    )
+
+    const onDuplicateBlock = useCallback(
+        (id: string) => {
+            const duplicateBlock = notebook.duplicateBlockById(id)
+            if (duplicateBlock) {
+                setSelectedBlockId(duplicateBlock.id)
+            }
+            if (duplicateBlock?.type === 'md') {
+                notebook.runBlockById(duplicateBlock.id)
+            }
+            setBlocks(notebook.getBlocks())
+        },
+        [notebook, setSelectedBlockId, setBlocks]
+    )
+
     useEffect(() => {
+        // Check all clicks on the document and deselect the currently selected block
+        // if it was triggered outside of a block.
         const handleClickOutside = (event: MouseEvent): void => {
             if (!event.target) {
                 return
@@ -189,6 +211,8 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 onBlockInputChange={onBlockInputChange}
                                 onMoveBlockSelection={onMoveBlockSelection}
                                 onDeleteBlock={onDeleteBlock}
+                                onMoveBlock={onMoveBlock}
+                                onDuplicateBlock={onDuplicateBlock}
                             />
                         )}
                         {block.type === 'query' && (
@@ -201,6 +225,8 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 onBlockInputChange={onBlockInputChange}
                                 onMoveBlockSelection={onMoveBlockSelection}
                                 onDeleteBlock={onDeleteBlock}
+                                onMoveBlock={onMoveBlock}
+                                onDuplicateBlock={onDuplicateBlock}
                             />
                         )}
                     </>

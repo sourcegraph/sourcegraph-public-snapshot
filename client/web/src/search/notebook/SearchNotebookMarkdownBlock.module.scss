@@ -1,6 +1,6 @@
 .input {
-    padding: 1rem;
-    background-color: var(--body-bg);
+    padding: 0.5rem 1rem;
+    background-color: var(--color-bg-1);
 }
 
 .output-wrapper {
@@ -8,6 +8,10 @@
 }
 
 .output {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     max-width: 640px;
+
+    :global(.markdown) :last-child {
+        margin-bottom: 0 !important;
+    }
 }

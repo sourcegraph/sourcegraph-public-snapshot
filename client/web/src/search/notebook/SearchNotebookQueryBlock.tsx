@@ -19,7 +19,7 @@ import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookQueryBlock.module.scss'
 import { useBlockFocusHandlers } from './useBlockFocusHandlers'
 import { useBlockShortcutHandlers } from './useBlockShortcutHandlers'
-import { useMonacoBlockInput } from './useMonacoBlockInput'
+import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, QueryBlock } from '.'
 
@@ -31,41 +31,6 @@ interface SearchNotebookQueryBlockProps
         TelemetryProps {
     isMacPlatform: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-}
-
-// Move to somewhere common to share with markdown block
-const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
-    readOnly: false,
-    lineNumbers: 'off',
-    lineHeight: 16,
-    // Match the query input's height for suggestion items line height.
-    suggestLineHeight: 34,
-    minimap: {
-        enabled: false,
-    },
-    scrollbar: {
-        vertical: 'hidden',
-        horizontal: 'hidden',
-    },
-    glyphMargin: false,
-    hover: { delay: 150 },
-    lineDecorationsWidth: 0,
-    lineNumbersMinChars: 0,
-    overviewRulerBorder: false,
-    folding: false,
-    rulers: [],
-    overviewRulerLanes: 0,
-    wordBasedSuggestions: false,
-    quickSuggestions: false,
-    fixedOverflowWidgets: true,
-    contextmenu: false,
-    links: false,
-    // Match our monospace/code style from code.scss
-    fontFamily: 'sfmono-regular, consolas, menlo, dejavu sans mono, monospace',
-    // Display the cursor as a 1px line.
-    cursorStyle: 'line',
-    cursorWidth: 1,
-    automaticLayout: true,
 }
 
 // TODO: Use React.memo
@@ -84,6 +49,8 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     onSelectBlock,
     onMoveBlockSelection,
     onDeleteBlock,
+    onMoveBlock,
+    onDuplicateBlock,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const blockElement = useRef<HTMLDivElement>(null)
@@ -108,6 +75,9 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         onMoveBlockSelection,
         onEnterBlock,
         onDeleteBlock,
+        onRunBlock,
+        onMoveBlock,
+        onDuplicateBlock,
     })
 
     const onSelect = useCallback(() => onSelectBlock(id), [id, onSelectBlock])
@@ -135,7 +105,11 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         >
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div
-                className={classNames(blockStyles.monacoWrapper, isInputFocused && blockStyles.selected)}
+                className={classNames(
+                    blockStyles.monacoWrapper,
+                    isInputFocused && blockStyles.selected,
+                    styles.queryInputMonacoWrapper
+                )}
                 onKeyDown={event => event.stopPropagation()}
             >
                 <MonacoEditor
@@ -145,7 +119,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                     isLightTheme={isLightTheme}
                     editorWillMount={() => {}}
                     onEditorCreated={setEditor}
-                    options={options}
+                    options={MONACO_BLOCK_INPUT_OPTIONS}
                     border={false}
                 />
             </div>

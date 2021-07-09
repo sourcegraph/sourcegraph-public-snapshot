@@ -18,8 +18,10 @@
 }
 
 .monaco-wrapper {
-    background-color: var(--color-bg-1);
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
+    :global(.monaco-editor) {
+        // Override our :focus-visible style, which gets applied to the textarea
+        :global(.inputarea.focus-visible) {
+            box-shadow: none;
+        }
+    }
 }

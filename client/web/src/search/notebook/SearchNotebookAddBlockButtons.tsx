@@ -19,7 +19,7 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
     onAddBlock,
 }) => (
     <div className={classNames(styles.addBlockButtonsWrapper, !alwaysVisible && 'show-on-hover', className)}>
-        {!alwaysVisible && <hr className="mx-3" />}
+        <hr className="mx-3" />
         <div className={styles.addBlockButtons}>
             <button
                 type="button"

@@ -28,13 +28,17 @@ export type Block = QueryBlock | MarkdownBlock
 
 export type BlockInitializer = Pick<Block, 'type' | 'input'>
 
+export type BlockDirection = 'up' | 'down'
+
 export interface BlockProps {
     isSelected: boolean
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, value: string): void
     onSelectBlock(id: string | null): void
-    onMoveBlockSelection(id: string, direction: 'up' | 'down'): void
+    onMoveBlockSelection(id: string, direction: BlockDirection): void
+    onMoveBlock(id: string, direction: BlockDirection): void
+    onDuplicateBlock(id: string): void
 }
 
 export class Notebook {
@@ -120,6 +124,26 @@ export class Notebook {
         this.blockOrder.splice(index, 0, id)
         this.idToBlock.set(id, block)
         return block
+    }
+
+    public moveBlockById(id: string, direction: BlockDirection): void {
+        const index = this.blockOrder.indexOf(id)
+        if ((direction === 'up' && index < 1) || (direction === 'down' && index === this.blockOrder.length - 1)) {
+            return
+        }
+        const swapIndex = direction === 'up' ? index - 1 : index + 1
+        const temporaryId = this.blockOrder[swapIndex]
+        this.blockOrder[swapIndex] = id
+        this.blockOrder[index] = temporaryId
+    }
+
+    public duplicateBlockById(id: string): Block | null {
+        const block = this.idToBlock.get(id)
+        if (!block) {
+            return null
+        }
+        const index = this.blockOrder.indexOf(id)
+        return this.insertBlockAtIndex(index + 1, block.type, block.input)
     }
 
     public getFirstBlockId(): string | null {

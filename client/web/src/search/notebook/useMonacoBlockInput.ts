@@ -3,6 +3,42 @@ import { useState, useEffect } from 'react'
 
 import { BlockProps } from '.'
 
+export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
+    readOnly: false,
+    lineNumbers: 'off',
+    lineHeight: 16,
+    // Match the query input's height for suggestion items line height.
+    suggestLineHeight: 34,
+    minimap: {
+        enabled: false,
+    },
+    scrollbar: {
+        vertical: 'hidden',
+        horizontal: 'hidden',
+    },
+    glyphMargin: false,
+    hover: { delay: 150 },
+    lineDecorationsWidth: 0,
+    lineNumbersMinChars: 0,
+    overviewRulerBorder: false,
+    folding: false,
+    rulers: [],
+    overviewRulerLanes: 0,
+    wordBasedSuggestions: false,
+    quickSuggestions: false,
+    fixedOverflowWidgets: true,
+    contextmenu: false,
+    links: false,
+    // Match our monospace/code style from code.scss
+    fontFamily: 'sfmono-regular, consolas, menlo, dejavu sans mono, monospace',
+    // Display the cursor as a 1px line.
+    cursorStyle: 'line',
+    cursorWidth: 1,
+    automaticLayout: true,
+    renderLineHighlight: 'none',
+    wordWrap: 'on',
+}
+
 type UseMonacoBlockEditorOptions = { editor: Monaco.editor.IStandaloneCodeEditor | undefined; id: string } & Pick<
     BlockProps,
     'onRunBlock' | 'onBlockInputChange' | 'onSelectBlock' | 'onMoveBlockSelection'
