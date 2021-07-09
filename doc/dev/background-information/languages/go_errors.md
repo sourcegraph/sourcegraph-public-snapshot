@@ -103,7 +103,7 @@ if errors.HasType(err, &NotFoundError{}) {
 
 This function should be preferred when comparing an error value with an _error struct_ that may tag additional data (e.g., a failed opcode or the identifier of a missing object).
 
-Note that using the `Is` function here will fail to match any error that does not produce the exact same error text. In the example above, if the struct's state is used in the error output, `Is` will only match error values where the value of the `ID` field is the zero value.
+Note that using the `Is` function here will fail to match any error that does not have equivalent fields. In the example above, `Is` will only match error values where the value of the `ID` field is the zero value.
 
 #### Use of `errors.As`
 
