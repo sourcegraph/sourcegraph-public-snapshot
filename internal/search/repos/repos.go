@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"math"
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
@@ -71,7 +70,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = SearchLimits().MaxRepos
+		limit = search.SearchLimits().MaxRepos
 	}
 
 	// If any repo groups are specified, take the intersection of the repo
@@ -381,35 +380,6 @@ func (op *Options) String() string {
 	}
 
 	return b.String()
-}
-
-func SearchLimits() schema.SearchLimits {
-	// Our configuration reader does not set defaults from schema. So we rely
-	// on Go default values to mean defaults.
-	withDefault := func(x *int, def int) {
-		if *x <= 0 {
-			*x = def
-		}
-	}
-
-	c := conf.Get()
-
-	var limits schema.SearchLimits
-	if c.SearchLimits != nil {
-		limits = *c.SearchLimits
-	}
-
-	// If MaxRepos unset use deprecated value
-	if limits.MaxRepos == 0 {
-		limits.MaxRepos = c.MaxReposToSearch
-	}
-
-	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
-	withDefault(&limits.CommitDiffMaxRepos, 50)
-	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
-	withDefault(&limits.MaxTimeoutSeconds, 60)
-
-	return limits
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and

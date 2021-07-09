@@ -1259,7 +1259,7 @@ var (
 
 func withTimeout(ctx context.Context, q query.Q) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
-	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
+	maxTimeout := time.Duration(search.SearchLimits().MaxTimeoutSeconds) * time.Second
 	timeout := q.Timeout()
 	if timeout != nil {
 		d = *timeout
