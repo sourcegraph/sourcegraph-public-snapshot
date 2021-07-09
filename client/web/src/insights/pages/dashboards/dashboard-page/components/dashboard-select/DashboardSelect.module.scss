@@ -6,6 +6,8 @@
     width: 100%;
     overflow: auto;
     max-height: 24rem;
+    // This value is synced with dashboard select input width
+    max-width: 22.75rem;
 
     &:focus {
         // Reach-ui implicitly reset box-shadow to none if list element is focused

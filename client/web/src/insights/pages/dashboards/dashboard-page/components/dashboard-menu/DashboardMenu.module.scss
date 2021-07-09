@@ -1,20 +1,20 @@
 @import '~@reach/menu-button/styles.css';
 
-.panel[data-reach-menu-items] {
+.trigger-button {
+    padding: 0.25rem;
+}
+
+.menu-list[data-reach-menu-items] {
     font-size: inherit;
     overflow: hidden;
     padding: 0.25rem 0;
+    background-color: var(--dropdown-bg);
 
     // Explicit override @reach ui border styles
     border: 1px solid var(--dropdown-border-color);
-    background-color: var(--dropdown-bg);
-
-    // class .dropdown-menu brings position absolute and breaks
-    // Menu positioning in portal because of it we reset position
-    position: static;
 }
 
-.item[data-reach-menu-item] {
+.menu-item[data-reach-menu-item] {
     padding: 0.25rem 0.75rem;
     text-align: right;
     width: 100%;
@@ -25,5 +25,15 @@
     &[data-selected] {
         background-color: var(--link-color);
         color: var(--light-text);
+    }
+}
+
+.menu-item {
+    &--danger {
+        color: var(--danger);
+    }
+
+    &--link[data-reach-menu-item] {
+        text-decoration: none;
     }
 }

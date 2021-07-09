@@ -195,7 +195,11 @@ func (u *UserStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-	return tx.create(ctx, info)
+	newUser, err = tx.create(ctx, info)
+	if err == nil {
+		logAccountCreatedEvent(ctx, u.Handle().DB(), newUser, "")
+	}
+	return newUser, err
 }
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
@@ -372,6 +376,31 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 	}
 
 	return user, nil
+}
+
+func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, serviceType string) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Creator     int32  `json:"creator"`
+		SiteAdmin   bool   `json:"site_admin"`
+		ServiceType string `json:"service_type"`
+	}{
+		Creator:     a.UID,
+		SiteAdmin:   u.SiteAdmin,
+		ServiceType: serviceType,
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccountCreated,
+		URL:             "",
+		UserID:          uint32(u.ID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
