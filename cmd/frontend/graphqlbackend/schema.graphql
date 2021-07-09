@@ -2389,6 +2389,12 @@ type Repository implements Node & GenericSearchResultInterface {
     stars: Int!
 
     """
+    Stats on all the changesets that have been applied to this repository by batch
+    changes.
+    """
+    changesetsStats: RepoChangesetsStats!
+
+    """
     A list of batch changes that have applied a changeset to this repository.
     """
     batchChanges(

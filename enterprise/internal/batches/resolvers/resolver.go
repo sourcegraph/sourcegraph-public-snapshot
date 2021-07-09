@@ -736,6 +736,19 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}, nil
 }
 
+func (r *Resolver) RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (graphqlbackend.RepoChangesetsStatsResolver, error) {
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repo)
+	if err != nil {
+		return nil, err
+	}
+
+	stats, err := r.store.GetRepoChangesetsStats(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	return &repoChangesetsStatsResolver{stats: stats}, nil
+}
+
 func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
 		return nil, err
