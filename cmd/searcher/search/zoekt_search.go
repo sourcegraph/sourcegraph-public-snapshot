@@ -141,7 +141,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 	}
 
 	// Choose sensible values for k when we generalize this.
-	k := zoektutil.ResultCountFactor(len(repoBranches), args.FileMatchLimit, false)
+	k := zoektutil.ResultCountFactor(len(repoBranches), args.FileMatchLimit)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args)
 	searchOpts.Whole = true
 
