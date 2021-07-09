@@ -33,7 +33,7 @@ const (
 
 	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
-	SecurityEventNamPasswordChanged        SecurityEventName = "PasswordChanged"
+	SecurityEventNamePasswordChanged       SecurityEventName = "PasswordChanged"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
