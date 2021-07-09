@@ -35,7 +35,7 @@ func contextWithFeatureFlags(ffs FeatureFlagStore, r *http.Request) context.Cont
 		// Continue if err != nil
 	}
 
-	if uid, err := cookie.AnonymousUID(r); err == nil {
+	if uid, ok := cookie.AnonymousUID(r); ok {
 		flags, err := ffs.GetAnonymousUserFlags(r.Context(), uid)
 		if err == nil {
 			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
