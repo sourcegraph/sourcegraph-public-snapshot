@@ -21,6 +21,7 @@ interface SearchNotebookPageProps
         ThemeProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded'> {
     globbing: boolean
+    isMacPlatform: boolean
 }
 
 export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps> = props => {

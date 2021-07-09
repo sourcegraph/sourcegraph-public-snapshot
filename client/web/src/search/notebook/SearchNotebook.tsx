@@ -23,6 +23,7 @@ interface SearchNotebookProps
         ThemeProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded'> {
     globbing: boolean
+    isMacPlatform: boolean
 
     onBlocksChange: (blocks: Block[]) => void
     blocks: BlockInitializer[]
@@ -89,15 +90,26 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         [notebook]
     )
 
-    const addBlock = useCallback(
+    const onAddBlock = useCallback(
         (index: number, type: BlockType, input: string) => {
             const addedBlock = notebook.insertBlockAtIndex(index, type, input)
             if (addedBlock.type === 'md') {
                 notebook.runBlockById(addedBlock.id)
             }
+            setSelectedBlockId(addedBlock.id)
             setBlocks(notebook.getBlocks())
         },
         [notebook, setBlocks]
+    )
+
+    const onDeleteBlock = useCallback(
+        (id: string) => {
+            const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
+            notebook.deleteBlockById(id)
+            setSelectedBlockId(blockToFocusAfterDelete)
+            setBlocks(notebook.getBlocks())
+        },
+        [notebook]
     )
 
     const onSelectBlock = useCallback(
@@ -132,11 +144,11 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             }
         }
         const handleKeyDown = (event: KeyboardEvent): void => {
-            if (selectedBlockId && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
-                onMoveBlockSelection(selectedBlockId, event.key === 'ArrowUp' ? 'up' : 'down')
-            }
+            // TODO: Scroll selected block into view (without being annoying)
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
+            } else if (event.key === 'Escape') {
+                setSelectedBlockId(null)
             }
         }
 
@@ -157,6 +169,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             interpretComments: true,
         })
         return () => subscription.unsubscribe()
+        // Only initialize on mount
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -164,7 +177,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         <div className="w-100">
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
-                    <SearchNotebookAddBlockButtons onAddBlock={addBlock} index={blockIndex} />
+                    <SearchNotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
                     <>
                         {block.type === 'md' && (
                             <SearchNotebookMarkdownBlock
@@ -175,6 +188,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 onRunBlock={onRunBlock}
                                 onBlockInputChange={onBlockInputChange}
                                 onMoveBlockSelection={onMoveBlockSelection}
+                                onDeleteBlock={onDeleteBlock}
                             />
                         )}
                         {block.type === 'query' && (
@@ -186,13 +200,14 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 onRunBlock={onRunBlock}
                                 onBlockInputChange={onBlockInputChange}
                                 onMoveBlockSelection={onMoveBlockSelection}
+                                onDeleteBlock={onDeleteBlock}
                             />
                         )}
                     </>
                 </div>
             ))}
             <SearchNotebookAddBlockButtons
-                onAddBlock={addBlock}
+                onAddBlock={onAddBlock}
                 index={blocks.length}
                 className="mt-4"
                 alwaysVisible={true}

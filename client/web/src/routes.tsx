@@ -107,7 +107,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search/notebook',
-        render: props => <SearchNotebookPage {...props} />,
+        render: props => <SearchNotebookPage {...props} isMacPlatform={isMacPlatform} />,
         exact: true,
     },
     {

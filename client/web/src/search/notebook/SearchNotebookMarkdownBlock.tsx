@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -8,11 +8,15 @@ import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
-import { useMonacoBlockInput } from './useBlockMonacoEditor'
+import { useBlockFocusHandlers } from './useBlockFocusHandlers'
+import { useBlockShortcutHandlers } from './useBlockShortcutHandlers'
+import { useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, MarkdownBlock } from '.'
 
-interface SearchNotebookMarkdownBlockProps extends BlockProps, Omit<MarkdownBlock, 'type'>, ThemeProps {}
+interface SearchNotebookMarkdownBlockProps extends BlockProps, Omit<MarkdownBlock, 'type'>, ThemeProps {
+    isMacPlatform: boolean
+}
 
 const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,
@@ -55,14 +59,16 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     output,
     isSelected,
     isLightTheme,
+    isMacPlatform,
     onRunBlock,
     onBlockInputChange,
     onSelectBlock,
     onMoveBlockSelection,
+    onDeleteBlock,
 }) => {
     const [isEditing, setIsEditing] = useState(false)
-    const [, setMonacoInstance] = useState<typeof Monaco>()
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const blockElement = useRef<HTMLDivElement>(null)
 
     const runBlock = useCallback(
         (id: string) => {
@@ -88,18 +94,43 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         }
     }, [id, isEditing, setIsEditing, onSelectBlock])
 
-    const onSelect = useCallback(() => {
-        onSelectBlock(id)
-    }, [id, onSelectBlock])
+    const onSelect = useCallback(() => onSelectBlock(id), [id, onSelectBlock])
+    const onEnterBlock = useCallback(() => setIsEditing(true), [setIsEditing])
+
+    const { onBlur } = useBlockFocusHandlers({ blockElement: blockElement.current, onSelectBlock, isSelected })
+    const { onKeyDown } = useBlockShortcutHandlers({
+        id,
+        isMacPlatform,
+        onMoveBlockSelection,
+        onEnterBlock,
+        onDeleteBlock,
+    })
+
+    useEffect(() => {
+        if (isEditing) {
+            editor?.focus()
+        } else {
+            blockElement.current?.focus()
+        }
+    }, [isEditing, editor])
 
     if (!isEditing) {
         return (
+            // eslint-disable-next-line jsx-a11y/no-static-element-interactions
             <div
                 className={classNames(blockStyles.block, isSelected && blockStyles.selected, styles.outputWrapper)}
                 onClick={onSelect}
                 onDoubleClick={onDoubleClick}
-                role="presentation"
+                onFocus={onSelect}
+                onBlur={onBlur}
+                onKeyDown={onKeyDown}
+                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+                tabIndex={0}
+                // eslint-disable-next-line jsx-a11y/aria-role
+                role="notebook-block"
+                aria-label="Notebook block"
                 data-block-id={id}
+                ref={blockElement}
             >
                 <div className={styles.output}>
                     <Markdown dangerousInnerHTML={output ?? ''} />
@@ -107,7 +138,9 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
             </div>
         )
     }
+
     return (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div
             className={classNames(
                 blockStyles.block,
@@ -116,16 +149,28 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                 isSelected && isInputFocused && blockStyles.selectedNotFocused
             )}
             onClick={onSelect}
-            role="presentation"
+            onFocus={onSelect}
+            onBlur={onBlur}
+            onKeyDown={onKeyDown}
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+            tabIndex={0}
+            // eslint-disable-next-line jsx-a11y/aria-role
+            role="notebook-block"
+            aria-label="Notebook block"
             data-block-id={id}
+            ref={blockElement}
         >
-            <div className={classNames(blockStyles.monacoWrapper, isInputFocused && blockStyles.selected)}>
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+            <div
+                className={classNames(blockStyles.monacoWrapper, isInputFocused && blockStyles.selected)}
+                onKeyDown={event => event.stopPropagation()}
+            >
                 <MonacoEditor
                     language="markdown"
                     value={input}
                     height={150}
                     isLightTheme={isLightTheme}
-                    editorWillMount={setMonacoInstance}
+                    editorWillMount={() => {}}
                     onEditorCreated={setEditor}
                     options={options}
                     border={false}

@@ -31,6 +31,7 @@ export type BlockInitializer = Pick<Block, 'type' | 'input'>
 export interface BlockProps {
     isSelected: boolean
     onRunBlock(id: string): void
+    onDeleteBlock(id: string): void
     onBlockInputChange(id: string, value: string): void
     onSelectBlock(id: string | null): void
     onMoveBlockSelection(id: string, direction: 'up' | 'down'): void
@@ -103,6 +104,15 @@ export class Notebook {
         }
     }
 
+    public deleteBlockById(id: string): void {
+        const index = this.blockOrder.indexOf(id)
+        if (index === -1) {
+            return
+        }
+        this.idToBlock.delete(id)
+        this.blockOrder.splice(index, 1)
+    }
+
     public insertBlockAtIndex(index: number, type: BlockType, input: string): Block {
         const id = uuid.v4()
         const block = { id, type, input, output: null }
@@ -114,6 +124,10 @@ export class Notebook {
 
     public getFirstBlockId(): string | null {
         return this.blockOrder.length > 0 ? this.blockOrder[0] : null
+    }
+
+    public getLastBlockId(): string | null {
+        return this.blockOrder.length > 0 ? this.blockOrder[this.blockOrder.length - 1] : null
     }
 
     public getPreviousBlockId(id: string): string | null {

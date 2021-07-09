@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
@@ -17,7 +17,9 @@ import { StreamingSearchResultsList } from '../results/StreamingSearchResultsLis
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookQueryBlock.module.scss'
-import { useMonacoBlockInput } from './useBlockMonacoEditor'
+import { useBlockFocusHandlers } from './useBlockFocusHandlers'
+import { useBlockShortcutHandlers } from './useBlockShortcutHandlers'
+import { useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, QueryBlock } from '.'
 
@@ -27,6 +29,7 @@ interface SearchNotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps {
+    isMacPlatform: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -74,13 +77,18 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     telemetryService,
     settingsCascade,
     isSelected,
+    isMacPlatform,
     fetchHighlightedFileLineRanges,
     onRunBlock,
     onBlockInputChange,
     onSelectBlock,
     onMoveBlockSelection,
+    onDeleteBlock,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const blockElement = useRef<HTMLDivElement>(null)
+    const searchResults = useObservable(output ?? of(undefined))
+    const location = useLocation()
 
     const { isInputFocused } = useMonacoBlockInput({
         editor,
@@ -91,14 +99,21 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         onMoveBlockSelection,
     })
 
-    const searchResults = useObservable(output ?? of(undefined))
-    const location = useLocation()
+    // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
+    const onEnterBlock = useCallback(() => setTimeout(() => editor?.focus(), 0), [editor])
+    const { onBlur } = useBlockFocusHandlers({ blockElement: blockElement.current, onSelectBlock, isSelected })
+    const { onKeyDown } = useBlockShortcutHandlers({
+        id,
+        isMacPlatform,
+        onMoveBlockSelection,
+        onEnterBlock,
+        onDeleteBlock,
+    })
 
-    const onSelect = useCallback(() => {
-        onSelectBlock(id)
-    }, [id, onSelectBlock])
+    const onSelect = useCallback(() => onSelectBlock(id), [id, onSelectBlock])
 
     return (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div
             className={classNames(
                 blockStyles.block,
@@ -107,10 +122,22 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 isSelected && isInputFocused && blockStyles.selectedNotFocused
             )}
             onClick={onSelect}
-            role="presentation"
+            onKeyDown={onKeyDown}
+            onFocus={onSelect}
+            onBlur={onBlur}
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+            tabIndex={0}
+            // eslint-disable-next-line jsx-a11y/aria-role
+            role="notebook-block"
+            aria-label="Notebook block"
             data-block-id={id}
+            ref={blockElement}
         >
-            <div className={classNames(blockStyles.monacoWrapper, isInputFocused && blockStyles.selected)}>
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+            <div
+                className={classNames(blockStyles.monacoWrapper, isInputFocused && blockStyles.selected)}
+                onKeyDown={event => event.stopPropagation()}
+            >
                 <MonacoEditor
                     language={SOURCEGRAPH_SEARCH}
                     value={input}

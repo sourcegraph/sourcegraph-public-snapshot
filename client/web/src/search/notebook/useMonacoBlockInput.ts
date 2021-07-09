@@ -3,16 +3,10 @@ import { useState, useEffect } from 'react'
 
 import { BlockProps } from '.'
 
-type UseMonacoBlockEditorOptions = { editor: Monaco.editor.IStandaloneCodeEditor | undefined; id: string } & Omit<
+type UseMonacoBlockEditorOptions = { editor: Monaco.editor.IStandaloneCodeEditor | undefined; id: string } & Pick<
     BlockProps,
-    'isSelected'
+    'onRunBlock' | 'onBlockInputChange' | 'onSelectBlock' | 'onMoveBlockSelection'
 >
-
-function blurActiveElement(): void {
-    if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur()
-    }
-}
 
 export const useMonacoBlockInput = ({
     editor,
@@ -47,7 +41,6 @@ export const useMonacoBlockInput = ({
                 }
                 if (position.lineNumber === 1) {
                     onMoveBlockSelection(id, 'up')
-                    blurActiveElement()
                 } else {
                     editor.setPosition({ lineNumber: position.lineNumber - 1, column: position.column })
                 }
@@ -68,7 +61,6 @@ export const useMonacoBlockInput = ({
                 }
                 if (position.lineNumber === lineCount) {
                     onMoveBlockSelection(id, 'down')
-                    blurActiveElement()
                 } else {
                     editor.setPosition({ lineNumber: position.lineNumber + 1, column: position.column })
                 }
