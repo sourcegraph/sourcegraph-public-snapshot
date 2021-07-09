@@ -84,7 +84,7 @@ func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
 	return &v, nil
 }
 
-//applyFilters will apply any filters defined as arguments serially and return the intersection.
+// applyFilters will apply any filters defined as arguments serially and return the intersection.
 func applyFilters(total []insights.SearchInsight, args InsightFilterArgs) []insights.SearchInsight {
 	filtered := total
 
