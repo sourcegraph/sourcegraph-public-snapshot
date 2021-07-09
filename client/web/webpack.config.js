@@ -153,7 +153,7 @@ const config = {
         // Only output files that are required to run the application
         filter: ({ isInitial }) => isInitial,
       }),
-    ...(shouldServeIndexHTML && getHTMLWebpackPlugins()),
+    ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     shouldAnalyze && new BundleAnalyzerPlugin(),
     isDevelopment && new webpack.HotModuleReplacementPlugin(),
     isDevelopment && new ReactRefreshWebpackPlugin({ overlay: false }),
