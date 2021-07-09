@@ -1313,7 +1313,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, q query.Q, tr *trac
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
-		return nil, r.errorForNoResolvedRepos(ctx)
+		return nil, r.errorForNoResolvedRepos(ctx, q)
 	}
 	return &resolved, nil
 }
