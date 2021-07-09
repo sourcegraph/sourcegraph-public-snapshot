@@ -61,7 +61,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 			a.cachedRepoNames = a.cachedRepoNames[:0]
 
 			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
-			// forever. Instead, we use the same list of default repositories used when you do a global
+			// forever. Instead, we use the same list of indexable repositories used when you do a global
 			// search on Sourcegraph.com.
 			res, err := a.IndexableReposLister.List(ctx)
 			if err != nil {

@@ -103,7 +103,7 @@ func TestListIndexableRepos(t *testing.T) {
 			}
 		})
 
-		t.Run("List only public default repos", func(t *testing.T) {
+		t.Run("List only public indexable repos", func(t *testing.T) {
 			repos, err := NewIndexableReposLister(database.Repos(db)).ListPublic(ctx)
 			if err != nil {
 				t.Fatal(err)
