@@ -381,7 +381,7 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, serviceType string) {
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
-		Creator     uint32 `json:"creator"`
+		Creator     int32  `json:"creator"`
 		SiteAdmin   bool   `json:"site_admin"`
 		ServiceType string `json:"service_type"`
 	}{
