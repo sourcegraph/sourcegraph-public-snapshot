@@ -288,6 +288,7 @@ type BatchChangesResolver interface {
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
+	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
