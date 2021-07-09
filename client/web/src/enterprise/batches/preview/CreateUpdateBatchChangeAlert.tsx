@@ -50,17 +50,17 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                 onDone()
             },
         },
-        {
-            type: 'publish-all',
-            buttonLabel: 'Publish all',
-            dropdownTitle: 'Publish all',
-            dropdownDescription: 'Apply the proposed changes, publishing all changesets.',
-            isAvailable: () => showPublishUI,
-            onTrigger: async (onDone, onCancel) => {
-                await onApply(CreateUpdateBatchChangeAlertAction.PublishAll, setIsLoading)
-                onDone()
-            },
-        },
+        // {
+        //     type: 'publish-all',
+        //     buttonLabel: 'Publish all',
+        //     dropdownTitle: 'Publish all',
+        //     dropdownDescription: 'Apply the proposed changes, publishing all changesets.',
+        //     isAvailable: () => showPublishUI,
+        //     onTrigger: async (onDone, onCancel) => {
+        //         await onApply(CreateUpdateBatchChangeAlertAction.PublishAll, setIsLoading)
+        //         onDone()
+        //     },
+        // },
         {
             type: 'publish-selected',
             buttonLabel: 'Publish selected',
@@ -72,17 +72,17 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                 onDone()
             },
         },
-        {
-            type: 'draft-all',
-            buttonLabel: 'Publish all as draft',
-            dropdownTitle: 'Publish all as draft',
-            dropdownDescription: 'Apply the proposed changes, publishing all changesets as drafts.',
-            isAvailable: () => showPublishUI,
-            onTrigger: async (onDone, onCancel) => {
-                await onApply(CreateUpdateBatchChangeAlertAction.DraftAll, setIsLoading)
-                onDone()
-            },
-        },
+        // {
+        //     type: 'draft-all',
+        //     buttonLabel: 'Publish all as draft',
+        //     dropdownTitle: 'Publish all as draft',
+        //     dropdownDescription: 'Apply the proposed changes, publishing all changesets as drafts.',
+        //     isAvailable: () => showPublishUI,
+        //     onTrigger: async (onDone, onCancel) => {
+        //         await onApply(CreateUpdateBatchChangeAlertAction.DraftAll, setIsLoading)
+        //         onDone()
+        //     },
+        // },
         {
             type: 'draft-selected',
             buttonLabel: 'Publish selected as draft',

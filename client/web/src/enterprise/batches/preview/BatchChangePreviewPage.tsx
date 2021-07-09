@@ -43,15 +43,12 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
         fetchBatchSpecById = _fetchBatchSpecById,
     } = props
 
-    const spec = useObservable(
-        useMemo(
-            () =>
-                fetchBatchSpecById(specID).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [specID, fetchBatchSpecById]
-        )
+    const [visibleChangesetSpecs, setVisibleChangesetSpecs] = useState<Set<string>>(new Set())
+    const onLoadChangesetSpecs = useCallback(
+        (ids: string[]) => {
+            setVisibleChangesetSpecs(new Set(ids))
+        },
+        [setVisibleChangesetSpecs]
     )
 
     const [selectedChangesetSpecs, setSelectedChangesetSpecs] = useState<MultiSelectContextSelected>(new Set())
@@ -59,6 +56,9 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     const onDeselectAllChangesetSpecs = useCallback(() => setSelectedChangesetSpecs(new Set()), [
         setSelectedChangesetSpecs,
     ])
+    const onSelectVisibleChangesetSpecs = useCallback(() => {
+        setSelectedChangesetSpecs(new Set(visibleChangesetSpecs))
+    }, [setSelectedChangesetSpecs, visibleChangesetSpecs])
     const onSelectChangesetSpec = useCallback(
         (id: string) => {
             const updated = new Set(selectedChangesetSpecs)
@@ -76,6 +76,17 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
             setSelectedChangesetSpecs(updated)
         },
         [selectedChangesetSpecs, setSelectedChangesetSpecs]
+    )
+
+    const spec = useObservable(
+        useMemo(
+            () =>
+                fetchBatchSpecById(specID).pipe(
+                    repeatWhen(notifier => notifier.pipe(delay(5000))),
+                    distinctUntilChanged((a, b) => isEqual(a, b))
+                ),
+            [specID, fetchBatchSpecById]
+        )
     )
 
     useEffect(() => {
@@ -96,10 +107,35 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 const batchChangeID = spec.appliesToBatchChange?.id
                 const toBeArchived = spec.applyPreview.stats.archive
 
-                // TODO: switch on action and use the current selections if necessary.
+                let publicationStates = null
+                if (action !== CreateUpdateBatchChangeAlertAction.Apply) {
+                    const ids =
+                        selectedChangesetSpecs === 'all'
+                            ? await queryAllChangesetSpecIDs({
+                                  batchSpec: spec.id,
+                                  first: null,
+                                  after: null,
+                                  search: null,
+                                  currentState: null,
+                                  action: null,
+                              }).toPromise()
+                            : [...selectedChangesetSpecs]
+
+                    const state =
+                        action === CreateUpdateBatchChangeAlertAction.DraftAll ||
+                        action === CreateUpdateBatchChangeAlertAction.DraftSelected
+                            ? 'draft'
+                            : true
+
+                    publicationStates = ids.map(id => ({
+                        changesetSpec: id,
+                        publicationState: state,
+                    }))
+                }
+
                 const batchChange = batchChangeID
-                    ? await applyBatchChange({ batchSpec: spec.id, batchChange: batchChangeID })
-                    : await createBatchChange({ batchSpec: spec.id })
+                    ? await applyBatchChange({ batchSpec: spec.id, batchChange: batchChangeID, publicationStates })
+                    : await createBatchChange({ batchSpec: spec.id, publicationStates })
 
                 if (toBeArchived > 0) {
                     history.push(`${batchChange.url}?archivedCount=${toBeArchived}&archivedBy=${spec.id}`)
@@ -111,7 +147,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 setIsLoading(error)
             }
         },
-        [spec, history, telemetryService]
+        [spec, history, selectedChangesetSpecs, telemetryService]
     )
 
     if (spec === undefined) {
@@ -129,10 +165,14 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
         <MultiSelectContext.Provider
             value={{
                 selected: selectedChangesetSpecs,
+                visible: visibleChangesetSpecs,
                 onDeselectAll: onDeselectAllChangesetSpecs,
+                onDeselectVisible: onDeselectAllChangesetSpecs,
                 onDeselect: onDeselectChangesetSpec,
                 onSelectAll: onSelectAllChangesetSpecs,
+                onSelectVisible: onSelectVisibleChangesetSpecs,
                 onSelect: onSelectChangesetSpec,
+                onLoad: onLoadChangesetSpecs,
             }}
         >
             <div className="pb-5">

@@ -1,12 +1,14 @@
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useContext } from 'react'
+import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
+import { MultiSelectContext } from '../../MultiSelectContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'
@@ -54,6 +56,8 @@ export const PreviewList: React.FunctionComponent<Props> = ({
         action: null,
     })
 
+    const { onLoad } = useContext(MultiSelectContext)
+
     const queryChangesetApplyPreviewConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesetApplyPreview({
@@ -63,8 +67,24 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 search: filters.search,
                 currentState: filters.currentState,
                 action: filters.action,
-            }),
-        [batchSpecID, filters.search, filters.currentState, filters.action, queryChangesetApplyPreview]
+            }).pipe(
+                tap(connection => {
+                    onLoad(
+                        connection.nodes
+                            .map(node => {
+                                if (node.__typename === 'HiddenChangesetApplyPreview') {
+                                    return undefined
+                                }
+                                if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+                                    return undefined
+                                }
+                                return node.targets.changesetSpec.id
+                            })
+                            .filter((id): id is string => id !== undefined)
+                    )
+                })
+            ),
+        [batchSpecID, filters.search, filters.currentState, filters.action, onLoad, queryChangesetApplyPreview]
     )
 
     return (
