@@ -10,6 +10,7 @@ import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import {
     ConnectionContainer,
     ConnectionError,
+    ConnectionForm,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
@@ -70,9 +71,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
     const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {
         onDidUpdate: onUserUpdate,
     }
-
     const [query, setQuery] = useState('')
-    console.log('query is', query)
     const { connection, errors, loading, fetchMore, hasNextPage } = usePaginatedConnection<
         CustomersResult,
         CustomersVariables,
@@ -100,25 +99,11 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
             </div>
             <p>User accounts may be linked to a customer on the billing system.</p>
             <ConnectionContainer className="list-group list-group-flush mt-3">
-                {/* TODO: Make form reusable */}
-                <Form
-                    className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
-                    onSubmit={event => event.preventDefault()}
-                >
-                    <input
-                        className="form-control"
-                        type="search"
-                        placeholder="Search customerz..."
-                        name="query"
-                        value={query}
-                        onChange={event => setQuery(event.target.value)}
-                        autoFocus={true}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                    />
-                </Form>
+                <ConnectionForm
+                    query={query}
+                    onChange={event => setQuery(event.target.value)}
+                    inputPlaceholder="Search customers..."
+                />
                 {errors.length > 0 && <ConnectionError errors={errors} />}
                 <ConnectionList>
                     {connection?.nodes?.map(node => (

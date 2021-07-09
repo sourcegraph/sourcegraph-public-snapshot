@@ -27,9 +27,6 @@ export interface ConnectionProps<N, NP = {}, HP = {}> extends ConnectionNodesDis
 
     /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
     nodeComponentProps?: NP
-
-    /** An element rendered as a sibling of the filters. */
-    additionalFilterElement?: React.ReactElement
 }
 
 /** State related to the ConnectionNodes component. */
