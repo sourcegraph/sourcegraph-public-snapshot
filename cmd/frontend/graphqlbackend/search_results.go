@@ -567,7 +567,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	maxTryCount := 40000
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
-	ctx, cancel, err := r.withTimeout(ctx)
+	ctx, cancel, err := withTimeout(ctx, q.ToParseTree())
 	if err != nil {
 		return nil, err
 	}
@@ -1257,13 +1257,13 @@ var (
 	defaultTimeout = 20 * time.Second
 )
 
-func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
+func withTimeout(ctx context.Context, q query.Q) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
 	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
-	timeout := r.Query.Timeout()
+	timeout := q.Timeout()
 	if timeout != nil {
 		d = *timeout
-	} else if r.Query.Count() != nil {
+	} else if q.Count() != nil {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
@@ -1350,7 +1350,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	start := time.Now()
 
-	ctx, cancel, err := r.withTimeout(ctx)
+	ctx, cancel, err := withTimeout(ctx, args.Query)
 	if err != nil {
 		return nil, err
 	}
