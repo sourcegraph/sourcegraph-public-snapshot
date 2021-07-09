@@ -15,10 +15,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
+// Loader will load insights from some persistent storage.
 type Loader interface {
 	LoadAll(ctx context.Context) ([]SearchInsight, error)
 }
 
+// DBLoader will load insights from a database. This is also where the application can access insights currently stored
+// in user / org settings.
 type DBLoader struct {
 	db dbutil.DB
 }
@@ -34,7 +37,7 @@ func NewLoader(db dbutil.DB) Loader {
 // GetSettings returns all settings on the Sourcegraph installation that can be filtered by a type. This is useful for
 // generating aggregates for code insights which are currently stored in the settings.
 // 🚨 SECURITY: This method bypasses any user permissions to fetch a list of all settings on the Sourcegraph installation.
-//It is used for generating aggregated analytics that require an accurate view across all settings, such as for code insights🚨
+// It is used for generating aggregated analytics that require an accurate view across all settings, such as for code insights🚨
 func GetSettings(ctx context.Context, db dbutil.DB, filter SettingFilter, prefix string) ([]*api.Settings, error) {
 	settingStore := database.Settings(db)
 	settings, err := settingStore.ListAll(ctx, prefix)
