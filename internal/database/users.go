@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -1116,7 +1118,35 @@ func (u *UserStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.
 	// 🚨 SECURITY: Set the new random password and clear the reset code/expiry, so the old code
 	// can't be reused, and so a new valid reset code can be generated afterward.
 	err = u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id))
+	if err == nil {
+		LogPasswordEvent(ctx, u.Handle().DB(), nil, SecurityEventNamPasswordRandomized, id)
+	}
 	return err
+}
+
+func LogPasswordEvent(ctx context.Context, db dbutil.DB, r *http.Request, name SecurityEventName, userID int32) {
+	a := actor.FromContext(ctx)
+	args, _ := json.Marshal(struct {
+		Requester int32 `json:"requester"`
+	}{
+		Requester: a.UID,
+	})
+
+	var path string
+	if r != nil {
+		path = r.URL.Path
+	}
+	event := &SecurityEvent{
+		Name:      name,
+		URL:       path,
+		UserID:    uint32(userID),
+		Argument:  args,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {

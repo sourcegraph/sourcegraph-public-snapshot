@@ -30,6 +30,10 @@ const (
 
 	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
 	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
+
+	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
+	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
+	SecurityEventNamPasswordChanged        SecurityEventName = "PasswordChanged"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
