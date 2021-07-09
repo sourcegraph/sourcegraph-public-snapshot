@@ -4,16 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
-import { Connection } from '../ConnectionType'
+import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 
 import { useSearchParameters } from './useSearchParameters'
 import { useUrlQuery } from './useUrlQuery'
-
-interface PaginationConnectionQueryArguments {
-    first?: number
-    after?: string | null
-    query?: string
-}
 
 interface PaginationConnectionResult<TData> {
     connection?: Connection<TData>
@@ -28,7 +22,7 @@ interface UsePaginationConnectionOptions {
 }
 interface UsePaginationConnectionParameters<TResult, TVariables, TData> {
     query: string
-    variables: TVariables & PaginationConnectionQueryArguments
+    variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
     options?: UsePaginationConnectionOptions
 }
@@ -41,7 +35,7 @@ export const usePaginatedConnection = <TResult, TVariables, TData>({
 }: UsePaginationConnectionParameters<TResult, TVariables, TData>): PaginationConnectionResult<TData> => {
     const searchParameters = useSearchParameters()
 
-    const [controlledVariables, setControlledVariables] = useState<TVariables & PaginationConnectionQueryArguments>({
+    const [controlledVariables, setControlledVariables] = useState<TVariables & ConnectionQueryArguments>({
         ...uncontrolledVariables,
         first: (options?.useURLQuery && parseQueryInt(searchParameters, 'first')) || uncontrolledVariables.first,
     })

@@ -26,7 +26,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { ErrorMessage } from '../alerts'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
-import { Connection } from './ConnectionType'
+import { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 import { getFilterFromURL, getUrlQuery, parseQueryInt } from './utils'
@@ -127,12 +127,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
 /**
  * The arguments for the Props.queryConnection function.
  */
-export interface FilteredConnectionQueryArguments {
-    first?: number
-    after?: string
-    query?: string
-}
-
+export interface FilteredConnectionQueryArguments extends ConnectionQueryArguments {}
 interface FilteredConnectionState<C extends Connection<N>, N> extends ConnectionNodesState {
     activeValues: Map<string, FilteredConnectionFilterValue>
 
