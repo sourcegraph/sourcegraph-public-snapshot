@@ -110,7 +110,11 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
     >({
         query: USER_EVENT_LOGS,
         variables: { first: 50, user: user.id },
-        getConnection: data => {
+        getConnection: result => {
+            console.log('Getting data...')
+            const data = dataOrThrowErrors(result)
+            console.log('Got data')
+            console.log(data)
             if (!data.node) {
                 throw new Error('User not found')
             }
@@ -131,7 +135,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
 
             <Container className="mb-3">
                 <ConnectionContainer className="list-group list-group-flush">
-                    {errors.length && <ConnectionError errors={errors} />}
+                    {errors.length > 0 && <ConnectionError errors={errors} />}
                     <ConnectionList>
                         {connection?.nodes.map((node, index) => (
                             <UserEventNode key={index} node={node} />

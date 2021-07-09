@@ -88,7 +88,8 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
             first: 5,
             user: user.id,
         },
-        getConnection: data => {
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
             if (!data.node) {
                 throw new Error('User not found')
             }
@@ -115,7 +116,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
             />
             <Container>
                 <ConnectionContainer>
-                    {errors.length && <ConnectionError errors={errors} />}
+                    {errors.length > 0 && <ConnectionError errors={errors} />}
                     <ConnectionList className="list-group list-group-flush">
                         {connection?.nodes?.map((node, index) => (
                             <AccessTokenNode

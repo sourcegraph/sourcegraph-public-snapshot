@@ -316,7 +316,10 @@ export function updateMirrorRepository(args: { repository: Scalars['ID'] }): Obs
         `,
         args
     ).pipe(
-        map(dataOrThrowErrors),
+        map(result => {
+            console.log(result)
+            const data = dataOrThrowErrors(result)
+        }),
         tap(() => resetAllMemoizationCaches()),
         map(() => undefined)
     )

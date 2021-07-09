@@ -13,6 +13,7 @@ import {
     MutationHookOptions,
     MutationTuple,
 } from '@apollo/client'
+import { GraphQLError } from 'graphql'
 import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
@@ -20,8 +21,6 @@ import { Omit } from 'utility-types'
 
 import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
-
-import * as GQL from './schema'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -35,7 +34,7 @@ export interface SuccessGraphQLResult<T> {
 }
 export interface ErrorGraphQLResult {
     data: undefined
-    errors: GQL.IGraphQLResponseError[]
+    errors: readonly GraphQLError[]
 }
 
 export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
@@ -54,17 +53,11 @@ export function dataOrThrowErrors<T>(result: GraphQLResult<T>): T {
     return result.data
 }
 
-export interface GraphQLError extends Error {
-    queryName: string
-}
 export const createInvalidGraphQLQueryResponseError = (queryName: string): GraphQLError =>
-    Object.assign(new Error(`Invalid GraphQL response: query ${queryName}`), {
-        queryName,
-    })
+    new GraphQLError(`Invalid GraphQL response: query ${queryName}`)
+
 export const createInvalidGraphQLMutationResponseError = (queryName: string): GraphQLError =>
-    Object.assign(new Error(`Invalid GraphQL response: mutation ${queryName}`), {
-        queryName,
-    })
+    new GraphQLError(`Invalid GraphQL response: mutation ${queryName}`)
 
 export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'body'> {
     baseUrl?: string

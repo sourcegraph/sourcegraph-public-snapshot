@@ -4,7 +4,7 @@ import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import {
@@ -83,12 +83,8 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
             first: 20,
             query,
         },
-        getConnection: data => {
-            if (!data || !data.users) {
-                // TODO: Support errors
-                throw new Error('bleh')
-                // throw createAggregateError(errors)
-            }
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
             return data.users
         },
         options: {
@@ -123,7 +119,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
                         spellCheck={false}
                     />
                 </Form>
-                {errors.length && <ConnectionError errors={errors} />}
+                {errors.length > 0 && <ConnectionError errors={errors} />}
                 <ConnectionList>
                     {connection?.nodes?.map(node => (
                         <SiteAdminCustomerNode key={node.id} {...nodeProps} node={node} />

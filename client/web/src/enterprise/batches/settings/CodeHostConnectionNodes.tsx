@@ -1,8 +1,10 @@
 import { ApolloError } from '@apollo/client'
+import { GraphQLError } from 'graphql'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { Connection } from '@sourcegraph/web/src/components/FilteredConnection'
 import {
@@ -44,7 +46,8 @@ export const CodeHostConnectionNodes: React.FunctionComponent<CodeHostConnection
             first: 15,
             after: null,
         },
-        getConnection: data => {
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
             if (data.node === null) {
                 throw new Error('User not found')
             }
@@ -71,7 +74,10 @@ export const GlobalCodeHostConnectionNodes: React.FunctionComponent = () => {
             first: 15,
             after: null,
         },
-        getConnection: result => result.batchChangesCodeHosts,
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+            return data.batchChangesCodeHosts
+        },
     })
 
     return <CodeHostConnectionNodesUI userID={null} {...response} />
@@ -79,28 +85,19 @@ export const GlobalCodeHostConnectionNodes: React.FunctionComponent = () => {
 
 const CodeHostConnectionNodesUI: React.FunctionComponent<{
     connection?: Connection<BatchChangesCodeHostFields>
-    errors: string[]
+    errors: readonly GraphQLError[]
     loading: boolean
     hasNextPage: boolean
     userID: Scalars['ID'] | null
     fetchMore: () => void
 }> = ({ connection, errors, loading, hasNextPage, userID, fetchMore }) => {
-    if (errors) {
-        // TODO: Support this better
-        // throw createAggregateError(errors)
-    }
-
     if (!connection) {
         return null
     }
 
-    if (loading) {
-        return <LoadingSpinner className="icon-inline" />
-    }
-
     return (
         <ConnectionContainer className="mb-3">
-            {errors.length && <ConnectionError errors={errors} />}
+            {errors.length > 0 && <ConnectionError errors={errors} />}
             <ConnectionList className="list-group">
                 {connection.nodes.map((node, index) => (
                     <CodeHostConnectionNode key={index} node={node} userID={userID} />
