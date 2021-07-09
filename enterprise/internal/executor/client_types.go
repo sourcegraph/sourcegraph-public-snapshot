@@ -63,6 +63,11 @@ type CliStep struct {
 
 	// Env specifies a set of NAME=value pairs to supply to the src command.
 	Env []string `json:"env"`
+
+	// InheritLocalEnv specifies a set of environment variables the src command
+	// should inherit, **if** it is executed locally, not inside a Docker
+	// container or Firecracker VM.
+	InheritLocalEnv []string `json:"inheritLocalEnv"`
 }
 
 type DequeueRequest struct {

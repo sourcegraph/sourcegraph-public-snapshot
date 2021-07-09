@@ -37,6 +37,11 @@ var commonFirecrackerFlags = []string{
 // also been the name supplied to a successful invocation of setupFirecracker. Additionally,
 // the virtual machine must not yet have been torn down (via teardownFirecracker).
 func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Options) command {
+	// Since we're executing in a Firecracker VM we can't simply inherit from
+	// the local machine without breaking things (e.g. a HOME set outside the
+	// VM might break things inside the VM), so we ignore the field altogether.
+	spec.InheritLocalEnv = []string{}
+
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
 	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")

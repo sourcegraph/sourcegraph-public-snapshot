@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 )
@@ -17,11 +19,16 @@ const ScriptsPath = ".sourcegraph-executor"
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) command {
 	// TODO - make this a non-special case
 	if spec.Image == "" {
+		env := spec.Env
+		for _, k := range spec.InheritLocalEnv {
+			env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
+		}
+
 		return command{
 			Key:       spec.Key,
 			Command:   spec.Command,
 			Dir:       filepath.Join(dir, spec.Dir),
-			Env:       spec.Env,
+			Env:       env,
 			Operation: spec.Operation,
 		}
 	}
@@ -33,7 +40,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(dir, spec.ScriptPath),
 			dockerWorkingdirectoryFlags(spec.Dir),
-			dockerEnvFlags(spec.Env),
+			dockerEnvFlags(append(spec.Env, spec.InheritLocalEnv...)),
 			dockerEntrypointFlags(),
 			spec.Image,
 			filepath.Join("/data", ScriptsPath, spec.ScriptPath),

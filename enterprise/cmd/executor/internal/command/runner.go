@@ -25,13 +25,14 @@ type Runner interface {
 // is the host, in a virtual machine, or in a docker container. If an image is
 // supplied, then the command will be run in a one-shot docker container.
 type CommandSpec struct {
-	Key        string
-	Image      string
-	ScriptPath string
-	Command    []string
-	Dir        string
-	Env        []string
-	Operation  *observation.Operation
+	Key             string
+	Image           string
+	ScriptPath      string
+	Command         []string
+	Dir             string
+	Env             []string
+	InheritLocalEnv []string
+	Operation       *observation.Operation
 }
 
 type Options struct {

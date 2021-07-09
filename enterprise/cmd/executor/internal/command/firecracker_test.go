@@ -14,10 +14,11 @@ import (
 func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Command:   []string{"ls", "-a"},
-			Dir:       "subdir",
-			Env:       []string{"TEST=true"},
-			Operation: makeTestOperation(),
+			Command:         []string{"ls", "-a"},
+			Dir:             "subdir",
+			Env:             []string{"TEST=true"},
+			InheritLocalEnv: []string{"TEST2"},
+			Operation:       makeTestOperation(),
 		},
 		"deadbeef",
 		"/proj/src",
@@ -38,11 +39,12 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Image:      "alpine:latest",
-			ScriptPath: "myscript.sh",
-			Dir:        "subdir",
-			Env:        []string{"TEST=true"},
-			Operation:  makeTestOperation(),
+			Image:           "alpine:latest",
+			ScriptPath:      "myscript.sh",
+			Dir:             "subdir",
+			Env:             []string{"TEST=true"},
+			InheritLocalEnv: []string{"TEST2"},
+			Operation:       makeTestOperation(),
 		},
 		"deadbeef",
 		"/proj/src",
@@ -78,9 +80,10 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 func TestFormatFirecrackerCommandDockerCommand(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Command: []string{"ls", "-a"},
-			Dir:     "subdir",
-			Env:     []string{"TEST=true"},
+			Command:         []string{"ls", "-a"},
+			Dir:             "subdir",
+			Env:             []string{"TEST=true"},
+			InheritLocalEnv: []string{"TEST2"},
 		},
 		"deadbeef",
 		"/proj/src",

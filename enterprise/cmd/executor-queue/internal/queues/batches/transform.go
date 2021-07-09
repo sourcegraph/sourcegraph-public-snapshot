@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -47,10 +46,6 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 	cliEnv := []string{
 		fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
 		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
-
-		// TODO: This is wrong here, it should be set on the executor machine
-		fmt.Sprintf("HOME=%s", os.Getenv("HOME")),
-		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 	}
 
 	var namespaceName string
@@ -80,8 +75,9 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 					"-text-only",
 					"-n", namespaceName,
 				},
-				Dir: ".",
-				Env: cliEnv,
+				Dir:             ".",
+				Env:             cliEnv,
+				InheritLocalEnv: []string{"HOME", "PATH"},
 			},
 		},
 		RedactedValues: map[string]string{
