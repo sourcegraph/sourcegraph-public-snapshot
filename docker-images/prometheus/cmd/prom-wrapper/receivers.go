@@ -62,8 +62,6 @@ var (
 	resolvedTitleTemplate     = "[RESOLVED] {{ .CommonLabels.description }}"
 	notificationTitleTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingTitleTemplate, resolvedTitleTemplate)
 
-	priorityTemplateDefault = `{{ if eq .CommonLabels.level "critical"}}P1{{else if eq .CommonLabels.level "warning"}}P2{{else if eq .CommonLabels.level "info"}}P3{{else}}P4{{end}}`
-
 	tagsTemplateDefault = "{{ range $key, $value := .CommonLabels }}{{$key}}={{$value}},{{end}}"
 )
 
@@ -230,7 +228,19 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				}
 			}
 
-			priority := priorityTemplateDefault
+			var priority string
+
+			switch alert.Level {
+			case "critical":
+				priority = "P1"
+			case "warning":
+				priority = "P2"
+			case "info":
+				priority = "P3"
+			default:
+				priority = "P4"
+			}
+
 			if notifier.Opsgenie.Priority != "" {
 				priority = notifier.Opsgenie.Priority
 			}
