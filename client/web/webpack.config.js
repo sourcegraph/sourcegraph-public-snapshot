@@ -143,7 +143,6 @@ const config = {
         'suggest',
       ],
     }),
-    new webpack.IgnorePlugin({ resourceRegExp: /\.flow$/ }),
     new WebpackManifestPlugin({
       writeToFileEmit: true,
       fileName: 'webpack.manifest.json',
