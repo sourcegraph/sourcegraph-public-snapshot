@@ -173,7 +173,7 @@ func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, 
 	}
 
 	if multi != nil {
-		log15.Error("deserialization errors parsing integrated insights", "error", multi)
+		log15.Error("insights: deserialization errors parsing integrated insights", "error", multi)
 	}
 
 	return results, nil
