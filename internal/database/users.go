@@ -375,15 +375,15 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 // is a list of errors encountered while generating this list. Note that even if errors are returned, the first
 // return value is still valid.
 func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
-	var errors []error
+	var errs []error
 	for userPattern, orgs := range userOrgMap {
 		if userPattern != "*" {
-			errors = append(errors, errors.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
+			errs = append(errs, errors.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
 			continue
 		}
-		return orgs, errors
+		return orgs, errs
 	}
-	return nil, errors
+	return nil, errs
 }
 
 // UserUpdate describes user fields to update.
