@@ -888,7 +888,7 @@ func WithExternalID(id string) func(*Changeset) bool {
 	return func(c *Changeset) bool { return c.ExternalID == id }
 }
 
-// ChangesetsStats holds stats information on a list of changesets for a repo.
+// RepoChangesetsStats holds stats information on a list of changesets for a repo.
 type RepoChangesetsStats struct {
 	Unpublished int32
 	Open        int32

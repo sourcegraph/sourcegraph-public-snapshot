@@ -943,8 +943,14 @@ WHERE
 `
 
 // GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
-func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (stats btypes.RepoChangesetsStats, err error) {
-	q := getRepoChangesetsStatsQuery(int64(repoID))
+func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (*btypes.RepoChangesetsStats, error) {
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
+	}
+	q := getRepoChangesetsStatsQuery(int64(repoID), authzConds)
+
+	var stats btypes.RepoChangesetsStats
 	err = s.query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
@@ -958,9 +964,9 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 		return err
 	})
 	if err != nil {
-		return stats, err
+		return &stats, err
 	}
-	return stats, nil
+	return &stats, nil
 }
 
 func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
@@ -1070,10 +1076,11 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 	)
 }
 
-func getRepoChangesetsStatsQuery(repoID int64) *sqlf.Query {
+func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf(
 		getRepoChangesetStatsFmtstr,
 		strconv.Itoa(int(repoID)),
+		authzConds,
 	)
 }
 
@@ -1086,5 +1093,8 @@ SELECT
 	COUNT(*) FILTER (WHERE changesets.external_state = 'MERGED' ) AS merged,
 	COUNT(*) FILTER (WHERE changesets.external_state = 'OPEN'   ) AS open
 FROM changesets
-WHERE changesets.repo_id = %s
+INNER JOIN repo ON changesets.repo_id = repo.id
+WHERE changesets.repo_id = %s AND
+-- authz conditions:
+%s
 `

@@ -322,10 +322,14 @@ func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sq
 }
 
 func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (*diff.Stat, error) {
-	q := getRepoDiffStatQuery(int64(repoID))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
+	}
+	q := getRepoDiffStatQuery(int64(repoID), authzConds)
 
 	var diffStat diff.Stat
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
 	})
 	if err != nil {
@@ -342,11 +346,14 @@ SELECT
 	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM changesets
-WHERE changesets.repo_id = %s
+INNER JOIN repo ON changesets.repo_id = repo.id
+WHERE changesets.repo_id = %s AND
+-- authz conditions:
+%s
 `
 
-func getRepoDiffStatQuery(repoID int64) *sqlf.Query {
-	return sqlf.Sprintf(getRepoDiffStatQueryFmtstr, repoID)
+func getRepoDiffStatQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
+	return sqlf.Sprintf(getRepoDiffStatQueryFmtstr, repoID, authzConds)
 }
 
 // ListBatchChangesOpts captures the query options needed for
@@ -367,7 +374,11 @@ type ListBatchChangesOpts struct {
 
 // ListBatchChanges lists batch changes with the given filters.
 func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*btypes.BatchChange, next int64, err error) {
-	q := listBatchChangesQuery(&opts)
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
+	}
+	q := listBatchChangesQuery(&opts, repoAuthzConds)
 
 	cs = make([]*btypes.BatchChange, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
@@ -395,7 +406,7 @@ WHERE %s
 ORDER BY id DESC
 `
 
-func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
+func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
@@ -434,11 +445,15 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 	}
 
 	if opts.RepoID != 0 {
+		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT"))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN repo ON changesets.repo_id = repo.id"))
 		preds = append(preds, sqlf.Sprintf(`EXISTS(
 			SELECT * FROM changesets
-			WHERE changesets.batch_change_ids ? batch_changes.id::TEXT
-			AND changesets.repo_id = %s
-		)`, opts.RepoID))
+			WHERE changesets.batch_change_ids ? batch_changes.id::TEXT AND
+			changesets.repo_id = %s AND
+			-- authz conditions:
+			%s
+		)`, opts.RepoID, repoAuthzConds))
 	}
 
 	if len(preds) == 0 {
