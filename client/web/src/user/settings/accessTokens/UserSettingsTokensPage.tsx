@@ -13,6 +13,7 @@ import {
     ConnectionList,
     ConnectionSummary,
     ShowMoreButton,
+    SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -124,13 +125,13 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                         ))}
                     </ConnectionList>
                     {connection && (
-                        <div className="filtered-connection__summary-container">
+                        <SummaryContainer>
                             {!connection?.pageInfo?.hasNextPage && (
                                 // TODO: check if valid with noSummaryIfAllNodesVisible
                                 <p className="text-muted text-center w-100 mb-0">You don't have any access tokens.</p>
                             )}
                             {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                        </div>
+                        </SummaryContainer>
                     )}
                 </ConnectionContainer>
             </Container>

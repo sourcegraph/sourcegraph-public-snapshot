@@ -1,4 +1,5 @@
 export { ConnectionContainer } from './ConnectionContainer'
-export { ConnectionSummary } from './ConnectionSummary'
-export { ShowMoreButton } from './ShowMoreButton'
 export { ConnectionList } from './ConnectionList'
+export { ConnectionSummary } from './ConnectionSummary'
+export { SummaryContainer } from './SummaryContainer'
+export { ShowMoreButton } from './ShowMoreButton'

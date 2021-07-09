@@ -7,12 +7,15 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { ConnectionNodesSummary } from '@sourcegraph/web/src/components/FilteredConnection/ConnectionNodesSummary'
 import {
     ConnectionContainer,
     ConnectionList,
     ConnectionSummary,
     ShowMoreButton,
+    SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
+import { hasNextPage } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
@@ -69,7 +72,11 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
 
     const [query, setQuery] = useState('')
     console.log('query is', query)
-    const { connection, fetchMore } = usePaginatedConnection<CustomersResult, CustomersVariables, CustomerFields>({
+    const { connection, fetchMore, hasNextPage } = usePaginatedConnection<
+        CustomersResult,
+        CustomersVariables,
+        CustomerFields
+    >({
         query: CUSTOMERS,
         variables: {
             first: 20,
@@ -119,18 +126,17 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
                     ))}
                 </ConnectionList>
                 {connection && (
-                    <div className="filtered-connection__summary-container">
-                        {!connection.pageInfo?.hasNextPage && (
-                            // TODO does this hide summary if all nodes visible?
-                            <ConnectionSummary
-                                connection={connection}
-                                noun="customer"
-                                pluralNoun="customers"
-                                totalCount={connection.totalCount}
-                            />
-                        )}
-                        {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                    </div>
+                    <SummaryContainer>
+                        <ConnectionSummary
+                            noSummaryIfAllNodesVisible={true}
+                            connection={connection}
+                            noun="customer"
+                            pluralNoun="customers"
+                            totalCount={connection.totalCount ?? null}
+                            hasNextPage={hasNextPage}
+                        />
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
                 )}
             </ConnectionContainer>
         </div>

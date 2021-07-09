@@ -15,6 +15,7 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     ConnectionList,
+    SummaryContainer,
 } from '../../../components/FilteredConnection/generic-ui'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -101,7 +102,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
     }, [telemetryService])
 
     // TODO: Show loading
-    const { connection, loading, error, fetchMore } = usePaginatedConnection<
+    const { connection, loading, error, fetchMore, hasNextPage } = usePaginatedConnection<
         UserEventLogsResult,
         UserEventLogsVariables,
         UserEventLogFields
@@ -135,15 +136,17 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
                         ))}
                     </ConnectionList>
                     {connection && (
-                        <div className="filtered-connection__summary-container">
+                        <SummaryContainer>
                             <ConnectionSummary
+                                noSummaryIfAllNodesVisible={true}
                                 connection={connection}
                                 noun="user event"
                                 pluralNoun="user events"
-                                totalCount={connection.totalCount}
+                                totalCount={connection.totalCount ?? null}
+                                hasNextPage={hasNextPage}
                             />
-                            {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                        </div>
+                            {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        </SummaryContainer>
                     )}
                 </ConnectionContainer>
             </Container>

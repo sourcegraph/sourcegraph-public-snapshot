@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
-import { parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
+import { hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
 import { Connection } from '../../../components/FilteredConnection/ConnectionType'
 
@@ -17,9 +17,10 @@ interface PaginationConnectionQueryArguments {
 
 interface PaginationConnectionResult<TData> {
     connection?: Connection<TData>
-    loading: boolean
     error?: ApolloError
     fetchMore: () => void
+    loading: boolean
+    hasNextPage: boolean
 }
 
 interface UsePaginationConnectionOptions {
@@ -111,5 +112,6 @@ export const usePaginatedConnection = <TResult, TVariables, TData>({
         loading,
         error,
         fetchMore: fetchMoreData,
+        hasNextPage: connection ? hasNextPage(connection) : false,
     }
 }

@@ -1,6 +1,7 @@
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
+import { Connection } from './ConnectionType'
 import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
@@ -42,3 +43,8 @@ export const parseQueryInt = (searchParameters: URLSearchParams, name: string): 
     }
     return null
 }
+
+export const hasNextPage = (connection: Connection<unknown>): boolean =>
+    connection.pageInfo
+        ? connection.pageInfo.hasNextPage
+        : typeof connection.totalCount === 'number' && connection.nodes.length < connection.totalCount

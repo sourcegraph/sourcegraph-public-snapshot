@@ -4,12 +4,15 @@ import React from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Connection } from '@sourcegraph/web/src/components/FilteredConnection'
+import { ConnectionNodesSummary } from '@sourcegraph/web/src/components/FilteredConnection/ConnectionNodesSummary'
 import {
     ConnectionContainer,
     ConnectionList,
     ConnectionSummary,
     ShowMoreButton,
+    SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
+import { hasNextPage } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
 import {
     BatchChangesCodeHostFields,
@@ -76,9 +79,10 @@ const CodeHostConnectionNodesUI: React.FunctionComponent<{
     connection?: Connection<BatchChangesCodeHostFields>
     error?: ApolloError
     loading: boolean
+    hasNextPage: boolean
     userID: Scalars['ID'] | null
     fetchMore: () => void
-}> = ({ connection, error, loading, userID, fetchMore }) => {
+}> = ({ connection, error, loading, hasNextPage, userID, fetchMore }) => {
     if (error) {
         throw error
     }
@@ -91,8 +95,6 @@ const CodeHostConnectionNodesUI: React.FunctionComponent<{
         return <LoadingSpinner className="icon-inline" />
     }
 
-    // TODO: Check useUrlQuery; false
-
     return (
         <ConnectionContainer className="mb-3">
             <ConnectionList className="list-group">
@@ -101,18 +103,17 @@ const CodeHostConnectionNodesUI: React.FunctionComponent<{
                 ))}
             </ConnectionList>
             {connection && (
-                <div className="filtered-connection__summary-container">
-                    {!connection.pageInfo?.hasNextPage && (
-                        // TODO does this hide summary if all nodes visible?
-                        <ConnectionSummary
-                            connection={connection}
-                            noun="code host"
-                            pluralNoun="code hosts"
-                            totalCount={connection.totalCount}
-                        />
-                    )}
-                    {connection?.pageInfo?.hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                </div>
+                <SummaryContainer>
+                    <ConnectionSummary
+                        noSummaryIfAllNodesVisible={true}
+                        connection={connection}
+                        noun="code host"
+                        pluralNoun="code hosts"
+                        totalCount={connection.totalCount ?? null}
+                        hasNextPage={hasNextPage}
+                    />
+                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                </SummaryContainer>
             )}
         </ConnectionContainer>
     )

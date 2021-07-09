@@ -1,13 +1,9 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
-
-import { ConnectionNodesSummary } from './ConnectionNodesSummary'
 import { Connection } from './ConnectionType'
-import { ConnectionList, ShowMoreButton } from './generic-ui'
-import { hasID } from './utils'
+import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './generic-ui'
+import { hasID, hasNextPage } from './utils'
 
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
@@ -138,15 +134,11 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     onShowMore,
     showMoreClassName,
 }: ConnectionNodesProps<C, N, NP, HP>): JSX.Element => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    const hasNextPage = connection.pageInfo
-        ? connection.pageInfo.hasNextPage
-        : typeof connection.totalCount === 'number' && connection.nodes.length < connection.totalCount
+    const nextPage = hasNextPage(connection)
 
     const totalCount = getTotalCount(connection, first)
     const summary = (
-        <ConnectionNodesSummary
+        <ConnectionSummary
             noSummaryIfAllNodesVisible={noSummaryIfAllNodesVisible}
             totalCount={totalCount}
             totalCountSummaryComponent={totalCountSummaryComponent}
@@ -155,7 +147,7 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
             connectionQuery={connectionQuery}
             emptyElement={emptyElement}
             connection={connection}
-            hasNextPage={hasNextPage}
+            hasNextPage={nextPage}
         />
     )
 
@@ -163,11 +155,9 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
         <NodeComponent key={hasID(node) ? node.id : index} node={node} {...nodeComponentProps!} />
     ))
 
-    const summaryContainerClassName = classNames(summaryClassName, 'filtered-connection__summary-container')
-
     return (
         <>
-            <div className={summaryContainerClassName}>{connectionQuery && summary}</div>
+            <SummaryContainer className={summaryClassName}>{connectionQuery && summary}</SummaryContainer>
             {connection.nodes.length > 0 && (
                 <ConnectionList as={listComponent} className={listClassName}>
                     {HeadComponent && (
@@ -182,12 +172,10 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
                 </ConnectionList>
             )}
             {!loading && (
-                <div className={summaryContainerClassName}>
+                <SummaryContainer className={summaryClassName}>
                     {!connectionQuery && summary}
-                    {!noShowMore && hasNextPage && (
-                        <ShowMoreButton onClick={onShowMore} className={showMoreClassName} />
-                    )}
-                </div>
+                    {!noShowMore && nextPage && <ShowMoreButton onClick={onShowMore} className={showMoreClassName} />}
+                </SummaryContainer>
             )}
         </>
     )

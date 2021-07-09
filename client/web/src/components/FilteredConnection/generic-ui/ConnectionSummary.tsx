@@ -1,29 +1,50 @@
-import React from 'react'
+import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
+import { ConnectionNodesState, ConnectionProps } from '../ConnectionNodes'
 import { Connection } from '../ConnectionType'
 
-interface ConnectionSummaryProps<C extends Connection<N>, N> {
-    // Generic connection
+interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = {}>
+    extends Pick<
+        ConnectionProps<N, NP, HP> & ConnectionNodesState,
+        | 'noSummaryIfAllNodesVisible'
+        | 'totalCountSummaryComponent'
+        | 'noun'
+        | 'pluralNoun'
+        | 'connectionQuery'
+        | 'emptyElement'
+    > {
+    /** The fetched connection data or an error (if an error occurred). */
     connection: C
-    totalCount?: number | null
-    noun: string
-    pluralNoun: string
-    connectionQuery?: string
-    /** @deprecated Required for interopability with FilteredConnection. */
-    emptyElement?: JSX.Element
+
+    hasNextPage: boolean
+
+    totalCount: number | null
 }
 
-export const ConnectionSummary = <C extends Connection<N>, N>({
+export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>({
+    noSummaryIfAllNodesVisible,
     connection,
+    totalCount,
+    totalCountSummaryComponent: TotalCountSummaryComponent,
     noun,
     pluralNoun,
     connectionQuery,
-    totalCount,
     emptyElement,
-}: ConnectionSummaryProps<C, N>): JSX.Element | null => {
-    if (totalCount && totalCount > 0) {
+    hasNextPage,
+}: ConnectionNodesSummaryProps<C, N, NP, HP>): JSX.Element | null => {
+    const shouldShowSummary = !noSummaryIfAllNodesVisible || connection.nodes.length === 0 || hasNextPage
+
+    if (!shouldShowSummary) {
+        return null
+    }
+
+    if (totalCount !== null && totalCount > 0 && TotalCountSummaryComponent) {
+        return <TotalCountSummaryComponent totalCount={totalCount} />
+    }
+
+    if (totalCount !== null && totalCount > 0 && !TotalCountSummaryComponent) {
         return (
             <p className="filtered-connection__summary" data-testid="summary">
                 <small>
