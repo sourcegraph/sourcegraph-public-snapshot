@@ -2,9 +2,9 @@ package dbworker
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -68,11 +68,9 @@ loop:
 	for {
 		resetIDs, erroredIDs, err := r.store.ResetStalled(r.ctx)
 		if err != nil {
-			// If the error is due to the loop being shut down, just break
-			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-				if err == r.ctx.Err() {
-					break loop
-				}
+			if errors.Cause(err) == r.ctx.Err() {
+				// If the error is due to the loop being shut down, just break`
+				break loop
 			}
 
 			r.options.Metrics.Errors.Inc()

@@ -54,7 +54,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 
 Generate is the main Sourcegraph monitoring generator entrypoint\.
 
-## func [Int64Ptr](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/util.go#L29>)
+## func [Int64Ptr](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/util.go#L30>)
 
 ```go
 func Int64Ptr(i int64) *int64
@@ -62,7 +62,7 @@ func Int64Ptr(i int64) *int64
 
 IntPtr converts an int64 value to a pointer\, useful for setting fields in some APIs\.
 
-## func [StringPtr](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/util.go#L23>)
+## func [StringPtr](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/util.go#L24>)
 
 ```go
 func StringPtr(s string) *string

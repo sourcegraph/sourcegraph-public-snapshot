@@ -25,7 +25,7 @@ func TestDequeue(t *testing.T) {
 
 	store := workerstoremocks.NewMockStore()
 	store.DequeueWithIndependentTransactionContextFunc.SetDefaultReturn(testRecord{ID: 42, Payload: "secret"}, store, true, nil)
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		if tr, ok := record.(testRecord); !ok {
 			t.Errorf("mismatched record type.")
 		} else if tr.Payload != "secret" {
@@ -90,7 +90,9 @@ func TestDequeueMaxTransactions(t *testing.T) {
 	store.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 41}, store, true, nil)
 	store.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 42}, store, true, nil)
 	store.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 43}, store, true, nil)
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) { return apiclient.Job{}, nil }
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return apiclient.Job{}, nil
+	}
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -140,7 +142,9 @@ func TestDequeueMaxTransactions(t *testing.T) {
 func TestAddExecutionLogEntry(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueWithIndependentTransactionContextFunc.SetDefaultReturn(testRecord{ID: 42}, store, true, nil)
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) { return apiclient.Job{ID: 42}, nil }
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return apiclient.Job{ID: 42}, nil
+	}
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -211,7 +215,9 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 func TestMarkComplete(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueWithIndependentTransactionContextFunc.SetDefaultReturn(testRecord{ID: 42}, store, true, nil)
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) { return apiclient.Job{ID: 42}, nil }
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return apiclient.Job{ID: 42}, nil
+	}
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -267,7 +273,9 @@ func TestMarkCompleteUnknownQueue(t *testing.T) {
 func TestMarkErrored(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueWithIndependentTransactionContextFunc.SetDefaultReturn(testRecord{ID: 42}, store, true, nil)
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) { return apiclient.Job{ID: 42}, nil }
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return apiclient.Job{ID: 42}, nil
+	}
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -326,7 +334,9 @@ func TestMarkErroredUnknownQueue(t *testing.T) {
 func TestMarkFailed(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueWithIndependentTransactionContextFunc.SetDefaultReturn(testRecord{ID: 42}, store, true, nil)
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) { return apiclient.Job{ID: 42}, nil }
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return apiclient.Job{ID: 42}, nil
+	}
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{

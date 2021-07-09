@@ -1,6 +1,6 @@
 package store
 
-import "errors"
+import "github.com/cockroachdb/errors"
 
 // ErrDequeueTransaction occurs when Dequeue is called from inside a transaction.
 var ErrDequeueTransaction = errors.New("unexpected transaction")

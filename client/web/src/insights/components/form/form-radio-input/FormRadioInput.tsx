@@ -10,14 +10,20 @@ interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
     className?: string
     /** Tooltip text for radio label element. */
     labelTooltipText?: string
+    /** Tooltip position */
+    labelTooltipPosition?: string
 }
 
 /** Displays form radio input for code insight creation form. */
 export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props => {
-    const { title, description, className, labelTooltipText, ...otherProps } = props
+    const { title, description, className, labelTooltipText, labelTooltipPosition, ...otherProps } = props
 
     return (
-        <label data-tooltip={labelTooltipText} className={classnames('d-flex flex-wrap align-items-center', className)}>
+        <label
+            data-placement={labelTooltipPosition}
+            data-tooltip={labelTooltipText}
+            className={classnames('d-flex flex-wrap align-items-center', className)}
+        >
             <input type="radio" {...otherProps} />
 
             <span className="pl-2">{title}</span>

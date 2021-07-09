@@ -243,7 +243,7 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page m-3" ref={this.nextRepositoryCommitPageElement}>
+            <div className="repository-commit-page p-3" ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)

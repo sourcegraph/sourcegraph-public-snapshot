@@ -2,12 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/gqltesting"
-
+	"github.com/cockroachdb/errors"
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -35,7 +33,7 @@ func TestRepository_Commit(t *testing.T) {
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `

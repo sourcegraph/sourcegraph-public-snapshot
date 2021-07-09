@@ -43,6 +43,8 @@ import {
     ReenqueueChangesetsVariables,
     MergeChangesetsResult,
     MergeChangesetsVariables,
+    CloseChangesetsResult,
+    CloseChangesetsVariables,
 } from '../../../graphql-operations'
 
 const changesetsStatsFragment = gql`
@@ -687,6 +689,20 @@ export async function mergeChangesets(
             }
         `,
         { batchChange, changesets, squash }
+    ).toPromise()
+    dataOrThrowErrors(result)
+}
+
+export async function closeChangesets(batchChange: Scalars['ID'], changesets: Scalars['ID'][]): Promise<void> {
+    const result = await requestGraphQL<CloseChangesetsResult, CloseChangesetsVariables>(
+        gql`
+            mutation CloseChangesets($batchChange: ID!, $changesets: [ID!]!) {
+                closeChangesets(batchChange: $batchChange, changesets: $changesets) {
+                    id
+                }
+            }
+        `,
+        { batchChange, changesets }
     ).toPromise()
     dataOrThrowErrors(result)
 }

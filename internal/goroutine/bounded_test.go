@@ -1,10 +1,11 @@
 package goroutine
 
 import (
-	"errors"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 func TestBounded(t *testing.T) {

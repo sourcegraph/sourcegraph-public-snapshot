@@ -185,7 +185,7 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	return AggregateStreamSearch(ctx, m.StreamSearch, q, opts)
 }
 
-func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
+func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	start := time.Now()
 
 	var cat string
@@ -202,8 +202,9 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 	}
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	tr.LogFields(trace.Stringer("opts", opts))
 
-	zsl, err := m.Streamer.List(ctx, q)
+	zsl, err := m.Streamer.List(ctx, q, opts)
 
 	code := "200"
 	if err != nil {

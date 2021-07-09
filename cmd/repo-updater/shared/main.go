@@ -134,7 +134,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
 
-	db, err := dbconn.New(dsn, "repo-updater")
+	db, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "repo-updater"})
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}

@@ -91,6 +91,10 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			r.registryExtensions[len(local)+i] = &registryExtensionRemoteResolver{v: x}
 		}
 
+		sort.SliceStable(r.registryExtensions, func(i, j int) bool {
+			return r.registryExtensions[i].Name() < r.registryExtensions[j].Name()
+		})
+
 		// Sort WIP extensions last. (The local extensions list is already sorted in that way, but
 		// the remote extensions list isn't, so therefore the combined list isn't.)
 		sort.SliceStable(r.registryExtensions, func(i, j int) bool {

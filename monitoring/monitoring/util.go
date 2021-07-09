@@ -1,9 +1,10 @@
 package monitoring
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 // upperFirst returns s with an uppercase first rune.

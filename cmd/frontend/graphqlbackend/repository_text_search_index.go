@@ -32,13 +32,13 @@ type repositoryTextSearchIndexResolver struct {
 }
 
 type repoLister interface {
-	List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error)
+	List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error)
 }
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
 		q := &zoektquery.RepoBranches{Set: map[string][]string{r.repo.Name(): {"HEAD"}}}
-		repoList, err := r.client.List(ctx, q)
+		repoList, err := r.client.List(ctx, q, nil)
 		if err != nil {
 			r.err = err
 			return

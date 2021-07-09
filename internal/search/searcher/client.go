@@ -77,7 +77,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 		}
 		q.Set("Deadline", string(t))
 	}
-	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
+	q.Set("Limit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")
 	}

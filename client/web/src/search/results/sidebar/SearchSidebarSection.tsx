@@ -11,39 +11,87 @@ import styles from './SearchSidebarSection.module.scss'
 
 export const SearchSidebarSection: React.FunctionComponent<{
     header: string
-    children?: React.ReactElement[]
+    children?: React.ReactElement[] | ((filter: string) => React.ReactElement)
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
     ctaLinkText?: string
     ctaLinkTo?: string
     onCtaLinkClick?: () => void
-}> = ({ header, children = [], className, showSearch = false, ctaLinkText, ctaLinkTo, onCtaLinkClick }) => {
+    onToggle?: (open: boolean) => void
+    open?: boolean
+}> = ({
+    header,
+    children = [],
+    className,
+    showSearch = false,
+    ctaLinkText,
+    ctaLinkTo,
+    onCtaLinkClick,
+    onToggle,
+    open,
+}) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
     useEffect(() => setFilter(''), [children])
 
-    const filteredChildren = children.filter(child => {
-        if (child.type === FilterLink) {
-            const props: FilterLinkProps = child.props as FilterLinkProps
-            return (
-                (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
-                (props?.value).toLowerCase().includes(filter.toLowerCase())
-            )
-        }
-        return true
-    })
+    let body
+    let searchVisible = showSearch
+    let visible = typeof children === 'function'
 
-    const [collapsed, setCollapsed] = useState(false)
+    if (typeof children === 'function') {
+        body = children(filter)
+    } else {
+        visible = children.length > 0
+        searchVisible = searchVisible && children.length > 1
 
-    const searchVisible = showSearch && children.length > 1
+        const filteredChildren = searchVisible
+            ? children.filter(child => {
+                  if (child.type === FilterLink) {
+                      const props: FilterLinkProps = child.props as FilterLinkProps
+                      return (
+                          (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
+                          (props?.value).toLowerCase().includes(filter.toLowerCase())
+                      )
+                  }
+                  return true
+              })
+            : children
 
-    return children.length > 0 ? (
+        body = (
+            <>
+                <ul className={styles.sidebarSectionList}>
+                    {filteredChildren.map((child, index) => (
+                        <li key={child.key || index}>{child}</li>
+                    ))}
+                    {filteredChildren.length === 0 && (
+                        <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
+                    )}
+                </ul>
+                {ctaLinkText && ctaLinkTo && (
+                    <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to={ctaLinkTo}>
+                        {ctaLinkText}
+                    </Link>
+                )}
+            </>
+        )
+    }
+
+    const [collapsed, setCollapsed] = useState(!open)
+
+    return visible ? (
         <div className={classNames(styles.sidebarSection, className)}>
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
-                onClick={() => setCollapsed(collapsed => !collapsed)}
+                onClick={() =>
+                    setCollapsed(collapsed => {
+                        if (onToggle) {
+                            onToggle(collapsed)
+                        }
+                        return !collapsed
+                    })
+                }
                 aria-label={collapsed ? 'Expand' : 'Collapse'}
             >
                 <h5 className="flex-grow-1">{header}</h5>
@@ -67,20 +115,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                             className={classNames('form-control form-control-sm', styles.sidebarSectionSearchBox)}
                         />
                     )}
-
-                    <ul className={styles.sidebarSectionList}>
-                        {filteredChildren.map((child, index) => (
-                            <li key={child.key || index}>{child}</li>
-                        ))}
-                        {filteredChildren.length === 0 && (
-                            <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
-                        )}
-                    </ul>
-                    {ctaLinkText && ctaLinkTo && (
-                        <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to={ctaLinkTo}>
-                            {ctaLinkText}
-                        </Link>
-                    )}
+                    {body}
                 </div>
             </Collapse>
         </div>

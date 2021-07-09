@@ -2,8 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"sync"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )

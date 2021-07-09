@@ -90,11 +90,9 @@ loop:
 	for {
 		ok, err := w.dequeueAndHandle()
 		if err != nil {
-			// If the error is due to the loop being shut down, just break
-			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-				if err == w.ctx.Err() {
-					break loop
-				}
+			if errors.Cause(err) == w.ctx.Err() {
+				// If the error is due to the loop being shut down, just break
+				break loop
 			}
 
 			log15.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)

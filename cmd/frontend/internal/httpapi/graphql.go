@@ -3,12 +3,12 @@ package httpapi
 import (
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"

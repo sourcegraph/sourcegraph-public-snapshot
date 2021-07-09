@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -16,9 +19,10 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-const port = "8080"
-const envConfig = "CONFIG"
-const envLogDir = "LOG_DIR"
+const (
+	port      = "8080"
+	envLogDir = "LOG_DIR"
+)
 
 func run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -33,11 +37,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	configPath := os.Getenv(envConfig)
-	if configPath == "" {
-		configPath = "/config.yaml"
-	}
-	config, err := loadQueries(configPath)
+	config, err := loadQueries()
 	if err != nil {
 		panic(err)
 	}
@@ -77,8 +77,26 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			if err != nil {
 				log.Error(err.Error())
 			} else {
-				log.Info("metrics", "trace", m.trace, "duration_ms", m.took, "first_result_ms", m.firstResultMs, "match_count", m.matchCount)
-				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
+
+				log.Info("metrics", "trace", m.trace, "duration", m.took, "first_result", m.firstResult, "match_count", m.matchCount)
+
+				tookSeconds, firstResultSeconds := m.took.Seconds(), m.firstResult.Seconds()
+
+				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
+				durationSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(tookSeconds)
+				firstResultSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(firstResultSeconds)
+
+				go func() {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(qc.Interval / 2):
+					}
+
+					if err := traces.Fetch(ctx, m.trace); err != nil {
+						log.Error("failed to store trace", "error", err)
+					}
+				}()
 			}
 
 			select {
@@ -131,6 +149,31 @@ func startServer(wg *sync.WaitGroup) *http.Server {
 	return srv
 }
 
+type tsvLogger struct {
+	mu  sync.Mutex
+	w   io.Writer
+	buf bytes.Buffer
+}
+
+func (t *tsvLogger) Log(a ...interface{}) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.buf.Reset()
+	t.buf.WriteString(time.Now().UTC().Format(time.RFC3339))
+	for _, v := range a {
+		t.buf.WriteByte('\t')
+		_, _ = fmt.Fprintf(&t.buf, "%v", v)
+	}
+	t.buf.WriteByte('\n')
+	_, _ = t.buf.WriteTo(t.w)
+}
+
+var (
+	tsv    *tsvLogger
+	traces *traceStore
+)
+
 func main() {
 	logDir := os.Getenv(envLogDir)
 	if logDir == "" {
@@ -143,10 +186,28 @@ func main() {
 			Filename: filepath.Join(logDir, "search_blitz.log"),
 			MaxSize:  10, // Megabyte
 			MaxAge:   90, // days
+			Compress: true,
 		}, log15.JsonFormat())))
+
+	// We also log to a TSV file since its easy to interact with via AWK.
+	tsv = &tsvLogger{w: &lumberjack.Logger{
+		Filename:   filepath.Join(logDir, "search_blitz.tsv"),
+		MaxSize:    10, // Megabyte
+		MaxBackups: 90, // days
+		Compress:   true,
+	}}
 
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()
+
+	traces = &traceStore{
+		Dir:                filepath.Join(logDir, "traces"),
+		Token:              os.Getenv(envToken),
+		JaegerServerURL:    os.Getenv("JAEGER_SERVER_URL"),
+		MaxTotalTraceBytes: 10 * 1024 * 1024 * 1024, // 10 GiB
+		MaxFetchAttempts:   10,
+	}
+	go traces.CleanupLoop(ctx)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

@@ -2,10 +2,11 @@ package siteid
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
