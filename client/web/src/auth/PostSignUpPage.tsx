@@ -16,7 +16,7 @@ import { useRepoCloningStatus } from './useRepoCloningStatus'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { StartSearching } from './welcome/StartSearching'
 
-interface Props {
+interface PostSignUpPage {
     authenticatedUser: UserAreaUserFields
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
 }
@@ -27,7 +27,7 @@ interface Step {
     prefetch?: () => void
 }
 
-export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: user, context }) => {
+export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({ authenticatedUser: user, context }) => {
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
     const location = useLocation()
     const history = useHistory()
@@ -73,7 +73,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
             </>
         ),
         // step is considered complete when user has at least one external service connected.
-        isComplete: (): boolean => !!externalServices && externalServices?.length > 1,
+        isComplete: (): boolean => !!externalServices && externalServices?.length > 0,
     }
 
     const secondStep = {

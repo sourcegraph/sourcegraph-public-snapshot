@@ -18,17 +18,22 @@ interface StartSearching {
     isDoneCloning: RepoCloningStatus['isDoneCloning']
 }
 
-export const useShowAlert = (): { showAlert: boolean } => {
+export const useShowAlert = (isDoneCloning: boolean): { showAlert: boolean } => {
     const [showAlert, setShowAlert] = useState(false)
 
     useEffect(() => {
         const timer = setTimeout(() => setShowAlert(true), 10000)
 
+        if (isDoneCloning) {
+            clearTimeout(timer)
+            setShowAlert(false)
+        }
+
         return () => {
             clearTimeout(timer)
             setShowAlert(false)
         }
-    }, [])
+    }, [isDoneCloning])
 
     return { showAlert }
 }
@@ -38,7 +43,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     cloningStatusLoading,
     isDoneCloning,
 }) => {
-    const { showAlert } = useShowAlert()
+    const { showAlert } = useShowAlert(isDoneCloning)
 
     return (
         <>
@@ -56,6 +61,11 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                     <h3 className="m-0 pl-4 py-3">Activity log</h3>
                 </header>
                 <Terminal>
+                    {!isDoneCloning && (
+                        <TerminalLine>
+                            <code>Cloning Repositories...</code>
+                        </TerminalLine>
+                    )}
                     {cloningStatusLoading && (
                         <TerminalLine>
                             <TerminalTitle>Loading...</TerminalTitle>

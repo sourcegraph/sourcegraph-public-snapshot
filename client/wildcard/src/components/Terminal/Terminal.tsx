@@ -7,7 +7,6 @@ const CHARACTERS_LENGTH = 73
 
 export const Terminal: React.FunctionComponent = ({ children }) => (
     <section className={terminalStyles.terminalWrapper}>
-        <code>Cloning Repositories...</code>
         <ul className={terminalStyles.downloadProgressWrapper}>{children}</ul>
     </section>
 )
