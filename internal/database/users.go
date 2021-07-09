@@ -588,7 +588,7 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 	// admin
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
-		Deleter int32 `json:"Deleter"`
+		Deleter int32 `json:"deleter"`
 	}{
 		Deleter: a.UID,
 	})
