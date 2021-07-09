@@ -1305,8 +1305,8 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 // determineRepos wraps resolveRepositories. It interprets the response and
 // error to see if an alert needs to be returned. Only one of the return
 // values will be non-nil.
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
-	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
+func (r *searchResolver) determineRepos(ctx context.Context, q query.Q, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
+	resolved, err := r.resolveRepositories(ctx, q, resolveRepositoriesOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -1423,7 +1423,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	resolved, err := r.determineRepos(ctx, tr, start)
+	resolved, err := r.determineRepos(ctx, args.Query, tr, start)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return alert.wrapResults(), err
