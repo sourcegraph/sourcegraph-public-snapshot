@@ -162,6 +162,16 @@ var (
 			migrationFixupCommand,
 		},
 	}
+
+	rfcFlagSet = flag.NewFlagSet("sg rfc", flag.ExitOnError)
+	rfcCommand = &ffcli.Command{
+		Name:       "rfc",
+		ShortUsage: "sg rfc [list]",
+		ShortHelp:  "Run the given RFC command to manage RFCs.",
+		FlagSet:    rfcFlagSet,
+		Exec:       rfcExec,
+		UsageFunc:  printRunUsage,
+	}
 )
 
 const (
@@ -206,6 +216,7 @@ var (
 			doctorCommand,
 			liveCommand,
 			migrationCommand,
+			rfcCommand,
 		},
 	}
 )
@@ -709,6 +720,17 @@ func printMigrationFixupUsage(c *ffcli.Command) string {
 	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
+
+	return out.String()
+}
+
+func printRFCUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
+
+	// TODO: Add usage
 
 	return out.String()
 }
