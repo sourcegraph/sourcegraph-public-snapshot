@@ -4,9 +4,9 @@ package pubsub
 
 import (
 	"context"
-	"errors"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"google.golang.org/api/option"
 

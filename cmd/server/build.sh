@@ -30,7 +30,7 @@ export CGO_ENABLED=0
 # enterprise build scripts.
 additional_images=()
 if [ $# -eq 0 ]; then
-  additional_images+=("github.com/sourcegraph/sourcegraph/cmd/frontend" "github.com/sourcegraph/sourcegraph/cmd/repo-updater")
+  additional_images+=("github.com/sourcegraph/sourcegraph/cmd/frontend" "github.com/sourcegraph/sourcegraph/cmd/worker" "github.com/sourcegraph/sourcegraph/cmd/repo-updater")
 else
   additional_images+=("$@")
 fi

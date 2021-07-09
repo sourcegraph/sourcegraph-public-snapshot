@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -116,11 +115,11 @@ func TestDeleteUser(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		gqlTests []*gqltesting.Test
+		gqlTests []*Test
 	}{
 		{
 			name: "soft delete a user",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -142,7 +141,7 @@ func TestDeleteUser(t *testing.T) {
 		},
 		{
 			name: "hard delete a user",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -165,7 +164,7 @@ func TestDeleteUser(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gqltesting.RunTests(t, test.gqlTests)
+			RunTests(t, test.gqlTests)
 		})
 	}
 }

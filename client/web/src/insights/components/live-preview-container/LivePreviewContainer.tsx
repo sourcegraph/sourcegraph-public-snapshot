@@ -1,7 +1,6 @@
 import classnames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { ReactElement, ReactNode } from 'react'
-import { useHistory } from 'react-router-dom'
 import { ChartContent } from 'sourcegraph'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -9,7 +8,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../components/alerts'
-import { ChartViewContent } from '../../../views/ChartViewContent/ChartViewContent'
+import { ChartViewContent } from '../insight-view-content/chart-view-content/ChartViewContent'
 
 import styles from './LivePreviewContainer.module.scss'
 
@@ -25,7 +24,6 @@ export interface LivePreviewContainerProps {
 
 export function LivePreviewContainer(props: LivePreviewContainerProps): ReactElement {
     const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage } = props
-    const history = useHistory()
 
     return (
         <section className={classnames(styles.livePreview, className)}>
@@ -55,7 +53,6 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
                         className={classnames(styles.livePreviewChart, 'card-body', {
                             [styles.livePreviewChartWithMock]: !dataOrError,
                         })}
-                        history={history}
                         viewID="search-insight-live-preview"
                         telemetryService={NOOP_TELEMETRY_SERVICE}
                         content={dataOrError ?? defaultMock}

@@ -25,6 +25,7 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
 - Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
+  - Which versions of the code hosts are used
 - Whether new user signup is allowed (true/false)
 - Whether a repository has ever been added (true/false)
 - Whether a code search has ever been executed (true/false)

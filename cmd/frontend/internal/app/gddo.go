@@ -1,11 +1,12 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )

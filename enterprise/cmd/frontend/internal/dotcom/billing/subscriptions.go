@@ -1,9 +1,9 @@
 package billing
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stripe/stripe-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"

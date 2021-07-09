@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 	"unicode/utf8"
 
 	"github.com/cockroachdb/errors"
@@ -308,8 +310,17 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 	}
 
 	if info.Email != "" {
+		// We don't allow adding a new user with an email address that has already been
+		// verified by another user.
+		exists, _, err := basestore.ScanFirstBool(u.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM user_emails where email = %s AND verified_at IS NOT NULL)", info.Email)))
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, errCannotCreateUser{errorCodeEmailExists}
+		}
+
 		// The first email address added should be their primary
-		var err error
 		if info.EmailIsVerified {
 			err = u.Exec(ctx, sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verified_at, is_primary) VALUES (%s, %s, now(), true)", id, info.Email))
 		} else {
@@ -492,6 +503,8 @@ func (u *UserStore) Delete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
+	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountDeleted)
+
 	return nil
 }
 
@@ -564,7 +577,33 @@ func (u *UserStore) HardDelete(ctx context.Context, id int32) (err error) {
 	if rows == 0 {
 		return userNotFoundErr{args: []interface{}{id}}
 	}
+
+	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountNuked)
+
 	return nil
+}
+
+func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name SecurityEventName) {
+	// The actor deleting the user could be a different user, for example a site
+	// admin
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Deleter int32 `json:"deleter"`
+	}{
+		Deleter: a.UID,
+	})
+
+	event := &SecurityEvent{
+		Name:            name,
+		URL:             "",
+		UserID:          uint32(id),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 // SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.

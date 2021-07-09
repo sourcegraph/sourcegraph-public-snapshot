@@ -224,7 +224,7 @@ type CountChangesetsOpts struct {
 	BatchChangeID        int64
 	OnlyArchived         bool
 	IncludeArchived      bool
-	ExternalState        *btypes.ChangesetExternalState
+	ExternalStates       []btypes.ChangesetExternalState
 	ExternalReviewState  *btypes.ChangesetReviewState
 	ExternalCheckState   *btypes.ChangesetCheckState
 	ReconcilerStates     []btypes.ReconcilerState
@@ -268,8 +268,12 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	if opts.PublicationState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
 	}
-	if opts.ExternalState != nil {
-		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
+	if len(opts.ExternalStates) > 0 {
+		states := make([]*sqlf.Query, len(opts.ExternalStates))
+		for i, externalState := range opts.ExternalStates {
+			states[i] = sqlf.Sprintf("%s", externalState)
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.external_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if opts.ExternalReviewState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))
@@ -477,7 +481,7 @@ type ListChangesetsOpts struct {
 	IDs                  []int64
 	PublicationState     *btypes.ChangesetPublicationState
 	ReconcilerStates     []btypes.ReconcilerState
-	ExternalState        *btypes.ChangesetExternalState
+	ExternalStates       []btypes.ChangesetExternalState
 	ExternalReviewState  *btypes.ChangesetReviewState
 	ExternalCheckState   *btypes.ChangesetCheckState
 	OwnedByBatchChangeID int64
@@ -557,8 +561,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		}
 		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
-	if opts.ExternalState != nil {
-		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
+	if len(opts.ExternalStates) > 0 {
+		states := make([]*sqlf.Query, len(opts.ExternalStates))
+		for i, externalState := range opts.ExternalStates {
+			states[i] = sqlf.Sprintf("%s", externalState)
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.external_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if opts.ExternalReviewState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))

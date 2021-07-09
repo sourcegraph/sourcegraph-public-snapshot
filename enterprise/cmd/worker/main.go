@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 )
 
 func main() {
@@ -24,9 +25,10 @@ func main() {
 	go setAuthzProviders()
 
 	shared.Start(map[string]shared.Job{
-		"codeintel-commitgraph":   codeintel.NewCommitGraphJob(),
-		"codeintel-janitor":       codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
+		"codeintel-commitgraph":    codeintel.NewCommitGraphJob(),
+		"codeintel-janitor":        codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
+		"codehost-version-syncing": versions.NewSyncingJob(),
 	})
 }
 
@@ -36,7 +38,7 @@ func main() {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders() {
-	_, err := shared.InitDatabase()
+	db, err := shared.InitDatabase()
 	if err != nil {
 		return
 	}
@@ -44,7 +46,7 @@ func setAuthzProviders() {
 	ctx := context.Background()
 
 	for range time.NewTicker(5 * time.Second).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.GlobalExternalServices)
+		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db))
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

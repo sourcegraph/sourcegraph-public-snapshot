@@ -129,11 +129,11 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		start := time.Now()
 		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
-			return Resolved{}, errors.Wrap(err, "getting list of default repos")
+			return Resolved{}, errors.Wrap(err, "getting list of indexable repos")
 		}
 		tr.LazyPrintf("searchableRepos: took %s to add %d repos", time.Since(start), len(searchableRepos))
 
-		// Search all default repos since indexed search is fast.
+		// Search all indexable repos since indexed search is fast.
 		if len(searchableRepos) > limit {
 			limit = len(searchableRepos)
 		}

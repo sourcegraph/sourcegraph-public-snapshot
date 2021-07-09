@@ -2011,6 +2011,17 @@ extend type Mutation {
         deleted). The returned error has the error code ErrEnsureBatchChangeFailed.
         """
         ensureBatchChange: ID
+
+        """
+        If set, these changeset specs will have their UI publication states set
+        to the given values. When updating an existing batch change, this will
+        overwrite existing publication states on the changesets.
+
+        An error will be returned if the same changeset spec ID is included
+        more than once in the array, or if a changeset spec ID is included with
+        a publication state set in its spec.
+        """
+        publicationStates: [ChangesetSpecPublicationStateInput!]
     ): BatchChange!
 
     """
@@ -2097,6 +2108,20 @@ extend type Mutation {
     Experimental: This API is likely to change in the future.
     """
     mergeChangesets(batchChange: ID!, changesets: [ID!]!, squash: Boolean = false): BulkOperation!
+
+    """
+    Close multiple changesets.
+
+    Experimental: This API is likely to change in the future.
+    """
+    closeChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
+
+    """
+    Creates a new batch spec execution from a given batch spec yaml file input.
+    The execution will be queued for processing by an executor. If some are available
+    for work, they will pick this up eventually.
+    """
+    createBatchSpecExecution(spec: String!): BatchSpecExecution!
 }
 
 extend type Query {
@@ -2379,6 +2404,10 @@ enum BulkOperationType {
     Bulk merge changesets.
     """
     MERGE
+    """
+    Bulk close changesets.
+    """
+    CLOSE
 }
 
 """
@@ -2780,4 +2809,118 @@ type BatchChangeDescription {
     The description as parsed from the input.
     """
     description: String!
+}
+
+"""
+The possible states of a batch spec execution.
+"""
+enum BatchSpecExecutionState {
+    """
+    This spec is being processed.
+    """
+    PROCESSING
+
+    """
+    This spec errored while processing.
+    """
+    ERRORED
+
+    """
+    This spec failed to be processed.
+    """
+    FAILED
+
+    """
+    This spec was processed successfully.
+    """
+    COMPLETED
+
+    """
+    This spec is queued to be processed.
+    """
+    QUEUED
+}
+
+"""
+A batch spec execution describes one server-side run of a batch change yaml input.
+"""
+type BatchSpecExecution implements Node {
+    """
+    The unique ID for the batch spec execution.
+    """
+    id: ID!
+
+    """
+    The original input string provided as the batch change yaml file.
+    """
+    inputSpec: String!
+
+    """
+    The state the execution is currently in.
+    """
+    state: BatchSpecExecutionState!
+
+    """
+    The time when the execution was created at. At this time, it is also added to
+    the queue for execution.
+    """
+    createdAt: DateTime!
+
+    """
+    The time when the execution started. Null, if the execution hasn't started yet.
+    """
+    startedAt: DateTime
+
+    """
+    The time when the execution finished. Null, if the execution hasn't finished yet.
+    """
+    finishedAt: DateTime
+
+    """
+    Error message, if the execution failed.
+    """
+    failure: String
+
+    ### TODO(eseliger): We want to provide more information here. Take inspiration
+    # steps: IndexSteps!
+
+    """
+    The rank of this execution in the queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInQueue: Int
+
+    """
+    The resulting batch spec from the execution. Null, if the execution hasn't
+    finished yet or if it failed.
+    """
+    batchSpec: BatchSpec
+
+    """
+    The user initiating this execution. Their permissions will be honored when
+    running the batch spec.
+    """
+    initiator: User!
+
+    """
+    The namespace this execution runs in. The resulting batch spec lives in this
+    namespace.
+    """
+    namespace: Namespace!
+}
+
+"""
+A ChangesetSpecPublicationStateInput is a tuple containing a changeset spec ID
+and its desired UI publication state.
+"""
+input ChangesetSpecPublicationStateInput {
+    """
+    The changeset spec ID.
+    """
+    changesetSpec: ID!
+
+    """
+    The desired publication state.
+    """
+    publicationState: PublishedValue!
 }

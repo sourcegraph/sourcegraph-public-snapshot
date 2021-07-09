@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path"
 	"regexp"
@@ -12,6 +11,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
@@ -310,7 +310,7 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 		return buildErr(proposedQueries, description)
 	}
 
-	resolved, _ := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
+	resolved, _ := r.resolveRepositories(ctx, r.Query, resolveRepositoriesOpts{})
 	if len(resolved.RepoRevs) > 0 {
 		paths := make([]string, len(resolved.RepoRevs))
 		for i, repo := range resolved.RepoRevs {
@@ -339,7 +339,7 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 			repoFieldValues = append(repoFieldValues, repoParentPattern)
 			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
-			resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{
+			resolved, err := r.resolveRepositories(ctx, r.Query, resolveRepositoriesOpts{
 				effectiveRepoFieldValues: repoFieldValues,
 			})
 			if ctx.Err() != nil {

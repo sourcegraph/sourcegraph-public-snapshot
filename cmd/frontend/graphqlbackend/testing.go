@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 )
 
 var (
@@ -47,7 +47,7 @@ type Test struct {
 	OperationName  string
 	Variables      map[string]interface{}
 	ExpectedResult string
-	ExpectedErrors []*errors.QueryError
+	ExpectedErrors []*gqlerrors.QueryError
 }
 
 // RunTests runs the given GraphQL test cases as subtests.
@@ -112,19 +112,19 @@ func formatJSON(data []byte) ([]byte, error) {
 	return formatted, nil
 }
 
-func checkErrors(t *testing.T, want, got []*errors.QueryError) {
+func checkErrors(t *testing.T, want, got []*gqlerrors.QueryError) {
 	t.Helper()
 
 	sortErrors(want)
 	sortErrors(got)
 
 	// Compare without caring about the concrete type of the error returned
-	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(errors.QueryError{}, "ResolverError")); diff != "" {
+	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError")); diff != "" {
 		t.Fatal(diff)
 	}
 }
 
-func sortErrors(errors []*errors.QueryError) {
+func sortErrors(errors []*gqlerrors.QueryError) {
 	if len(errors) <= 1 {
 		return
 	}

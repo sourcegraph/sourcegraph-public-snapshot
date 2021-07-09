@@ -28,6 +28,15 @@ export const PREDICATES: Access[] = [
             },
         ],
     },
+    {
+        name: 'file',
+        fields: [
+            {
+                name: 'contains',
+                fields: [{ name: 'content' }],
+            },
+        ],
+    },
 ]
 
 /** Represents a predicate's components corresponding to the syntax path(parameters). */

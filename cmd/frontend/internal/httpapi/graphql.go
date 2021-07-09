@@ -3,12 +3,12 @@ package httpapi
 import (
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -205,8 +206,8 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 	if !anonymous {
 		return a.UIDString(), false, anonymous
 	}
-	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil && cookie.Value != "" {
-		return cookie.Value, false, anonymous
+	if uid, ok := cookie.AnonymousUID(r); ok && uid != "" {
+		return uid, false, anonymous
 	}
 	// The user is anonymous with no cookie, use IP
 	if ip := r.Header.Get("X-Forwarded-For"); ip != "" {

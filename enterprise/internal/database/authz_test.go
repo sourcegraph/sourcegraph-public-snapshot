@@ -49,7 +49,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	}
 
 	// Add two external accounts
-	err = database.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID,
+	err = database.ExternalAccounts(db).AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "gitlab",
 			ServiceID:   "https://gitlab.com/",
@@ -60,7 +60,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = database.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID,
+	err = database.ExternalAccounts(db).AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",

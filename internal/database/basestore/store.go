@@ -50,16 +50,6 @@ type ShareableStore interface {
 
 var _ ShareableStore = &Store{}
 
-// New returns a new base store connected to the given dsn (data store name).
-func New(postgresDSN, app string, txOptions sql.TxOptions) (*Store, error) {
-	handle, err := NewHandle(postgresDSN, app, txOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewWithHandle(handle), nil
-}
-
 // NewHandleWithDB returns a new base store connected to the given connection.
 func NewWithDB(db dbutil.DB, txOptions sql.TxOptions) *Store {
 	return NewWithHandle(NewHandleWithDB(db, txOptions))

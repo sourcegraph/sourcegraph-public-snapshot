@@ -1,13 +1,14 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/efritz/pentimento"
+
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
 )
 

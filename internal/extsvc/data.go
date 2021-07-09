@@ -2,8 +2,9 @@ package extsvc
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 )
 
 func setJSONOrError(field **json.RawMessage, value interface{}) {
