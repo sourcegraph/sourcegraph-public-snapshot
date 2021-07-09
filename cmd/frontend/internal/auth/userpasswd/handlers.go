@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -268,12 +269,6 @@ func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *database.SecurityEventName) {
 	var anonymousID string
 
-	// TODO: We have multiple places in our codebase where we grab this cookie, we
-	// should centralise it
-	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil && cookie.Value != "" {
-		anonymousID = cookie.Value
-	}
-
 	event := &database.SecurityEvent{
 		Name:            *name,
 		URL:             r.URL.Path,
@@ -282,6 +277,9 @@ func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *databa
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
+
+	// Safe to ignore this error
+	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	database.SecurityEventLogs(db).LogEvent(r.Context(), event)
 }
