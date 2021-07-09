@@ -1017,8 +1017,8 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		HeadFunc: &GitserverClientHeadFunc{
-			defaultHook: func(context.Context, int) (string, error) {
-				return "", nil
+			defaultHook: func(context.Context, int) (string, bool, error) {
+				return "", false, nil
 			},
 		},
 		ListFilesFunc: &GitserverClientListFilesFunc{
@@ -1180,24 +1180,24 @@ func (c GitserverClientFileExistsFuncCall) Results() []interface{} {
 // GitserverClientHeadFunc describes the behavior when the Head method of
 // the parent MockGitserverClient instance is invoked.
 type GitserverClientHeadFunc struct {
-	defaultHook func(context.Context, int) (string, error)
-	hooks       []func(context.Context, int) (string, error)
+	defaultHook func(context.Context, int) (string, bool, error)
+	hooks       []func(context.Context, int) (string, bool, error)
 	history     []GitserverClientHeadFuncCall
 	mutex       sync.Mutex
 }
 
 // Head delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) Head(v0 context.Context, v1 int) (string, error) {
-	r0, r1 := m.HeadFunc.nextHook()(v0, v1)
-	m.HeadFunc.appendCall(GitserverClientHeadFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockGitserverClient) Head(v0 context.Context, v1 int) (string, bool, error) {
+	r0, r1, r2 := m.HeadFunc.nextHook()(v0, v1)
+	m.HeadFunc.appendCall(GitserverClientHeadFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Head method of the
 // parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1205,7 +1205,7 @@ func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int)
 // Head method of the parent MockGitserverClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, error)) {
+func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1213,21 +1213,21 @@ func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, int) (stri
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (string, error) {
-		return r0, r1
+func (f *GitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientHeadFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, int) (string, error) {
-		return r0, r1
+func (f *GitserverClientHeadFunc) PushReturn(r0 string, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *GitserverClientHeadFunc) nextHook() func(context.Context, int) (string, error) {
+func (f *GitserverClientHeadFunc) nextHook() func(context.Context, int) (string, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1271,7 +1271,10 @@ type GitserverClientHeadFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1283,7 +1286,7 @@ func (c GitserverClientHeadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientHeadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // GitserverClientListFilesFunc describes the behavior when the ListFiles

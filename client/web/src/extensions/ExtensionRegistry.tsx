@@ -5,7 +5,7 @@ import { concat, of, timer } from 'rxjs'
 import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilChanged } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
+import { ConfiguredRegistryExtension, isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
@@ -203,10 +203,12 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             previous.query === current.query && previous.category === current.category
                     ),
                     switchMap(({ query, category, immediate, settingsCascade }) => {
-                        let viewerConfiguredExtensions: string[] = []
+                        let enabledExtensions: string[] = []
                         if (!isErrorLike(settingsCascade.final)) {
                             if (settingsCascade.final?.extensions) {
-                                viewerConfiguredExtensions = Object.keys(settingsCascade.final.extensions)
+                                enabledExtensions = Object.keys(settingsCascade.final.extensions).filter(extensionID =>
+                                    isExtensionEnabled(settingsCascade.final, extensionID)
+                                )
                             }
                         }
 
@@ -224,7 +226,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             request: extensionRegistryQuery,
                             variables: {
                                 query,
-                                prioritizeExtensionIDs: viewerConfiguredExtensions,
+                                prioritizeExtensionIDs: enabledExtensions,
                                 getFeatured: shouldGetFeaturedExtensions,
                             },
                             mightContainPrivateInfo: true,

@@ -1,9 +1,9 @@
 package gitolite
 
 import (
-	"errors"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 )
 

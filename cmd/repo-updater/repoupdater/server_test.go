@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"

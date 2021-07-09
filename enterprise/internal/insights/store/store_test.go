@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -26,7 +26,7 @@ func TestSeriesPoints(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 
-	postgres := dbtesting.GetDB(t)
+	postgres := dbtest.NewDB(t, "")
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 
@@ -135,7 +135,7 @@ func TestCountData(t *testing.T) {
 	clock := timeutil.Now
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtesting.GetDB(t)
+	postgres := dbtest.NewDB(t, "")
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 
@@ -228,7 +228,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 	clock := timeutil.Now
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtesting.GetDB(t)
+	postgres := dbtest.NewDB(t, "")
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 

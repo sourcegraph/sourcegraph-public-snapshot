@@ -126,7 +126,7 @@ const referenceIDsAndFiltersCTEDefinitions = `
 WITH visible_uploads AS (
 	(%s)
 	UNION
-	(SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id != %s)
+	(SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id != %s AND uvt.is_default_branch)
 )
 `
 

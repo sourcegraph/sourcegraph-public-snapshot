@@ -43,6 +43,10 @@ func (r *batchSpecExecutionResolver) State() string {
 	return strings.ToUpper(string(r.spec.State))
 }
 
+func (r *batchSpecExecutionResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.spec.CreatedAt}
+}
+
 func (r *batchSpecExecutionResolver) StartedAt() *graphqlbackend.DateTime {
 	if r.spec.StartedAt == nil {
 		return nil
@@ -75,4 +79,29 @@ func (r *batchSpecExecutionResolver) BatchSpec(ctx context.Context) (graphqlback
 		return nil, err
 	}
 	return &batchSpecResolver{store: r.store, batchSpec: spec}, nil
+}
+
+func (r *batchSpecExecutionResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.spec.UserID)
+}
+
+func (r *batchSpecExecutionResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+	var (
+		namespace graphqlbackend.NamespaceResolver
+		err       error
+	)
+	if r.spec.NamespaceUserID != 0 {
+		namespace.Namespace, err = graphqlbackend.UserByIDInt32(
+			ctx,
+			r.store.DB(),
+			r.spec.NamespaceUserID,
+		)
+		return &namespace, err
+	}
+	namespace.Namespace, err = graphqlbackend.OrgByIDInt32(
+		ctx,
+		r.store.DB(),
+		r.spec.NamespaceOrgID,
+	)
+	return &namespace, err
 }

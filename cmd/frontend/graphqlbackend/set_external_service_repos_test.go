@@ -9,8 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -84,7 +82,7 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		repoupdater.DefaultClient.HTTPClient = oldClient
 	}()
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Context: ctx,
 			Schema:  mustParseGraphQLSchema(t),

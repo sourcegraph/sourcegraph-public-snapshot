@@ -264,7 +264,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := regexSearchBatch(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		_, _, err := regexSearchBatch(ctx, rg, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -429,7 +429,8 @@ func TestMaxMatches(t *testing.T) {
 	// Create a zip archive which contains our limits + 1
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
-	for i := 0; i < maxFileMatches+1; i++ {
+	maxMatches := 33
+	for i := 0; i < maxMatches+1; i++ {
 		w, err := zw.CreateHeader(&zip.FileHeader{
 			Name:   strconv.Itoa(i),
 			Method: zip.Store,
@@ -437,7 +438,7 @@ func TestMaxMatches(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for j := 0; j < maxLineMatches+1; j++ {
+		for j := 0; j < 10; j++ {
 			_, _ = w.Write([]byte(pattern))
 			_, _ = w.Write([]byte{' '})
 			_, _ = w.Write([]byte{'\n'})
@@ -456,7 +457,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxFileMatches, true, false, false)
+	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxMatches, true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -464,16 +465,13 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatalf("expected limitHit on regexSearch")
 	}
 
-	if len(fileMatches) != maxFileMatches {
-		t.Fatalf("expected %d file matches, got %d", maxFileMatches, len(fileMatches))
+	totalMatches := 0
+	for _, match := range fileMatches {
+		totalMatches += match.MatchCount
 	}
-	for _, fm := range fileMatches {
-		if !fm.LimitHit {
-			t.Fatalf("expected limitHit on file match")
-		}
-		if len(fm.LineMatches) != maxLineMatches {
-			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
-		}
+
+	if totalMatches != maxMatches {
+		t.Fatalf("expected %d file matches, got %d", maxMatches, totalMatches)
 	}
 }
 
@@ -544,7 +542,7 @@ func TestRegexSearch(t *testing.T) {
 		ctx                   context.Context
 		rg                    *readerGrep
 		zf                    *store.ZipFile
-		fileMatchLimit        int
+		limit                 int
 		patternMatchesContent bool
 		patternMatchesPaths   bool
 	}
@@ -573,17 +571,19 @@ func TestRegexSearch(t *testing.T) {
 				},
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
+				limit:                 5,
 			},
 			wantFm: []protocol.FileMatch{
 				{
-					Path: "a.go",
+					Path:       "a.go",
+					MatchCount: 1,
 				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
+			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return

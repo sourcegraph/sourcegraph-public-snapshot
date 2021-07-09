@@ -2,10 +2,10 @@ package lsifstore
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 

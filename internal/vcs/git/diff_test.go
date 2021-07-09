@@ -2,10 +2,11 @@ package git
 
 import (
 	"context"
-	"errors"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 )
 
 func TestDiff(t *testing.T) {

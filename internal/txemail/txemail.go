@@ -4,13 +4,13 @@ package txemail
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 	"net/smtp"
 	"net/textproto"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/jordan-wright/email"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"

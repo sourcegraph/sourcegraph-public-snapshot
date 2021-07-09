@@ -3,12 +3,12 @@ package vfsutil
 import (
 	"archive/zip"
 	"context"
-	"errors"
 	"io"
 	"io/fs"
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"

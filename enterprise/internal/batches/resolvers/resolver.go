@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -460,6 +461,24 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	if args.EnsureBatchChange != nil {
 		opts.EnsureBatchChangeID, err = unmarshalBatchChangeID(*args.EnsureBatchChange)
 		if err != nil {
+			return nil, err
+		}
+	}
+
+	if args.PublicationStates != nil && *args.PublicationStates != nil {
+		var errs *multierror.Error
+		for _, state := range *args.PublicationStates {
+			id, err := unmarshalChangesetSpecID(state.ChangesetSpec)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := opts.PublicationStates.Add(id, state.PublicationState); err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		}
+
+		if err := errs.ErrorOrNil(); err != nil {
 			return nil, err
 		}
 	}
@@ -1371,8 +1390,9 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 	actor := actor.FromContext(ctx)
 
 	exec := &btypes.BatchSpecExecution{
-		BatchSpec: args.Spec,
-		UserID:    actor.UID,
+		BatchSpec:       args.Spec,
+		UserID:          actor.UID,
+		NamespaceUserID: actor.UID,
 	}
 
 	if err := r.store.CreateBatchSpecExecution(ctx, exec); err != nil {

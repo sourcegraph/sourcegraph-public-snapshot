@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/subtle"
 	"database/sql"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"

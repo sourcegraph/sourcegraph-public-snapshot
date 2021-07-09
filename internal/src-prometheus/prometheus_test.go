@@ -1,9 +1,10 @@
 package srcprometheus
 
 import (
-	"errors"
 	"net/http"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 )
 
 // test detection of "prometheus unavailable"

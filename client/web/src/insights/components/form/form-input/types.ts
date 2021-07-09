@@ -23,7 +23,7 @@ export interface ForwardReferenceComponent<
     /*
      * When `as` prop is passed, use this overload. Merges original own props
      * (without DOM props) and the inferred props from `as` element with the own
-     * props taking precendence.
+     * props taking precedence.
      *
      * We explicitly avoid `React.ElementType` and manually narrow the prop types
      * so that events are typed when using JSX.IntrinsicElements.

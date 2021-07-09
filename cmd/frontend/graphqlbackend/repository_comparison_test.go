@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -10,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 

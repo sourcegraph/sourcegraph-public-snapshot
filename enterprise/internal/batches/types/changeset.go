@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // ChangesetState defines the possible states of a Changeset.
@@ -84,11 +85,22 @@ func (s ChangesetPublicationState) Unpublished() bool {
 
 type ChangesetUiPublicationState string
 
-const (
+var (
 	ChangesetUiPublicationStateUnpublished ChangesetUiPublicationState = "UNPUBLISHED"
 	ChangesetUiPublicationStateDraft       ChangesetUiPublicationState = "DRAFT"
 	ChangesetUiPublicationStatePublished   ChangesetUiPublicationState = "PUBLISHED"
 )
+
+func ChangesetUiPublicationStateFromPublishedValue(value batches.PublishedValue) *ChangesetUiPublicationState {
+	if value.True() {
+		return &ChangesetUiPublicationStatePublished
+	} else if value.Draft() {
+		return &ChangesetUiPublicationStateDraft
+	} else if !value.Nil() {
+		return &ChangesetUiPublicationStateUnpublished
+	}
+	return nil
+}
 
 func (s ChangesetUiPublicationState) Valid() bool {
 	switch s {

@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -229,7 +228,7 @@ func TestAddExternalService(t *testing.T) {
 		database.Mocks.ExternalServices = database.MockExternalServices{}
 	})
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -417,7 +416,7 @@ func TestUpdateExternalService(t *testing.T) {
 		database.Mocks.ExternalServices = database.MockExternalServices{}
 	})
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -553,7 +552,7 @@ func TestDeleteExternalService(t *testing.T) {
 		database.Mocks.ExternalServices = database.MockExternalServices{}
 	})
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -688,7 +687,7 @@ func TestExternalServices(t *testing.T) {
 	}()
 
 	// NOTE: all these tests run as site admin
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		// Read all external services
 		{
 			Schema: mustParseGraphQLSchema(t),
@@ -721,7 +720,7 @@ func TestExternalServices(t *testing.T) {
 				}
 			}
 		`,
-			ExpectedErrors: []*errors.QueryError{
+			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []interface{}{"externalServices"},
 					Message:       errNoAccessExternalService.Error(),

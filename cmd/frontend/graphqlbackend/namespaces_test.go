@@ -7,7 +7,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -23,7 +22,7 @@ func TestNamespace(t *testing.T) {
 			}
 			return &types.User{ID: wantUserID, Username: "alice"}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -55,7 +54,7 @@ func TestNamespace(t *testing.T) {
 			}
 			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -84,7 +83,7 @@ func TestNamespace(t *testing.T) {
 		invalidID := "aW52YWxpZDoz"
 		wantErr := InvalidNamespaceIDErr{id: graphql.ID(invalidID)}
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: fmt.Sprintf(`
@@ -101,8 +100,8 @@ func TestNamespace(t *testing.T) {
 			`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Message:       wantErr.Error(),
 						Path:          []interface{}{"namespace"},
+						Message:       wantErr.Error(),
 						ResolverError: wantErr,
 					},
 				},
@@ -130,7 +129,7 @@ func TestNamespaceByName(t *testing.T) {
 			}
 			return &types.User{ID: wantUserID, Username: wantName}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -171,7 +170,7 @@ func TestNamespaceByName(t *testing.T) {
 			}
 			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -199,7 +198,7 @@ func TestNamespaceByName(t *testing.T) {
 		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
 			return nil, database.ErrNamespaceNotFound
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -53,16 +54,19 @@ type GetAndSaveUserOp struct {
 // 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
 // describe the problem. The err may contain sensitive information and should only be written to the
 // server error logs, not to the HTTP response to shown to unauthenticated users.
-func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 	if MockGetAndSaveUser != nil {
 		return MockGetAndSaveUser(ctx, op)
 	}
+
+	extacc := database.ExternalAccounts(db)
+
 	userID, userSaved, extAcctSaved, safeErrMsg, err := func() (int32, bool, bool, string, error) {
 		if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
 			return actor.UID, false, false, "", nil
 		}
 
-		uid, lookupByExternalErr := database.GlobalExternalAccounts.LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
+		uid, lookupByExternalErr := extacc.LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
 		if lookupByExternalErr == nil {
 			return uid, false, true, "", nil
 		}
@@ -98,7 +102,7 @@ func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, saf
 		}
 
 		// If CreateIfNotExist is true, create the new user, regardless of whether the email was verified or not.
-		userID, err := database.GlobalExternalAccounts.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		userID, err := extacc.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
 		switch {
 		case database.IsUsernameExists(err):
 			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
@@ -146,7 +150,7 @@ func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, saf
 
 	// Create/update the external account and ensure it's associated with the user ID
 	if !extAcctSaved {
-		err := database.GlobalExternalAccounts.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
+		err := extacc.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
 		if err != nil {
 			return 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}

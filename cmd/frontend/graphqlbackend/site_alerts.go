@@ -2,13 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
