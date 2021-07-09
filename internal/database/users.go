@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -583,12 +584,21 @@ func (u *UserStore) HardDelete(ctx context.Context, id int32) (err error) {
 }
 
 func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name SecurityEventName) {
+	// The actor deleting the user could be a different user, for example a site
+	// admin
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Deleter int32 `json:"Deleter"`
+	}{
+		Deleter: a.UID,
+	})
+
 	event := &SecurityEvent{
 		Name:            name,
 		URL:             "",
 		UserID:          uint32(id),
 		AnonymousUserID: "",
-		Argument:        nil,
+		Argument:        arg,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
