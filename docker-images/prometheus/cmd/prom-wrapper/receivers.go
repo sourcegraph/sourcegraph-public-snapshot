@@ -61,6 +61,8 @@ var (
 	firingTitleTemplate       = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
 	resolvedTitleTemplate     = "[RESOLVED] {{ .CommonLabels.description }}"
 	notificationTitleTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingTitleTemplate, resolvedTitleTemplate)
+
+	tagsTemplateDefault = "{{ range $key, $value := .CommonLabels }}{{$key}}={{$value}},{{end}}"
 )
 
 // newRoutesAndReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers
@@ -226,8 +228,27 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				}
 			}
 
-			priority := notifier.Opsgenie.Priority
-			tags := notifier.Opsgenie.Tags
+			var priority string
+
+			switch alert.Level {
+			case "critical":
+				priority = "P1"
+			case "warning":
+				priority = "P2"
+			case "info":
+				priority = "P3"
+			default:
+				priority = "P4"
+			}
+
+			if notifier.Opsgenie.Priority != "" {
+				priority = notifier.Opsgenie.Priority
+			}
+
+			tags := tagsTemplateDefault
+			if notifier.Opsgenie.Tags != "" {
+				tags = notifier.Opsgenie.Tags
+			}
 
 			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
 				APIKey: apiKEY,

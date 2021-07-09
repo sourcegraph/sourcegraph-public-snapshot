@@ -957,13 +957,15 @@ type NotifierEmail struct {
 
 // NotifierOpsGenie description: OpsGenie notifier
 type NotifierOpsGenie struct {
-	ApiKey   string `json:"apiKey,omitempty"`
-	ApiUrl   string `json:"apiUrl,omitempty"`
+	ApiKey string `json:"apiKey,omitempty"`
+	ApiUrl string `json:"apiUrl,omitempty"`
+	// Priority description: Defines the importance of an alert. Allowed values are P1, P2, P3, P4, P5 - or a Go template that resolves to one of those values. By default, Sourcegraph will fill this in for you if a value isn't specified here.
 	Priority string `json:"priority,omitempty"`
 	// Responders description: List of responders responsible for notifications.
 	Responders []*Responders `json:"responders,omitempty"`
-	Tags       string        `json:"tags,omitempty"`
-	Type       string        `json:"type"`
+	// Tags description: Comma separated list of tags attached to the notifications - or a Go template that produces such a list. Sourcegraph provides some default ones if this value isn't specified.
+	Tags string `json:"tags,omitempty"`
+	Type string `json:"type"`
 }
 
 // NotifierPagerduty description: PagerDuty notifier
