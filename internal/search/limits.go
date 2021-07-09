@@ -2,6 +2,7 @@ package search
 
 import (
 	"math"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -10,6 +11,9 @@ import (
 const (
 	DefaultMaxSearchResults          = 30
 	DefaultMaxSearchResultsStreaming = 500
+
+	// The default timeout to use for queries.
+	DefaultTimeout = 20 * time.Second
 )
 
 func SearchLimits() schema.SearchLimits {

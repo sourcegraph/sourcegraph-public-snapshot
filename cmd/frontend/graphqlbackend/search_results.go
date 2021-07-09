@@ -478,6 +478,7 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 	args := search.TextParameters{
 		PatternInfo: p,
 		Query:       q,
+		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
 		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || r.stream != nil,
@@ -567,10 +568,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	maxTryCount := 40000
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
-	ctx, cancel, err := withTimeout(ctx, q.ToParseTree())
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, search.TimeoutDuration(q))
 	defer cancel()
 
 	if count := q.GetCount(); count != "" {
@@ -1252,28 +1250,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	return stats, nil
 }
 
-var (
-	// The default timeout to use for queries.
-	defaultTimeout = 20 * time.Second
-)
-
-func withTimeout(ctx context.Context, q query.Q) (context.Context, context.CancelFunc, error) {
-	d := defaultTimeout
-	maxTimeout := time.Duration(search.SearchLimits().MaxTimeoutSeconds) * time.Second
-	timeout := q.Timeout()
-	if timeout != nil {
-		d = *timeout
-	} else if q.Count() != nil {
-		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
-		d = maxTimeout
-	}
-	if d > maxTimeout {
-		d = maxTimeout
-	}
-	ctx, cancel := context.WithTimeout(ctx, d)
-	return ctx, cancel, nil
-}
-
 // withResultTypes populates the ResultTypes field of args, which drives the kind
 // of search to run (e.g., text search, symbol search).
 func withResultTypes(args search.TextParameters, forceTypes result.Types) search.TextParameters {
@@ -1350,10 +1326,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	start := time.Now()
 
-	ctx, cancel, err := withTimeout(ctx, args.Query)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, args.Timeout)
 	defer cancel()
 
 	limit := r.MaxResults()
