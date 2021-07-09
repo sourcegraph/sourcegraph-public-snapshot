@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 	"unicode/utf8"
 
 	"github.com/cockroachdb/errors"
@@ -501,6 +503,8 @@ func (u *UserStore) Delete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
+	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountDeleted)
+
 	return nil
 }
 
@@ -573,7 +577,33 @@ func (u *UserStore) HardDelete(ctx context.Context, id int32) (err error) {
 	if rows == 0 {
 		return userNotFoundErr{args: []interface{}{id}}
 	}
+
+	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountNuked)
+
 	return nil
+}
+
+func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name SecurityEventName) {
+	// The actor deleting the user could be a different user, for example a site
+	// admin
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Deleter int32 `json:"deleter"`
+	}{
+		Deleter: a.UID,
+	})
+
+	event := &SecurityEvent{
+		Name:            name,
+		URL:             "",
+		UserID:          uint32(id),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 // SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
