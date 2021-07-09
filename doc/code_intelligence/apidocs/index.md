@@ -22,7 +22,7 @@ Tweet us your Go repository name to @slimsag @sourcegraph and we'll index and up
 
 API docs is an experimental feature of Sourcegraph. If you like this idea, have any feedback, please reach out:
 
-* (lead engineer) twitter:@slimsag stephen@sourcegraph.com
+* (lead engineer) stephen@sourcegraph.com
 * (entire team) twitter:@sourcegraph support@sourcegraph.com
 
 We're working hard to improve it rapidly, so your feedback will influence the future direction a lot!

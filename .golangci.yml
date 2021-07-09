@@ -18,22 +18,23 @@ linters:
 linters-settings:
   depguard:
     list-type: blacklist
+    include-go-root: true
     packages-with-error-message:
-      - errors: "Use github.com/cockroachdb/errors instead"
-      - github.com/pkg/errors: "Use github.com/cockroachdb/errors instead"
-      - ioutil: "The ioutil package has been deprecated"
+      - errors: 'Use github.com/cockroachdb/errors instead'
+      - github.com/pkg/errors: 'Use github.com/cockroachdb/errors instead'
+      - ioutil: 'The ioutil package has been deprecated'
   gocritic:
     disabled-checks:
-      - appendAssign      # Too many false positives
-      - assignOp          # Maybe worth adding, but likely not worth the noise
+      - appendAssign # Too many false positives
+      - assignOp # Maybe worth adding, but likely not worth the noise
       - commentFormatting # No strong benefit
       - deprecatedComment # Unnecessary
-      - exitAfterDefer    # Only occurs in auxiliary tools
-      - ifElseChain       # Noisy for not much gain
-      - singleCaseSwitch  # Noisy for not much gain
+      - exitAfterDefer # Only occurs in auxiliary tools
+      - ifElseChain # Noisy for not much gain
+      - singleCaseSwitch # Noisy for not much gain
   govet:
-      disable:
-          - composites
+    disable:
+      - composites
 
 issues:
   exclude-rules:
@@ -51,3 +52,6 @@ run:
     - ui
     - vendor
     - node_modules
+
+  skip-files:
+    - schema/schema.go # Auto-generated with depguard failures

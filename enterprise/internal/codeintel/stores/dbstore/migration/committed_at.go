@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -104,7 +104,7 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, repositoryName, commit string) error {
 	var commitDateString string
 	if commitDate, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit); err != nil {
-		if !errors.Is(err, &vcs.RepoNotExistError{}) && !errors.Is(err, &basegitserver.RevisionNotFoundError{}) {
+		if !vcs.IsRepoNotExist(err) && !gitserver.IsRevisionNotFound(err) {
 			return errors.Wrap(err, "gitserver.CommitDate")
 		}
 

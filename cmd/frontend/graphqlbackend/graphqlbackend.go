@@ -3,13 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"

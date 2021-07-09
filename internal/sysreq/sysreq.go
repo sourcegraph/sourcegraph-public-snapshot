@@ -2,9 +2,10 @@
 package sysreq
 
 import (
+	"context"
 	"strings"
 
-	"context"
+	"github.com/cockroachdb/errors"
 )
 
 // Status describes the status of a system requirement.
@@ -14,6 +15,13 @@ type Status struct {
 	Fix     string // if non-empty, how to fix the problem
 	Err     error  // if non-nil, the error encountered
 	Skipped bool   // if true, indicates this check was skipped
+}
+
+// Equals returns true if other has the same fields as the receiver.
+// Used for testing as we don't want to DeepEqual or cmp.Diff structs
+// holding error values.
+func (s Status) Equals(other Status) bool {
+	return s.Name == other.Name && s.Problem == other.Problem && s.Fix == other.Fix && errors.Is(s.Err, other.Err) && s.Skipped == other.Skipped
 }
 
 // OK is whether the component is present, has no errors, and was not

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -89,7 +90,8 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			return c.Value
 		}
 
-		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, getCookie("sourcegraphAnonymousUid"), getCookie("sourcegraphSourceUrl"))
+		anonymousId, _ := cookie.AnonymousUID(r)
+		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"))
 		if err != nil {
 			log15.Error("OAuth failed: error looking up or creating user from OAuth token.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)

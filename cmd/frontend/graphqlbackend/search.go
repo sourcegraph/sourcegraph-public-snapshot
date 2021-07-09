@@ -261,7 +261,7 @@ type resolveRepositoriesOpts struct {
 
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where opts.effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRepositoriesOpts) (resolved searchrepos.Resolved, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, q query.Q, opts resolveRepositoriesOpts) (resolved searchrepos.Resolved, err error) {
 	if mockResolveRepositories != nil {
 		return mockResolveRepositories(opts.effectiveRepoFieldValues)
 	}
@@ -288,12 +288,12 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 		}()
 	}
 
-	repoFilters, minusRepoFilters := r.Query.Repositories()
+	repoFilters, minusRepoFilters := q.Repositories()
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
 
 	}
-	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
+	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 
 	var settingForks, settingArchived bool
 	if v := r.UserSettings.SearchIncludeForks; v != nil {
@@ -310,7 +310,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 		// (2) user/org/global setting includes forks
 		fork = query.Yes
 	}
-	if setFork := r.Query.Fork(); setFork != nil {
+	if setFork := q.Fork(); setFork != nil {
 		fork = *setFork
 	}
 
@@ -321,15 +321,15 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 		// (2) user/org/global setting includes archives in all searches
 		archived = query.Yes
 	}
-	if setArchived := r.Query.Archived(); setArchived != nil {
+	if setArchived := q.Archived(); setArchived != nil {
 		archived = *setArchived
 	}
 
-	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)
+	visibilityStr, _ := q.StringValue(query.FieldVisibility)
 	visibility := query.ParseVisibility(visibilityStr)
 
-	commitAfter, _ := r.Query.StringValue(query.FieldRepoHasCommitAfter)
-	searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
+	commitAfter, _ := q.StringValue(query.FieldRepoHasCommitAfter)
+	searchContextSpec, _ := q.StringValue(query.FieldContext)
 
 	var versionContextName string
 	if r.VersionContext != nil {
@@ -367,17 +367,6 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
-	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
-	if err != nil {
-		return nil, err
-	}
-
-	if resolved.OverLimit {
-		// If we've exceeded the repo limit, then we may miss files from repos we care
-		// about, so don't bother searching filenames at all.
-		return nil, nil
-	}
-
 	q, err := query.ToBasicQuery(r.Query)
 	if err != nil {
 		return nil, err
@@ -390,7 +379,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
+		RepoPromise:     &search.RepoPromise{}, // TODO(rvantonder) remove this field for this type.
 		Query:           r.Query,
 		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil,
 		Zoekt:           r.zoekt,
@@ -399,6 +388,19 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, err
 	}
+
+	resolved, err := r.resolveRepositories(ctx, args.Query, resolveRepositoriesOpts{})
+	if err != nil {
+		return nil, err
+	}
+
+	if resolved.OverLimit {
+		// If we've exceeded the repo limit, then we may miss files from repos we care
+		// about, so don't bother searching filenames at all.
+		return nil, nil
+	}
+
+	args.RepoPromise = (&search.RepoPromise{}).Resolve(resolved.RepoRevs)
 
 	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {

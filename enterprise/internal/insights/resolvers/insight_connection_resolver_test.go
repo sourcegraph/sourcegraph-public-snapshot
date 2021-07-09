@@ -93,7 +93,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		resolver := newWithClock(timescale, postgres, clock)
 
 		// Create the insights connection resolver.
-		conn, err := resolver.Insights(ctx)
+		conn, err := resolver.Insights(ctx, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -213,7 +213,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	setUpTest := func(ctx context.Context, t *testing.T) graphqlbackend.InsightConnectionResolver {
 
 		resolver := newWithClock(timescale, postgres, clock)
-		conn, err := resolver.Insights(ctx)
+		conn, err := resolver.Insights(ctx, &graphqlbackend.InsightsArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}

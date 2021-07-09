@@ -2,14 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/stretchr/testify/require"
 

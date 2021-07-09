@@ -51,6 +51,9 @@ VOLUME ["/tmp"]
 # Used in order to reverse proxy the Jaeger UI
 ENV QUERY_BASE_PATH="/-/debug/jaeger"
 
+# Default configuration file for setting sampling strategies, we override the command in docker-compose
+ENV SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json
+
 ENTRYPOINT ["/go/bin/all-in-one-linux"]
 CMD ["--sampling.strategies-file=/etc/jaeger/sampling_strategies.json"]
 

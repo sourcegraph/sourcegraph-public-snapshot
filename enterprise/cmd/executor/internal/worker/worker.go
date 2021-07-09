@@ -2,12 +2,12 @@ package worker
 
 import (
 	"context"
-	"errors"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"

@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"path"
@@ -13,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"

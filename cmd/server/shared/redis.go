@@ -2,12 +2,13 @@ package shared
 
 import (
 	"bytes"
-	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"text/template"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
 )

@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -104,15 +104,23 @@ func (j *unknownCommitJanitor) handleSourcedCommits(ctx context.Context, tx DBSt
 }
 
 func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int, repositoryName, commit string) error {
-	shouldDelete := true
+	var shouldDelete bool
 	_, err := git.ResolveRevision(ctx, api.RepoName(repositoryName), commit, git.ResolveRevisionOptions{})
-	if err == nil || errors.Is(err, &vcs.RepoNotExistError{}) {
+	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
+		shouldDelete = false
+	} else if vcs.IsRepoNotExist(err) {
 		// If we have a repository not found error, then we'll just update the timestamp
 		// of the record so we can move on to other data; we deleted records associated
 		// with deleted repositories in a separate janitor process.
 		shouldDelete = false
-	} else if !errors.Is(err, &basegitserver.RevisionNotFoundError{}) {
+	} else if gitserver.IsRevisionNotFound(err) {
+		// Target condition: repository is resolvable bu the commit is not; was probably
+		// force-pushed away and the commit was gc'd after some time or after a re-clone
+		// in gitserver.
+		shouldDelete = true
+	} else {
+		// unexpected error
 		return errors.Wrap(err, "git.ResolveRevision")
 	}
 

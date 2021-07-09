@@ -268,7 +268,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 || hasSingleContextField {
-			resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{
+			resolved, err := r.resolveRepositories(ctx, r.Query, resolveRepositoriesOpts{
 				effectiveRepoFieldValues: effectiveRepoFieldValues,
 				limit:                    maxSearchSuggestions,
 			})
@@ -378,7 +378,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
+		resolved, err := r.resolveRepositories(ctx, r.Query, resolveRepositoriesOpts{})
 		if err != nil {
 			return nil, err
 		}

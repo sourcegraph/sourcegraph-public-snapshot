@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -15,6 +14,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"

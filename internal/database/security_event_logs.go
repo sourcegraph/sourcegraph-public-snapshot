@@ -27,6 +27,9 @@ const (
 	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
 
 	SecurityEventNameAccountCreated SecurityEventName = "AccountCreated"
+
+	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
+	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
