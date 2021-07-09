@@ -26,6 +26,8 @@ const (
 	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
 	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
 
+	SecurityEventNameAccountCreated SecurityEventName = "AccountCreated"
+
 	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
 	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
 )
