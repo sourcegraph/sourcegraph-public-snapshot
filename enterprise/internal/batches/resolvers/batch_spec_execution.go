@@ -14,11 +14,11 @@ import (
 
 const batchSpecExecutionIDKind = "BatchSpecExecution"
 
-func marshalBatchSpecExecutionID(id int64) graphql.ID {
+func marshalBatchSpecExecutionRandID(id string) graphql.ID {
 	return relay.MarshalID(batchSpecExecutionIDKind, id)
 }
 
-func unmarshalBatchSpecExecutionID(id graphql.ID) (batchSpecExecutionID int64, err error) {
+func unmarshalBatchSpecExecutionRandID(id graphql.ID) (batchSpecExecutionID string, err error) {
 	err = relay.UnmarshalSpec(id, &batchSpecExecutionID)
 	return
 }
@@ -32,7 +32,7 @@ type batchSpecExecutionResolver struct {
 var _ graphqlbackend.BatchSpecExecutionResolver = &batchSpecExecutionResolver{}
 
 func (r *batchSpecExecutionResolver) ID() graphql.ID {
-	return marshalBatchSpecExecutionID(r.spec.ID)
+	return marshalBatchSpecExecutionRandID(r.spec.RandID)
 }
 
 func (r *batchSpecExecutionResolver) InputSpec() string {
