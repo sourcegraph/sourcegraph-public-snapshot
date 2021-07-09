@@ -2310,9 +2310,13 @@ type BatchChange implements Node {
         """
         search: String
         """
-        Only return changesets that are archived in this campaign.
+        Only return changesets that are archived in this batch change.
         """
         onlyArchived: Boolean = false
+        """
+        Only include changesets belonging to the given repository.
+        """
+        repo: ID
     ): ChangesetConnection!
 
     """

@@ -231,6 +231,7 @@ type CountChangesetsOpts struct {
 	PublicationState     *btypes.ChangesetPublicationState
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
+	RepoID               api.RepoID
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -292,6 +293,9 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	}
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
+	}
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.repo_id = %s", opts.RepoID))
 	}
 
 	join := sqlf.Sprintf("")
@@ -486,6 +490,7 @@ type ListChangesetsOpts struct {
 	OwnedByBatchChangeID int64
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
+	RepoID               api.RepoID
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -578,6 +583,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
+	}
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.repo_id = %s", opts.RepoID))
 	}
 
 	join := sqlf.Sprintf("")

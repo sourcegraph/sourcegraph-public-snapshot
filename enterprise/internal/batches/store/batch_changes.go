@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -332,6 +333,8 @@ type ListBatchChangesOpts struct {
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
+
+	RepoID api.RepoID
 }
 
 // ListBatchChanges lists batch changes with the given filters.
@@ -400,6 +403,14 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 
 	if opts.NamespaceOrgID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_org_id = %s", opts.NamespaceOrgID))
+	}
+
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf(`EXISTS(
+			SELECT * FROM changesets
+			WHERE changesets.batch_change_ids ? batch_changes.id::TEXT
+			AND changesets.repo_id = %s
+		)`, opts.RepoID))
 	}
 
 	if len(preds) == 0 {

@@ -141,6 +141,12 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
+func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
+	id := r.ID()
+	args.Repo = &id
+	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
+}
+
 type RepositoryCommitArgs struct {
 	Rev          string
 	InputRevspec *string
