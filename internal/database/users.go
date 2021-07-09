@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -194,7 +195,11 @@ func (u *UserStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-	return tx.create(ctx, info)
+	newUser, err = tx.create(ctx, info)
+	if err == nil {
+		logAccountCreatedEvent(ctx, u.Handle().DB(), newUser, "")
+	}
+	return newUser, err
 }
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
@@ -368,20 +373,29 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}
-
-		logAccountCreatedEvent(ctx, u.Handle().DB(), id)
 	}
 
 	return user, nil
 }
 
-func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, id int32) {
+func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, serviceType string) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Creator     int32  `json:"creator,omitempty"`
+		SiteAdmin   bool   `json:"site_admin,omitempty"`
+		ServiceType string `json:"service_type,omitempty"`
+	}{
+		Creator:     a.UID,
+		SiteAdmin:   u.SiteAdmin,
+		ServiceType: serviceType,
+	})
+
 	event := &SecurityEvent{
 		Name:            SecurityEventNameAccountCreated,
 		URL:             "",
-		UserID:          uint32(id),
+		UserID:          uint32(u.ID),
 		AnonymousUserID: "",
-		Argument:        nil,
+		Argument:        arg,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
