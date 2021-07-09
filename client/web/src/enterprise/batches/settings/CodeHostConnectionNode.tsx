@@ -37,10 +37,9 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     const closeModal = useCallback(() => {
         setOpenModal(undefined)
     }, [])
-    // const afterAction = useCallback(() => {
-    //     setOpenModal(undefined)
-    //     updateList.next()
-    // }, [updateList])
+    const afterAction = useCallback(() => {
+        setOpenModal(undefined)
+    }, [])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
 

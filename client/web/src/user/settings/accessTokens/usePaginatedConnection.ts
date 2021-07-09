@@ -1,13 +1,18 @@
 import { ApolloError } from '@apollo/client'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
 import { Connection } from '../../../components/FilteredConnection/ConnectionType'
+
+import { useUrlQuery } from './useUrlQuery'
 
 interface PaginationConnectionQueryArguments {
     first?: number
     after?: string | null
+    query?: string
 }
 
 interface PaginationConnectionResult<TData> {
@@ -17,20 +22,54 @@ interface PaginationConnectionResult<TData> {
     fetchMore: () => void
 }
 
+interface UsePaginationConnectionOptions {
+    useURLQuery?: boolean
+}
+
 interface UsePaginationConnectionParameters<TResult, TVariables, TData> {
     query: string
     variables: TVariables & PaginationConnectionQueryArguments
     getConnection: (result: TResult) => Connection<TData>
+    options?: UsePaginationConnectionOptions
+}
+
+const useSearchParameters = (): URLSearchParams => {
+    const location = useLocation()
+    return new URLSearchParams(location.search)
 }
 
 export const usePaginatedConnection = <TResult, TVariables, TData>({
     query,
     variables: _variables,
     getConnection,
+    options,
 }: UsePaginationConnectionParameters<TResult, TVariables, TData>): PaginationConnectionResult<TData> => {
-    const [variables, setVariables] = useState<TVariables & PaginationConnectionQueryArguments>(_variables)
+    const searchParameters = useSearchParameters()
+
+    const [variables, setVariables] = useState<TVariables & PaginationConnectionQueryArguments>({
+        ..._variables,
+        first: (options?.useURLQuery && parseQueryInt(searchParameters, 'first')) || _variables.first,
+    })
+
     const { data, loading, error, fetchMore } = useQuery<TResult, TVariables>(query, { variables })
     const connection = data ? getConnection(data) : undefined
+
+    // Support allowing consumers to control the query variable
+    useEffect(() => {
+        if (_variables.query !== variables.query) {
+            setVariables(previous => ({
+                ...previous,
+                query: _variables.query,
+            }))
+        }
+    }, [_variables.query, variables.query])
+
+    useUrlQuery({
+        enabled: options?.useURLQuery,
+        first: variables.first,
+        initialFirst: _variables.first,
+        query: variables.query,
+    })
 
     const fetchMoreData = useCallback(() => {
         const cursor = connection?.pageInfo?.endCursor

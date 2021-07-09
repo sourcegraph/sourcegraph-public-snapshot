@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -10,7 +10,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { FilteredConnection } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
     ConnectionSummary,
@@ -96,18 +95,12 @@ export interface UserEventLogsPageProps
 /**
  * A page displaying usage statistics for the site.
  */
-export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> = ({
-    telemetryService,
-    // TODO: Support URL updating
-    history,
-    location,
-    user,
-}) => {
+export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> = ({ telemetryService, user }) => {
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])
 
-    // TODO: Support loading
+    // TODO: Show loading
     const { connection, loading, error, fetchMore } = usePaginatedConnection<
         UserEventLogsResult,
         UserEventLogsVariables,
@@ -123,6 +116,9 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
                 throw new Error(`Requested node is a ${data.node.__typename}, not a User`)
             }
             return data.node.eventLogs
+        },
+        options: {
+            useURLQuery: true,
         },
     })
 
