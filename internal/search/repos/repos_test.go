@@ -379,7 +379,7 @@ func TestSearchableRepositories(t *testing.T) {
 				drNames = append(drNames, string(dr.Name))
 			}
 			if !reflect.DeepEqual(drNames, tc.want) {
-				t.Errorf("names of default repos = %v, want %v", drNames, tc.want)
+				t.Errorf("names of indexable repos = %v, want %v", drNames, tc.want)
 			}
 		})
 	}
@@ -425,8 +425,8 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		name              string
 		searchContextSpec string
 	}{
-		{name: "use default repos if missing search context", searchContextSpec: ""},
-		{name: "use default repos with global search context", searchContextSpec: "global"},
+		{name: "use indexable repos if missing search context", searchContextSpec: ""},
+		{name: "use indexable repos with global search context", searchContextSpec: "global"},
 	}
 
 	for _, tt := range tests {
@@ -445,7 +445,7 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				repoNames = append(repoNames, string(repoRev.Repo.Name))
 			}
 			if !reflect.DeepEqual(repoNames, wantIndexableRepos) {
-				t.Errorf("names of default repos = %v, want %v", repoNames, wantIndexableRepos)
+				t.Errorf("names of indexable repos = %v, want %v", repoNames, wantIndexableRepos)
 			}
 		})
 	}
