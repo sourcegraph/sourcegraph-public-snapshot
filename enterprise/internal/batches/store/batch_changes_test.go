@@ -196,6 +196,92 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			}
 		})
 
+		t.Run("By RepoID", func(t *testing.T) {
+			repoStore := database.ReposWith(s)
+			esStore := database.ExternalServicesWith(s)
+
+			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
+				t.Fatal(err)
+			}
+
+			t.Logf("batch change ids: %v, %v", cs[0].ID, cs[1].ID)
+
+			// 1 batch change + changeset is associated with the first repo
+			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:         repo1.ID,
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+			})
+
+			// 2 batch changes, each with 1 changeset, are associated with the second repo
+			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:         repo2.ID,
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+			})
+			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:         repo2.ID,
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[1].ID}},
+			})
+
+			// no batch changes are associated with the third repo
+
+			{
+				tcs := []struct {
+					repoID        api.RepoID
+					listLen       int
+					batchChangeID *int64
+				}{
+					{
+						repoID:        repo1.ID,
+						listLen:       1,
+						batchChangeID: &cs[0].ID,
+					},
+					{
+						repoID:        repo2.ID,
+						listLen:       2,
+						batchChangeID: &cs[1].ID,
+					},
+					{
+						repoID:        repo3.ID,
+						listLen:       0,
+						batchChangeID: nil,
+					},
+				}
+
+				for i, tc := range tcs {
+					t.Run(strconv.Itoa(i), func(t *testing.T) {
+						opts := ListBatchChangesOpts{RepoID: tc.repoID}
+
+						ts, next, err := s.ListBatchChanges(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						for _, res := range ts {
+							t.Logf("res %v", *&res.ID)
+						}
+
+						if len(ts) != tc.listLen {
+							t.Fatalf("listed the wrong number of batch changes: have %v, want %v", len(ts), tc.listLen)
+						}
+
+						if len(ts) > 0 {
+							have, want := ts[0].ID, *tc.batchChangeID
+							if have != want {
+								t.Fatalf("listed batch change with id %d, wanted %d", have, want)
+							}
+						}
+					})
+				}
+			}
+		})
+
 		// The batch changes store returns the batch changes in reversed order.
 		reversedBatchChanges := make([]*btypes.BatchChange, len(cs))
 		for i, c := range cs {
@@ -533,14 +619,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-		repo1.Private = true
-		if err := repoStore.Create(ctx, repo1); err != nil {
-			t.Fatal(err)
-		}
-		if err := repoStore.Create(ctx, repo2); err != nil {
-			t.Fatal(err)
-		}
-		if err := repoStore.Create(ctx, repo3); err != nil {
+		if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
 			t.Fatal(err)
 		}
 

@@ -447,10 +447,9 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 	}
 
 	if opts.RepoID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT"))
-		joins = append(joins, sqlf.Sprintf("INNER JOIN repo ON changesets.repo_id = repo.id"))
 		preds = append(preds, sqlf.Sprintf(`EXISTS(
 			SELECT * FROM changesets
+			INNER JOIN repo ON changesets.repo_id = repo.id
 			WHERE
 				changesets.batch_change_ids ? batch_changes.id::TEXT AND
 				changesets.repo_id = %s AND
