@@ -27,55 +27,49 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
-	db := dbtest.NewDB(t, *dsn)
-
-	store := repos.NewStore(db, sql.TxOptions{
-		Isolation: sql.LevelReadCommitted,
-	})
-
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
-
-	store.Log = lg
-	store.Metrics = repos.NewStoreMetrics()
-	store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
-
-	userID := insertTestUser(t, db)
-
-	dbconn.Global = db
-	defer func() {
-		dbconn.Global = nil
-	}()
-
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, *repos.Store) func(*testing.T)
+		test func(*repos.Store) func(*testing.T)
 	}{
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},
 		{"DBStore/UpsertSources", testStoreUpsertSources},
-		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, store)},
-		{"DBStore/EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob(db)},
-		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
+		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs},
+		{"DBStore/EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
+		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs},
 		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},
 		{"DBStore/Syncer/Sync", testSyncerSync},
 		{"DBStore/Syncer/SyncRepo", testSyncRepo},
-		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing(db)},
-		{"DBStore/Syncer/Run", testSyncRun(db)},
-		{"DBStore/Syncer/MultipleServices", testSyncer(db)},
-		{"DBStore/Syncer/OrphanedRepos", testOrphanedRepo(db)},
-		{"DBStore/Syncer/UserAddedRepos", testUserAddedRepos(db, userID)},
-		{"DBStore/Syncer/DeleteExternalService", testDeleteExternalService(db)},
-		{"DBStore/Syncer/NameConflictDiscardOld", testNameOnConflictDiscardOld(db)},
-		{"DBStore/Syncer/NameConflictDiscardNew", testNameOnConflictDiscardNew(db)},
-		{"DBStore/Syncer/NameConflictOnRename", testNameOnConflictOnRename(db)},
-		{"DBStore/Syncer/ConflictingSyncers", testConflictingSyncers(db)},
-		{"DBStore/Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources(db)},
+		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing},
+		{"DBStore/Syncer/Run", testSyncRun},
+		{"DBStore/Syncer/MultipleServices", testSyncer},
+		{"DBStore/Syncer/OrphanedRepos", testOrphanedRepo},
+		{"DBStore/Syncer/UserAddedRepos", testUserAddedRepos},
+		{"DBStore/Syncer/DeleteExternalService", testDeleteExternalService},
+		{"DBStore/Syncer/NameConflict", testNameConflict},
+		{"DBStore/Syncer/ConflictingSyncers", testConflictingSyncers},
+		{"DBStore/Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			db := dbtest.NewDB(t, *dsn)
+
+			store := repos.NewStore(db, sql.TxOptions{
+				Isolation: sql.LevelReadCommitted,
+			})
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			store.Log = lg
+			store.Metrics = repos.NewStoreMetrics()
+			store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
+
+			dbconn.Global = db
+			defer func() {
+				dbconn.Global = nil
+			}()
+
 			t.Cleanup(func() {
 				if t.Failed() {
 					return
@@ -90,18 +84,7 @@ DELETE FROM repo;
 				}
 			})
 
-			tc.test(t, store)(t)
+			tc.test(store)(t)
 		})
 	}
-}
-
-func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
-	t.Helper()
-
-	err := db.QueryRow("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id").Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return userID
 }

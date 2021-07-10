@@ -46,9 +46,7 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	store := repos.NewStore(db, sql.TxOptions{
-		Isolation: sql.LevelSerializable,
-	})
+	store := repos.NewStore(db, sql.TxOptions{})
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
@@ -288,16 +286,18 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 			now := clock.Now()
 
 			githubSource := types.ExternalService{
-				Kind:   extsvc.KindGitHub,
-				Config: `{}`,
+				Kind:         extsvc.KindGitHub,
+				Config:       `{}`,
+				CloudDefault: true,
 			}
 			awsSource := types.ExternalService{
 				Kind:   extsvc.KindAWSCodeCommit,
 				Config: `{}`,
 			}
 			gitlabSource := types.ExternalService{
-				Kind:   extsvc.KindGitLab,
-				Config: `{}`,
+				Kind:         extsvc.KindGitLab,
+				Config:       `{}`,
+				CloudDefault: true,
 			}
 
 			if err := store.ExternalServiceStore.Upsert(ctx, &githubSource, &awsSource, &gitlabSource); err != nil {
@@ -309,8 +309,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 				Description: "The description",
 				Archived:    false,
 				Fork:        false,
-				CreatedAt:   now,
-				UpdatedAt:   now,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
@@ -336,7 +334,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 				Description: "The stripe-go lib",
 				Archived:    false,
 				Fork:        false,
-				CreatedAt:   now,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: extsvc.TypeAWSCodeCommit,
@@ -363,8 +360,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 				Name:        "gitlab.com/gitlab-org/gitaly",
 				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
 				URI:         "gitlab.com/gitlab-org/gitaly",
-				CreatedAt:   now,
-				UpdatedAt:   now,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "2009901",
 					ServiceType: extsvc.TypeGitLab,
@@ -571,33 +566,32 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 					}},
 					assert: types.Assert.ReposEqual(gitlabRepository),
 				},
-				// TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/21408
-				// {
-				// 	name: "found - gitlab.com on Sourcegraph.com already exists",
-				// 	args: protocol.RepoLookupArgs{
-				// 		Repo: api.RepoName("gitlab.com/foo/bar"),
-				// 	},
-				// 	stored: []*types.Repo{gitlabRepository},
-				// 	gitlabDotComSource: &fakeRepoSource{
-				// 		repo: gitlabRepository,
-				// 	},
-				// 	result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				// 		Name:        "gitlab.com/gitlab-org/gitaly",
-				// 		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-				// 		Fork:        false,
-				// 		Archived:    false,
-				// 		VCS: protocol.VCSInfo{
-				// 			URL: "https://gitlab.com/gitlab-org/gitaly.git",
-				// 		},
-				// 		Links: &protocol.RepoLinks{
-				// 			Root:   "https://gitlab.com/gitlab-org/gitaly",
-				// 			Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
-				// 			Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
-				// 			Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
-				// 		},
-				// 		ExternalRepo: gitlabRepository.ExternalRepo,
-				// 	}},
-				// },
+				{
+					name: "found - gitlab.com on Sourcegraph.com already exists",
+					args: protocol.RepoLookupArgs{
+						Repo: api.RepoName("gitlab.com/foo/bar"),
+					},
+					stored: []*types.Repo{gitlabRepository},
+					gitlabDotComSource: &fakeRepoSource{
+						repo: gitlabRepository,
+					},
+					result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+						Name:        "gitlab.com/gitlab-org/gitaly",
+						Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+						Fork:        false,
+						Archived:    false,
+						VCS: protocol.VCSInfo{
+							URL: "https://gitlab.com/gitlab-org/gitaly.git",
+						},
+						Links: &protocol.RepoLinks{
+							Root:   "https://gitlab.com/gitlab-org/gitaly",
+							Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
+							Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
+							Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
+						},
+						ExternalRepo: gitlabRepository.ExternalRepo,
+					}},
+				},
 				{
 					name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
 					args: protocol.RepoLookupArgs{
@@ -683,7 +677,9 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 
 					clock := clock
 					syncer := &repos.Syncer{
-						Now: clock.Now,
+						Now:    clock.Now,
+						Store:  store,
+						Logger: log15.Root(),
 					}
 					s := &Server{Syncer: syncer, Store: store}
 					if tc.githubDotComSource != nil {
@@ -855,8 +851,10 @@ type testSource struct {
 	fn func() error
 }
 
-var _ repos.Source = &testSource{}
-var _ repos.UserSource = &testSource{}
+var (
+	_ repos.Source     = &testSource{}
+	_ repos.UserSource = &testSource{}
+)
 
 func (t testSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
 }

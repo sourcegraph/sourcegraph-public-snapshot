@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -74,7 +75,7 @@ func TestStatusMessages(t *testing.T) {
 		stored           types.Repos
 		gitserverCloned  []string
 		gitserverFailure map[string]bool
-		sourcerErr       error
+		sourcer          Sourcer
 		listRepoErr      error
 		res              []StatusMessage
 		user             *types.User
@@ -212,13 +213,13 @@ func TestStatusMessages(t *testing.T) {
 			res:             nil,
 		},
 		{
-			name:       "one external service syncer err",
-			user:       admin,
-			sourcerErr: errors.New("github is down"),
+			name:    "one external service syncer err",
+			user:    admin,
+			sourcer: NewFakeSourcer(nil, NewFakeSource(siteLevelService, errors.New("github is down"))),
 			res: []StatusMessage{
 				{
 					ExternalServiceSyncError: &ExternalServiceSyncError{
-						Message:           "fetching from code host github.com - site: 1 error occurred:\n\t* github is down\n\n",
+						Message:           "1 error occurred:\n\t* fetching from code host github.com - site: github is down\n\n",
 						ExternalServiceId: siteLevelService.ID,
 					},
 				},
@@ -227,11 +228,12 @@ func TestStatusMessages(t *testing.T) {
 		{
 			name:        "one syncer err",
 			user:        admin,
+			sourcer:     NewFakeSourcer(nil, NewFakeSource(siteLevelService, nil, &types.Repo{Name: "foo"})),
 			listRepoErr: errors.New("could not connect to database"),
 			res: []StatusMessage{
 				{
 					ExternalServiceSyncError: &ExternalServiceSyncError{
-						Message:           "syncer.sync.store.list-repos: could not connect to database",
+						Message:           "1 error occurred:\n\t* syncer: getting repo from the database: could not connect to database\n\n",
 						ExternalServiceId: siteLevelService.ID,
 					},
 				},
@@ -326,19 +328,19 @@ func TestStatusMessages(t *testing.T) {
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				Store: store,
-				Now:   clock.Now,
+				Store:   store,
+				Now:     clock.Now,
+				Logger:  log15.Root(),
+				Sourcer: tc.sourcer,
 			}
 
-			if tc.sourcerErr != nil || tc.listRepoErr != nil {
+			if tc.sourcer != nil || tc.listRepoErr != nil {
 				database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
 					return nil, tc.listRepoErr
 				}
 				defer func() {
 					database.Mocks.Repos.List = nil
 				}()
-				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
-				syncer.Sourcer = sourcer
 
 				err = syncer.SyncExternalService(ctx, store, siteLevelService.ID, time.Millisecond)
 				// In prod, SyncExternalService is kicked off by a worker queue. Any error

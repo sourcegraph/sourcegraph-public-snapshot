@@ -979,7 +979,7 @@ func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash
 		} `json:"mergePullRequest"`
 	}
 
-	var mergeMethod = "MERGE"
+	mergeMethod := "MERGE"
 	if squash {
 		mergeMethod = "SQUASH"
 	}
@@ -1077,9 +1077,11 @@ func abbreviateRef(ref string) string {
 // timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
 const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
 
-var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
-var ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
-var ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
+var (
+	ghe220Semver, _             = semver.NewConstraint("~2.20.0")
+	ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
+	ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
+)
 
 func timelineItemTypes(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {

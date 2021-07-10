@@ -614,7 +614,7 @@ func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 		// config is not encrypted, return plaintext
 		return config, nil
 	}
-	var key = keyring.Default().ExternalServiceKey
+	key := keyring.Default().ExternalServiceKey
 	if e.key != nil {
 		key = e.key
 	}

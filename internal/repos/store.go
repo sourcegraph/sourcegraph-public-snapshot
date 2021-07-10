@@ -5,15 +5,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
+	"sort"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -285,8 +286,10 @@ func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map
 	return nil
 }
 
-var upsertSourcesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSuffix
-var upsertSourcesWithDeletesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrDeletes + upsertSourcesFmtstrSuffix
+var (
+	upsertSourcesQueryFmtstr            = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSuffix
+	upsertSourcesWithDeletesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrDeletes + upsertSourcesFmtstrSuffix
+)
 
 const upsertSourcesFmtstrPrefix = `
 -- source: internal/repos/store.go:DBStore.UpsertSources
@@ -477,6 +480,310 @@ func (s *Store) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, c
 	}
 	return scanAll(rows, scan)
 }
+
+// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids. We run one query
+// per repo rather than one batch query in order to reduce the chances of this whole operation blocking on locks other
+// queries acquire when referencing external_service_repos. Since the syncer runs periodically, it's better to fail to
+// delete some repos and try to delete them again in the next run, than to have one failure prevent all deletes from
+// happening.
+func (s *Store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
+	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceReposNotIn")
+	tr.LogFields(
+		otlog.Int("len(ids)", len(ids)),
+		otlog.Int64("external_service_id", svc.ID),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.DeleteExternalServiceReposNotIn.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.delete-external-service-repos-not-in", &err, "external-service-id", svc.ID, "len(ids)", len(ids))
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	set := make(pq.Int64Array, 0, len(ids))
+	for id := range ids {
+		set = append(set, int64(id))
+	}
+
+	sort.Slice(set, func(a, b int) bool { return set[a] < set[b] })
+
+	var toDelete pq.Int64Array
+	if err = s.QueryRow(ctx, sqlf.Sprintf(listExternalServiceReposNotInQuery, svc.ID, set)).Scan(&toDelete); err != nil {
+		return nil, errors.Wrap(err, "failed to list external service repo ids")
+	}
+
+	var errs multierror.Error
+	for _, id := range toDelete {
+		if err = s.DeleteExternalServiceRepo(ctx, svc, api.RepoID(id)); err != nil {
+			multierror.Append(&errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
+		} else {
+			deleted = append(deleted, api.RepoID(id))
+		}
+	}
+
+	return deleted, errs.ErrorOrNil()
+}
+
+const listExternalServiceReposNotInQuery = `
+SELECT array_agg(repo_id)
+FROM external_service_repos
+WHERE external_service_id = %s AND repo_id != ALL(%s)
+`
+
+// DeleteExternalServiceRepo deletes a repo's association to an external service and the repo itself if there are no
+// more associations to that repo by any other external service (which is done by a trigger in the database called
+// trig_soft_delete_orphan_repo_by_external_service_repo).
+func (s *Store) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
+	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceRepo")
+	tr.LogFields(
+		otlog.Int32("id", int32(id)),
+		otlog.Int64("external_service_id", svc.ID),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.DeleteExternalServiceRepo.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.delete-external-service-repo", &err, "external-service-id", svc.ID, "repo-id", id)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	if !s.InTransaction() {
+		s, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { s.Done(err) }()
+	}
+
+	err = s.Exec(ctx, sqlf.Sprintf(deleteExternalServiceRepoQuery, svc.ID, id))
+	if err != nil {
+		return errors.Wrap(err, "failed to delete external service repo")
+	}
+
+	err = s.Exec(ctx, sqlf.Sprintf(deleteRepoIfOrphanQuery, id, id))
+	if err != nil {
+		return errors.Wrap(err, "failed to delete orphaned repo")
+	}
+
+	return nil
+}
+
+const deleteExternalServiceRepoQuery = `
+DELETE FROM external_service_repos
+WHERE external_service_id = %s AND repo_id = %s
+`
+
+const deleteRepoIfOrphanQuery = `
+UPDATE repo
+SET name = soft_deleted_repository_name(name), deleted_at = now()
+WHERE id = %s AND NOT EXISTS (
+	SELECT FROM external_service_repos
+	WHERE repo_id = %s LIMIT 1
+)
+`
+
+// CreateExternalServiceRepo inserts a single repo and its association to an external service, respectively in the repo and
+// external_service_repos table. The associated external service must already exist.
+func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
+	tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
+	tr.LogFields(
+		otlog.String("name", string(r.Name)),
+		otlog.Int64("external_service_id", svc.ID),
+		otlog.String("external_repo_spec", r.ExternalRepo.String()),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.create-external-service-repo", &err,
+			"external-service-id", svc.ID,
+			"name", r.Name,
+			"external-repo-spec", r.ExternalRepo.String(),
+		)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	metadata, err := json.Marshal(r.Metadata)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(createRepoQuery,
+		r.Name,
+		r.URI,
+		r.Description,
+		r.ExternalRepo.ServiceType,
+		r.ExternalRepo.ServiceID,
+		r.ExternalRepo.ID,
+		r.Archived,
+		r.Fork,
+		r.Stars,
+		r.Private,
+		metadata,
+	)
+
+	src, ok := r.Sources[svc.URN()]
+	if !ok {
+		return errors.New("CreateExternalServiceRepo: repo missing source info for external service")
+	}
+
+	if !s.InTransaction() {
+		s, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { s.Done(err) }()
+	}
+
+	if err = s.QueryRow(ctx, q).Scan(&r.ID, &r.CreatedAt); err != nil {
+		return err
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
+		svc.ID,
+		r.ID,
+		svc.NamespaceUserID,
+		src.CloneURL,
+	))
+}
+
+const createRepoQuery = `
+INSERT INTO repo (
+	name,
+	uri,
+	description,
+	external_service_type,
+	external_service_id,
+	external_id,
+	archived,
+	fork,
+	stars,
+	private,
+	metadata,
+	created_at
+)
+VALUES (%s, NULLIF(%s, ''), %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+RETURNING id, created_at
+`
+
+const upsertExternalServiceRepoQuery = `
+INSERT INTO external_service_repos (
+	external_service_id,
+	repo_id,
+	user_id,
+	clone_url
+)
+VALUES (%s, %s, NULLIF(%s, 0), %s)
+ON CONFLICT (external_service_id, repo_id)
+DO UPDATE SET
+	clone_url = excluded.clone_url,
+	user_id   = excluded.user_id
+WHERE
+	external_service_repos.clone_url != excluded.clone_url OR
+	external_service_repos.user_id   != excluded.user_id
+`
+
+// UpdateExternalServiceRepo updates a single repo and its association to an external service, respectively in the repo and
+// external_service_repos table. The associated external service must already exist.
+func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
+	tr, ctx := s.trace(ctx, "Store.UpdateExternalServiceRepo")
+	tr.LogFields(
+		otlog.String("name", string(r.Name)),
+		otlog.Int64("external_service_id", svc.ID),
+		otlog.String("external_repo_spec", r.ExternalRepo.String()),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.UpdateExternalServiceRepo.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.update-external-service-repo", &err,
+			"external-service-id", svc.ID,
+			"name", r.Name,
+			"external-repo-spec", r.ExternalRepo.String(),
+		)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	if r.ID == 0 {
+		return errors.New("empty repo id in update")
+	}
+
+	metadata, err := metadataColumn(r.Metadata)
+	if err != nil {
+		return errors.Wrapf(err, "metadata marshalling failed")
+	}
+
+	q := sqlf.Sprintf(updateRepoQuery,
+		r.Name,
+		r.URI,
+		r.Description,
+		r.ExternalRepo.ServiceType,
+		r.ExternalRepo.ServiceID,
+		r.ExternalRepo.ID,
+		r.Archived,
+		r.Fork,
+		r.Stars,
+		r.Private,
+		metadata,
+		r.ID,
+	)
+
+	src, ok := r.Sources[svc.URN()]
+	if !ok {
+		return errors.New("UpdateExternalServiceRepo: repo missing source info for external service")
+	}
+
+	if !s.InTransaction() {
+		s, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { s.Done(err) }()
+	}
+
+	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
+		return err
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
+		svc.ID,
+		r.ID,
+		svc.NamespaceUserID,
+		src.CloneURL,
+	))
+}
+
+const updateRepoQuery = `
+UPDATE repo
+SET
+	name                  = %s,
+	uri                   = NULLIF(%s, ''),
+	description           = %s,
+	external_service_type = %s,
+	external_service_id   = %s,
+	external_id           = %s,
+	archived              = %s,
+	fork                  = %s,
+	stars                 = %s,
+	private               = %s,
+	metadata              = %s,
+	updated_at            = now(),
+	deleted_at            = NULL
+WHERE id = %s
+RETURNING updated_at
+`
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository
 // store. The ID field is used to distinguish between Repos that need to be

@@ -48,10 +48,12 @@ type GithubSource struct {
 	originalHostname string
 }
 
-var _ Source = &GithubSource{}
-var _ UserSource = &GithubSource{}
-var _ AffiliatedRepositorySource = &GithubSource{}
-var _ VersionSource = &GithubSource{}
+var (
+	_ Source                     = &GithubSource{}
+	_ UserSource                 = &GithubSource{}
+	_ AffiliatedRepositorySource = &GithubSource{}
+	_ VersionSource              = &GithubSource{}
+)
 
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
@@ -240,6 +242,10 @@ func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types
 
 func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
+	metadata := *r
+	// This field flip flops depending on which token was used to retrieve the repo
+	// so we don't want to store it.
+	metadata.ViewerPermission = ""
 	return &types.Repo{
 		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,
@@ -263,7 +269,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 				CloneURL: s.remoteURL(r),
 			},
 		},
-		Metadata: r,
+		Metadata: &metadata,
 	}
 }
 

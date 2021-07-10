@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -311,7 +312,7 @@ var Assert = struct {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
 			have = append(Repos{}, have...).With(Opt.RepoID(0))
-			if diff := cmp.Diff(want, have); diff != "" {
+			if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(Repo{}, "CreatedAt", "UpdatedAt")); diff != "" {
 				t.Errorf("repos (-want +got): %s", diff)
 			}
 		}

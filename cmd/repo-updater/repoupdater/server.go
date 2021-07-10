@@ -441,7 +441,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}, nil
 	}
 
-	err = s.Syncer.SyncRepo(ctx, s.Store, repo)
+	err = s.Syncer.SyncRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
