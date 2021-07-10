@@ -168,18 +168,12 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
 	defer save(&diff, &owner, &err)
 
-	ids := []int64{externalServiceID}
 	// We don't use tx here as the sourcing process below can be slow and we don't
 	// want to hold a lock on the external_services table for too long.
-	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{IDs: ids})
+	svc, err := s.Store.ExternalServiceStore.GetByID(ctx, externalServiceID)
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}
-
-	if len(svcs) != 1 {
-		return errors.Errorf("want 1 external service but got %d", len(svcs))
-	}
-	svc := svcs[0]
 
 	if svc.NamespaceUserID > 0 {
 		owner = ownerUser
@@ -187,7 +181,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		owner = ownerSite
 	}
 
-	onSourced := func(*types.Repo) error { return nil } //noop
+	onSourced := func(*types.Repo) error { return nil } // noop
 
 	if owner == ownerUser {
 		// If we are over our limit for user added repos we abort the sync
