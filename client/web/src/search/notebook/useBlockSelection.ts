@@ -45,6 +45,8 @@ export const useBlockSelection = ({
     useEffect(() => {
         if (isSelected && !isInputFocused) {
             blockElement?.focus()
+        } else if (!isSelected) {
+            blockElement?.blur()
         }
     }, [isSelected, blockElement, isInputFocused])
 
