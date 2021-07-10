@@ -620,20 +620,33 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		batchChangeID := cs[0].ID
 		var testDiffStatCount1 int32 = 10
 		var testDiffStatCount2 int32 = 20
+
+		// two changesets on the first repo
 		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 			Repo:            repo1.ID,
-			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
+			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount1,
 			DiffStatChanged: testDiffStatCount1,
 			DiffStatDeleted: testDiffStatCount1,
 		})
 		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			Repo:            repo1.ID,
+			BatchChange:     batchChangeID,
+			DiffStatAdded:   testDiffStatCount2,
+			DiffStatChanged: 0,
+			DiffStatDeleted: testDiffStatCount2,
+		})
+
+		// one changeset on the second repo
+		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 			Repo:            repo2.ID,
-			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
+			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
 			DiffStatChanged: testDiffStatCount2,
 			DiffStatDeleted: testDiffStatCount2,
 		})
+
+		// no changesets on the third repo
 
 		{
 			tcs := []struct {
@@ -643,9 +656,9 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 				{
 					repoID: repo1.ID,
 					want: &diff.Stat{
-						Added:   testDiffStatCount1,
+						Added:   testDiffStatCount1 + testDiffStatCount2,
 						Changed: testDiffStatCount1,
-						Deleted: testDiffStatCount1,
+						Deleted: testDiffStatCount1 + testDiffStatCount2,
 					},
 				},
 				{
