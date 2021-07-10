@@ -423,6 +423,11 @@ type Mutation {
         """
         cohortID: String
         """
+        An optional referrer parameter for the user's current session.
+        Only captured and stored on Sourcegraph Cloud.
+        """
+        referrer: String
+        """
         The additional argument information.
         """
         argument: String

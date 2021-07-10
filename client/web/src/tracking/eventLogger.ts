@@ -17,6 +17,7 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private referrer?: string
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -111,6 +112,11 @@ export class EventLogger implements TelemetryService {
 
         this.firstSourceURL = firstSourceURL
         return firstSourceURL
+    }
+
+    public getReferrer(): string {
+        const referrer = this.referrer || document.referrer
+        return referrer
     }
 
     /**
