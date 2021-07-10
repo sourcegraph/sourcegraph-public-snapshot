@@ -39,10 +39,13 @@ export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstruc
     wordWrap: 'on',
 }
 
-type UseMonacoBlockEditorOptions = { editor: Monaco.editor.IStandaloneCodeEditor | undefined; id: string } & Pick<
-    BlockProps,
-    'onRunBlock' | 'onBlockInputChange' | 'onSelectBlock' | 'onMoveBlockSelection'
->
+export const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
+
+interface UseMonacoBlockEditorOptions
+    extends Pick<BlockProps, 'onRunBlock' | 'onBlockInputChange' | 'onSelectBlock' | 'onMoveBlockSelection'> {
+    editor: Monaco.editor.IStandaloneCodeEditor | undefined
+    id: string
+}
 
 export const useMonacoBlockInput = ({
     editor,
@@ -129,9 +132,11 @@ export const useMonacoBlockInput = ({
             onSelectBlock(id)
         })
         const onDidBlurEditorTextDisposable = editor.onDidBlurEditorText(() => setIsInputFocused(false))
+        const onDidEditorDisposeDisposable = editor.onDidDispose(() => setIsInputFocused(false))
         return () => {
             onDidFocusEditorTextDisposable.dispose()
             onDidBlurEditorTextDisposable.dispose()
+            onDidEditorDisposeDisposable.dispose()
         }
     }, [editor, id, setIsInputFocused, onSelectBlock])
 

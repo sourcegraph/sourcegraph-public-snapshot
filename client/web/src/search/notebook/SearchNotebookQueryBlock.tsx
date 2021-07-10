@@ -17,9 +17,9 @@ import { StreamingSearchResultsList } from '../results/StreamingSearchResultsLis
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookQueryBlock.module.scss'
-import { useBlockFocusHandlers } from './useBlockFocusHandlers'
-import { useBlockShortcutHandlers } from './useBlockShortcutHandlers'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
+import { useBlockFocus } from './useBlockFocus'
+import { useBlockShortcuts } from './useBlockShortcuts'
+import { isMonacoEditorDescendant, MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, QueryBlock } from '.'
 
@@ -68,8 +68,13 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
 
     // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => setTimeout(() => editor?.focus(), 0), [editor])
-    const { onBlur } = useBlockFocusHandlers({ blockElement: blockElement.current, onSelectBlock, isSelected })
-    const { onKeyDown } = useBlockShortcutHandlers({
+    const { onBlur } = useBlockFocus({
+        blockElement: blockElement.current,
+        onSelectBlock,
+        isSelected,
+        isInputFocused,
+    })
+    const { onKeyDown } = useBlockShortcuts({
         id,
         isMacPlatform,
         onMoveBlockSelection,
@@ -80,7 +85,16 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         onDuplicateBlock,
     })
 
-    const onSelect = useCallback(() => onSelectBlock(id), [id, onSelectBlock])
+    const onSelect = useCallback(
+        (event: React.MouseEvent | React.FocusEvent) => {
+            // Let Monaco input handle focus/click events
+            if (isMonacoEditorDescendant(event.target as HTMLElement)) {
+                return
+            }
+            onSelectBlock(id)
+        },
+        [id, onSelectBlock]
+    )
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions

@@ -8,9 +8,9 @@ import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
-import { useBlockFocusHandlers } from './useBlockFocusHandlers'
-import { useBlockShortcutHandlers } from './useBlockShortcutHandlers'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
+import { useBlockFocus } from './useBlockFocus'
+import { useBlockShortcuts } from './useBlockShortcuts'
+import { isMonacoEditorDescendant, MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, MarkdownBlock } from '.'
 
@@ -62,11 +62,28 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         }
     }, [id, isEditing, setIsEditing, onSelectBlock])
 
-    const onSelect = useCallback(() => onSelectBlock(id), [id, onSelectBlock])
+    // TODO: Consolidate with QueryBlock
+    const onSelect = useCallback(
+        (event: React.MouseEvent | React.FocusEvent) => {
+            // Let Monaco input handle focus/click events
+            if (isMonacoEditorDescendant(event.target as HTMLElement)) {
+                return
+            }
+            onSelectBlock(id)
+        },
+        [id, onSelectBlock]
+    )
+
     const onEnterBlock = useCallback(() => setIsEditing(true), [setIsEditing])
 
-    const { onBlur } = useBlockFocusHandlers({ blockElement: blockElement.current, onSelectBlock, isSelected })
-    const { onKeyDown } = useBlockShortcutHandlers({
+    const { onBlur } = useBlockFocus({
+        blockElement: blockElement.current,
+        onSelectBlock,
+        isSelected,
+        isInputFocused,
+    })
+
+    const { onKeyDown } = useBlockShortcuts({
         id,
         isMacPlatform,
         onMoveBlockSelection,
@@ -91,8 +108,8 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
             <div
                 className={classNames(blockStyles.block, isSelected && blockStyles.selected, styles.outputWrapper)}
                 onClick={onSelect}
-                onDoubleClick={onDoubleClick}
                 onFocus={onSelect}
+                onDoubleClick={onDoubleClick}
                 onBlur={onBlur}
                 onKeyDown={onKeyDown}
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
@@ -113,7 +130,11 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div
-            className={classNames(blockStyles.block, styles.input, isInputFocused && blockStyles.selected)}
+            className={classNames(
+                blockStyles.block,
+                styles.input,
+                (isInputFocused || isSelected) && blockStyles.selected
+            )}
             onClick={onSelect}
             onFocus={onSelect}
             onBlur={onBlur}

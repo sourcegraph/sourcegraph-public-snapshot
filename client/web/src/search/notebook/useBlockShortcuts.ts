@@ -2,12 +2,17 @@ import { useCallback } from 'react'
 
 import { BlockProps } from '.'
 
-type UseBlockShortcutHandlersOptions = { id: string; onEnterBlock: () => void; isMacPlatform: boolean } & Pick<
-    BlockProps,
-    'onMoveBlockSelection' | 'onDeleteBlock' | 'onRunBlock' | 'onDuplicateBlock' | 'onMoveBlock'
->
+interface UseBlockShortcutsOptions
+    extends Pick<
+        BlockProps,
+        'onMoveBlockSelection' | 'onDeleteBlock' | 'onRunBlock' | 'onDuplicateBlock' | 'onMoveBlock'
+    > {
+    id: string
+    onEnterBlock: () => void
+    isMacPlatform: boolean
+}
 
-export const useBlockShortcutHandlers = ({
+export const useBlockShortcuts = ({
     id,
     isMacPlatform,
     onMoveBlockSelection,
@@ -16,7 +21,7 @@ export const useBlockShortcutHandlers = ({
     onEnterBlock,
     onMoveBlock,
     onDuplicateBlock,
-}: UseBlockShortcutHandlersOptions): { onKeyDown: (event: React.KeyboardEvent) => void } => {
+}: UseBlockShortcutsOptions): { onKeyDown: (event: React.KeyboardEvent) => void } => {
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent): void => {
             const isModifierKeyDown = (isMacPlatform && event.metaKey) || (!isMacPlatform && event.ctrlKey)

@@ -2,16 +2,18 @@ import React, { useCallback, useEffect } from 'react'
 
 import { BlockProps } from '.'
 
-type UseBlockFocusHandlersOptions = { isSelected: boolean; blockElement: HTMLElement | null } & Pick<
-    BlockProps,
-    'onSelectBlock'
->
+interface UseBlockFocusOptions extends Pick<BlockProps, 'onSelectBlock'> {
+    isSelected: boolean
+    isInputFocused: boolean
+    blockElement: HTMLElement | null
+}
 
-export const useBlockFocusHandlers = ({
+export const useBlockFocus = ({
     isSelected,
     onSelectBlock,
     blockElement,
-}: UseBlockFocusHandlersOptions): { onBlur: (event: React.FocusEvent) => void } => {
+    isInputFocused,
+}: UseBlockFocusOptions): { onBlur: (event: React.FocusEvent) => void } => {
     const onBlur = useCallback(
         (event: React.FocusEvent) => {
             const relatedTarget = event.relatedTarget as HTMLElement
@@ -23,10 +25,10 @@ export const useBlockFocusHandlers = ({
     )
 
     useEffect(() => {
-        if (isSelected) {
+        if (isSelected && !isInputFocused) {
             blockElement?.focus()
         }
-    }, [isSelected, blockElement])
+    }, [isSelected, blockElement, isInputFocused])
 
     return { onBlur }
 }
