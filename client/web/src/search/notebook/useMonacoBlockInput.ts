@@ -39,8 +39,6 @@ export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstruc
     wordWrap: 'on',
 }
 
-export const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
-
 interface UseMonacoBlockEditorOptions
     extends Pick<BlockProps, 'onRunBlock' | 'onBlockInputChange' | 'onSelectBlock' | 'onMoveBlockSelection'> {
     editor: Monaco.editor.IStandaloneCodeEditor | undefined

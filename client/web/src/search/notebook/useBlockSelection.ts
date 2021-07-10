@@ -3,17 +3,24 @@ import React, { useCallback, useEffect } from 'react'
 import { BlockProps } from '.'
 
 interface UseBlockFocusOptions extends Pick<BlockProps, 'onSelectBlock'> {
+    id: string
     isSelected: boolean
     isInputFocused: boolean
     blockElement: HTMLElement | null
 }
 
-export const useBlockFocus = ({
+const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
+
+export const useBlockSelection = ({
+    id,
     isSelected,
     onSelectBlock,
     blockElement,
     isInputFocused,
-}: UseBlockFocusOptions): { onBlur: (event: React.FocusEvent) => void } => {
+}: UseBlockFocusOptions): {
+    onBlur: (event: React.FocusEvent) => void
+    onSelect: (event: React.MouseEvent | React.FocusEvent) => void
+} => {
     const onBlur = useCallback(
         (event: React.FocusEvent) => {
             const relatedTarget = event.relatedTarget as HTMLElement
@@ -24,11 +31,22 @@ export const useBlockFocus = ({
         [onSelectBlock]
     )
 
+    const onSelect = useCallback(
+        (event: React.MouseEvent | React.FocusEvent) => {
+            // Let Monaco input handle focus/click events
+            if (isMonacoEditorDescendant(event.target as HTMLElement)) {
+                return
+            }
+            onSelectBlock(id)
+        },
+        [id, onSelectBlock]
+    )
+
     useEffect(() => {
         if (isSelected && !isInputFocused) {
             blockElement?.focus()
         }
     }, [isSelected, blockElement, isInputFocused])
 
-    return { onBlur }
+    return { onBlur, onSelect }
 }

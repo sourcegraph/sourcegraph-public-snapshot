@@ -8,9 +8,9 @@ import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
-import { useBlockFocus } from './useBlockFocus'
+import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
-import { isMonacoEditorDescendant, MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
+import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, MarkdownBlock } from '.'
 
@@ -62,21 +62,10 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         }
     }, [id, isEditing, setIsEditing, onSelectBlock])
 
-    // TODO: Consolidate with QueryBlock
-    const onSelect = useCallback(
-        (event: React.MouseEvent | React.FocusEvent) => {
-            // Let Monaco input handle focus/click events
-            if (isMonacoEditorDescendant(event.target as HTMLElement)) {
-                return
-            }
-            onSelectBlock(id)
-        },
-        [id, onSelectBlock]
-    )
-
     const onEnterBlock = useCallback(() => setIsEditing(true), [setIsEditing])
 
-    const { onBlur } = useBlockFocus({
+    const { onBlur, onSelect } = useBlockSelection({
+        id,
         blockElement: blockElement.current,
         onSelectBlock,
         isSelected,
