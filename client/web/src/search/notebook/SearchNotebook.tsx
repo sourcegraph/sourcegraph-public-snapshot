@@ -15,6 +15,7 @@ import { StreamingSearchResultsListProps } from '../results/StreamingSearchResul
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
+import { isMonacoEditorDescendant } from './useBlockSelection'
 
 import { Block, BlockDirection, BlockInitializer, BlockType, Notebook } from '.'
 
@@ -169,7 +170,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             // TODO: Scroll selected block into view (without being annoying)
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
-            } else if (event.key === 'Escape') {
+            } else if (event.key === 'Escape' && !isMonacoEditorDescendant(event.target as HTMLElement)) {
                 setSelectedBlockId(null)
             }
         }
@@ -185,7 +186,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
     useEffect(() => {
         // Initialize Sourcegraph Monaco code intelligence (hovers, completions)
         const subscription = addSourcegraphSearchCodeIntelligence(fetchSuggestions, {
-            // TODO?
+            // TODO: Get global patternType from query?
             patternType: SearchPatternType.literal,
             globbing: props.globbing,
             interpretComments: true,
@@ -235,7 +236,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             <SearchNotebookAddBlockButtons
                 onAddBlock={onAddBlock}
                 index={blocks.length}
-                className="mt-4"
+                className="mt-2"
                 alwaysVisible={true}
             />
         </div>

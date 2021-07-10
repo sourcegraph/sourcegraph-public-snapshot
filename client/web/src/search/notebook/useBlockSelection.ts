@@ -9,7 +9,7 @@ interface UseBlockFocusOptions extends Pick<BlockProps, 'onSelectBlock'> {
     blockElement: HTMLElement | null
 }
 
-const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
+export const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
 
 export const useBlockSelection = ({
     id,
