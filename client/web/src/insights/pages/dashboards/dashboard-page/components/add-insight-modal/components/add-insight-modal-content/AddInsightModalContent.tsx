@@ -1,17 +1,20 @@
 import classnames from 'classnames';
 import React from 'react'
 import { Link } from 'react-router-dom'
-
+import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { FormInput } from '../../../../../../../components/form/form-input/FormInput';
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes';
 import { useField } from '../../../../../../../components/form/hooks/useField';
-import { SubmissionErrors, useForm } from '../../../../../../../components/form/hooks/useForm';
-import { Insight } from '../../../../../../../core/types';
+import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm';
+import { ReachableInsight } from '../../hooks/use-reachable-insights';
 
 import styles from './AddInsightModalContent.module.scss'
+import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText';
+import { Badge } from '../../../dashboard-select/components/badge/Badge';
+import { LoaderButton } from '../../../../../../../../components/LoaderButton';
 
 interface AddInsightModalContentProps {
-    insights: Insight[]
+    insights: ReachableInsight[]
     initialValues: AddInsightFormValues
     onSubmit: (values: AddInsightFormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
@@ -25,7 +28,7 @@ export interface AddInsightFormValues {
 export const AddInsightModalContent: React.FunctionComponent<AddInsightModalContentProps> = props => {
     const { initialValues, insights, onSubmit, onCancel } = props
 
-    const { formAPI, ref, handleSubmit } = useForm({
+    const { formAPI, ref, handleSubmit, } = useForm({
         initialValues,
         onSubmit
     })
@@ -65,12 +68,15 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                             onBlur={onBlur}
                             className='mr-2'/>
 
-                        <span>{insight.title}</span>
+                        <TruncatedText>{insight.title}</TruncatedText>
+                        <Badge value={insight.owner.name} className={styles.insightOwnerName}/>
                     </label>
                 )}
             </fieldset>
 
             <hr/>
+
+            {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert className='mt-3' error={formAPI.submitErrors[FORM_ERROR]} />}
 
             <div className='d-flex justify-content-end mt-4'>
                 <button
@@ -78,7 +84,15 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                     className='btn btn-outline-secondary mr-2'
                     onClick={onCancel}>Cancel</button>
 
-                <button type='submit' className='btn btn-primary'>Save</button>
+                <LoaderButton
+                    alwaysShowLabel={true}
+                    loading={formAPI.submitting}
+                    label={formAPI.submitting ? 'Saving' : 'Save'}
+                    type="submit"
+                    disabled={formAPI.submitting}
+                    spinnerClassName="mr-2"
+                    className="btn btn-primary"
+                />
             </div>
         </form>
     )

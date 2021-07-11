@@ -3,6 +3,12 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
 
 import { Settings } from '../../../../../../../schema/settings.schema';
 import { Insight, InsightConfiguration, isInsightSettingKey } from '../../../../../../core/types';
+import {
+    isSubjectInsightSupported,
+    SUBJECT_SHARING_LEVELS,
+    SupportedInsightSubject
+} from '../../../../../../core/types/subjects';
+import { getDashboardOwnerInfo } from '../../../../../../hooks/use-dashboards/utils';
 import { createInsightFromSettings } from '../../../../../../hooks/use-insight/use-insight';
 
 export interface UseReachableInsightsProps extends SettingsCascadeProps<Settings> {
@@ -12,60 +18,67 @@ export interface UseReachableInsightsProps extends SettingsCascadeProps<Settings
     ownerId: string
 }
 
+export type ReachableInsight = Insight & {
+    owner: {
+        id: string,
+        name: string
+    }
+}
+
 /**
  * Returns all reachable subject's insights by owner id.
  *
  * User subject has access to all insights from all organizations and global site settings.
  * Organization subject has access to only its insights.
  */
-export function useReachableInsights(props: UseReachableInsightsProps): Insight[] {
+export function useReachableInsights(props: UseReachableInsightsProps): ReachableInsight[] {
     const { settingsCascade, ownerId } = props
 
     if (!settingsCascade.subjects) {
         return []
     }
 
-    const configureSubject = settingsCascade.subjects
+    const ownerConfigureSubject = settingsCascade.subjects
         .find(configureSubject => configureSubject.subject.id === ownerId)
 
-    const ownerSubject = configureSubject?.subject
-    const ownerSubjectSettings = configureSubject?.settings
-
-    if (!ownerSubject) {
+    if (!ownerConfigureSubject) {
         return []
     }
 
-    switch (ownerSubject.__typename) {
-        case 'User': {
-            const final = settingsCascade.final
+    const subjectSharingLevel = SUBJECT_SHARING_LEVELS[ownerConfigureSubject.subject.__typename]
+    const availableSubjects = settingsCascade.subjects
+        .filter(configuredSubject => SUBJECT_SHARING_LEVELS[configuredSubject.subject.__typename] > subjectSharingLevel)
 
-            if (!final ||isErrorLike(final)) {
+    const subjectsWithReachableInsights = [
+        ownerConfigureSubject,
+        ...availableSubjects
+    ]
+
+    return subjectsWithReachableInsights
+        .filter(configureSubject => isSubjectInsightSupported(configureSubject.subject))
+        .flatMap(configureSubject => {
+            const { settings, subject } = configureSubject
+
+            if (!settings || isErrorLike(settings)) {
                 return []
             }
 
-            return Object.keys(final)
+            const subjectOwnerInfo = getDashboardOwnerInfo(subject as SupportedInsightSubject)
+
+            return Object.keys(settings)
                 .filter(isInsightSettingKey)
-                .map(key => createInsightFromSettings({
-                    insightKey: key,
-                    ownerId: ownerSubject.id,
-                    insightConfiguration: final[key] as InsightConfiguration
-                }) )
-        }
+                .map(key => {
+                    const insight = createInsightFromSettings({
+                        insightKey: key,
+                        ownerId: subject.id,
+                        insightConfiguration: settings[key] as InsightConfiguration
+                    })
 
-        case 'Org': {
-            if (!ownerSubjectSettings || isErrorLike(ownerSubjectSettings)) {
-                return []
-            }
-
-            return Object.keys(ownerSubjectSettings)
-                .filter(isInsightSettingKey)
-                .map(key => createInsightFromSettings({
-                    insightKey: key,
-                    ownerId: ownerSubject.id,
-                    insightConfiguration: ownerSubjectSettings[key] as InsightConfiguration
-                }))
-        }
-
-        default: return []
-    }
+                    return {
+                        ...insight,
+                        // Extend common insight object with owner info
+                        owner: subjectOwnerInfo
+                    }
+                })
+        })
 }

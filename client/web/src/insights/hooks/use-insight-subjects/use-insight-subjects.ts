@@ -14,5 +14,5 @@ export function useInsightSubjects(props: SettingsCascadeProps): SupportedInsigh
 
     return settingsCascade.subjects
         .map(configureSubject => configureSubject.subject)
-        .filter<SupportedInsightSubject>(subject => isSubjectInsightSupported(subject))
+        .filter<SupportedInsightSubject>(isSubjectInsightSupported)
 }

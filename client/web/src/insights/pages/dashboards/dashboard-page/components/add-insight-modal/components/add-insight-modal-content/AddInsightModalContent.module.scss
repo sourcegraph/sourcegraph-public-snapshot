@@ -1,7 +1,7 @@
 
 
 .insights-container {
-    max-height: 14rem;    
+    max-height: 14rem;
     overflow: auto;
 }
 
@@ -15,6 +15,11 @@
 
     &:hover, &:focus-within {
         cursor: pointer;
-        background: var(--color-bg-2);
+        background: var(--color-bg-3);
     }
+}
+
+.insight-owner-name {
+    max-width: 40%;
+    margin-left: 1rem;
 }

@@ -11,7 +11,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors';
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm';
 import { InsightsApiContext } from '../../../../../core/backend/api-provider';
 import { updateDashboardInsightIds } from '../../../../../core/settings-action/dashboards';
-import { RealInsightDashboard } from '../../../../../core/types';
+import { SettingsBasedInsightDashboard } from '../../../../../core/types';
 
 import styles from './AddInsightModal.module.scss'
 import {
@@ -20,8 +20,8 @@ import {
 } from './components/add-insight-modal-content/AddInsightModalContent';
 import { useReachableInsights } from './hooks/use-reachable-insights';
 
-export interface AddInsightModalProps extends SettingsCascadeProps, PlatformContextProps {
-    dashboard: RealInsightDashboard
+export interface AddInsightModalProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
+    dashboard: SettingsBasedInsightDashboard
     onClose: () => void
 }
 
@@ -43,16 +43,17 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
             const { insightIds } = values;
             const settings = await getSubjectSettings(dashboard.owner.id).toPromise()
 
-            const editedSettings = updateDashboardInsightIds(settings.contents, dashboard.id, insightIds)
+            const editedSettings = updateDashboardInsightIds(settings.contents, dashboard.settingsKey, insightIds)
 
             await updateSubjectSettings(platformContext, dashboard.owner.id, editedSettings).toPromise()
+            onClose()
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
     }
 
     return (
-        <Dialog className={styles.modal} onDismiss={close}>
+        <Dialog className={styles.modal} onDismiss={onClose}>
             <button
                 type='button'
                 className={classnames('btn btn-icon', styles.closeButton)}

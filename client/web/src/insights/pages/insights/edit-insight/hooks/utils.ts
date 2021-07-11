@@ -7,7 +7,7 @@ import { Settings } from '../../../../../schema/settings.schema';
 import { addInsightToDashboard, removeInsightFromDashboard } from '../../../../core/settings-action/dashboards';
 import { addInsightToSettings, removeInsightFromSettings } from '../../../../core/settings-action/insights';
 import { Insight, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../../../core/types';
-import { SupportedInsightSubjectType } from '../../../../core/types/subjects';
+import { SUBJECT_SHARING_LEVELS } from '../../../../core/types/subjects';
 
 interface EditInsightProps extends SettingsCascadeProps<Settings> {
     oldInsight: Insight
@@ -144,11 +144,6 @@ export function updateInsightSettings(props: EditInsightProps): SettingsOperatio
     ]
 }
 
-const SUBJECT_LEVELS: Record<string, number> = {
-    [SupportedInsightSubjectType.User]: 1,
-    [SupportedInsightSubjectType.Organization]: 2
-}
-
 export function updateDashboardInsightOwnership(props: EditInsightProps): SettingsOperation[] {
     const { oldInsight, newInsight, settingsCascade } = props
 
@@ -171,8 +166,8 @@ export function updateDashboardInsightOwnership(props: EditInsightProps): Settin
     const previousSubjectType = oldInsightSubject.subject.__typename
     const nextSubjectType = newInsightSubject.subject.__typename
 
-    const previousShareLevel = SUBJECT_LEVELS[previousSubjectType]
-    const nextShareLevel = SUBJECT_LEVELS[nextSubjectType]
+    const previousShareLevel = SUBJECT_SHARING_LEVELS[previousSubjectType]
+    const nextShareLevel = SUBJECT_SHARING_LEVELS[nextSubjectType]
 
     // This means that we increased shared level - insights are still accessible in dashboards
     // of subject with less shared level. Nothing should be changed in settings

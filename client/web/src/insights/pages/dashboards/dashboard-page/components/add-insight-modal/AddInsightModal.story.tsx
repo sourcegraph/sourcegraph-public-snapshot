@@ -36,7 +36,7 @@ const ORG_1_SETTINGS = {
     lastID: 100,
     settings: {
         'searchInsights.insight.testOrg1graphQLTypesMigration': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types',
+            title: '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
             repositories: ['github.com/sourcegraph/sourcegraph'],
             series: [],
             step: { 'weeks': 6 }
@@ -53,23 +53,11 @@ const ORG_1_SETTINGS = {
             series: [],
             step: { 'weeks': 6 }
         },
-        'searchInsights.insight.testOrg1graphQLTypesMigration3': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { 'weeks': 6 }
-        },
-        'searchInsights.insight.testOrg1graphQLTypesMigration4': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { 'weeks': 6 }
-        },
     },
     subject: {
         __typename: 'Org' as const,
         name: 'test organization 1',
-        displayName: 'Test organization 1',
+        displayName: 'Test organization 1 Test organization 1 Test organization 1',
         viewerCanAdminister: true,
         id: 'test_org_1_id',
     }
@@ -132,6 +120,10 @@ add('AddInsightModal', () => {
 
     return (
         <>
-            {open && <AddInsightModal settingsCascade={SETTINGS_CASCADE} dashboard={dashboard} onClose={() => setOpen(false)}/>}
+            {open && <AddInsightModal
+                platformContext={{} as any}
+                settingsCascade={SETTINGS_CASCADE}
+                dashboard={dashboard}
+                onClose={() => setOpen(false)}/>}
         </>)
 })

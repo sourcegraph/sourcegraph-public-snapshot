@@ -16,8 +16,9 @@ import { CodeInsightsIcon } from '../../../components'
 import { InsightsDashboardType } from '../../../core/types'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
 
-export interface DashboardsPageProps extends TelemetryProps, SettingsCascadeProps<Settings>, ExtensionsControllerProps {
+export interface DashboardsPageProps extends PlatformContextProps<'updateSettings'>, TelemetryProps, SettingsCascadeProps<Settings>, ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -31,7 +32,7 @@ export interface DashboardsPageProps extends TelemetryProps, SettingsCascadeProp
  * Displays insights dashboard page - dashboard selector and grid of dashboard insights.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
-    const { dashboardID, settingsCascade, extensionsController, telemetryService } = props
+    const { dashboardID, settingsCascade, extensionsController, telemetryService, platformContext } = props
     const { url } = useRouteMatch()
 
     if (!dashboardID) {
@@ -60,6 +61,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                 />
 
                 <DashboardsContent
+                    platformContext={platformContext}
                     extensionsController={extensionsController}
                     telemetryService={telemetryService}
                     settingsCascade={settingsCascade}

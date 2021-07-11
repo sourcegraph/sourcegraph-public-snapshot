@@ -79,7 +79,7 @@ interface DashboardOwnerInfo extends InsightDashboardOwner {
  *
  * @param subject - subject settings (User, Organization, Site, Client)
  */
-function getDashboardOwnerInfo(subject: SupportedInsightSubject): DashboardOwnerInfo {
+export function getDashboardOwnerInfo(subject: SupportedInsightSubject): DashboardOwnerInfo {
     switch (subject.__typename) {
         case 'Org':
             return {

@@ -55,10 +55,12 @@ export function useCheckboxes<
             isChecked: (value: string) => state.value.includes(value),
             onBlur: () => setState(state => ({...state, touched: true })),
             onChange: (event: ChangeEvent<HTMLInputElement>) => {
-                if (event.target.checked) {
-                    const checkboxValue = event.target.value as unknown as string
+                const checkboxValue = event.target.value as unknown as string
 
+                if (event.target.checked) {
                     setState(state => ({ ...state, value: [...state.value, checkboxValue ]}))
+                } else {
+                    setState(state => ({ ...state, value: state.value.filter(value => value !== checkboxValue)}))
                 }
             }
         },
