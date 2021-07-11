@@ -34,14 +34,7 @@ export function removeDashboardFromSettings(settings: string, dashboardId: strin
  * Adds insight id in dashboard configuration.
  */
 export function addInsightToDashboard(settings: string, dashboardId: string, insightId: string): string {
-    const parsedSettings = parseJSONCOrError<Settings>(settings)
-
-    if (isErrorLike(parsedSettings)) {
-        return settings
-    }
-
-    const dashboards = parsedSettings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {}
-    const currentDashboard = dashboards[dashboardId]
+    const currentDashboard = getDashboard(settings, dashboardId)
 
     if (!currentDashboard) {
         return settings
@@ -59,15 +52,8 @@ export function addInsightToDashboard(settings: string, dashboardId: string, ins
 /**
  * Removes insight id from the dashboard configuration insight ids setting.
  */
-export function removeInsightFromDashboard(settings: string, dashboardId: string, insightId: string) {
-    const parsedSettings = parseJSONCOrError<Settings>(settings)
-
-    if (isErrorLike(parsedSettings)) {
-        return settings
-    }
-
-    const dashboards = parsedSettings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {}
-    const currentDashboard = dashboards[dashboardId]
+export function removeInsightFromDashboard(settings: string, dashboardId: string, insightId: string): string {
+    const currentDashboard = getDashboard(settings, dashboardId)
 
     if (!currentDashboard) {
         return settings
@@ -80,4 +66,33 @@ export function removeInsightFromDashboard(settings: string, dashboardId: string
         [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId, 'insightIds'],
         insightIds.filter(id => id !== insightId)
     )
+}
+
+/**
+ * Updates dashboard insight ids setting field.
+ */
+export function updateDashboardInsightIds(settings: string, dashboardId: string, insightIds: string[]): string {
+    const currentDashboard = getDashboard(settings, dashboardId)
+
+    if (!currentDashboard) {
+        return settings
+    }
+
+    return modify(
+        settings,
+        [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId, 'insightIds'],
+        insightIds
+    )
+}
+
+function getDashboard(settings: string, dashboardId: string): InsightDashboard | undefined {
+    const parsedSettings = parseJSONCOrError<Settings>(settings)
+
+    if (isErrorLike(parsedSettings)) {
+        return
+    }
+
+    const dashboards = parsedSettings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {}
+
+    return dashboards[dashboardId]
 }

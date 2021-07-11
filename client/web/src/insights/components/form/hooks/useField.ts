@@ -60,7 +60,9 @@ export interface useFieldAPI<FieldValue> {
  *
  * Should be used with useForm hook to connect field and form component's states.
  * */
-export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
+export function useField<
+    FormValues,
+    FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
     name: FieldValueKey,
     formApi: FormAPI<FormValues>,
     validators?: Validators<FormValues[FieldValueKey]>
