@@ -22,6 +22,7 @@ import {
 import styles from './LangStatsInsightCreationPage.module.scss'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
+import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects';
 
 const DEFAULT_FINAL_SETTINGS = {}
 
@@ -37,14 +38,16 @@ export interface LangStatsInsightCreationPageProps
 }
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
-    const { authenticatedUser, settingsCascade, platformContext, telemetryService } = props
+    const { settingsCascade, platformContext, telemetryService } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
     const history = useHistory()
 
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
-        'insights.code-stats-creation',
+        'insights.code-stats-creation-ui',
         undefined
     )
+
+    const insightSubjects = useInsightSubjects({ settingsCascade })
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
@@ -52,16 +55,8 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
-            if (!authenticatedUser) {
-                return
-            }
 
-            const { id: userID } = authenticatedUser
-            const subjectID =
-                values.visibility === 'personal'
-                    ? userID
-                    : // If this is not a 'personal' value than we are dealing with org id
-                      values.visibility
+            const subjectID = values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
@@ -81,15 +76,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
             return
         },
-        [
-            authenticatedUser,
-            getSubjectSettings,
-            updateSubjectSettings,
-            platformContext,
-            setInitialFormValues,
-            telemetryService,
-            history,
-        ]
+        [getSubjectSettings, updateSubjectSettings, platformContext, setInitialFormValues, telemetryService, history]
     )
 
     const handleCancel = useCallback(() => {
@@ -102,10 +89,6 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {
         setInitialFormValues(event.values)
     }
-
-    const {
-        organizations: { nodes: orgs },
-    } = authenticatedUser
 
     return (
         <Page className={classnames(styles.creationPage, 'col-10')}>
@@ -126,7 +109,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
                 initialValues={initialFormValues}
-                organizations={orgs}
+                subjects={insightSubjects}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onChange={handleChange}
