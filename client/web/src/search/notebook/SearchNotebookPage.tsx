@@ -67,7 +67,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                     annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ text: 'Search Notebook' }]}
                 />
-                <hr className="mt-2 mb-3 mx-3" />
+                <hr className="mt-2 mb-1 mx-3" />
                 <SearchNotebook {...props} blocks={blocks} onBlocksChange={onBlocksChange} />
             </Page>
         </div>

@@ -13,7 +13,7 @@ export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstruc
         enabled: false,
     },
     scrollbar: {
-        vertical: 'hidden',
+        vertical: 'auto',
         horizontal: 'hidden',
     },
     glyphMargin: false,
@@ -34,7 +34,6 @@ export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstruc
     // Display the cursor as a 1px line.
     cursorStyle: 'line',
     cursorWidth: 1,
-    automaticLayout: true,
     renderLineHighlight: 'none',
     wordWrap: 'on',
 }

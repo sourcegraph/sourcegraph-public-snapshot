@@ -141,7 +141,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                 <MonacoEditor
                     language="markdown"
                     value={input}
-                    height={150}
+                    height="auto"
                     isLightTheme={isLightTheme}
                     editorWillMount={() => {}}
                     onEditorCreated={setEditor}

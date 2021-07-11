@@ -119,7 +119,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 <MonacoEditor
                     language={SOURCEGRAPH_SEARCH}
                     value={input}
-                    height={75}
+                    height="auto"
                     isLightTheme={isLightTheme}
                     editorWillMount={() => {}}
                     onEditorCreated={setEditor}
