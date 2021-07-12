@@ -19,6 +19,7 @@ func TestSetDefaultQueryCount(t *testing.T) {
 	for in, want := range map[string]string{
 		"":                     hardCodedCount,
 		"count:10":             "count:10",
+		"count:all":            "count:all",
 		"r:foo":                "r:foo" + hardCodedCount,
 		"r:foo count:10":       "r:foo count:10",
 		"r:foo count:10 f:bar": "r:foo count:10 f:bar",
