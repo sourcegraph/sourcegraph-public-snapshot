@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1635,7 +1634,15 @@ func testSyncRepoMaintainsOtherSources(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testUserAddedRepos(store *repos.Store) func(*testing.T) {
+func testBatchUserAddedRepos(store *repos.Store) func(*testing.T) {
+	return testUserAddedRepos(store, false)
+}
+
+func testStreamingUserAddedRepos(store *repos.Store) func(*testing.T) {
+	return testUserAddedRepos(store, true)
+}
+
+func testUserAddedRepos(store *repos.Store, streaming bool) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1707,8 +1714,9 @@ func testUserAddedRepos(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(adminService, nil, publicRepo, privateRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1723,8 +1731,9 @@ func testUserAddedRepos(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(adminService, nil)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1739,8 +1748,9 @@ func testUserAddedRepos(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1761,8 +1771,9 @@ func testUserAddedRepos(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1783,8 +1794,9 @@ func testUserAddedRepos(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1806,6 +1818,7 @@ func testUserAddedRepos(store *repos.Store) func(*testing.T) {
 			Now:                 time.Now,
 			Store:               store,
 			UserReposMaxPerUser: 1,
+			Streaming:           streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
 			t.Fatal("Expected an error, got none")
@@ -1820,6 +1833,7 @@ func testUserAddedRepos(store *repos.Store) func(*testing.T) {
 			Now:                 time.Now,
 			Store:               store,
 			UserReposMaxPerSite: 1,
+			Streaming:           streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
 			t.Fatal("Expected an error, got none")
@@ -2023,7 +2037,15 @@ func testNameOnConflictDiscardNew(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testNameOnConflictOnRename(store *repos.Store) func(*testing.T) {
+func testBatchNameOnConflictOnRename(store *repos.Store) func(*testing.T) {
+	return testNameOnConflictOnRename(store, false)
+}
+
+func testStreamingNameOnConflictOnRename(store *repos.Store) func(*testing.T) {
+	return testNameOnConflictOnRename(store, true)
+}
+
+func testNameOnConflictOnRename(store *repos.Store, streaming bool) func(*testing.T) {
 	return func(t *testing.T) {
 		// Test the case where more than one external service returns the same name for different repos. The names
 		// are the same, but the external id are different.
@@ -2081,8 +2103,9 @@ func testNameOnConflictOnRename(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo1)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -2094,8 +2117,9 @@ func testNameOnConflictOnRename(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo2)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -2112,14 +2136,14 @@ func testNameOnConflictOnRename(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc1, nil, renamedRepo1)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
 		}
 
-		// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
 		fromDB, err := store.RepoStore.List(ctx, database.ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
@@ -2130,14 +2154,33 @@ func testNameOnConflictOnRename(store *repos.Store) func(*testing.T) {
 		}
 
 		found := fromDB[0]
-		expectedID := "foo-external-bar"
+		var expectedID string
+
+		if !streaming {
+			// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
+			expectedID = "foo-external-bar"
+		} else {
+			// We expect repo2 to be synced since we always pick the just sourced repo as the winner, deleting the other.
+			// If the existing conflicting repo still exists, it'll have a different name (because names are unique in
+			// the code host), so it'll get re-created once we sync it later.
+			expectedID = "foo-external-foo"
+		}
+
 		if found.ExternalRepo.ID != expectedID {
 			t.Fatalf("Want %q, got %q", expectedID, found.ExternalRepo.ID)
 		}
 	}
 }
 
-func testDeleteExternalService(store *repos.Store) func(*testing.T) {
+func testBatchDeleteExternalService(store *repos.Store) func(*testing.T) {
+	return testDeleteExternalService(store, false)
+}
+
+func testStreamingDeleteExternalService(store *repos.Store) func(*testing.T) {
+	return testDeleteExternalService(store, true)
+}
+
+func testDeleteExternalService(store *repos.Store, streaming bool) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -2182,8 +2225,9 @@ func testDeleteExternalService(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -2195,8 +2239,9 @@ func testDeleteExternalService(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 			t.Fatal(err)

@@ -58,11 +58,21 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/Batch/OrphanedRepos", testBatchOrphanedRepo},
 		{"DBStore/Syncer/Streaming/OrphanedRepos", testStreamingOrphanedRepo},
 
-		{"DBStore/Syncer/Batch/UserAddedRepos", testUserAddedRepos},
-		{"DBStore/Syncer/Batch/DeleteExternalService", testDeleteExternalService},
+		{"DBStore/Syncer/Batch/UserAddedRepos", testBatchUserAddedRepos},
+		{"DBStore/Syncer/Streaming/UserAddedRepos", testStreamingUserAddedRepos},
+
+		{"DBStore/Syncer/Batch/DeleteExternalService", testBatchDeleteExternalService},
+		{"DBStore/Syncer/Batch/DeleteExternalService", testStreamingDeleteExternalService},
+
+		// We don't run streaming versions of these two tests because the behaviour is completely different, and it is
+		// tested by the streaming NameConflictOnRename test. Since we sync one repo at a time, there's no "sorting" by
+		// IDs to pick winners - we always treat the just now sourced repo as the winner, and delete the conflicting one.
 		{"DBStore/Syncer/Batch/NameConflictDiscardOld", testNameOnConflictDiscardOld},
 		{"DBStore/Syncer/Batch/NameConflictDiscardNew", testNameOnConflictDiscardNew},
-		{"DBStore/Syncer/Batch/NameConflictOnRename", testNameOnConflictOnRename},
+
+		{"DBStore/Syncer/Batch/NameConflictOnRename", testBatchNameOnConflictOnRename},
+		{"DBStore/Syncer/Streaming/NameConflictOnRename", testStreamingNameOnConflictOnRename},
+
 		{"DBStore/Syncer/Batch/ConflictingSyncers", testConflictingSyncers},
 		{"DBStore/Syncer/Batch/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 	} {
