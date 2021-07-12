@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Backend Code Insights will aggregate viewable repositories based on the authenticated user. [#22471](https://github.com/sourcegraph/sourcegraph/pull/22471)
 - Added support for highlighting .frugal files as Thrift syntax.
 - Added `file:contains.content(regexp)` predicate, which filters only to files that contain matches of the given pattern. [#22666](https://github.com/sourcegraph/sourcegraph/pull/22666)
+- Added "Groovy" to `lang:` filter suggestions in the search bar. [#22755](https://github.com/sourcegraph/sourcegraph/pull/22755)
 
 ### Changed
 

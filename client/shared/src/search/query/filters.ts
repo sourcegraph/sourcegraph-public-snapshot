@@ -164,6 +164,7 @@ export const LANGUAGES: string[] = [
     'Erlang',
     'Go',
     'GraphQL',
+    'Groovy',
     'Haskell',
     'HTML',
     'Java',
