@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
@@ -177,7 +178,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                         value={input}
                         height="auto"
                         isLightTheme={isLightTheme}
-                        editorWillMount={() => {}}
+                        editorWillMount={noop}
                         onEditorCreated={setEditor}
                         options={MONACO_BLOCK_INPUT_OPTIONS}
                         border={false}

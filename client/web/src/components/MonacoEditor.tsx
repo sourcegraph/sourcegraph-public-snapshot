@@ -206,7 +206,6 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         if (!element) {
             return
         }
-        // TODO: this is not a monaco "instance", this is the entire monaco module!
         this.props.editorWillMount(monaco)
         const autoHeightOptions =
             this.props.height === 'auto' ? { automaticLayout: true, scrollBeyondLastLine: false } : {}
