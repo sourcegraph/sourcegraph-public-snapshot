@@ -57,33 +57,3 @@ func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
 func (s FakeSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
-
-type ErrUnauthorized struct{}
-
-func (e ErrUnauthorized) Error() string {
-	return "bad credentials"
-}
-
-func (e ErrUnauthorized) Unauthorized() bool {
-	return true
-}
-
-type ErrForbidden struct{}
-
-func (e ErrForbidden) Error() string {
-	return "forbidden"
-}
-
-func (e ErrForbidden) Forbidden() bool {
-	return true
-}
-
-type ErrAccountSuspended struct{}
-
-func (e ErrAccountSuspended) Error() string {
-	return "account suspended"
-}
-
-func (e ErrAccountSuspended) AccountSuspended() bool {
-	return true
-}
