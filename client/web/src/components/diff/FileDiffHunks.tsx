@@ -234,6 +234,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                             isSplitMode && 'flex-1 w-50',
                             'file-diff-node__status-bar border-bottom border-top-0'
                         )}
+                        statusBarItemClassName="mx-0"
                         extensionsController={extensionInfo.extensionsController}
                         location={location}
                         badgeText="BASE"
@@ -244,6 +245,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                             isSplitMode && 'w-50',
                             'flex-1 file-diff-node__status-bar border-bottom border-top-0'
                         )}
+                        statusBarItemClassName="mx-0"
                         extensionsController={extensionInfo.extensionsController}
                         location={location}
                         badgeText="HEAD"

@@ -23,6 +23,7 @@ import { useCarousel } from '../../components/useCarousel'
 interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
+    statusBarItemClassName?: string
     /**
      * Used to determine when to restart timer to show "Install extensions"
      * message when there are no status bar items. Only necessary when status bar
@@ -44,6 +45,7 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     getStatusBarItems,
     className,
+    statusBarItemClassName,
     extensionsController,
     uri,
     location,
@@ -125,6 +127,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                                   statusBarItem={statusBarItem}
                                   extensionsController={extensionsController}
                                   location={location}
+                                  className={statusBarItemClassName}
                               />
                           ))
                         : hasEnoughTimePassed && (
@@ -159,7 +162,7 @@ const StatusBarItem: React.FunctionComponent<
         component?: JSX.Element
         location: H.Location
     } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
-> = ({ statusBarItem, className = 'status-bar', component, extensionsController, location }) => {
+> = ({ statusBarItem, className, component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)
 
     const command = useMemo(() => statusBarItem.command, [statusBarItem.command])
@@ -191,8 +194,9 @@ const StatusBarItem: React.FunctionComponent<
     return (
         <ButtonLink
             className={classNames(
-                `${className}__item h-100 d-flex align-items-center px-1 text-decoration-none`,
-                noop && `${className}__item--noop`
+                'status-bar__item h-100 d-flex align-items-center px-1 text-decoration-none',
+                noop && 'status-bar__item--noop',
+                className
             )}
             data-tooltip={statusBarItem.tooltip}
             onSelect={handleCommand}
@@ -201,7 +205,7 @@ const StatusBarItem: React.FunctionComponent<
             disabled={commandState === 'loading'}
         >
             {component || (
-                <small className={classNames(`${className}__text`, commandState === 'loading' && 'text-muted')}>
+                <small className={classNames('status-bar__text', commandState === 'loading' && 'text-muted')}>
                     {statusBarItem.text}
                 </small>
             )}
