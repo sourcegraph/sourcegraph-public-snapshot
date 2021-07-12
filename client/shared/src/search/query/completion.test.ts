@@ -5,7 +5,7 @@ import { NEVER, of } from 'rxjs'
 import { SearchSuggestion } from '../../graphql/schema'
 
 import { getCompletionItems, repositoryCompletionItemKind } from './completion'
-import { popularLanguages } from './languageFilter'
+import { POPULAR_LANGUAGES } from './languageFilter'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
 
@@ -294,7 +294,7 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ label }) => label)
-        ).toStrictEqual(popularLanguages)
+        ).toStrictEqual(POPULAR_LANGUAGES)
     })
 
     test('returns completions in order of discrete value definition, not alphabetically', async () => {

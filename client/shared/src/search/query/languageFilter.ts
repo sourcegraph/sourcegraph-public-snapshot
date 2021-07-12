@@ -645,5 +645,5 @@ export const POPULAR_LANGUAGES: string[] = [
 // Returns a list of popular languages initially and a complete list when the
 // user has provided input.
 export const languageCompletion = (value: Literal | undefined): string[] => {
-    return value && value.value ? allLanguages : popularLanguages
+    return value && value.value ? ALL_LANGUAGES : POPULAR_LANGUAGES
 }
