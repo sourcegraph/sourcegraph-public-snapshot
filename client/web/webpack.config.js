@@ -24,6 +24,14 @@ const isCI = process.env.CI === 'true'
 const isCacheEnabled = isDevelopment && !isCI
 const isHotReloadEnabled = isDevelopment && !isCI
 
+console.log({
+  isDevelopment,
+  isProduction,
+  isCI,
+  isCacheEnabled,
+  isHotReloadEnabled,
+})
+
 const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 
 const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
