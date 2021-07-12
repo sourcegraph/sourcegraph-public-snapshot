@@ -36,7 +36,7 @@ interface InsightsDashboardCreationPageProps
 }
 
 export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDashboardCreationPageProps> = props => {
-    const { platformContext, telemetryService, authenticatedUser, settingsCascade } = props
+    const { platformContext, telemetryService, settingsCascade } = props
 
     const history = useHistory()
     const subjects = useInsightSubjects({ settingsCascade })
@@ -45,13 +45,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     const finalSettings = useDashboardSettings({ settingsCascade })
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
-        const { id: userID } = authenticatedUser
-
-        const subjectID =
-            values.visibility === 'personal'
-                ? userID
-                : // If this is not a 'personal' value than we are dealing with an org id
-                  values.visibility
+        const subjectID = values.visibility
 
         try {
             const settings = await getSubjectSettings(subjectID).toPromise()
@@ -75,7 +69,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     return (
         <Page className={classnames('col-8', styles.page)}>
-            <PageTitle title="Create new code insight" />
+            <PageTitle title="Add new dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
 
@@ -95,7 +89,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 alwaysShowLabel={true}
                                 data-testid="insight-save-button"
                                 loading={formAPI.submitting}
-                                label={formAPI.submitting ? 'Submitting' : 'Create dashboard'}
+                                label={formAPI.submitting ? 'Creating' : 'Create dashboard'}
                                 spinnerClassName="mr-2"
                                 type="submit"
                                 disabled={formAPI.submitting}

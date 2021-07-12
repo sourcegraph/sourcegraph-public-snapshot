@@ -44,10 +44,13 @@ export interface InsightsDashboardCreationContentProps {
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues = DASHBOARD_INITIAL_VALUES, subjects, dashboardsSettings, onSubmit, children } = props
+    const { initialValues, subjects, dashboardsSettings, onSubmit, children } = props
+
+    // Calculate initial value for the visibility settings
+    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
-        initialValues,
+        initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
         onSubmit,
     })
 
@@ -79,7 +82,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     value={userSubject.id}
                     title="Private"
                     description="visible only to you"
-                    checked={visibility.input.value === 'personal'}
+                    checked={visibility.input.value === userSubject.id}
                     className="mr-3"
                     onChange={visibility.input.onChange}
                 />
