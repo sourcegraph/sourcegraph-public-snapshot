@@ -194,8 +194,8 @@ const StatusBarItem: React.FunctionComponent<
     return (
         <ButtonLink
             className={classNames(
-                'status-bar__item h-100 d-flex align-items-center px-1 text-decoration-none',
-                noop && 'status-bar__item--noop',
+                'status-bar__item h-100 d-flex align-items-center px-1',
+                noop && 'status-bar__item--noop text-decoration-none',
                 className
             )}
             data-tooltip={statusBarItem.tooltip}

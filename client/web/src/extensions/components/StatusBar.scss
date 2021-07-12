@@ -53,11 +53,11 @@
 
         &--noop {
             cursor: default;
+            color: var(--body-color);
         }
     }
 
     &__text {
         padding-top: 0.0625rem; // 1px
-        color: var(--body-color);
     }
 }
