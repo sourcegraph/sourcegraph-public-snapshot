@@ -11,12 +11,6 @@ export interface UseCheckboxAPI<FieldValue> {
     values: string[]
 }
 
-function assertArray<T>(value: unknown): asserts value is T[] {
-    if (!Array.isArray(value)) {
-        throw new TypeError('Checkbox form value must be array-like')
-    }
-}
-
 interface CheckboxesState<FieldValue> {
     value: FieldValue[]
     touched: boolean
@@ -24,12 +18,10 @@ interface CheckboxesState<FieldValue> {
 
 export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
     name: FieldValueKey,
-    formApi: FormValues[FieldValueKey] extends string[] ? FormAPI<FormValues> : never
+    formApi: Omit<FormAPI<FormValues>, 'initialValues'> & { initialValues: { [_ in FieldValueKey]: string[] } }
 ): UseCheckboxAPI<string> {
     const { setFieldState, initialValues } = formApi
     const initialCheckboxesValue = initialValues[name]
-
-    assertArray<string>(initialCheckboxesValue)
 
     const [state, setState] = useState<CheckboxesState<string>>({
         value: initialCheckboxesValue,
