@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -239,6 +240,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
+		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") == "1",
 	}
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
