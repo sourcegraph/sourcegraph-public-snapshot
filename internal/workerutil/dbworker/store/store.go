@@ -157,7 +157,7 @@ type Options struct {
 	// supplied.
 	OrderByExpression *sqlf.Query
 
-	// ColumnExpressions are the target columns provided to the query when selecting a jobrecord. These
+	// ColumnExpressions are the target columns provided to the query when selecting a job record. These
 	// expressions may use the alias provided in `ViewName`, if one was supplied.
 	ColumnExpressions []*sqlf.Query
 
