@@ -17,6 +17,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 import { Settings } from '../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
 import { getSubjectDashboardByID } from '../../../hooks/use-dashboards/utils'
+import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
 import { InsightsDashboardCreationContent } from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 import { useDashboardSettings } from '../creation/hooks/use-dashboard-settings'
 
@@ -35,6 +36,7 @@ interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, Platfor
 export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
     const { dashboardId, settingsCascade, authenticatedUser, platformContext } = props
     const history = useHistory()
+    const subjects = useInsightSubjects({ settingsCascade })
 
     const [previousDashboard] = useState(() => {
         const subjects = settingsCascade.subjects
@@ -106,7 +108,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                 <InsightsDashboardCreationContent
                     initialValues={dashboardInitialValues}
                     dashboardsSettings={finalDashboardSettings}
-                    organizations={authenticatedUser.organizations.nodes}
+                    subjects={subjects}
                     onSubmit={handleSubmit}
                 >
                     {formAPI => (

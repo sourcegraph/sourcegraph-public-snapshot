@@ -18,6 +18,7 @@ import { CodeInsightsIcon } from '../../../components'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { addDashboardToSettings } from '../../../core/settings-action/dashboards'
+import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
     DashboardCreationFields,
@@ -38,6 +39,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     const { platformContext, telemetryService, authenticatedUser, settingsCascade } = props
 
     const history = useHistory()
+    const subjects = useInsightSubjects({ settingsCascade })
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
     const finalSettings = useDashboardSettings({ settingsCascade })
@@ -80,7 +82,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
             <Container className="mt-4">
                 <InsightsDashboardCreationContent
                     dashboardsSettings={finalSettings}
-                    organizations={authenticatedUser.organizations.nodes}
+                    subjects={subjects}
                     onSubmit={handleSubmit}
                 >
                     {formAPI => (

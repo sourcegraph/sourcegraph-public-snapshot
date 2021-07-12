@@ -7,9 +7,9 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 
 import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
+import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../../../../core/types/subjects'
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -30,7 +30,7 @@ export interface InsightsDashboardCreationContentProps {
     /**
      * Organizations list used in the creation form for dashboard visibility setting.
      */
-    organizations: Organization[]
+    subjects: SupportedInsightSubject[]
 
     dashboardsSettings: {
         [k: string]: InsightDashboard
@@ -44,7 +44,7 @@ export interface InsightsDashboardCreationContentProps {
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues = DASHBOARD_INITIAL_VALUES, organizations, dashboardsSettings, onSubmit, children } = props
+    const { initialValues = DASHBOARD_INITIAL_VALUES, subjects, dashboardsSettings, onSubmit, children } = props
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues,
@@ -54,6 +54,10 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     const nameValidator = useDashboardNameValidator({ settings: dashboardsSettings })
     const name = useField('name', formAPI, { sync: nameValidator })
     const visibility = useField('visibility', formAPI)
+
+    // We always have user subject in our settings cascade
+    const userSubject = subjects.find(isUserSubject)!
+    const organizationSubjects = subjects.filter(isOrganizationSubject)
 
     return (
         // eslint-disable-next-line react/forbid-elements
@@ -72,7 +76,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
             <FormGroup name="visibility" title="Visibility" className="mb-0 mt-4">
                 <FormRadioInput
                     name="visibility"
-                    value="personal"
+                    value={userSubject.id}
                     title="Private"
                     description="visible only to you"
                     checked={visibility.input.value === 'personal'}
@@ -86,7 +90,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     Shared - visible to everyone is the chosen Organisation
                 </small>
 
-                {organizations.map(org => (
+                {organizationSubjects.map(org => (
                     <FormRadioInput
                         key={org.id}
                         name="visibility"
@@ -98,7 +102,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     />
                 ))}
 
-                {organizations.length === 0 && (
+                {organizationSubjects.length === 0 && (
                     <FormRadioInput
                         name="visibility"
                         value="organization"
