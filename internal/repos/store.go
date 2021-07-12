@@ -630,8 +630,8 @@ func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		metadata,
 	)
 
-	src, ok := r.Sources[svc.URN()]
-	if !ok {
+	src := r.Sources[svc.URN()]
+	if src == nil || src.CloneURL == "" {
 		return errors.New("CreateExternalServiceRepo: repo missing source info for external service")
 	}
 
@@ -739,8 +739,8 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		r.ID,
 	)
 
-	src, ok := r.Sources[svc.URN()]
-	if !ok {
+	src := r.Sources[svc.URN()]
+	if src == nil || src.CloneURL == "" {
 		return errors.New("UpdateExternalServiceRepo: repo missing source info for external service")
 	}
 
