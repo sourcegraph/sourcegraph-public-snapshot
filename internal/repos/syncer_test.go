@@ -467,57 +467,6 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				svcs:   []*types.ExternalService{tc.svc},
 				err:    "<nil>",
 			},
-			func() testCase {
-				var update interface{}
-				typ, ok := extsvc.ParseServiceType(tc.repo.ExternalRepo.ServiceType)
-				if !ok {
-					panic(fmt.Sprintf("test must be extended with new external service kind: %q", strings.ToLower(tc.repo.ExternalRepo.ServiceType)))
-				}
-				switch typ {
-				case extsvc.TypeGitHub:
-					update = &github.Repository{
-						IsArchived:       true,
-						ViewerPermission: "ADMIN",
-					}
-				case extsvc.TypeGitLab:
-					update = &gitlab.Project{Archived: true}
-				case extsvc.TypeBitbucketServer:
-					update = &bitbucketserver.Repo{Public: true}
-				case extsvc.TypeBitbucketCloud:
-					update = &bitbucketcloud.Repo{IsPrivate: true}
-				case extsvc.TypeAWSCodeCommit:
-					update = &awscodecommit.Repository{Description: "new description"}
-				case extsvc.TypeOther, extsvc.TypeGitolite:
-					return testCase{}
-				default:
-					panic(fmt.Sprintf("test must be extended with new external service kind: %q", strings.ToLower(tc.repo.ExternalRepo.ServiceType)))
-				}
-
-				expected := update
-				// Special case for GitHub, see Repo.Update method
-				if typ == extsvc.TypeGitHub {
-					expected = &github.Repository{
-						IsArchived: true,
-					}
-				}
-
-				return testCase{
-					name: string(tc.repo.Name) + "/metadata update",
-					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
-						tc.repo.With(types.Opt.RepoModifiedAt(clock.Time(1)),
-							types.Opt.RepoMetadata(update)),
-					)),
-					store:  s,
-					stored: types.Repos{tc.repo.Clone()},
-					now:    clock.Now,
-					diff: repos.Diff{Modified: types.Repos{tc.repo.With(
-						types.Opt.RepoModifiedAt(clock.Time(1)),
-						types.Opt.RepoMetadata(expected),
-					)}},
-					svcs: []*types.ExternalService{tc.svc},
-					err:  "<nil>",
-				}
-			}(),
 		)
 	}
 
