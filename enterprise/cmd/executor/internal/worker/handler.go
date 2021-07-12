@@ -77,7 +77,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 			// cancellation error we don't want to skip uploading these logs as users will
 			// often want to see how far something progressed prior to a timeout.
 			if err := h.store.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
-				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "id", record.RecordID(), "repositoryName", job.RepositoryName, "commit", job.Commit, "error", err)
+				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "repositoryName", job.RepositoryName, "commit", job.Commit, "error", err)
 			}
 		}
 	}()
