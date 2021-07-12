@@ -30,16 +30,16 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
 )
 
 const SelectAll: React.FunctionComponent<
-    Pick<MultiSelectContextState, 'onSelectVisible' | 'onSelectAll' | 'selected' | 'visible'>
-> = ({ onSelectVisible, onSelectAll, selected, visible }) => {
+    Pick<MultiSelectContextState, 'selectVisible' | 'selectAll' | 'selected' | 'visible'>
+> = ({ selectVisible, selectAll, selected, visible }) => {
     const isVisible = useMemo(() => selected === 'all' || selected.size === visible.size, [selected, visible])
     const onClick = useCallback(() => {
         if (selected === 'all') {
-            onSelectVisible()
+            selectVisible()
         } else {
-            onSelectAll()
+            selectAll()
         }
-    }, [selected, onSelectVisible, onSelectAll])
+    }, [selected, selectVisible, selectAll])
 
     if (!isVisible) {
         return null
@@ -55,17 +55,17 @@ const SelectAll: React.FunctionComponent<
 }
 
 const SelectVisibleCheckbox: React.FunctionComponent<
-    Pick<MultiSelectContextState, 'onDeselectVisible' | 'onSelectVisible' | 'selected' | 'visible'>
-> = ({ onDeselectVisible, onSelectVisible, selected, visible }) => {
+    Pick<MultiSelectContextState, 'deselectVisible' | 'selectVisible' | 'selected' | 'visible'>
+> = ({ deselectVisible: deselectVisible, selectVisible: selectVisible, selected, visible }) => {
     const checked = useMemo(() => selected === 'all' || selected.size === visible.size, [selected, visible])
     const disabled = useMemo(() => selected === 'all', [selected])
     const onClick = useCallback(() => {
         if (checked) {
-            onDeselectVisible()
+            deselectVisible()
         } else {
-            onSelectVisible()
+            selectVisible()
         }
-    }, [checked, onDeselectVisible, onSelectVisible])
+    }, [checked, deselectVisible, selectVisible])
 
     return (
         <span className="p-2 pl-3 d-none d-sm-block">

@@ -1,6 +1,6 @@
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React, { useCallback, useState, useContext } from 'react'
+import React, { useCallback, useContext } from 'react'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -9,14 +9,15 @@ import { Container } from '@sourcegraph/wildcard'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { MultiSelectContext } from '../../MultiSelectContext'
+import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
-import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
+import { PreviewFilterRow } from './PreviewFilterRow'
 import styles from './PreviewList.module.scss'
-import { PreviewListHeader } from './PreviewListHeader'
+import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']
@@ -50,24 +51,15 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
-    const [filters, setFilters] = useState<PreviewFilters>({
-        search: null,
-        currentState: null,
-        action: null,
-    })
-
-    const { onLoad } = useContext(MultiSelectContext)
+    const { filters, setPagination } = useContext(BatchChangePreviewContext)
+    const { setVisible: onLoad } = useContext(MultiSelectContext)
 
     const queryChangesetApplyPreviewConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryChangesetApplyPreview({
-                first: args.first ?? null,
-                after: args.after ?? null,
-                batchSpec: batchSpecID,
-                search: filters.search,
-                currentState: filters.currentState,
-                action: filters.action,
-            }).pipe(
+        (args: FilteredConnectionQueryArguments) => {
+            const pagination = { after: args.after ?? null, first: args.first ?? null }
+            setPagination(pagination)
+
+            return queryChangesetApplyPreview({ batchSpec: batchSpecID, ...filters, ...pagination }).pipe(
                 tap(connection => {
                     onLoad(
                         connection.nodes
@@ -83,14 +75,19 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                             .filter((id): id is string => id !== undefined)
                     )
                 })
-            ),
-        [batchSpecID, filters.search, filters.currentState, filters.action, onLoad, queryChangesetApplyPreview]
+            )
+        },
+        [setPagination, queryChangesetApplyPreview, batchSpecID, filters, onLoad]
     )
 
     return (
         <Container>
-            <PreviewFilterRow history={history} location={location} onFiltersChange={setFilters} />
-            <FilteredConnection<ChangesetApplyPreviewFields, Omit<ChangesetApplyPreviewNodeProps, 'node'>>
+            <PreviewFilterRow history={history} location={location} />
+            <FilteredConnection<
+                ChangesetApplyPreviewFields,
+                Omit<ChangesetApplyPreviewNodeProps, 'node'>,
+                PreviewListHeaderProps
+            >
                 className="mt-2"
                 nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{

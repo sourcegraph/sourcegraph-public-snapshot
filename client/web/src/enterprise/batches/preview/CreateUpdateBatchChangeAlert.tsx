@@ -1,14 +1,18 @@
 import classNames from 'classnames'
-import React, { useState } from 'react'
+import * as H from 'history'
+import React, { useContext, useState, useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../components/alerts'
-import { BatchSpecFields } from '../../../graphql-operations'
+import { BatchSpecFields, ChangesetSpecPublicationStateInput } from '../../../graphql-operations'
 import { Action, DropdownButton } from '../DropdownButton'
+import { MultiSelectContext } from '../MultiSelectContext'
 
+import { applyBatchChange, createBatchChange, queryAllChangesetSpecIDs } from './backend'
+import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
 export enum CreateUpdateBatchChangeAlertAction {
@@ -20,22 +24,76 @@ export enum CreateUpdateBatchChangeAlertAction {
 }
 
 export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
+    specID: string
+    toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
     showPublishUI: boolean
-    onApply: (
-        action: CreateUpdateBatchChangeAlertAction,
-        setIsLoading: (loadingOrError: boolean | Error) => void
-    ) => Promise<void>
     viewerCanAdminister: boolean
+    history: H.History
+    telemetryService: TelemetryService
 }
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateBatchChangeAlertProps> = ({
+    specID,
+    toBeArchived,
     batchChange,
     showPublishUI,
-    onApply,
     viewerCanAdminister,
+    history,
+    telemetryService,
 }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+
+    const { filters, pagination } = useContext(BatchChangePreviewContext)
+    const { selected } = useContext(MultiSelectContext)
+
+    const batchChangeID = batchChange?.id
+    const onApply = useCallback(
+        async (action: CreateUpdateBatchChangeAlertAction, setIsLoading: (loadingOrError: boolean | Error) => void) => {
+            if (!confirm(`Are you sure you want to ${batchChangeID ? 'update' : 'create'} this batch change?`)) {
+                return
+            }
+            setIsLoading(true)
+            try {
+                let publicationStates: ChangesetSpecPublicationStateInput[] | null = null
+                if (action !== CreateUpdateBatchChangeAlertAction.Apply) {
+                    const ids =
+                        selected === 'all'
+                            ? await queryAllChangesetSpecIDs({
+                                  batchSpec: specID,
+                                  ...filters,
+                                  ...pagination,
+                              }).toPromise()
+                            : [...selected]
+
+                    const state =
+                        action === CreateUpdateBatchChangeAlertAction.DraftAll ||
+                        action === CreateUpdateBatchChangeAlertAction.DraftSelected
+                            ? 'draft'
+                            : true
+
+                    publicationStates = ids.map(id => ({
+                        changesetSpec: id,
+                        publicationState: state,
+                    }))
+                }
+
+                const batchChange = batchChangeID
+                    ? await applyBatchChange({ batchSpec: specID, batchChange: batchChangeID, publicationStates })
+                    : await createBatchChange({ batchSpec: specID, publicationStates })
+
+                if (toBeArchived > 0) {
+                    history.push(`${batchChange.url}?archivedCount=${toBeArchived}&archivedBy=${specID}`)
+                } else {
+                    history.push(batchChange.url)
+                }
+                telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
+            } catch (error) {
+                setIsLoading(error)
+            }
+        },
+        [batchChangeID, filters, history, pagination, selected, specID, telemetryService, toBeArchived]
+    )
 
     const actions: Action[] = [
         {

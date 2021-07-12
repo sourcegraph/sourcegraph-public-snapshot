@@ -559,20 +559,25 @@ const VisibleChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
     return <ChangesetStatusCell state={node.targets.changeset.state} className={className} />
 }
 
-interface SelectCheckboxProps extends Pick<MultiSelectContextState, 'onDeselect' | 'onSelect' | 'selected'> {
+interface SelectCheckboxProps extends Pick<MultiSelectContextState, 'deselectSingle' | 'selectSingle' | 'selected'> {
     id: string
 }
 
-const SelectCheckbox: React.FunctionComponent<SelectCheckboxProps> = ({ id, onDeselect, onSelect, selected }) => {
+const SelectCheckbox: React.FunctionComponent<SelectCheckboxProps> = ({
+    id,
+    deselectSingle,
+    selectSingle,
+    selected,
+}) => {
     const checked = useMemo(() => selected === 'all' || selected.has(id), [id, selected])
     const disabled = useMemo(() => selected === 'all', [selected])
     const onClick = useCallback(() => {
         if (checked) {
-            onDeselect(id)
+            deselectSingle(id)
         } else {
-            onSelect(id)
+            selectSingle(id)
         }
-    }, [checked, id, onDeselect, onSelect])
+    }, [checked, deselectSingle, id, selectSingle])
 
     return (
         <span className={classNames(styles.visibleChangesetApplyPreviewNodeListCell)}>
