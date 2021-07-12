@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -79,13 +78,13 @@ func getGitolitePhabCallsign(ctx context.Context, gconf *schema.GitoliteConnecti
 	if err != nil {
 		var e *exec.ExitError
 		if errors.As(err, &e) {
-			return "", fmt.Errorf("Command failed: %s, stderr: %s", e, string(e.Stderr))
+			return "", errors.Errorf("Command failed: %s, stderr: %s", e, string(e.Stderr))
 		}
-		return "", fmt.Errorf("Command failed: %s", err)
+		return "", errors.Errorf("Command failed: %s", err)
 	}
 	callsign := strings.TrimSpace(string(stdout))
 	if !callSignPattern.MatchString(callsign) {
-		return "", fmt.Errorf("Callsign %q is invalid (must match `[A-Z]+`)", callsign)
+		return "", errors.Errorf("Callsign %q is invalid (must match `[A-Z]+`)", callsign)
 	}
 	return callsign, nil
 }

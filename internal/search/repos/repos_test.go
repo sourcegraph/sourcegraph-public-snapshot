@@ -3,12 +3,12 @@ package repos
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
@@ -256,7 +256,7 @@ func TestSearchRevspecs(t *testing.T) {
 			descr:    "invalid regexp",
 			specs:    []string{"*o@a:b"},
 			repo:     "foo",
-			err:      fmt.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
+			err:      errors.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
 			matched:  nil,
 			clashing: nil,
 		},

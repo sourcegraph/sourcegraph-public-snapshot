@@ -130,10 +130,10 @@ func main() {
 		if *globalConfig != "" {
 			b, err := os.ReadFile(*globalConfig)
 			if err != nil {
-				return nil, fmt.Errorf("could read configuration at %s: %w", *globalConfig, err)
+				return nil, errors.Errorf("could read configuration at %s: %w", *globalConfig, err)
 			}
 			if err := yaml.Unmarshal(b, &s); err != nil {
-				return nil, fmt.Errorf("could not parse configuration at %s: %w", *globalConfig, err)
+				return nil, errors.Errorf("could not parse configuration at %s: %w", *globalConfig, err)
 			}
 		}
 

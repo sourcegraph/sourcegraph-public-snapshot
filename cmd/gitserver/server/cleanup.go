@@ -428,7 +428,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 
 	// Check.
 	if spaceFreed < howManyBytesToFree {
-		return fmt.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
+		return errors.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
 	}
 	return nil
 }

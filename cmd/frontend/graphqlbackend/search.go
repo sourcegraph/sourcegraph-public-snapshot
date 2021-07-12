@@ -147,7 +147,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "structural":
 			searchType = query.SearchTypeStructural
 		default:
-			return -1, fmt.Errorf("unrecognized patternType: %v", patternType)
+			return -1, errors.Errorf("unrecognized patternType: %v", patternType)
 		}
 	} else {
 		switch version {
@@ -156,7 +156,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V2":
 			searchType = query.SearchTypeLiteral
 		default:
-			return -1, fmt.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
+			return -1, errors.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
 		}
 	}
 	return searchType, nil

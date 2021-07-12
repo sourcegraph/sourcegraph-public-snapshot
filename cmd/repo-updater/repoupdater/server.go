@@ -506,7 +506,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
-		return nil, fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)
+		return nil, errors.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)
 	}
 
 	info := protocol.RepoInfo{

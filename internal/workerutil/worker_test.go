@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -76,7 +77,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
 	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
 	store.MarkErroredFunc.SetDefaultReturn(true, nil)
-	handler.HandleFunc.SetDefaultReturn(fmt.Errorf("oops"))
+	handler.HandleFunc.SetDefaultReturn(errors.Errorf("oops"))
 
 	worker := newWorker(context.Background(), store, handler, options, clock)
 	go func() { worker.Start() }()

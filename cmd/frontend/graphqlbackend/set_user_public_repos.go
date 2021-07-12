@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -112,7 +111,7 @@ func getRepo(ctx context.Context, repoStore *database.RepoStore, repoURI string)
 		return nil, errors.Wrap(err, "looking up repo on remote host")
 	}
 	if res.Repo == nil {
-		return nil, fmt.Errorf("unable to find repo %s", repoURI)
+		return nil, errors.Errorf("unable to find repo %s", repoURI)
 	}
 
 	repoName = res.Repo.Name

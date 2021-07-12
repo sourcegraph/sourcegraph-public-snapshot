@@ -245,7 +245,7 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 
 		parts := strings.SplitN(line, ":", 4)
 		if len(parts) != 4 {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
 		commit := parts[0]
@@ -261,12 +261,12 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 			}
 		}
 		if refType == RefTypeUnknown {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
 		createdDate, err := time.Parse(time.RFC3339, parts[3])
 		if err != nil {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
 		refDescriptions[commit] = RefDescription{

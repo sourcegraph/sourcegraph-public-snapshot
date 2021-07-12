@@ -906,7 +906,7 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 		return nil, err
 	}
 	if len(results.Repository.PullRequests.Nodes) != 1 {
-		return nil, fmt.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
+		return nil, errors.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
 	}
 
 	node := results.Repository.PullRequests.Nodes[0]
@@ -1051,7 +1051,7 @@ func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, 
 		}
 
 		if results.Node.TypeName != "PullRequest" {
-			return nil, fmt.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
+			return nil, errors.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
 		}
 
 		items = append(items, results.Node.TimelineItems.Nodes...)
@@ -1085,7 +1085,7 @@ func timelineItemTypes(version *semver.Version) (string, error) {
 	if ghe221PlusOrDotComSemver.Check(version) {
 		return timelineItemTypesFmtStr + `, CONVERT_TO_DRAFT_EVENT`, nil
 	}
-	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
+	return "", errors.Errorf("unsupported version of GitHub: %s", version)
 }
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1327,7 +1327,7 @@ func timelineItemsFragment(version *semver.Version) (string, error) {
 	if ghe221PlusOrDotComSemver.Check(version) {
 		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
 	}
-	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
+	return "", errors.Errorf("unsupported version of GitHub: %s", version)
 }
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1428,7 +1428,7 @@ func pullRequestFragments(version *semver.Version) (string, error) {
 	if ghe221PlusOrDotComSemver.Check(version) {
 		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
 	}
-	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
+	return "", errors.Errorf("unsupported version of GitHub: %s", version)
 }
 
 // ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitHub repository.
@@ -1618,7 +1618,7 @@ func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
 func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err error) {
 	parts := strings.SplitN(nameWithOwner, "/", 2)
 	if len(parts) != 2 || strings.Contains(parts[1], "/") || parts[0] == "" || parts[1] == "" {
-		return "", "", fmt.Errorf("invalid GitHub repository \"owner/name\" string: %q", nameWithOwner)
+		return "", "", errors.Errorf("invalid GitHub repository \"owner/name\" string: %q", nameWithOwner)
 	}
 	return parts[0], parts[1], nil
 }

@@ -199,9 +199,9 @@ func (o *OrgStore) Create(ctx context.Context, name string, displayName *string)
 			case "orgs_name":
 				return nil, errOrgNameAlreadyExists
 			case "orgs_name_max_length", "orgs_name_valid_chars":
-				return nil, fmt.Errorf("org name invalid: %s", e.ConstraintName)
+				return nil, errors.Errorf("org name invalid: %s", e.ConstraintName)
 			case "orgs_display_name_max_length":
-				return nil, fmt.Errorf("org display name invalid: %s", e.ConstraintName)
+				return nil, errors.Errorf("org display name invalid: %s", e.ConstraintName)
 			}
 		}
 
