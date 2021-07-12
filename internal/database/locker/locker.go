@@ -3,8 +3,8 @@ package locker
 import (
 	"context"
 	"database/sql"
-	"errors"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/segmentio/fasthash/fnv1"
@@ -57,27 +57,27 @@ type UnlockFunc func(err error) error
 // Lock attempts to take an advisory lock on the given key. If successful, this method will
 // return a true-valued flag along with a function that must be called to release the lock.
 func (l *Locker) Lock(ctx context.Context, key int, blocking bool) (locked bool, _ UnlockFunc, err error) {
-	l, err = l.Transact(ctx)
+	tx, err := l.Transact(ctx)
 	if err != nil {
 		return false, nil, err
 	}
 
 	if blocking {
-		locked, err = l.lock(ctx, key)
+		locked, err = tx.lock(ctx, key)
 	} else {
-		locked, err = l.tryLock(ctx, key)
+		locked, err = tx.tryLock(ctx, key)
 	}
 
 	if err != nil || !locked {
-		return false, nil, l.Done(err)
+		return false, nil, tx.Done(err)
 	}
 
 	unlock := func(err error) error {
-		if unlockErr := l.unlock(context.Background(), key); unlockErr != nil {
+		if unlockErr := tx.unlock(context.Background(), key); unlockErr != nil {
 			err = multierror.Append(err, unlockErr)
 		}
 
-		return l.Done(err)
+		return tx.Done(err)
 	}
 
 	return true, unlock, nil
