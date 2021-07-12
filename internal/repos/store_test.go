@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testStoreUpsertRepos(store *repos.Store) func(*testing.T) {
+func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -330,13 +330,13 @@ func testStoreUpsertRepos(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreUpsertSources(store *repos.Store) func(*testing.T) {
+func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	servicesPerKind := createExternalServices(t, store)
+
 	return func(t *testing.T) {
-		clock := timeutil.NewFakeClock(time.Now(), 0)
-		now := clock.Now()
-
-		servicesPerKind := createExternalServices(t, store)
-
 		github := types.Repo{
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
@@ -528,9 +528,10 @@ func testStoreUpsertSources(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreSetClonedRepos(store *repos.Store) func(*testing.T) {
+func testStoreSetClonedRepos(t *testing.T, store *repos.Store) func(*testing.T) {
+	servicesPerKind := createExternalServices(t, store)
+
 	return func(t *testing.T) {
-		servicesPerKind := createExternalServices(t, store)
 		var repositories types.Repos
 		for i := 0; i < 3; i++ {
 			repositories = append(repositories, &types.Repo{
@@ -640,7 +641,7 @@ func testStoreSetClonedRepos(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreCountNotClonedRepos(store *repos.Store) func(*testing.T) {
+func testStoreCountNotClonedRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		servicesPerKind := createExternalServices(t, store)
 
@@ -748,12 +749,13 @@ func hasID(ids ...api.RepoID) func(r *types.Repo) bool {
 	}
 }
 
-func testStoreListExternalRepoSpecs(store *repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
-		ctx := context.Background()
+func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(*testing.T) {
+	return func(t *testing.T, store *repos.Store) func(*testing.T) {
+		return func(t *testing.T) {
+			ctx := context.Background()
 
-		// Insert test repositories
-		err := store.Exec(ctx, sqlf.Sprintf(`
+			// Insert test repositories
+			_, err := db.ExecContext(ctx, `
 INSERT INTO repo (id, name, description, fork, external_id, external_service_type, external_service_id, deleted_at)
 VALUES
 	(1, 'github.com/user/repo1', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
@@ -761,29 +763,30 @@ VALUES
 	(3, 'github.com/user/repo3', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
 	(4, 'github.com/user/repo4', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
 	(5, 'github.com/user/repo5', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
-`))
-		if err != nil {
-			t.Fatal(err)
-		}
+`)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		ids, err := store.ListExternalRepoSpecs(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := map[api.ExternalRepoSpec]struct{}{
-			{
-				ID:          "MDEwOlJlcG9zaXRvcnk1",
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
-			}: {},
-		}
-		if diff := cmp.Diff(want, ids); diff != "" {
-			t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			ids, err := store.ListExternalRepoSpecs(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := map[api.ExternalRepoSpec]struct{}{
+				{
+					ID:          "MDEwOlJlcG9zaXRvcnk1",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				}: {},
+			}
+			if diff := cmp.Diff(want, ids); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
 		}
 	}
 }
 
-func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
+func testSyncRateLimiters(t *testing.T, store *repos.Store) func(*testing.T) {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -834,11 +837,9 @@ func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreEnqueueSyncJobs(store *repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
+func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.Store) func(t *testing.T, store *repos.Store) func(*testing.T) {
+	return func(t *testing.T, _ *repos.Store) func(*testing.T) {
 		t.Helper()
-
-		ctx := context.Background()
 
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
@@ -903,126 +904,134 @@ func testStoreEnqueueSyncJobs(store *repos.Store) func(*testing.T) {
 				},
 			})
 		}
-		for _, tc := range testCases {
-			tc := tc
 
-			t.Run(tc.name, func(t *testing.T) {
-				t.Cleanup(func() {
-					if err := store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")); err != nil {
+		return func(t *testing.T) {
+			ctx := context.Background()
+
+			for _, tc := range testCases {
+				tc := tc
+
+				t.Run(tc.name, func(t *testing.T) {
+					t.Cleanup(func() {
+						if _, err := db.ExecContext(ctx, "DELETE FROM external_service_sync_jobs;DELETE FROM external_services"); err != nil {
+							t.Fatal(err)
+						}
+					})
+					stored := tc.stored.Clone()
+
+					if err := store.ExternalServiceStore.Upsert(ctx, stored...); err != nil {
+						t.Fatalf("failed to setup store: %v", err)
+					}
+
+					err := store.EnqueueSyncJobs(ctx, tc.ignoreSiteAdmin)
+					if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
+						t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+					}
+
+					jobs, err := store.ListSyncJobs(ctx)
+					if err != nil {
 						t.Fatal(err)
 					}
+
+					gotIDs := make([]int64, 0, len(jobs))
+					for _, job := range jobs {
+						gotIDs = append(gotIDs, job.ExternalServiceID)
+					}
+
+					want := tc.queued(stored)
+					sort.Slice(gotIDs, func(i, j int) bool {
+						return gotIDs[i] < gotIDs[j]
+					})
+					sort.Slice(want, func(i, j int) bool {
+						return want[i] < want[j]
+					})
+
+					if diff := cmp.Diff(want, gotIDs); diff != "" {
+						t.Fatal(diff)
+					}
 				})
-				stored := tc.stored.Clone()
-
-				if err := store.ExternalServiceStore.Upsert(ctx, stored...); err != nil {
-					t.Fatalf("failed to setup store: %v", err)
-				}
-
-				err := store.EnqueueSyncJobs(ctx, tc.ignoreSiteAdmin)
-				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
-					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
-				}
-
-				jobs, err := store.ListSyncJobs(ctx)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				gotIDs := make([]int64, 0, len(jobs))
-				for _, job := range jobs {
-					gotIDs = append(gotIDs, job.ExternalServiceID)
-				}
-
-				want := tc.queued(stored)
-				sort.Slice(gotIDs, func(i, j int) bool {
-					return gotIDs[i] < gotIDs[j]
-				})
-				sort.Slice(want, func(i, j int) bool {
-					return want[i] < want[j]
-				})
-
-				if diff := cmp.Diff(want, gotIDs); diff != "" {
-					t.Fatal(diff)
-				}
-			})
+			}
 		}
 	}
 }
 
-func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
+func testStoreEnqueueSingleSyncJob(db *sql.DB) func(t *testing.T, store *repos.Store) func(*testing.T) {
+	return func(t *testing.T, _ *repos.Store) func(*testing.T) {
 		t.Helper()
 
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
-		ctx := context.Background()
-		t.Cleanup(func() {
-			if err := store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")); err != nil {
+		return func(t *testing.T) {
+			ctx := context.Background()
+			t.Cleanup(func() {
+				if _, err := db.ExecContext(ctx, "DELETE FROM external_service_sync_jobs;DELETE FROM external_services"); err != nil {
+					t.Fatal(err)
+				}
+			})
+			service := types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test",
+				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			// Create a new external service
+			confGet := func() *conf.Unified {
+				return &conf.Unified{}
+			}
+			err := database.ExternalServices(db).Create(ctx, confGet, &service)
+			if err != nil {
 				t.Fatal(err)
 			}
-		})
-		service := types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test",
-			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
 
-		// Create a new external service
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		err := database.ExternalServicesWith(store).Create(ctx, confGet, &service)
-		if err != nil {
-			t.Fatal(err)
-		}
+			assertCount := func(t *testing.T, want int) {
+				t.Helper()
+				var count int
+				if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_sync_jobs").Scan(&count); err != nil {
+					t.Fatal(err)
+				}
+				if count != want {
+					t.Fatalf("Expected %d rows, got %d", want, count)
+				}
+			}
+			assertCount(t, 0)
 
-		assertCount := func(t *testing.T, want int) {
-			t.Helper()
-			var count int
-			if err := store.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")).Scan(&count); err != nil {
+			rs := repos.NewStore(db, sql.TxOptions{})
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
 				t.Fatal(err)
 			}
-			if count != want {
-				t.Fatalf("Expected %d rows, got %d", want, count)
+			assertCount(t, 1)
+
+			// Doing it again should not fail or add a new row
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
+				t.Fatal(err)
 			}
-		}
-		assertCount(t, 0)
+			assertCount(t, 1)
 
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 1)
+			// If we change status to processing it should not add a new row
+			if _, err := db.ExecContext(ctx, "UPDATE external_service_sync_jobs SET state='processing'"); err != nil {
+				t.Fatal(err)
+			}
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertCount(t, 1)
 
-		// Doing it again should not fail or add a new row
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
+			// If we change status to completed we should be able to enqueue another one
+			if _, err := db.ExecContext(ctx, "UPDATE external_service_sync_jobs SET state='completed'"); err != nil {
+				t.Fatal(err)
+			}
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertCount(t, 2)
 		}
-		assertCount(t, 1)
-
-		// If we change status to processing it should not add a new row
-		if err := store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")); err != nil {
-			t.Fatal(err)
-		}
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 1)
-
-		// If we change status to completed we should be able to enqueue another one
-		if err := store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")); err != nil {
-			t.Fatal(err)
-		}
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 2)
 	}
 }
 
@@ -1075,16 +1084,11 @@ func transact(ctx context.Context, s *repos.Store, test func(testing.TB, *repos.
 	}
 }
 
-func createExternalServices(t *testing.T, store *repos.Store, opts ...func(*types.ExternalService)) map[string]*types.ExternalService {
+func createExternalServices(t *testing.T, store *repos.Store) map[string]*types.ExternalService {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svcs := mkExternalServices(now)
-	for _, opt := range opts {
-		for _, svc := range svcs {
-			opt(svc)
-		}
-	}
 
 	// create a few external services
 	if err := store.ExternalServiceStore.Upsert(context.Background(), svcs...); err != nil {
