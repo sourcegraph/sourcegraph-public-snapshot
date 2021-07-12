@@ -2,12 +2,12 @@ package trace
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync/atomic"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -152,7 +152,7 @@ func (t *Trace) SetError(err error) {
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
 // context.DeadlineExceeded.
 func (t *Trace) SetErrorIfNotContext(err error) {
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		t.trace.LazyPrintf("error: %v", err)
 		t.span.LogFields(log.Error(err))
 		return

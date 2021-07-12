@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +10,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
@@ -128,7 +129,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 		if repoName == "" {
 			// Any error here is a problem with the user's configured git remote
 			// URL. We want them to actually read this error message.
-			return "", fmt.Errorf("Git remote URL %q not supported", s.remoteURL)
+			return "", errors.Errorf("Git remote URL %q not supported", s.remoteURL)
 		}
 		// Note: we do not use ^ at the front of the repo filter because repoName may
 		// produce imprecise results and a suffix match seems better than no match.
@@ -180,7 +181,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
-		return "", fmt.Errorf("git remote URL %q not supported", of.remoteURL)
+		return "", errors.Errorf("git remote URL %q not supported", of.remoteURL)
 	}
 
 	inputRev, beExplicit := of.revision, true

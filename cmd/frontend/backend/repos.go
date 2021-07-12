@@ -160,7 +160,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 }
 
 // ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
-// default repos which could include private user added repos.
+// indexable repos which could include private user added repos.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {

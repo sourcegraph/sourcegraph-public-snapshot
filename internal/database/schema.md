@@ -97,8 +97,10 @@ Indexes:
  user_id           | integer                  |           |          | 
  namespace_user_id | integer                  |           |          | 
  namespace_org_id  | integer                  |           |          | 
+ rand_id           | text                     |           | not null | 
 Indexes:
     "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_executions_rand_id" btree (rand_id)
 Check constraints:
     "batch_spec_executions_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
@@ -454,18 +456,6 @@ Indexes:
 
 ```
 
-# Table "public.default_repos"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- repo_id | integer |           | not null | 
-Indexes:
-    "default_repos_pkey" PRIMARY KEY, btree (repo_id)
-Foreign-key constraints:
-    "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
-
-```
-
 # Table "public.discussion_comments"
 ```
      Column     |           Type           | Collation | Nullable |                     Default                     
@@ -600,7 +590,6 @@ Check constraints:
  user_id             | integer |           |          | 
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
-    "external_service_repos_external_service_id" btree (external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
@@ -1486,7 +1475,6 @@ Check constraints:
 Referenced by:
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

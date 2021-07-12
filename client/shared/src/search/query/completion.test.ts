@@ -306,6 +306,7 @@ describe('getCompletionItems()', () => {
               "Erlang",
               "Go",
               "GraphQL",
+              "Groovy",
               "Haskell",
               "HTML",
               "Java",

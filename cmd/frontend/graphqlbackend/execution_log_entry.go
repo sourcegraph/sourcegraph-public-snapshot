@@ -1,26 +1,42 @@
-package graphql
+package graphqlbackend
 
 import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+type ExecutionLogEntryResolver interface {
+	Key() string
+	Command() []string
+	StartTime() DateTime
+	ExitCode() int32
+	Out(ctx context.Context) (string, error)
+	DurationMilliseconds() int32
+}
+
+func NewExecutionLogEntryResolver(db dbutil.DB, entry workerutil.ExecutionLogEntry) *executionLogEntryResolver {
+	return &executionLogEntryResolver{
+		db:    db,
+		entry: entry,
+	}
+}
+
 type executionLogEntryResolver struct {
+	db    dbutil.DB
 	entry workerutil.ExecutionLogEntry
 }
 
-var _ gql.ExecutionLogEntryResolver = &executionLogEntryResolver{}
+var _ ExecutionLogEntryResolver = &executionLogEntryResolver{}
 
 func (r *executionLogEntryResolver) Key() string       { return r.entry.Key }
 func (r *executionLogEntryResolver) Command() []string { return r.entry.Command }
 func (r *executionLogEntryResolver) ExitCode() int32   { return int32(r.entry.ExitCode) }
 
-func (r *executionLogEntryResolver) StartTime() gql.DateTime {
-	return gql.DateTime{Time: r.entry.StartTime}
+func (r *executionLogEntryResolver) StartTime() DateTime {
+	return DateTime{Time: r.entry.StartTime}
 }
 
 func (r *executionLogEntryResolver) DurationMilliseconds() int32 {
@@ -29,7 +45,7 @@ func (r *executionLogEntryResolver) DurationMilliseconds() int32 {
 
 func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only site admins can view executor log contents.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		if err != backend.ErrMustBeSiteAdmin {
 			return "", err
 		}

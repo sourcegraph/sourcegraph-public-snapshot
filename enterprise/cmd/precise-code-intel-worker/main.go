@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -200,6 +200,5 @@ func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) e
 }
 
 func isRequestError(err error) bool {
-	var rse *smithyhttp.RequestSendError
-	return errors.As(err, &rse)
+	return errors.HasType(err, &smithyhttp.RequestSendError{})
 }

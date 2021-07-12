@@ -3,8 +3,9 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"

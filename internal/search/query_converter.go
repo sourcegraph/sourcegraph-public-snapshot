@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -149,4 +150,20 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 		Index:                        q.Index(),
 		Select:                       selector,
 	}
+}
+
+func TimeoutDuration(b query.Basic) time.Duration {
+	d := DefaultTimeout
+	maxTimeout := time.Duration(SearchLimits().MaxTimeoutSeconds) * time.Second
+	timeout := b.GetTimeout()
+	if timeout != nil {
+		d = *timeout
+	} else if b.GetCount() != "" {
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
+		d = maxTimeout
+	}
+	if d > maxTimeout {
+		d = maxTimeout
+	}
+	return d
 }

@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/NYTimes/gziphandler"
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
@@ -465,8 +464,9 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it
 	// separately (since log15 prints the escaped sequence).
-	if r, ok := err.(recoverError); ok {
-		err = fmt.Errorf("ui: recovered from panic %v\n\n%s", r.recover, r.stack)
+	var e recoverError
+	if errors.As(err, &e) {
+		err = errors.Errorf("ui: recovered from panic %v\n\n%s", e.recover, e.stack)
 		log.Println(err)
 	}
 

@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -386,7 +386,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 	display := get("display", "-1")
 	var err error
 	if a.Display, err = strconv.Atoi(display); err != nil {
-		return nil, fmt.Errorf("display must be an integer, got %q: %w", display, err)
+		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
 	}
 
 	return &a, nil

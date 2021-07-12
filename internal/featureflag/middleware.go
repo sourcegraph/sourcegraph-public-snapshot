@@ -4,12 +4,14 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 type flagContextKey struct{}
 
-type FeatureFlagStore interface {
+type Store interface {
 	GetUserFlags(context.Context, int32) (map[string]bool, error)
 	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
 	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
@@ -17,14 +19,14 @@ type FeatureFlagStore interface {
 
 // Middleware evaluates the feature flags for the current user and adds the
 // feature flags to the current context.
-func Middleware(ffs FeatureFlagStore, next http.Handler) http.Handler {
+func Middleware(ffs Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
 		next.ServeHTTP(w, r.WithContext(contextWithFeatureFlags(ffs, r)))
 	})
 }
 
-func contextWithFeatureFlags(ffs FeatureFlagStore, r *http.Request) context.Context {
+func contextWithFeatureFlags(ffs Store, r *http.Request) context.Context {
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
 		flags, err := ffs.GetUserFlags(r.Context(), a.UID)
 		if err == nil {
@@ -33,8 +35,8 @@ func contextWithFeatureFlags(ffs FeatureFlagStore, r *http.Request) context.Cont
 		// Continue if err != nil
 	}
 
-	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil {
-		flags, err := ffs.GetAnonymousUserFlags(r.Context(), cookie.Value)
+	if uid, ok := cookie.AnonymousUID(r); ok {
+		flags, err := ffs.GetAnonymousUserFlags(r.Context(), uid)
 		if err == nil {
 			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 		}

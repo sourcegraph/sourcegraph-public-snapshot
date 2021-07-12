@@ -3,13 +3,12 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"reflect"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -47,19 +46,19 @@ func TestSetExternalServiceRepos(t *testing.T) {
 	database.Mocks.ExternalServices.Upsert = func(ctx context.Context, services ...*types.ExternalService) error {
 		called = true
 		if len(services) != 1 {
-			return fmt.Errorf("Expected 1, got %v", len(services))
+			return errors.Errorf("Expected 1, got %v", len(services))
 		}
 		svc := services[0]
 		cfg, err := svc.Configuration()
 		if err != nil {
-			return fmt.Errorf("Expected nil, got %s", err)
+			return errors.Errorf("Expected nil, got %s", err)
 		}
 		gh, ok := cfg.(*schema.GitHubConnection)
 		if !ok {
-			return fmt.Errorf("Expected *schema.GitHubConnection, got %T", cfg)
+			return errors.Errorf("Expected *schema.GitHubConnection, got %T", cfg)
 		}
 		if expected, got := []string{"foo", "bar", "baz"}, gh.Repos; !reflect.DeepEqual(expected, got) {
-			return fmt.Errorf("Expected %s got %s", expected, got)
+			return errors.Errorf("Expected %s got %s", expected, got)
 		}
 		return nil
 	}
@@ -84,7 +83,7 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		repoupdater.DefaultClient.HTTPClient = oldClient
 	}()
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Context: ctx,
 			Schema:  mustParseGraphQLSchema(t),

@@ -2,10 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"io/fs"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"

@@ -370,23 +370,23 @@ func (r *Resolver) batchSpecExecutionByID(ctx context.Context, id graphql.ID) (g
 		return nil, err
 	}
 
-	dbID, err := unmarshalBatchSpecExecutionID(id)
+	randID, err := unmarshalBatchSpecExecutionRandID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if dbID == 0 {
+	if randID == "" {
 		return nil, nil
 	}
 
-	spec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: dbID})
+	spec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{RandID: randID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &batchSpecExecutionResolver{store: r.store, spec: spec}, nil
+	return &batchSpecExecutionResolver{store: r.store, exec: spec}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -1399,7 +1399,7 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 		return nil, err
 	}
 
-	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionID(exec.ID))
+	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
@@ -1412,7 +1412,7 @@ func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	case "CLOSED":
 		return btypes.BatchChangeStateClosed, nil
 	default:
-		return btypes.BatchChangeStateAny, fmt.Errorf("unknown state %q", *s)
+		return btypes.BatchChangeStateAny, errors.Errorf("unknown state %q", *s)
 	}
 }
 
@@ -1420,7 +1420,7 @@ func checkSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, userID int32) (
 	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
 	// admin rights.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
-		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 			return false, nil
 		}
 

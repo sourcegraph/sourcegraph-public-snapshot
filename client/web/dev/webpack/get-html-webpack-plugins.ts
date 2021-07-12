@@ -16,9 +16,7 @@ export const getHTMLWebpackPlugins = (): Plugin[] => {
         <!DOCTYPE html>
         <html lang="en">
             <head>
-                <meta charset="UTF-8">
-                <title>Sourcegraph Development build</title>
-                ${htmlWebpackPlugin.tags.headTags.toString()}
+            <title>${htmlWebpackPlugin.options.title || 'Sourcegraph'}</title>
             </head>
             <body>
                 <div id="root"></div>
@@ -31,11 +29,17 @@ export const getHTMLWebpackPlugins = (): Plugin[] => {
                 </script>
             </body>
         </html>
-      `
+        `
 
     const htmlWebpackPlugin = new HtmlWebpackPlugin({
         // `TemplateParameter` can be mutated. We need to tell TS that we didn't touch it.
         templateContent: templateContent as Options['templateContent'],
+        meta: {
+            charset: 'utf-8',
+            viewport: 'width=device-width, viewport-fit=cover, initial-scale=1',
+            referrer: 'origin-when-cross-origin',
+            'color-scheme': 'light dark',
+        },
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),
         alwaysWriteToDisk: true,
     })

@@ -1,7 +1,7 @@
 package vcs
 
 import (
-	"errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -28,11 +28,7 @@ func (e *RepoNotExistError) Error() string {
 
 // IsRepoNotExist reports if err is a RepoNotExistError.
 func IsRepoNotExist(err error) bool {
-	// Note we use As instead of Is here to ensure that we do not try
-	// compare struct fields for equality; we only care that the type
-	// of the error value matches.
-	var e *RepoNotExistError
-	return errors.As(err, &e)
+	return errors.HasType(err, &RepoNotExistError{})
 }
 
 // IsCloneInProgress reports if err is a RepoNotExistError which has a clone

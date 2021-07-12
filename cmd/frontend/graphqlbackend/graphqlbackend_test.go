@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -52,7 +51,7 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 func TestRepository(t *testing.T) {
 	resetMocks()
 	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -231,7 +230,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 		UID: 1,
 	})
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Context: ctx,
 			Schema:  mustParseGraphQLSchema(t),
@@ -280,7 +279,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 		UID: 2,
 	})
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Context: ctx,
 			Schema:  mustParseGraphQLSchema(t),
@@ -333,7 +332,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 		}, nil
 	}
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Context: ctx,
 			Schema:  mustParseGraphQLSchema(t),

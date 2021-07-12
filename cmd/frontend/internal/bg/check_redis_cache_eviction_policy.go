@@ -1,10 +1,10 @@
 package bg
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 
