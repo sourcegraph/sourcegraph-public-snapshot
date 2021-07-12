@@ -1130,7 +1130,6 @@ func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}
 
-		stored = append(stored, sourced)
 		d.Added = append(d.Added, sourced)
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
