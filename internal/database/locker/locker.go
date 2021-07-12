@@ -113,7 +113,7 @@ const tryLockQuery = `
 SELECT pg_try_advisory_lock(%s, %s)
 `
 
-var ErrUnlock = errors.New("Failed to unlock")
+var ErrUnlock = errors.New("failed to unlock")
 
 // unlock releases the advisory lock on the given key.
 func (l *Locker) unlock(ctx context.Context, key int) error {
