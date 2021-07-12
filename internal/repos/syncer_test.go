@@ -1086,7 +1086,15 @@ func testSyncRun(store *repos.Store, streaming bool) func(t *testing.T) {
 	}
 }
 
-func testSyncer(store *repos.Store) func(t *testing.T) {
+func testBatchSyncerMultipleServices(store *repos.Store) func(t *testing.T) {
+	return testSyncerMultipleServices(store, false)
+}
+
+func testStreamingSyncerMultipleServices(store *repos.Store) func(t *testing.T) {
+	return testSyncerMultipleServices(store, true)
+}
+
+func testSyncerMultipleServices(store *repos.Store, streaming bool) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1172,9 +1180,10 @@ func testSyncer(store *repos.Store) func(t *testing.T) {
 				}
 				return repos.Sources{s}, nil
 			},
-			Store:  store,
-			Synced: make(chan repos.Diff),
-			Now:    time.Now,
+			Store:     store,
+			Synced:    make(chan repos.Diff),
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 
 		done := make(chan error)
@@ -1212,19 +1221,38 @@ func testSyncer(store *repos.Store) func(t *testing.T) {
 			t.Fatalf("expected %d sync jobs, got %d", len(services), jobCount)
 		}
 
-		for i := 0; i < len(services); i++ {
-			diff = <-syncer.Synced
-			if len(diff.Added) != 10 {
-				t.Fatalf("Expected 10 Added repos. got %d", len(diff.Added))
+		if !streaming {
+			for i := 0; i < len(services); i++ {
+				diff = <-syncer.Synced
+				if len(diff.Added) != 10 {
+					t.Fatalf("Expected 10 Added repos. got %d", len(diff.Added))
+				}
+				if len(diff.Deleted) != 0 {
+					t.Fatalf("Expected 0 Deleted repos. got %d", len(diff.Added))
+				}
+				if len(diff.Modified) != 0 {
+					t.Fatalf("Expected 0 Modified repos. got %d", len(diff.Added))
+				}
+				if len(diff.Unmodified) != 0 {
+					t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
+				}
 			}
-			if len(diff.Deleted) != 0 {
-				t.Fatalf("Expected 0 Deleted repos. got %d", len(diff.Added))
-			}
-			if len(diff.Modified) != 0 {
-				t.Fatalf("Expected 0 Modified repos. got %d", len(diff.Added))
-			}
-			if len(diff.Unmodified) != 0 {
-				t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
+		} else {
+			for i := 0; i < len(services)*10; i++ {
+				diff := <-syncer.Synced
+
+				if len(diff.Added) != 1 {
+					t.Fatalf("Expected 1 Added repos. got %d", len(diff.Added))
+				}
+				if len(diff.Deleted) != 0 {
+					t.Fatalf("Expected 0 Deleted repos. got %d", len(diff.Added))
+				}
+				if len(diff.Modified) != 0 {
+					t.Fatalf("Expected 0 Modified repos. got %d", len(diff.Added))
+				}
+				if len(diff.Unmodified) != 0 {
+					t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
+				}
 			}
 		}
 
