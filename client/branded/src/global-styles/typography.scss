@@ -46,7 +46,8 @@ h6 {
 }
 
 // Body / Small / Regular
-small {
+small,
+.small {
     @extend %small;
     // Bootstrap applies `font-weight: 400;` to `small` element,
     // but we want to control `font-weight` only with `strong` or `.font-weight-medium`.
