@@ -17,12 +17,12 @@ func Union(left, right []Match) []Match {
 // Intersect performs a merge of match results, merging line matches for files
 // contained in both result sets.
 func Intersect(left, right []Match) []Match {
-	rightMap := make(map[Key]Match)
+	rightMap := make(map[Key]Match, len(right))
 	for _, r := range right {
 		rightMap[r.Key()] = r
 	}
 
-	var merged []Match
+	merged := left[:0]
 	for _, l := range left {
 		r := rightMap[l.Key()]
 		if r == nil {
