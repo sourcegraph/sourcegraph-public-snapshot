@@ -3,10 +3,10 @@ package registry
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 

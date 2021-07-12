@@ -4,12 +4,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,6 +17,7 @@ var settingsExample = &api.Settings{ID: 1, Contents: `{
 		{
 		  "title": "fmt usage",
 		  "description": "fmt.Errorf/fmt.Printf usage",
+		  "id": "1",
 		  "series": [
 			{
 			  "label": "fmt.Errorf",
@@ -29,6 +32,7 @@ var settingsExample = &api.Settings{ID: 1, Contents: `{
 		{
 			"title": "gitserver usage",
 			"description": "gitserver exec & close usage",
+			"id": "5",
 			"series": [
 			  {
 				"label": "exec",
@@ -53,40 +57,101 @@ func TestDiscover(t *testing.T) {
 		return settingsExample, nil
 	})
 	ctx := context.Background()
-	insights, err := Discover(ctx, settingStore)
-	if err != nil {
-		t.Fatal(err)
-	}
-	autogold.Want("insights", []*schema.Insight{
-		{
+
+	loader := insights.NewMockLoader()
+
+	t.Run("test_with_no_id_filter", func(t *testing.T) {
+		discovered, err := Discover(ctx, settingStore, loader, InsightFilterArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("discovered", []insights.SearchInsight{
+			{
+				ID:          "1",
+				Title:       "fmt usage",
+				Description: "fmt.Errorf/fmt.Printf usage",
+				Series: []insights.TimeSeries{
+					{
+						Name:  "fmt.Errorf",
+						Query: "errorf",
+					},
+					{
+						Name:  "printf",
+						Query: "fmt.Printf",
+					},
+				},
+			},
+			{
+				ID:          "5",
+				Title:       "gitserver usage",
+				Description: "gitserver exec & close usage",
+				Series: []insights.TimeSeries{
+					{
+						Name:  "exec",
+						Query: "gitserver.Exec",
+					},
+					{
+						Name:  "close",
+						Query: "gitserver.Close",
+					},
+				},
+			},
+		}).Equal(t, discovered)
+	})
+
+	t.Run("test_with_id_filter", func(t *testing.T) {
+		discovered, err := Discover(ctx, settingStore, loader, InsightFilterArgs{Ids: []string{"1"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("discovered_id_filter", []insights.SearchInsight{
+			{
+				ID:          "1",
+				Title:       "fmt usage",
+				Description: "fmt.Errorf/fmt.Printf usage",
+				Series: []insights.TimeSeries{
+					{
+						Name:  "fmt.Errorf",
+						Query: "errorf",
+					},
+					{
+						Name:  "printf",
+						Query: "fmt.Printf",
+					},
+				},
+			},
+		}).Equal(t, discovered)
+	})
+
+	t.Run("test_with_loader", func(t *testing.T) {
+		integrated := []insights.SearchInsight{{
+			ID:          "1234",
+			Title:       "my insight",
+			Description: "woooo!!!!",
+		}}
+
+		loader.LoadAllFunc.SetDefaultReturn(integrated, nil)
+		discovered, err := Discover(ctx, settingStore, loader, InsightFilterArgs{Ids: []string{"1"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Want("discovered_with_loader", []insights.SearchInsight{{
+			ID:          "1",
+			Title:       "fmt usage",
 			Description: "fmt.Errorf/fmt.Printf usage",
-			Series: []*schema.InsightSeries{
+			Series: []insights.TimeSeries{
 				{
-					Label:  "fmt.Errorf",
-					Search: "errorf",
+					Name:  "fmt.Errorf",
+					Query: "errorf",
 				},
 				{
-					Label:  "printf",
-					Search: "fmt.Printf",
-				},
-			},
-			Title: "fmt usage",
-		},
-		{
-			Description: "gitserver exec & close usage",
-			Series: []*schema.InsightSeries{
-				{
-					Label:  "exec",
-					Search: "gitserver.Exec",
-				},
-				{
-					Label:  "close",
-					Search: "gitserver.Close",
+					Name:  "printf",
+					Query: "fmt.Printf",
 				},
 			},
-			Title: "gitserver usage",
-		},
-	}).Equal(t, insights)
+		}}).Equal(t, discovered)
+	})
 }
 
 func Test_parseUserSettings(t *testing.T) {
@@ -114,6 +179,7 @@ func Test_parseUserSettings(t *testing.T) {
 				&schema.Settings{Insights: []*schema.Insight{
 					{
 						Description: "fmt.Errorf/fmt.Printf usage",
+						Id:          "1",
 						Series: []*schema.InsightSeries{
 							{
 								Label:  "fmt.Errorf",
@@ -128,6 +194,7 @@ func Test_parseUserSettings(t *testing.T) {
 					},
 					{
 						Description: "gitserver exec & close usage",
+						Id:          "5",
 						Series: []*schema.InsightSeries{
 							{
 								Label:  "exec",

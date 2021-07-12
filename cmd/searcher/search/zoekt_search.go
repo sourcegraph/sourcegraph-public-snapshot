@@ -3,23 +3,21 @@ package search
 import (
 	"archive/zip"
 	"context"
-	"errors"
 	"io"
 	"regexp/syntax"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -143,7 +141,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 	}
 
 	// Choose sensible values for k when we generalize this.
-	k := zoektutil.ResultCountFactor(len(repoBranches), args.FileMatchLimit, false)
+	k := zoektutil.ResultCountFactor(len(repoBranches), args.FileMatchLimit)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args)
 	searchOpts.Whole = true
 

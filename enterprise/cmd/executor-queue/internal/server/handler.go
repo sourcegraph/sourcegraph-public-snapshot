@@ -2,10 +2,10 @@ package server
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"

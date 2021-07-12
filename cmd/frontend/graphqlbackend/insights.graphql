@@ -1,8 +1,13 @@
 extend type Query {
     """
-    EXPERIMENTAL: Queries code insights
+    [Experimental] Query for all insights and return their aggregations.
     """
-    insights: InsightConnection
+    insights(
+        """
+        An (optional) array of insight unique ids that will filter the results by the provided values. If omitted, all available insights will return.
+        """
+        ids: [ID!]
+    ): InsightConnection
 }
 
 """
@@ -43,6 +48,11 @@ type Insight {
     Data points over a time range (inclusive)
     """
     series: [InsightsSeries!]!
+
+    """
+    Unique identifier for this insight.
+    """
+    id: String!
 }
 
 """

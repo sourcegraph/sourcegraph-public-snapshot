@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -18,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-lsp"

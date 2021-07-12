@@ -41,10 +41,8 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	defer cancel()
 
 	wrapError := func(err error, message string) error {
-		for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-			if ex == context.DeadlineExceeded {
-				err = fmt.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
-			}
+		if errors.Cause(err) == context.DeadlineExceeded {
+			err = fmt.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
 		}
 
 		return errors.Wrap(err, message)
@@ -188,9 +186,10 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		log15.Info(fmt.Sprintf("Running src-cli step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 		cliStepCommand := command.CommandSpec{
-			Key:       fmt.Sprintf("step.src.%d", i),
-			Command:   append([]string{"src"}, cliStep.Commands...),
-			Dir:       cliStep.Dir,
+			Key:     fmt.Sprintf("step.src.%d", i),
+			Command: append([]string{"src"}, cliStep.Commands...),
+			Dir:     cliStep.Dir,
+			// TODO: We need $HOME/$PATH from the machine on which this is executed
 			Env:       cliStep.Env,
 			Operation: h.operations.Exec,
 		}

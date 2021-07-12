@@ -225,15 +225,28 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsi
 }
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
-// with the given identifiers.
+// with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
+// an upload as protected (visible to _some_ branch) butn ot visible from teh default branch, use the
+// insertVisibleAtTipNonDefaultBranch method instead.
 func insertVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
+	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
+}
+
+// insertVisibleAtTipNonDefaultBranch populates rows of the lsif_uploads_visible_at_tip table for the
+// given repository with the given identifiers. Each upload is assumed to refer to the tip of a branch
+// distinct from the default branch or a tag.
+func insertVisibleAtTipNonDefaultBranch(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
+	insertVisibleAtTipInternal(t, db, repositoryID, false, uploadIDs...)
+}
+
+func insertVisibleAtTipInternal(t testing.TB, db *sql.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {
 	var rows []*sqlf.Query
 	for _, uploadID := range uploadIDs {
-		rows = append(rows, sqlf.Sprintf("(%s, %s)", repositoryID, uploadID))
+		rows = append(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uploadID, isDefaultBranch))
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id) VALUES %s`,
+		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id, is_default_branch) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -329,13 +342,27 @@ func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []str
 
 func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
-		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
+		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,
 		repositoryID,
 	)
 
 	ids, err := basestore.ScanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads visible at tip: %s", err)
+	}
+
+	return ids
+}
+
+func getProtectedUploads(t testing.TB, db *sql.DB, repositoryID int) []int {
+	query := sqlf.Sprintf(
+		`SELECT DISTINCT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
+		repositoryID,
+	)
+
+	ids, err := basestore.ScanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	if err != nil {
+		t.Fatalf("unexpected error getting protected uploads: %s", err)
 	}
 
 	return ids

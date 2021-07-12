@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
@@ -196,7 +195,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 		hasTimeFilter = true
 	}
 
-	limits := searchrepos.SearchLimits()
+	limits := search.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}

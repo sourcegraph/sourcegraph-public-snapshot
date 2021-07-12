@@ -114,7 +114,6 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                     disabled={true}
                     title="Organization"
                     description="all users in your organization"
-                    data-tooltip="Enable regular expression"
                     className="mr-3"
                     labelTooltipText="Create or join the Organization to share code insights with others!"
                 />

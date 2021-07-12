@@ -1505,7 +1505,8 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	cstore := store.New(db, nil)
+	now := time.Now().UTC().Truncate(time.Millisecond)
+	cstore := store.NewWithClock(db, nil, func() time.Time { return now })
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
@@ -1531,6 +1532,13 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 		ID:        response.CreateBatchSpecExecution.ID,
 		InputSpec: testSpec,
 		State:     "QUEUED",
+		Initiator: apitest.User{
+			ID: string(graphqlbackend.MarshalUserID(userID)),
+		},
+		Namespace: apitest.UserOrg{
+			ID: string(graphqlbackend.MarshalUserID(userID)),
+		},
+		CreatedAt: graphqlbackend.DateTime{Time: now.Truncate(time.Second)},
 	}
 	if diff := cmp.Diff(want, response.CreateBatchSpecExecution); diff != "" {
 		t.Fatalf("invalid execution returned, diff=%s", diff)
@@ -1543,11 +1551,14 @@ mutation($spec: String!) {
 		id
 		inputSpec
 		state
+		createdAt
 		startedAt
 		finishedAt
 		failure
 		placeInQueue
 		batchSpec { id }
+		initiator { id }
+		namespace { id }
 	}
 }
 `

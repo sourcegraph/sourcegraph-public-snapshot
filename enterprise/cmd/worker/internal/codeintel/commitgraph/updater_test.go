@@ -25,7 +25,9 @@ func TestUpdater(t *testing.T) {
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.CommitGraphFunc.SetDefaultReturn(graph, nil)
-	mockGitserverClient.HeadFunc.SetDefaultReturn("b", nil)
+	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string]gitserver.RefDescription{
+		"b": {IsDefaultBranch: true},
+	}, nil)
 
 	updater := &Updater{
 		dbStore:         mockDBStore,
@@ -64,9 +66,14 @@ func TestUpdaterNoUploads(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 	mockDBStore.GetOldestCommitDateFunc.SetDefaultReturn(time.Time{}, false, nil)
+
 	mockLocker := NewMockLocker()
 	mockLocker.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
+
 	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string]gitserver.RefDescription{
+		"b": {IsDefaultBranch: true},
+	}, nil)
 
 	updater := &Updater{
 		dbStore:         mockDBStore,
@@ -92,9 +99,14 @@ func TestUpdaterNoUploads(t *testing.T) {
 func TestUpdaterLocked(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
+
 	mockLocker := NewMockLocker()
 	mockLocker.LockFunc.SetDefaultReturn(false, nil, nil)
+
 	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string]gitserver.RefDescription{
+		"b": {IsDefaultBranch: true},
+	}, nil)
 
 	updater := &Updater{
 		dbStore:         mockDBStore,

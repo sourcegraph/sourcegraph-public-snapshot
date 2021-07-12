@@ -2,12 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 

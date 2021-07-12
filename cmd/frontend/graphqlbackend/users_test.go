@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -19,7 +17,7 @@ func TestUsers(t *testing.T) {
 		return []*types.User{{Username: "user1"}, {Username: "user2"}}, nil
 	}
 	database.Mocks.Users.Count = func(context.Context, *database.UsersListOptions) (int, error) { return 2, nil }
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `

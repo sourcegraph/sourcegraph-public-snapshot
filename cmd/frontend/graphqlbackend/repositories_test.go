@@ -2,11 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"testing"
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -43,7 +42,7 @@ func TestRepositories(t *testing.T) {
 		}, nil
 	}
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -86,7 +85,7 @@ func TestRepositories(t *testing.T) {
 		}, nil
 	}
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -245,7 +244,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -282,7 +281,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -319,7 +318,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -356,7 +355,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -397,7 +396,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -432,7 +431,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -450,9 +449,9 @@ func TestRepositories_CursorPagination(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
-						Message:       `cannot unmarshal repository cursor type: ""`,
 						Path:          []interface{}{"repositories"},
+						Message:       `cannot unmarshal repository cursor type: ""`,
+						ResolverError: fmt.Errorf(`cannot unmarshal repository cursor type: ""`),
 					},
 				},
 			},

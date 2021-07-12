@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -16,6 +17,7 @@ import (
 
 var BatchSpecExecutionColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_spec_executions.id"),
+	sqlf.Sprintf("batch_spec_executions.rand_id"),
 	sqlf.Sprintf("batch_spec_executions.state"),
 	sqlf.Sprintf("batch_spec_executions.failure_message"),
 	sqlf.Sprintf("batch_spec_executions.started_at"),
@@ -30,11 +32,16 @@ var BatchSpecExecutionColumns = []*sqlf.Query{
 	sqlf.Sprintf(`batch_spec_executions.batch_spec`),
 	sqlf.Sprintf(`batch_spec_executions.batch_spec_id`),
 	sqlf.Sprintf(`batch_spec_executions.user_id`),
+	sqlf.Sprintf(`batch_spec_executions.namespace_user_id`),
+	sqlf.Sprintf(`batch_spec_executions.namespace_org_id`),
 }
 
 var batchSpecExecutionInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("rand_id"),
 	sqlf.Sprintf("batch_spec"),
 	sqlf.Sprintf("user_id"),
+	sqlf.Sprintf("namespace_user_id"),
+	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
@@ -59,15 +66,25 @@ func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpe
 var createBatchSpecExecutionQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_executions.go:CreateBatchSpecExecution
 INSERT INTO batch_spec_executions (%s)
-VALUES (%s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, error) {
+	if c.RandID == "" {
+		var err error
+		if c.RandID, err = RandomID(); err != nil {
+			return nil, errors.Wrap(err, "creating RandID failed")
+		}
+	}
+
 	return sqlf.Sprintf(
 		createBatchSpecExecutionQueryFmtstr,
 		sqlf.Join(batchSpecExecutionInsertColumns, ", "),
+		c.RandID,
 		c.BatchSpec,
 		c.UserID,
+		nullInt32Column(c.NamespaceUserID),
+		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
@@ -76,15 +93,19 @@ func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, e
 
 // GetBatchSpecExecutionOpts captures the query options needed for getting a BatchSpecExecution.
 type GetBatchSpecExecutionOpts struct {
-	ID int64
+	ID     int64
+	RandID string
 }
 
 // GetBatchSpecExecution gets a BatchSpecExecution matching the given options.
 func (s *Store) GetBatchSpecExecution(ctx context.Context, opts GetBatchSpecExecutionOpts) (*btypes.BatchSpecExecution, error) {
-	q := getBatchSpecExecutionQuery(&opts)
+	q, err := getBatchSpecExecutionQuery(&opts)
+	if err != nil {
+		return nil, err
+	}
 
 	var b btypes.BatchSpecExecution
-	err := s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBatchSpecExecution(&b, sc)
 	})
 	if err != nil {
@@ -105,16 +126,26 @@ WHERE %s
 LIMIT 1
 `
 
-func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("id = %s", opts.ID),
+func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) (*sqlf.Query, error) {
+	var preds []*sqlf.Query
+
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.RandID != "" {
+		preds = append(preds, sqlf.Sprintf("rand_id = %s", opts.RandID))
+	}
+
+	if len(preds) == 0 {
+		return nil, errors.New("no predicates given")
 	}
 
 	return sqlf.Sprintf(
 		getBatchSpecExecutionQueryFmtstr,
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
-	)
+	), nil
 }
 
 func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {
@@ -122,6 +153,7 @@ func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {
 
 	if err := sc.Scan(
 		&b.ID,
+		&b.RandID,
 		&b.State,
 		&b.FailureMessage,
 		&b.StartedAt,
@@ -136,6 +168,8 @@ func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {
 		&b.BatchSpec,
 		&dbutil.NullInt64{N: &b.BatchSpecID},
 		&b.UserID,
+		&dbutil.NullInt32{N: &b.NamespaceUserID},
+		&dbutil.NullInt32{N: &b.NamespaceOrgID},
 	); err != nil {
 		return err
 	}

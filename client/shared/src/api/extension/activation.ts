@@ -155,13 +155,13 @@ export function activateExtensions(
 
                         return from(
                             Promise.all([
-                                toActivate.map(({ id, scriptURL }) => {
+                                toActivate.map(async ({ id, scriptURL }) => {
                                     console.log(`Activating Sourcegraph extension: ${id}`)
 
                                     // We only want to log non-default extension events
                                     if (!defaultExtensions[id]) {
                                         // Hash extension IDs that specify host, since that means that it's a private registry extension.
-                                        const telemetryExtensionID = splitExtensionID(id).host ? hashCode(id) : id
+                                        const telemetryExtensionID = splitExtensionID(id).host ? await hashCode(id) : id
                                         mainAPI
                                             .logEvent('ExtensionActivation', {
                                                 extension_id: telemetryExtensionID,

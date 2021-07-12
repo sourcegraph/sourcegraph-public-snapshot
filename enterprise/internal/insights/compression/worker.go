@@ -128,7 +128,7 @@ func (i *CommitIndexer) index(name string) error {
 	}
 
 	if !metadata.Enabled {
-		logger.Info("commit indexing disabled", "repo_id", repoId)
+		logger.Debug("commit indexing disabled", "repo_id", repoId)
 		return nil
 	}
 
@@ -141,7 +141,7 @@ func (i *CommitIndexer) index(name string) error {
 	}
 
 	if len(commits) == 0 {
-		logger.Info("commit index up to date", "repo_id", repoId)
+		logger.Debug("commit index up to date", "repo_id", repoId)
 
 		if _, err = i.commitStore.UpsertMetadataStamp(ctx, repoId); err != nil {
 			return err
@@ -151,7 +151,7 @@ func (i *CommitIndexer) index(name string) error {
 		return nil
 	}
 
-	log15.Info("indexing commits", "repo_id", repoId, "count", len(commits))
+	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits))
 	err = i.commitStore.InsertCommits(ctx, repoId, commits)
 	if err != nil {
 		return errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)

@@ -8,9 +8,10 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	// "net"
 	"os"

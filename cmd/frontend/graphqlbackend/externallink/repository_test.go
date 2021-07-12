@@ -2,9 +2,10 @@ package externallink
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"

@@ -2,14 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/stretchr/testify/require"
 
@@ -441,7 +440,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		},
 	}
 
-	alert, err := errorToAlert(sr.errorForNoResolvedRepos(context.Background()))
+	alert, err := errorToAlert(sr.errorForNoResolvedRepos(context.Background(), q))
 	require.NoError(t, err)
 	require.Equal(t, wantAlert, alert)
 }

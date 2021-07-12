@@ -836,9 +836,11 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 		Upload{ID: 6, State: "completed", FinishedAt: &t4}, // too new
 		Upload{ID: 7, State: "errored", FinishedAt: &t4},   // too new
 		Upload{ID: 8, State: "uploaded", UploadedAt: t3},
-		Upload{ID: 9, State: "uploaded", UploadedAt: t4}, // too new
+		Upload{ID: 9, State: "uploaded", UploadedAt: t4},    // too new
+		Upload{ID: 10, State: "completed", FinishedAt: &t2}, // protected on non-default branch
 	)
 	insertVisibleAtTip(t, db, 50, 2, 4)
+	insertVisibleAtTipNonDefaultBranch(t, db, 50, 10)
 
 	if count, err := store.SoftDeleteOldUploads(context.Background(), time.Minute, t1.Add(time.Minute*6)); err != nil {
 		t.Fatalf("unexpected error pruning uploads: %s", err)
@@ -847,22 +849,23 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 	}
 
 	expectedStates := map[int]string{
-		1: "deleted",
-		2: "completed",
-		3: "deleted",
-		4: "completed",
-		5: "deleted",
-		6: "completed",
-		7: "errored",
-		8: "deleted",
-		9: "uploaded",
+		1:  "deleted",
+		2:  "completed",
+		3:  "deleted",
+		4:  "completed",
+		5:  "deleted",
+		6:  "completed",
+		7:  "errored",
+		8:  "deleted",
+		9:  "uploaded",
+		10: "completed",
 	}
 
 	// Ensure record was deleted
-	if states, err := getUploadStates(db, 1, 2, 3, 4, 5, 6, 7, 8, 9); err != nil {
+	if states, err := getUploadStates(db, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
-		t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
 	}
 
 	// Ensure repository was marked as dirty

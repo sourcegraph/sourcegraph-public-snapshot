@@ -1,10 +1,11 @@
 package hubspot
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
+
+	"github.com/cockroachdb/errors"
 )
 
 // CreateOrUpdateContact creates or updates a HubSpot contact (with email as primary key)

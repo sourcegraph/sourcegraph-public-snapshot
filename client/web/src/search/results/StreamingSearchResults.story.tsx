@@ -51,6 +51,8 @@ const defaultProps: StreamingSearchResultsProps = {
     isLightTheme: true,
 
     navbarSearchQueryState: { query: '' },
+    onNavbarQueryChange: () => {},
+    isSourcegraphDotCom: false,
 
     settingsCascade: {
         subjects: null,

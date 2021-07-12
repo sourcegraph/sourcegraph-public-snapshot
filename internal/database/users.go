@@ -5,9 +5,12 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
+	"time"
 	"unicode/utf8"
 
 	"github.com/cockroachdb/errors"
@@ -20,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -193,7 +197,11 @@ func (u *UserStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-	return tx.create(ctx, info)
+	newUser, err = tx.create(ctx, info)
+	if err == nil {
+		logAccountCreatedEvent(ctx, u.Handle().DB(), newUser, "")
+	}
+	return newUser, err
 }
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
@@ -372,6 +380,31 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 	return user, nil
 }
 
+func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, serviceType string) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Creator     int32  `json:"creator"`
+		SiteAdmin   bool   `json:"site_admin"`
+		ServiceType string `json:"service_type"`
+	}{
+		Creator:     a.UID,
+		SiteAdmin:   u.SiteAdmin,
+		ServiceType: serviceType,
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccountCreated,
+		URL:             "",
+		UserID:          uint32(u.ID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
+}
+
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
 // is a list of errors encountered while generating this list. Note that even if errors are returned, the first
 // return value is still valid.
@@ -501,6 +534,8 @@ func (u *UserStore) Delete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
+	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountDeleted)
+
 	return nil
 }
 
@@ -573,7 +608,33 @@ func (u *UserStore) HardDelete(ctx context.Context, id int32) (err error) {
 	if rows == 0 {
 		return userNotFoundErr{args: []interface{}{id}}
 	}
+
+	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountNuked)
+
 	return nil
+}
+
+func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name SecurityEventName) {
+	// The actor deleting the user could be a different user, for example a site
+	// admin
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Deleter int32 `json:"deleter"`
+	}{
+		Deleter: a.UID,
+	})
+
+	event := &SecurityEvent{
+		Name:            name,
+		URL:             "",
+		UserID:          uint32(id),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 // SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
@@ -1057,7 +1118,35 @@ func (u *UserStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.
 	// 🚨 SECURITY: Set the new random password and clear the reset code/expiry, so the old code
 	// can't be reused, and so a new valid reset code can be generated afterward.
 	err = u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id))
+	if err == nil {
+		LogPasswordEvent(ctx, u.Handle().DB(), nil, SecurityEventNamPasswordRandomized, id)
+	}
 	return err
+}
+
+func LogPasswordEvent(ctx context.Context, db dbutil.DB, r *http.Request, name SecurityEventName, userID int32) {
+	a := actor.FromContext(ctx)
+	args, _ := json.Marshal(struct {
+		Requester int32 `json:"requester"`
+	}{
+		Requester: a.UID,
+	})
+
+	var path string
+	if r != nil {
+		path = r.URL.Path
+	}
+	event := &SecurityEvent{
+		Name:      name,
+		URL:       path,
+		UserID:    uint32(userID),
+		Argument:  args,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	}
+	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {

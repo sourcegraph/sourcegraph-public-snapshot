@@ -73,7 +73,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		firstErr        error
 	)
 	for i, verifiedEmail := range verifiedEmails {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username:        login,
 				Email:           verifiedEmail,

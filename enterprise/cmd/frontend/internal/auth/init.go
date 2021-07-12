@@ -24,9 +24,9 @@ func Init(db dbutil.DB) {
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
-		openidconnect.Middleware,
-		saml.Middleware,
-		httpheader.Middleware,
+		openidconnect.Middleware(db),
+		saml.Middleware(db),
+		httpheader.Middleware(db),
 		githuboauth.Middleware(db),
 		gitlaboauth.Middleware(db),
 	)

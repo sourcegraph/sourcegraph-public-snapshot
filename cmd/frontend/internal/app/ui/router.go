@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/NYTimes/gziphandler"
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
