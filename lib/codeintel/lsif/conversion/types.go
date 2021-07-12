@@ -13,6 +13,7 @@ type Range struct {
 	DefinitionResultID int
 	ReferenceResultID  int
 	HoverResultID      int
+	DocumentationResultID int
 }
 
 func (r Range) SetDefinitionResultID(id int) Range {
@@ -21,6 +22,7 @@ func (r Range) SetDefinitionResultID(id int) Range {
 		DefinitionResultID: id,
 		ReferenceResultID:  r.ReferenceResultID,
 		HoverResultID:      r.HoverResultID,
+		DocumentationResultID: r.DocumentationResultID,
 	}
 }
 
@@ -30,6 +32,7 @@ func (r Range) SetReferenceResultID(id int) Range {
 		DefinitionResultID: r.DefinitionResultID,
 		ReferenceResultID:  id,
 		HoverResultID:      r.HoverResultID,
+		DocumentationResultID: r.DocumentationResultID,
 	}
 }
 
@@ -39,6 +42,17 @@ func (r Range) SetHoverResultID(id int) Range {
 		DefinitionResultID: r.DefinitionResultID,
 		ReferenceResultID:  r.ReferenceResultID,
 		HoverResultID:      id,
+		DocumentationResultID: r.DocumentationResultID,
+	}
+}
+
+func (r Range) SetDocumentationResultID(id int) Range {
+	return Range{
+		Range:              r.Range,
+		DefinitionResultID: r.DefinitionResultID,
+		ReferenceResultID:  r.ReferenceResultID,
+		HoverResultID:      r.HoverResultID,
+		DocumentationResultID: id,
 	}
 }
 
@@ -80,7 +94,7 @@ func (rs ResultSet) SetHoverResultID(id int) ResultSet {
 	}
 }
 
-func (rs ResultSet) SetDocumentationResultID(id string) ResultSet {
+func (rs ResultSet) SetDocumentationResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:             rs.ResultSet,
 		DefinitionResultID:    rs.DefinitionResultID,
