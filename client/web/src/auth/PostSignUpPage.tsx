@@ -4,7 +4,7 @@ import { useLocation, useHistory } from 'react-router'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
+import { Steps, Step, StepList } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
@@ -121,7 +121,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                 )}
             </>
         ),
-        isComplete: () => true,
+        isComplete: () => didSelectAffiliatedRepos,
         onNextButtonClick: async () => {
             await AffiliatedReposReference.current?.submit()
         },
@@ -233,11 +233,17 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             </p>
                             <div className="mt-4 pb-3">
                                 <Steps current={currentStepNumber} numbered={true} onTabClick={onStepTabClick}>
-                                    <Step title="Connect with code hosts" borderColor="purple" />
-                                    <Step title="Add repositories" borderColor="blue" />
-                                    <Step title="Start searching" borderColor="orange" />
+                                    <StepList>
+                                        <Step title="Connect with code hosts" borderColor="purple" />
+                                        <Step title="Add repositories" borderColor="blue" />
+                                        <Step title="Start searching" borderColor="orange" />
+                                    </StepList>
+                                    {/* <StepPanels> */}
+                                    {/* <StepPanel></StepPanel> */}
+                                    {/* </StepPanels> */}
                                 </Steps>
                             </div>
+                            {/* This should be part of step panel */}
                             <div className="mt-4 pb-3">{currentStep.content}</div>
                             <div className="mt-4">
                                 <button

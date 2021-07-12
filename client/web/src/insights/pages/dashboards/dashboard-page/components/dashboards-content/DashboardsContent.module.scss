@@ -1,3 +1,13 @@
 .dashboard-select {
+    // This max-width value is synced with max width of dropdown panel
+    // of the dropdown component.
     max-width: 22.75rem;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.dashboard-select-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    width: 100%;
 }

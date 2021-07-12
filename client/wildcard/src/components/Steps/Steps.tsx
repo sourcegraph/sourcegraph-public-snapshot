@@ -66,3 +66,5 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ current = 1, number
         </nav>
     )
 }
+
+export const StepList: React.FunctionComponent = ({ children }) => <div>{children}</div>

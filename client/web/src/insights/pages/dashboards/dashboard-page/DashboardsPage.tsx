@@ -47,9 +47,14 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                     actions={
-                        <Link to="/insights/create" className="btn btn-secondary mr-1">
-                            <PlusIcon className="icon-inline" /> Create new insight
-                        </Link>
+                        <>
+                            <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
+                                <PlusIcon className="icon-inline" /> Create new dashboard
+                            </Link>
+                            <Link to="/insights/create" className="btn btn-secondary">
+                                <PlusIcon className="icon-inline" /> Create new insight
+                            </Link>
+                        </>
                     }
                     className="mb-3"
                 />

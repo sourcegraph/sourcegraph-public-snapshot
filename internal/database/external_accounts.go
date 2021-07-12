@@ -269,6 +269,9 @@ func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	}
 
 	err = tx.insert(ctx, createdUser.ID, spec, data)
+	if err == nil {
+		logAccountCreatedEvent(ctx, s.Handle().DB(), createdUser, spec.ServiceType)
+	}
 	return createdUser.ID, err
 }
 

@@ -1,3 +1,4 @@
+import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
@@ -15,6 +16,7 @@ import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { useDashboards } from '../../hooks/use-dashboards/use-dashboards'
+import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 
 import styles from './DashboardsContent.module.scss'
@@ -69,14 +71,38 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         history.push(`/insights/dashboards/${dashboard.id}`)
     }
 
+    const handleSelect = (action: DashboardMenuAction): void => {
+        switch (action) {
+            case DashboardMenuAction.Configure: {
+                if (
+                    currentDashboard &&
+                    !isVirtualDashboard(currentDashboard) &&
+                    isSettingsBasedInsightsDashboard(currentDashboard)
+                ) {
+                    history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
+                }
+
+                return
+            }
+
+            // Implement other actions
+        }
+    }
+
     return (
         <div>
-            <DashboardSelect
-                value={currentDashboard?.id}
-                dashboards={dashboards}
-                onSelect={handleDashboardSelect}
-                className={styles.dashboardSelect}
-            />
+            <section className="d-flex flex-wrap align-items-center">
+                <span className={styles.dashboardSelectLabel}>Dashboard</span>
+
+                <DashboardSelect
+                    value={currentDashboard?.id}
+                    dashboards={dashboards}
+                    onSelect={handleDashboardSelect}
+                    className={classnames(styles.dashboardSelect, 'mr-2')}
+                />
+
+                <DashboardMenu dashboard={currentDashboard} onSelect={handleSelect} />
+            </section>
 
             <hr className="mt-2 mb-3" />
 

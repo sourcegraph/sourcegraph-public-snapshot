@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -64,22 +65,17 @@ func logSignOutEvent(r *http.Request, db dbutil.DB, name database.SecurityEventN
 	ctx := r.Context()
 	a := actor.FromContext(ctx)
 
-	var anonymousID string
-	// TODO: We have multiple places in our codebase where we grab this cookie, we
-	// should centralise it
-	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil && cookie.Value != "" {
-		anonymousID = cookie.Value
+	event := &database.SecurityEvent{
+		Name:      name,
+		URL:       r.URL.Path,
+		UserID:    uint32(a.UID),
+		Argument:  nil,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
 	}
 
-	event := &database.SecurityEvent{
-		Name:            name,
-		URL:             r.URL.Path,
-		UserID:          uint32(a.UID),
-		AnonymousUserID: anonymousID,
-		Argument:        nil,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
+	// Safe to ignore this error
+	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	database.SecurityEventLogs(db).LogEvent(ctx, event)
 }

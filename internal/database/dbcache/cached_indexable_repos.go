@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// indexableReposMaxAge is how long we cache the list of default repos. The list
+// indexableReposMaxAge is how long we cache the list of indexable repos. The list
 // changes very rarely, so we can cache for a while.
 const indexableReposMaxAge = time.Minute
 
@@ -40,7 +40,7 @@ func NewIndexableReposLister(store *database.RepoStore) *IndexableReposLister {
 	}
 }
 
-// IndexableReposLister holds the list of default repos which are cached for
+// IndexableReposLister holds the list of indexable repos which are cached for
 // indexableReposMaxAge.
 type IndexableReposLister struct {
 	store *database.RepoStore
@@ -50,8 +50,8 @@ type IndexableReposLister struct {
 	mu               sync.Mutex
 }
 
-// List lists ALL default repos. These include anything in the default_repos
-// table, user added repos (both public and private) as well as any repos added
+// List lists ALL indexable repos. These include all repos with a minimum number of stars,
+// user added repos (both public and private) as well as any repos added
 // to the user_public_repos table.
 //
 // The values are cached for up to indexableReposMaxAge. If the cache has expired, we return
@@ -89,7 +89,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 
 		_, err := s.refreshCache(newCtx, onlyPublic)
 		if err != nil {
-			log15.Error("Refreshing default repos cache", "error", err)
+			log15.Error("Refreshing indexable repos cache", "error", err)
 		}
 	}()
 	return repos, nil
@@ -117,7 +117,7 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool
 	}
 	repos, err := s.store.ListIndexableRepos(ctx, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying for default repos")
+		return nil, errors.Wrap(err, "querying for indexable repos")
 	}
 
 	cache.Store(&cachedRepos{
