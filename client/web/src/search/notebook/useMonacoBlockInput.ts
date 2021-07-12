@@ -66,8 +66,19 @@ export const useMonacoBlockInput = ({
             keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
             run: () => onRunBlock(id),
         })
+        const blurOnEscapeDisposable = editor.addAction({
+            id: 'blur-on-esacpe',
+            label: 'Blur on escape',
+            keybindings: [Monaco.KeyCode.Escape],
+            run: () => {
+                if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur()
+                }
+            },
+        })
         return () => {
             addRunBlockActionDisposable.dispose()
+            blurOnEscapeDisposable.dispose()
         }
     }, [editor, id, onRunBlock, onMoveBlockSelection])
 
