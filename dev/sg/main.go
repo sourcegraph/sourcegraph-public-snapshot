@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -281,7 +282,7 @@ func runSetExec(ctx context.Context, args []string) error {
 	for _, name := range names {
 		cmd, ok := conf.Commands[name]
 		if !ok {
-			return fmt.Errorf("command %q not found in commandset %q", name, args[0])
+			return errors.Errorf("command %q not found in commandset %q", name, args[0])
 		}
 
 		cmds = append(cmds, cmd)
@@ -483,7 +484,7 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("no migrations exist at commit %s", commit)
+		return errors.Errorf("no migrations exist at commit %s", commit)
 	}
 
 	// Run migrations up to last migration index and dump the database into a single migration file pair

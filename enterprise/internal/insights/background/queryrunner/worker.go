@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"golang.org/x/time/rate"
@@ -152,7 +153,7 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 		return nil, err
 	}
 	if len(jobs) != 1 {
-		return nil, fmt.Errorf("expected 1 job to dequeue, found %v", len(jobs))
+		return nil, errors.Errorf("expected 1 job to dequeue, found %v", len(jobs))
 	}
 	return jobs[0], nil
 }

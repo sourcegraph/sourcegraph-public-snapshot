@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
 
@@ -149,7 +150,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			owners := strings.Join(alert.Owners, "|")
 			ownerRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
 			if err != nil {
-				newProblem(fmt.Errorf("failed to apply alert %d: %w", i, err))
+				newProblem(errors.Errorf("failed to apply alert %d: %w", i, err))
 				continue
 			}
 
@@ -205,7 +206,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			if notifier.Opsgenie.ApiUrl != "" {
 				u, err := url.Parse(notifier.Opsgenie.ApiUrl)
 				if err != nil {
-					newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
+					newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
 					continue
 				}
 				apiURL = &amconfig.URL{URL: u}
@@ -273,7 +274,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			if notifier.Pagerduty.ApiUrl != "" {
 				u, err := url.Parse(notifier.Pagerduty.ApiUrl)
 				if err != nil {
-					newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
+					newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
 					continue
 				}
 				apiURL = &amconfig.URL{URL: u}
@@ -299,7 +300,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		case notifier.Slack != nil:
 			u, err := url.Parse(notifier.Slack.Url)
 			if err != nil {
-				newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
+				newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
 				continue
 			}
 
@@ -337,7 +338,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		case notifier.Webhook != nil:
 			u, err := url.Parse(notifier.Webhook.Url)
 			if err != nil {
-				newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
+				newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
 				continue
 			}
 			receiver.WebhookConfigs = append(receiver.WebhookConfigs, &amconfig.WebhookConfig{
@@ -355,7 +356,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 
 		// define new notifiers to support in site.schema.json
 		default:
-			newProblem(fmt.Errorf("failed to apply notifier %d: no configuration found", i))
+			newProblem(errors.Errorf("failed to apply notifier %d: no configuration found", i))
 		}
 	}
 

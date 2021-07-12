@@ -62,7 +62,7 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 
 	// TODO(slimsag): future: Logs are not a good way to surface these errors to users.
 	if len(results.Errors) > 0 {
-		return fmt.Errorf("GraphQL errors: %v", results.Errors)
+		return errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
 	if alert := results.Data.Search.Results.Alert; alert != nil {
 		if alert.Title == "No repositories satisfied your repo: filter" {
@@ -79,7 +79,7 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 			// general.
 		} else {
 			// Maybe the user's search query is actually wrong.
-			return fmt.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
+			return errors.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
 		}
 	}
 	if results.Data.Search.Results.LimitHit {
