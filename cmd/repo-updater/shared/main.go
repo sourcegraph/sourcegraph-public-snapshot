@@ -253,7 +253,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go watchSyncer(ctx, syncer, scheduler, gps)
 	go func() {
-		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
+		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
 			IsCloud:         envvar.SourcegraphDotComMode(),
 			MinSyncInterval: repos.ConfRepoListUpdateInterval,
