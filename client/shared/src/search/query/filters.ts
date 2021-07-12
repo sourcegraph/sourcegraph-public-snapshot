@@ -1,6 +1,7 @@
 import { Omit } from 'utility-types'
 
 import { SearchSuggestion } from '../suggestions'
+import { languageCompletion } from './languageFilter'
 
 import { predicateCompletion } from './predicates'
 import { selectorCompletion } from './selectFilter'
@@ -152,46 +153,6 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
 
 export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
-export const LANGUAGES: string[] = [
-    'Assembly',
-    'Bash',
-    'C',
-    'C++',
-    'C#',
-    'CSS',
-    'Dart',
-    'Elixir',
-    'Erlang',
-    'Go',
-    'GraphQL',
-    'Groovy',
-    'Haskell',
-    'HTML',
-    'Java',
-    'JavaScript',
-    'Kotlin',
-    'JSON',
-    'Julia',
-    'Lua',
-    'Markdown',
-    'Objective-C',
-    'OCaml',
-    'PHP',
-    'PowerShell',
-    'Python',
-    'R',
-    'Ruby',
-    'Rust',
-    'Sass',
-    'Scala',
-    'SQL',
-    'Swift',
-    'TypeScript',
-    'VBA',
-    'XML',
-    'Zig',
-]
-
 const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
     {
         label: 'Search a GitHub organization',
@@ -272,7 +233,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.lang]: {
         alias: 'l',
-        discreteValues: () => LANGUAGES.map(value => ({ label: value })),
+        discreteValues: value => languageCompletion(value).map(value => ({ label: value })),
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} results from the given language`,
     },
