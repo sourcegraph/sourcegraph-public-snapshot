@@ -160,7 +160,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.type,
-        placeholder: parsePlaceholder('{diff//commit/...}'),
+        placeholder: parsePlaceholder('{diff/commit/...}'),
         commonRank: 90,
         description:
             'Specifies the type of search. By default, searches are executed on all code at a given point in time (a branch or a commit). Specify the `type:` if you want to search over changes to code or commit messages instead (diffs or commits).',
