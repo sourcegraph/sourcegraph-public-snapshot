@@ -26,6 +26,7 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -1375,11 +1376,11 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 
-	// performance optimization: call zoekt early, resolve repos concurrently, filter
-	// search results with resolved repos.
+	// perf: call zoekt early, resolve only user accessible private repos.
 	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath {
 		argsIndexed := *args
 		argsIndexed.Mode = search.ZoektGlobalSearch
+		argsIndexed.UserPrivateRepos = r.getUserAccessiblePrivateRepos(ctx)
 		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1515,6 +1516,24 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		Stats:   common,
 		Alert:   alert,
 	}, err
+}
+
+// getUserAccessiblePrivateRepos returns private repos a user has access to. We
+// assume this list is very short on sourcegraph.com. In case of an error we
+// return a nil slice.
+func (r *searchResolver) getUserAccessiblePrivateRepos(ctx context.Context) []types.RepoName {
+	a := actor.FromContext(ctx)
+	if a.UID == 0 {
+		return nil
+	}
+	res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		UserID:      a.UID,
+		OnlyPrivate: true,
+	})
+	if err != nil {
+		return nil
+	}
+	return res
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
