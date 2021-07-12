@@ -197,22 +197,6 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 					err:  "<nil>",
 				},
 				testCase{
-					name: string(tc.repo.Name) + "/new repo sources",
-					sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
-						repos.NewFakeSource(svcdup.Clone(), nil, tc.repo.Clone()),
-					),
-					store:  s,
-					stored: types.Repos{tc.repo.Clone()},
-					now:    clock.Now,
-					diff: repos.Diff{Modified: types.Repos{tc.repo.With(
-						types.Opt.RepoModifiedAt(clock.Time(1)),
-						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
-					)}},
-					svcs: []*types.ExternalService{tc.svc},
-					err:  "<nil>",
-				},
-				testCase{
 					// If the source is unauthorized we should treat this as if zero repos were
 					// returned as it indicates that the source no longer has access to its repos
 					name:    string(tc.repo.Name) + "/unauthorized",
@@ -477,6 +461,27 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 					err:    "<nil>",
 				},
 			)
+
+			if !streaming {
+				// streaming SyncExternalService removes the possibility of adding any sources to a repo beyond the
+				// currently syncing external service, so we don't test this for the streaming syncer.
+				testCases = append(testCases, testCase{
+					name: string(tc.repo.Name) + "/new repo sources",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
+						repos.NewFakeSource(svcdup.Clone(), nil, tc.repo.Clone()),
+					),
+					store:  s,
+					stored: types.Repos{tc.repo.Clone()},
+					now:    clock.Now,
+					diff: repos.Diff{Modified: types.Repos{tc.repo.With(
+						types.Opt.RepoModifiedAt(clock.Time(1)),
+						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+					)}},
+					svcs: []*types.ExternalService{tc.svc},
+					err:  "<nil>",
+				})
+			}
 		}
 
 		for _, tc := range testCases {
@@ -522,8 +527,8 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 				for _, svc := range tc.svcs {
 					err := syncer.SyncExternalService(ctx, st, svc.ID, time.Millisecond)
 
-					if have, want := fmt.Sprint(err), tc.err; have != want {
-						t.Errorf("have error %q, want %q", have, want)
+					if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
+						t.Errorf("error %q doesn't contain %q", have, want)
 					}
 
 					if err != nil {

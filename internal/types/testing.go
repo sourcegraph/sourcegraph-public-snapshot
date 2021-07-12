@@ -272,7 +272,7 @@ var Opt = struct {
 		return func(r *Repo) {
 			r.Sources = map[string]*SourceInfo{}
 			for _, src := range srcs {
-				r.Sources[src] = &SourceInfo{ID: src}
+				r.Sources[src] = &SourceInfo{ID: src, CloneURL: "clone-url"}
 			}
 		}
 	},
