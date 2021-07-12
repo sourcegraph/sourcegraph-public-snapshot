@@ -95,13 +95,12 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     }, [onRunBlock, searchResults])
 
     const menuActions = useMemo(
-        () =>
-            (!isInputFocused ? [{ label: 'Edit', onClick: (id: string) => onEnterBlock() }] : []).concat([
-                { label: 'Move Up', onClick: (id: string) => onMoveBlock(id, 'up') },
-                { label: 'Move Down', onClick: (id: string) => onMoveBlock(id, 'down') },
-                { label: 'Delete', onClick: onDeleteBlock },
-            ]),
-        [isInputFocused, onEnterBlock, onMoveBlock, onDeleteBlock]
+        () => [
+            { label: 'Move Up', onClick: (id: string) => onMoveBlock(id, 'up') },
+            { label: 'Move Down', onClick: (id: string) => onMoveBlock(id, 'down') },
+            { label: 'Delete', onClick: onDeleteBlock },
+        ],
+        [onMoveBlock, onDeleteBlock]
     )
 
     return (
