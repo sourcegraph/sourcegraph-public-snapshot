@@ -10,7 +10,7 @@ import {
     SettingsBasedInsightDashboard,
     InsightDashboardOwner,
 } from '../../core/types'
-import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects';
+import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects'
 
 /**
  * Returns all subject dashboards and one special (built-in) dashboard that includes

@@ -5,7 +5,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
-import { SupportedInsightSubject } from '../../../../core/types/subjects';
+import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'
 import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/insight-sanitizer'

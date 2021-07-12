@@ -1,15 +1,15 @@
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../../../schema/settings.schema';
-import { Insight, InsightConfiguration, isInsightSettingKey } from '../../../../../../core/types';
+import { Settings } from '../../../../../../../schema/settings.schema'
+import { Insight, InsightConfiguration, isInsightSettingKey } from '../../../../../../core/types'
 import {
     isSubjectInsightSupported,
     SUBJECT_SHARING_LEVELS,
-    SupportedInsightSubject
-} from '../../../../../../core/types/subjects';
-import { getDashboardOwnerInfo } from '../../../../../../hooks/use-dashboards/utils';
-import { createInsightFromSettings } from '../../../../../../hooks/use-insight/use-insight';
+    SupportedInsightSubject,
+} from '../../../../../../core/types/subjects'
+import { getDashboardOwnerInfo } from '../../../../../../hooks/use-dashboards/utils'
+import { createInsightFromSettings } from '../../../../../../hooks/use-insight/use-insight'
 
 export interface UseReachableInsightsProps extends SettingsCascadeProps<Settings> {
     /**
@@ -20,7 +20,7 @@ export interface UseReachableInsightsProps extends SettingsCascadeProps<Settings
 
 export type ReachableInsight = Insight & {
     owner: {
-        id: string,
+        id: string
         name: string
     }
 }
@@ -38,21 +38,20 @@ export function useReachableInsights(props: UseReachableInsightsProps): Reachabl
         return []
     }
 
-    const ownerConfigureSubject = settingsCascade.subjects
-        .find(configureSubject => configureSubject.subject.id === ownerId)
+    const ownerConfigureSubject = settingsCascade.subjects.find(
+        configureSubject => configureSubject.subject.id === ownerId
+    )
 
     if (!ownerConfigureSubject) {
         return []
     }
 
     const subjectSharingLevel = SUBJECT_SHARING_LEVELS[ownerConfigureSubject.subject.__typename]
-    const availableSubjects = settingsCascade.subjects
-        .filter(configuredSubject => SUBJECT_SHARING_LEVELS[configuredSubject.subject.__typename] > subjectSharingLevel)
+    const availableSubjects = settingsCascade.subjects.filter(
+        configuredSubject => SUBJECT_SHARING_LEVELS[configuredSubject.subject.__typename] > subjectSharingLevel
+    )
 
-    const subjectsWithReachableInsights = [
-        ownerConfigureSubject,
-        ...availableSubjects
-    ]
+    const subjectsWithReachableInsights = [ownerConfigureSubject, ...availableSubjects]
 
     return subjectsWithReachableInsights
         .filter(configureSubject => isSubjectInsightSupported(configureSubject.subject))
@@ -71,13 +70,13 @@ export function useReachableInsights(props: UseReachableInsightsProps): Reachabl
                     const insight = createInsightFromSettings({
                         insightKey: key,
                         ownerId: subject.id,
-                        insightConfiguration: settings[key] as InsightConfiguration
+                        insightConfiguration: settings[key] as InsightConfiguration,
                     })
 
                     return {
                         ...insight,
                         // Extend common insight object with owner info
-                        owner: subjectOwnerInfo
+                        owner: subjectOwnerInfo,
                     }
                 })
         })

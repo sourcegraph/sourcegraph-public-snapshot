@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo } from 'react'
 
-import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../schema/settings.schema';
-import { Insight, InsightConfiguration } from '../../core/types';
+import { Settings } from '../../../schema/settings.schema'
+import { Insight, InsightConfiguration } from '../../core/types'
 
 export interface UseInsightProps extends SettingsCascadeProps<Settings> {
     insightId: string
@@ -19,7 +19,7 @@ export function useInsight(props: UseInsightProps): Insight | null {
     return useMemo(() => findInsightById(settingsCascade, insightId), [settingsCascade, insightId])
 }
 
-export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings>, insightId: string): Insight | null{
+export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings>, insightId: string): Insight | null {
     const subjects = settingsCascade.subjects
 
     const subject = subjects?.find(({ settings }) => settings && !isErrorLike(settings) && !!settings[insightId])
@@ -30,7 +30,7 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
 
     const insightConfiguration = subject.settings[insightId] as InsightConfiguration
 
-    return  {
+    return {
         id: insightId,
         visibility: subject.subject.id,
         ...insightConfiguration,
@@ -38,12 +38,12 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
 }
 
 interface InsightsInputs {
-    insightKey: string,
-    insightConfiguration: InsightConfiguration,
-    ownerId: string,
+    insightKey: string
+    insightConfiguration: InsightConfiguration
+    ownerId: string
 }
 
-export function createInsightFromSettings(input: InsightsInputs) {
+export function createInsightFromSettings(input: InsightsInputs): Insight {
     const { insightKey, ownerId, insightConfiguration } = input
 
     return {

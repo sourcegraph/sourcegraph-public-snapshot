@@ -1,6 +1,6 @@
 import React, { ChangeEvent } from 'react'
 
-import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../core/types/subjects';
+import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../core/types/subjects'
 import { FormGroup } from '../form/form-group/FormGroup'
 import { FormRadioInput } from '../form/form-radio-input/FormRadioInput'
 
@@ -44,7 +44,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
         <FormGroup
             name="visibility"
             title="Visibility"
-            description='This insight will be always displayed in the ‘All Insights’ dashboard by default'
+            description="This insight will be always displayed in the ‘All Insights’ dashboard by default"
             className="mb-0 mt-4"
             labelClassName={labelClassName}
             contentClassName="d-flex flex-wrap mb-n2"

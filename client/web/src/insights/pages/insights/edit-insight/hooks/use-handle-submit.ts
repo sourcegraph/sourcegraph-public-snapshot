@@ -1,16 +1,16 @@
-import { useContext } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useContext } from 'react'
+import { useHistory } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
-import { asError } from '@sourcegraph/shared/src/util/errors';
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../schema/settings.schema';
-import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm';
-import { InsightsApiContext } from '../../../../core/backend/api-provider';
-import { Insight } from '../../../../core/types';
+import { Settings } from '../../../../../schema/settings.schema'
+import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { InsightsApiContext } from '../../../../core/backend/api-provider'
+import { Insight } from '../../../../core/types'
 
-import { applyEditOperations, getUpdatedSubjectSettings } from './utils';
+import { applyEditOperations, getUpdatedSubjectSettings } from './utils'
 
 export interface UseHandleSubmitProps extends PlatformContextProps<'updateSettings'>, SettingsCascadeProps<Settings> {
     originalInsight: Insight | null
@@ -38,23 +38,21 @@ export function useHandleSubmit(props: UseHandleSubmitProps): useHandleSubmitOut
             const subjectsToUpdate = getUpdatedSubjectSettings({
                 oldInsight: originalInsight,
                 newInsight,
-                settingsCascade
+                settingsCascade,
             })
 
-            const subjectUpdateRequests = Object
-                .keys(subjectsToUpdate)
-                .map(subjectId => {
-                    async function updateSettings(): Promise<void> {
-                        const editOperations = subjectsToUpdate[subjectId]
-                        const settings = await getSubjectSettings(subjectId).toPromise()
+            const subjectUpdateRequests = Object.keys(subjectsToUpdate).map(subjectId => {
+                async function updateSettings(): Promise<void> {
+                    const editOperations = subjectsToUpdate[subjectId]
+                    const settings = await getSubjectSettings(subjectId).toPromise()
 
-                        const nextSubjectSettings = applyEditOperations(settings.contents, editOperations)
+                    const nextSubjectSettings = applyEditOperations(settings.contents, editOperations)
 
-                        await updateSubjectSettings(platformContext, subjectId, nextSubjectSettings).toPromise()
-                    }
+                    await updateSubjectSettings(platformContext, subjectId, nextSubjectSettings).toPromise()
+                }
 
-                    return updateSettings()
-                })
+                return updateSettings()
+            })
 
             await Promise.all(subjectUpdateRequests)
 

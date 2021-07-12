@@ -12,7 +12,7 @@ export enum DashboardMenuAction {
     CopyLink,
     Delete,
     Configure,
-    AddRemoveInsights
+    AddRemoveInsights,
 }
 
 export interface DashboardMenuProps {

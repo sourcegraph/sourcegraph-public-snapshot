@@ -13,7 +13,7 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
-import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects';
+import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
     SearchInsightCreationContent,
@@ -45,7 +45,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
-
             const subjectID = values.visibility
 
             try {

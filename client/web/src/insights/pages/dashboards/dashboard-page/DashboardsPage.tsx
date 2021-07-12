@@ -5,6 +5,7 @@ import { Redirect } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader } from '@sourcegraph/wildcard'
@@ -16,9 +17,12 @@ import { CodeInsightsIcon } from '../../../components'
 import { InsightsDashboardType } from '../../../core/types'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
 
-export interface DashboardsPageProps extends PlatformContextProps<'updateSettings'>, TelemetryProps, SettingsCascadeProps<Settings>, ExtensionsControllerProps {
+export interface DashboardsPageProps
+    extends PlatformContextProps<'updateSettings'>,
+        TelemetryProps,
+        SettingsCascadeProps<Settings>,
+        ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.

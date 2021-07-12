@@ -5,7 +5,6 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { authUser } from '../../../../../search/panels/utils'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../core/backend/insights-api'
 
@@ -58,7 +57,6 @@ add('Page', () => (
             telemetryService={NOOP_TELEMETRY_SERVICE}
             platformContext={PLATFORM_CONTEXT}
             settingsCascade={EMPTY_SETTINGS_CASCADE}
-            authenticatedUser={authUser}
         />
     </InsightsApiContext.Provider>
 ))

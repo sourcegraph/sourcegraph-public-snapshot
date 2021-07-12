@@ -12,8 +12,6 @@ describe('parseJSONCOrError', () => {
 
 describe('modify', () => {
     test('modify nested value', () => {
-
-        expect(modify('{/*x*/"a":{"b":1}}', ['a', 'b'], 2))
-            .toEqual('{/*x*/"a":{"b":2}}')
+        expect(modify('{/*x*/"a":{"b":1}}', ['a', 'b'], 2)).toEqual('{/*x*/"a":{"b":2}}')
     })
 })

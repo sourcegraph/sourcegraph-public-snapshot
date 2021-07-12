@@ -1,5 +1,3 @@
-
-
 .insights-container {
     max-height: 14rem;
     overflow: auto;
@@ -13,7 +11,8 @@
     margin: 0;
     padding: 0.5rem 0.5rem;
 
-    &:hover, &:focus-within {
+    &:hover,
+    &:focus-within {
         cursor: pointer;
         background: var(--color-bg-3);
     }

@@ -1,13 +1,13 @@
-import { groupBy } from 'lodash';
+import { groupBy } from 'lodash'
 
-import { ConfiguredSubjectOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { ConfiguredSubjectOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../schema/settings.schema';
-import { addInsightToDashboard, removeInsightFromDashboard } from '../../../../core/settings-action/dashboards';
-import { addInsightToSettings, removeInsightFromSettings } from '../../../../core/settings-action/insights';
-import { Insight, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../../../core/types';
-import { SUBJECT_SHARING_LEVELS } from '../../../../core/types/subjects';
+import { Settings } from '../../../../../schema/settings.schema'
+import { addInsightToDashboard, removeInsightFromDashboard } from '../../../../core/settings-action/dashboards'
+import { addInsightToSettings, removeInsightFromSettings } from '../../../../core/settings-action/insights'
+import { Insight, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../../../core/types'
+import { SUBJECT_SHARING_LEVELS } from '../../../../core/types/subjects'
 
 interface EditInsightProps extends SettingsCascadeProps<Settings> {
     oldInsight: Insight
@@ -23,35 +23,31 @@ enum SettingsOperationType {
 
 interface RemoveInsight {
     type: SettingsOperationType.removeInsight
-    subjectId: string,
+    subjectId: string
     insightID: string
 }
 
 interface AddInsight {
     type: SettingsOperationType.addInsight
-    subjectId: string,
+    subjectId: string
     insight: Insight
 }
 
 interface RemoveInsightFromDashboard {
     type: SettingsOperationType.removeInsightFromDashboard
-    subjectId: string,
+    subjectId: string
     insightId: string
-    dashboardSettingKey: string,
+    dashboardSettingKey: string
 }
 
 interface AddInsightToDashboard {
     type: SettingsOperationType.addInsightToDashboard
-    subjectId: string,
+    subjectId: string
     insightId: string
-    dashboardSettingKey: string,
+    dashboardSettingKey: string
 }
 
-type SettingsOperation =
-    | AddInsight
-    | RemoveInsight
-    | AddInsightToDashboard
-    | RemoveInsightFromDashboard
+type SettingsOperation = AddInsight | RemoveInsight | AddInsightToDashboard | RemoveInsightFromDashboard
 
 /**
  * Apply edit operation over jsonc settings string and return serialized final string
@@ -71,7 +67,7 @@ export function applyEditOperations(settings: string, operations: SettingsOperat
             case SettingsOperationType.removeInsight:
                 settingsContent = removeInsightFromSettings({
                     originalSettings: settingsContent,
-                    insightID: operation.insightID
+                    insightID: operation.insightID,
                 })
                 continue
             case SettingsOperationType.addInsightToDashboard:
@@ -103,11 +99,13 @@ export function getUpdatedSubjectSettings(props: EditInsightProps): Record<strin
         return {}
     }
 
-    const oldInsightSubject = settingsCascade.subjects
-        .find(configuredSubject => configuredSubject.subject.id === oldInsight.visibility)
+    const oldInsightSubject = settingsCascade.subjects.find(
+        configuredSubject => configuredSubject.subject.id === oldInsight.visibility
+    )
 
-    const newInsightSubject = settingsCascade.subjects
-        .find(configuredSubject => configuredSubject.subject.id === newInsight.visibility)
+    const newInsightSubject = settingsCascade.subjects.find(
+        configuredSubject => configuredSubject.subject.id === newInsight.visibility
+    )
 
     if (!oldInsightSubject || !newInsightSubject) {
         return {}
@@ -129,19 +127,16 @@ export function updateInsightSettings(props: EditInsightProps): SettingsOperatio
     const removeOldInsightOperation: RemoveInsight = {
         type: SettingsOperationType.removeInsight,
         subjectId: oldInsight.visibility,
-        insightID: oldInsight.id
+        insightID: oldInsight.id,
     }
 
     const addNewInsightOperation: AddInsight = {
         type: SettingsOperationType.addInsight,
         subjectId: newInsight.visibility,
-        insight: newInsight
+        insight: newInsight,
     }
 
-    return [
-        removeOldInsightOperation,
-        addNewInsightOperation
-    ]
+    return [removeOldInsightOperation, addNewInsightOperation]
 }
 
 export function updateDashboardInsightOwnership(props: EditInsightProps): SettingsOperation[] {
@@ -153,11 +148,13 @@ export function updateDashboardInsightOwnership(props: EditInsightProps): Settin
         return []
     }
 
-    const oldInsightSubject = settingsCascade.subjects
-        .find(configuredSubject => configuredSubject.subject.id === oldInsight.visibility)
+    const oldInsightSubject = settingsCascade.subjects.find(
+        configuredSubject => configuredSubject.subject.id === oldInsight.visibility
+    )
 
-    const newInsightSubject = settingsCascade.subjects
-        .find(configuredSubject => configuredSubject.subject.id === newInsight.visibility)
+    const newInsightSubject = settingsCascade.subjects.find(
+        configuredSubject => configuredSubject.subject.id === newInsight.visibility
+    )
 
     if (!oldInsightSubject || !newInsightSubject) {
         return []
@@ -187,23 +184,24 @@ export function updateDashboardInsightOwnership(props: EditInsightProps): Settin
     if (nextShareLevel < previousShareLevel) {
         const subjectsToUpdate = [
             // Get all subject from old top share level
-            ...settingsCascade.subjects
-                .filter(configuredSubject => configuredSubject.subject.__typename === previousSubjectType),
+            ...settingsCascade.subjects.filter(
+                configuredSubject => configuredSubject.subject.__typename === previousSubjectType
+            ),
             // Get all subjects with new share level but not the subject that will have insight
-            ... settingsCascade.subjects
+            ...settingsCascade.subjects
                 .filter(configuredSubject => configuredSubject.subject.__typename === nextSubjectType)
-                .filter(configuredSubject => configuredSubject.subject.id !== newInsight.visibility)
+                .filter(configuredSubject => configuredSubject.subject.id !== newInsight.visibility),
         ]
 
-        return subjectsToUpdate.flatMap(
-            configuredSubject => removeInsightFromAllSubjectDashboards(oldInsight, configuredSubject)
+        return subjectsToUpdate.flatMap(configuredSubject =>
+            removeInsightFromAllSubjectDashboards(oldInsight, configuredSubject)
         )
     }
 
     return []
 }
 
-function updateInsightIdInDashboardIds(props: EditInsightProps): SettingsOperation[]  {
+function updateInsightIdInDashboardIds(props: EditInsightProps): SettingsOperation[] {
     const { oldInsight, newInsight, settingsCascade } = props
     // Since we use camel cased title as id for the insight is users changed title
     // this means id is also changed and we have to re-create insight with new id.
@@ -230,14 +228,14 @@ function updateInsightIdInDashboardIds(props: EditInsightProps): SettingsOperati
                     type: SettingsOperationType.removeInsightFromDashboard,
                     dashboardSettingKey: key,
                     insightId: oldInsight.id,
-                    subjectId: subject.id
+                    subjectId: subject.id,
                 }
 
                 const addNewInsightId: AddInsightToDashboard = {
                     type: SettingsOperationType.addInsightToDashboard,
                     dashboardSettingKey: key,
                     insightId: newInsight.id,
-                    subjectId: subject.id
+                    subjectId: subject.id,
                 }
 
                 return [removeOldInsightId, addNewInsightId]
@@ -247,8 +245,8 @@ function updateInsightIdInDashboardIds(props: EditInsightProps): SettingsOperati
 
 function removeInsightFromAllSubjectDashboards(
     insight: Insight,
-    configuredSubject: ConfiguredSubjectOrError<Settings>): RemoveInsightFromDashboard[] {
-
+    configuredSubject: ConfiguredSubjectOrError<Settings>
+): RemoveInsightFromDashboard[] {
     const { subject, settings } = configuredSubject
 
     if (!settings || isErrorLike(settings)) {
@@ -260,9 +258,9 @@ function removeInsightFromAllSubjectDashboards(
     return Object.keys(dashboards)
         .filter(key => dashboards[key]?.insightIds?.includes(insight.id))
         .map(key => ({
-                type: SettingsOperationType.removeInsightFromDashboard,
-                dashboardSettingKey: key,
-                insightId: insight.id,
-                subjectId: subject.id
-            }))
+            type: SettingsOperationType.removeInsightFromDashboard,
+            dashboardSettingKey: key,
+            insightId: insight.id,
+            subjectId: subject.id,
+        }))
 }

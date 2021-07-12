@@ -8,7 +8,7 @@ import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoryField } from '../../../../../../components/form/repositories-field/RepositoryField'
 import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects';
+import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
@@ -101,11 +101,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}
             />
 
-            <VisibilityPicker
-                subjects={subjects}
-                value={visibility.input.value}
-                onChange={visibility.input.onChange}
-            />
+            <VisibilityPicker subjects={subjects} value={visibility.input.value} onChange={visibility.input.onChange} />
 
             <hr className={styles.formSeparator} />
 

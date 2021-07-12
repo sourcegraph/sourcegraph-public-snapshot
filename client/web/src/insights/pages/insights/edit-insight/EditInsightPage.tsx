@@ -11,13 +11,13 @@ import { HeroPage } from '../../../../components/HeroPage'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
-import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects';
-import { useInsight } from '../../../hooks/use-insight/use-insight';
+import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
+import { useInsight } from '../../../hooks/use-insight/use-insight'
 
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import styles from './EditInsightPage.module.scss'
-import { useHandleSubmit } from './hooks/use-handle-submit';
+import { useHandleSubmit } from './hooks/use-handle-submit'
 
 export interface EditInsightPageProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     /** Normalized insight id <type insight>.insight.<name of insight> */
@@ -35,10 +35,10 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
 
     const subjects = useInsightSubjects({ settingsCascade })
     const insight = useInsight({ settingsCascade, insightId: insightID })
-    const { handleEditInsightSubmit } = useHandleSubmit( {
+    const { handleEditInsightSubmit } = useHandleSubmit({
         originalInsight: insight,
         settingsCascade,
-        platformContext
+        platformContext,
     })
 
     const finalSettings = useMemo(() => {

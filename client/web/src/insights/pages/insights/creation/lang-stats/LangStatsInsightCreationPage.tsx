@@ -8,12 +8,12 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
     LangStatsInsightCreationContent,
@@ -22,20 +22,13 @@ import {
 import styles from './LangStatsInsightCreationPage.module.scss'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
-import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects';
 
 const DEFAULT_FINAL_SETTINGS = {}
 
 export interface LangStatsInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
         SettingsCascadeProps,
-        TelemetryProps {
-    /**
-     * Authenticated user info, Used to decide where code insight will appears
-     * in personal dashboard (private) or in organization dashboard (public)
-     * */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'>
-}
+        TelemetryProps {}
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
     const { settingsCascade, platformContext, telemetryService } = props
@@ -55,7 +48,6 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
-
             const subjectID = values.visibility
 
             try {

@@ -72,9 +72,7 @@ export const FormInput = forwardRef((props, reference) => {
                 </small>
             )}
             {!error && description && (
-                <small className={classnames('text-muted', 'form-text', styles.description)}>
-                    {description}
-                </small>
+                <small className={classnames('text-muted', 'form-text', styles.description)}>{description}</small>
             )}
         </label>
     )

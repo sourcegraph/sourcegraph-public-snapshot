@@ -1,4 +1,4 @@
-import { SettingsOrgSubject, SettingsSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings';
+import { SettingsOrgSubject, SettingsSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
 /**
  * Currently we support only two types of subject that can have insights dashboard.
@@ -7,12 +7,12 @@ export type SupportedInsightSubject = SettingsUserSubject | SettingsOrgSubject
 
 export enum SupportedInsightSubjectType {
     User = 'User',
-    Organization = 'Org'
+    Organization = 'Org',
 }
 
 export const SUBJECT_SHARING_LEVELS: Record<string, number> = {
     [SupportedInsightSubjectType.User]: 1,
-    [SupportedInsightSubjectType.Organization]: 2
+    [SupportedInsightSubjectType.Organization]: 2,
 }
 
 export const SUPPORTED_TYPES_OF_SUBJECT = new Set<string>(Object.values(SupportedInsightSubjectType))

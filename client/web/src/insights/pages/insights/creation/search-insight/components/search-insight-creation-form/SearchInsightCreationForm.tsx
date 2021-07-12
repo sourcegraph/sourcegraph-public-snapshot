@@ -10,7 +10,7 @@ import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
 import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects';
+import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 

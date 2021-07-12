@@ -1,6 +1,6 @@
 import { camelCase } from 'lodash'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
 import { InsightDashboard, Settings } from '../../../schema/settings.schema'
@@ -42,11 +42,7 @@ export function addInsightToDashboard(settings: string, dashboardId: string, ins
 
     const insightIds = currentDashboard.insightIds ?? []
 
-    return modify(
-        settings,
-        [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId, 'insightIds'],
-        [...insightIds, insightId]
-    )
+    return modify(settings, [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId, 'insightIds'], [...insightIds, insightId])
 }
 
 /**
@@ -78,11 +74,7 @@ export function updateDashboardInsightIds(settings: string, dashboardId: string,
         return settings
     }
 
-    return modify(
-        settings,
-        [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId, 'insightIds'],
-        insightIds
-    )
+    return modify(settings, [INSIGHTS_DASHBOARDS_SETTINGS_KEY, dashboardId, 'insightIds'], insightIds)
 }
 
 function getDashboard(settings: string, dashboardId: string): InsightDashboard | undefined {

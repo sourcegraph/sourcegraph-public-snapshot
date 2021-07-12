@@ -8,7 +8,7 @@ import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
 import { useInsightTitleValidator } from '../../../../../../components/form/hooks/useInsightTitleValidator'
 import { InsightTypePrefix } from '../../../../../../core/types'
-import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects';
+import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
 import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'

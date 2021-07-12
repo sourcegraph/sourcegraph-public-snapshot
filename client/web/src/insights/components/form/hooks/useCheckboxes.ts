@@ -1,19 +1,19 @@
-import { ChangeEvent, FocusEventHandler, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FocusEventHandler, useEffect, useRef, useState } from 'react'
 
-import { FormAPI } from './useForm';
+import { FormAPI } from './useForm'
 
 export interface UseCheckboxAPI<FieldValue> {
     input: {
-        isChecked: (value: FieldValue) => boolean,
+        isChecked: (value: FieldValue) => boolean
         onChange: (event: ChangeEvent<HTMLInputElement>) => void
         onBlur: FocusEventHandler<HTMLInputElement>
-    },
+    }
     values: string[]
 }
 
 function assertArray<T>(value: unknown): asserts value is T[] {
     if (!Array.isArray(value)) {
-        throw new TypeError('Checkbox form value must be array-like');
+        throw new TypeError('Checkbox form value must be array-like')
     }
 }
 
@@ -22,9 +22,7 @@ interface CheckboxesState<FieldValue> {
     touched: boolean
 }
 
-export function useCheckboxes<
-    FormValues,
-    FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
+export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
     name: FieldValueKey,
     formApi: FormValues[FieldValueKey] extends string[] ? FormAPI<FormValues> : never
 ): UseCheckboxAPI<string> {
@@ -46,24 +44,25 @@ export function useCheckboxes<
     // Sync field state with state on form level - useForm hook will used this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
-    useEffect(() => setFieldStateReference.current(
-        name, { ...state, validState: 'VALID', validity: null }
-    ), [name, state])
+    useEffect(() => setFieldStateReference.current(name, { ...state, validState: 'VALID', validity: null }), [
+        name,
+        state,
+    ])
 
     return {
         input: {
             isChecked: (value: string) => state.value.includes(value),
-            onBlur: () => setState(state => ({...state, touched: true })),
+            onBlur: () => setState(state => ({ ...state, touched: true })),
             onChange: (event: ChangeEvent<HTMLInputElement>) => {
-                const checkboxValue = event.target.value as unknown as string
+                const checkboxValue = (event.target.value as unknown) as string
 
                 if (event.target.checked) {
-                    setState(state => ({ ...state, value: [...state.value, checkboxValue ]}))
+                    setState(state => ({ ...state, value: [...state.value, checkboxValue] }))
                 } else {
-                    setState(state => ({ ...state, value: state.value.filter(value => value !== checkboxValue)}))
+                    setState(state => ({ ...state, value: state.value.filter(value => value !== checkboxValue) }))
                 }
-            }
+            },
         },
-        values: state.value
+        values: state.value,
     }
 }

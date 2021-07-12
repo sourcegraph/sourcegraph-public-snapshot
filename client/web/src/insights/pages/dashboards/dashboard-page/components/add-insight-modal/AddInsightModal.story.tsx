@@ -1,18 +1,15 @@
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings';
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
-import { WebStory } from '../../../../../../components/WebStory';
-import { Settings } from '../../../../../../schema/settings.schema';
-import {
-    InsightsDashboardType,
-    SettingsBasedInsightDashboard
-} from '../../../../../core/types';
+import { WebStory } from '../../../../../../components/WebStory'
+import { Settings } from '../../../../../../schema/settings.schema'
+import { InsightsDashboardType, SettingsBasedInsightDashboard } from '../../../../../core/types'
 
-import { AddInsightModal } from './AddInsightModal';
+import { AddInsightModal } from './AddInsightModal'
 
-const {add} = storiesOf('web/insights/AddInsightModal', module)
+const { add } = storiesOf('web/insights/AddInsightModal', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
@@ -28,30 +25,31 @@ const dashboard: SettingsBasedInsightDashboard = {
     insightIds: [],
     owner: {
         id: 'user_test_id',
-        name: 'Emir Kusturica'
-    }
+        name: 'Emir Kusturica',
+    },
 }
 
 const ORG_1_SETTINGS = {
     lastID: 100,
     settings: {
         'searchInsights.insight.testOrg1graphQLTypesMigration': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
+            title:
+                '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
             repositories: ['github.com/sourcegraph/sourcegraph'],
             series: [],
-            step: { 'weeks': 6 }
+            step: { weeks: 6 },
         },
         'searchInsights.insight.testOrg1graphQLTypesMigration1': {
             title: '[Test ORG 1] Migration to new GraphQL TS types',
             repositories: ['github.com/sourcegraph/sourcegraph'],
             series: [],
-            step: { 'weeks': 6 }
+            step: { weeks: 6 },
         },
         'searchInsights.insight.testOrg1graphQLTypesMigration2': {
             title: '[Test ORG 1] Migration to new GraphQL TS types',
             repositories: ['github.com/sourcegraph/sourcegraph'],
             series: [],
-            step: { 'weeks': 6 }
+            step: { weeks: 6 },
         },
     },
     subject: {
@@ -60,7 +58,7 @@ const ORG_1_SETTINGS = {
         displayName: 'Test organization 1 Test organization 1 Test organization 1',
         viewerCanAdminister: true,
         id: 'test_org_1_id',
-    }
+    },
 }
 
 const ORG_2_SETTINGS = {
@@ -70,8 +68,8 @@ const ORG_2_SETTINGS = {
             title: '[Test ORG 2] Migration to new GraphQL TS types',
             repositories: ['github.com/sourcegraph/sourcegraph'],
             series: [],
-            step: { 'weeks': 6 }
-        }
+            step: { weeks: 6 },
+        },
     },
     subject: {
         __typename: 'Org' as const,
@@ -79,7 +77,7 @@ const ORG_2_SETTINGS = {
         displayName: 'Test organization 2',
         viewerCanAdminister: true,
         id: 'test_org_2_id',
-    }
+    },
 }
 
 const USER_SETTINGS = {
@@ -89,8 +87,8 @@ const USER_SETTINGS = {
             title: '[Personal] Migration to new GraphQL TS types',
             repositories: ['github.com/sourcegraph/sourcegraph'],
             series: [],
-            step: { 'weeks': 6 }
-        }
+            step: { weeks: 6 },
+        },
     },
     subject: {
         __typename: 'User' as const,
@@ -102,17 +100,13 @@ const USER_SETTINGS = {
 }
 
 const SETTINGS_CASCADE: SettingsCascadeOrError<Settings> = {
-    subjects: [
-        ORG_1_SETTINGS,
-        ORG_2_SETTINGS,
-        USER_SETTINGS,
-    ],
+    subjects: [ORG_1_SETTINGS, ORG_2_SETTINGS, USER_SETTINGS],
     final: {
         // Naive merging of subject settings file for testing UI.
         ...ORG_1_SETTINGS.settings,
         ...ORG_2_SETTINGS.settings,
         ...USER_SETTINGS.settings,
-    }
+    },
 }
 
 add('AddInsightModal', () => {
@@ -120,10 +114,14 @@ add('AddInsightModal', () => {
 
     return (
         <>
-            {open && <AddInsightModal
-                platformContext={{} as any}
-                settingsCascade={SETTINGS_CASCADE}
-                dashboard={dashboard}
-                onClose={() => setOpen(false)}/>}
-        </>)
+            {open && (
+                <AddInsightModal
+                    platformContext={{} as any}
+                    settingsCascade={SETTINGS_CASCADE}
+                    dashboard={dashboard}
+                    onClose={() => setOpen(false)}
+                />
+            )}
+        </>
+    )
 })

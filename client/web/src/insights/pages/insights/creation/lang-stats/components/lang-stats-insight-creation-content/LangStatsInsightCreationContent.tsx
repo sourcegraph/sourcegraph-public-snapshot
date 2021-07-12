@@ -8,7 +8,7 @@ import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
 import { useInsightTitleValidator } from '../../../../../../components/form/hooks/useInsightTitleValidator'
 import { InsightTypePrefix } from '../../../../../../core/types'
-import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects';
+import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
@@ -63,7 +63,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
 
     const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
-        initialValues: initialValues ?? {...INITIAL_VALUES, visibility: userSubjectID },
+        initialValues: initialValues ?? { ...INITIAL_VALUES, visibility: userSubjectID },
         onSubmit,
         onChange,
         touched: mode === 'edit',

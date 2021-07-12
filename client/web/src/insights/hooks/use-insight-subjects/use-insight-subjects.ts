@@ -1,6 +1,6 @@
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects';
+import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects'
 
 /**
  * Returns all subjects that are supportable by insight logic.
