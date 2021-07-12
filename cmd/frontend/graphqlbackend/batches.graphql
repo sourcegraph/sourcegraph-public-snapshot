@@ -2846,7 +2846,13 @@ A batch spec execution describes one server-side run of a batch change yaml inpu
 """
 type BatchSpecExecution implements Node {
     """
-    The unique ID for the batch spec execution.
+    The unique ID for a batch spec execution.
+
+    The ID is unguessable (i.e., long and randomly generated, not sequential).
+    Consider a batch change to fix a security vulnerability: the batch change
+    author may prefer to prepare the batch change in private so that the window
+    between revealing the problem and merging the fixes is as short as
+    possible.
     """
     id: ID!
 

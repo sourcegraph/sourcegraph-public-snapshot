@@ -370,16 +370,16 @@ func (r *Resolver) batchSpecExecutionByID(ctx context.Context, id graphql.ID) (g
 		return nil, err
 	}
 
-	dbID, err := unmarshalBatchSpecExecutionID(id)
+	randID, err := unmarshalBatchSpecExecutionRandID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if dbID == 0 {
+	if randID == "" {
 		return nil, nil
 	}
 
-	spec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: dbID})
+	spec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{RandID: randID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -1399,7 +1399,7 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 		return nil, err
 	}
 
-	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionID(exec.ID))
+	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
