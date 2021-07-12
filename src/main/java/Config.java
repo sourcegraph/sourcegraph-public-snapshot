@@ -17,6 +17,12 @@ class Config implements PersistentStateComponent<Config> {
         return url;
     }
 
+    public String defaultBranch;
+
+    public String getDefaultBranch() {
+        return defaultBranch;
+    }
+
     @Nullable
     @Override
     public Config getState() {
@@ -26,6 +32,7 @@ class Config implements PersistentStateComponent<Config> {
     @Override
     public void loadState(@NotNull Config config) {
         this.url = config.url;
+        this.defaultBranch = config.defaultBranch;
     }
 
     @Nullable static Config getInstance(Project project) {

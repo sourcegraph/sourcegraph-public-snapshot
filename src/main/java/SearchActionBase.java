@@ -51,6 +51,13 @@ public abstract class SearchActionBase extends AnAction {
         String uri;
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
+        String branch = repoInfo.branch;
+
+        // set defaultBranch only if not config is not null
+        if(Util.setDefaultBranch(project)!=null) {
+            branch = Util.setDefaultBranch(project);
+        };
+
         try {
             uri = Util.sourcegraphURL(project)+"-/editor"
                     + "?editor=" + URLEncoder.encode("JetBrains", "UTF-8")
@@ -61,7 +68,7 @@ public abstract class SearchActionBase extends AnAction {
 
             if (mode == "search.repository") {
                 uri += "&search_remote_url=" + URLEncoder.encode(repoInfo.remoteURL, "UTF-8")
-                        + "&search_branch=" + URLEncoder.encode(repoInfo.branch, "UTF-8");
+                        + "&search_branch=" + URLEncoder.encode(branch, "UTF-8");
             }
 
         } catch (UnsupportedEncodingException err) {

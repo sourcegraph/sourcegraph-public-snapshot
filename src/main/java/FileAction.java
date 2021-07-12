@@ -54,12 +54,19 @@ public abstract class FileAction extends AnAction {
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
         String uri;
+        String branch = repoInfo.branch;
+
+        // set defaultBranch only if not config is not null
+        if(Util.setDefaultBranch(project)!=null) {
+            branch = Util.setDefaultBranch(project);
+        };
+
         try {
             LogicalPosition start = editor.visualToLogicalPosition(sel.getSelectionStartPosition());
             LogicalPosition end = editor.visualToLogicalPosition(sel.getSelectionEndPosition());
             uri = Util.sourcegraphURL(project)+"-/editor"
                     + "?remote_url=" + URLEncoder.encode(repoInfo.remoteURL, "UTF-8")
-                    + "&branch=" + URLEncoder.encode(repoInfo.branch, "UTF-8")
+                    + "&branch=" + URLEncoder.encode(branch, "UTF-8")
                     + "&file=" + URLEncoder.encode(repoInfo.fileRel, "UTF-8")
                     + "&editor=" + URLEncoder.encode("JetBrains", "UTF-8")
                     + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
