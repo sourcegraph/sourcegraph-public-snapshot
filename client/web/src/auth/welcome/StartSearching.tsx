@@ -51,11 +51,6 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
             <p className="text-muted">
                 We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
             </p>
-            {/* <p>{`cloningStatusLoading: ${cloningStatusLoading}`}</p>
-                <p>{`isDoneCloning: ${isDoneCloning}`}</p>
-                <p>{`cloningStatusLines count: ${
-                    cloningStatusLines ? cloningStatusLines.length : 'undefined'
-                }`}</p> */}
             <div className="border overflow-hidden rounded">
                 <header>
                     <h3 className="m-0 pl-4 py-3">Activity log</h3>

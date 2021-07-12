@@ -74,6 +74,7 @@ const USER_AFFILIATED_REPOS_MIRROR_INFO = gql`
                             updatedAt
                         }
                     }
+                    totalCount
                 }
             }
         }
@@ -96,7 +97,7 @@ export const useRepoCloningStatus = ({
             notCloned: true,
             indexed: true,
             notIndexed: true,
-            first: null,
+            first: 2000,
             query: null,
             externalServiceID: null,
         },
