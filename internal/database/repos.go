@@ -835,7 +835,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB(), "Repos.listSQL")
 	if err != nil {
 		return nil, err
 	}
