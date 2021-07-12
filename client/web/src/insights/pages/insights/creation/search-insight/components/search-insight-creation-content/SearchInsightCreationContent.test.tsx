@@ -10,6 +10,14 @@ import { createMockInsightAPI } from '../../../../../../core/backend/insights-ap
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
 
+const USER_TEST_SUBJECT = {
+    __typename: 'User' as const,
+    id: 'user_test_id',
+    username: 'testusername',
+    displayName: 'test',
+    viewerCanAdminister: true,
+}
+
 describe('CreateInsightContent', () => {
     const mockAPI = createMockInsightAPI({
         getRepositorySuggestions: () => Promise.resolve([]),
@@ -18,7 +26,7 @@ describe('CreateInsightContent', () => {
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
         render(
             <InsightsApiContext.Provider value={mockAPI}>
-                <SearchInsightCreationContent {...props} />
+                <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT]} />
             </InsightsApiContext.Provider>
         )
     const onSubmitMock = sinon.spy()

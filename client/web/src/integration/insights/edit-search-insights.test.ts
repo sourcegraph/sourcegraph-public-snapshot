@@ -385,7 +385,7 @@ describe('Code insight edit insight page', () => {
         assert.deepStrictEqual(grabbedInsightInfo, {
             title: 'Migration to new GraphQL TS types',
             repositories: 'github.com/sourcegraph/sourcegraph',
-            visibility: 'personal',
+            visibility: 'TestUserID',
             series: [
                 {
                     name: 'Imports of old GQL.* types',
