@@ -481,11 +481,11 @@ func (s *Store) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, c
 	return scanAll(rows, scan)
 }
 
-// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids. We run one query
-// per repo rather than one batch query in order to reduce the chances of this whole operation blocking on locks other
-// queries acquire when referencing external_service_repos. Since the syncer runs periodically, it's better to fail to
-// delete some repos and try to delete them again in the next run, than to have one failure prevent all deletes from
-// happening.
+// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids that is owned
+// by the given external service. We run one query per repo rather than one batch query in order to reduce the chances
+// of this whole operation blocking on locks other queries acquire when referencing external_service_repos or repo.
+// Since the syncer runs periodically, it's better to fail to delete some repos and try to delete them again in the
+// next run, than to have one failure prevent all deletes from happening.
 func (s *Store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceReposNotIn")
 	tr.LogFields(
