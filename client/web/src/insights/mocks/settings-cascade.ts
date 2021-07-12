@@ -1,4 +1,4 @@
-import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings';
+import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
 export const SETTINGS_CASCADE: SettingsCascade = {
     subjects: [
@@ -23,7 +23,7 @@ export const SETTINGS_CASCADE: SettingsCascade = {
                 viewerCanAdminister: true,
                 id: 'test_org_2_id',
             },
-        }
+        },
     ],
-    final: {}
+    final: {},
 }

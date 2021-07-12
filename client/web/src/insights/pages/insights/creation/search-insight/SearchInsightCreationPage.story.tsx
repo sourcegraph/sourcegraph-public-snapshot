@@ -6,7 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../components/WebStory'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../core/backend/insights-api'
-import { SETTINGS_CASCADE } from '../../../../mocks/settings-cascade';
+import { SETTINGS_CASCADE } from '../../../../mocks/settings-cascade'
 
 import {
     DEFAULT_MOCK_CHART_CONTENT,

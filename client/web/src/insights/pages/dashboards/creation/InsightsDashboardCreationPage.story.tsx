@@ -7,7 +7,7 @@ import { WebStory } from '../../../../components/WebStory'
 import { authUser } from '../../../../search/panels/utils'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../core/backend/insights-api'
-import { SETTINGS_CASCADE } from '../../../mocks/settings-cascade';
+import { SETTINGS_CASCADE } from '../../../mocks/settings-cascade'
 
 import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
 
