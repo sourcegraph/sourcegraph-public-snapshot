@@ -54,7 +54,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     }
 
     return (
-        <Dialog className={styles.modal} onDismiss={onClose}>
+        <Dialog className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
             <button type="button" className={classnames('btn btn-icon', styles.closeButton)} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
