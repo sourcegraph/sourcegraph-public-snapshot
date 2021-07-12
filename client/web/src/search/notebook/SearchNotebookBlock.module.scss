@@ -1,4 +1,9 @@
+.block-wrapper {
+    position: relative;
+}
+
 .block {
+    position: relative;
     // Prevents moving content
     border: 1px solid transparent;
     border-radius: 0.25rem;

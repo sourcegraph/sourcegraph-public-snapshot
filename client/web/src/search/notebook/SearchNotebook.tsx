@@ -160,14 +160,13 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                 return
             }
             const target = event.target as HTMLElement
-            // Check if the event target has a block ancestor
-            const closestTargetCell = target.closest('[data-block-id]')
-            if (!closestTargetCell) {
+            // Check if the event target has a block-wrapper ancestor
+            const closestTargetBlock = target.closest('.block-wrapper')
+            if (!closestTargetBlock) {
                 setSelectedBlockId(null)
             }
         }
         const handleKeyDown = (event: KeyboardEvent): void => {
-            // TODO: Scroll selected block into view (without being annoying)
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
             } else if (event.key === 'Escape' && !isMonacoEditorDescendant(event.target as HTMLElement)) {
@@ -175,13 +174,23 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             }
         }
 
+        const handleFocus = (event: FocusEvent): void => {
+            const target = event.target as HTMLElement | null
+            if (target && !target.closest('.block-wrapper')) {
+                setSelectedBlockId(null)
+            }
+        }
+
         document.addEventListener('mousedown', handleClickOutside)
         document.addEventListener('keydown', handleKeyDown)
+        // We're using the `focusin` event instead of just the `focus` event, since the latter does not bubble up.
+        document.addEventListener('focusin', handleFocus)
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
             document.removeEventListener('keydown', handleKeyDown)
+            document.removeEventListener('focusin', handleFocus)
         }
-    }, [notebook, selectedBlockId, onMoveBlockSelection])
+    }, [notebook, selectedBlockId, onMoveBlockSelection, setSelectedBlockId])
 
     useEffect(() => {
         // Initialize Sourcegraph Monaco code intelligence (hovers, completions)

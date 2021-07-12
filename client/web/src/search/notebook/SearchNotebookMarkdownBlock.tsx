@@ -1,12 +1,13 @@
 import classNames from 'classnames'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
+import { SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
 import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
@@ -64,7 +65,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
 
     const onEnterBlock = useCallback(() => setIsEditing(true), [setIsEditing])
 
-    const { onBlur, onSelect } = useBlockSelection({
+    const { onSelect } = useBlockSelection({
         id,
         blockElement: blockElement.current,
         onSelectBlock,
@@ -91,15 +92,56 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         }
     }, [isEditing, editor])
 
+    const menuActions = useMemo(
+        () => [
+            isEditing ? { label: 'Render', onClick: runBlock } : { label: 'Edit', onClick: onEnterBlock },
+            { label: 'Move Up', onClick: id => onMoveBlock(id, 'up') },
+            { label: 'Move Down', onClick: id => onMoveBlock(id, 'down') },
+            { label: 'Delete', onClick: onDeleteBlock },
+        ],
+        [isEditing, runBlock, onEnterBlock, onMoveBlock, onDeleteBlock]
+    )
+
+    const blockMenu = isSelected && <SearchNotebookBlockMenu id={id} actions={menuActions} />
+
     if (!isEditing) {
         return (
-            // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+            <div className={classNames('block-wrapper', blockStyles.blockWrapper)}>
+                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+                <div
+                    className={classNames(blockStyles.block, isSelected && blockStyles.selected, styles.outputWrapper)}
+                    onClick={onSelect}
+                    onFocus={onSelect}
+                    onDoubleClick={onDoubleClick}
+                    onKeyDown={onKeyDown}
+                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+                    tabIndex={0}
+                    // eslint-disable-next-line jsx-a11y/aria-role
+                    role="notebook-block"
+                    aria-label="Notebook block"
+                    data-block-id={id}
+                    ref={blockElement}
+                >
+                    <div className={styles.output}>
+                        <Markdown dangerousInnerHTML={output ?? ''} />
+                    </div>
+                </div>
+                {blockMenu}
+            </div>
+        )
+    }
+
+    return (
+        <div className={classNames('block-wrapper', blockStyles.blockWrapper)}>
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div
-                className={classNames(blockStyles.block, isSelected && blockStyles.selected, styles.outputWrapper)}
+                className={classNames(
+                    blockStyles.block,
+                    styles.input,
+                    (isInputFocused || isSelected) && blockStyles.selected
+                )}
                 onClick={onSelect}
                 onFocus={onSelect}
-                onDoubleClick={onDoubleClick}
-                onBlur={onBlur}
                 onKeyDown={onKeyDown}
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                 tabIndex={0}
@@ -109,46 +151,21 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                 data-block-id={id}
                 ref={blockElement}
             >
-                <div className={styles.output}>
-                    <Markdown dangerousInnerHTML={output ?? ''} />
+                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+                <div className={blockStyles.monacoWrapper} onKeyDown={event => event.stopPropagation()}>
+                    <MonacoEditor
+                        language="markdown"
+                        value={input}
+                        height="auto"
+                        isLightTheme={isLightTheme}
+                        editorWillMount={() => {}}
+                        onEditorCreated={setEditor}
+                        options={MONACO_BLOCK_INPUT_OPTIONS}
+                        border={false}
+                    />
                 </div>
             </div>
-        )
-    }
-
-    return (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div
-            className={classNames(
-                blockStyles.block,
-                styles.input,
-                (isInputFocused || isSelected) && blockStyles.selected
-            )}
-            onClick={onSelect}
-            onFocus={onSelect}
-            onBlur={onBlur}
-            onKeyDown={onKeyDown}
-            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-            tabIndex={0}
-            // eslint-disable-next-line jsx-a11y/aria-role
-            role="notebook-block"
-            aria-label="Notebook block"
-            data-block-id={id}
-            ref={blockElement}
-        >
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-            <div className={blockStyles.monacoWrapper} onKeyDown={event => event.stopPropagation()}>
-                <MonacoEditor
-                    language="markdown"
-                    value={input}
-                    height="auto"
-                    isLightTheme={isLightTheme}
-                    editorWillMount={() => {}}
-                    onEditorCreated={setEditor}
-                    options={MONACO_BLOCK_INPUT_OPTIONS}
-                    border={false}
-                />
-            </div>
+            {blockMenu}
         </div>
     )
 }

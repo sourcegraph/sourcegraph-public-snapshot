@@ -18,19 +18,8 @@ export const useBlockSelection = ({
     blockElement,
     isInputFocused,
 }: UseBlockFocusOptions): {
-    onBlur: (event: React.FocusEvent) => void
     onSelect: (event: React.MouseEvent | React.FocusEvent) => void
 } => {
-    const onBlur = useCallback(
-        (event: React.FocusEvent) => {
-            const relatedTarget = event.relatedTarget as HTMLElement
-            if (!event.target.contains(relatedTarget)) {
-                onSelectBlock(null)
-            }
-        },
-        [onSelectBlock]
-    )
-
     const onSelect = useCallback(
         (event: React.MouseEvent | React.FocusEvent) => {
             // Let Monaco input handle focus/click events
@@ -50,5 +39,5 @@ export const useBlockSelection = ({
         }
     }, [isSelected, blockElement, isInputFocused])
 
-    return { onBlur, onSelect }
+    return { onSelect }
 }
