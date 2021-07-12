@@ -958,7 +958,15 @@ func TestDiff(t *testing.T) {
 	}
 }
 
-func testSyncRun(store *repos.Store) func(t *testing.T) {
+func testBatchSyncRun(store *repos.Store) func(t *testing.T) {
+	return testSyncRun(store, false)
+}
+
+func testStreamingSyncRun(store *repos.Store) func(t *testing.T) {
+	return testSyncRun(store, true)
+}
+
+func testSyncRun(store *repos.Store, streaming bool) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -986,7 +994,10 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 
 		// Our test will have 1 initial repo, and discover a new repo on sourcing.
 		stored := types.Repos{mk("initial")}.With(types.Opt.RepoSources(svc.URN()))
-		sourced := types.Repos{mk("initial"), mk("new")}
+		sourced := types.Repos{
+			mk("initial").With(func(r *types.Repo) { r.Description = "updated" }),
+			mk("new"),
+		}
 
 		syncer := &repos.Syncer{
 			Sourcer:          repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
@@ -994,6 +1005,7 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 			Synced:           make(chan repos.Diff),
 			SingleRepoSynced: make(chan repos.Diff),
 			Now:              time.Now,
+			Streaming:        streaming,
 		}
 
 		// Initial repos in store
@@ -1017,27 +1029,52 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 		// The first thing sent down Synced is the list of repos in store.
 		diff := <-syncer.Synced
 		if d := cmp.Diff(repos.Diff{Unmodified: stored}, diff, ignore); d != "" {
-			t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
+			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
 
-		// Next up it should find the new repo and send it down SingleRepoSynced
-		diff = <-syncer.SingleRepoSynced
-		if d := cmp.Diff(repos.Diff{Added: types.Repos{mk("new")}}, diff, ignore); d != "" {
-			t.Fatalf("SingleRepoSynced mismatch (-want +got):\n%s", d)
-		}
+		if !streaming {
+			// Next up it should find the new repo and send it down SingleRepoSynced
+			diff = <-syncer.SingleRepoSynced
+			if d := cmp.Diff(repos.Diff{Added: types.Repos{mk("new")}}, diff, ignore); d != "" {
+				t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+			}
 
-		// Finally we get the final diff, which will have everything listed as
-		// Unmodified since we added when we did SingleRepoSynced.
-		diff = <-syncer.Synced
-		if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
-			t.Fatalf("final Synced mismatch (-want +got):\n%s", d)
-		}
+			// Finally we get the final diff.
+			diff = <-syncer.Synced
+			if d := cmp.Diff(repos.Diff{Modified: sourced[:1], Unmodified: sourced[1:]}, diff, ignore); d != "" {
+				t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+			}
 
-		// We check synced again to test us going around the Run loop 2 times in
-		// total.
-		diff = <-syncer.Synced
-		if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
-			t.Fatalf("second final Synced mismatch (-want +got):\n%s", d)
+			// We check synced again to test us going around the Run loop 2 times in
+			// total.
+			diff = <-syncer.Synced
+			if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
+				t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+			}
+		} else {
+			// Next up it should find the existing repo and send it down Synced
+			diff = <-syncer.Synced
+			if d := cmp.Diff(repos.Diff{Modified: sourced[:1]}, diff, ignore); d != "" {
+				t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+			}
+
+			// Then the new repo.
+			diff = <-syncer.Synced
+			if d := cmp.Diff(repos.Diff{Added: sourced[1:]}, diff, ignore); d != "" {
+				t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+			}
+
+			// We check synced again to test us going around the Run loop 2 times in
+			// total.
+			diff = <-syncer.Synced
+			if d := cmp.Diff(repos.Diff{Unmodified: sourced[:1]}, diff, ignore); d != "" {
+				t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+			}
+
+			diff = <-syncer.Synced
+			if d := cmp.Diff(repos.Diff{Unmodified: sourced[1:]}, diff, ignore); d != "" {
+				t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+			}
 		}
 
 		// Cancel context and the run loop should stop

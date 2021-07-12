@@ -41,12 +41,15 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs},
 		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},
+		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing},
 		{"DBStore/Syncer/Batch/Sync", testSyncerBatchSync},
 		{"DBStore/Syncer/Streaming/Sync", testSyncerStreamingSync},
 		{"DBStore/Syncer/Batch/SyncRepo", testBatchSyncRepo},
 		{"DBStore/Syncer/Streaming/SyncRepo", testStreamingSyncRepo},
-		{"DBStore/Syncer/Batch/SyncWorker", testSyncWorkerPlumbing},
-		{"DBStore/Syncer/Batch/Run", testSyncRun},
+
+		{"DBStore/Syncer/Batch/Run", testBatchSyncRun},
+		{"DBStore/Syncer/Streaming/Run", testStreamingSyncRun},
+
 		{"DBStore/Syncer/Batch/MultipleServices", testSyncer},
 		{"DBStore/Syncer/Batch/OrphanedRepos", testOrphanedRepo},
 		{"DBStore/Syncer/Batch/UserAddedRepos", testUserAddedRepos},
