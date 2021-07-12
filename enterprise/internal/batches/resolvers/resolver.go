@@ -386,7 +386,7 @@ func (r *Resolver) batchSpecExecutionByID(ctx context.Context, id graphql.ID) (g
 		}
 		return nil, err
 	}
-	return &batchSpecExecutionResolver{store: r.store, spec: spec}, nil
+	return &batchSpecExecutionResolver{store: r.store, exec: spec}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
