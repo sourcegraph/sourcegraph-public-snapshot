@@ -224,19 +224,19 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     return (
         <div className="file-diff-node__body">
             {extensionInfo && (
-                <div className={classNames('d-flex w-100')}>
+                <div className={classNames('w-100', isSplitMode && 'd-flex ')}>
                     {/* Always render base status bar even though it isn't displayed in unified mode
                     in order to prevent overloading the extension host with messages (`api.getStatusBarItems`) on
                     mode switch, which noticeably decreases status bar performance. */}
                     <StatusBar
                         getStatusBarItems={getBaseStatusBarItems}
                         className={classNames(
-                            isSplitMode ? 'flex-1 w-50' : 'd-none',
+                            isSplitMode && 'flex-1 w-50',
                             'file-diff-node__status-bar border-bottom border-top-0'
                         )}
                         extensionsController={extensionInfo.extensionsController}
                         location={location}
-                        badgeText={isSplitMode ? 'BASE' : undefined}
+                        badgeText="BASE"
                     />
                     <StatusBar
                         getStatusBarItems={getHeadStatusBarItems}
@@ -246,7 +246,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         )}
                         extensionsController={extensionInfo.extensionsController}
                         location={location}
-                        badgeText={isSplitMode ? 'HEAD' : undefined}
+                        badgeText="HEAD"
                     />
                 </div>
             )}
