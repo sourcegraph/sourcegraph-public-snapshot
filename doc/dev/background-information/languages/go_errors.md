@@ -16,6 +16,8 @@ Idiomatic error messages in Go should start with a lowercase letter and should c
 
 Generally, errors of this class should be created as a constant at the highest level possible (e.g., a unexported package constant). Such errors should be exported if direct comparison of error values should be allowed by a user.
 
+Idiomatically, error constant _values_ should always have a name of the format `ErrX` (or `errX` if package-private) and types that can be used as `error` should have a name of the format `XError`.
+
 #### Use of `errors.Errorf`
 
 Use this function to create an error value with non-static message.
