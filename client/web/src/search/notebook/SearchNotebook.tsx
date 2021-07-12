@@ -206,6 +206,12 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    // Register dummy onCompletionSelected handler to prevent console errors
+    useEffect(() => {
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', () => {})
+        return () => disposable.dispose()
+    }, [])
+
     return (
         <div className={styles.searchNotebook}>
             {blocks.map((block, blockIndex) => (
