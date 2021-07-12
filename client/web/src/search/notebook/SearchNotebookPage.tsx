@@ -28,7 +28,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     const history = useHistory()
     const location = useLocation()
 
-    const onBlocksChange = useCallback(
+    const onSerializeBlocks = useCallback(
         (blocks: Block[]) => {
             const serializedBlocks = blocks
                 .map(block => `${encodeURIComponent(block.type)}:${encodeURIComponent(block.input)}`)
@@ -68,7 +68,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                     path={[{ text: 'Search Notebook' }]}
                 />
                 <hr className="mt-2 mb-1 mx-3" />
-                <SearchNotebook {...props} blocks={blocks} onBlocksChange={onBlocksChange} />
+                <SearchNotebook {...props} blocks={blocks} onSerializeBlocks={onSerializeBlocks} />
             </Page>
         </div>
     )

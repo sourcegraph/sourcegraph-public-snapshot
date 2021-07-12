@@ -15,7 +15,7 @@
 
 .selected {
     border: 1px solid var(--border-active-color) !important;
-    box-shadow: 0px 0px 0px 2px var(--primary-2);
+    box-shadow: 0 0 0 0.125rem var(--primary-2);
 }
 
 .selected-not-focused {

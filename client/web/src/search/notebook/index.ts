@@ -54,7 +54,6 @@ export class Notebook {
         this.renderMarkdownBlocks()
     }
 
-    // TODO: Turn into a generic method: runBlocks(type?: BlockType)
     private renderMarkdownBlocks(): void {
         const blocks = this.idToBlock.values()
         for (const block of blocks) {

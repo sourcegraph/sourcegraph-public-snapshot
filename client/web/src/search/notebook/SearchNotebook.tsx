@@ -27,7 +27,7 @@ interface SearchNotebookProps
     globbing: boolean
     isMacPlatform: boolean
 
-    onBlocksChange: (blocks: Block[]) => void
+    onSerializeBlocks: (blocks: Block[]) => void
     blocks: BlockInitializer[]
 }
 
@@ -68,28 +68,37 @@ function addSourcegraphSearchCodeIntelligence(
     return subscriptions
 }
 
-export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ onBlocksChange, ...props }) => {
+export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ onSerializeBlocks, ...props }) => {
     const notebook = useMemo(() => new Notebook(props.blocks), [props.blocks])
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
 
+    const updateBlocks = useCallback(
+        (serialize = true) => {
+            const blocks = notebook.getBlocks()
+            setBlocks(blocks)
+            if (serialize) {
+                onSerializeBlocks(blocks)
+            }
+        },
+        [notebook, setBlocks, onSerializeBlocks]
+    )
+
     const onRunBlock = useCallback(
         (id: string) => {
             notebook.runBlockById(id)
-            const blocks = notebook.getBlocks()
-            setBlocks(blocks)
-            onBlocksChange(blocks)
+            updateBlocks()
         },
-        [notebook, onBlocksChange]
+        [notebook, updateBlocks]
     )
 
     const onBlockInputChange = useCallback(
         (id: string, value: string) => {
             notebook.setBlockInputById(id, value)
-            setBlocks(notebook.getBlocks())
+            updateBlocks(false)
         },
-        [notebook]
+        [notebook, updateBlocks]
     )
 
     const onAddBlock = useCallback(
@@ -99,9 +108,9 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                 notebook.runBlockById(addedBlock.id)
             }
             setSelectedBlockId(addedBlock.id)
-            setBlocks(notebook.getBlocks())
+            updateBlocks()
         },
-        [notebook, setBlocks]
+        [notebook, updateBlocks, setSelectedBlockId]
     )
 
     const onDeleteBlock = useCallback(
@@ -109,9 +118,31 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
             notebook.deleteBlockById(id)
             setSelectedBlockId(blockToFocusAfterDelete)
-            setBlocks(notebook.getBlocks())
+            updateBlocks()
         },
-        [notebook]
+        [notebook, setSelectedBlockId, updateBlocks]
+    )
+
+    const onMoveBlock = useCallback(
+        (id: string, direction: BlockDirection) => {
+            notebook.moveBlockById(id, direction)
+            updateBlocks()
+        },
+        [notebook, updateBlocks]
+    )
+
+    const onDuplicateBlock = useCallback(
+        (id: string) => {
+            const duplicateBlock = notebook.duplicateBlockById(id)
+            if (duplicateBlock) {
+                setSelectedBlockId(duplicateBlock.id)
+            }
+            if (duplicateBlock?.type === 'md') {
+                notebook.runBlockById(duplicateBlock.id)
+            }
+            updateBlocks()
+        },
+        [notebook, setSelectedBlockId, updateBlocks]
     )
 
     const onSelectBlock = useCallback(
@@ -131,39 +162,10 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         [notebook, setSelectedBlockId]
     )
 
-    const onMoveBlock = useCallback(
-        (id: string, direction: BlockDirection) => {
-            notebook.moveBlockById(id, direction)
-            setBlocks(notebook.getBlocks())
-        },
-        [notebook, setBlocks]
-    )
-
-    const onDuplicateBlock = useCallback(
-        (id: string) => {
-            const duplicateBlock = notebook.duplicateBlockById(id)
-            if (duplicateBlock) {
-                setSelectedBlockId(duplicateBlock.id)
-            }
-            if (duplicateBlock?.type === 'md') {
-                notebook.runBlockById(duplicateBlock.id)
-            }
-            setBlocks(notebook.getBlocks())
-        },
-        [notebook, setSelectedBlockId, setBlocks]
-    )
-
     useEffect(() => {
-        // Check all clicks on the document and deselect the currently selected block
-        // if it was triggered outside of a block.
-        const handleClickOutside = (event: MouseEvent): void => {
-            if (!event.target) {
-                return
-            }
-            const target = event.target as HTMLElement
-            // Check if the event target has a block-wrapper ancestor
-            const closestTargetBlock = target.closest('.block-wrapper')
-            if (!closestTargetBlock) {
+        const handleEventOutsideBlockWrapper = (event: MouseEvent | FocusEvent): void => {
+            const target = event.target as HTMLElement | null
+            if (target && !target.closest('.block-wrapper')) {
                 setSelectedBlockId(null)
             }
         }
@@ -175,21 +177,15 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             }
         }
 
-        const handleFocus = (event: FocusEvent): void => {
-            const target = event.target as HTMLElement | null
-            if (target && !target.closest('.block-wrapper')) {
-                setSelectedBlockId(null)
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside)
         document.addEventListener('keydown', handleKeyDown)
-        // We're using the `focusin` event instead of just the `focus` event, since the latter does not bubble up.
-        document.addEventListener('focusin', handleFocus)
+        // Check all clicks on the document and deselect the currently selected block if it was triggered outside of a block.
+        document.addEventListener('mousedown', handleEventOutsideBlockWrapper)
+        // We're using the `focusin` event instead of the `focus` event, since the latter does not bubble up.
+        document.addEventListener('focusin', handleEventOutsideBlockWrapper)
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
             document.removeEventListener('keydown', handleKeyDown)
-            document.removeEventListener('focusin', handleFocus)
+            document.removeEventListener('mousedown', handleEventOutsideBlockWrapper)
+            document.removeEventListener('focusin', handleEventOutsideBlockWrapper)
         }
     }, [notebook, selectedBlockId, onMoveBlockSelection, setSelectedBlockId])
 
