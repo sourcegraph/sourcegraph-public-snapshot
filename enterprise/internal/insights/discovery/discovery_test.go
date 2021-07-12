@@ -139,10 +139,10 @@ func TestDiscover(t *testing.T) {
 		autogold.Want("discovered_with_loader", []insights.SearchInsight{{
 			ID:          "1",
 			Title:       "fmt usage",
-			Description: "fmt.Errorf/fmt.Printf usage",
+			Description: "errors.Errorf/fmt.Printf usage",
 			Series: []insights.TimeSeries{
 				{
-					Name:  "fmt.Errorf",
+					Name:  "errors.Errorf",
 					Query: "errorf",
 				},
 				{
