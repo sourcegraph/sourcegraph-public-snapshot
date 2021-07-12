@@ -55,7 +55,7 @@ func (l *Locker) Transact(ctx context.Context) (*Locker, error) {
 type UnlockFunc func(err error) error
 
 // ErrNoTransaction occurs when Lock is called outside of a transaction.
-var ErrNoTransaction = errors.New("store: not in a transaction")
+var ErrNoTransaction = errors.New("locker: not in a transaction")
 
 // Lock attempts to take an advisory lock on the given key. If successful, this method will
 // return a true-valued flag along with a function that must be called to release the lock.
