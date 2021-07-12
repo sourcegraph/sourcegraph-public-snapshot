@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,9 +17,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -150,7 +150,7 @@ func (s *Server) cleanupRepos() {
 			reason = "old"
 		}
 		if time.Since(recloneTime) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
-			if gclog, err := ioutil.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
+			if gclog, err := os.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
@@ -203,7 +203,7 @@ func (s *Server) cleanupRepos() {
 			multi = multierror.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(filepath.Join(gitDir, "refs"), func(path string, fi os.FileInfo) error {
+		if err := bestEffortWalk(filepath.Join(gitDir, "refs"), func(path string, fi fs.FileInfo) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -264,7 +264,7 @@ func (s *Server) cleanupRepos() {
 		})
 	}
 
-	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
+	err := bestEffortWalk(s.ReposDir, func(dir string, fi fs.FileInfo) error {
 		if s.ignorePath(dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -299,7 +299,7 @@ func (s *Server) cleanupRepos() {
 
 	if b, err := json.Marshal(stats); err != nil {
 		log15.Error("cleanup: failed to marshal periodic stats", "error", err)
-	} else if err = ioutil.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
+	} else if err = os.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
 		log15.Error("cleanup: failed to write periodic stats", "error", err)
 	}
 
@@ -428,7 +428,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 
 	// Check.
 	if spaceFreed < howManyBytesToFree {
-		return fmt.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
+		return errors.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
 	}
 	return nil
 }
@@ -443,7 +443,7 @@ func gitDirModTime(d GitDir) (time.Time, error) {
 
 func (s *Server) findGitDirs() ([]GitDir, error) {
 	var dirs []GitDir
-	err := bestEffortWalk(s.ReposDir, func(path string, fi os.FileInfo) error {
+	err := bestEffortWalk(s.ReposDir, func(path string, fi fs.FileInfo) error {
 		if s.ignorePath(path) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -467,7 +467,7 @@ func dirSize(d string) int64 {
 	var size int64
 	// We don't return an error, so we know that err is always nil and can be
 	// ignored.
-	_ = bestEffortWalk(d, func(path string, fi os.FileInfo) error {
+	_ = bestEffortWalk(d, func(path string, fi fs.FileInfo) error {
 		if fi.IsDir() {
 			return nil
 		}
@@ -559,7 +559,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 func (s *Server) cleanTmpFiles(dir GitDir) {
 	now := time.Now()
 	packdir := dir.Path("objects", "pack")
-	err := bestEffortWalk(packdir, func(path string, info os.FileInfo) error {
+	err := bestEffortWalk(packdir, func(path string, info fs.FileInfo) error {
 		if path != packdir && info.IsDir() {
 			return filepath.SkipDir
 		}
@@ -591,7 +591,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 		// Rename the current tmp file so we can asynchronously remove it. Use
 		// a consistent pattern so if we get interrupted, we can clean it
 		// another time.
-		oldTmp, err := ioutil.TempDir(s.ReposDir, oldPrefix)
+		oldTmp, err := os.MkdirTemp(s.ReposDir, oldPrefix)
 		if err != nil {
 			return "", err
 		}
@@ -607,7 +607,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	}
 
 	// Asynchronously remove old temporary directories
-	files, err := ioutil.ReadDir(s.ReposDir)
+	files, err := os.ReadDir(s.ReposDir)
 	if err != nil {
 		log15.Error("failed to do tmp cleanup", "error", err)
 	} else {
@@ -727,7 +727,8 @@ func gitConfigGet(dir GitDir, key string) (string, error) {
 	out, err := cmd.Output()
 	if err != nil {
 		// Exit code 1 means the key is not set.
-		if ee, ok := err.(*exec.ExitError); ok && ee.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
+		var e *exec.ExitError
+		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
 			return "", nil
 		}
 		return "", errors.Wrapf(wrapCmdError(cmd, err), "failed to get git config %s", key)
@@ -751,7 +752,8 @@ func gitConfigUnset(dir GitDir, key string) error {
 	err := cmd.Run()
 	if err != nil {
 		// Exit code 5 means the key is not set.
-		if ee, ok := err.(*exec.ExitError); ok && ee.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
+		var e *exec.ExitError
+		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
 			return nil
 		}
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s", key)
@@ -781,8 +783,9 @@ func wrapCmdError(cmd *exec.Cmd, err error) error {
 	if err == nil {
 		return nil
 	}
-	if ee, ok := err.(*exec.ExitError); ok {
-		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(ee.Stderr))
+	var e *exec.ExitError
+	if errors.As(err, &e) {
+		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
 	}
 	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
 }

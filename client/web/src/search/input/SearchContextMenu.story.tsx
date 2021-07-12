@@ -2,11 +2,13 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
-import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
-
 import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../../searchContexts/testHelpers'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
@@ -25,19 +27,16 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
     ))
 
 const defaultProps: SearchContextMenuProps = {
+    authenticatedUser: null,
     showSearchContextManagement: false,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(2),
     fetchSearchContexts: ({
         first,
-        namespaceFilterType,
-        namespace,
         query,
         after,
     }: {
         first: number
         query?: string
-        namespace?: Scalars['ID']
-        namespaceFilterType?: SearchContextsNamespaceFilterType
         after?: string
     }): Observable<ListSearchContextsResult['searchContexts']> =>
         of({
@@ -46,10 +45,17 @@ const defaultProps: SearchContextMenuProps = {
                     __typename: 'SearchContext',
                     id: '3',
                     spec: '@username/test-version-1.5',
+                    name: 'test-version-1.5',
+                    namespace: {
+                        __typename: 'User',
+                        id: 'u1',
+                        namespaceName: 'username',
+                    },
                     autoDefined: false,
                     public: true,
                     description: 'Only code in version 1.5',
                     updatedAt: '2021-03-15T19:39:11Z',
+                    viewerCanManage: true,
                     repositories: [],
                 },
             ],
@@ -63,6 +69,7 @@ const defaultProps: SearchContextMenuProps = {
     selectedSearchContextSpec: 'global',
     selectSearchContextSpec: () => {},
     closeMenu: () => {},
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 }
 
 const emptySearchContexts = {

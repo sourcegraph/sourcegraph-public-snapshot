@@ -5,9 +5,31 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
-Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
+> ⚠️ **Regardless of your deployment type:** ⚠️
+> <br>Upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
+> <br>Patches, e.g. vX.X.4 vs. vX.X.5, do not have to be adopted when moving between vX.X versions.
+
+> ⚠️ **Regardless of your deployment type:** ⚠️
+> <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+
+## 3.28 -> 3.29.1
+
+To upgrade, please perform the changes in the following diff:
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
+
+This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.28).*
+
+## 3.27 -> 3.28
+
+To upgrade, please perform the changes in the following diff:
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b)
 
 ## 3.26 -> 3.27
 

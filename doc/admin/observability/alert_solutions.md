@@ -356,7 +356,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 20,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
-- **If your users are requesting many results** with a large `count:` parameter, consider using our [search pagination API](../../api/graphql/search.md).
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
@@ -383,7 +382,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 15,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
-- **If your users are requesting many results** with a large `count:` parameter, consider using our [search pagination API](../../api/graphql/search.md).
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
@@ -793,248 +791,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```json
 "observability.silenceAlerts": [
   "warning_frontend_codeintel_gitserverclient_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_commit_graph_queue_size
-
-<p class="subtitle">commit graph queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 100+ commit graph queue size
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_commit_graph_queue_growth_rate
-
-<p class="subtitle">commit graph queue growth rate over 30m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 5+ commit graph queue growth rate over 30m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_queue_growth_rate"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_commit_graph_updater_99th_percentile_duration
-
-<p class="subtitle">99th percentile successful commit graph updater operation duration over 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20s+ 99th percentile successful commit graph updater operation duration over 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_commit_graph_updater_errors
-
-<p class="subtitle">commit graph updater errors every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ commit graph updater errors every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_updater_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_janitor_errors
-
-<p class="subtitle">janitor errors every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ janitor errors every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_janitor_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_upload_resets
-
-<p class="subtitle">upload records re-queued (due to unresponsive worker) every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ upload records re-queued (due to unresponsive worker) every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_upload_resets"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_upload_reset_failures
-
-<p class="subtitle">upload records errored due to repeated reset every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ upload records errored due to repeated reset every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_upload_reset_failures"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_index_resets
-
-<p class="subtitle">index records re-queued (due to unresponsive indexer) every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ index records re-queued (due to unresponsive indexer) every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_index_resets"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_index_reset_failures
-
-<p class="subtitle">index records errored due to repeated reset every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ index records errored due to repeated reset every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_index_reset_failures"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_indexing_errors
-
-<p class="subtitle">indexing errors every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ indexing errors every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_indexing_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_autoindex_enqueuer_errors
-
-<p class="subtitle">index enqueuer errors every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ index enqueuer errors every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_autoindex_enqueuer_errors"
 ]
 ```
 
@@ -1592,12 +1348,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## gitserver: running_git_commands
 
-<p class="subtitle">git commands sent to each gitserver instance</p>
+<p class="subtitle">git commands running on each gitserver instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> gitserver: 50+ git commands sent to each gitserver instance for 2m0s
-- <span class="badge badge-critical">critical</span> gitserver: 100+ git commands sent to each gitserver instance for 5m0s
+- <span class="badge badge-warning">warning</span> gitserver: 50+ git commands running on each gitserver instance for 2m0s
+- <span class="badge badge-critical">critical</span> gitserver: 100+ git commands running on each gitserver instance for 5m0s
 
 **Possible solutions**
 
@@ -3128,6 +2884,573 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## worker: worker_job_codeintel-janitor_count
+
+<p class="subtitle">number of worker instances running the codeintel-janitor job</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-janitor job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-janitor job for 5m0s
+
+**Possible solutions**
+
+- Ensure your instance defines a worker container such that:
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-janitor" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-janitor"
+- Ensure that such a container is not failing to start or stay active
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_worker_job_codeintel-janitor_count",
+  "critical_worker_worker_job_codeintel-janitor_count"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: worker_job_codeintel-commitgraph_count
+
+<p class="subtitle">number of worker instances running the codeintel-commitgraph job</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-commitgraph job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-commitgraph job for 5m0s
+
+**Possible solutions**
+
+- Ensure your instance defines a worker container such that:
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-commitgraph" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-commitgraph"
+- Ensure that such a container is not failing to start or stay active
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_worker_job_codeintel-commitgraph_count",
+  "critical_worker_worker_job_codeintel-commitgraph_count"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: worker_job_codeintel-auto-indexing_count
+
+<p class="subtitle">number of worker instances running the codeintel-auto-indexing job</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-auto-indexing job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-auto-indexing job for 5m0s
+
+**Possible solutions**
+
+- Ensure your instance defines a worker container such that:
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-auto-indexing" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-auto-indexing"
+- Ensure that such a container is not failing to start or stay active
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_worker_job_codeintel-auto-indexing_count",
+  "critical_worker_worker_job_codeintel-auto-indexing_count"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_queue_size
+
+<p class="subtitle">commit graph queue size</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 100+ commit graph queue size
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_queue_size"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_queue_growth_rate
+
+<p class="subtitle">commit graph queue growth rate over 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 5+ commit graph queue growth rate over 30m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_queue_growth_rate"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_updater_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful commit graph updater operation duration over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20s+ 99th percentile successful commit graph updater operation duration over 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_updater_99th_percentile_duration"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_updater_errors
+
+<p class="subtitle">commit graph updater errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ commit graph updater errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_updater_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_janitor_errors
+
+<p class="subtitle">janitor errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ janitor errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_janitor_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_upload_resets
+
+<p class="subtitle">upload records re-queued (due to unresponsive worker) every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ upload records re-queued (due to unresponsive worker) every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_upload_resets"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_upload_reset_failures
+
+<p class="subtitle">upload records errored due to repeated reset every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ upload records errored due to repeated reset every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_upload_reset_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_index_resets
+
+<p class="subtitle">index records re-queued (due to unresponsive indexer) every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ index records re-queued (due to unresponsive indexer) every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_index_resets"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_index_reset_failures
+
+<p class="subtitle">index records errored due to repeated reset every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ index records errored due to repeated reset every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_index_reset_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_indexing_errors
+
+<p class="subtitle">indexing errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ indexing errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_indexing_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_autoindex_enqueuer_errors
+
+<p class="subtitle">index enqueuer errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ index enqueuer errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_autoindex_enqueuer_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: frontend_internal_api_error_responses
+
+<p class="subtitle">frontend-internal API error responses every 5m by route</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 2%+ frontend-internal API error responses every 5m by route for 5m0s
+
+**Possible solutions**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs worker` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs worker` for logs indicating request failures to `frontend` or `frontend-internal`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_frontend_internal_api_error_responses"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: container_cpu_usage
+
+<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 99%+ container cpu usage total (1m average) across all cores by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_container_cpu_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: container_memory_usage
+
+<p class="subtitle">container memory usage by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 99%+ container memory usage by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_container_memory_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the worker service.
+- **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the worker service.
+- **Docker Compose:** Consider increasing `memory:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_memory_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 90%+ container memory usage (5m maximum) by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: go_goroutines
+
+<p class="subtitle">maximum active goroutines</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 10000+ maximum active goroutines for 10m0s
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_go_goroutines"
+]
+```
+
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: go_gc_duration_seconds
+
+<p class="subtitle">maximum go garbage collection duration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 2s+ maximum go garbage collection duration
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_go_gc_duration_seconds"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: pods_available_percentage
+
+<p class="subtitle">percentage pods available</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: less than 90% percentage pods available for 10m0s
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_pods_available_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ## repo-updater: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
@@ -3188,15 +3511,15 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## repo-updater: src_repoupdater_syncer_sync_errors_total
 
-<p class="subtitle">sync error rate</p>
+<p class="subtitle">site level external service sync error rate</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 0+ sync error rate for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 0+ site level external service sync error rate for 10m0s
 
 **Possible solutions**
 
-- An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
+- An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
 with your code hosts connections or networking issues affecting communication with your code hosts.
 - Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
 - Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
@@ -3217,11 +3540,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## repo-updater: syncer_sync_start
 
-<p class="subtitle">sync was started</p>
+<p class="subtitle">repo metadata sync was started</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: less than 0 sync was started for 9h0m0s
+- <span class="badge badge-warning">warning</span> repo-updater: less than 0 repo metadata sync was started for 9h0m0s
 
 **Possible solutions**
 
@@ -3725,13 +4048,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: repoupdater_errored_sync_jobs_total
+## repo-updater: repoupdater_errored_sync_jobs_percentage
 
-<p class="subtitle">the total number of errored sync jobs</p>
+<p class="subtitle">the percentage of external services that have failed their most recent sync</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ the total number of errored sync jobs for 1h0m0s
+- <span class="badge badge-warning">warning</span> repo-updater: 10%+ the percentage of external services that have failed their most recent sync for 1h0m0s
 
 **Possible solutions**
 
@@ -3740,7 +4063,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_repoupdater_errored_sync_jobs_total"
+  "warning_repo-updater_repoupdater_errored_sync_jobs_percentage"
 ]
 ```
 
@@ -3870,7 +4193,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 90%+ container memory usage by instance
+- <span class="badge badge-critical">critical</span> repo-updater: 90%+ container memory usage by instance for 10m0s
 
 **Possible solutions**
 

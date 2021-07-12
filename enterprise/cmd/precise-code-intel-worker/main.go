@@ -3,19 +3,18 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -31,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -83,7 +81,6 @@ func main() {
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
-	enqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{dbStore}, gitserverClient, repoupdater.DefaultClient, observationContext)
 
 	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 	if err != nil {
@@ -103,7 +100,6 @@ func main() {
 		&worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,
 		gitserverClient,
-		enqueuer,
 		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
@@ -129,7 +125,8 @@ func mustInitializeDB() *sql.DB {
 		}
 	})
 
-	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
+	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "precise-code-intel-worker"}
+	if err := dbconn.SetupGlobalConnection(opts); err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
 
@@ -139,7 +136,7 @@ func mustInitializeDB() *sql.DB {
 	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(5 * time.Second).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.GlobalExternalServices)
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(dbconn.Global))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -158,7 +155,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		}
 	})
 
-	db, err := dbconn.New(postgresDSN, "_codeintel")
+	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "precise-code-intel-worker"})
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
@@ -203,6 +200,5 @@ func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) e
 }
 
 func isRequestError(err error) bool {
-	var rse *smithyhttp.RequestSendError
-	return errors.As(err, &rse)
+	return errors.HasType(err, &smithyhttp.RequestSendError{})
 }

@@ -25,19 +25,22 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
 - Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
+  - Which versions of the code hosts are used
 - Whether new user signup is allowed (true/false)
 - Whether a repository has ever been added (true/false)
 - Whether a code search has ever been executed (true/false)
 - Whether code intelligence has ever been used (true/false)
 - Aggregate counts of current daily, weekly, and monthly users
-- Aggregate counts of current daily, weekly, and monthly users, by:
-  - Whether they are using code host integrations
-  - Search modes used (interactive search, plain-text search)
-  - Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)
+- Aggregate counts of current daily, weekly, and monthly users, by whether they are using code host integrations
 - Aggregate daily, weekly, and monthly latencies (in ms) of search queries
-- Aggregate daily, weekly, and monthly counts of:
-  - Searches using each search mode (interactive search, plain-text search)
-  - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
+- Aggregate daily, weekly, and monthly integer counts of the following query syntax:
+  - The number of boolean operators (`and`, `or`, `not` keywords)
+  - The number of built-in predicate keywords (`contains`, `contains.file`, `contains.repo`, `contains.commit.after`)
+  - The number of `select` keywords by kind (`repo`, `file`, `content`, `symbol`, `commit.diff.added`, `commit.diff.removed`)
+  - The number of queries using the `context:` filter without the default `global` value
+  - The number of queries with only patterns (e.g., without filters like `repo:` or `file:`)
+  - The number of queries with three or more patterns
+- Aggregate daily, weekly, and monthly user counts of search queries with the above properties
 - Code intelligence usage data
   - Total number of repositories with and without an uploaded LSIF index
   - Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
@@ -88,6 +91,12 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total counts of edits, additions, and removals of insights by type
   - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
   - Weekly count of users that have created an insight, and count of users that have created their first insight this week                  
+  - Weekly count of total and unique views to the `Create new insight`, `Create search insight`, and `Create language insight` pages
+  - Weekly count of total and unique clicks of the `Create search insight`, `Create language usage insight`, and `Explore the extensions` buttons on the `Create new insight` page
+  - Weekly count of total and unique clicks of the `Create` and `Cancel` buttons on the `Create search insight` and `Create language insight` pages
+  - Total count of insights grouped by time interval (step size) in days  
+  - Total count of insights set organization visible grouped by insight type
+
 - Code monitoring usage data
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page
@@ -107,7 +116,7 @@ Sourcegraph only connects to Sourcegraph.com for two purposes:
 1. The pings described above are sent, in order to:
    - Check for new product updates.
    - Send [anonymous, non-specific, aggregate metrics](#pings) back to Sourcegraph.com (see the full list above).
-1. [Sourcegraph extensions](../extensions/index.md) are fetched from Sourcegraph.com's extension registry (unless you are using a [private extension registry](extensions.md#publish-extensions-to-a-private-extension-registry)).
+1. [Sourcegraph extensions](../extensions/index.md) are fetched from Sourcegraph.com`s extension registry (unless you are using a [private extension registry](extensions.md#publish-extensions-to-a-private-extension-registry)).
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
 

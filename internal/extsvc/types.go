@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -249,16 +249,6 @@ type RepoID string
 // RepoIDType indicates the type of the RepoID.
 type RepoIDType string
 
-const (
-	// RepoIDExact indicates the RepoID is an exact match, e.g.
-	// "github.com/alice/repo" can only identify itself.
-	RepoIDExact RepoIDType = "exact"
-	// RepoIDPrefix indicates the RepoID is a prefix match, e.g. "//Sourcegraph/"
-	// can identify "//Sourcegraph/CoreApp", "//Sourcegraph/Backend" and everything
-	// starts with it.
-	RepoIDPrefix RepoIDType = "prefix"
-)
-
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
 func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	switch strings.ToUpper(kind) {
@@ -281,7 +271,7 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
-		return nil, fmt.Errorf("unknown external service kind %q", kind)
+		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
 	return cfg, jsonc.Unmarshal(config, cfg)
 }
@@ -424,4 +414,64 @@ func DecodeURN(urn string) (kind string, id int64) {
 		return "", 0
 	}
 	return fields[1], id
+}
+
+type OtherRepoMetadata struct {
+	// RelativePath is relative to ServiceID which is usually the host URL.
+	// Joining them gives you the clone url.
+	RelativePath string
+}
+
+// UniqueCodeHostIdentifier returns a string that uniquely identifies the
+// instance of a code host an external service is pointing at.
+//
+// E.g.: multiple external service configurations might point at the same
+// GitHub Enterprise instance. All of them would return the normalized base URL
+// as a unique identifier.
+//
+// In case an external service doesn't have a base URL (e.g. AWS Code Commit)
+// another unique identifier is returned.
+//
+// This function can be used to group external services by the code host
+// instance they point at.
+func UniqueCodeHostIdentifier(kind, config string) (string, error) {
+	cfg, err := ParseConfig(kind, config)
+	if err != nil {
+		return "", err
+	}
+
+	var rawURL string
+	switch c := cfg.(type) {
+	case *schema.GitLabConnection:
+		rawURL = c.Url
+	case *schema.GitHubConnection:
+		rawURL = c.Url
+	case *schema.BitbucketServerConnection:
+		rawURL = c.Url
+	case *schema.BitbucketCloudConnection:
+		rawURL = c.Url
+	case *schema.PhabricatorConnection:
+		rawURL = c.Url
+	case *schema.OtherExternalServiceConnection:
+		rawURL = c.Url
+	case *schema.GitoliteConnection:
+		rawURL = c.Host
+	case *schema.AWSCodeCommitConnection:
+		// AWS Code Commit does not have a URL in the config, so we return a
+		// unique string here and return early:
+		return c.Region + ":" + c.AccessKeyID, nil
+	case *schema.PerforceConnection:
+		// Perforce uses the P4PORT to specify the instance, so we use that
+		return c.P4Port, nil
+
+	default:
+		return "", errors.Errorf("unknown external service kind: %s", kind)
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	return NormalizeBaseURL(u).String(), nil
 }

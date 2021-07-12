@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -95,7 +97,7 @@ func TestCachedLocationResolver(t *testing.T) {
 					return
 				}
 				if repoID != repositoryID {
-					errs <- fmt.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repoID)
+					errs <- errors.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repoID)
 					return
 				}
 			}
@@ -108,7 +110,7 @@ func TestCachedLocationResolver(t *testing.T) {
 						return
 					}
 					if commitResolver.OID() != graphqlbackend.GitObjectID(commit) {
-						errs <- fmt.Errorf("unexpected commit. want=%s have=%s", commit, commitResolver.OID())
+						errs <- errors.Errorf("unexpected commit. want=%s have=%s", commit, commitResolver.OID())
 						return
 					}
 				}
@@ -123,7 +125,7 @@ func TestCachedLocationResolver(t *testing.T) {
 							return
 						}
 						if treeResolver.Path() != path {
-							errs <- fmt.Errorf("unexpected path. want=%s have=%s", path, treeResolver.Path())
+							errs <- errors.Errorf("unexpected path. want=%s have=%s", path, treeResolver.Path())
 							return
 						}
 
@@ -272,13 +274,13 @@ func TestResolveLocations(t *testing.T) {
 	if len(locations) != 3 {
 		t.Fatalf("unexpected length. want=%d have=%d", 3, len(locations))
 	}
-	if url := locations[0].CanonicalURL(); url != "/repo50@deadbeef1/-/tree/p1#L12:13-14:15" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo50@deadbeef1/-/tree/p1#L12:13-14:15", url)
+	if url := locations[0].CanonicalURL(); url != "/repo50@deadbeef1/-/tree/p1?L12:13-14:15" {
+		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo50@deadbeef1/-/tree/p1?L12:13-14:15", url)
 	}
-	if url := locations[1].CanonicalURL(); url != "/repo51@deadbeef2/-/tree/p2#L22:23-24:25" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo51@deadbeef2/-/tree/p2#L22:23-24:25", url)
+	if url := locations[1].CanonicalURL(); url != "/repo51@deadbeef2/-/tree/p2?L22:23-24:25" {
+		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo51@deadbeef2/-/tree/p2?L22:23-24:25", url)
 	}
-	if url := locations[2].CanonicalURL(); url != "/repo53@deadbeef4/-/tree/p4#L42:43-44:45" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/tree/p4#L42:43-44:45", url)
+	if url := locations[2].CanonicalURL(); url != "/repo53@deadbeef4/-/tree/p4?L42:43-44:45" {
+		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/tree/p4?L42:43-44:45", url)
 	}
 }

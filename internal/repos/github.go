@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -51,12 +51,13 @@ type GithubSource struct {
 var _ Source = &GithubSource{}
 var _ UserSource = &GithubSource{}
 var _ AffiliatedRepositorySource = &GithubSource{}
+var _ VersionSource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGithubSource(svc, &c, cf)
 }
@@ -196,6 +197,10 @@ func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
 	return err
 }
 
+func (s GithubSource) Version(ctx context.Context) (string, error) {
+	return s.v3Client.GetVersion(ctx)
+}
+
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) {
@@ -250,6 +255,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
+		Stars:        r.StargazerCount,
 		Private:      r.IsPrivate,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
@@ -264,7 +270,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 // remoteURL returns the repository's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use types.RepoCloneURL
+// if you need to get an authenticated clone url use repos.CloneURL
 func (s *GithubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
 		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
@@ -337,35 +343,82 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 //
 // It returns an error if the request fails on the first page.
 func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
-	var oerr error
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
-		defer func() {
-			// Catch 404 to handle
-			if page == 1 {
-				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
-					oerr = fmt.Errorf("organisation %q not found", org)
-					err = nil
+	dedupC := make(chan *githubResult)
+
+	// Currently, the Github API doesn't return internal repos
+	// when calling it with the "all" type.
+	// We need to call it twice, once with the "all" type and
+	// once with the "internal" type.
+	// However, since we don't have any guarantee that this behavior
+	// will always remain the same and that Github will never fix this issue,
+	// we need to deduplicate the results before sending them to the results channel.
+
+	getReposByType := func(tp string) error {
+		var oerr error
+
+		s.paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+			defer func() {
+				if page == 1 {
+					var e *github.APIError
+					if errors.As(err, &e) && e.Code == 404 {
+						oerr = errors.Errorf("organisation %q not found", org)
+						err = nil
+					}
+				}
+
+				remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+				log15.Debug(
+					"github sync: ListOrgRepositories",
+					"repos", len(repos),
+					"rateLimitCost", cost,
+					"rateLimitRemaining", remaining,
+					"rateLimitReset", reset,
+					"retryAfter", retry,
+					"type", tp,
+				)
+			}()
+
+			return s.v3Client.ListOrgRepositories(ctx, org, page, tp)
+		})
+
+		return oerr
+	}
+
+	go func() {
+		defer close(dedupC)
+
+		err := getReposByType("all")
+		// Handle 404 from org repos endpoint by trying user repos endpoint
+		if err != nil {
+			if s.listUser(ctx, org, dedupC) != nil {
+				dedupC <- &githubResult{
+					err: err,
 				}
 			}
-
-			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-			log15.Debug(
-				"github sync: ListOrgRepositories",
-				"repos", len(repos),
-				"rateLimitCost", cost,
-				"rateLimitRemaining", remaining,
-				"rateLimitReset", reset,
-				"retryAfter", retry,
-			)
-		}()
-		return s.v3Client.ListOrgRepositories(ctx, org, page)
-	})
-
-	// Handle 404 from org repos endpoint by trying user repos endpoint
-	if oerr != nil && s.listUser(ctx, org, results) != nil {
-		results <- &githubResult{
-			err: oerr,
+			return
 		}
+
+		// if the first call succeeded,
+		// call the same endpoint with the "internal" type
+		if err = getReposByType("internal"); err != nil {
+			dedupC <- &githubResult{
+				err: err,
+			}
+		}
+	}()
+
+	seen := make(map[string]bool)
+
+	for res := range dedupC {
+		if res.err == nil {
+			if seen[res.repo.ID] {
+				continue
+			}
+
+			seen[res.repo.ID] = true
+		}
+
+		results <- res
 	}
 }
 
@@ -698,7 +751,7 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	for hasNextPage {
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("context canceled")
+			return nil, errors.Errorf("context canceled")
 		default:
 		}
 		repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)

@@ -202,7 +202,7 @@ const SCORE_TO_TWEET = 9
 const TweetFeedback: React.FunctionComponent<TweetFeedbackProps> = ({ feedback, score }) => {
     if (score >= SCORE_TO_TWEET) {
         const url = new URL('https://twitter.com/intent/tweet')
-        url.searchParams.set('text', `After using @srcgraph: ${feedback}`)
+        url.searchParams.set('text', `After using @sourcegraph: ${feedback}`)
         return (
             <>
                 <p className="mt-2">

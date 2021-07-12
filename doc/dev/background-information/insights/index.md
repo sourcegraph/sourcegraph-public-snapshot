@@ -6,7 +6,7 @@
 
 ## What is it?
 
-See https://about.sourcegraph.com/handbook/engineering/web/code-insights
+See https://about.sourcegraph.com/handbook/engineering/web/code-insights and the [Code Insights docs](../../../code_insights/index.md). 
 
 ## Webapp frontend
 

@@ -60,9 +60,13 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
                               // calling provideView on null value
                               providerResultToObservable(provider.viewProvider.provideView(context)).pipe(
                                   defaultIfEmpty<sourcegraph.View | null | undefined>(null),
-                                  catchError((error): [ErrorLike] => {
+                                  catchError((error: unknown): [ErrorLike] => {
                                       console.error('View provider errored:', error)
-                                      return [asError(error)]
+
+                                      // Pass only primitive copied values because Error object is not
+                                      // cloneable in Firefox and Safari
+                                      const { message, name, stack } = asError(error)
+                                      return [{ message, name, stack } as ErrorLike]
                                   }),
                                   // Add index to view to put response in right position of result views array below in scan operator
                                   map(view => ({ id: provider.id, view, index }))

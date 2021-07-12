@@ -18,6 +18,7 @@ import { LsifUploadFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
 
 import { deleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
+import { CodeIntelAssociatedIndex } from './CodeIntelAssociatedIndex'
 import { CodeIntelUploadMeta } from './CodeIntelUploadMeta'
 import { CodeIntelUploadTimeline } from './CodeIntelUploadTimeline'
 
@@ -90,7 +91,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (
-        <div className="site-admin-lsif-upload-page w-100 web-content">
+        <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="Code intelligence - uploads" />
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
@@ -126,6 +127,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         }
                         className="mb-3"
                     />
+
                     <CodeIntelStateBanner
                         state={uploadOrError.state}
                         placeInQueue={uploadOrError.placeInQueue}
@@ -140,11 +142,10 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             tip of the default branch and are targets of cross-repository find reference operations.
                         </div>
                     )}
-                    <div className="card mb-3">
-                        <div className="card-body">
-                            <CodeIntelUploadMeta node={uploadOrError} now={now} />
-                        </div>
-                    </div>
+                    <CodeIntelUploadMeta node={uploadOrError} now={now} />
+                    <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
+
+                    <h3>Timeline</h3>
                     <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
                 </>
             )}

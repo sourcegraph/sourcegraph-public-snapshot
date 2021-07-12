@@ -50,10 +50,6 @@ func TestTickerGoBrrr(t *testing.T) {
 	// Also read from the now-closed `done` to synchronize, since closing a
 	// channel is non-blocking.
 	<-ticker.done
-	// Now make sure that the channel is closed.
-	if c := <-ticker.C; c != nil {
-		t.Errorf("unexpected non-nil channel: %v", c)
-	}
 }
 
 func TestTickerRateLimited(t *testing.T) {
@@ -76,8 +72,8 @@ func TestTickerRateLimited(t *testing.T) {
 
 	c = <-ticker.C
 	have := time.Since(now)
-	if wantMin, wantMax := 9*time.Millisecond, 15*time.Millisecond; have < wantMin || have > wantMax {
-		t.Errorf("unexpectedly short delay between takes: have=%v want >=%v && <=%v", have, wantMin, wantMax)
+	if wantMin := 9 * time.Millisecond; have < wantMin {
+		t.Errorf("unexpectedly short delay between takes: have=%v want>=%v", have, wantMin)
 	}
 	c <- time.Duration(0)
 
@@ -86,10 +82,6 @@ func TestTickerRateLimited(t *testing.T) {
 	// Also read from the now-closed `done` to synchronize, since closing a
 	// channel is non-blocking.
 	<-ticker.done
-	// Now make sure that the channel is closed.
-	if c := <-ticker.C; c != nil {
-		t.Errorf("unexpected non-nil channel: %v", c)
-	}
 }
 
 func TestTickerZero(t *testing.T) {

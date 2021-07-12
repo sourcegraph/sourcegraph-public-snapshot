@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -21,7 +22,9 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	handler := OverrideAuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	db := dbtest.NewDB(t, "")
+
+	handler := OverrideAuthMiddleware(db, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
 		if actor.IsAuthenticated() {
 			fmt.Fprintf(w, "user %v", actor.UID)

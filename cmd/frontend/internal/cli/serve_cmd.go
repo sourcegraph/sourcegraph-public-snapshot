@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,11 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -42,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -96,8 +93,9 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	if err := dbconn.SetupGlobalConnection(""); err != nil {
-		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
+	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
+	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
@@ -177,11 +175,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they still have
 	// work remaining.
-	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second*30, &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	})
+	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)
@@ -254,7 +248,8 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
-	go updatecheck.Start(db)
+	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
+	goroutine.Go(func() { updatecheck.Start(db) })
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
 	// being initialized
@@ -267,11 +262,10 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	rateLimitWatcher, err := makeRateLimitWatcher()
 	if err != nil {
 		return err
 	}
-	rateLimitWatcher := graphqlbackend.NewBasicLimitWatcher(ratelimitStore)
 
 	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
@@ -358,4 +352,12 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 		}
 	}
 	return false
+}
+
+func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
+	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewBasicLimitWatcher(ratelimitStore), nil
 }

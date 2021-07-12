@@ -6,14 +6,13 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -41,12 +41,12 @@ func (e ErrRepoSeeOther) Error() string {
 
 var Repos = &repos{
 	store: database.GlobalRepos,
-	cache: dbcache.NewDefaultRepoLister(database.GlobalRepos),
+	cache: dbcache.NewIndexableReposLister(database.GlobalRepos),
 }
 
 type repos struct {
 	store *database.RepoStore
-	cache *dbcache.DefaultRepoLister
+	cache *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -159,8 +159,8 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.DefaultRepos.List, with tracing. It lists ALL
-// default repos which could include private user added repos.
+// ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
+// indexable repos which could include private user added repos.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
@@ -173,11 +173,11 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 	return s.cache.List(ctx)
 }
 
-// ListDefault calls database.DefaultRepos.ListPublic, with tracing.
-// It lists all public default repos and also any private repos added by the
-// current user.
-func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err error) {
-	ctx, done := trace(ctx, "Repos", "ListDefaultPublic", nil, &err)
+// ListSearchable calls database.IndexableRepos.ListPublic, with tracing.
+// It lists all public indexable repos and also any private repos added by the
+// current user. Only used on sourcegraph.com where we don't have every repo indexed.
+func (s *repos) ListSearchable(ctx context.Context) (repos []types.RepoName, err error) {
+	ctx, done := trace(ctx, "Repos", "ListSearchable", nil, &err)
 	defer func() {
 		if err == nil {
 			span := opentracing.SpanFromContext(ctx)
@@ -187,26 +187,22 @@ func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err er
 	}()
 
 	span := opentracing.SpanFromContext(ctx)
-	span.LogFields(otlog.String("ListPublic", "start"))
 	repos, err = s.cache.ListPublic(ctx)
 	if err != nil {
-		span.LogFields(otlog.String("ListPublic", "failed"))
 		return nil, errors.Wrap(err, "listing default public repos")
 	}
-	span.LogFields(otlog.String("ListPublic", "done"))
+	span.LogFields(otlog.Int("public.len", len(repos)))
 
 	// For authenticated users we also want to include any private repos they may have added
 	if a := actor.FromContext(ctx); a.IsAuthenticated() {
-		span.LogFields(otlog.String("ListRepoNames", "start"))
 		privateRepos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{
 			UserID:      a.UID,
 			OnlyPrivate: true,
 		})
 		if err != nil {
-			span.LogFields(otlog.String("ListRepoNames", "failed"))
 			return nil, errors.Wrap(err, "getting user private repos")
 		}
-		span.LogFields(otlog.String("ListRepoNames", "done"))
+		span.LogFields(otlog.Int("private.len", len(privateRepos)))
 		repos = append(repos, privateRepos...)
 	}
 

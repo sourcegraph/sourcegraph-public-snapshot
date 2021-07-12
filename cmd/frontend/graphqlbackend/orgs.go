@@ -27,8 +27,8 @@ type orgConnectionResolver struct {
 }
 
 func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, error) {
-	// 🚨 SECURITY: Only site admins can list orgs.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins can list organisations.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -48,8 +48,8 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 }
 
 func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: Only site admins can count orgs.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins can count organisations.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 

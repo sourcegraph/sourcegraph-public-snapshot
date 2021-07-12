@@ -15,8 +15,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -255,7 +255,7 @@ func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, exe
 		}
 
 		if attempts > 5 {
-			return nil, execDuration, fmt.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout)
+			return nil, execDuration, errors.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout)
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed

@@ -2,10 +2,9 @@ package gitlab
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,7 +18,8 @@ var _ authz.Provider = (*OAuthProvider)(nil)
 type OAuthProvider struct {
 	// The token is the access token used for syncing repositories from the code host,
 	// but it may or may not be a sudo-scoped.
-	token string
+	token     string
+	tokenType gitlab.TokenType
 
 	urn            string
 	clientProvider *gitlab.ClientProvider
@@ -38,11 +38,15 @@ type OAuthProviderOp struct {
 	//
 	// 🚨 SECURITY: This value contains secret information that must not be shown to non-site-admins.
 	Token string
+
+	// TokenType is the type of the access token. Default is gitlab.TokenTypePAT.
+	TokenType gitlab.TokenType
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	return &OAuthProvider{
-		token: op.Token,
+		token:     op.Token,
+		tokenType: op.TokenType,
 
 		urn:            op.URN,
 		clientProvider: gitlab.NewClientProvider(op.BaseURL, cli),
@@ -83,7 +87,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
@@ -111,10 +115,17 @@ func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposit
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
-		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
+		return nil, errors.Errorf("not a code host of the repository: want %q but have %q",
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
-	client := p.clientProvider.GetPATClient(p.token, "")
+	var client *gitlab.Client
+	switch p.tokenType {
+	case gitlab.TokenTypeOAuth:
+		client = p.clientProvider.GetOAuthClient(p.token)
+	default:
+		client = p.clientProvider.GetPATClient(p.token, "")
+	}
+
 	return listMembers(ctx, client, repo.ID)
 }

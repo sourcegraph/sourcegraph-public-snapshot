@@ -11,10 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
-	"github.com/pkg/errors"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -146,7 +148,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
-	if err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, "graphql", c.httpClient, req, &respBody); err != nil {
+	if _, err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
 	}
 
@@ -283,7 +285,8 @@ func (e graphqlErrors) Error() string {
 // json.UnmarshalTypeError
 func unmarshal(data []byte, v interface{}) error {
 	err := json.Unmarshal(data, v)
-	if e, ok := err.(*json.UnmarshalTypeError); ok && e.Offset >= 0 {
+	var e *json.UnmarshalTypeError
+	if errors.As(err, &e) && e.Offset >= 0 {
 		a := e.Offset - 100
 		b := e.Offset + 100
 		if a < 0 {
@@ -298,4 +301,180 @@ func unmarshal(data []byte, v interface{}) error {
 		return errors.Wrapf(err, "graphql: cannot unmarshal at offset %d: before %q; after %q", e.Offset, string(data[a:e.Offset]), string(data[e.Offset:b]))
 	}
 	return err
+}
+
+// determineGitHubVersion returns a *semver.Version for the targetted GitHub instance by this client. When an
+// error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
+func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
+	url := normalizeURL(c.apiURL.String())
+	globalVersionCache.mu.Lock()
+	defer globalVersionCache.mu.Unlock()
+
+	if globalVersionCache.lastReset.IsZero() || time.Now().After(globalVersionCache.lastReset.Add(versionCacheResetTime)) {
+		// Clear cache and set last expiry to now.
+		globalVersionCache.lastReset = time.Now()
+		globalVersionCache.versions = make(map[string]*semver.Version)
+	}
+	if version, ok := globalVersionCache.versions[url]; ok {
+		return version
+	}
+	version := c.fetchGitHubVersion(ctx)
+	globalVersionCache.versions[url] = version
+	return version
+}
+
+func (c *V4Client) fetchGitHubVersion(ctx context.Context) *semver.Version {
+	if c.githubDotCom {
+		return allMatchingSemver
+	}
+
+	var resp struct {
+		InstalledVersion string `json:"installed_version"`
+	}
+	req, err := http.NewRequest("GET", "/meta", nil)
+	if err != nil {
+		log15.Warn("Failed to fetch GitHub enterprise version", "build request", "apiURL", c.apiURL, "err", err)
+		return allMatchingSemver
+	}
+	if _, err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
+		log15.Warn("Failed to fetch GitHub enterprise version", "doRequest", "apiURL", c.apiURL, "err", err)
+		return allMatchingSemver
+	}
+	version, err := semver.NewVersion(resp.InstalledVersion)
+	if err == nil {
+		return version
+	}
+	log15.Warn("Failed to fetch GitHub enterprise version", "parse version", "apiURL", c.apiURL, "resp.InstalledVersion", resp.InstalledVersion, "err", err)
+	return allMatchingSemver
+}
+
+func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*Actor, error) {
+	var result struct {
+		Viewer Actor `json:"viewer"`
+	}
+	err := c.requestGraphQL(ctx, `query GetAuthenticatedUser {
+    viewer {
+        login
+        avatarUrl
+        url
+    }
+}`, nil, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result.Viewer, nil
+}
+
+// GetReposByNameWithOwner fetches the specified repositories (namesWithOwners)
+// from the GitHub GraphQL API and returns a slice of repositories.
+// If a repository is not found, it will return an error.
+//
+// The maximum number of repositories to be fetched is 30. If more
+// namesWithOwners are given, the method returns an error. 30 is not a official
+// limit of the API, but based on the observation that the GitHub GraphQL does
+// not return results when more than 37 aliases are specified in a query. 30 is
+// the conservative step back from 37.
+//
+// This method does not cache.
+func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
+	if len(namesWithOwners) > 30 {
+		return nil, ErrBatchTooLarge
+	}
+
+	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]*Repository
+	err = c.requestGraphQL(ctx, query, map[string]interface{}{}, &result)
+	if err != nil {
+		var e graphqlErrors
+		if errors.As(err, &e) {
+			for _, err2 := range e {
+				if err2.Type == graphqlErrTypeNotFound {
+					log15.Warn("GitHub repository not found", "error", err2)
+					continue
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	repos := make([]*Repository, 0, len(result))
+	for _, r := range result {
+		if r != nil {
+			repos = append(repos, r)
+		}
+	}
+	return repos, nil
+}
+
+func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+	var b strings.Builder
+	b.WriteString(c.repositoryFieldsGraphQLFragment(ctx))
+	b.WriteString("query {\n")
+
+	for i, pair := range namesWithOwners {
+		owner, name, err := SplitRepositoryNameWithOwner(pair)
+		if err != nil {
+			return "", err
+		}
+		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
+		b.WriteString("... on Repository { ...RepositoryFields } }\n")
+	}
+
+	b.WriteString("}")
+
+	return b.String(), nil
+}
+
+// repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
+// Repository struct.
+func (c *V4Client) repositoryFieldsGraphQLFragment(ctx context.Context) string {
+	if c.githubDotCom {
+		return `
+fragment RepositoryFields on Repository {
+	id
+	databaseId
+	nameWithOwner
+	description
+	url
+	isPrivate
+	isFork
+	isArchived
+	isLocked
+	isDisabled
+	viewerPermission
+	stargazerCount
+	forkCount
+}
+	`
+	}
+	ghe300Fields := []string{}
+	version := c.determineGitHubVersion(ctx)
+	if ghe300PlusOrDotComSemver.Check(version) {
+		ghe300Fields = append(ghe300Fields, "stargazerCount")
+	}
+	// Some fields are not yet available on GitHub Enterprise yet
+	// or are available but too new to expect our customers to have updated:
+	// - viewerPermission
+	return fmt.Sprintf(`
+fragment RepositoryFields on Repository {
+	id
+	databaseId
+	nameWithOwner
+	description
+	url
+	isPrivate
+	isFork
+	isArchived
+	isLocked
+	isDisabled
+	forkCount
+	%s
+}
+	`, strings.Join(ghe300Fields, "\n	"))
 }

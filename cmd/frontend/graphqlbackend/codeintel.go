@@ -53,6 +53,7 @@ type LSIFUploadResolver interface {
 	FinishedAt() *DateTime
 	InputIndexer() string
 	PlaceInQueue() *int32
+	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
@@ -86,6 +87,7 @@ type LSIFIndexResolver interface {
 	FinishedAt() *DateTime
 	Steps() IndexStepsResolver
 	PlaceInQueue() *int32
+	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
@@ -110,15 +112,6 @@ type IndexStepResolver interface {
 	LogEntry() ExecutionLogEntryResolver
 }
 
-type ExecutionLogEntryResolver interface {
-	Key() string
-	Command() []string
-	StartTime() DateTime
-	ExitCode() int32
-	Out(ctx context.Context) (string, error)
-	DurationMilliseconds() int32
-}
-
 type LSIFIndexConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
@@ -140,6 +133,8 @@ type QueueAutoIndexJobArgs struct {
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
+	DocumentationPathInfo(ctx context.Context, args *LSIFDocumentationPathInfoArgs) (JSONValue, error)
 }
 
 type CodeIntelligenceCommitGraphResolver interface {

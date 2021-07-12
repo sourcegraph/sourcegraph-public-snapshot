@@ -2,12 +2,12 @@ package gitlab
 
 import (
 	"context"
-	"errors"
 	"net/url"
 	"sort"
 	"strconv"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	"golang.org/x/oauth2"
 

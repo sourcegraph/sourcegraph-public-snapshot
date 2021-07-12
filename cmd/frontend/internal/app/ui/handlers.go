@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -11,10 +12,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -28,10 +30,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -56,6 +61,9 @@ type Metadata struct {
 
 	// ShowPreview controls whether or not OpenGraph/Twitter card/etc metadata is rendered.
 	ShowPreview bool
+
+	// PreviewImage contains the URL of the preview image for relevant routes (e.g. blob).
+	PreviewImage string
 }
 
 type Common struct {
@@ -148,21 +156,23 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && gitserver.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitserver.RevisionNotFoundError{}) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
-			if e, ok := err.(*handlerutil.URLMovedError); ok {
+			var urlMovedError *handlerutil.URLMovedError
+			if errors.As(err, &urlMovedError) {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
-				err = handlerutil.RedirectToNewRepoName(w, r, e.NewRepo)
+				err = handlerutil.RedirectToNewRepoName(w, r, urlMovedError.NewRepo)
 				if err != nil {
 					return nil, errors.Wrap(err, "when sending renamed repository redirect response")
 				}
 
 				return nil, nil
 			}
-			if e, ok := err.(backend.ErrRepoSeeOther); ok {
+			var repoSeeOtherError backend.ErrRepoSeeOther
+			if errors.As(err, &repoSeeOtherError) {
 				// Repo does not exist here, redirect to the recommended location.
-				u, err := url.Parse(e.RedirectURL)
+				u, err := url.Parse(repoSeeOtherError.RedirectURL)
 				if err != nil {
 					return nil, err
 				}
@@ -170,12 +180,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if gitserver.IsRevisionNotFound(errors.Cause(err)) {
+			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if _, ok := errors.Cause(err).(*gitserver.RepoNotCloneableErr); ok {
+			if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) {
 				if errcode.IsNotFound(err) {
 					// Repository is not found.
 					serveError(w, r, err, http.StatusNotFound)
@@ -195,7 +205,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errcode.IsNotFound(err) {
+			if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
@@ -220,6 +230,35 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			}
 		}()
 	}
+
+	// common.Repo and common.CommitID are populated in the above if statement
+	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() {
+		lineRange := findLineRangeInQueryParameters(r.URL.Query())
+
+		var symbolResult *result.Symbol
+		if lineRange != nil && lineRange.StartLine != 0 && lineRange.StartLineCharacter != 0 {
+			// Do not slow down the page load if symbol data takes too long to retrieve.
+			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
+			defer cancel()
+
+			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
+				ctx,
+				types.RepoName{ID: common.Repo.ID, Name: common.Repo.Name},
+				common.CommitID,
+				strings.TrimLeft(blobPath, "/"),
+				lineRange.StartLine-1,
+				lineRange.StartLineCharacter-1,
+			); symbolMatch != nil {
+				symbolResult = &symbolMatch.Symbol
+			}
+		}
+
+		common.Metadata.ShowPreview = true
+		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
+		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), mux.Vars(r)["Repo"])
+		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange, symbolResult)
+	}
+
 	return common, nil
 }
 
@@ -427,11 +466,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		sourceURL = sourceURLCookie.Value
 	}
 
-	anonymousUIDCookie, err := r.Cookie("sourcegraphAnonymousUid")
-	var anonymousUserId string
-	if err == nil && anonymousUIDCookie != nil {
-		anonymousUserId = anonymousUIDCookie.Value
-	}
+	anonymousUserId, _ := cookie.AnonymousUID(r)
 
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
 		IsServerAdmin:   true,

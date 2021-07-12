@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/beevik/etree"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
@@ -133,7 +133,7 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 	for _, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
 		for i, xcert := range kd.KeyInfo.X509Data.X509Certificates {
 			if xcert.Data == "" {
-				return nil, fmt.Errorf("SAML Identity Provider metadata certificate %d is empty", i)
+				return nil, errors.Errorf("SAML Identity Provider metadata certificate %d is empty", i)
 			}
 			certData, err := base64.StdEncoding.DecodeString(xcert.Data)
 			if err != nil {
@@ -270,10 +270,10 @@ func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byt
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("non-200 HTTP response for SAML Identity Provider metadata URL: %s", c.identityProviderMetadataURL)
+		return nil, errors.Errorf("non-200 HTTP response for SAML Identity Provider metadata URL: %s", c.identityProviderMetadataURL)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "reading SAML Identity Provider metadata")
 	}

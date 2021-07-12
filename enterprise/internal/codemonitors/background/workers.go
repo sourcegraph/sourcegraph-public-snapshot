@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
@@ -166,7 +167,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if numResults > 0 {
 		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, record.RecordID())
 		if err != nil {
-			return fmt.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
+			return errors.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
@@ -178,8 +179,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	// Log the actual query we ran and whether we got any new results.
 	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
 	if err != nil {
-		return fmt.Errorf("LogSearch: %w", err)
-
+		return errors.Errorf("LogSearch: %w", err)
 	}
 	return nil
 }
@@ -213,27 +213,27 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 	var ok bool
 	j, ok = record.(*cm.ActionJob)
 	if !ok {
-		return fmt.Errorf("type assertion failed")
+		return errors.Errorf("type assertion failed")
 	}
 
 	m, err = s.GetActionJobMetadata(ctx, record.RecordID())
 	if err != nil {
-		return fmt.Errorf("store.GetActionJobMetadata: %w", err)
+		return errors.Errorf("store.GetActionJobMetadata: %w", err)
 	}
 
 	e, err = s.ActionEmailByIDInt64(ctx, j.Email)
 	if err != nil {
-		return fmt.Errorf("store.ActionEmailByIDInt64: %w", err)
+		return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
 	}
 
 	recs, err = s.AllRecipientsForEmailIDInt64(ctx, j.Email)
 	if err != nil {
-		return fmt.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
+		return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 	}
 
 	data, err = email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
 	if err != nil {
-		return fmt.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
+		return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
 	}
 	for _, rec := range recs {
 		if rec.NamespaceOrgID != nil {
@@ -241,7 +241,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 			continue
 		}
 		if rec.NamespaceUserID == nil {
-			return fmt.Errorf("nil recipient")
+			return errors.Errorf("nil recipient")
 		}
 		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
 		if err != nil {

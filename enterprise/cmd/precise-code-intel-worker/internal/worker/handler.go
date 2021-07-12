@@ -8,20 +8,23 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 type handler struct {
@@ -29,7 +32,6 @@ type handler struct {
 	workerStore     dbworkerstore.Store
 	lsifStore       LSIFStore
 	uploadStore     uploadstore.Store
-	enqueuer        enqueuer.Enqueuer
 	gitserverClient GitserverClient
 	enableBudget    bool
 	budgetRemaining int64
@@ -76,6 +78,13 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued bool, err error) {
+	start := time.Now()
+	defer func() {
+		if honey.Enabled() {
+			_ = createHoneyEvent(ctx, upload, err, time.Since(start)).Send()
+		}
+	}()
+
 	if requeued, err := requeueIfCloning(ctx, h.workerStore, upload); err != nil || requeued {
 		return requeued, err
 	}
@@ -94,17 +103,19 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			return errors.Wrap(err, "conversion.Correlate")
 		}
 
+		// Note: this is writing to a different database than the block below, so we need to use a
+		// different transaction context (managed by the writeData function).
 		if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
-			return err
-		}
-
-		defer func() {
-			if upload.RepositoryID == sourcegraphRepositoryID && err == nil {
-				if err := h.enqueuer.QueueIndexesForPackages(ctx, groupedBundleData.PackageReferences); err != nil {
-					log15.Error("Failed to queue indexes for packages", "error", err)
-				}
+			if isUniqueConstraintViolation(err) {
+				// If this is a unique constraint violation, then we've previously processed this same
+				// upload record up to this point, but failed to perform the transaction below. We can
+				// safely assume that the entire index's data is in the codeintel database, as it's
+				// parsed determinstically and written atomically.
+				log15.Warn("LSIF data already exists for upload record")
+			} else {
+				return err
 			}
-		}()
+		}
 
 		// Start a nested transaction with Postgres savepoints. In the event that something after this
 		// point fails, we want to update the upload record with an error message but do not want to
@@ -137,6 +148,13 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
+			// Insert a companion record to this upload that will asynchronously trigger another worker to
+			// queue auto-index records for the monikers written into the lsif_references table attached by
+			// this index processing job.
+			if _, err := tx.InsertDependencyIndexingJob(ctx, upload.ID); err != nil {
+				return errors.Wrap(err, "store.InsertDependencyIndexingJob")
+			}
+
 			// Mark this repository so that the commit updater process will pull the full commit graph from
 			// gitserver and recalculate the nearest upload for each commit as well as which uploads are visible
 			// from the tip of the default branch. We don't do this inside of the transaction as we re-calcalute
@@ -151,9 +169,6 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 		})
 	})
 }
-
-// sourcegraphRepositoryID is the repository id of sg/sg on Cloud
-const sourcegraphRepositoryID = 36809250
 
 func inTransaction(ctx context.Context, dbStore DBStore, fn func(tx DBStore) error) (err error) {
 	tx, err := dbStore.Transact(ctx)
@@ -246,6 +261,41 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	if err := tx.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
+	if err := tx.WriteDocumentationPages(ctx, id, groupedBundleData.DocumentationPages); err != nil {
+		return errors.Wrap(err, "store.WriteDocumentationPages")
+	}
+	if err := tx.WriteDocumentationPathInfo(ctx, id, groupedBundleData.DocumentationPathInfo); err != nil {
+		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
+	}
 
 	return nil
+}
+
+func isUniqueConstraintViolation(err error) bool {
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505"
+}
+
+func createHoneyEvent(ctx context.Context, upload store.Upload, err error, duration time.Duration) *libhoney.Event {
+	fields := map[string]interface{}{
+		"duration_ms":    duration.Milliseconds(),
+		"uploadID":       upload.ID,
+		"repositoryID":   upload.RepositoryID,
+		"repositoryName": upload.RepositoryName,
+		"commit":         upload.Commit,
+		"root":           upload.Root,
+		"indexer":        upload.Indexer,
+	}
+
+	if err != nil {
+		fields["error"] = err.Error()
+	}
+	if upload.UploadSize != nil {
+		fields["uploadSize"] = upload.UploadSize
+	}
+	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
+		fields["trace"] = spanURL
+	}
+
+	return honey.EventWithFields("codeintel-worker", fields)
 }

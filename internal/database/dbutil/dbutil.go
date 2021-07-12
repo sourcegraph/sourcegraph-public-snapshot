@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgconn"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -68,8 +68,8 @@ type TxBeginner interface {
 }
 
 func IsPostgresError(err error, codename string) bool {
-	e, ok := errors.Cause(err).(*pgconn.PgError)
-	return ok && e.Code == codename
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == codename
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the
@@ -138,7 +138,7 @@ func (n *NullInt32) Scan(value interface{}) error {
 	case nil:
 		return nil
 	default:
-		return fmt.Errorf("value is not int64: %T", value)
+		return errors.Errorf("value is not int64: %T", value)
 	}
 	return nil
 }
@@ -174,13 +174,49 @@ func (n *NullInt64) Scan(value interface{}) error {
 	case nil:
 		return nil
 	default:
-		return fmt.Errorf("value is not int64: %T", value)
+		return errors.Errorf("value is not int64: %T", value)
 	}
 	return nil
 }
 
 // Value implements the driver Valuer interface.
 func (n NullInt64) Value() (driver.Value, error) {
+	if n.N == nil {
+		return nil, nil
+	}
+	return *n.N, nil
+}
+
+// NullInt represents an int that may be null. NullInt implements the
+// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.NullString. When the scanned value is null, int is set to the zero value.
+type NullInt struct{ N *int }
+
+// NewNullInt returns a NullInt treating zero value as null.
+func NewNullInt(i int) NullInt {
+	if i == 0 {
+		return NullInt{}
+	}
+	return NullInt{N: &i}
+}
+
+// Scan implements the Scanner interface.
+func (n *NullInt) Scan(value interface{}) error {
+	switch value := value.(type) {
+	case int64:
+		*n.N = int(value)
+	case int32:
+		*n.N = int(value)
+	case nil:
+		return nil
+	default:
+		return errors.Errorf("value is not int: %T", value)
+	}
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (n NullInt) Value() (driver.Value, error) {
 	if n.N == nil {
 		return nil, nil
 	}
@@ -204,7 +240,7 @@ func (n *JSONInt64Set) Scan(value interface{}) error {
 			return err
 		}
 	default:
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	if *n.Set == nil {
@@ -245,7 +281,7 @@ func (n *NullJSONRawMessage) Scan(value interface{}) error {
 		n.Raw = make([]byte, len(value))
 		copy(n.Raw, value)
 	default:
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	return nil
@@ -267,7 +303,7 @@ func (c *CommitBytea) Scan(value interface{}) error {
 	case []byte:
 		*c = CommitBytea(hex.EncodeToString(value))
 	default:
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	return nil

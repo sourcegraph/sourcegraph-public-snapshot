@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -64,6 +63,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 					Name:        "github.com/sourcegraph/sourcegraph",
 					Description: "Code search and navigation tool (self-hosted)",
 					URI:         "github.com/sourcegraph/sourcegraph",
+					Stars:       2220,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
 						ServiceType: "github",
@@ -76,11 +76,13 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:    41288708,
-						NameWithOwner: "sourcegraph/sourcegraph",
-						Description:   "Code search and navigation tool (self-hosted)",
-						URL:           "https://github.com/sourcegraph/sourcegraph",
+						ID:             "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						DatabaseID:     41288708,
+						NameWithOwner:  "sourcegraph/sourcegraph",
+						Description:    "Code search and navigation tool (self-hosted)",
+						URL:            "https://github.com/sourcegraph/sourcegraph",
+						StargazerCount: 2220,
+						ForkCount:      164,
 					},
 				}
 
@@ -133,7 +135,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "github-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -436,7 +438,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 				src, err := githubSrc.WithAuthenticator(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {
@@ -470,4 +472,67 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 			t.Errorf("GitHubSource should exclude %+v", r)
 		}
 	}
+}
+
+func TestGithubSource_GetVersion(t *testing.T) {
+	t.Run("github.com", func(t *testing.T) {
+		svc := &types.ExternalService{
+			Kind: extsvc.KindGitHub,
+			Config: marshalJSON(t, &schema.GitHubConnection{
+				Url: "https://github.com",
+			}),
+		}
+
+		githubSrc, err := NewGithubSource(svc, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := githubSrc.Version(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if want := "unknown"; have != want {
+			t.Fatalf("wrong version returned. want=%s, have=%s", want, have)
+		}
+	})
+
+	t.Run("github enterprise", func(t *testing.T) {
+		// The GithubSource uses the github.Client under the hood, which
+		// uses rcache, a caching layer that uses Redis.
+		// We need to clear the cache before we run the tests
+		rcache.SetupForTest(t)
+
+		fixtureName := "githubenterprise-version"
+		gheToken := os.Getenv("GHE_TOKEN")
+		if update(fixtureName) && gheToken == "" {
+			t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
+		}
+
+		cf, save := newClientFactory(t, fixtureName)
+		defer save(t)
+
+		svc := &types.ExternalService{
+			Kind: extsvc.KindGitHub,
+			Config: marshalJSON(t, &schema.GitHubConnection{
+				Url:   "https://ghe.sgdev.org",
+				Token: gheToken,
+			}),
+		}
+
+		githubSrc, err := NewGithubSource(svc, cf)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := githubSrc.Version(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if want := "2.22.6"; have != want {
+			t.Fatalf("wrong version returned. want=%s, have=%s", want, have)
+		}
+	})
 }

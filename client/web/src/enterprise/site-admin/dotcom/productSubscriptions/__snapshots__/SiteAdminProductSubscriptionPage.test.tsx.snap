@@ -173,7 +173,11 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
     <div
       className="filtered-connection test-filtered-connection filtered-connection--compact list-group list-group-flush"
     >
-      
+      <div
+        className="filtered-connection__summary-container"
+      >
+        
+      </div>
       <ul
         className="filtered-connection__nodes"
         data-testid="nodes"
@@ -203,6 +207,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
           showSubscription={false}
         />
       </ul>
+      <div
+        className="filtered-connection__summary-container"
+      />
     </div>
   </div>
   <div

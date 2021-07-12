@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
@@ -18,7 +18,7 @@ import (
 
 type repoListerMock struct{}
 
-func (r repoListerMock) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
+func (r repoListerMock) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	zoektRepo := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name: string("alice/repo"),

@@ -22,7 +22,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface, func()) {
 		// Setup the GraphQL resolver.
@@ -39,7 +38,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		resolver.insightsStore = mockStore
 
 		// Create the insights connection resolver and query series.
-		conn, err := resolver.Insights(ctx)
+		conn, err := resolver.Insights(ctx, nil)
 		if err != nil {
 			cleanup()
 			t.Fatal(err)
@@ -68,7 +67,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		autogold.Want("insights length", int(2)).Equal(t, len(insights))
 
 		autogold.Want("insights[0].length", int(2)).Equal(t, len(insights[0]))
-		autogold.Want("insights[0].series[0].Label", "fmt.Errorf").Equal(t, insights[0][0].Label())
+		autogold.Want("insights[0].series[0].Label", "errors.Errorf").Equal(t, insights[0][0].Label())
 		autogold.Want("insights[0].series[1].Label", "printf").Equal(t, insights[0][1].Label())
 
 		autogold.Want("insights[1].length", int(2)).Equal(t, len(insights[1]))
@@ -104,7 +103,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E","RepoID":null,"From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
+			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E","RepoID":null,"Excluded":null,"Included":null,"From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
 			return []store.SeriesPoint{
 				{Time: args.From.Time, Value: 1},
 				{Time: args.From.Time, Value: 2},
@@ -115,6 +114,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("insights[0][0].Points mocked", "[{p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[]}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[]}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[]}}]").Equal(t, fmt.Sprintf("%+v", points))
+		autogold.Want("insights[0][0].Points mocked", "[{p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[]}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[]}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[]}}]").Equal(t, fmt.Sprintf("%+v", points))
 	})
 }

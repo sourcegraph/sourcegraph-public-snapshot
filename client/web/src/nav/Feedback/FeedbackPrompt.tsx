@@ -55,12 +55,18 @@ const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
 interface ContentProps {
     closePrompt: () => void
     routeMatch?: string
+    /** Text to be prepended to user input on submission. */
+    textPrefix?: string
 }
 
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, routeMatch }) => {
+export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
+    closePrompt,
+    routeMatch,
+    textPrefix = '',
+}) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -78,11 +84,11 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
             event.preventDefault()
             if (rating) {
                 return submitFeedback({
-                    input: { score: rating, feedback: text, currentPath: routeMatch },
+                    input: { score: rating, feedback: `${textPrefix}${text}`, currentPath: routeMatch },
                 })
             }
         },
-        [rating, submitFeedback, text, routeMatch]
+        [rating, submitFeedback, text, routeMatch, textPrefix]
     )
 
     useEffect(() => {
@@ -146,7 +152,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                         className="btn btn-block btn-secondary feedback-prompt__button"
                         loading={loading}
                         label="Send"
-                        disabled={!rating || loading}
+                        disabled={!rating || !text || loading}
                     />
                 </Form>
             )}
@@ -180,7 +186,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
                 {!isRedesignEnabled && <MessageDrawIcon className="d-lg-none icon-inline" />}
                 <span className={classNames({ 'd-none d-lg-block': !isRedesignEnabled })}>Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="web-content feedback-prompt__menu">
+            <DropdownMenu right={true} className="feedback-prompt__menu">
                 <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>

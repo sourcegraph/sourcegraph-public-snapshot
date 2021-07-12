@@ -1,21 +1,30 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 func corruptArchives(dir string) error {
-	files, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil
 	}
 
-	archives := []os.FileInfo{}
+	files := make([]fs.FileInfo, len(entries))
+	for i := range entries {
+		files[i], err = entries[i].Info()
+		if err != nil {
+			return err
+		}
+	}
+
+	archives := []fs.FileInfo{}
 	for _, f := range files {
 		if strings.HasSuffix(f.Name(), ".zip") {
 			archives = append(archives, f)
@@ -34,7 +43,7 @@ func corruptArchives(dir string) error {
 func corruptArchive(path string, size int64) error {
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("open err: %v", err)
+		return errors.Errorf("open err: %v", err)
 	}
 	defer file.Close()
 

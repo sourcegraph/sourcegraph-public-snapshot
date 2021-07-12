@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -32,7 +32,7 @@ type BitbucketCloudSource struct {
 func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	var c schema.BitbucketCloudConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newBitbucketCloudSource(svc, &c, cf)
 }
@@ -131,7 +131,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *types.Repo {
 // remoteURL returns the repository's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use types.RepoCloneURL
+// if you need to get an authenticated clone url use repos.CloneURL
 func (s *BitbucketCloudSource) remoteURL(repo *bitbucketcloud.Repo) string {
 	if s.config.GitURLType == "ssh" {
 		return fmt.Sprintf("git@%s:%s.git", s.config.Url, repo.FullName)

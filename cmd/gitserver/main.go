@@ -3,7 +3,6 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -12,11 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,15 +23,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -45,7 +44,6 @@ var (
 	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
-	envHostname                  = env.Get("HOSTNAME", "", "Hostname override")
 )
 
 func main() {
@@ -103,9 +101,9 @@ func main() {
 					return "", err
 				}
 
-				return types.RepoCloneURL(svc.Kind, svc.Config, r)
+				return repos.CloneURL(svc.Kind, svc.Config, r)
 			}
-			return "", fmt.Errorf("no sources for %q", repo)
+			return "", errors.Errorf("no sources for %q", repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			r, err := repoStore.GetByName(ctx, repo)
@@ -140,17 +138,17 @@ func main() {
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
-		Hostname: hostnameBestEffort(),
+		Hostname: hostname.Get(),
 		DB:       db,
 	}
 	gitserver.RegisterMetrics()
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
-	} else {
+	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 		// Additionally set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
-		os.Setenv("TMP_DIR", tmpDir)
+		log.Fatalf("Setting TMP_DIR: %s", err)
 	}
 
 	// Create Handler now since it also initializes state
@@ -193,27 +191,21 @@ func main() {
 	}()
 
 	// Stop accepting requests. In the future we should use graceful shutdown.
-	srv.Close()
+	if err := srv.Close(); err != nil {
+		log15.Error("closing http server", "error", err)
+	}
 
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
 }
 
-func hostnameBestEffort() string {
-	if envHostname != "" {
-		return envHostname
-	}
-	h, _ := os.Hostname()
-	return h
-}
-
 func getPercent(p int) (int, error) {
 	if p < 0 {
-		return 0, fmt.Errorf("negative value given for percentage: %d", p)
+		return 0, errors.Errorf("negative value given for percentage: %d", p)
 	}
 	if p > 100 {
-		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
+		return 0, errors.Errorf("excessively high value given for percentage: %d", p)
 	}
 	return p, nil
 }
@@ -243,5 +235,5 @@ func getDB() (dbutil.DB, error) {
 		}
 	})
 
-	return dbconn.New(dsn, "gitserver")
+	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
 }

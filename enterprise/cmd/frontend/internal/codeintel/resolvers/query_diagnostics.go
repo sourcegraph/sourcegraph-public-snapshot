@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -113,7 +113,7 @@ func (r *queryResolver) adjustDiagnostic(ctx context.Context, adjustedUpload adj
 	// call below, and is also reflected in the embedded diagnostic value in the return.
 	diagnostic.Path = adjustedUpload.Upload.Root + diagnostic.Path
 
-	adjustedCommit, adjustedRange, err := r.adjustRange(
+	adjustedCommit, adjustedRange, _, err := r.adjustRange(
 		ctx,
 		adjustedUpload.Upload.RepositoryID,
 		adjustedUpload.Upload.Commit,

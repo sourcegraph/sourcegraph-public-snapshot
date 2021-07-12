@@ -5,14 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
@@ -70,20 +72,20 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 			do: func(r *http.Request) (*http.Response, error) {
 				want := "https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=private"
 				if r.URL.String() != want {
-					return nil, fmt.Errorf("URL: want %q but got %q", want, r.URL)
+					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
 				}
 
 				want = "Bearer my_access_token"
 				got := r.Header.Get("Authorization")
 				if got != want {
-					return nil, fmt.Errorf("HTTP Authorization: want %q but got %q", want, got)
+					return nil, errors.Errorf("HTTP Authorization: want %q but got %q", want, got)
 				}
 
 				body := `[{"id": 1}, {"id": 2}, {"id": 3}]`
 				return &http.Response{
 					Status:     http.StatusText(http.StatusOK),
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte(body))),
+					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 				}, nil
 			},
 		},
@@ -149,56 +151,115 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 
-	p := newOAuthProvider(
-		OAuthProviderOp{
-			BaseURL: mustURL(t, "https://gitlab.com"),
-			Token:   "admin_token",
-		},
-		&mockDoer{
-			do: func(r *http.Request) (*http.Response, error) {
-				want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
-				if r.URL.String() != want {
-					return nil, fmt.Errorf("URL: want %q but got %q", want, r.URL)
-				}
+	t.Run("token type PAT", func(t *testing.T) {
+		p := newOAuthProvider(
+			OAuthProviderOp{
+				BaseURL:   mustURL(t, "https://gitlab.com"),
+				Token:     "admin_token",
+				TokenType: gitlab.TokenTypePAT,
+			},
+			&mockDoer{
+				do: func(r *http.Request) (*http.Response, error) {
+					want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
+					if r.URL.String() != want {
+						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
+					}
 
-				want = "admin_token"
-				got := r.Header.Get("Private-Token")
-				if got != want {
-					return nil, fmt.Errorf("HTTP Private-Token: want %q but got %q", want, got)
-				}
+					want = "admin_token"
+					got := r.Header.Get("Private-Token")
+					if got != want {
+						return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
+					}
 
-				body := `
+					body := `
 [
 	{"id": 1, "access_level": 10},
 	{"id": 2, "access_level": 20},
 	{"id": 3, "access_level": 30}
 ]`
-				return &http.Response{
-					Status:     http.StatusText(http.StatusOK),
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte(body))),
-				}, nil
+					return &http.Response{
+						Status:     http.StatusText(http.StatusOK),
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+					}, nil
+				},
 			},
-		},
-	)
+		)
 
-	accountIDs, err := p.FetchRepoPerms(context.Background(),
-		&extsvc.Repository{
-			URI: "gitlab.com/user/repo",
-			ExternalRepoSpec: api.ExternalRepoSpec{
-				ServiceType: "gitlab",
-				ServiceID:   "https://gitlab.com/",
-				ID:          "gitlab_project_id",
+		accountIDs, err := p.FetchRepoPerms(context.Background(),
+			&extsvc.Repository{
+				URI: "gitlab.com/user/repo",
+				ExternalRepoSpec: api.ExternalRepoSpec{
+					ServiceType: "gitlab",
+					ServiceID:   "https://gitlab.com/",
+					ID:          "gitlab_project_id",
+				},
 			},
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 1 should not be included because of "access_level" < 20
-	expAccountIDs := []extsvc.AccountID{"2", "3"}
-	if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
-		t.Fatal(diff)
-	}
+		// 1 should not be included because of "access_level" < 20
+		expAccountIDs := []extsvc.AccountID{"2", "3"}
+		if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("token type OAuth", func(t *testing.T) {
+		p := newOAuthProvider(
+			OAuthProviderOp{
+				BaseURL:   mustURL(t, "https://gitlab.com"),
+				Token:     "admin_token",
+				TokenType: gitlab.TokenTypeOAuth,
+			},
+			&mockDoer{
+				do: func(r *http.Request) (*http.Response, error) {
+					want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
+					if r.URL.String() != want {
+						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
+					}
+
+					want = "Bearer admin_token"
+					got := r.Header.Get("Authorization")
+					if got != want {
+						return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
+					}
+
+					body := `
+[
+	{"id": 1, "access_level": 10},
+	{"id": 2, "access_level": 20},
+	{"id": 3, "access_level": 30}
+]`
+					return &http.Response{
+						Status:     http.StatusText(http.StatusOK),
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+					}, nil
+				},
+			},
+		)
+
+		accountIDs, err := p.FetchRepoPerms(context.Background(),
+			&extsvc.Repository{
+				URI: "gitlab.com/user/repo",
+				ExternalRepoSpec: api.ExternalRepoSpec{
+					ServiceType: "gitlab",
+					ServiceID:   "https://gitlab.com/",
+					ID:          "gitlab_project_id",
+				},
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// 1 should not be included because of "access_level" < 20
+		expAccountIDs := []extsvc.AccountID{"2", "3"}
+		if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 }

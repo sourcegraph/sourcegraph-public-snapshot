@@ -195,7 +195,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           <span
             className="h5 mb-0 font-weight-bold"
           >
-            Welcome to Sourcegraph
+            <div
+              className="p-2"
+            >
+              Welcome to Sourcegraph
+            </div>
           </span>
           <div
             className="h5 mb-0 font-weight-normal"
@@ -230,7 +234,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           data-reach-accordion=""
         >
           <div
-            className="activation-checklist__container list-group-item "
+            className="activation-checklist__container list-group-item"
             data-reach-accordion-item=""
             data-state="open"
           >

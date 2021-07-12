@@ -24,3 +24,15 @@
         flex: 1;
     }
 }
+
+.user-node {
+    &__container {
+        .theme-redesign & {
+            border: 0;
+            padding: 0.5rem 0;
+            + .user-node__container {
+                border-top: 1px solid var(--border-color);
+            }
+        }
+    }
+}

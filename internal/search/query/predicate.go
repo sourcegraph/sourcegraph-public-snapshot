@@ -1,10 +1,10 @@
 package query
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 type Predicate interface {
@@ -32,6 +32,10 @@ var DefaultPredicateRegistry = predicateRegistry{
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 	},
+	FieldFile: {
+		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
+		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
+	},
 }
 
 type predicateRegistry map[string]map[string]func() Predicate
@@ -51,7 +55,7 @@ func (pr predicateRegistry) Get(field, name string) Predicate {
 }
 
 var (
-	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?P<params>.*)\)$`)
+	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?s:(?P<params>.*))\)$`)
 	nameIndex       = predicateRegexp.SubexpIndex("name")
 	paramsIndex     = predicateRegexp.SubexpIndex("params")
 )
@@ -62,7 +66,7 @@ var (
 func ParseAsPredicate(value string) (name, params string) {
 	match := predicateRegexp.FindStringSubmatch(value)
 	if match == nil {
-		panic("Invariant broken: attempt to parse a predicate value " + value + " that has not been validated")
+		panic("Invariant broken: attempt to parse a predicate value " + value + " which appears to have not been properly validated")
 	}
 	name = match[nameIndex]
 	params = match[paramsIndex]
@@ -113,10 +117,10 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			}
 			f.Content = v.Value
 		default:
-			return fmt.Errorf("unsupported option %q", v.Field)
+			return errors.Errorf("unsupported option %q", v.Field)
 		}
 	case Pattern:
-		return fmt.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
+		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
 	case Operator:
 		if v.Kind == Or {
 			return errors.New("predicates do not currently support 'or' queries")
@@ -127,7 +131,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			}
 		}
 	default:
-		return fmt.Errorf("unsupported node type %T", n)
+		return errors.Errorf("unsupported node type %T", n)
 	}
 	return nil
 }
@@ -170,10 +174,10 @@ type RepoContainsContentPredicate struct {
 
 func (f *RepoContainsContentPredicate) ParseParams(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
-		return fmt.Errorf("contains.content argument: %w", err)
+		return errors.Errorf("contains.content argument: %w", err)
 	}
 	if params == "" {
-		return fmt.Errorf("contains.content argument should not be empty")
+		return errors.Errorf("contains.content argument should not be empty")
 	}
 	f.Pattern = params
 	return nil
@@ -194,10 +198,10 @@ type RepoContainsFilePredicate struct {
 
 func (f *RepoContainsFilePredicate) ParseParams(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
-		return fmt.Errorf("contains.file argument: %w", err)
+		return errors.Errorf("contains.file argument: %w", err)
 	}
 	if params == "" {
-		return fmt.Errorf("contains.file argument should not be empty")
+		return errors.Errorf("contains.file argument should not be empty")
 	}
 	f.Pattern = params
 	return nil
@@ -233,6 +237,41 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	}, Parameter{
 		Field: FieldRepoHasCommitAfter,
 		Value: f.TimeRef,
+	})
+
+	nodes = append(nodes, nonPredicateRepos(parent)...)
+	return ToPlan(Dnf(nodes))
+}
+
+type FileContainsContentPredicate struct {
+	Pattern string
+}
+
+func (f *FileContainsContentPredicate) ParseParams(params string) error {
+	if _, err := regexp.Compile(params); err != nil {
+		return errors.Errorf("file:contains.content argument: %w", err)
+	}
+	if params == "" {
+		return errors.Errorf("file:contains.content argument should not be empty")
+	}
+	f.Pattern = params
+	return nil
+}
+
+func (f FileContainsContentPredicate) Field() string { return FieldFile }
+func (f FileContainsContentPredicate) Name() string  { return "contains.content" }
+
+func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
+	nodes := make([]Node, 0, 3)
+	nodes = append(nodes, Parameter{
+		Field: FieldCount,
+		Value: "99999",
+	}, Parameter{
+		Field: FieldType,
+		Value: "file",
+	}, Pattern{
+		Value:      f.Pattern,
+		Annotation: Annotation{Labels: Regexp},
 	})
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)

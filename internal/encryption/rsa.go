@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
 

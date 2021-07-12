@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/cmd/precise-code-intel-tester/util"
@@ -93,7 +94,7 @@ func makeTestQueryFunction(name string, location Location, expectedLocations []L
 			sortLocations(locations)
 
 			if diff := cmp.Diff(expectedLocations, locations); diff != "" {
-				return fmt.Errorf("unexpected locations (-want +got):\n%s", diff)
+				return errors.Errorf("unexpected locations (-want +got):\n%s", diff)
 			}
 		}
 
@@ -172,7 +173,7 @@ func queryDefinitions(ctx context.Context, location Location) (locations []Locat
 	}
 
 	payload := QueryResponse{}
-	if err := util.QueryGraphQL(ctx, endpoint, token, query, variables, &payload); err != nil {
+	if err := util.QueryGraphQL(ctx, endpoint, "CodeIntelTesterDefinitions", token, query, variables, &payload); err != nil {
 		return nil, err
 	}
 
@@ -246,7 +247,7 @@ func queryReferences(ctx context.Context, location Location) (locations []Locati
 		}
 
 		payload := QueryResponse{}
-		if err := util.QueryGraphQL(ctx, endpoint, token, query, variables, &payload); err != nil {
+		if err := util.QueryGraphQL(ctx, endpoint, "CodeIntelTesterReferences", token, query, variables, &payload); err != nil {
 			return nil, err
 		}
 

@@ -32,6 +32,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### New features
 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
+- [How to use feature flags](how-to/use_feature_flags.md)
 
 ### [Troubleshooting](how-to/troubleshooting_local_development.md)
 
@@ -44,6 +45,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [Running out of disk space](how-to/troubleshooting_local_development.md#running-out-of-disk-space)
 - [Certificate expiry](how-to/troubleshooting_local_development.md#certificate-expiry)
 - [CPU/RAM/bandwidth/battery usage](how-to/troubleshooting_local_development.md#cpurambandwidthbattery-usage)
+- [Permission errors for Grafana and Prometheus](how-to/troubleshooting_local_development.md#permission-errors-for-grafana-and-prometheus-containers)
 
 ### Implementing Sourcegraph
 

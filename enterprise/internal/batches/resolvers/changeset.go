@@ -2,13 +2,12 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -171,7 +170,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 		return nil, err
 	}
@@ -342,7 +341,7 @@ func (r *changesetResolver) State() (string, error) {
 	case btypes.ChangesetExternalStateDeleted:
 		return string(btypes.ChangesetStateDeleted), nil
 	default:
-		return "", fmt.Errorf("invalid ExternalState %q for state calculation", r.changeset.ExternalState)
+		return "", errors.Errorf("invalid ExternalState %q for state calculation", r.changeset.ExternalState)
 	}
 }
 

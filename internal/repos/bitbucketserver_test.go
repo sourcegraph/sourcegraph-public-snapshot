@@ -2,10 +2,11 @@ package repos
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +71,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 }
 
 func TestBitbucketServerSource_Exclude(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +199,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 				src, err := bbsSrc.WithAuthenticator(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {

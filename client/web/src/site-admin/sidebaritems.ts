@@ -26,10 +26,6 @@ export const overviewGroup: SiteAdminSideBarGroup = {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
         },
-        {
-            label: 'Migrations',
-            to: '/site-admin/migrations',
-        },
     ],
 }
 
@@ -105,6 +101,10 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Report a bug',
             to: '/site-admin/report-bug',
+        },
+        {
+            label: 'Migrations',
+            to: '/site-admin/migrations',
         },
         {
             label: 'Instrumentation',

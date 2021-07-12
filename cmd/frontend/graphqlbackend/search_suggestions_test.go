@@ -10,15 +10,15 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -26,8 +26,6 @@ import (
 
 func TestSearchSuggestions(t *testing.T) {
 	db := new(dbtesting.MockDB)
-
-	limitOffset := &database.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
@@ -53,11 +51,11 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	}
 
-	run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
+	symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}
-	defer func() { run.MockSearchSymbols = nil }()
+	defer func() { symbol.MockSearchSymbols = nil }()
 
 	mockDecodedViewerFinalSettings = &schema.Settings{}
 	defer func() { mockDecodedViewerFinalSettings = nil }()
@@ -83,11 +81,6 @@ func TestSearchSuggestions(t *testing.T) {
 		var calledReposListNamesAll, calledReposListFoo bool
 		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
-
 			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
 				// when treating term as repo: field
 				calledReposListFoo = true
@@ -109,7 +102,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer git.ResetMocks()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -118,9 +111,9 @@ func TestSearchSuggestions(t *testing.T) {
 			rev := "rev"
 			fm.CommitID = "rev"
 			fm.InputRev = &rev
-			return []*result.FileMatch{fm}, &streaming.Stats{}, nil
+			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
-		defer func() { run.MockSearchFilesInRepos = nil }()
+		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 		for _, v := range searchVersions {
 			testSuggestions(t, "foo", v, []string{"repo:foo-repo", "file:dir/file"})
 			if !calledReposListNamesAll {
@@ -132,91 +125,6 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
-		}
-	})
-
-	t.Run("repogroup: and single term", func(t *testing.T) {
-		t.Skip("TODO(slimsag): this test is not reliable")
-		var mu sync.Mutex
-
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		var calledReposListRepoNamesInGroup, calledReposListFooRepo3 bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
-			mu.Lock()
-			defer mu.Unlock()
-			wantReposInGroup := database.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, LimitOffset: limitOffset}    // when treating term as repo: field
-			wantFooRepo3 := database.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, LimitOffset: limitOffset} // when treating term as repo: field
-			if reflect.DeepEqual(op, wantReposInGroup) {
-				calledReposListRepoNamesInGroup = true
-				return []types.RepoName{
-					{Name: "foo-repo1"},
-					{Name: "repo3"},
-				}, nil
-			} else if reflect.DeepEqual(op, wantFooRepo3) {
-				calledReposListFooRepo3 = true
-				return []types.RepoName{{Name: "foo-repo1"}}, nil
-			}
-			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
-			return nil, nil
-		}
-		database.Mocks.Repos.Count = mockCount
-		defer func() { database.Mocks = database.MockStores{} }()
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
-
-		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
-			mu.Lock()
-			defer mu.Unlock()
-			calledSearchFilesInRepos.Store(true)
-			if args.PatternInfo.Pattern != "." && args.PatternInfo.Pattern != "foo" {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
-			}
-			mk := func(name api.RepoName, path string) *result.FileMatch {
-				fm := mkFileMatch(types.RepoName{Name: name}, path)
-				fm.CommitID = "rev"
-				rev := "rev"
-				fm.InputRev = &rev
-				return fm
-			}
-			return []*result.FileMatch{
-				mk("repo3", "dir/foo-repo3-file-name-match"),
-				mk("repo1", "dir/foo-repo1-file-name-match"),
-				mk("repo", "dir/file-content-match"),
-			}, &streaming.Stats{}, nil
-		}
-		defer func() { run.MockSearchFilesInRepos = nil }()
-
-		calledResolveRepoGroups := false
-		searchrepos.MockResolveRepoGroups = func() (map[string][]searchrepos.RepoGroupValue, error) {
-			mu.Lock()
-			defer mu.Unlock()
-			calledResolveRepoGroups = true
-			return map[string][]searchrepos.RepoGroupValue{
-				"baz": {
-					searchrepos.RepoPath("foo-repo1"),
-					searchrepos.RepoPath("repo3"),
-				},
-			}, nil
-		}
-		defer func() { searchrepos.MockResolveRepoGroups = nil }()
-		for _, v := range searchVersions {
-			testSuggestions(t, "repogroup:baz foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
-			if !calledReposListRepoNamesInGroup {
-				t.Error("!calledReposListRepoNamesInGroup")
-			}
-			if !calledReposListFooRepo3 {
-				t.Error("!calledReposListFooRepo3")
-			}
-			if !calledSearchFilesInRepos.Load() {
-				t.Error("!calledSearchFilesInRepos")
-			}
-			if !calledResolveRepoGroups {
-				t.Error("!calledResolveRepoGroups")
-			}
-
 		}
 	})
 
@@ -232,10 +140,6 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledReposListRepoNames = true
 
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
 			return []types.RepoName{{Name: "foo-repo"}}, nil
@@ -248,22 +152,22 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
-			repos, err := getRepos(context.Background(), args.RepoPromise)
+			repos, err := args.RepoPromise.Get(context.Background())
 			if err != nil {
 				t.Error(err)
 			}
 			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
 				t.Errorf("got %q, want %q", repos, want)
 			}
-			return []*result.FileMatch{
+			return []result.Match{
 				mkFileMatch(types.RepoName{Name: "foo-repo"}, "dir/file"),
 			}, &streaming.Stats{}, nil
 		}
-		defer func() { run.MockSearchFilesInRepos = nil }()
+		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo", v, []string{"repo:foo-repo", "file:dir/file"})
@@ -353,10 +257,6 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledReposListRepoNames = true
 
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
 			return []types.RepoName{{Name: "foo-repo"}}, nil
@@ -369,20 +269,20 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
-			repos, err := getRepos(context.Background(), args.RepoPromise)
+			repos, err := args.RepoPromise.Get(context.Background())
 			if err != nil {
 				t.Error(err)
 			}
 			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
 				t.Errorf("got %q, want %q", repos, want)
 			}
-			return []*result.FileMatch{mkFileMatch(types.RepoName{Name: "foo-repo"}, "dir/bar-file")}, &streaming.Stats{}, nil
+			return []result.Match{mkFileMatch(types.RepoName{Name: "foo-repo"}, "dir/bar-file")}, &streaming.Stats{}, nil
 		}
-		defer func() { run.MockSearchFilesInRepos = nil }()
+		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo file:bar", v, []string{"file:dir/bar-file"})

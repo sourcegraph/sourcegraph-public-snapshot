@@ -10,7 +10,6 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"reflect"
@@ -948,6 +947,100 @@ func TestClient_CreatePullRequestComment(t *testing.T) {
 	}
 }
 
+func TestClient_MergePullRequest(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "https://bitbucket.sgdev.org"
+	}
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	pr := &PullRequest{}
+	pr.ToRef.Repository.Slug = "automation-testing"
+	pr.ToRef.Repository.Project.Key = "SOUR"
+
+	for _, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   func() *PullRequest
+		err  string
+	}{
+		{
+			name: "timeout",
+			pr:   func() *PullRequest { return pr },
+			ctx:  timeout,
+			err:  "context deadline exceeded",
+		},
+		{
+			name: "ToRef repo not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.Repository.Slug = ""
+				return &pr
+			},
+			err: "repository slug empty",
+		},
+		{
+			name: "ToRef project not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.Repository.Project.Key = ""
+				return &pr
+			},
+			err: "project key empty",
+		},
+		{
+			name: "success",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ID = 146
+				pr.Version = 0
+				return &pr
+			},
+		},
+		{
+			name: "not mergeable",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ID = 146
+				pr.Version = 1
+				return &pr
+			},
+			err: "pull request cannot be merged",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			name := "MergePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
+
+			cli, save := NewTestClient(t, name, *update)
+			defer save()
+
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
+
+			pr := tc.pr()
+			err := cli.MergePullRequest(tc.ctx, pr)
+			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
+				t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil || tc.err != "<nil>" {
+				return
+			}
+
+			checkGolden(t, name, pr)
+		})
+	}
+}
+
 // NOTE: This test validates that correct repository IDs are returned from the
 // roaring bitmap permissions endpoint. Therefore, the expected results are
 // dependent on the user token supplied. The current golden files are generated
@@ -974,12 +1067,12 @@ func checkGolden(t *testing.T, name string, got interface{}) {
 
 	path := "testdata/golden/" + name
 	if *update {
-		if err = ioutil.WriteFile(path, data, 0640); err != nil {
+		if err = os.WriteFile(path, data, 0640); err != nil {
 			t.Fatalf("failed to update golden file %q: %s", path, err)
 		}
 	}
 
-	golden, err := ioutil.ReadFile(path)
+	golden, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read golden file %q: %s", path, err)
 	}
@@ -1178,6 +1271,21 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 	if newClient.RateLimit != old.RateLimit {
 		t.Fatalf("RateLimit: want %#v but got %#v", old.RateLimit, newClient.RateLimit)
+	}
+}
+
+func TestClient_GetVersion(t *testing.T) {
+	fixture := "GetVersion"
+	cli, save := NewTestClient(t, fixture, *update)
+	defer save()
+
+	have, err := cli.GetVersion(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := "7.11.2"; have != want {
+		t.Fatalf("wrong version. want=%s, have=%s", want, have)
 	}
 }
 

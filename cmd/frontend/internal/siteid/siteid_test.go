@@ -2,10 +2,11 @@ package siteid
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,7 +36,7 @@ func TestGet(t *testing.T) {
 	tryInit := func() (err error) {
 		defer func() {
 			if e := recover(); e != nil {
-				err = fmt.Errorf("panic: %v", e)
+				err = errors.Errorf("panic: %v", e)
 			}
 		}()
 		Init()
@@ -65,7 +66,7 @@ func TestGet(t *testing.T) {
 			return nil, errors.New("x")
 		}
 
-		want := fmt.Errorf("panic: [Error initializing global state: x]")
+		want := errors.Errorf("panic: [Error initializing global state: x]")
 		if err := tryInit(); fmt.Sprint(err) != fmt.Sprint(want) {
 			t.Errorf("got error %q, want %q", err, want)
 		}

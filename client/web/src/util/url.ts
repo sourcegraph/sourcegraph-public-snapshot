@@ -4,7 +4,8 @@ import {
     LineOrPositionOrRange,
     lprToRange,
     ParsedRepoURI,
-    parseHash,
+    parseQueryAndHash,
+    RepoDocumentation,
     RepoFile,
     toPositionHashComponent,
 } from '@sourcegraph/shared/src/util/url'
@@ -13,15 +14,16 @@ export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
 }
 
+export function toDocumentationURL(target: RepoDocumentation): string {
+    return `/${encodeRepoRevision(target)}/-/docs${target.pathID}`
+}
+
 /**
- * Returns the LineOrPositionOrRange and given URLSearchParams as a string.
+ * Returns the given URLSearchParams as a string.
  */
-export function formatHash(lpr: LineOrPositionOrRange, searchParameters: URLSearchParams): string {
-    if (!lpr.line) {
-        return `#${searchParameters.toString()}`
-    }
+export function formatHash(searchParameters: URLSearchParams): string {
     const anyParameters = [...searchParameters].length > 0
-    return `#L${formatLineOrPositionOrRange(lpr)}${anyParameters ? '&' + searchParameters.toString() : ''}`
+    return `${anyParameters ? '#' + searchParameters.toString() : ''}`
 }
 
 /**
@@ -30,10 +32,10 @@ export function formatHash(lpr: LineOrPositionOrRange, searchParameters: URLSear
  *
  * @param lpr The `LineOrPositionOrRange`
  */
-function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
+export function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string | undefined {
     const range = lprToRange(lpr)
     if (!range) {
-        return ''
+        return undefined
     }
     const emptyRange = range.start.line === range.end.line && range.start.character === range.end.character
     return emptyRange
@@ -105,25 +107,23 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     }
     let position: Position | undefined
     let range: Range | undefined
-    if (url.hash) {
-        const parsedHash = parseHash(url.hash.slice('#'.length))
-        if (parsedHash.line) {
-            position = {
-                line: parsedHash.line,
-                character: parsedHash.character || 0,
-            }
-            if (parsedHash.endLine) {
-                range = {
-                    start: position,
-                    end: {
-                        line: parsedHash.endLine,
-                        character: parsedHash.endCharacter || 0,
-                    },
-                }
+
+    const parsedHash = parseQueryAndHash(url.search, url.hash)
+    if (parsedHash.line) {
+        position = {
+            line: parsedHash.line,
+            character: parsedHash.character || 0,
+        }
+        if (parsedHash.endLine) {
+            range = {
+                start: position,
+                end: {
+                    line: parsedHash.endLine,
+                    character: parsedHash.endCharacter || 0,
+                },
             }
         }
     }
-
     return { repoName, revision, rawRevision, commitID, filePath, commitRange, position, range }
 }
 

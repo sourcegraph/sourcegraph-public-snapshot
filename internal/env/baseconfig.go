@@ -1,12 +1,24 @@
 package env
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 )
+
+type Config interface {
+	// Load is called prior to env.Lock an application startup. This method should
+	// read the values from the environment and store errors to be reported later.
+	Load()
+
+	// Validate performs non-trivial validation and returns any resulting errors.
+	// This method should also return errors that occurred while reading values from
+	// the environment in Load. This method is called after the environment has been
+	// locked, so all environment variable reads must happen in Load.
+	Validate() error
+}
 
 // BaseConfig is a base struct for configuration objects. The following is a minimal
 // example of declaring, loading, and validating configuration from the environment.
@@ -66,7 +78,7 @@ func (c *BaseConfig) Validate() error {
 func (c *BaseConfig) Get(name, defaultValue, description string) string {
 	rawValue := c.get(name, defaultValue, description)
 	if rawValue == "" {
-		c.AddError(fmt.Errorf("invalid value %q for %s: no value supplied", rawValue, name))
+		c.AddError(errors.Errorf("invalid value %q for %s: no value supplied", rawValue, name))
 		return ""
 	}
 
@@ -86,7 +98,7 @@ func (c *BaseConfig) GetInt(name, defaultValue, description string) int {
 	rawValue := c.get(name, defaultValue, description)
 	i, err := strconv.ParseInt(rawValue, 10, 64)
 	if err != nil {
-		c.AddError(fmt.Errorf("invalid int %q for %s: %s", rawValue, name, err))
+		c.AddError(errors.Errorf("invalid int %q for %s: %s", rawValue, name, err))
 		return 0
 	}
 
@@ -101,7 +113,7 @@ func (c *BaseConfig) GetInt(name, defaultValue, description string) int {
 func (c *BaseConfig) GetPercent(name, defaultValue, description string) int {
 	value := c.GetInt(name, defaultValue, description)
 	if value < 0 || value > 100 {
-		c.AddError(fmt.Errorf("invalid percent %q for %s: must be 0 <= p <= 100", value, name))
+		c.AddError(errors.Errorf("invalid percent %q for %s: must be 0 <= p <= 100", value, name))
 		return 0
 	}
 
@@ -112,7 +124,7 @@ func (c *BaseConfig) GetInterval(name, defaultValue, description string) time.Du
 	rawValue := c.get(name, defaultValue, description)
 	d, err := time.ParseDuration(rawValue)
 	if err != nil {
-		c.AddError(fmt.Errorf("invalid duration %q for %s: %s", rawValue, name, err))
+		c.AddError(errors.Errorf("invalid duration %q for %s: %s", rawValue, name, err))
 		return 0
 	}
 
@@ -127,7 +139,7 @@ func (c *BaseConfig) GetBool(name, defaultValue, description string) bool {
 	rawValue := c.get(name, defaultValue, description)
 	v, err := strconv.ParseBool(rawValue)
 	if err != nil {
-		c.AddError(fmt.Errorf("invalid bool %q for %s: %s", rawValue, name, err))
+		c.AddError(errors.Errorf("invalid bool %q for %s: %s", rawValue, name, err))
 		return false
 	}
 

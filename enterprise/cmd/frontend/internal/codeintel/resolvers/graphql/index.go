@@ -13,12 +13,22 @@ import (
 
 type IndexResolver struct {
 	index            store.Index
+	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 }
 
-func NewIndexResolver(index store.Index, locationResolver *CachedLocationResolver) gql.LSIFIndexResolver {
+func NewIndexResolver(index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFIndexResolver {
+	if index.AssociatedUploadID != nil {
+		// Request the next batch of upload fetches to contain the record's associated
+		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
+		// invocation in the AssociatedUpload method to batch its work with sibling
+		// resolvers, which share the same prefetcher instance.
+		prefetcher.MarkUpload(*index.AssociatedUploadID)
+	}
+
 	return &IndexResolver{
 		index:            index,
+		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
 	}
 }
@@ -41,6 +51,19 @@ func (r *IndexResolver) State() string {
 	}
 
 	return state
+}
+
+func (r *IndexResolver) AssociatedUpload(ctx context.Context) (gql.LSIFUploadResolver, error) {
+	if r.index.AssociatedUploadID == nil {
+		return nil, nil
+	}
+
+	upload, exists, err := r.prefetcher.GetUploadByID(ctx, *r.index.AssociatedUploadID)
+	if err != nil || !exists {
+		return nil, err
+	}
+
+	return NewUploadResolver(upload, r.prefetcher, r.locationResolver), nil
 }
 
 func (r *IndexResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {

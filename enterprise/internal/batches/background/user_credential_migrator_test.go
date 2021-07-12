@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -19,7 +19,7 @@ import (
 
 func TestUserCredentialMigrator(t *testing.T) {
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	cstore := store.New(db, et.TestKey{})
 
@@ -195,8 +195,9 @@ func createUnencryptedUserCredential(
 	if err := store.Exec(
 		ctx,
 		sqlf.Sprintf(
-			"UPDATE user_credentials SET credential = %s, encryption_key_id = '' WHERE id = %s",
+			"UPDATE user_credentials SET credential = %s, encryption_key_id = %s WHERE id = %s",
 			raw,
+			database.UserCredentialUnmigratedEncryptionKeyID,
 			cred.ID,
 		),
 	); err != nil {

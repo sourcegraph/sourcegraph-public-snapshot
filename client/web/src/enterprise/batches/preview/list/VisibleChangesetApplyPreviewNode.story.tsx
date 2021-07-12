@@ -17,7 +17,7 @@ import styles from './PreviewList.module.scss'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
 const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
+    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
 ))
 
 const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }

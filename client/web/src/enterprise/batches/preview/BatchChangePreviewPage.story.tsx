@@ -18,7 +18,7 @@ import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyP
 import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
 
 const { add } = storiesOf('web/batches/preview/BatchChangePreviewPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
@@ -63,6 +63,7 @@ const batchSpec = (): BatchSpecFields => ({
         totalCount: 0,
         nodes: [],
     },
+    originalInput: 'name: awesome-batch-change\ndescription: somestring',
     applyPreview: {
         stats: {
             close: 10,
@@ -79,6 +80,7 @@ const batchSpec = (): BatchSpecFields => ({
             modified: 10,
             removed: 3,
         },
+        totalCount: 18,
     },
 })
 
@@ -184,6 +186,27 @@ add('Missing credentials', () => (
                 expandChangesetDescriptions={true}
                 batchSpecID="123123"
                 fetchBatchSpecById={fetchBatchSpecMissingCredentials}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
+                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('Spec file', () => (
+    <EnterpriseWebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
+        {props => (
+            <BatchChangePreviewPage
+                {...props}
+                expandChangesetDescriptions={true}
+                batchSpecID="123123"
+                fetchBatchSpecById={fetchBatchSpecCreate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{

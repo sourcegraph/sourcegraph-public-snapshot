@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,8 +14,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -222,7 +223,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmtHash := strings.TrimSpace(string(out))
 
 	// Move objects from tmpObjectsDir to repoObjectsDir.
-	err = filepath.Walk(tmpObjectsDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(tmpObjectsDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

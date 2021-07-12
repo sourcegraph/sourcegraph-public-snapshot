@@ -3,20 +3,20 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/goreman"
 )
 
 func do() error {
 	if len(os.Args) != 2 {
-		return fmt.Errorf("USAGE: %s Procfile", os.Args[0])
+		return errors.Errorf("USAGE: %s Procfile", os.Args[0])
 	}
 
-	procfile, err := ioutil.ReadFile(os.Args[1])
+	procfile, err := os.ReadFile(os.Args[1])
 	if err != nil {
 		return err
 	}

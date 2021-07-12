@@ -8,7 +8,6 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -64,15 +63,15 @@ const expectedFallbackIndexConfiguration = `{
 
 func TestFallbackIndexConfiguration(t *testing.T) {
 	mockDBStore := NewMockDBStore() // returns no dumps
-	mockEnqueuerDBStore := enqueuer.NewMockDBStore()
+	mockEnqueuerDBStore := NewMockEnqueuerDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
-	gitServerClient := enqueuer.NewMockGitserverClient()
-	mockRepoUpdater := inference.NewMockRepoUpdaterClient()
+	gitServerClient := NewMockEnqueuerGitserverClient()
+	mockRepoUpdater := NewMockRepoUpdaterClient()
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, mockRepoUpdater, &observation.TestContext)
 
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(dbstore.IndexConfiguration{}, false, nil)
-	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", nil)
+	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", true, nil)
 	gitServerClient.ListFilesFunc.SetDefaultReturn([]string{"go.mod"}, nil)
 
 	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, indexEnqueuer, nil, &observation.TestContext)

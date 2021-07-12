@@ -6,12 +6,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // Client is capable of posting a message to a Slack webhook
@@ -86,11 +85,11 @@ func (c *Client) Post(ctx context.Context, payload *Payload) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("slack: %s failed with %d %s", payloadJSON, resp.StatusCode, string(body))
+		return errors.Errorf("slack: %s failed with %d %s", payloadJSON, resp.StatusCode, string(body))
 	}
 	return nil
 }

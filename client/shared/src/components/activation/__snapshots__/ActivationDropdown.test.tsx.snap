@@ -267,10 +267,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
         hidden={false}
       >
         <Popover
+          as="div"
           className="activation-dropdown dropdown-menu show"
           data-reach-menu=""
           data-reach-menu-popover=""
           hidden={false}
+          onBlur={[Function]}
           targetRef={
             Object {
               "current": <button
@@ -366,16 +368,16 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         data-reach-accordion=""
                       >
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
                           <button
-                            aria-controls="panel--3--0"
+                            aria-controls="panel--1--0"
                             aria-expanded="false"
                             class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
-                            id="button--3--0"
+                            id="button--1--0"
                           >
                             <div
                               class="activation-checklist-item d-flex justify-content-between"
@@ -433,12 +435,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                             </div>
                           </button>
                           <div
-                            aria-labelledby="button--3--0"
+                            aria-labelledby="button--1--0"
                             class="px-2"
                             data-reach-accordion-panel=""
                             data-state="collapsed"
                             hidden=""
-                            id="panel--3--0"
+                            id="panel--1--0"
                             role="region"
                             tabindex="-1"
                           >
@@ -450,16 +452,16 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           </div>
                         </div>
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
                           <button
-                            aria-controls="panel--3--1"
+                            aria-controls="panel--1--1"
                             aria-expanded="false"
                             class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
-                            id="button--3--1"
+                            id="button--1--1"
                           >
                             <div
                               class="activation-checklist-item d-flex justify-content-between"
@@ -517,12 +519,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                             </div>
                           </button>
                           <div
-                            aria-labelledby="button--3--1"
+                            aria-labelledby="button--1--1"
                             class="px-2"
                             data-reach-accordion-panel=""
                             data-state="collapsed"
                             hidden=""
-                            id="panel--3--1"
+                            id="panel--1--1"
                             role="region"
                             tabindex="-1"
                           >
@@ -547,16 +549,16 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           </div>
                         </div>
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
                           <button
-                            aria-controls="panel--3--2"
+                            aria-controls="panel--1--2"
                             aria-expanded="false"
                             class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
-                            id="button--3--2"
+                            id="button--1--2"
                           >
                             <div
                               class="activation-checklist-item d-flex justify-content-between"
@@ -614,12 +616,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                             </div>
                           </button>
                           <div
-                            aria-labelledby="button--3--2"
+                            aria-labelledby="button--1--2"
                             class="px-2"
                             data-reach-accordion-panel=""
                             data-state="collapsed"
                             hidden=""
-                            id="panel--3--2"
+                            id="panel--1--2"
                             role="region"
                             tabindex="-1"
                           >
@@ -631,16 +633,16 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           </div>
                         </div>
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
                           <button
-                            aria-controls="panel--3--3"
+                            aria-controls="panel--1--3"
                             aria-expanded="false"
                             class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
-                            id="button--3--3"
+                            id="button--1--3"
                           >
                             <div
                               class="activation-checklist-item d-flex justify-content-between"
@@ -698,12 +700,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                             </div>
                           </button>
                           <div
-                            aria-labelledby="button--3--3"
+                            aria-labelledby="button--1--3"
                             class="px-2"
                             data-reach-accordion-panel=""
                             data-state="collapsed"
                             hidden=""
-                            id="panel--3--3"
+                            id="panel--1--3"
                             role="region"
                             tabindex="-1"
                           >
@@ -721,10 +723,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               }
             >
               <PopoverImpl
+                as="div"
                 className="activation-dropdown dropdown-menu show"
                 data-reach-menu=""
                 data-reach-menu-popover=""
                 hidden={false}
+                onBlur={[Function]}
                 targetRef={
                   Object {
                     "current": <button
@@ -794,6 +798,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                   data-reach-menu-popover=""
                   data-reach-popover=""
                   hidden={false}
+                  onBlur={[Function]}
                   style={
                     Object {
                       "left": "0px",
@@ -954,11 +959,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               Object {
                                 "disabled": false,
                                 "element": <button
-                                  aria-controls="panel--3--0"
+                                  aria-controls="panel--1--0"
                                   aria-expanded="false"
                                   class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
-                                  id="button--3--0"
+                                  id="button--1--0"
                                 >
                                   <div
                                     class="activation-checklist-item d-flex justify-content-between"
@@ -1020,11 +1025,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               Object {
                                 "disabled": false,
                                 "element": <button
-                                  aria-controls="panel--3--1"
+                                  aria-controls="panel--1--1"
                                   aria-expanded="false"
                                   class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
-                                  id="button--3--1"
+                                  id="button--1--1"
                                 >
                                   <div
                                     class="activation-checklist-item d-flex justify-content-between"
@@ -1086,11 +1091,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               Object {
                                 "disabled": false,
                                 "element": <button
-                                  aria-controls="panel--3--2"
+                                  aria-controls="panel--1--2"
                                   aria-expanded="false"
                                   class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
-                                  id="button--3--2"
+                                  id="button--1--2"
                                 >
                                   <div
                                     class="activation-checklist-item d-flex justify-content-between"
@@ -1152,11 +1157,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               Object {
                                 "disabled": false,
                                 "element": <button
-                                  aria-controls="panel--3--3"
+                                  aria-controls="panel--1--3"
                                   aria-expanded="false"
                                   class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
-                                  id="button--3--3"
+                                  id="button--1--3"
                                 >
                                   <div
                                     class="activation-checklist-item d-flex justify-content-between"
@@ -1223,11 +1228,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                             data-reach-accordion=""
                           >
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="ConnectedCodeHost"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >
@@ -1235,18 +1240,17 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
-                                    aria-controls="panel--3--0"
+                                    aria-controls="panel--1--0"
                                     aria-expanded={false}
                                     className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
-                                    id="button--3--0"
+                                    id="button--1--0"
                                     onClick={[Function]}
                                     onKeyDown={[Function]}
                                   >
                                     <ActivationChecklistItem
                                       detail="Configure Sourcegraph to talk to your code host and fetch a list of your repositories."
                                       done={false}
-                                      history="[History]"
                                       id="ConnectedCodeHost"
                                       key="ConnectedCodeHost"
                                       title="Add repositories"
@@ -1288,12 +1292,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="px-2"
                                 >
                                   <div
-                                    aria-labelledby="button--3--0"
+                                    aria-labelledby="button--1--0"
                                     className="px-2"
                                     data-reach-accordion-panel=""
                                     data-state="collapsed"
                                     hidden={true}
-                                    id="panel--3--0"
+                                    id="panel--1--0"
                                     role="region"
                                     tabIndex={-1}
                                   >
@@ -1307,11 +1311,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               </div>
                             </AccordionItem>
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="DidSearch"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >
@@ -1319,11 +1323,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
-                                    aria-controls="panel--3--1"
+                                    aria-controls="panel--1--1"
                                     aria-expanded={false}
                                     className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
-                                    id="button--3--1"
+                                    id="button--1--1"
                                     onClick={[Function]}
                                     onKeyDown={[Function]}
                                   >
@@ -1345,7 +1349,6 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         </span>
                                       }
                                       done={false}
-                                      history="[History]"
                                       id="DidSearch"
                                       key="DidSearch"
                                       title="Search your code"
@@ -1387,12 +1390,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="px-2"
                                 >
                                   <div
-                                    aria-labelledby="button--3--1"
+                                    aria-labelledby="button--1--1"
                                     className="px-2"
                                     data-reach-accordion-panel=""
                                     data-state="collapsed"
                                     hidden={true}
-                                    id="panel--3--1"
+                                    id="panel--1--1"
                                     role="region"
                                     tabIndex={-1}
                                   >
@@ -1419,11 +1422,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               </div>
                             </AccordionItem>
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="FoundReferences"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >
@@ -1431,18 +1434,17 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
-                                    aria-controls="panel--3--2"
+                                    aria-controls="panel--1--2"
                                     aria-expanded={false}
                                     className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
-                                    id="button--3--2"
+                                    id="button--1--2"
                                     onClick={[Function]}
                                     onKeyDown={[Function]}
                                   >
                                     <ActivationChecklistItem
                                       detail="To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click \\"Find references\\"."
                                       done={false}
-                                      history="[History]"
                                       id="FoundReferences"
                                       key="FoundReferences"
                                       title="Find some references"
@@ -1484,12 +1486,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="px-2"
                                 >
                                   <div
-                                    aria-labelledby="button--3--2"
+                                    aria-labelledby="button--1--2"
                                     className="px-2"
                                     data-reach-accordion-panel=""
                                     data-state="collapsed"
                                     hidden={true}
-                                    id="panel--3--2"
+                                    id="panel--1--2"
                                     role="region"
                                     tabIndex={-1}
                                   >
@@ -1503,11 +1505,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               </div>
                             </AccordionItem>
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="EnabledSharing"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >
@@ -1515,18 +1517,17 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
-                                    aria-controls="panel--3--3"
+                                    aria-controls="panel--1--3"
                                     aria-expanded={false}
                                     className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
-                                    id="button--3--3"
+                                    id="button--1--3"
                                     onClick={[Function]}
                                     onKeyDown={[Function]}
                                   >
                                     <ActivationChecklistItem
                                       detail="Configure a single-sign on (SSO) provider or have at least one other teammate sign up."
                                       done={false}
-                                      history="[History]"
                                       id="EnabledSharing"
                                       key="EnabledSharing"
                                       title="Configure SSO or share with teammates"
@@ -1568,12 +1569,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   className="px-2"
                                 >
                                   <div
-                                    aria-labelledby="button--3--3"
+                                    aria-labelledby="button--1--3"
                                     className="px-2"
                                     data-reach-accordion-panel=""
                                     data-state="collapsed"
                                     hidden={true}
-                                    id="panel--3--3"
+                                    id="panel--1--3"
                                     role="region"
                                     tabIndex={-1}
                                   >

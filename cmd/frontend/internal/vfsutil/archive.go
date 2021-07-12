@@ -3,12 +3,12 @@ package vfsutil
 import (
 	"archive/zip"
 	"context"
-	"errors"
 	"io"
-	"os"
+	"io/fs"
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
@@ -94,21 +94,21 @@ func (fs *ArchiveFS) Open(ctx context.Context, name string) (ctxvfs.ReadSeekClos
 	return fs.fs.Open(name)
 }
 
-func (fs *ArchiveFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
+func (fs *ArchiveFS) Lstat(ctx context.Context, path string) (fs.FileInfo, error) {
 	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Lstat(path)
 }
 
-func (fs *ArchiveFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
+func (fs *ArchiveFS) Stat(ctx context.Context, path string) (fs.FileInfo, error) {
 	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}
 	return fs.fs.Stat(path)
 }
 
-func (fs *ArchiveFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
+func (fs *ArchiveFS) ReadDir(ctx context.Context, path string) ([]fs.FileInfo, error) {
 	if err := fs.fetchOrWait(ctx); err != nil {
 		return nil, err
 	}

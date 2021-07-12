@@ -14,4 +14,4 @@ func (sm ServiceMocks) Reset() {
 	sm.ValidateAuthenticator = nil
 }
 
-var Mocks ServiceMocks = ServiceMocks{}
+var Mocks = ServiceMocks{}

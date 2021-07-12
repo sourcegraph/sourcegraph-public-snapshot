@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
@@ -248,7 +249,7 @@ func (r *AnyResult) UnmarshalJSON(b []byte) error {
 		}
 		r.Inner = rr
 	default:
-		return fmt.Errorf("Unknown type %s", typeUnmarshaller.TypeName)
+		return errors.Errorf("Unknown type %s", typeUnmarshaller.TypeName)
 	}
 	return nil
 }
@@ -406,8 +407,15 @@ func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		srr.inner = v
+	case "SearchContext":
+		var v SearchContextSuggestionResult
+		err := json.Unmarshal(data, &v)
+		if err != nil {
+			return err
+		}
+		srr.inner = v
 	default:
-		return fmt.Errorf("unknown typename %s", typeDecoder.TypeName)
+		return errors.Errorf("unknown typename %s", typeDecoder.TypeName)
 	}
 
 	return nil
@@ -446,6 +454,11 @@ type LanguageSuggestionResult struct {
 	Name string
 }
 
+type SearchContextSuggestionResult struct {
+	Spec        string `json:"spec"`
+	Description string `json:"description"`
+}
+
 func (c *Client) SearchSuggestions(query string) ([]SearchSuggestionsResult, error) {
 	const gqlQuery = `
 query SearchSuggestions($query: String!) {
@@ -480,6 +493,10 @@ query SearchSuggestions($query: String!) {
 			}
 			... on Language {
 				name
+			}
+			... on SearchContext {
+				spec
+				description
 			}
 		}
 	}

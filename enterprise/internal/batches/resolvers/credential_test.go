@@ -5,6 +5,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 func TestUnmarshalBatchChangesCredentialID(t *testing.T) {
@@ -58,5 +61,15 @@ func TestUnmarshalBatchChangesCredentialID(t *testing.T) {
 		if (haveErr != nil) != tc.wantErr {
 			t.Errorf("invalid error %+v", haveErr)
 		}
+	}
+}
+
+func TestCommentSSHKey(t *testing.T) {
+	publicKey := "public\n"
+	sshKey := commentSSHKey(&auth.BasicAuthWithSSH{BasicAuth: auth.BasicAuth{Username: "foo", Password: "bar"}, PrivateKey: "private", PublicKey: publicKey, Passphrase: "pass"})
+	expectedKey := "public Sourcegraph " + globals.ExternalURL().Host
+
+	if sshKey != expectedKey {
+		t.Errorf("found wrong ssh key: want=%q, have=%q", expectedKey, sshKey)
 	}
 }

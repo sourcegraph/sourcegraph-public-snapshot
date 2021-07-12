@@ -16,7 +16,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestBatchChangeConnectionResolver(t *testing.T) {
@@ -25,7 +25,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -177,7 +177,7 @@ func TestBatchChangesListing(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))

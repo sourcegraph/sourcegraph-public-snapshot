@@ -2,10 +2,12 @@ package batches
 
 import (
 	"encoding/json"
-	"fmt"
+
+	"github.com/cockroachdb/errors"
 )
 
-// PublishedValue is a wrapper type that supports the triple `true`, `false`, `"draft"`.
+// PublishedValue is a wrapper type that supports the quadruple `true`, `false`,
+// `"draft"`, `nil`.
 type PublishedValue struct {
 	Val interface{}
 }
@@ -34,9 +36,14 @@ func (p PublishedValue) Draft() bool {
 	return false
 }
 
+// Nil is true if the enclosed value is a null or omitted.
+func (p PublishedValue) Nil() bool {
+	return p.Val == nil
+}
+
 // Valid returns whether the enclosed value is of any of the permitted types.
 func (p *PublishedValue) Valid() bool {
-	return p.True() || p.False() || p.Draft()
+	return p.True() || p.False() || p.Draft() || p.Nil()
 }
 
 // Value returns the underlying value stored in this wrapper.
@@ -45,12 +52,9 @@ func (p *PublishedValue) Value() interface{} {
 }
 
 func (p PublishedValue) MarshalJSON() ([]byte, error) {
-	if !p.Valid() {
-		if p.Val == nil {
-			v := "null"
-			return []byte(v), nil
-		}
-		return nil, fmt.Errorf("invalid PublishedValue: %s (%T)", p.Val, p.Val)
+	if p.Nil() {
+		v := "null"
+		return []byte(v), nil
 	}
 	if p.True() {
 		v := "true"
@@ -60,8 +64,11 @@ func (p PublishedValue) MarshalJSON() ([]byte, error) {
 		v := "false"
 		return []byte(v), nil
 	}
-	v := `"draft"`
-	return []byte(v), nil
+	if p.Draft() {
+		v := `"draft"`
+		return []byte(v), nil
+	}
+	return nil, errors.Errorf("invalid PublishedValue: %s (%T)", p.Val, p.Val)
 }
 
 func (p *PublishedValue) UnmarshalJSON(b []byte) error {
@@ -79,6 +86,9 @@ func (p *PublishedValue) UnmarshalYAML(unmarshal func(interface{}) error) error 
 
 func (p *PublishedValue) UnmarshalGraphQL(input interface{}) error {
 	p.Val = input
+	if !p.Valid() {
+		return errors.Errorf("invalid PublishedValue: %v", input)
+	}
 	return nil
 }
 

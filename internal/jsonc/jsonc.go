@@ -2,10 +2,9 @@ package jsonc
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/jsonx"
 )
@@ -28,7 +27,7 @@ func Unmarshal(text string, v interface{}) error {
 func Parse(text string) ([]byte, error) {
 	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	if len(errs) > 0 {
-		return data, fmt.Errorf("failed to parse JSON: %v", errs)
+		return data, errors.Errorf("failed to parse JSON: %v", errs)
 	}
 	return data, nil
 }

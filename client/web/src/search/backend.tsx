@@ -1,18 +1,15 @@
-import { Remote } from 'comlink'
-import { Observable, of, combineLatest, defer, from } from 'rxjs'
-import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
+import { Observable, of, combineLatest, defer } from 'rxjs'
+import { map, publishReplay, refCount } from 'rxjs/operators'
 
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
-import { asError, createAggregateError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
+import { AuthenticatedUser } from '../auth'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
-    SearchPatternType,
     EventLogsDataResult,
     EventLogsDataVariables,
     CreateSavedSearchResult,
@@ -32,184 +29,14 @@ import {
     FetchSearchContextVariables,
     ConvertVersionContextToSearchContextResult,
     ConvertVersionContextToSearchContextVariables,
+    CreateSearchContextResult,
+    CreateSearchContextVariables,
+    UpdateSearchContextVariables,
+    UpdateSearchContextResult,
+    DeleteSearchContextVariables,
+    DeleteSearchContextResult,
+    Maybe,
 } from '../graphql-operations'
-import { DeployType } from '../jscontext'
-
-export function search(
-    query: string,
-    version: string,
-    patternType: SearchPatternType,
-    versionContext: string | undefined,
-    extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
-): Observable<GQL.ISearchResults | ErrorLike> {
-    const transformedQuery = from(extensionHostPromise).pipe(
-        switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
-    )
-
-    return transformedQuery.pipe(
-        switchMap(query =>
-            queryGraphQL(
-                gql`
-                    query Search(
-                        $query: String!
-                        $version: SearchVersion!
-                        $patternType: SearchPatternType!
-                        $versionContext: String
-                    ) {
-                        search(
-                            query: $query
-                            version: $version
-                            patternType: $patternType
-                            versionContext: $versionContext
-                        ) {
-                            results {
-                                __typename
-                                limitHit
-                                matchCount
-                                approximateResultCount
-                                missing {
-                                    name
-                                }
-                                cloning {
-                                    name
-                                }
-                                repositoriesCount
-                                timedout {
-                                    name
-                                }
-                                indexUnavailable
-                                dynamicFilters {
-                                    value
-                                    label
-                                    count
-                                    limitHit
-                                    kind
-                                }
-                                results {
-                                    __typename
-                                    ... on Repository {
-                                        id
-                                        name
-                                        # TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
-                                        # beginning of genericSearchResultInterfaceFields inline fragment
-                                        label {
-                                            html
-                                        }
-                                        url
-                                        detail {
-                                            html
-                                        }
-                                        matches {
-                                            url
-                                            body {
-                                                text
-                                                html
-                                            }
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        # end of genericSearchResultInterfaceFields inline fragment
-                                    }
-                                    ... on FileMatch {
-                                        file {
-                                            path
-                                            url
-                                            commit {
-                                                oid
-                                            }
-                                        }
-                                        repository {
-                                            name
-                                            url
-                                        }
-                                        revSpec {
-                                            __typename
-                                            ... on GitRef {
-                                                displayName
-                                                url
-                                            }
-                                            ... on GitRevSpecExpr {
-                                                expr
-                                                object {
-                                                    commit {
-                                                        url
-                                                    }
-                                                }
-                                            }
-                                            ... on GitObject {
-                                                abbreviatedOID
-                                                commit {
-                                                    url
-                                                }
-                                            }
-                                        }
-                                        limitHit
-                                        symbols {
-                                            name
-                                            containerName
-                                            url
-                                            kind
-                                        }
-                                        lineMatches {
-                                            preview
-                                            lineNumber
-                                            offsetAndLengths
-                                        }
-                                    }
-                                    ... on CommitSearchResult {
-                                        # TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
-                                        # beginning of genericSearchResultInterfaceFields inline fragment
-                                        label {
-                                            html
-                                        }
-                                        url
-                                        detail {
-                                            html
-                                        }
-                                        matches {
-                                            url
-                                            body {
-                                                text
-                                                html
-                                            }
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
-                                        # end of genericSearchResultInterfaceFields inline fragment
-                                    }
-                                }
-                                alert {
-                                    title
-                                    description
-                                    proposedQueries {
-                                        description
-                                        query
-                                    }
-                                }
-                                elapsedMilliseconds
-                            }
-                        }
-                    }
-                `,
-                { query, version, patternType, versionContext }
-            ).pipe(
-                map(({ data, errors }) => {
-                    if (!data || !data.search || !data.search.results) {
-                        throw createAggregateError(errors)
-                    }
-                    return data.search.results
-                }),
-                catchError(error => [asError(error)])
-            )
-        )
-    )
-}
 
 /**
  * Repogroups to include in search suggestions.
@@ -237,11 +64,18 @@ const searchContextFragment = gql`
     fragment SearchContextFields on SearchContext {
         __typename
         id
+        name
+        namespace {
+            __typename
+            id
+            namespaceName
+        }
         spec
         description
         public
         autoDefined
         updatedAt
+        viewerCanManage
         repositories {
             __typename
             repository {
@@ -287,10 +121,15 @@ export const fetchAutoDefinedSearchContexts = defer(() =>
     refCount()
 )
 
+export function getUserSearchContextNamespaces(authenticatedUser: AuthenticatedUser | null): Maybe<Scalars['ID']>[] {
+    return authenticatedUser
+        ? [null, authenticatedUser.id, ...authenticatedUser.organizations.nodes.map(org => org.id)]
+        : [null]
+}
+
 export function fetchSearchContexts({
     first,
-    namespaceFilterType,
-    namespace,
+    namespaces,
     query,
     after,
     orderBy,
@@ -298,8 +137,7 @@ export function fetchSearchContexts({
 }: {
     first: number
     query?: string
-    namespace?: Scalars['ID']
-    namespaceFilterType?: GQL.SearchContextsNamespaceFilterType
+    namespaces?: Maybe<Scalars['ID']>[]
     after?: string
     orderBy?: GQL.SearchContextsOrderBy
     descending?: boolean
@@ -310,8 +148,7 @@ export function fetchSearchContexts({
                 $first: Int!
                 $after: String
                 $query: String
-                $namespaceFilterType: SearchContextsNamespaceFilterType
-                $namespace: ID
+                $namespaces: [ID]
                 $orderBy: SearchContextsOrderBy
                 $descending: Boolean
             ) {
@@ -319,8 +156,7 @@ export function fetchSearchContexts({
                     first: $first
                     after: $after
                     query: $query
-                    namespaceFilterType: $namespaceFilterType
-                    namespace: $namespace
+                    namespaces: $namespaces
                     orderBy: $orderBy
                     descending: $descending
                 ) {
@@ -340,8 +176,7 @@ export function fetchSearchContexts({
             first,
             after: after ?? null,
             query: query ?? null,
-            namespaceFilterType: namespaceFilterType ?? null,
-            namespace: namespace ?? null,
+            namespaces: namespaces ?? [],
             orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
             descending: descending ?? false,
         }
@@ -369,6 +204,60 @@ export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchCon
         map(dataOrThrowErrors),
         map(data => data.node as GQL.ISearchContext)
     )
+}
+
+export function createSearchContext(variables: CreateSearchContextVariables): Observable<GQL.ISearchContext> {
+    return requestGraphQL<CreateSearchContextResult, CreateSearchContextVariables>(
+        gql`
+            mutation CreateSearchContext(
+                $searchContext: SearchContextInput!
+                $repositories: [SearchContextRepositoryRevisionsInput!]!
+            ) {
+                createSearchContext(searchContext: $searchContext, repositories: $repositories) {
+                    ...SearchContextFields
+                }
+            }
+            ${searchContextFragment}
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.createSearchContext as GQL.ISearchContext)
+    )
+}
+
+export function updateSearchContext(variables: UpdateSearchContextVariables): Observable<GQL.ISearchContext> {
+    return requestGraphQL<UpdateSearchContextResult, UpdateSearchContextVariables>(
+        gql`
+            mutation UpdateSearchContext(
+                $id: ID!
+                $searchContext: SearchContextEditInput!
+                $repositories: [SearchContextRepositoryRevisionsInput!]!
+            ) {
+                updateSearchContext(id: $id, searchContext: $searchContext, repositories: $repositories) {
+                    ...SearchContextFields
+                }
+            }
+            ${searchContextFragment}
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.updateSearchContext as GQL.ISearchContext)
+    )
+}
+
+export function deleteSearchContext(id: GQL.ID): Observable<DeleteSearchContextResult> {
+    return requestGraphQL<DeleteSearchContextResult, DeleteSearchContextVariables>(
+        gql`
+            mutation DeleteSearchContext($id: ID!) {
+                deleteSearchContext(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(map(dataOrThrowErrors))
 }
 
 export function isSearchContextAvailable(
@@ -419,6 +308,10 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
                                         }
                                     }
                                 }
+                            }
+                            ... on SearchContext {
+                                spec
+                                description
                             }
                         }
                     }
@@ -672,34 +565,6 @@ export const highlightCode = memoizeObservable(
     context =>
         `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}:${String(context.isLightTheme)}`
 )
-
-/**
- * Returns true if search performance and accuracy are limited because this is a
- * single-node Docker deployment that is configured with more than 100 repositories.
- */
-export function shouldDisplayPerformanceWarning(deployType: DeployType): Observable<boolean> {
-    if (deployType !== 'docker-container') {
-        return of(false)
-    }
-    const manyReposWarningLimit = 100
-    return queryGraphQL(
-        gql`
-            query ManyReposWarning($first: Int) {
-                repositories(first: $first) {
-                    nodes {
-                        id
-                    }
-                }
-            }
-        `,
-        {
-            first: manyReposWarningLimit + 1,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
-    )
-}
 
 export interface EventLogResult {
     totalCount: number

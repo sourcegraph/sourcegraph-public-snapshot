@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type rawResult struct {
 	Data   result        `json:"data,omitempty"`
 	Errors []interface{} `json:"errors,omitempty"`
@@ -36,6 +38,8 @@ type searchResultsAlert struct {
 }
 
 type metrics struct {
-	took  int64
-	trace string
+	took        time.Duration
+	firstResult time.Duration
+	matchCount  int
+	trace       string
 }

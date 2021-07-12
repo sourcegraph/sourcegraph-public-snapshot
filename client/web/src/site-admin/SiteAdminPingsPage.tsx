@@ -114,6 +114,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>
                     Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS
                     CodeCommit, Other)
+                    <ul>
+                        <li>Which versions of the code hosts are used</li>
+                    </ul>
                 </li>
                 <li>Whether new user signup is allowed (true/false)</li>
                 <li>Whether a repository has ever been added (true/false)</li>
@@ -256,6 +259,20 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             Weekly count of users that have created an insight, and count of users that have created
                             their first insight this week
                         </li>
+                        <li>
+                            Weekly count of total and unique views to the Create new insight, Create search insight, and
+                            Create language insight pages
+                        </li>
+                        <li>
+                            Weekly count of total and unique clicks of the Create search insight, Create language usage
+                            insight, and Explore the extensions buttons on the Create new insight page
+                        </li>
+                        <li>
+                            Weekly count of total and unique clicks of the Create and Cancel buttons on the Create
+                            search insight and Create language insight pages
+                        </li>
+                        <li>Total count of insights grouped by time interval (step size) in days</li>
+                        <li>Total count of insights set organization visible grouped by insight type</li>
                     </ul>
                 </li>
                 <li>

@@ -6,10 +6,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -51,11 +52,19 @@ func unmarshalBatchChangesCredentialID(id graphql.ID) (credentialID int64, isSit
 		isSiteCredential = true
 	case userCredentialPrefix:
 	default:
-		return credentialID, isSiteCredential, fmt.Errorf("invalid id, unsupported credential kind %q", kind)
+		return credentialID, isSiteCredential, errors.Errorf("invalid id, unsupported credential kind %q", kind)
 	}
 
 	parsedID, err := strconv.Atoi(parts[1])
 	return int64(parsedID), isSiteCredential, err
+}
+
+func commentSSHKey(ssh auth.AuthenticatorWithSSH) string {
+	url := globals.ExternalURL()
+	if url != nil && url.Host != "" {
+		return strings.TrimRight(ssh.SSHPublicKey(), "\n") + " Sourcegraph " + url.Host
+	}
+	return ssh.SSHPublicKey()
 }
 
 type batchChangesUserCredentialResolver struct {
@@ -83,8 +92,8 @@ func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (
 		return nil, errors.Wrap(err, "retrieving authenticator")
 	}
 
-	if a, ok := a.(auth.AuthenticatorWithSSH); ok {
-		publicKey := a.SSHPublicKey()
+	if ssh, ok := a.(auth.AuthenticatorWithSSH); ok {
+		publicKey := commentSSHKey(ssh)
 		return &publicKey, nil
 	}
 	return nil, nil
@@ -124,7 +133,7 @@ func (c *batchChangesSiteCredentialResolver) SSHPublicKey(ctx context.Context) (
 	}
 
 	if ssh, ok := a.(auth.AuthenticatorWithSSH); ok {
-		publicKey := ssh.SSHPublicKey()
+		publicKey := commentSSHKey(ssh)
 		return &publicKey, nil
 	}
 	return nil, nil

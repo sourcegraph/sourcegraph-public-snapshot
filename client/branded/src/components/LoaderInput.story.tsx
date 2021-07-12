@@ -2,7 +2,7 @@ import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import webStyles from '@sourcegraph/web/src/main.scss'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { BrandedStory } from './BrandedStory'
 import { LoaderInput } from './LoaderInput'

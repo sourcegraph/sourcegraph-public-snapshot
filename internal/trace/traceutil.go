@@ -2,12 +2,12 @@ package trace
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync/atomic"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -30,6 +30,19 @@ func SpanURL(span opentracing.Span) string {
 		return "#tracer-not-enabled"
 	}
 	return f(span)
+}
+
+// SpanURLFromContext returns the URL to the tracing UI for the span attached to the given
+// context. An empty string is returned if there is no span associated with the given context.
+func SpanURLFromContext(ctx context.Context) string {
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		// URLs starting with # don't have a trace. eg "#tracer-not-enabled"
+		if spanURL := SpanURL(span); !strings.HasPrefix(spanURL, "#") {
+			return spanURL
+		}
+	}
+
+	return ""
 }
 
 // SetSpanURLFunc sets the function that SpanURL sets.
@@ -139,7 +152,7 @@ func (t *Trace) SetError(err error) {
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
 // context.DeadlineExceeded.
 func (t *Trace) SetErrorIfNotContext(err error) {
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		t.trace.LazyPrintf("error: %v", err)
 		t.span.LogFields(log.Error(err))
 		return

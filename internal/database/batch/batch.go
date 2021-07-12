@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -141,7 +141,7 @@ func NewInserterWithReturn(
 // Insert submits a single row of values to be inserted on the next flush.
 func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 	if len(values) != i.numColumns {
-		return fmt.Errorf("expected %d values, got %d", i.numColumns, len(values))
+		return errors.Errorf("expected %d values, got %d", i.numColumns, len(values))
 	}
 
 	i.batch = append(i.batch, values...)

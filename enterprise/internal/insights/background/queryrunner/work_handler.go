@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/time/rate"
+
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -23,6 +25,7 @@ var _ workerutil.Handler = &workHandler{}
 type workHandler struct {
 	workerBaseStore *basestore.Store
 	insightsStore   *store.Store
+	limiter         *rate.Limiter
 }
 
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -38,6 +41,10 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
+	err = r.limiter.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	// Actually perform the search query.
 	//
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
@@ -53,7 +60,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 
 	// TODO(slimsag): future: Logs are not a good way to surface these errors to users.
 	if len(results.Errors) > 0 {
-		return fmt.Errorf("GraphQL errors: %v", results.Errors)
+		return errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
 	if alert := results.Data.Search.Results.Alert; alert != nil {
 		if alert.Title == "No repositories satisfied your repo: filter" {
@@ -70,7 +77,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			// general.
 		} else {
 			// Maybe the user's search query is actually wrong.
-			return fmt.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
+			return errors.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
 		}
 	}
 	if results.Data.Search.Results.LimitHit {

@@ -55,7 +55,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
             className={classNames('git-ref-node list-group-item', className)}
             to={!ancestorIsLink ? url : undefined}
         >
-            <span>
+            <span className="d-flex align-items-center">
                 <code className="git-ref-tag-2">{node.displayName}</code>
                 {mostRecentSig && (
                     <small className="pl-2">

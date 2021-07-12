@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
@@ -36,7 +37,7 @@ type Store interface {
 	// Most often, this will be when the handler moves the record into a terminal state.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-	Dequeue(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -72,7 +73,7 @@ type ExecutionLogEntry workerutil.ExecutionLogEntry
 func (e *ExecutionLogEntry) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	return json.Unmarshal(b, &e)
@@ -259,6 +260,7 @@ var columns = []struct {
 	{"num_resets", true},
 	{"num_failures", true},
 	{"execution_logs", true},
+	{"worker_hostname", true},
 }
 
 // DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
@@ -305,7 +307,7 @@ SELECT COUNT(*) FROM %s WHERE (
 // Most often, this will be when the handler moves the record into a terminal state.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (_ workerutil.Record, _ context.CancelFunc, _ bool, err error) {
+func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ context.CancelFunc, _ bool, err error) {
 	ctx, traceLog, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -329,6 +331,7 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (_ worker
 		quote(s.options.TableName),
 		now,
 		now,
+		workerHostname,
 	)))
 	if err != nil {
 		return nil, nil, false, err
@@ -403,7 +406,8 @@ SET
 	{started_at} = %s,
 	{last_updated_at} = %s,
 	{finished_at} = NULL,
-	{failure_message} = NULL
+	{failure_message} = NULL,
+	{worker_hostname} = %s
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
 `

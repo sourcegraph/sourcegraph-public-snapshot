@@ -1,9 +1,9 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useState } from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
@@ -64,9 +64,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <>
-            <h3>Preview</h3>
-            <hr className="mb-3" />
+        <Container>
             <PreviewFilterRow history={history} location={location} onFiltersChange={setFilters} />
             <FilteredConnection<ChangesetApplyPreviewFields, Omit<ChangesetApplyPreviewNodeProps, 'node'>>
                 className="mt-2"
@@ -88,7 +86,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 location={location}
                 useURLQuery={true}
                 listComponent="div"
-                listClassName={classNames(styles.previewListGrid, 'mb-3')}
+                listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
@@ -100,12 +98,12 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                     )
                 }
             />
-        </>
+        </Container>
     )
 }
 
 const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
-    <div className="text-muted mt-4 pt-4 mb-4 row">
+    <div className="text-muted row w-100">
         <div className="col-12 text-center">
             <MagnifyIcon className="icon" />
             <div className="pt-2">No changesets matched the search.</div>

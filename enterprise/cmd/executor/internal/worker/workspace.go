@@ -3,12 +3,11 @@ package worker
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 )
@@ -42,7 +41,8 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 
 		gitCommands := []command.CommandSpec{
 			{Key: "setup.git.init", Command: []string{"git", "-C", tempDir, "init"}, Operation: h.operations.SetupGitInit},
-			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit}, Operation: h.operations.SetupGitFetch},
+			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), "-t", commit}, Operation: h.operations.SetupGitFetch},
+			{Key: "setup.git.add-remote", Command: []string{"git", "-C", tempDir, "remote", "add", "origin", repositoryName}, Operation: h.operations.SetupAddRemote},
 			{Key: "setup.git.checkout", Command: []string{"git", "-C", tempDir, "checkout", commit}, Operation: h.operations.SetupGitCheckout},
 		}
 		for _, spec := range gitCommands {
@@ -85,13 +85,13 @@ var makeTempDir = makeTemporaryDirectory
 func makeTemporaryDirectory() (string, error) {
 	// TMPDIR is set in the dev Procfile to avoid requiring developers to explicitly
 	// allow bind mounts of the host's /tmp. If this directory doesn't exist,
-	// ioutil.TempDir below will fail.
+	// os.MkdirTemp below will fail.
 	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
 		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return "", err
 		}
-		return ioutil.TempDir(tempdir, "")
+		return os.MkdirTemp(tempdir, "")
 	}
 
-	return ioutil.TempDir("", "")
+	return os.MkdirTemp("", "")
 }

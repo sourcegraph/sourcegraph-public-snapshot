@@ -9,7 +9,7 @@ import { IndexConnection } from './backend'
 import { CodeIntelIndexesPage } from './CodeIntelIndexesPage'
 
 const { add } = storiesOf('web/codeintel/list/CodeIntelIndexesPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
@@ -26,6 +26,7 @@ add('Page', () => {
             finishedAt: null,
             placeInQueue: 3,
             failure: null,
+            associatedUpload: null,
         },
         {
             id: '2',
@@ -35,6 +36,7 @@ add('Page', () => {
             finishedAt: null,
             failure: null,
             placeInQueue: null,
+            associatedUpload: null,
         },
         {
             id: '3',
@@ -44,6 +46,7 @@ add('Page', () => {
             finishedAt: '2020-06-15T12:30:30+00:00',
             failure: null,
             placeInQueue: null,
+            associatedUpload: null,
         },
         {
             id: '4',
@@ -53,6 +56,7 @@ add('Page', () => {
             finishedAt: '2020-06-15T12:30:30+00:00',
             failure: 'Whoops! The server encountered a boo-boo handling this input.',
             placeInQueue: null,
+            associatedUpload: null,
         }
     )
 

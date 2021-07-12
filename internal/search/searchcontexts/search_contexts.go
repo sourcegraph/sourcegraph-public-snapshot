@@ -2,10 +2,10 @@ package searchcontexts
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -31,47 +31,60 @@ var (
 	namespacedSearchContextSpecRegexp = lazyregexp.New(searchContextSpecPrefix + `(.*?)\/(.*)`)
 )
 
-func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSpec string) (*types.SearchContext, error) {
-	if IsGlobalSearchContextSpec(searchContextSpec) {
-		return GetGlobalSearchContext(), nil
-	} else if submatches := namespacedSearchContextSpecRegexp.FindStringSubmatch(searchContextSpec); submatches != nil {
+type ParsedSearchContextSpec struct {
+	NamespaceName     string
+	SearchContextName string
+}
+
+func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
+	if submatches := namespacedSearchContextSpecRegexp.FindStringSubmatch(searchContextSpec); submatches != nil {
 		// We expect 3 submatches, because FindStringSubmatch returns entire string as first submatch, and 2 captured groups
 		// as additional submatches
 		namespaceName, searchContextName := submatches[1], submatches[2]
-		namespace, err := database.Namespaces(db).GetByName(ctx, namespaceName)
+		return ParsedSearchContextSpec{NamespaceName: namespaceName, SearchContextName: searchContextName}
+	} else if strings.HasPrefix(searchContextSpec, searchContextSpecPrefix) {
+		return ParsedSearchContextSpec{NamespaceName: searchContextSpec[1:]}
+	}
+	return ParsedSearchContextSpec{SearchContextName: searchContextSpec}
+}
+
+func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSpec string) (*types.SearchContext, error) {
+	parsedSearchContextSpec := ParseSearchContextSpec(searchContextSpec)
+	hasNamespaceName := parsedSearchContextSpec.NamespaceName != ""
+	hasSearchContextName := parsedSearchContextSpec.SearchContextName != ""
+
+	if IsGlobalSearchContextSpec(searchContextSpec) {
+		return GetGlobalSearchContext(), nil
+	} else if hasNamespaceName && hasSearchContextName {
+		namespace, err := database.Namespaces(db).GetByName(ctx, parsedSearchContextSpec.NamespaceName)
 		if err != nil {
 			return nil, err
 		}
 		return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{
-			Name:            searchContextName,
+			Name:            parsedSearchContextSpec.SearchContextName,
 			NamespaceUserID: namespace.User,
 			NamespaceOrgID:  namespace.Organization,
 		})
-	} else if strings.HasPrefix(searchContextSpec, searchContextSpecPrefix) {
-		namespaceName := searchContextSpec[1:]
-		namespace, err := database.Namespaces(db).GetByName(ctx, namespaceName)
+	} else if hasNamespaceName && !hasSearchContextName {
+		namespace, err := database.Namespaces(db).GetByName(ctx, parsedSearchContextSpec.NamespaceName)
 		if err != nil {
 			return nil, err
 		}
 		if namespace.User == 0 {
-			return nil, fmt.Errorf("search context %q not found", searchContextSpec)
+			return nil, errors.Errorf("search context %q not found", searchContextSpec)
 		}
-		return GetUserSearchContext(namespaceName, namespace.User), nil
+		return GetUserSearchContext(parsedSearchContextSpec.NamespaceName, namespace.User), nil
 	}
 	// Check if instance-level context
-	searchContext, err := database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{Name: searchContextSpec})
-	if err != nil {
-		return nil, err
-	}
-	return searchContext, nil
+	return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
 }
 
-func validateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
+func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
 	if namespaceUserID != 0 && namespaceOrgID != 0 {
 		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
 	}
 
-	user, err := backend.CurrentUser(ctx)
+	user, err := backend.CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -106,11 +119,11 @@ func validateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbut
 
 func validateSearchContextName(name string) error {
 	if len(name) > maxSearchContextNameLength {
-		return fmt.Errorf("search context name %q exceeds maximum allowed length (%d)", name, maxSearchContextNameLength)
+		return errors.Errorf("search context name %q exceeds maximum allowed length (%d)", name, maxSearchContextNameLength)
 	}
 
 	if !validateSearchContextNameRegexp.MatchString(name) {
-		return fmt.Errorf("%q is not a valid search context name", name)
+		return errors.Errorf("%q is not a valid search context name", name)
 	}
 
 	return nil
@@ -118,7 +131,7 @@ func validateSearchContextName(name string) error {
 
 func validateSearchContextDescription(description string) error {
 	if len(description) > maxSearchContextDescriptionLength {
-		return fmt.Errorf("search context description exceeds maximum allowed length (%d)", maxSearchContextDescriptionLength)
+		return errors.Errorf("search context description exceeds maximum allowed length (%d)", maxSearchContextDescriptionLength)
 	}
 	return nil
 }
@@ -127,7 +140,7 @@ func validateSearchContextRepositoryRevisions(repositoryRevisions []*types.Searc
 	for _, repository := range repositoryRevisions {
 		for _, revision := range repository.Revisions {
 			if len(revision) > maxRevisionLength {
-				return fmt.Errorf("revision %q exceeds maximum allowed length (%d)", revision, maxRevisionLength)
+				return errors.Errorf("revision %q exceeds maximum allowed length (%d)", revision, maxRevisionLength)
 			}
 		}
 	}
@@ -155,7 +168,7 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, errors.New("cannot override global search context")
 	}
 
-	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +205,7 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, errors.New("cannot update global search context")
 	}
 
-	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +237,7 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 		return errors.New("cannot delete auto-defined search context")
 	}
 
-	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return err
 	}

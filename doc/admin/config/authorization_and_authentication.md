@@ -68,14 +68,18 @@ Follow these steps to [configure authentication with GitHub via OAuth](../auth/i
 
 Once authentication with GitHub via OAuth is configured, follow [these steps to configure access permissions](../repo/permissions.md#github). Users will log into Sourcegraph using Github OAuth, and permissions will be synced in the background.
 
-### GitLab Enterprise or GiLab Cloud authentication and authorization
+### GitLab Enterprise or GitLab Cloud authentication and authorization
 
 We support both authentication and permissions syncing (through OAuth) for GitLab. If you use GitLab as your code host, you have two available authentication flows:
+
+#### Option 1
 
 1. Use SAML (or another auth mechanism) to log in to GitLab
 2. Use GitLab OAuth to log in to Sourcegraph
 
 In this way, access to Sourcegraph will still be managed by your identity provider, using the code host as a middle step. This option is the simplest to configure. To do so, [set up GitLab as an authentication option](../auth/index.md#gitlab), and then [enable permissions syncing](../repo/permissions.md#oauth-application).
+
+#### Option 2
 
 Alternatively, you can configure SAML authentication in Sourcegraph, and use GitLab permissions syncing in the background to control access permissions. To implement this method, you will need to make sure that GitLab is able to return a value in `identities.provider` for the `GET /users` endpoint ([GitLab documentation](https://docs.gitlab.com/ee/api/users.html#for-admins)) that your identity provider is able to pass as the `nameID` in the SAML response. If that isn’t possible, you will need to use the first option. 
 

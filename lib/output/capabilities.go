@@ -4,8 +4,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/mattn/go-isatty"
-	"github.com/nsf/termbox-go"
+	"github.com/moby/term"
 )
 
 type capabilities struct {
@@ -15,28 +16,27 @@ type capabilities struct {
 	Width  int
 }
 
-func detectCapabilities() capabilities {
-	// There's a pretty obvious flaw here in that we only check the terminal
-	// size once. We may want to consider adding a background goroutine that
-	// updates the capabilities struct every second or two.
-	//
-	// Pulling in termbox is probably overkill, but finding a pure Go library
-	// that could just provide terminfo was surprisingly hard. At least termbox
-	// is widely used.
-	w, h := 80, 25
-	if err := termbox.Init(); err == nil {
-		w, h = termbox.Size()
-		termbox.Close()
-	}
-
+func detectCapabilities() (capabilities, error) {
 	atty := isatty.IsTerminal(os.Stdout.Fd())
+	w, h := 80, 25
+	var err error
+	if atty {
+		size, err := term.GetWinsize(os.Stdout.Fd())
+		if err == nil {
+			if size != nil {
+				w, h = int(size.Width), int(size.Height)
+			} else {
+				err = errors.New("unexpected nil size from GetWinsize")
+			}
+		}
+	}
 
 	return capabilities{
 		Color:  detectColor(atty),
 		Isatty: atty,
 		Height: h,
 		Width:  w,
-	}
+	}, err
 }
 
 func detectColor(atty bool) bool {

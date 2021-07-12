@@ -20,30 +20,28 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	nettrace "golang.org/x/net/trace"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/pkg/errors"
-
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/schema"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const (
-	// maxFileMatches is the limit on number of matching files we return.
-	maxFileMatches = 1000
-
-	// maxLineMatches is the limit on number of matches to return in a
-	// file.
-	maxLineMatches = 100
+	// maxLimit is a hard-coded maximum for total number of matches we return.
+	// This may be increased in the future pending stability evaluation, or may
+	// be removed entirely once streaming is in place and we don't need to buffer
+	// the whole result set in memory.
+	maxLimit = 100_000
 
 	// numWorkers is how many concurrent readerGreps run in the case of
 	// regexSearch, and the number of parallel workers in the case of
@@ -100,13 +98,19 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if p.Limit == 0 || p.Limit > maxLimit {
+		p.Limit = maxLimit
+	}
 
-	matches, limitHit, deadlineHit, err := s.search(ctx, &p)
+	ctx, cancel, stream := newLimitedStreamCollector(ctx, p.Limit)
+	defer cancel()
+
+	deadlineHit, err := s.search(ctx, &p, stream)
 	if err != nil {
 		code := http.StatusInternalServerError
-		if isBadRequest(err) || ctx.Err() == context.Canceled {
+		if errcode.IsBadRequest(err) || errors.Is(ctx.Err(), context.Canceled) {
 			code = http.StatusBadRequest
-		} else if isTemporary(err) {
+		} else if errcode.IsTemporary(err) {
 			code = http.StatusServiceUnavailable
 		} else {
 			log.Printf("internal error serving %#+v: %s", p, err)
@@ -114,15 +118,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), code)
 		return
 	}
-	if matches == nil {
-		// Return an empty list
-		matches = make([]protocol.FileMatch, 0)
-	}
 
 	w.Header().Set("Content-Type", "application/json")
 	resp := protocol.Response{
-		Matches:     matches,
-		LimitHit:    limitHit,
+		Matches:     stream.Collected(),
+		LimitHit:    stream.LimitHit(),
 		DeadlineHit: deadlineHit,
 	}
 	// The only reasonable error is the client going away now since we know we
@@ -132,9 +132,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(&resp)
 }
 
-const maxFileMatchLimit = 100
-
-func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
+func (s *Service) search(ctx context.Context, p *protocol.Request, sender *limitedStreamCollector) (deadlineHit bool, err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 
@@ -151,7 +149,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
 	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
 	span.SetTag("pathPatternsAreCaseSensitive", strconv.FormatBool(p.PathPatternsAreCaseSensitive))
-	span.SetTag("fileMatchLimit", p.FileMatchLimit)
+	span.SetTag("limit", p.Limit)
 	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
 	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
 	span.SetTag("deadline", p.Deadline)
@@ -174,29 +172,30 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 			tr.SetError()
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
-			if isBadRequest(err) {
+			if errcode.IsBadRequest(err) {
 				code = "400"
-			} else if isTemporary(err) {
+			} else if errcode.IsTemporary(err) {
 				code = "503"
 			} else {
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v deadlineHit=%v", code, len(matches), limitHit, deadlineHit)
+		tr.LazyPrintf("code=%s matches=%d limitHit=%v deadlineHit=%v", code, sender.SentCount(), sender.LimitHit(), deadlineHit)
 		tr.Finish()
 		requestTotal.WithLabelValues(code).Inc()
-		span.LogFields(otlog.Int("matches.len", len(matches)))
-		span.SetTag("limitHit", limitHit)
+		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
+		span.SetTag("limitHit", sender.LimitHit())
 		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
 		if s.Log != nil {
-			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "indexerEndpoints", p.IndexerEndpoints, "err", err)
+			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", sender.SentCount(), "code", code, "duration", time.Since(start), "indexerEndpoints", p.IndexerEndpoints, "err", err)
 		}
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
-		return structuralSearchWithZoekt(ctx, p)
+		// TODO use limit in indexed structural search
+		return structuralSearchWithZoekt(ctx, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
@@ -204,7 +203,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	if !p.IsStructuralPat {
 		rg, err = compile(&p.PatternInfo)
 		if err != nil {
-			return nil, false, false, badRequestError{err.Error()}
+			return false, badRequestError{err.Error()}
 		}
 	}
 
@@ -213,7 +212,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}
 	fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
 	if err != nil {
-		return nil, false, false, err
+		return false, err
 	}
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
@@ -229,7 +228,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 
 	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
-		return nil, false, false, errors.Wrap(err, "failed to get archive")
+		return false, errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 
@@ -243,11 +242,10 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		matches, limitHit, err = filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo)
+		return false, filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 	} else {
-		matches, limitHit, err = regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		return false, regexSearch(ctx, rg, zf, p.Limit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 	}
-	return matches, limitHit, false, err
 }
 
 func validateParams(p *protocol.Request) error {
@@ -294,17 +292,3 @@ type badRequestError struct{ msg string }
 
 func (e badRequestError) Error() string    { return e.msg }
 func (e badRequestError) BadRequest() bool { return true }
-
-func isBadRequest(err error) bool {
-	e, ok := errors.Cause(err).(interface {
-		BadRequest() bool
-	})
-	return ok && e.BadRequest()
-}
-
-func isTemporary(err error) bool {
-	e, ok := errors.Cause(err).(interface {
-		Temporary() bool
-	})
-	return ok && e.Temporary()
-}

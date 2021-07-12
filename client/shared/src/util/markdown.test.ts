@@ -43,13 +43,15 @@ describe('renderMarkdown', () => {
             <p>Some text
             in the same paragraph
             with a <a href=\\"./destination\\">link</a>.</p>
-            <pre><code class=\\"language-ts\\"><span class=\\"hljs-keyword\\">const</span> someTypeScriptCode = funcCall()</code></pre>
+            <pre><code class=\\"language-ts\\"><span class=\\"hljs-keyword\\">const</span> someTypeScriptCode = funcCall()
+            </code></pre>
             <ul>
             <li>bullet list item 1</li>
             <li>bullet list item 2</li>
             </ul>
             <ol>
-            <li>item 1<pre><code class=\\"language-ts\\"><span class=\\"hljs-keyword\\">const</span> codeInsideTheBulletPoint = <span class=\\"hljs-string\\">\\"string\\"</span></code></pre>
+            <li>item 1<pre><code class=\\"language-ts\\"><span class=\\"hljs-keyword\\">const</span> codeInsideTheBulletPoint = <span class=\\"hljs-string\\">\\"string\\"</span>
+            </code></pre>
             </li>
             <li>item 2</li>
             </ol>

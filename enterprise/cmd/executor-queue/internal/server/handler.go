@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 
@@ -61,7 +61,7 @@ type QueueOptions struct {
 
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
-	RecordTransformer func(record workerutil.Record) (apiclient.Job, error)
+	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
 }
 
 type executorMeta struct {
@@ -95,13 +95,15 @@ func newHandlerWithMetrics(options Options, clock glock.Clock, observationContex
 	}
 }
 
-var ErrUnknownQueue = errors.New("unknown queue")
-var ErrUnknownJob = errors.New("unknown job")
+var (
+	ErrUnknownQueue = errors.New("unknown queue")
+	ErrUnknownJob   = errors.New("unknown job")
+)
 
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // or the server has hit its maximum transactions, a false-valued flag is returned.
-func (m *handler) dequeue(ctx context.Context, queueName, executorName string) (_ apiclient.Job, dequeued bool, _ error) {
+func (m *handler) dequeue(ctx context.Context, queueName, executorName, executorHostname string) (_ apiclient.Job, dequeued bool, _ error) {
 	queueOptions, ok := m.options.QueueOptions[queueName]
 	if !ok {
 		return apiclient.Job{}, false, ErrUnknownQueue
@@ -121,7 +123,7 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName string) (
 		}
 	}()
 
-	record, cancel, dequeued, err := queueOptions.Store.Dequeue(context.Background(), nil)
+	record, cancel, dequeued, err := queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
 	if err != nil {
 		return apiclient.Job{}, false, err
 	}
@@ -129,7 +131,7 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName string) (
 		return apiclient.Job{}, false, nil
 	}
 
-	job, err := queueOptions.RecordTransformer(record)
+	job, err := queueOptions.RecordTransformer(ctx, record)
 	if err != nil {
 		if _, err := queueOptions.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err)); err != nil {
 			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)

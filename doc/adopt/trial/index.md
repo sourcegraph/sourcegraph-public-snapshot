@@ -8,7 +8,7 @@ However, if you already know deep down in your bones that Sourcegraph will great
 
 Sourcegraph has been deployed inside of thousands of organizations. From our experience working with those that have been successful, and those that haven't, we have collected a set of recommendations for running an effective trial.
 
-> NOTE: Trying Sourcegraph during a Hackathon? Check out our [Hackathon offerings](https://about.sourcegraph.com/hackathons) and [let us know](https://twitter.com/@srcgraph)!
+> NOTE: Trying Sourcegraph during a Hackathon? Check out our [Hackathon offerings](https://about.sourcegraph.com/hackathons) and [let us know](https://twitter.com/@sourcegraph)!
 
 ## 1. Define trial success
 
@@ -38,7 +38,7 @@ For measuring a trial, each company will be different. Common examples we find i
 
     While we don't always encourage this, it can be instructive! Take Sourcegraph away for a day, and see who gets upset. Developers may feel like their superpowers were suddenly taken away.
 
-We have helped hundreds of customers run trials and cannot overemphasize enough how much we can help guide you through this process. To encourage letting us help your trial be a success (not to mention take a lot of the trial's organization off your shoulders) we will grant you an Enterprise license key free of charge for the trial's duration! [Please reach out] https://about.sourcegraph.com/contact/sales and ask for your free license key. 
+We have helped hundreds of customers run trials and cannot overemphasize enough how much we can help guide you through this process. To encourage letting us help your trial be a success (not to mention take a lot of the trial's organization off your shoulders) we will grant you an Enterprise license key free of charge for the trial's duration! [Please reach out] https://about.sourcegraph.com/contact/sales and ask for your free license key.
 
 
 ## 2. Deploy Sourcegraph
@@ -82,10 +82,10 @@ For short trials, however, companies often choose to only set up our search shor
 
 Like step 1, this looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure!
 
-How did it go? Any feedback for us? [Tweet at us](https://twitter.com/@srcgraph), and we'll send you some Sourcegraph swag!
+How did it go? Any feedback for us? [Tweet at us](https://twitter.com/@sourcegraph), and we'll send you some Sourcegraph swag!
 
 ## Let us know!
 
 Whether your team found Sourcegraph to be successful or not, please let us know! If so, we'd love to talk about how to grow Sourcegraph internally on a plan that's right for you, and if not, we need to know how to improve.
 
-[Contact us directly](https://about.sourcegraph.com/contact), [file an issue](https://github.com/sourcegraph/sourcegraph) with product feedback/problems/questions, or [tweet at us](https://twitter.com/srcgraph)!
+[Contact us directly](https://about.sourcegraph.com/contact), [file an issue](https://github.com/sourcegraph/sourcegraph) with product feedback/problems/questions, or [tweet at us](https://twitter.com/sourcegraph)!

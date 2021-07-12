@@ -5,7 +5,10 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 
 echo "Compiling..."
 
-go install .
+# -mod=mod: default is -mod=readonly. However, because our lib dependency is
+#           not fixed everytime it changes we need to update go.sum. By making
+#           it rw we prevent failing go install.
+go install -mod=mod .
 
 # Let's figure out where this got installed. First, we need to calculate the
 # effective $GOBIN; this logic is documented at

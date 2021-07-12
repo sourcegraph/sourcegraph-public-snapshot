@@ -47,7 +47,7 @@ func GetRepositories(ctx context.Context) (*Repositories, error) {
 		total.GitDirBytes += uint64(stat.GitDirBytes)
 	}
 
-	repos, err := search.Indexed().Client.List(ctx, &query.Const{Value: true})
+	repos, err := search.Indexed().Client.List(ctx, &query.Const{Value: true}, nil)
 	if err != nil {
 		return nil, err
 	}

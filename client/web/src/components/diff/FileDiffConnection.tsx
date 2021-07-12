@@ -16,7 +16,7 @@ import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toURIWithPath }
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FileDiffFields, Scalars } from '../../graphql-operations'
-import { Connection, FilteredConnection } from '../FilteredConnection'
+import { FilteredConnection, Connection } from '../FilteredConnection'
 
 import { FileDiffNodeProps } from './FileDiffNode'
 

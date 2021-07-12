@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -17,16 +16,6 @@ type TransactableHandle struct {
 	db         dbutil.DB
 	savepoints []*savepoint
 	txOptions  sql.TxOptions
-}
-
-// NewHandle returns a new transactable database handle connected to the given dsn (data store name).
-func NewHandle(postgresDSN, app string, txOptions sql.TxOptions) (*TransactableHandle, error) {
-	db, err := dbconn.New(postgresDSN, app)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewHandleWithDB(db, txOptions), nil
 }
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
@@ -52,7 +41,7 @@ func (h *TransactableHandle) InTransaction() bool {
 // Note that it is not valid to call Transact or Done on the same database handle from distinct goroutines.
 // Because we support properly nested transactions via savepoints, calling Transact from two different
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
-// and callaing Done in one goroutine may not finalize the expected unit of work.
+// and calling Done in one goroutine may not finalize the expected unit of work.
 func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle, error) {
 	if h.InTransaction() {
 		savepoint, err := newSavepoint(ctx, h.db)

@@ -5,6 +5,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
+import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
@@ -12,11 +13,12 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { DefaultIcon } from '../icons'
+import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon } from '../icons'
 
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
+import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
@@ -53,10 +55,9 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
     }
 
     if (manifest?.publisher === 'sourcegraph') {
-        return <DefaultIcon className="registry-extension-overview-page__icon mb-3" />
+        return <DefaultSourcegraphExtensionIcon className="registry-extension-overview-page__icon mb-3" />
     }
-
-    return null
+    return <DefaultExtensionIcon className="registry-extension-overview-page__icon mb-3" />
 }
 
 /** A page that displays overview information about a registry extension. */
@@ -93,6 +94,8 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
         }
     }
 
+    const { isSourcegraphExtension } = splitExtensionID(extension.id)
+
     return (
         <div className="registry-extension-overview-page d-flex flex-wrap">
             <PageTitle title={extension.id} />
@@ -108,7 +111,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
                                     <Link
-                                        to={urlToExtensionsQuery(extensionsQuery({ category }))}
+                                        to={urlToExtensionsQuery({ category })}
                                         className="btn btn-outline-secondary btn-sm"
                                     >
                                         {category}
@@ -128,7 +131,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">
                                         <Link
-                                            to={urlToExtensionsQuery(extensionsQuery({ tag }))}
+                                            to={urlToExtensionsQuery({ query: extensionsQuery({ tag }) })}
                                             className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
                                         >
                                             {tag}
@@ -217,6 +220,11 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                                 </div>
                             )}
                         </dd>
+                        {isSourcegraphExtension && (
+                            <dd className="mt-2 py-2">
+                                <SourcegraphExtensionFeedback extensionID={extension.id} />
+                            </dd>
+                        )}
                     </dl>
                 </small>
             </aside>

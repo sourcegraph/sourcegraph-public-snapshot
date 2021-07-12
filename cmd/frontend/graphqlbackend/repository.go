@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -128,7 +128,7 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
 			return false, nil // not an error
 		}
@@ -154,7 +154,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			return nil, nil
 		}
 		return nil, err
@@ -179,6 +179,9 @@ func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver
 		if err != nil {
 			return nil, err
 		}
+		if refName == "" {
+			return nil, nil
+		}
 		return &GitRefResolver{repo: r, name: refName}, nil
 	}
 	r.defaultBranchOnce.Do(func() {
@@ -198,7 +201,7 @@ func getDefaultBranchForRepo(ctx context.Context, repoName api.RepoName) (string
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
+		if vcs.IsCloneInProgress(err) || errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			return "", nil
 		}
 		return "", err
@@ -259,10 +262,6 @@ func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.
 	return externallink.Repository(ctx, r.db, repo)
 }
 
-func (r *RepositoryResolver) Icon() string {
-	return "data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K"
-}
-
 func (r *RepositoryResolver) Rev() string {
 	return r.RepoMatch.Rev
 }
@@ -298,6 +297,14 @@ func (r *RepositoryResolver) ResultCount() int32 {
 
 func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
+}
+
+func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(repo.Stars), nil
 }
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
@@ -414,7 +421,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !gitserver.IsRevisionNotFound(err)) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitserver.RevisionNotFoundError{})) {
 		return commit, err
 	}
 

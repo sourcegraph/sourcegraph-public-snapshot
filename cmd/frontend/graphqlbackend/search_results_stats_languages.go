@@ -2,16 +2,16 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
-	"os"
+	"io/fs"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -23,7 +23,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srr.SearchResults)
+	langs, err := searchResultsStatsLanguages(ctx, srr.Matches)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +35,23 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 	return wrapped, nil
 }
 
+func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
+	srs.once.Do(func() {
+		args, err := srs.sr.toTextParameters(srs.sr.Query)
+		if err != nil {
+			srs.srsErr = err
+			return
+		}
+		results, err := srs.sr.doResults(ctx, args)
+		if err != nil {
+			srs.srsErr = err
+			return
+		}
+		srs.srs = srs.sr.resultsToResolver(results)
+	})
+	return srs.srs, srs.srsErr
+}
+
 func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([]inventory.Lang, error) {
 	// Batch our operations by repo-commit.
 	type repoCommit struct {
@@ -44,7 +61,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 
 	// Records the work necessary for a batch (repoCommit).
 	type fileStatsWork struct {
-		fullEntries  []os.FileInfo     // matched these full files
+		fullEntries  []fs.FileInfo     // matched these full files
 		partialFiles map[string]uint64 // file with line matches (path) -> count of lines matching
 	}
 

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { DiffStat } from '../../../components/diff/DiffStat'
+import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchSpecFields } from '../../../graphql-operations'
 
 import styles from './BatchChangePreviewStatsBar.module.scss'
@@ -32,12 +32,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
             <span className="badge badge-info text-uppercase mb-0">Preview</span>
         </h2>
         <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
-        <DiffStat
-            {...batchSpec.diffStat}
-            separateLines={true}
-            expandedCounts={true}
-            className={styles.batchChangePreviewStatsBarDiff}
-        />
+        <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...batchSpec.diffStat} />
         <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />
         <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'mx-3 d-none d-sm-block d-md-none')} />
         <div className={classNames(styles.batchChangePreviewStatsBarMetrics, 'flex-grow-1 d-flex justify-content-end')}>
@@ -48,21 +43,21 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
         <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-md-none my-3')} />
         <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-md-block ml-3 mr-2')} />
         <div className={classNames(styles.batchChangePreviewStatsBarStates, 'd-flex justify-content-end')}>
-            <PreviewActionReopen className={actionClassNames} label={`${batchSpec.applyPreview.stats.reopen} reopen`} />
-            <PreviewActionClose className={actionClassNames} label={`${batchSpec.applyPreview.stats.reopen} close`} />
-            <PreviewActionUpdate className={actionClassNames} label={`${batchSpec.applyPreview.stats.update} update`} />
+            <PreviewActionReopen className={actionClassNames} label={`${batchSpec.applyPreview.stats.reopen} Reopen`} />
+            <PreviewActionClose className={actionClassNames} label={`${batchSpec.applyPreview.stats.reopen} Close`} />
+            <PreviewActionUpdate className={actionClassNames} label={`${batchSpec.applyPreview.stats.update} Update`} />
             <PreviewActionUndraft
                 className={actionClassNames}
-                label={`${batchSpec.applyPreview.stats.undraft} undraft`}
+                label={`${batchSpec.applyPreview.stats.undraft} Undraft`}
             />
             <PreviewActionPublish
                 className={actionClassNames}
-                label={`${batchSpec.applyPreview.stats.publish + batchSpec.applyPreview.stats.publishDraft} publish`}
+                label={`${batchSpec.applyPreview.stats.publish + batchSpec.applyPreview.stats.publishDraft} Publish`}
             />
-            <PreviewActionImport className={actionClassNames} label={`${batchSpec.applyPreview.stats.import} import`} />
+            <PreviewActionImport className={actionClassNames} label={`${batchSpec.applyPreview.stats.import} Import`} />
             <PreviewActionArchive
                 className={actionClassNames}
-                label={`${batchSpec.applyPreview.stats.archive} archive`}
+                label={`${batchSpec.applyPreview.stats.archive} Archive`}
             />
         </div>
     </div>
@@ -79,7 +74,7 @@ export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ 
             </span>
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
         </div>
-        {count} added
+        {count} Added
     </div>
 )
 export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = ({ count }) => (
@@ -96,7 +91,7 @@ export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = 
             </span>
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
         </div>
-        {count} modified
+        {count} Modified
     </div>
 )
 export const PreviewStatsRemoved: React.FunctionComponent<{ count: number }> = ({ count }) => (
@@ -113,6 +108,6 @@ export const PreviewStatsRemoved: React.FunctionComponent<{ count: number }> = (
             </span>
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>
         </div>
-        {count} removed
+        {count} Removed
     </div>
 )

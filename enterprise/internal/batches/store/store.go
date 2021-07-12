@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -34,7 +34,7 @@ func (s SQLColumns) ToSqlf() []*sqlf.Query {
 }
 
 // seededRand is used in RandomID() to generate a "random" number.
-var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
+var seededRand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")

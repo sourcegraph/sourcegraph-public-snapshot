@@ -1,13 +1,13 @@
 package debugproxies
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -89,7 +89,7 @@ func (cs *clusterScanner) watchEndpointEvents() (bool, error) {
 	// TODO(Dax): Rewrite this to used NewSharedInformerFactory from k8s/client-go
 	watcher, err := cs.client.Endpoints(cs.namespace).Watch(metav1.ListOptions{})
 	if err != nil {
-		return false, fmt.Errorf("k8s client.Watch error: %w", err)
+		return false, errors.Errorf("k8s client.Watch error: %w", err)
 	}
 	defer watcher.Stop()
 
@@ -97,7 +97,7 @@ func (cs *clusterScanner) watchEndpointEvents() (bool, error) {
 		event := <-watcher.ResultChan()
 		if err != nil {
 			// we need a new watcher
-			return true, fmt.Errorf("k8s watcher.Next error: %w", err)
+			return true, errors.Errorf("k8s watcher.Next error: %w", err)
 		}
 
 		if event.Type == watch.Error {
@@ -184,7 +184,7 @@ func (cs *clusterScanner) scanCluster() {
 // when the client was created, the official k8s client does not
 func namespace() string {
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		log15.Warn("scanner: falling back to kubernetes default namespace", "filename", filename, "error", err)
 		return "default"

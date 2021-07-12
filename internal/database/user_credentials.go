@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -41,7 +41,7 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 	// The record includes a field indicating the encryption key ID. We don't
 	// really have a way to look up a key by ID right now, so this is used as a
 	// marker of whether we should expect a key or not.
-	if uc.EncryptionKeyID == "" {
+	if uc.EncryptionKeyID == "" || uc.EncryptionKeyID == UserCredentialUnmigratedEncryptionKeyID {
 		return UnmarshalAuthenticator(string(uc.EncryptedCredential))
 	}
 	if uc.key == nil {
@@ -87,7 +87,9 @@ const (
 	// Valid domain values for user credentials.
 	UserCredentialDomainBatches = "batches"
 
+	// Placeholder encryption key IDs.
 	UserCredentialPlaceholderEncryptionKeyID = "previously-migrated"
+	UserCredentialUnmigratedEncryptionKeyID  = "unmigrated"
 )
 
 // UserCredentialNotFoundErr is returned when a credential cannot be found from
@@ -108,7 +110,7 @@ type UserCredentialsStore struct {
 	key encryption.Key
 }
 
-// NewUserStoreWithDB instantiates and returns a new UserCredentialsStore with prepared statements.
+// UserCredentials instantiates and returns a new UserCredentialsStore with prepared statements.
 func UserCredentials(db dbutil.DB, key encryption.Key) *UserCredentialsStore {
 	return &UserCredentialsStore{
 		Store: basestore.NewWithDB(db, sql.TxOptions{}),
@@ -116,7 +118,7 @@ func UserCredentials(db dbutil.DB, key encryption.Key) *UserCredentialsStore {
 	}
 }
 
-// NewUserStoreWith instantiates and returns a new UserCredentialsStore using the other store handle.
+// UserCredentialsWith instantiates and returns a new UserCredentialsStore using the other store handle.
 func UserCredentialsWith(other basestore.ShareableStore, key encryption.Key) *UserCredentialsStore {
 	return &UserCredentialsStore{
 		Store: basestore.NewWithHandle(other.Handle()),
@@ -340,10 +342,17 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 		preds = append(preds, sqlf.Sprintf("ssh_migration_applied = %s", *opts.SSHMigrationApplied))
 	}
 	if opts.RequiresMigration {
-		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", UserCredentialPlaceholderEncryptionKeyID))
+		preds = append(preds, sqlf.Sprintf(
+			"encryption_key_id IN (%s, %s)",
+			UserCredentialPlaceholderEncryptionKeyID,
+			UserCredentialUnmigratedEncryptionKeyID,
+		))
 	}
 	if opts.OnlyEncrypted {
-		preds = append(preds, sqlf.Sprintf("encryption_key_id <> ''"))
+		preds = append(preds, sqlf.Sprintf(
+			"encryption_key_id NOT IN ('', %s)",
+			UserCredentialUnmigratedEncryptionKeyID,
+		))
 	}
 
 	if len(preds) == 0 {

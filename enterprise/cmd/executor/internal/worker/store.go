@@ -2,7 +2,8 @@ package worker
 
 import (
 	"context"
-	"errors"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -27,7 +28,7 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 	return 0, errors.New("unimplemented")
 }
 
-func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
 	var job executor.Job
 	dequeued, err := s.queueStore.Dequeue(ctx, s.queueName, &job)
 	if err != nil {

@@ -1,13 +1,12 @@
 package gitlaboauth
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 
+	"github.com/cockroachdb/errors"
 	"github.com/dghubble/gologin"
 	oauth2Login "github.com/dghubble/gologin/oauth2"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -38,7 +37,7 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 
 		gitlabClient, err := gitlabClientFromAuthURL(config.Endpoint.AuthURL, token.AccessToken)
 		if err != nil {
-			ctx = gologin.WithError(ctx, fmt.Errorf("could not parse AuthURL %s", config.Endpoint.AuthURL))
+			ctx = gologin.WithError(ctx, errors.Errorf("could not parse AuthURL %s", config.Endpoint.AuthURL))
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}

@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -87,7 +87,7 @@ func (p *PhabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, 
 func (p *PhabricatorStore) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	repo, err := p.GetByName(ctx, name)
 	if err != nil {
-		if _, ok := err.(errPhabricatorRepoNotFound); !ok {
+		if !errors.HasType(err, errPhabricatorRepoNotFound{}) {
 			return nil, err
 		}
 		return p.Create(ctx, callsign, name, phabURL)

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/src-cli/internal/output"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (

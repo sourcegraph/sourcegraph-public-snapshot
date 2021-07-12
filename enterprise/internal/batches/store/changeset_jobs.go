@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -180,8 +180,16 @@ func scanChangesetJob(c *btypes.ChangesetJob, s scanner) error {
 	switch c.JobType {
 	case btypes.ChangesetJobTypeComment:
 		c.Payload = new(btypes.ChangesetJobCommentPayload)
+	case btypes.ChangesetJobTypeDetach:
+		c.Payload = new(btypes.ChangesetJobDetachPayload)
+	case btypes.ChangesetJobTypeReenqueue:
+		c.Payload = new(btypes.ChangesetJobReenqueuePayload)
+	case btypes.ChangesetJobTypeMerge:
+		c.Payload = new(btypes.ChangesetJobMergePayload)
+	case btypes.ChangesetJobTypeClose:
+		c.Payload = new(btypes.ChangesetJobClosePayload)
 	default:
-		return fmt.Errorf("unknown job type %q", c.JobType)
+		return errors.Errorf("unknown job type %q", c.JobType)
 	}
 	return json.Unmarshal(raw, &c.Payload)
 }

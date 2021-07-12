@@ -4,9 +4,30 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
-Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
+> ⚠️ **Regardless of your deployment type:** ⚠️
+> <br>Upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
+> <br>Patches, e.g. vX.X.4 vs. vX.X.5, do not have to be adopted when moving between vX.X versions.
+
+> ⚠️ **Regardless of your deployment type:** ⚠️
+> <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+
+## 3.28 -> 3.29 
+
+## Standard upgrade procedure
+
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+
+You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+
+## 3.27 -> 3.28 
+
+## Standard upgrade procedure
+
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+
+You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
 
 ## 3.26 -> 3.27
 
@@ -25,7 +46,6 @@ You can always find the version number of the latest release at [docs.sourcegrap
 - As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
 - If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
 - There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
-
 
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
@@ -56,7 +76,7 @@ In Sourcegraph version 3.20, we would automatically generate a secret key file (
 
 ## 3.16 -> 3.17
 
-- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in the `sourcegraph/server:3.27.4` release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](#Standard-upgrade-procedure) listed below.
+- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in the `sourcegraph/server:3.29.1` release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](#Standard-upgrade-procedure) listed below.
 
 ## Standard upgrade procedure
 

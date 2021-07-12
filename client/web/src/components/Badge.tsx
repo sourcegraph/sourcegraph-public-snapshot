@@ -1,11 +1,12 @@
 import classnames from 'classnames'
 import React from 'react'
 
-export type BadgeStatus = 'beta' | 'prototype' | 'wip' | 'new'
+export type BadgeStatus = 'beta' | 'prototype' | 'experimental' | 'wip' | 'new'
 
 const statusStyleMapping: Record<BadgeStatus, string> = {
     prototype: 'badge-warning',
     wip: 'badge-warning',
+    experimental: 'badge-info',
     beta: 'badge-info',
     new: 'badge-info',
 }

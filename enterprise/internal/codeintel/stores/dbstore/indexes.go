@@ -20,26 +20,27 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-	ID             int                            `json:"id"`
-	Commit         string                         `json:"commit"`
-	QueuedAt       time.Time                      `json:"queuedAt"`
-	State          string                         `json:"state"`
-	FailureMessage *string                        `json:"failureMessage"`
-	StartedAt      *time.Time                     `json:"startedAt"`
-	FinishedAt     *time.Time                     `json:"finishedAt"`
-	ProcessAfter   *time.Time                     `json:"processAfter"`
-	NumResets      int                            `json:"numResets"`
-	NumFailures    int                            `json:"numFailures"`
-	RepositoryID   int                            `json:"repositoryId"`
-	LocalSteps     []string                       `json:"local_steps"`
-	RepositoryName string                         `json:"repositoryName"`
-	DockerSteps    []DockerStep                   `json:"docker_steps"`
-	Root           string                         `json:"root"`
-	Indexer        string                         `json:"indexer"`
-	IndexerArgs    []string                       `json:"indexer_args"` // TODO - convert this to `IndexCommand string`
-	Outfile        string                         `json:"outfile"`
-	ExecutionLogs  []workerutil.ExecutionLogEntry `json:"execution_logs"`
-	Rank           *int                           `json:"placeInQueue"`
+	ID                 int                            `json:"id"`
+	Commit             string                         `json:"commit"`
+	QueuedAt           time.Time                      `json:"queuedAt"`
+	State              string                         `json:"state"`
+	FailureMessage     *string                        `json:"failureMessage"`
+	StartedAt          *time.Time                     `json:"startedAt"`
+	FinishedAt         *time.Time                     `json:"finishedAt"`
+	ProcessAfter       *time.Time                     `json:"processAfter"`
+	NumResets          int                            `json:"numResets"`
+	NumFailures        int                            `json:"numFailures"`
+	RepositoryID       int                            `json:"repositoryId"`
+	LocalSteps         []string                       `json:"local_steps"`
+	RepositoryName     string                         `json:"repositoryName"`
+	DockerSteps        []DockerStep                   `json:"docker_steps"`
+	Root               string                         `json:"root"`
+	Indexer            string                         `json:"indexer"`
+	IndexerArgs        []string                       `json:"indexer_args"` // TODO - convert this to `IndexCommand string`
+	Outfile            string                         `json:"outfile"`
+	ExecutionLogs      []workerutil.ExecutionLogEntry `json:"execution_logs"`
+	Rank               *int                           `json:"placeInQueue"`
+	AssociatedUploadID *int                           `json:"associatedUpload"`
 }
 
 func (i Index) RecordID() int {
@@ -79,6 +80,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			pq.Array(&executionLogs),
 			&index.Rank,
 			pq.Array(&index.LocalSteps),
+			&index.AssociatedUploadID,
 		); err != nil {
 			return nil, err
 		}
@@ -124,6 +126,12 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
 }
 
+const indexAssociatedUploadIDQueryFragment = `
+(
+	SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id
+) AS associated_upload_id
+`
+
 const indexRankQueryFragment = `
 SELECT
 	r.id,
@@ -154,12 +162,69 @@ SELECT
 	u.outfile,
 	u.execution_logs,
 	s.rank,
-	u.local_steps
+	u.local_steps,
+	` + indexAssociatedUploadIDQueryFragment + `
 FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE u.id = %s AND %s
+`
+
+// GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
+// have a corresponding element in the returned list.
+func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err error) {
+	ctx, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%d", id))
+	}
+
+	return scanIndexes(s.Store.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+}
+
+const getIndexesByIDsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexesByIDs
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps,
+	` + indexAssociatedUploadIDQueryFragment + `
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (` + indexRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE u.id IN (%s) AND %s
 `
 
 type GetIndexesOptions struct {
@@ -252,7 +317,8 @@ SELECT
 	u.outfile,
 	u.execution_logs,
 	s.rank,
-	u.local_steps
+	u.local_steps,
+	` + indexAssociatedUploadIDQueryFragment + `
 FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -301,11 +367,13 @@ SELECT COUNT(*) WHERE EXISTS (
 `
 
 // InsertIndex inserts a new index and returns its identifier.
-func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
-	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", index.ID),
-	}})
-	defer endObservation(1, observation.Args{})
+func (s *Store) InsertIndex(ctx context.Context, index Index) (id int, err error) {
+	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("id", id),
+		}})
+	}()
 
 	if index.DockerSteps == nil {
 		index.DockerSteps = []DockerStep{}
@@ -317,7 +385,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 		index.LocalSteps = []string{}
 	}
 
-	id, _, err := basestore.ScanFirstInt(s.Store.Query(
+	id, _, err = basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			insertIndexQuery,
@@ -375,6 +443,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.execution_logs`),
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf(`u.local_steps`),
+	sqlf.Sprintf(indexAssociatedUploadIDQueryFragment),
 }
 
 var IndexColumnsWithNullRank = indexColumnsWithNullRank

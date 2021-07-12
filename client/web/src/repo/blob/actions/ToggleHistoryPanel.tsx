@@ -7,10 +7,12 @@ import { filter } from 'rxjs/operators'
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import {
+    addLineRangeQueryParameter,
+    formatSearchParameters,
     lprToRange,
-    parseHash,
-    toPositionOrRangeHash,
-    toViewStateHashComponent,
+    parseQueryAndHash,
+    toPositionOrRangeQueryParameter,
+    toViewStateHash,
 } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -33,7 +35,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
      * Reports the current visibility (derived from the location).
      */
     public static isVisible(location: H.Location): boolean {
-        return parseHash<BlobPanelTabID>(location.hash).viewState === 'history'
+        return parseQueryAndHash<BlobPanelTabID>(location.search, location.hash).viewState === 'history'
     }
 
     /**
@@ -41,13 +43,19 @@ export class ToggleHistoryPanel extends React.PureComponent<
      * the given value.
      */
     private static locationWithVisibility(location: H.Location, visible: boolean): H.LocationDescriptorObject {
-        const hash = parseHash<BlobPanelTabID>(location.hash)
+        const parsedQuery = parseQueryAndHash<BlobPanelTabID>(location.search, location.hash)
         if (visible) {
-            hash.viewState = 'history' // defaults to last-viewed tab, or first tab
+            parsedQuery.viewState = 'history' // defaults to last-viewed tab, or first tab
         } else {
-            delete hash.viewState
+            delete parsedQuery.viewState
         }
-        return { hash: toPositionOrRangeHash({ range: lprToRange(hash) }) + toViewStateHashComponent(hash.viewState) }
+        const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
+        return {
+            search: formatSearchParameters(
+                addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
+            ),
+            hash: toViewStateHash(parsedQuery.viewState),
+        }
     }
 
     public componentDidMount(): void {
@@ -80,14 +88,18 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink className="nav-link repo-header__file-action" onSelect={this.onClick}>
+                <ButtonLink className="btn repo-header__file-action" onSelect={this.onClick}>
                     <HistoryIcon className="icon-inline" />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </ButtonLink>
             )
         }
         return (
-            <ButtonLink onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
+            <ButtonLink
+                className="btn btn-icon repo-header__action"
+                onSelect={this.onClick}
+                data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
+            >
                 <HistoryIcon className="icon-inline" />
             </ButtonLink>
         )

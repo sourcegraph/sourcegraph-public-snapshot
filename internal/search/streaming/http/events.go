@@ -2,7 +2,8 @@ package http
 
 import (
 	"bytes"
-	"fmt"
+
+	"github.com/cockroachdb/errors"
 )
 
 // EventMatch is an interface which only the top level match event types
@@ -19,6 +20,7 @@ type EventFileMatch struct {
 
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
+	RepoStars  int      `json:"repoStars,omitempty"`
 	Branches   []string `json:"branches,omitempty"`
 	Version    string   `json:"version,omitempty"`
 
@@ -39,8 +41,12 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
+	Repository  string   `json:"repository"`
+	Branches    []string `json:"branches,omitempty"`
+	RepoStars   int      `json:"repoStars,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Fork        bool     `json:"fork,omitempty"`
+	Archived    bool     `json:"archived,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}
@@ -52,6 +58,7 @@ type EventSymbolMatch struct {
 
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
+	RepoStars  int      `json:"repoStars,omitempty"`
 	Branches   []string `json:"branches,omitempty"`
 	Version    string   `json:"version,omitempty"`
 
@@ -79,6 +86,7 @@ type EventCommitMatch struct {
 	URL        string `json:"url"`
 	Detail     string `json:"detail"`
 	Repository string `json:"repository"`
+	RepoStars  int    `json:"repoStars,omitempty"`
 	Content    string `json:"content"`
 	// [line, character, length]
 	Ranges [][3]int32 `json:"ranges"`
@@ -136,7 +144,7 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 	case CommitMatchType:
 		return []byte(`"commit"`), nil
 	default:
-		return nil, fmt.Errorf("unknown MatchType: %d", t)
+		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
 
 }
@@ -151,7 +159,7 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 	} else if bytes.Equal(b, []byte(`"commit"`)) {
 		*t = CommitMatchType
 	} else {
-		return fmt.Errorf("unknown MatchType: %s", b)
+		return errors.Errorf("unknown MatchType: %s", b)
 	}
 	return nil
 }

@@ -2,12 +2,11 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -29,7 +28,7 @@ type GithubSource struct {
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGithubSource(&c, cf, nil)
 }
@@ -62,7 +61,7 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 		return nil, err
 	}
 
-	var authr auth.Authenticator = au
+	var authr = au
 	if au == nil {
 		authr = &auth.OAuthBearerToken{Token: c.Token}
 	}
@@ -250,4 +249,22 @@ func (s GithubSource) CreateComment(ctx context.Context, c *Changeset, text stri
 	}
 
 	return s.client.CreatePullRequestComment(ctx, pr, text)
+}
+
+// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
+// If squash is true, a squash-then-merge merge will be performed.
+func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	if err := s.client.MergePullRequest(ctx, pr, squash); err != nil {
+		if github.IsNotMergeable(err) {
+			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		}
+		return err
+	}
+
+	return c.Changeset.SetMetadata(pr)
 }

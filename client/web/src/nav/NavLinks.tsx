@@ -18,7 +18,7 @@ import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
 import { LinkWithIcon } from '../components/LinkWithIcon'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
-import { InsightsNavItem } from '../insights/components/InsightsNavLink/InsightsNavLink'
+import { InsightsNavItem } from '../insights/components'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -26,7 +26,9 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
+import { SearchContextProps } from '../search'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { getReactElements } from '../util/getReactElements'
 
 import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
@@ -44,7 +46,8 @@ interface Props
         ExtensionAlertAnimationProps,
         TelemetryProps,
         CodeMonitoringProps,
-        ActivationProps {
+        ActivationProps,
+        Pick<SearchContextProps, 'showSearchContext' | 'showSearchContextManagement'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -157,15 +160,18 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                         {link}
                     </li>
                 ))}
-            {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag  */}
+            {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag */}
             {authenticatedUser &&
-                (window.context?.externalServicesUserModeEnabled ||
-                    authenticatedUser?.siteAdmin ||
-                    authenticatedUser?.tags?.some(
-                        tag => tag === 'AllowUserExternalServicePublic' || tag === 'AllowUserExternalServicePrivate'
-                    )) && (
+                (authenticatedUser.siteAdmin || userExternalServicesEnabledFromTags(authenticatedUser.tags)) && (
                     <li className="nav-item">
-                        <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
+                        <StatusMessagesNavItem
+                            user={{
+                                id: authenticatedUser.id,
+                                username: authenticatedUser.username,
+                                isSiteAdmin: authenticatedUser.siteAdmin,
+                            }}
+                            history={history}
+                        />
                     </li>
                 )}
             {!minimalNavLinks && (

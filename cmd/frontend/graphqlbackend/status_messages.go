@@ -3,17 +3,16 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	currentUser, err := backend.CurrentUser(ctx)
+	currentUser, err := backend.CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +22,7 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageRe
 
 	// 🚨 SECURITY: Users will fetch status messages for any external services they
 	// own. In addition, site admins will also fetch site level external services.
-	messages, err := repos.FetchStatusMessages(ctx, r.db, currentUser, envvar.SourcegraphDotComMode())
+	messages, err := repos.FetchStatusMessages(ctx, r.db, currentUser)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +56,10 @@ func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.SyncError != nil
 }
 
+func (r *statusMessageResolver) ToIndexingError() (*statusMessageResolver, bool) {
+	return r, r.message.IndexingError != nil
+}
+
 func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil
@@ -66,6 +69,9 @@ func (r *statusMessageResolver) Message() (string, error) {
 	}
 	if r.message.SyncError != nil {
 		return r.message.SyncError.Message, nil
+	}
+	if r.message.IndexingError != nil {
+		return r.message.IndexingError.Message, nil
 	}
 	return "", errors.New("status message is of unknown type")
 }

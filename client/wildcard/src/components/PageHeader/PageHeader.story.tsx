@@ -12,7 +12,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { PageHeader } from './PageHeader'
 
 const { add } = storiesOf('wildcard/PageHeader', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container web-content mt-3">{story()}</div>}</BrandedStory>
+    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 ))
 
 add(
@@ -28,20 +28,12 @@ add(
         />
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                name: 'Figma',
-                url:
-                    'https://www.figma.com/file/A4gGoseJDz8iPeHP515MfQ/%F0%9F%A5%96Breaders-breadcrumbs-headers-15431-Approved?node-id=690%3A13588',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
-            },
-        ],
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        },
     }
 )
 
@@ -66,7 +58,7 @@ add(
                     <Link to="/page" className="btn btn-secondary mr-2">
                         Secondary
                     </Link>
-                    <Link to="/page" className="btn btn-primary mr-2">
+                    <Link to="/page" className="btn btn-primary text-nowrap">
                         <PlusIcon className="icon-inline" /> Create
                     </Link>
                 </div>
@@ -74,19 +66,11 @@ add(
         />
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                name: 'Figma',
-                url:
-                    'https://www.figma.com/file/A4gGoseJDz8iPeHP515MfQ/%F0%9F%A5%96Breaders-breadcrumbs-headers-15431-Approved?node-id=690%3A13588',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
-            },
-        ],
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        },
     }
 )

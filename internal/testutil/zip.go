@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -71,11 +70,11 @@ func TempZipFileOnDisk(data []byte) (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	d, err := ioutil.TempDir("", "temp_zip_dir")
+	d, err := os.MkdirTemp("", "temp_zip_dir")
 	if err != nil {
 		return "", nil, err
 	}
-	f, err := ioutil.TempFile(d, "temp_zip")
+	f, err := os.CreateTemp(d, "temp_zip")
 	if err != nil {
 		return "", nil, err
 	}

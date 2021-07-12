@@ -2,13 +2,12 @@ package httpapi
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -62,7 +61,7 @@ func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Reque
 				return nil
 			}
 		}
-		return fmt.Errorf("given repository %s not listed in installed repositories", nameWithOwner)
+		return errors.Errorf("given repository %s not listed in installed repositories", nameWithOwner)
 	}
 
 	authViaReposEndpoint := func() error {

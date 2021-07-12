@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 
@@ -31,7 +32,7 @@ func handleGitHubRepoAuthzEvent(ctx context.Context, extSvc *types.ExternalServi
 
 	e, ok := payload.(repoGetter)
 	if !ok {
-		return fmt.Errorf("incorrect event type sent to github event handler: %T", payload)
+		return errors.Errorf("incorrect event type sent to github event handler: %T", payload)
 	}
 	return scheduleRepoUpdate(ctx, e.GetRepo())
 }
@@ -49,7 +50,7 @@ func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository) error {
 	}
 
 	// 🚨 SECURITY: we want to be able to find any private repo here, so set internal actor
-	ctx = actor.WithActor(ctx, &actor.Actor{Internal: true})
+	ctx = actor.WithInternalActor(ctx)
 	r, err := database.GlobalRepos.GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
 	if err != nil {
 		return err

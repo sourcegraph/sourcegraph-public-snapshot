@@ -111,18 +111,6 @@ type Mutation {
     """
     deleteExternalService(externalService: ID!): EmptyResponse!
     """
-    DEPRECATED: All repositories are accessible or deleted. To prevent a
-    repository from being accessed on Sourcegraph add it to the external
-    service exclude configuration. This mutation will be removed in 3.6.
-
-    Enables or disables a repository. A disabled repository is only accessible
-    to site admins and never appears in search results.
-
-    Only site admins may perform this mutation.
-    """
-    setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
-    """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.
 
@@ -430,6 +418,11 @@ type Mutation {
         """
         source: EventSource!
         """
+        An optional cohort ID to identify the user as part of a specific A/B test.
+        The cohort ID is expected to be a date in the form YYYY-MM-DD
+        """
+        cohortID: String
+        """
         The additional argument information.
         """
         argument: String
@@ -590,7 +583,7 @@ type Mutation {
     convertVersionContextToSearchContext(name: String!): SearchContext!
 
     """
-    (experimental) Create search context.
+    Create search context.
     """
     createSearchContext(
         """
@@ -604,12 +597,12 @@ type Mutation {
     ): SearchContext!
 
     """
-    (experimental) Delete search context.
+    Delete search context.
     """
     deleteSearchContext(id: ID!): EmptyResponse!
 
     """
-    (experimental) Update search context.
+    Update search context.
     """
     updateSearchContext(
         """
@@ -625,6 +618,106 @@ type Mutation {
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
+
+    """
+    (experimental) Create a new feature flag
+    """
+    createFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+
+        """
+        The value of the feature flag. Only set if the new feature flag
+        will be a concrete boolean flag. Mutually exclusive with rolloutBasisPoints.
+        """
+        value: Boolean
+
+        """
+        The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
+        Only set if the new feature flag will be a rollout flag.
+        Mutually exclusive with value.
+        """
+        rolloutBasisPoints: Int
+    ): FeatureFlag!
+
+    """
+    (experimental) Delete a feature flag
+    """
+    deleteFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+    ): EmptyResponse!
+
+    """
+    (experimental) Update a feature flag
+    """
+    updateFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+
+        """
+        The value of the feature flag. Only set if the new feature flag
+        will be a concrete boolean flag. Mutually exclusive with rollout.
+        """
+        value: Boolean
+
+        """
+        The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
+        Mutually exclusive with value.
+        """
+        rolloutBasisPoints: Int
+    ): FeatureFlag!
+
+    """
+    (experimental) Create a new feature flag override for the given org or user
+    """
+    createFeatureFlagOverride(
+        """
+        The namespace for this feature flag. Must be either a user ID or an org ID.
+        """
+        namespace: ID!
+
+        """
+        The name of the feature flag this override applies to
+        """
+        flagName: String!
+
+        """
+        The overridden value
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
+
+    """
+    Delete a feature flag override
+    """
+    deleteFeatureFlagOverride(
+        """
+        The ID of the feature flag override to delete
+        """
+        id: ID!
+    ): EmptyResponse!
+
+    """
+    Update a feature flag override
+    """
+    updateFeatureFlagOverride(
+        """
+        The ID of the feature flag override to update
+        """
+        id: ID!
+
+        """
+        The updated value of the feature flag override
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
 }
 
 """
@@ -1009,6 +1102,10 @@ type Query {
         """
         notIndexed: Boolean = true
         """
+        Include repositories that have encountered errors when cloning or fetching
+        """
+        failedFetch: Boolean = false
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
@@ -1140,30 +1237,6 @@ type Query {
         default version context is used (all repositories on the default branch).
         """
         versionContext: String
-
-        """
-        (experimental) Sourcegraph 3.9 added support for cursor-based paginated
-        search requests when this field is specified. For details, see
-        https://docs.sourcegraph.com/api/graphql/search
-
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-
-        A future request can be made for more results by passing in the
-        'SearchResults.pageInfo.endCursor' that is returned.
-        """
-        after: String
-
-        """
-        (experimental) Sourcegraph 3.9 added support for cursor-based paginated
-        search requests when this field is specified. For details, see
-        https://docs.sourcegraph.com/api/graphql/search
-
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
-        """
-        first: Int
     ): Search
     """
     All saved searches configured for the current user, merged from all configurations.
@@ -1178,11 +1251,11 @@ type Query {
     """
     versionContexts: [VersionContext!]!
     """
-    (experimental) Auto-defined search contexts available to the current user.
+    Auto-defined search contexts available to the current user.
     """
     autoDefinedSearchContexts: [SearchContext!]!
     """
-    (experimental) All available user-defined search contexts. Excludes auto-defined contexts.
+    All available user-defined search contexts. Excludes auto-defined contexts.
     """
     searchContexts(
         """
@@ -1198,15 +1271,13 @@ type Query {
         """
         query: String
         """
-        Specifies the filter type used to narrow down the search contexts using their namespaces. If not set,
-        search contexts are not filtered by namespace.
+        Include search contexts matching the provided namespaces. A union of all matching search contexts is returned.
+        ID can either be a user ID, org ID, or nil to match instance-level contexts. Empty namespaces list
+        defaults to returning all available search contexts.
+        Example: `namespaces: [user1, org1, org2, nil]` will return search contexts created by user1 + contexts
+        created by org1 + contexts created by org2 + all instance-level contexts.
         """
-        namespaceFilterType: SearchContextsNamespaceFilterType
-        """
-        Limit search contexts to a specific namespace (user or org). Namespace parameter has to be set if namespaceFilterType is set to NAMESPACE.
-        If namespaceFilterType is INSTANCE or not set, namespace should not be set.
-        """
-        namespace: ID
+        namespaces: [ID] = []
         """
         Sort field.
         """
@@ -1217,7 +1288,7 @@ type Query {
         descending: Boolean = false
     ): SearchContextConnection!
     """
-    (experimental) Determines whether the search context is within the set of search contexts available to the current user.
+    Determines whether the search context is within the set of search contexts available to the current user.
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
     isSearchContextAvailable(spec: String!): Boolean!
@@ -1282,9 +1353,111 @@ type Query {
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
+    Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
+    """
+    codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
+
+    """
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
+
+    """
+    Retrieve the list of defined feature flags
+    """
+    featureFlags: [FeatureFlag!]!
+
+    """
+    Retrieve the values of all feature flags for the current user
+    """
+    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+}
+
+"""
+A feature flag is either a static boolean feature flag or a rollout feature flag
+"""
+union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout
+
+"""
+A feature flag that has a statically configured value
+"""
+type FeatureFlagBoolean {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The static value of the feature flag
+    """
+    value: Boolean!
+
+    """
+    Overrides that apply to the feature flag
+    """
+    overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag that is randomly evaluated to a boolean based on the rollout parameter
+"""
+type FeatureFlagRollout {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The ratio of users that will be assigned this this feature flag, expressed in
+    basis points (0.01%).
+    """
+    rolloutBasisPoints: Int!
+
+    """
+    Overrides that apply to the feature flag
+    """
+    overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag override is an override of a feature flag's value for a specific org or user
+"""
+type FeatureFlagOverride {
+    """
+    A unique ID for this feature flag override
+    """
+    id: ID!
+
+    """
+    The namespace for this override. Will always be a user or org.
+    """
+    namespace: Namespace!
+
+    """
+    The name of the feature flag being overridden
+    """
+    targetFlag: FeatureFlag!
+
+    """
+    The overriden value of the feature flag
+    """
+    value: Boolean!
+}
+
+"""
+An evaluated feature flag is any feature flag (static or random) that has been evaluated to
+a concrete value for a given viewer.
+"""
+type EvaluatedFeatureFlag {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The concrete evaluated value of the feature flag
+    """
+    value: Boolean!
 }
 
 """
@@ -1313,7 +1486,9 @@ type OutOfBandMigration implements Node {
     description: String!
 
     """
-    The Sourcegraph version in which this migration was introduced.
+    The Sourcegraph version in which this migration was introduced. The format of this version
+    includes only major and minor parts separated by a dot. The patch version can always be assumed
+    to be zero as we'll never introduce or deprecate an out-of-band migration within a patch release.
 
     It is necessary to completely this migration in reverse (if destructive) before downgrading
     to or past this version. Otherwise, the previous instance version will not be aware of the
@@ -1322,7 +1497,8 @@ type OutOfBandMigration implements Node {
     introduced: String!
 
     """
-    The Sourcegraph version in which this migration is assumed to have completed.
+    The Sourcegraph version by which this migration is assumed to have completed. The format of
+    this version mirrors introduced and includes only major and minor parts separated by a dot.
 
     It is necessary to have completed this migration before upgrading to or past this version.
     Otherwsie, the next instance version will no longer be aware of the old data format.
@@ -1485,10 +1661,6 @@ A search result. Every type of search result, except FileMatch, must implement t
 """
 interface GenericSearchResultInterface {
     """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -1616,11 +1788,6 @@ type SearchResults {
     Dynamic filters generated by the search results
     """
     dynamicFilters: [SearchFilter!]!
-    """
-    Pagination information.
-    This field is only applcable when the original request was a paginated one.
-    """
-    pageInfo: PageInfo!
 }
 
 """
@@ -1682,7 +1849,7 @@ type Language {
 """
 A search suggestion.
 """
-union SearchSuggestion = Repository | File | Symbol | Language
+union SearchSuggestion = Repository | File | Symbol | Language | SearchContext
 
 """
 A search-related alert message.
@@ -1783,10 +1950,6 @@ type Diff {
 A search result that is a Git commit.
 """
 type CommitSearchResult implements GenericSearchResultInterface {
-    """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
     """
     A markdown string that is rendered prominently.
     """
@@ -1954,6 +2117,14 @@ type ExternalService implements Node {
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
     nextSyncAt: DateTime
+
+    """
+    Returns a list of scopes granted by the code host. It is based on the token used
+    when configuring the external service.
+    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
+    so it should be used sparingly.
+    """
+    grantedScopes: [String!]
 }
 
 """
@@ -2194,10 +2365,6 @@ type Repository implements Node & GenericSearchResultInterface {
     """
     viewerCanAdminister: Boolean!
     """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -2215,6 +2382,11 @@ type Repository implements Node & GenericSearchResultInterface {
     for use by code intelligence features.
     """
     codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
+
+    """
+    The star count the repository has in the code host.
+    """
+    stars: Int!
 }
 
 """
@@ -2391,27 +2563,21 @@ type VersionContext {
 }
 
 """
-(experimental) Search context namespace filter types available to narrow down contexts when querying.
-"""
-enum SearchContextsNamespaceFilterType {
-    """
-    Limits available search contexts to instance-level contexts (without a namespace).
-    """
-    INSTANCE
-    """
-    Limits available search contexts to a specific namespace (user or org).
-    """
-    NAMESPACE
-}
-
-"""
-(experimental) A search context. Specifies a set of repositories to be searched.
+A search context. Specifies a set of repositories to be searched.
 """
 type SearchContext implements Node {
     """
     The unique id of the search context.
     """
     id: ID!
+    """
+    The name of the search context.
+    """
+    name: String!
+    """
+    The owner (user or org) of the search context. If nil, search context is considered instance-level.
+    """
+    namespace: Namespace
     """
     The description of the search context.
     """
@@ -2443,10 +2609,14 @@ type SearchContext implements Node {
     Date and time the search context was last updated.
     """
     updatedAt: DateTime!
+    """
+    If current viewer can manage (edit, delete) the search context.
+    """
+    viewerCanManage: Boolean!
 }
 
 """
-(experimental) Specifies a set of revisions to be searched within a repository.
+Specifies a set of revisions to be searched within a repository.
 """
 type SearchContextRepositoryRevisions {
     """
@@ -3508,6 +3678,10 @@ type GitCommit implements Node {
         recursive: Boolean = false
     ): GitTree
     """
+    A list of file names in this repository.
+    """
+    fileNames: [String!]!
+    """
     The Git blob in this commit at the given path.
     """
     blob(path: String!): GitBlob
@@ -4076,6 +4250,19 @@ type GitBlob implements TreeEntry & File2 {
         """
         query: String
     ): SymbolConnection!
+    """
+    (Experimental) Symbol defined in this blob at the specfic line number and character offset.
+    """
+    symbol(
+        """
+        The line number (0-based).
+        """
+        line: Int!
+        """
+        The character offset (0-based). The offset is measured in characters, not bytes.
+        """
+        character: Int!
+    ): Symbol
     """
     Always false, since a blob is a file, not directory.
     """
@@ -5070,6 +5257,11 @@ type Site implements SettingsSubject {
         """
         days: Int
     ): MonitoringStatistics!
+    """
+    Whether changes can be made to site settings through the API. When global settings are configured through
+    the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
+    """
+    allowSiteSettingsEdits: Boolean!
 }
 
 """
@@ -5616,6 +5808,10 @@ type ExtensionRegistry {
     Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
     """
     localExtensionIDPrefix: String
+    """
+    A list of featured extensions in the registry.
+    """
+    featuredExtensions: FeaturedExtensionsConnection
 }
 
 """
@@ -5870,6 +6066,23 @@ type RegistryExtensionConnection {
 }
 
 """
+A list of featured extensions in the registry.
+"""
+type FeaturedExtensionsConnection {
+    """
+    A list of featured registry extensions.
+    """
+    nodes: [RegistryExtension!]!
+
+    """
+    Errors that occurred while communicating with remote registries to obtain the list of extensions.
+    In order to be able to return local extensions even when the remote registry is unreachable, errors are
+    recorded here instead of in the top-level GraphQL errors list.
+    """
+    error: String
+}
+
+"""
 Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
 """
 type CodeIntelligenceRangeConnection {
@@ -5982,9 +6195,20 @@ type SyncError {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when repositories could not
+be indexed
+"""
+type IndexingError {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError
+union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError | IndexingError
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -6095,4 +6319,39 @@ type CodeHostRepository {
     Is the repo private
     """
     private: Boolean!
+}
+
+"""
+A description of a command run inside the executor to during processing of the parent record.
+"""
+type ExecutionLogEntry {
+    """
+    An internal tag used to correlate this log entry with other records.
+    """
+    key: String!
+
+    """
+    The arguments of the command run inside the executor.
+    """
+    command: [String!]!
+
+    """
+    The date when this command started.
+    """
+    startTime: DateTime!
+
+    """
+    The exit code of the command.
+    """
+    exitCode: Int!
+
+    """
+    The combined stdout and stderr logs of the command.
+    """
+    out: String!
+
+    """
+    The duration in milliseconds of the command.
+    """
+    durationMilliseconds: Int!
 }

@@ -9,7 +9,7 @@ import { BatchChangeListPage } from './BatchChangeListPage'
 import { nodes } from './testData'
 
 const { add } = storiesOf('web/batches/BatchChangeListPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
@@ -35,6 +35,7 @@ add('List of batch changes', () => (
         {props => (
             <BatchChangeListPage
                 {...props}
+                headingElement="h1"
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesLicensed}
             />
@@ -47,6 +48,7 @@ add('Licensing not enforced', () => (
         {props => (
             <BatchChangeListPage
                 {...props}
+                headingElement="h1"
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesNotLicensed}
             />
@@ -75,6 +77,7 @@ add('No batch changes', () => {
             {props => (
                 <BatchChangeListPage
                     {...props}
+                    headingElement="h1"
                     queryBatchChanges={queryBatchChanges}
                     areBatchChangesLicensed={batchChangesLicensed}
                 />
@@ -104,6 +107,7 @@ add('All batch changes tab empty', () => {
             {props => (
                 <BatchChangeListPage
                     {...props}
+                    headingElement="h1"
                     queryBatchChanges={queryBatchChanges}
                     areBatchChangesLicensed={batchChangesLicensed}
                     openTab="batchChanges"

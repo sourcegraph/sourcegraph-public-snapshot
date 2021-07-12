@@ -1,28 +1,18 @@
 package query
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-// SubstituteAliases substitutes field name aliases for their canonical names.
+// SubstituteAliases substitutes field name aliases for their canonical names,
+// and substitutes `content:` for pattern nodes.
 func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
-	aliases := map[string]string{
-		"r":        FieldRepo,
-		"g":        FieldRepoGroup,
-		"f":        FieldFile,
-		"l":        FieldLang,
-		"language": FieldLang,
-		"since":    FieldAfter,
-		"until":    FieldBefore,
-		"m":        FieldMessage,
-		"msg":      FieldMessage,
-		"revision": FieldRev,
-	}
 	mapper := func(nodes []Node) []Node {
 		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 			if field == "content" {
@@ -33,9 +23,7 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 				}
 				return Pattern{Value: value, Negated: negated, Annotation: annotation}
 			}
-			if canonical, ok := aliases[field]; ok {
-				field = canonical
-			}
+			field = resolveFieldAlias(field)
 			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 		})
 	}
@@ -282,7 +270,7 @@ func Globbing(nodes []Node) ([]Node, error) {
 	})
 
 	if len(globErrors) == 1 {
-		return nil, fmt.Errorf("invalid glob syntax in field %s: ", globErrors[0].field)
+		return nil, errors.Errorf("invalid glob syntax in field %s: ", globErrors[0].field)
 	}
 
 	if len(globErrors) > 1 {
@@ -291,7 +279,7 @@ func Globbing(nodes []Node) ([]Node, error) {
 		for _, e := range globErrors[1:] {
 			fields += fmt.Sprintf(", %s:", e.field)
 		}
-		return nil, fmt.Errorf("invalid glob syntax in fields %s", fields)
+		return nil, errors.Errorf("invalid glob syntax in fields %s", fields)
 	}
 
 	return nodes, nil
@@ -335,12 +323,12 @@ func toParameters(nodes []Node) []Parameter {
 // repo:foo a or b or repo:bar c => (repo:foo a) or (b) or (repo:bar c)
 func Hoist(nodes []Node) ([]Node, error) {
 	if len(nodes) != 1 {
-		return nil, fmt.Errorf("heuristic requires one top-level expression")
+		return nil, errors.Errorf("heuristic requires one top-level expression")
 	}
 
 	expression, ok := nodes[0].(Operator)
 	if !ok || expression.Kind == Concat {
-		return nil, fmt.Errorf("heuristic requires top-level and- or or-expression")
+		return nil, errors.Errorf("heuristic requires top-level and- or or-expression")
 	}
 
 	n := len(expression.Operands)
@@ -357,7 +345,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 			continue
 		}
 		if !isPatternExpression([]Node{node}) {
-			return nil, fmt.Errorf("inner expression %s is not a pure pattern expression", node.String())
+			return nil, errors.Errorf("inner expression %s is not a pure pattern expression", node.String())
 		}
 		pattern = append(pattern, node)
 	}

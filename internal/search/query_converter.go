@@ -1,10 +1,10 @@
 package search
 
 import (
-	"math"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -62,9 +62,6 @@ func IncludeExcludeValues(q query.Basic, field string) (include, exclude []strin
 	return include, exclude
 }
 
-const defaultMaxSearchResults = 30
-const defaultMaxSearchResultsStreaming = 500
-
 func count(q query.Basic, p Protocol) int {
 	if count := q.GetCount(); count != "" {
 		v, _ := strconv.Atoi(count) // Invariant: count is validated.
@@ -72,16 +69,14 @@ func count(q query.Basic, p Protocol) int {
 	}
 
 	if q.IsStructural() {
-		return defaultMaxSearchResults
+		return DefaultMaxSearchResults
 	}
 
 	switch p {
 	case Batch:
-		return defaultMaxSearchResults
+		return DefaultMaxSearchResults
 	case Streaming:
-		return defaultMaxSearchResultsStreaming
-	case Pagination:
-		return math.MaxInt32
+		return DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
 }
@@ -91,7 +86,6 @@ type Protocol int
 const (
 	Streaming Protocol = iota
 	Batch
-	Pagination
 )
 
 // ToTextPatternInfo converts a an atomic query to internal values that drive
@@ -156,4 +150,20 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 		Index:                        q.Index(),
 		Select:                       selector,
 	}
+}
+
+func TimeoutDuration(b query.Basic) time.Duration {
+	d := DefaultTimeout
+	maxTimeout := time.Duration(SearchLimits().MaxTimeoutSeconds) * time.Second
+	timeout := b.GetTimeout()
+	if timeout != nil {
+		d = *timeout
+	} else if b.GetCount() != "" {
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
+		d = maxTimeout
+	}
+	if d > maxTimeout {
+		d = maxTimeout
+	}
+	return d
 }

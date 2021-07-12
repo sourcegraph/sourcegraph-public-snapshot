@@ -2,10 +2,11 @@ package authz
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
 
 const (
@@ -15,12 +16,12 @@ const (
 
 // errUnrecognizedScheme occurs when the Authorization header scheme (the first token) is not
 // recognized.
-var errUnrecognizedScheme = fmt.Errorf("unrecognized HTTP Authorization request header scheme (supported values: %q, %q)", SchemeToken, SchemeTokenSudo)
+var errUnrecognizedScheme = errors.Errorf("unrecognized HTTP Authorization request header scheme (supported values: %q, %q)", SchemeToken, SchemeTokenSudo)
 
 // IsUnrecognizedScheme reports whether err indicates that the request's Authorization header scheme
 // is unrecognized or unparseable (i.e., is neither "token" nor "token-sudo").
 func IsUnrecognizedScheme(err error) bool {
-	return err == errUnrecognizedScheme || err == errHTTPAuthParamsDuplicateKey || err == errHTTPAuthParamsNoEquals
+	return errors.IsAny(err, errUnrecognizedScheme, errHTTPAuthParamsDuplicateKey, errHTTPAuthParamsNoEquals)
 }
 
 // ParseAuthorizationHeader parses the HTTP Authorization request header for supported credentials
@@ -52,6 +53,10 @@ func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err e
 		case SchemeTokenSudo:
 			return "", "", errors.New(`HTTP Authorization request header value must be of the following form: token="TOKEN",user="USERNAME"`)
 		}
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		return "", "", errors.New("use of access tokens with sudo scope is disabled")
 	}
 
 	token = params["token"]

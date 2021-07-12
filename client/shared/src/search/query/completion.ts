@@ -279,7 +279,7 @@ async function completeFilter(
         staticSuggestions = resolvedFilter.definition.discreteValues(token.value, isSourcegraphDotCom).map(
             ({ label, insertText, asSnippet }, index): Monaco.languages.CompletionItem => ({
                 label,
-                sortText: index.toString().padStart(2, '0'), // suggestions sort by order in the list, not alphabetically (up to 99 values).
+                sortText: index.toString().padStart(2, '1'), // suggestions sort by order in the list, not alphabetically (up to 99 values).
                 kind: Monaco.languages.CompletionItemKind.Value,
                 insertText: `${insertText || label} `,
                 filterText: label,
@@ -302,13 +302,14 @@ async function completeFilter(
             .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
             .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
             .filter(isDefined)
-            .map(partialCompletionItem => ({
+            .map((partialCompletionItem, index) => ({
                 ...partialCompletionItem,
                 // Set the current value as filterText, so that all dynamic suggestions
                 // returned by the server are displayed. Otherwise, if the current filter value
                 // is a regex pattern like `repo:^` Monaco's filtering will try match `^` against the
                 // suggestions, and not display them because they don't match.
                 filterText: value?.value,
+                sortText: index.toString().padStart(2, '0'), // suggestions sort by order in the list, not alphabetically (up to 99 values).
                 range: value ? toMonacoRange(value.range) : defaultRange,
                 command: COMPLETION_ITEM_SELECTED,
             }))

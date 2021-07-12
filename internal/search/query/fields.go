@@ -30,8 +30,7 @@ const (
 
 	// Temporary experimental fields:
 	FieldIndex     = "index"
-	FieldCount     = "count"  // Searches that specify `count:` will fetch at least that number of results, or the full result set
-	FieldStable    = "stable" // Forces search to return a stable result ordering (currently limited to file content matches).
+	FieldCount     = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
 	FieldTimeout   = "timeout"
 	FieldCombyRule = "rule"
 	FieldSelect    = "select"
@@ -68,10 +67,31 @@ var allFields = map[string]struct{}{
 	"msg":                   empty,
 	FieldIndex:              empty,
 	FieldCount:              empty,
-	FieldStable:             empty,
 	FieldTimeout:            empty,
 	FieldCombyRule:          empty,
 	FieldRev:                empty,
 	"revision":              empty,
 	FieldSelect:             empty,
+}
+
+var aliases = map[string]string{
+	"r":        FieldRepo,
+	"g":        FieldRepoGroup,
+	"f":        FieldFile,
+	"l":        FieldLang,
+	"language": FieldLang,
+	"since":    FieldAfter,
+	"until":    FieldBefore,
+	"m":        FieldMessage,
+	"msg":      FieldMessage,
+	"revision": FieldRev,
+}
+
+// resolveFieldAlias resolves an aliased field like `r:` to its canonical name
+// like `repo:`.
+func resolveFieldAlias(field string) string {
+	if canonical, ok := aliases[field]; ok {
+		return canonical
+	}
+	return field
 }

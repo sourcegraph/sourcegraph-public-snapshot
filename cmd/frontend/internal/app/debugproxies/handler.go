@@ -1,7 +1,6 @@
 package debugproxies
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,10 +9,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -145,7 +146,7 @@ func reverseProxyFromHost(host string, pathPrefix string) http.Handler {
 // adminOnly is a HTTP middleware which only allows requests by admins.
 func adminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), dbconn.Global); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}

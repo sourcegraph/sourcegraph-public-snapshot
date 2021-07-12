@@ -21,6 +21,7 @@ export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     experimentalFeatures?: {
         enableFastResultLoading?: boolean
+        acceptSearchSuggestionOnEnter?: boolean
     }
     [key: string]: any
 
@@ -41,7 +42,7 @@ export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdmini
         | Pick<IClient, '__typename' | 'displayName'>
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
         | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
-        | Pick<GQL.ISite, '__typename'>
+        | Pick<GQL.ISite, '__typename' | 'allowSiteSettingsEdits'>
         | Pick<GQL.IDefaultSettings, '__typename'>
     )
 
@@ -189,6 +190,7 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
         'search.scopes': (base: any, add: any) => [...base, ...add],
         'search.savedQueries': (base: any, add: any) => [...base, ...add],
         'search.repositoryGroups': (base: any, add: any) => ({ ...base, ...add }),
+        'insights.dashboards': (base: any, add: any) => ({ ...base, ...add }),
         quicklinks: (base: any, add: any) => [...base, ...add],
     }
     const target = cloneDeep(values[0])

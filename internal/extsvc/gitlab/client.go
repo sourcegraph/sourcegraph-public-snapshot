@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -13,8 +13,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -55,6 +55,14 @@ func trace(msg string, ctx ...interface{}) {
 		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
 	}
 }
+
+// TokenType is the type of an access token.
+type TokenType string
+
+const (
+	TokenTypePAT   TokenType = "pat"   // "pat" represents personal access token.
+	TokenTypeOAuth TokenType = "oauth" // "oauth" represents OAuth token.
+)
 
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
 // separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
@@ -202,8 +210,15 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
+// do is the default method for making API requests and will prepare the correct
+// base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
+	return c.doWithBaseURL(ctx, req, result)
+}
+
+// doWithBaseURL will not amend the request URL.
+func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.Auth != nil {
 		if err := c.Auth.Authenticate(req); err != nil {
@@ -243,7 +258,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		// We swallow the error here, because we don't want to fail. Parsing the body
 		// is just optional to provide some more context.
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		err := NewHTTPError(resp.StatusCode, body)
 		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
@@ -275,6 +290,26 @@ func (c *Client) ValidateToken(ctx context.Context) error {
 	v := struct{}{}
 	_, _, err = c.do(ctx, req, &v)
 	return err
+}
+
+func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	// The oauth token info path is non standard so we need to build it manually
+	// without the default `/api/v4` prefix
+	u, _ := url.Parse(c.baseURL.String())
+	u.Path = "oauth/token/info"
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	v := struct {
+		Scopes []string `json:"scopes,omitempty"`
+	}{}
+	_, _, err = c.doWithBaseURL(ctx, req, &v)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting oauth scopes")
+	}
+	return v.Scopes, nil
 }
 
 type HTTPError struct {
@@ -310,18 +345,18 @@ func (err HTTPError) Unauthorized() bool {
 	return err.code == http.StatusUnauthorized
 }
 
+func (err HTTPError) Forbidden() bool {
+	return err.code == http.StatusForbidden
+}
+
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	e, ok := err.(HTTPError)
-	if !ok {
-		// Try one level deeper.
-		err = errors.Cause(err)
-		e, ok = err.(HTTPError)
-	}
-	if ok {
+	var e HTTPError
+	if errors.As(err, &e) {
 		return e.Code()
 	}
+
 	return 0
 }
 
@@ -334,14 +369,5 @@ var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if err == ErrProjectNotFound || errors.Cause(err) == ErrProjectNotFound {
-		return true
-	}
-	if err == ErrMergeRequestNotFound || errors.Cause(err) == ErrMergeRequestNotFound {
-		return true
-	}
-	if HTTPErrorCode(err) == http.StatusNotFound {
-		return true
-	}
-	return false
+	return errors.IsAny(err, ErrProjectNotFound, ErrMergeRequestNotFound) || HTTPErrorCode(err) == http.StatusNotFound
 }

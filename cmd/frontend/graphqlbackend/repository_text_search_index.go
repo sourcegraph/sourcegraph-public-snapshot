@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
@@ -32,18 +32,19 @@ type repositoryTextSearchIndexResolver struct {
 }
 
 type repoLister interface {
-	List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error)
+	List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error)
 }
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		repoList, err := r.client.List(ctx, zoektquery.NewRepoSet(r.repo.Name()))
+		q := &zoektquery.RepoBranches{Set: map[string][]string{r.repo.Name(): {"HEAD"}}}
+		repoList, err := r.client.List(ctx, q, nil)
 		if err != nil {
 			r.err = err
 			return
 		}
 		if len(repoList.Repos) > 1 {
-			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.Name())
+			r.err = errors.Errorf("more than 1 indexed repo found for %q", r.repo.Name())
 			return
 		}
 		if len(repoList.Repos) == 1 {

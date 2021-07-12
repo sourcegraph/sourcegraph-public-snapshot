@@ -37,6 +37,7 @@ var SourcegraphDockerImages = []string{
 	"gitserver",
 	"query-runner",
 	"repo-updater",
+	"worker",
 	"searcher",
 	"symbols",
 	"precise-code-intel-worker",
@@ -44,6 +45,7 @@ var SourcegraphDockerImages = []string{
 	"executor",
 
 	// Images under docker-images/
+	"alpine-3.12",
 	"cadvisor",
 	"indexed-searcher",
 	"postgres-11.4",
@@ -58,7 +60,7 @@ var SourcegraphDockerImages = []string{
 	"codeintel-db",
 	"codeinsights-db",
 	"minio",
-	"postgres-12.6",
+	"postgres-12.6-alpine",
 	"postgres_exporter",
 }
 

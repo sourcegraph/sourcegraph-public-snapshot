@@ -92,7 +92,7 @@ func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Contex
 }
 
 // List aggregates list over every endpoint in Map.
-func (s *HorizontalSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
+func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	clients, err := s.searchers()
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoLi
 	results := make(chan result, len(clients))
 	for _, c := range clients {
 		go func(c zoekt.Streamer) {
-			rl, err := c.List(ctx, q)
+			rl, err := c.List(ctx, q, opts)
 			results <- result{rl: rl, err: err}
 		}(c)
 	}
@@ -117,7 +117,9 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoLi
 	// PERF: We don't deduplicate Repos since the only user of List already
 	// does deduplication.
 
-	var aggregate zoekt.RepoList
+	aggregate := zoekt.RepoList{
+		Minimal: make(map[uint32]*zoekt.MinimalRepoListEntry),
+	}
 	for range clients {
 		r := <-results
 		if r.err != nil {
@@ -126,6 +128,10 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoLi
 
 		aggregate.Repos = append(aggregate.Repos, r.rl.Repos...)
 		aggregate.Crashes += r.rl.Crashes
+
+		for k, v := range r.rl.Minimal {
+			aggregate.Minimal[k] = v
+		}
 	}
 
 	return &aggregate, nil

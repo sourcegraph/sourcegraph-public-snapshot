@@ -3,15 +3,13 @@ package httptestutil
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 func NewTest(h http.Handler) *Client {
@@ -27,7 +25,7 @@ func (t handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	rw.Body = new(bytes.Buffer)
 	if req.Body == nil {
 		// For server requests the Request Body is always non-nil.
-		req.Body = ioutil.NopCloser(bytes.NewReader(nil))
+		req.Body = io.NopCloser(bytes.NewReader(nil))
 	}
 	t.Handler.ServeHTTP(rw, req)
 	return rw.Result(), nil
@@ -48,8 +46,8 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	resp, err := c.Client.Do(req)
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		resp.Body = ioutil.NopCloser(bytes.NewReader(body))
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body = io.NopCloser(bytes.NewReader(body))
 	}
 	if err != nil {
 		return resp, err
@@ -61,7 +59,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 func (c *Client) DoOK(req *http.Request) (*http.Response, error) {
 	resp, err := c.Do(req)
 	if resp != nil && resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Do %s %s: HTTP %d (%s)", req.URL, req.Method, resp.StatusCode, resp.Status)
+		err = errors.Errorf("Do %s %s: HTTP %d (%s)", req.URL, req.Method, resp.StatusCode, resp.Status)
 	}
 	return resp, err
 }
@@ -82,11 +80,13 @@ func (c Client) DoNoFollowRedirects(req *http.Request) (*http.Response, error) {
 	noRedir := errors.New("x")
 	c.CheckRedirect = func(r *http.Request, via []*http.Request) error { return noRedir }
 	resp, err := c.Do(req)
-	if urlErr, ok := err.(*url.Error); ok && urlErr != nil {
-		if urlErr.Err == noRedir {
+	if err != nil {
+		var e *url.Error
+		if errors.As(err, &e) && e.Err == noRedir {
 			err = nil
 		}
 	}
+
 	return resp, err
 }
 
@@ -124,7 +124,7 @@ func (c *Client) DoJSON(method, url string, in, out interface{}) error {
 	}
 	defer resp.Body.Close()
 	if ct := resp.Header.Get("content-type"); !strings.HasPrefix(ct, "application/json") {
-		return fmt.Errorf("content type %q is not JSON", ct)
+		return errors.Errorf("content type %q is not JSON", ct)
 	}
 	if out != nil {
 		if err := json.NewDecoder(resp.Body).Decode(out); err != nil {

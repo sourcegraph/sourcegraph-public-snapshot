@@ -1,3 +1,0 @@
-BEGIN;
-DROP TABLE IF EXISTS cm_trigger_jobs;
-COMMIT;

@@ -1,11 +1,9 @@
-import { Remote } from 'comlink'
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -14,8 +12,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { parseHash } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
@@ -29,9 +26,9 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { SearchPatternType } from './graphql-operations'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -51,7 +48,6 @@ import {
     parseSearchURLQuery,
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
@@ -70,7 +66,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserRepositoriesUpdateProps } from './util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -86,7 +82,6 @@ export interface LayoutProps
         ParsedSearchQueryProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         MutableVersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
@@ -95,7 +90,8 @@ export interface LayoutProps
         SearchStreamingProps,
         CodeMonitoringProps,
         SearchContextProps,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps,
+        FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -128,18 +124,10 @@ export interface LayoutProps
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    searchRequest: (
-        query: QueryState['query'],
-        version: string,
-        patternType: SearchPatternType,
-        versionContext: string | undefined,
-        extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
-    ) => Observable<GQL.ISearchResults | ErrorLike>
 
     globbing: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
-    enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
     showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
@@ -151,6 +139,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+    const isSearchConsolePage = routeMatch?.startsWith('/search/console')
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
@@ -227,6 +216,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         '/android',
         '/stanford',
         '/stackstorm',
+        '/temporal',
         '/cncf',
     ]
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
@@ -283,16 +273,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
             />
-            <GlobalAlerts
-                isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
-                settingsCascade={props.settingsCascade}
-            />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     authRequired={!!authRequired}
-                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage}
+                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage && !isSearchConsolePage}
                     variant={
                         hideGlobalSearchInput
                             ? 'no-search-input'
@@ -336,13 +323,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
-                <ResizablePanel
-                    {...props}
-                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                />
-            )}
+            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+                props.location.pathname !== '/sign-in' && (
+                    <ResizablePanel
+                        {...props}
+                        repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                    />
+                )}
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}

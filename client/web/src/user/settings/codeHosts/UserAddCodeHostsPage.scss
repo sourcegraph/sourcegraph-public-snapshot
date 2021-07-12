@@ -5,7 +5,7 @@
         top: 0.55rem;
     }
     &__icon--dashed {
-        color: var(--border-color);
+        color: var(--icon-muted);
     }
     &__modal--plain {
         background-color: var(--theme-bg-plain);
@@ -15,17 +15,17 @@
         line-height: (20/14);
     }
 
-    $gitlab: #6e49cb;
-
-    &__btn--gitlab {
-        @include button-variant(
-            $gitlab,
-            darken($gitlab, 7.5%),
-            darken($gitlab, 10%),
-            lighten($gitlab, 5%),
-            lighten($gitlab, 10%),
-            darken($gitlab, 30%)
-        );
-        color: $white;
+    &__code-host-item {
+        .theme-redesign & {
+            border: 0;
+            padding: 0;
+            &:not(:last-child) {
+                margin-bottom: 1rem;
+            }
+            + .user-code-hosts-page__code-host-item {
+                border-top: 1px solid var(--border-color);
+                padding-top: 1rem;
+            }
+        }
     }
 }

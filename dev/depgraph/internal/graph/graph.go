@@ -1,12 +1,12 @@
 package graph
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 // DependencyGraph encodes the import relationships between packages within
@@ -82,7 +82,7 @@ func findRoot() (string, error) {
 	}
 
 	for {
-		contents, err := ioutil.ReadFile(filepath.Join(wd, "go.mod"))
+		contents, err := os.ReadFile(filepath.Join(wd, "go.mod"))
 		if err == nil {
 			for _, line := range strings.Split(string(contents), "\n") {
 				if line == "module github.com/sourcegraph/sourcegraph" {
@@ -98,7 +98,7 @@ func findRoot() (string, error) {
 			continue
 		}
 
-		return "", fmt.Errorf("not running inside sourcegraph/sourcegraph")
+		return "", errors.Errorf("not running inside sourcegraph/sourcegraph")
 	}
 }
 

@@ -158,7 +158,7 @@ SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
 	u.uploaded_at,
 	u.state,
 	u.failure_message,
@@ -180,6 +180,63 @@ LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE u.state != 'deleted' AND u.id = %s AND %s
+`
+
+const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
+
+// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
+// have a corresponding element in the returned list.
+func (s *Store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []Upload, err error) {
+	ctx, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%d", id))
+	}
+
+	return scanUploads(s.Store.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+}
+
+const getUploadsByIDsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploadsByIDs
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	u.associated_index_id,
+	s.rank
+FROM lsif_uploads_with_repository_name u
+LEFT JOIN (` + uploadRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE u.state != 'deleted' AND u.id  IN (%s) AND %s
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
@@ -255,7 +312,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
 	if opts.VisibleAtTip {
-		conds = append(conds, sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id)"))
+		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
@@ -310,7 +367,7 @@ SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
 	u.uploaded_at,
 	u.state,
 	u.failure_message,
@@ -354,17 +411,19 @@ func makeSearchCondition(term string) *sqlf.Query {
 }
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err error) {
-	ctx, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", upload.ID),
-	}})
-	defer endObservation(1, observation.Args{})
+func (s *Store) InsertUpload(ctx context.Context, upload Upload) (id int, err error) {
+	ctx, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("id", id),
+		}})
+	}()
 
 	if upload.UploadedParts == nil {
 		upload.UploadedParts = []int{}
 	}
 
-	id, _, err := basestore.ScanFirstInt(s.Store.Query(
+	id, _, err = basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			insertUploadQuery,
@@ -458,7 +517,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
 	sqlf.Sprintf("u.commit"),
 	sqlf.Sprintf("u.root"),
-	sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE state != 'deleted' AND repository_id = u.repository_id AND upload_id = u.id) AS visible_at_tip"),
+	sqlf.Sprintf("EXISTS (" + visibleAtTipSubselectQuery + ") AS visible_at_tip"),
 	sqlf.Sprintf("u.uploaded_at"),
 	sqlf.Sprintf("u.state"),
 	sqlf.Sprintf("u.failure_message"),
@@ -633,7 +692,8 @@ WITH u AS (
 				%s - u.finished_at > (%s || ' second')::interval OR
 				(u.finished_at IS NULL AND %s - u.uploaded_at > (%s || ' second')::interval)
 			) AND
-				u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
+				-- Anything visible from a non-stale branch or tag is protected from expiration
+				u.id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id)
 		RETURNING id, repository_id
 )
 SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id

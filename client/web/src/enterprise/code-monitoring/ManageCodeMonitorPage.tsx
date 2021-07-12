@@ -8,8 +8,11 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -21,7 +24,7 @@ import {
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-export interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
+interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -31,7 +34,7 @@ export interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Sc
     deleteCodeMonitor?: typeof _deleteCodeMonitor
 }
 
-export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = ({
+const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = ({
     authenticatedUser,
     history,
     location,
@@ -98,13 +101,17 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     return (
         <div className="container col-8">
             <PageTitle title="Manage code monitor" />
-            <div className="page-header d-flex flex-wrap align-items-center">
-                <h2 className="flex-grow-1">Manage code monitor</h2>
-            </div>
-            Code monitors watch your code for specific triggers and run actions in response.{' '}
-            <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
-                Learn more
-            </a>
+            <PageHeader
+                path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Manage code monitor' }]}
+                description={
+                    <>
+                        Code monitors watch your code for specific triggers and run actions in response.{' '}
+                        <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
+                            Learn more
+                        </a>
+                    </>
+                }
+            />
             {codeMonitorOrError === 'loading' && <LoadingSpinner className="icon-inline" />}
             {codeMonitorOrError && !isErrorLike(codeMonitorOrError) && codeMonitorOrError !== 'loading' && (
                 <>
@@ -123,3 +130,5 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
         </div>
     )
 }
+
+export const ManageCodeMonitorPage = withAuthenticatedUser(AuthenticatedManageCodeMonitorPage)

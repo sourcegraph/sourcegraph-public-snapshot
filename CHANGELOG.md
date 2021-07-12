@@ -15,22 +15,140 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added support for `select:file.directory` in search queries, which returns unique directory paths for results that satisfy the query. [#22449](https://github.com/sourcegraph/sourcegraph/pull/22449)
+- An `sg_service` Postgres role has been introduced, as well as an `sg_repo_access_policy` policy on the `repo` table that restricts access to that role. The role that owns the `repo` table will continue to get unrestricted access. [#22303](https://github.com/sourcegraph/sourcegraph/pull/22303)
+- Every service that connects to the database (i.e. Postgres) now has a "Database connections" monitoring section in its Grafana dashboard. [#22570](https://github.com/sourcegraph/sourcegraph/pull/22570)
+- A new bulk operation to close many changesets at once has been added to Batch Changes. [#22547](https://github.com/sourcegraph/sourcegraph/pull/22547)
+- Backend Code Insights will aggregate viewable repositories based on the authenticated user. [#22471](https://github.com/sourcegraph/sourcegraph/pull/22471)
+- Added support for highlighting .frugal files as Thrift syntax.
+- Added `file:contains.content(regexp)` predicate, which filters only to files that contain matches of the given pattern. [#22666](https://github.com/sourcegraph/sourcegraph/pull/22666)
+- Added "Groovy" to `lang:` filter suggestions in the search bar. [#22755](https://github.com/sourcegraph/sourcegraph/pull/22755)
+
+### Changed
+
+- Backend Code Insights only fills historical data frames that have changed to reduce the number of searches required. [#22298](https://github.com/sourcegraph/sourcegraph/pull/22298)
+- Backend Code Insights displays data points for a fixed 6 months period in 2 week intervals, and will carry observations forward that are missing. [#22298](https://github.com/sourcegraph/sourcegraph/pull/22298)
+- Backend Code Insights now aggregate over 26 weeks instead of 6 months. [#22527](https://github.com/sourcegraph/sourcegraph/pull/22527)
+- Search queries now disallow specifying `rev:` without `repo:`. Note that to search across potentially multiple revisions, a query like `repo:.* rev:<revision>` remains valid. [#22705](https://github.com/sourcegraph/sourcegraph/pull/22705)
+
+### Fixed
+
+- The Batch Changes user and site credential encryption migrators added in Sourcegraph 3.28 could report zero progress when encryption was disabled, even though they had nothing to do. This has been fixed, and progress will now be correctly reported. [#22277](https://github.com/sourcegraph/sourcegraph/issues/22277)
+- Listing Github Entreprise org repos now returns internal repos as well. [#22339](https://github.com/sourcegraph/sourcegraph/pull/22339)
+- Jaeger works in Docker-compose deployments again. [#22691](https://github.com/sourcegraph/sourcegraph/pull/22691)
+- A bug where the pattern `)` makes the browser unresponsive. [#22738](https://github.com/sourcegraph/sourcegraph/pull/22738)
+- An issue where using `select:repo` in conjunction with `and` patterns did not yield expected repo results. [#22743](https://github.com/sourcegraph/sourcegraph/pull/22743)
+
+### Removed
+
+- The experimental paginated search feature (the `stable:` keyword) has been removed, to be replaced with streaming search. [#22428](https://github.com/sourcegraph/sourcegraph/pull/22428)
+- The experimental extensions view page [#22565](https://github.com/sourcegraph/sourcegraph/pull/22565)
+
+### API docs (experimental)
+
+API docs is a new experimental feature of Sourcegraph ([learn more](https://docs.sourcegraph.com/code_intelligence/apidocs)). It is enabled by default in Sourcegraph 3.30.0.
+
+- API docs is enabled by default in Sourcegraph 3.30.0. It can be disabled by adding `"apiDocs": false` to the `experimentalFeatures` section of user settings.
+- The API docs landing page now indicates what API docs are and provide more info.
+- The API docs landing page now represents the code in the repository root, instead of an empty page.
+- Pages now correctly indicate it is an experimental feature, and include a feedback widget.
+- Subpages linked via the sidebar are now rendered much better, and have an expandable section.
+- Symbols in documentation now have distinct icons for e.g. functions/vars/consts/etc.
+- Symbols are now sorted in exported-first, alphabetical order.
+- Repositories without LSIF documentation data now show a friendly error page indicating what languages are supported, how to set it up, etc.
+- API docs can now distinguish between different types of symbols, tests, examples, benchmarks, etc. and whether symbols are public/private - to support filtering in the future.
+- Only public/exported symbols are included by default for now.
+- URL paths for Go packages are now friendlier, e.g. `/-/docs/cmd/frontend/auth` instead of `/-/docs/cmd-frontend-auth`.
+- URLs are now formatted by the language indexer, in a way that makes sense for the language, e.g. `#Mocks.CreateUserAndSave` instead of `#ypeMocksCreateUserAndSave` for a Go method `CreateUserAndSave` on type `Mocks`.
+- Go blank identifier assignments `var _ = ...` are no longer incorrectly included.
+- Go symbols defined within functions, e.g. a `var` inside a `func` scope are no longer incorrectly included.
+- `Functions`, `Variables`, and other top-level sections are no longer rendered empty if there are none in that section.
+- A new test suite for LSIF indexers implementing the Sourcegraph documentation extension to LSIF [is available](https://github.com/sourcegraph/lsif-static-doc).
+- We now emit the LSIF data needed to in the future support "Jump to API docs" from code views, "View code" from API docs, usage examples in API docs, and search indexing.
+- Various UI style issues, color contrast issues, etc. have been fixed.
+- Major improvements to the GraphQL APIs for API documentation.
+
+## 3.29.0
+
+### Added
+
+- Code Insights queries can now run concurrently up to a limit set by the `insights.query.worker.concurrency` site config. [#21219](https://github.com/sourcegraph/sourcegraph/pull/21219)
+- Code Insights workers now support a rate limit for query execution and historical data frame analysis using the `insights.query.worker.rateLimit` and `insights.historical.worker.rateLimit` site configurations. [#21533](https://github.com/sourcegraph/sourcegraph/pull/21533)
+- The GraphQL `Site` `SettingsSubject` type now has an `allowSiteSettingsEdits` field to allow clients to determine whether the instance uses the `GLOBAL_SETTINGS_FILE` environment variable. [#21827](https://github.com/sourcegraph/sourcegraph/pull/21827)
+- The Code Insights creation UI now remembers previously filled-in field values when returning to the form after having navigated away. [#21744](https://github.com/sourcegraph/sourcegraph/pull/21744)
+- The Code Insights creation UI now shows autosuggestions for the repository field. [#21699](https://github.com/sourcegraph/sourcegraph/pull/21699)
+- A new bulk operation to retry many changesets at once has been added to Batch Changes. [#21173](https://github.com/sourcegraph/sourcegraph/pull/21173)
+- A `security_event_logs` database table has been added in support of upcoming security-related efforts. [#21949](https://github.com/sourcegraph/sourcegraph/pull/21949)
+- Added featured Sourcegraph extensions query to the GraphQL API, as well as a section in the extension registry to display featured extensions. [#21665](https://github.com/sourcegraph/sourcegraph/pull/21665)
+- The search page now has a `create insight` button to create search-based insight based on your search query [#21943](https://github.com/sourcegraph/sourcegraph/pull/21943)
+- Added support for Terraform syntax highlighting. [#22040](https://github.com/sourcegraph/sourcegraph/pull/22040)
+- A new bulk operation to merge many changesets at once has been added to Batch Changes. [#21959](https://github.com/sourcegraph/sourcegraph/pull/21959)
+- Pings include aggregated usage for the Code Insights creation UI, organization visible insight count per insight type, and insight step size in days. [#21671](https://github.com/sourcegraph/sourcegraph/pull/21671)
+- Search-based insight creation UI now supports `count:` filter in data series query input. [#22049](https://github.com/sourcegraph/sourcegraph/pull/22049)
+- Code Insights background workers will now index commits in a new table `commit_index` for future optimization efforts. [#21994](https://github.com/sourcegraph/sourcegraph/pull/21994)
+- The creation UI for search-based insights now supports the `count:` filter in the data series query input. [#22049](https://github.com/sourcegraph/sourcegraph/pull/22049)
+- A new service, `worker`, has been introduced to run background jobs that were previously run in the frontend. See the [deployment documentation](https://docs.sourcegraph.com/admin/workers) for additional details. [#21768](https://github.com/sourcegraph/sourcegraph/pull/21768)
+
+### Changed
+
+- SSH public keys generated to access code hosts with batch changes now include a comment indicating they originated from Sourcegraph. [#20523](https://github.com/sourcegraph/sourcegraph/issues/20523)
+- The copy query button is now permanently enabled and `experimentalFeatures.copyQueryButton` setting has been deprecated. [#21364](https://github.com/sourcegraph/sourcegraph/pull/21364)
+- Search streaming is now permanently enabled and `experimentalFeatures.searchStreaming` setting has been deprecated. [#21522](https://github.com/sourcegraph/sourcegraph/pull/21522)
+- Pings removes the collection of aggregate search filter usage counts and adds a smaller set of aggregate usage counts for query operators, predicates, and pattern counts. [#21320](https://github.com/sourcegraph/sourcegraph/pull/21320)
+- Sourcegraph will now refuse to start if there are unfinished [out-of-band-migrations](https://docs.sourcegraph.com/admin/migrations) that are deprecated in the current version. See the [upgrade documentation](https://docs.sourcegraph.com/admin/updates) for changes to the upgrade process. [#20967](https://github.com/sourcegraph/sourcegraph/pull/20967)
+- Code Insight pages now have new URLs [#21856](https://github.com/sourcegraph/sourcegraph/pull/21856)
+- We are proud to bring you [an entirely new visual design for the Sourcegraph UI](https://about.sourcegraph.com/blog/introducing-sourcegraphs-new-ui/). We think you’ll find this new design improves your experience and sets the stage for some incredible features to come. Some of the highlights include:
+
+  - **Refined search results:** The redesigned search bar provides more space for expressive queries, and the new results sidebar helps to discover search syntax without referencing documentation.
+  - **Improved focus on code:** We’ve reduced non-essential UI elements to provide greater focus on the code itself, and positioned the most important items so they’re unobtrusive and located exactly where they are needed.
+  - **Improved layouts:** We’ve improved pages like diff views to make them easier to use and to help find information quickly.
+  - **New navigation:** A new global navigation provides immediate discoverability and access to current and future functionality.
+  - **Promoting extensibility:** We've brought the extension registry back to the main navigation and improved its design and navigation.
+
+  With bulk of the redesign complete, future releases will include more improvements and refinements.
+
+### Fixed
+
+- Stricter validation of structural search queries. The `type:` parameter is not supported for structural searches and returns an appropriate alert. [#21487](https://github.com/sourcegraph/sourcegraph/pull/21487)
+- Batch changeset specs that are not attached to changesets will no longer prematurely expire before the batch specs that they are associated with. [#21678](https://github.com/sourcegraph/sourcegraph/pull/21678)
+- The Y-axis of Code Insights line charts no longer start at a negative value. [#22018](https://github.com/sourcegraph/sourcegraph/pull/22018)
+- Correctly handle field aliases in the query (like `r:` versus `repo:`) when used with `contains` predicates. [#22105](https://github.com/sourcegraph/sourcegraph/pull/22105)
+- Running a code insight over a timeframe when the repository didn't yet exist doesn't break the entire insight anymore. [#21288](https://github.com/sourcegraph/sourcegraph/pull/21288)
+
+### Removed
+
+- The deprecated GraphQL `icon` field on CommitSearchResult and Repository was removed. [#21310](https://github.com/sourcegraph/sourcegraph/pull/21310)
+- The undocumented `index` filter was removed from search type-ahead suggestions. [#18806](https://github.com/sourcegraph/sourcegraph/issues/18806)
+- Code host connection tokens aren't used for creating changesets anymore when the user is site admin and no credential has been specified. [#16814](https://github.com/sourcegraph/sourcegraph/issues/16814)
+
+## 3.28.0
+
+### Added
+
 - Added `select:commit.diff.added` and `select:commit.diff.removed` for `type:diff` search queries. These selectors return commit diffs only if a pattern matches in `added` (respespectively, `removed`) lines. [#20328](https://github.com/sourcegraph/sourcegraph/pull/20328)
 - Additional language autocompletions for the `lang:` filter in the search bar. [#20535](https://github.com/sourcegraph/sourcegraph/pull/20535)
 - Steps in batch specs can now have an `if:` attribute to enable conditional execution of different steps. [#20701](https://github.com/sourcegraph/sourcegraph/pull/20701)
 - Extensions can now log messages through `sourcegraph.app.log` to aid debugging user issues. [#20474](https://github.com/sourcegraph/sourcegraph/pull/20474)
+- Bulk comments on many changesets are now available in Batch Changes. [#20361](https://github.com/sourcegraph/sourcegraph/pull/20361)
+- Batch specs are now viewable when previewing changesets. [#19534](https://github.com/sourcegraph/sourcegraph/issues/19534)
+- Added a new UI for creating code insights. [#20212](https://github.com/sourcegraph/sourcegraph/issues/20212)
 
 ### Changed
 
 - User and site credentials used in Batch Changes are now encrypted in the database if encryption is enabled with the `encryption.keys` config. [#19570](https://github.com/sourcegraph/sourcegraph/issues/19570)
 - All Sourcegraph images within [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) now specify the registry. Thanks! @k24dizzle [#2901](https://github.com/sourcegraph/deploy-sourcegraph/pull/2901).
 - Default reviewers are now added to Bitbucket Server PRs opened by Batch Changes. [#20551](https://github.com/sourcegraph/sourcegraph/pull/20551)
+- The default memory requirements for the `redis-*` containers have been raised by 1GB (to a new total of 7GB). This change allows Redis to properly run its key-eviction routines (when under memory pressure) without getting killed by the host machine. This affects both the docker-compose and Kubernetes deployments. [sourcegraph/deploy-sourcegraph-docker#373](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373) and [sourcegraph/deploy-sourcegraph#2898](https://github.com/sourcegraph/deploy-sourcegraph/pull/2898)
 - Only site admins can now list users on an instance. [#20619](https://github.com/sourcegraph/sourcegraph/pull/20619)
 - Repository permissions can now be enabled for site admins via the `authz.enforceForSiteAdmins` setting. [#20674](https://github.com/sourcegraph/sourcegraph/pull/20674)
 - Site admins can no longer view user added code host configuration. [#20851](https://github.com/sourcegraph/sourcegraph/pull/20851)
+- Site admins cannot add access tokens for any user by default. [#20988](https://github.com/sourcegraph/sourcegraph/pull/20988)
+- Our namespaced overlays now only scrape container metrics within that namespace. [#2969](https://github.com/sourcegraph/deploy-sourcegraph/pull/2969)
+- The extension registry main page has a new visual design that better conveys the most useful information about extensions, and individual extension pages have better information architecture. [#20822](https://github.com/sourcegraph/sourcegraph/pull/20822)
 
 ### Fixed
 
+- Search returned inconsistent result counts when a `count:` limit was not specified.
 - Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
 - `repo:contains(...)` built-in did not respect parameters that affect repo filtering (e.g., `repogroup`, `fork`). It now respects these. [#20339](https://github.com/sourcegraph/sourcegraph/pull/20339)
 - An issue where duplicate results would render for certain `or`-expressions. [#20480](https://github.com/sourcegraph/sourcegraph/pull/20480)
@@ -38,10 +156,15 @@ All notable changes to Sourcegraph are documented in this file.
 - Pull request event webhooks received from GitHub with unexpected actions no longer cause panics. [#20571](https://github.com/sourcegraph/sourcegraph/pull/20571)
 - Repository search patterns like `^repo/(prefix-suffix|prefix)$` now correctly match both `repo/prefix-suffix` and `repo/prefix`. [#20389](https://github.com/sourcegraph/sourcegraph/issues/20389)
 - Ephemeral storage requests and limits now match the default cache size to avoid Symbols pods being evicted. The symbols pod now requires 10GB of ephemeral space as a minimum to scheduled. [#2369](https://github.com/sourcegraph/deploy-sourcegraph/pull/2369)
+- Minor query syntax highlighting bug for `repo:contains` predicate. [#21038](https://github.com/sourcegraph/sourcegraph/pull/21038)
+- An issue causing diff and commit results with file filters to return invalid results. [#21039](https://github.com/sourcegraph/sourcegraph/pull/21039)
+- All databases now have the Kubernetes Quality of Service class of 'Guaranteed' which should reduce the chance of them
+  being evicted during NodePressure events. [#2900](https://github.com/sourcegraph/deploy-sourcegraph/pull/2900)
+- An issue causing diff views to display without syntax highlighting [#21160](https://github.com/sourcegraph/sourcegraph/pull/21160)
 
 ### Removed
 
--
+- The deprecated `SetRepositoryEnabled` mutation was removed. [#21044](https://github.com/sourcegraph/sourcegraph/pull/21044)
 
 ## 3.27.5
 
@@ -771,7 +894,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The Sourcegraph Docker image will now copy `/etc/sourcegraph/gitconfig` to `$HOME/.gitconfig`. This is a convenience similiar to what we provide for [repositories that need HTTP(S) or SSH authentication](https://docs.sourcegraph.com/admin/repo/auth). [#658](https://github.com/sourcegraph/sourcegraph/issues/658)
 - Permissions background syncing is now supported for GitHub via site configuration `"permissions.backgroundSync": {"enabled": true}`. [#8890](https://github.com/sourcegraph/sourcegraph/issues/8890)
 - Search: Adding `stable:true` to a query ensures a deterministic search result order. This is an experimental parameter. It applies only to file contents, and is limited to at max 5,000 results (consider using [the paginated search API](https://docs.sourcegraph.com/api/graphql/search#sourcegraph-3-9-experimental-paginated-search) if you need more than that.). [#9681](https://github.com/sourcegraph/sourcegraph/pull/9681).
-- After completing the Sourcegraph user feedback survey, a button may appear for tweeting this feedback at [@srcgraph](https://twitter.com/srcgraph). [#9728](https://github.com/sourcegraph/sourcegraph/pull/9728)
+- After completing the Sourcegraph user feedback survey, a button may appear for tweeting this feedback at [@sourcegraph](https://twitter.com/sourcegraph). [#9728](https://github.com/sourcegraph/sourcegraph/pull/9728)
 - `git fetch` and `git clone` now inherit the parent process environment variables. This allows site admins to set `HTTPS_PROXY` or [git http configurations](https://git-scm.com/docs/git-config/2.26.0#Documentation/git-config.txt-httpproxy) via environment variables. For cluster environments site admins should set this on the gitserver container. [#250](https://github.com/sourcegraph/sourcegraph/issues/250)
 - Experimental: Search for file contents using `and`- and `or`-expressions in queries. Enabled via the global settings value `{"experimentalFeatures": {"andOrQuery": "enabled"}}`. [#8567](https://github.com/sourcegraph/sourcegraph/issues/8567)
 - Always include forks or archived repositories in searches via the global/org/user settings with `"search.includeForks": true` or `"search.includeArchived": true` respectively. [#9927](https://github.com/sourcegraph/sourcegraph/issues/9927)

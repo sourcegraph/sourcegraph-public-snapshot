@@ -7,18 +7,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "batchchangesswebhooksdb"
-}
 
 var update = flag.Bool("update", false, "update testdata")
 
@@ -56,7 +51,7 @@ type webhookTestCase struct {
 func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 	t.Helper()
 
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -374,6 +374,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
 		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
 		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
+		overBatchSpecTTL := clock.Now().Add(-btypes.BatchSpecTTL - 24*time.Hour)
 
 		type testCase struct {
 			createdAt time.Time
@@ -389,7 +390,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		printTestCase := func(tc testCase) string {
 			var tooOld bool
-			if tc.createdAt.Equal(overTTL) {
+			if tc.createdAt.Equal(overTTL) || tc.createdAt.Equal(overBatchSpecTTL) {
 				tooOld = true
 			}
 
@@ -417,7 +418,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			// anymore, and the ChangesetSpec is neither the current, nor the
 			// previous spec.
 			{hasBatchSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, createdAt: overTTL, wantDeleted: true},
+			{hasBatchSpec: true, createdAt: overTTL, wantDeleted: false},
+			{hasBatchSpec: true, createdAt: overBatchSpecTTL, wantDeleted: true},
 		}
 
 		for _, tc := range tests {
@@ -499,7 +501,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		// Create some test data
 		user := ct.CreateTestUser(t, s.DB(), true)
 		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
-		var mappings btypes.RewirerMappings = make(btypes.RewirerMappings, 3)
+		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
 			spec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
@@ -686,6 +688,59 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 		})
 	})
+}
+
+func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	repoStore := database.ReposWith(s)
+	esStore := database.ExternalServicesWith(s)
+
+	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	if err := repoStore.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	user := ct.CreateTestUser(t, s.DB(), false)
+
+	// Create old batch spec and batch change
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
+	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+
+	// Create an archived changeset with a changeset spec
+	oldSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:      user.ID,
+		Repo:      repo.ID,
+		BatchSpec: oldBatchSpec.ID,
+		Title:     "foobar",
+		Published: true,
+		HeadRef:   "refs/heads/foobar",
+	})
+
+	opts := ct.TestChangesetOpts{}
+	opts.ExternalState = btypes.ChangesetExternalStateOpen
+	opts.ExternalID = "1223"
+	opts.ExternalServiceType = repo.ExternalRepo.ServiceType
+	opts.Repo = repo.ID
+	opts.BatchChange = batchChange.ID
+	opts.PreviousSpec = oldSpec.ID
+	opts.CurrentSpec = oldSpec.ID
+	opts.OwnedByBatchChange = batchChange.ID
+	opts.IsArchived = true
+
+	ct.CreateChangeset(t, ctx, s, opts)
+
+	// Get preview for new batch spec without any changeset specs
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
+	mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+		BatchSpecID:   newBatchSpec.ID,
+		BatchChangeID: batchChange.ID,
+	})
+	if err != nil {
+		t.Errorf("unexpected error: %+v", err)
+	}
+
+	if len(mappings) != 0 {
+		t.Errorf("mappings returned, but none were expected")
+	}
 }
 
 func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {

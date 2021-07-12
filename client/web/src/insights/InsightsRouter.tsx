@@ -1,36 +1,26 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
-import { RouteComponentProps, Switch, Route } from 'react-router'
+import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { AuthenticatedUser } from '../auth'
+import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
-import { InsightsPageProps } from './pages/dashboard/InsightsPage'
+import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
+import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
+import { getExperimentalFeatures } from './utils/get-experimental-features'
 
-const InsightsLazyPage = lazyComponent(() => import('./pages/dashboard/InsightsPage'), 'InsightsPage')
-
-const IntroCreationLazyPage = lazyComponent(
-    () => import('./pages/creation/intro/IntroCreationPage'),
-    'IntroCreationPage'
+const InsightsLazyPage = lazyComponent(() => import('./pages/insights/insights-page/InsightsPage'), 'InsightsPage')
+const EditInsightLazyPage = lazyComponent(
+    () => import('./pages/insights/edit-insight/EditInsightPage'),
+    'EditInsightPage'
 )
-
-const SearchInsightCreationLazyPage = lazyComponent(
-    () => import('./pages/creation/search-insight/SearchInsightCreationPage'),
-    'SearchInsightCreationPage'
-)
-
-const LangStatsInsightCreationLazyPage = lazyComponent(
-    () => import('./pages/creation/lang-stats/LangStatsInsightCreationPage'),
-    'LangStatsInsightCreationPage'
-)
-
-/**
- * Feature flag for new code insights creation UI.
- * */
-const CREATION_UI_ENABLED_KEY = 'enableCodeInsightCreationUI'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -40,42 +30,69 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
  * sub-components withing app tree.
  */
 export interface InsightsRouterProps
-    extends RouteComponentProps,
-        Omit<InsightsPageProps, 'isCreationUIEnabled'>,
-        SearchInsightCreationPageProps {}
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps {
+    /**
+     * Authenticated user info, Used to decide where code insight will appears
+     * in personal dashboard (private) or in organisation dashboard (public)
+     * */
+    authenticatedUser: AuthenticatedUser
+}
 
-/** Main Insight routing component. Main entry point to code insights UI. */
-export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {
-    const { match, ...outerProps } = props
-    const [isCreationUIEnabled] = useLocalStorage(CREATION_UI_ENABLED_KEY, false)
+/**
+ * Main Insight routing component. Main entry point to code insights UI.
+ */
+export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props => {
+    const { platformContext, settingsCascade, telemetryService, extensionsController, authenticatedUser } = props
+
+    const match = useRouteMatch()
+    const { codeInsightsDashboards } = getExperimentalFeatures(settingsCascade)
 
     return (
         <Switch>
+            <Route path={match.url} exact={true}>
+                <InsightsLazyPage
+                    telemetryService={telemetryService}
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
+                    extensionsController={extensionsController}
+                />
+            </Route>
+
+            <Route path={`${match.url}/create`}>
+                <CreationRoutes
+                    platformContext={platformContext}
+                    authenticatedUser={authenticatedUser}
+                    settingsCascade={settingsCascade}
+                    telemetryService={telemetryService}
+                />
+            </Route>
+
             <Route
-                render={props => (
-                    <InsightsLazyPage isCreationUIEnabled={isCreationUIEnabled} {...outerProps} {...props} />
+                path={`${match.url}/edit/:insightID`}
+                render={(props: RouteComponentProps<{ insightID: string }>) => (
+                    <EditInsightLazyPage
+                        platformContext={platformContext}
+                        authenticatedUser={authenticatedUser}
+                        settingsCascade={settingsCascade}
+                        insightID={props.match.params.insightID}
+                    />
                 )}
-                path={match.url}
-                exact={true}
             />
 
-            {isCreationUIEnabled && (
-                <>
-                    <Route
-                        path={`${match.url}/create-search-insight`}
-                        render={props => <SearchInsightCreationLazyPage {...outerProps} {...props} />}
-                    />
-
-                    <Route
-                        path={`${match.url}/create-lang-stats-insight`}
-                        render={props => <LangStatsInsightCreationLazyPage {...outerProps} {...props} />}
-                    />
-
-                    <Route path={`${match.url}/create-intro`} component={IntroCreationLazyPage} />
-                </>
+            {codeInsightsDashboards && (
+                <DashboardsRoutes
+                    authenticatedUser={authenticatedUser}
+                    telemetryService={telemetryService}
+                    extensionsController={extensionsController}
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
+                />
             )}
 
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     )
-}
+})

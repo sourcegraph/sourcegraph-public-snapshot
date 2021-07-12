@@ -1,7 +1,7 @@
 .file-match-children {
     .theme-redesign & {
         background-color: var(--code-bg);
-        border: 1px solid var(--border-color-2);
+        border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
         padding: 0.25rem 0;
     }
@@ -30,6 +30,10 @@
             overflow-x: auto;
             &:not(:first-child) {
                 border-top: 1px solid var(--border-color);
+
+                .theme-redesign & {
+                    border-color: var(--border-color-2);
+                }
             }
         }
     }

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "license": "Apache-2.0",
   "scripts": {
+    "storybook": "STORIES_GLOB=client/branded/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
     "test": "jest"

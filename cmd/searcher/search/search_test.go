@@ -5,10 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,6 +14,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
@@ -225,29 +225,34 @@ milton.png
 	defer ts.Close()
 
 	for i, test := range cases {
-		if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
-			// If we are not on CI, skip the comby-dependent test.
-			continue
-		}
-
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
+				t.Skip("skipping comby test when not on CI")
+			}
+
+			// CI can be very busy, so give lots of time to fetchTimeout.
+			fetchTimeout := 500 * time.Millisecond
+			if deadline, ok := t.Deadline(); ok {
+				fetchTimeout = time.Until(deadline) / 2
+			}
+
 			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: "2000ms",
+				FetchTimeout: fetchTimeout.String(),
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
-				t.Fatalf("%v failed: %s", test.arg, err)
+				t.Fatalf("%s failed: %s", test.arg.String(), err)
 			}
 			sort.Sort(sortByPath(m))
 			got := toString(m)
 			err = sanityCheckSorted(m)
 			if err != nil {
-				t.Fatalf("%v malformed response: %s\n%s", test.arg, err, got)
+				t.Fatalf("%s malformed response: %s\n%s", test.arg.String(), err, got)
 			}
 			// We have an extra newline to make expected readable
 			if len(test.want) > 0 {
@@ -440,12 +445,12 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
+		return nil, errors.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
 	var r protocol.Response
@@ -483,13 +488,13 @@ func newStore(files map[string]string) (*store.Store, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	d, err := ioutil.TempDir("", "search_test")
+	d, err := os.MkdirTemp("", "search_test")
 	if err != nil {
 		return nil, nil, err
 	}
 	return &store.Store{
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
+			return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,
 	}, func() { os.RemoveAll(d) }, nil
@@ -521,15 +526,15 @@ func sanityCheckSorted(m []protocol.FileMatch) error {
 	}
 	for i := range m {
 		if i > 0 && m[i].Path == m[i-1].Path {
-			return fmt.Errorf("duplicate FileMatch on %s", m[i].Path)
+			return errors.Errorf("duplicate FileMatch on %s", m[i].Path)
 		}
 		lm := m[i].LineMatches
 		if !sort.IsSorted(sortByLineNumber(lm)) {
-			return fmt.Errorf("unsorted LineMatches for %s", m[i].Path)
+			return errors.Errorf("unsorted LineMatches for %s", m[i].Path)
 		}
 		for j := range lm {
 			if j > 0 && lm[j].LineNumber == lm[j-1].LineNumber {
-				return fmt.Errorf("duplicate LineNumber on %s:%d", m[i].Path, lm[j].LineNumber)
+				return errors.Errorf("duplicate LineNumber on %s:%d", m[i].Path, lm[j].LineNumber)
 			}
 		}
 	}

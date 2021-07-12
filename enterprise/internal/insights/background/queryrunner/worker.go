@@ -6,6 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
+
+	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -28,16 +35,50 @@ import (
 // results into the code insights database.
 func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	workerStore := createDBWorkerStore(workerBaseStore)
+
+	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
+	if numHandlers <= 0 {
+		numHandlers = 1
+	}
+
 	options := workerutil.WorkerOptions{
 		Name:        "insights_query_runner_worker",
-		NumHandlers: 1,
+		NumHandlers: numHandlers,
 		Interval:    5 * time.Second,
 		Metrics:     metrics,
 	}
+
+	defaultRateLimit := rate.Limit(2.0)
+	getRateLimit := getRateLimit(defaultRateLimit)
+
+	limiter := rate.NewLimiter(getRateLimit(), 1)
+
+	go conf.Watch(func() {
+		val := getRateLimit()
+		log15.Info(fmt.Sprintf("Updating insights/query-worker rate limit value=%v", val))
+		limiter.SetLimit(val)
+	})
+
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		workerBaseStore: workerBaseStore,
 		insightsStore:   insightsStore,
+		limiter:         limiter,
 	}, options)
+}
+
+func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
+	return func() rate.Limit {
+		val := conf.Get().InsightsQueryWorkerRateLimit
+
+		var result rate.Limit
+		if val == nil {
+			result = defaultValue
+		} else {
+			result = rate.Limit(*val)
+		}
+
+		return result
+	}
 }
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long
@@ -113,7 +154,7 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 		return nil, err
 	}
 	if len(jobs) != 1 {
-		return nil, fmt.Errorf("expected 1 job to dequeue, found %v", len(jobs))
+		return nil, errors.Errorf("expected 1 job to dequeue, found %v", len(jobs))
 	}
 	return jobs[0], nil
 }
@@ -251,8 +292,17 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 	return jobs, nil
 }
 
-var jobsColumns = append([]*sqlf.Query{
+var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("insights_query_runner_jobs.series_id"),
 	sqlf.Sprintf("insights_query_runner_jobs.search_query"),
 	sqlf.Sprintf("insights_query_runner_jobs.record_time"),
-}, dbworkerstore.DefaultColumnExpressions()...)
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("execution_logs"),
+}

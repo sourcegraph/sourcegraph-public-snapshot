@@ -1,8 +1,9 @@
 import { isPlainObject } from 'lodash'
 
-import { ExtensionManifest as ExtensionManifestSchema } from '../schema/extensionSchema'
+import { ExtensionManifest as ExtensionManifestSchema, EXTENSION_HEADER_COLORS } from '../schema/extensionSchema'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
+import { isDefined } from '../util/types'
 
 /**
  * Represents an input object that is validated against a subset of properties of the {@link ExtensionManifest}
@@ -11,12 +12,15 @@ import { parseJSONCOrError } from '../util/jsonc'
 export type ExtensionManifest = Pick<
     ExtensionManifestSchema,
     | 'description'
+    | 'wip'
     | 'repository'
     | 'categories'
     | 'tags'
     | 'readme'
     | 'url'
     | 'icon'
+    | 'iconDark'
+    | 'headerColor'
     | 'activationEvents'
     | 'contributes'
     | 'publisher'
@@ -46,6 +50,9 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
                     problems.push('"repository" property "url" must be a string')
                 }
             }
+        }
+        if (isDefined(value.wip) && typeof value.wip !== 'boolean') {
+            problems.push('"wip" property "type" must be a boolean')
         }
         if (
             value.categories &&
@@ -81,6 +88,15 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
         }
         if (value.icon && typeof value.icon !== 'string') {
             problems.push('"icon" property must be a string')
+        }
+        if (value.iconDark && typeof value.iconDark !== 'string') {
+            problems.push('"iconDark" property must be a string')
+        }
+        if (
+            value.headerColor &&
+            (typeof value.headerColor !== 'string' || !EXTENSION_HEADER_COLORS.has(value.headerColor))
+        ) {
+            problems.push(`"headerColor" property must be one of: ${[...EXTENSION_HEADER_COLORS].join(', ')}`)
         }
         if (problems.length > 0) {
             return new Error(`invalid extension manifest: ${problems.join(', ')}`)

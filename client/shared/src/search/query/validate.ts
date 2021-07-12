@@ -1,4 +1,4 @@
-import { FilterType } from './filters'
+import { FILTERS, FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
 
@@ -68,3 +68,12 @@ export function filterExists(query: string, filter: FilterType): boolean {
         scannedQuery.term.some(token => token.type === 'filter' && token.field.value.toLowerCase() === filter)
     )
 }
+
+/**
+ * Type guard for repo: filter token.
+ *
+ * @param token - query parsed lexical token
+ */
+export const isRepoFilter = (token: Token): token is Filter =>
+    token.type === 'filter' &&
+    (token.field.value === FilterType.repo || token.field.value === FILTERS[FilterType.repo].alias)

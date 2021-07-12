@@ -126,8 +126,8 @@ This overlay adds a namespace declaration to all the manifests.
     git checkout -b 3.26-kustomize   
     ```
 
-1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice (`<EXAMPLE NAMESPACE>` in this example) in the
-[overlays/namespaced/kustomization.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/kustomization.yaml) file.
+1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice everywhere within the
+[overlays/namespaced/](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/) directory. 
 
 1. Generate the overlay by running this command from the `root` directory:
 
@@ -248,7 +248,19 @@ kubectl apply -n ns-sourcegraph --prune -l deploy=sourcegraph -f generated-clust
 
 ### Non-privileged overlay
 
-This overlays goes one step further than the `non-root` overlay by also removing cluster roles and cluster role bindings.
+This overlays goes one step further than the `non-root` overlay by also removing cluster roles and cluster role bindings. This kustomization is for Sourcegraph installations in clusters with security restrictions. It avoids creating Roles and does all the rolebinding in a namespace. It configures Prometheus to work in the namespace and not require ClusterRole wide privileges when doing service discovery for scraping targets. It also disables cAdvisor.
+
+To use it, execute the following command from the `root` directory:
+
+```shell script
+./overlay-generate-cluster.sh non-privileged generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```shell script
+kubectl apply -n ns-sourcegraph --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
 
 If you are starting a fresh installation use the overlay `non-privileged-create-cluster`. After creation you can use the overlay
 `non-privileged`.

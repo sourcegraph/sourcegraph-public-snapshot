@@ -106,6 +106,12 @@ type CreateBatchChangeArgs struct {
 type ApplyBatchChangeArgs struct {
 	BatchSpec         graphql.ID
 	EnsureBatchChange *graphql.ID
+	PublicationStates *[]ChangesetSpecPublicationStateInput
+}
+
+type ChangesetSpecPublicationStateInput struct {
+	ChangesetSpec    graphql.ID
+	PublicationState batches.PublishedValue
 }
 
 type ListBatchChangesArgs struct {
@@ -199,20 +205,41 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 	OnlyWithoutCredential bool
 }
 
-type DetachChangesetsArgs struct {
+type BulkOperationBaseArgs struct {
 	BatchChange graphql.ID
 	Changesets  []graphql.ID
+}
+
+type DetachChangesetsArgs struct {
+	BulkOperationBaseArgs
 }
 
 type ListBatchChangeBulkOperationArgs struct {
-	First int32
-	After *string
+	First        int32
+	After        *string
+	CreatedAfter *DateTime
 }
 
 type CreateChangesetCommentsArgs struct {
-	BatchChange graphql.ID
-	Changesets  []graphql.ID
-	Body        string
+	BulkOperationBaseArgs
+	Body string
+}
+
+type ReenqueueChangesetsArgs struct {
+	BulkOperationBaseArgs
+}
+
+type MergeChangesetsArgs struct {
+	BulkOperationBaseArgs
+	Squash bool
+}
+
+type CreateBatchSpecExecutionArgs struct {
+	Spec string
+}
+
+type CloseChangesetsArgs struct {
+	BulkOperationBaseArgs
 }
 
 type BatchChangesResolver interface {
@@ -241,8 +268,12 @@ type BatchChangesResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
-	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
+	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
+	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
+	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
+	CreateBatchSpecExecution(ctx context.Context, args *CreateBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
+	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 
 	// Queries
 
@@ -271,6 +302,8 @@ type BulkOperationResolver interface {
 	State() string
 	Progress() float64
 	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
+	Initiator(ctx context.Context) (*UserResolver, error)
+	ChangesetCount() int32
 	CreatedAt() DateTime
 	FinishedAt() *DateTime
 }
@@ -466,7 +499,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() batches.PublishedValue
+	Published() *batches.PublishedValue
 }
 
 type GitCommitDescriptionResolver interface {
@@ -674,4 +707,25 @@ type ChangesetCountsResolver interface {
 	OpenApproved() int32
 	OpenChangesRequested() int32
 	OpenPending() int32
+}
+
+type BatchSpecExecutionResolver interface {
+	ID() graphql.ID
+	InputSpec() string
+	State() string
+	CreatedAt() DateTime
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+	Failure() *string
+	Steps() BatchSpecExecutionStepsResolver
+	PlaceInQueue() *int32
+	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
+	Initiator(ctx context.Context) (*UserResolver, error)
+	Namespace(ctx context.Context) (*NamespaceResolver, error)
+}
+
+type BatchSpecExecutionStepsResolver interface {
+	Setup() []ExecutionLogEntryResolver
+	SrcPreview() ExecutionLogEntryResolver
+	Teardown() []ExecutionLogEntryResolver
 }

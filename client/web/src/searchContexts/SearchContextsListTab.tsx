@@ -7,12 +7,15 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../auth'
-import { FilteredConnection, FilteredConnectionFilter, FilterValue } from '../components/FilteredConnection'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
+} from '../components/FilteredConnection'
 import {
     ListSearchContextsResult,
     ListSearchContextsVariables,
     SearchContextFields,
-    SearchContextsNamespaceFilterType,
     SearchContextsOrderBy,
 } from '../graphql-operations'
 import { SearchContextProps } from '../search'
@@ -20,7 +23,10 @@ import { SearchContextProps } from '../search'
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 
 export interface SearchContextsListTabProps
-    extends Pick<SearchContextProps, 'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts'> {
+    extends Pick<
+        SearchContextProps,
+        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+    > {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
@@ -28,46 +34,50 @@ export interface SearchContextsListTabProps
 export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTabProps> = ({
     isSourcegraphDotCom,
     authenticatedUser,
+    getUserSearchContextNamespaces,
     fetchSearchContexts,
     fetchAutoDefinedSearchContexts,
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
-            const { namespace, namespaceFilterType, orderBy, descending } = args as {
+            const { namespace, orderBy, descending } = args as {
                 namespace: string | undefined
-                namespaceFilterType: SearchContextsNamespaceFilterType | undefined
                 orderBy: SearchContextsOrderBy
                 descending: boolean
             }
+            const namespaces = namespace
+                ? [namespace === 'global' ? null : namespace]
+                : getUserSearchContextNamespaces(authenticatedUser)
+
             return fetchSearchContexts({
                 first: args.first ?? 10,
                 query: args.query ?? undefined,
                 after: args.after ?? undefined,
-                namespace,
-                namespaceFilterType,
+                namespaces,
                 orderBy,
                 descending,
             })
         },
-        [fetchSearchContexts]
+        [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces]
     )
 
     const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts.pipe(catchError(() => [])))
 
-    const ownerNamespaceFilterValues: FilterValue[] = authenticatedUser
+    const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser
         ? [
               {
                   value: authenticatedUser.id,
                   label: authenticatedUser.username,
                   args: {
                       namespace: authenticatedUser.id,
-                      namespaceFilterType: SearchContextsNamespaceFilterType.NAMESPACE,
                   },
               },
               ...authenticatedUser.organizations.nodes.map(org => ({
                   value: org.id,
                   label: org.displayName || org.name,
-                  args: { namespace: org.id, namespaceFilterType: SearchContextsNamespaceFilterType.NAMESPACE },
+                  args: {
+                      namespace: org.id,
+                  },
               })),
           ]
         : []
@@ -85,10 +95,10 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     args: {},
                 },
                 {
-                    value: 'no-owner',
-                    label: 'No owner',
+                    value: 'global-owner',
+                    label: 'Global',
                     args: {
-                        namespaceFilterType: SearchContextsNamespaceFilterType.INSTANCE,
+                        namespace: 'global',
                     },
                 },
                 ...ownerNamespaceFilterValues,

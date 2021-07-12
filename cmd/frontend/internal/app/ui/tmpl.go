@@ -6,10 +6,12 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
@@ -51,7 +53,7 @@ var funcMap = template.FuncMap{
 			return "", err
 		}
 		defer f.Close()
-		data, err := ioutil.ReadAll(f)
+		data, err := io.ReadAll(f)
 		if err != nil {
 			return "", err
 		}
@@ -103,11 +105,11 @@ func doLoadTemplate(path string) (*template.Template, error) {
 	case "error.html":
 		data = errorHTML
 	default:
-		return nil, fmt.Errorf("invalid template path %q", path)
+		return nil, errors.Errorf("invalid template path %q", path)
 	}
 	tmpl, err := template.New(path).Funcs(funcMap).Parse(data)
 	if err != nil {
-		return nil, fmt.Errorf("ui: failed to parse template %q: %v", path, err)
+		return nil, errors.Errorf("ui: failed to parse template %q: %v", path, err)
 	}
 	return tmpl, nil
 }

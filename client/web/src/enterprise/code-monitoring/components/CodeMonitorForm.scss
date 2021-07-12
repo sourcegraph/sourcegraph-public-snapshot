@@ -32,7 +32,6 @@
     }
 
     &__horizontal-rule {
-        margin: 2rem 0;
         border-top: 1px solid var(--border-color-2);
     }
 
@@ -43,7 +42,7 @@
     &__actions,
     &__triggers {
         &--disabled {
-            color: $gray-17 !important;
+            color: var(--gray-08) !important;
             opacity: 0.5;
 
             // Avoid applying opacity twice

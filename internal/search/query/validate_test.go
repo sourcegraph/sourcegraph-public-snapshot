@@ -34,10 +34,6 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			want:  `unknown language: "stephenhas9cats"`,
 		},
 		{
-			input: "stable:???",
-			want:  `invalid boolean "???"`,
-		},
-		{
 			input: "count:sedonuts",
 			want:  "field count has value sedonuts, sedonuts is not a number",
 		},
@@ -76,6 +72,14 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			want:  "invalid syntax. You specified both @ and rev: for a repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again",
 		},
 		{
+			input: "rev:this is a good channel",
+			want:  "invalid syntax. The query contains `rev:` without `repo:`. Add a `repo:` filter and try again",
+		},
+		{
+			input: `repo:'' rev:bedge`,
+			want:  "invalid syntax. The query contains `rev:` without `repo:`. Add a `repo:` filter and try again",
+		},
+		{
 			input: "repo:foo author:rob@saucegraph.com",
 			want:  `your query contains the field 'author', which requires type:commit or type:diff in the query`,
 		},
@@ -93,7 +97,17 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		},
 		{
 			input: "type:symbol select:symbol.timelime",
-			want:  "invalid field 'timelime' on select type 'symbol'",
+			want:  `invalid field "timelime" on select path "symbol.timelime"`,
+		},
+		{
+			input:      "nice try type:repo",
+			want:       "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents",
+			searchType: SearchTypeStructural,
+		},
+		{
+			input:      "type:diff nice try",
+			want:       "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents and is not currently supported for diff searches",
+			searchType: SearchTypeStructural,
 		},
 	}
 	for _, c := range cases {

@@ -2,8 +2,8 @@ package dbworker
 
 import (
 	"context"
-	"errors"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -37,13 +37,13 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 }
 
 // Dequeue calls into the inner store.
-func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	return s.Store.Dequeue(ctx, conditions)
+	return s.Store.Dequeue(ctx, workerHostname, conditions)
 }
 
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.

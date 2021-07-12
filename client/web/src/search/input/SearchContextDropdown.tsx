@@ -1,64 +1,49 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import Shepherd from 'shepherd.js'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
+import styles from '../FeatureTour.module.scss'
 import { SubmitSearchParameters } from '../helpers'
+import { getTourOptions, HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, useFeatureTour } from '../useFeatureTour'
 
+import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
-import { defaultTourOptions } from './tour-options'
+import { defaultPopperModifiers } from './tour-options'
 
 export interface SearchContextDropdownProps
-    extends Omit<
-            SearchContextProps,
-            | 'showSearchContext'
-            | 'convertVersionContextToSearchContext'
-            | 'isSearchContextSpecAvailable'
-            | 'fetchSearchContext'
-        >,
+    extends Omit<SearchContextInputProps, 'showSearchContext'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps {
+        VersionContextProps,
+        TelemetryProps {
+    isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
     submitSearch: (args: SubmitSearchParameters) => void
     submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
+    isSearchOnboardingTourVisible: boolean
+    className?: string
 }
 
-const tourOptions: Shepherd.Tour.TourOptions = {
-    ...defaultTourOptions,
-    defaultStepOptions: {
-        ...defaultTourOptions.defaultStepOptions,
-        popperOptions: {
-            // Removes default behavior of autofocusing steps
-            modifiers: [
-                {
-                    name: 'focusAfterRender',
-                    enabled: false,
-                },
-                { name: 'offset', options: { offset: [2, 4] } },
-            ],
-        },
-    },
-}
-
-function getHighlightTourStep(onClose: () => void): HTMLElement {
+function getFeatureTourElement(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
-    container.className = 'search-context-dropdown__highlight-tour-step'
+    container.className = styles.featureTourStep
     container.innerHTML = `
         <div>
             <strong>New: Search contexts</strong>
         </div>
         <div class="mt-2 mb-2">Search just the code you care about with search contexts.</div>
         <div>
-            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental" target="_blank">
+            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts" target="_blank">
                 Learn more
             </a>
         </div>
@@ -68,18 +53,17 @@ function getHighlightTourStep(onClose: () => void): HTMLElement {
             </button>
         </div>
     `
-
     const button = container.querySelector('button')
-    if (button) {
-        button.addEventListener('click', onClose)
-    }
+    button?.addEventListener('click', onClose)
     return container
 }
 
-const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
-
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
+        isSourcegraphDotCom,
+        authenticatedUser,
+        hasUserAddedRepositories,
+        hasUserAddedExternalServices,
         history,
         patternType,
         caseSensitive,
@@ -90,52 +74,26 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        showSearchContextHighlightTourStep = false,
+        showSearchContextFeatureTour = false,
         submitSearchOnSearchContextChange = true,
+        isSearchOnboardingTourVisible,
+        className,
     } = props
 
-    const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(
-        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
-        false
-    )
-
-    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
-    useEffect(() => {
-        tour.addSteps([
-            {
-                id: 'search-contexts-start-tour',
-                text: getHighlightTourStep(() => tour.cancel()),
-                attachTo: {
-                    element: '.search-context-dropdown__button',
-                    on: 'bottom',
-                },
+    const tour = useFeatureTour(
+        'search-contexts-start-tour',
+        !!authenticatedUser && showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
+        getFeatureTourElement,
+        HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY,
+        getTourOptions({
+            attachTo: {
+                element: '.search-context-dropdown__button',
+                on: 'bottom',
             },
-        ])
-    }, [tour])
-
-    useEffect(() => {
-        if (showSearchContextHighlightTourStep && !hasSeenHighlightTourStep) {
-            tour.start()
-        }
-    }, [showSearchContextHighlightTourStep, hasSeenHighlightTourStep, tour])
-
-    useEffect(() => {
-        const onCanceled = (): void => {
-            setHasSeenHighlightTourStep(true)
-        }
-        tour.on('cancel', onCanceled)
-        return () => {
-            tour.off('cancel', onCanceled)
-        }
-    }, [tour, setHasSeenHighlightTourStep])
-
-    useEffect(
-        () => () => {
-            if (tour.isActive()) {
-                tour.cancel()
-            }
-        },
-        [tour]
+            popperOptions: {
+                modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [140, 16] } }],
+            },
+        })
     )
 
     const [isOpen, setIsOpen] = useState(false)
@@ -181,38 +139,45 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     )
 
     return (
-        <>
-            <Dropdown
-                isOpen={isOpen}
-                toggle={toggleOpen}
-                a11y={false} /* Override default keyboard events in reactstrap */
+        <Dropdown
+            isOpen={isOpen}
+            toggle={toggleOpen}
+            a11y={false} /* Override default keyboard events in reactstrap */
+            className={classNames('search-context-dropdown ', className)}
+        >
+            <DropdownToggle
+                className={classNames(
+                    'search-context-dropdown__button',
+                    'dropdown-toggle',
+                    'test-search-context-dropdown',
+                    {
+                        'search-context-dropdown__button--open': isOpen,
+                    }
+                )}
+                color="link"
+                disabled={isDisabled}
+                data-tooltip={disabledTooltipText}
             >
-                <DropdownToggle
-                    className={classNames(
-                        'search-context-dropdown__button',
-                        'dropdown-toggle',
-                        'test-search-context-dropdown',
-                        {
-                            'search-context-dropdown__button--open': isOpen,
-                        }
+                <code className="search-context-dropdown__button-content test-selected-search-context-spec">
+                    <span className="search-filter-keyword">context:</span>
+                    {selectedSearchContextSpec?.startsWith('@') ? (
+                        <>
+                            <span className="search-keyword">@</span>
+                            {selectedSearchContextSpec?.slice(1)}
+                        </>
+                    ) : (
+                        selectedSearchContextSpec
                     )}
-                    color="link"
-                    disabled={isDisabled}
-                    data-tooltip={disabledTooltipText}
-                >
-                    <code className="search-context-dropdown__button-content test-selected-search-context-spec">
-                        <span className="search-filter-keyword">context:</span>
-                        {selectedSearchContextSpec?.startsWith('@') ? (
-                            <>
-                                <span className="search-keyword">@</span>
-                                {selectedSearchContextSpec?.slice(1)}
-                            </>
-                        ) : (
-                            selectedSearchContextSpec
-                        )}
-                    </code>
-                </DropdownToggle>
-                <DropdownMenu>
+                </code>
+            </DropdownToggle>
+            <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
+                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
+                    <SearchContextCtaPrompt
+                        telemetryService={props.telemetryService}
+                        authenticatedUser={authenticatedUser}
+                        hasUserAddedExternalServices={hasUserAddedExternalServices}
+                    />
+                ) : (
                     <SearchContextMenu
                         {...props}
                         selectSearchContextSpec={selectSearchContextSpec}
@@ -220,9 +185,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         fetchSearchContexts={fetchSearchContexts}
                         closeMenu={toggleOpen}
                     />
-                </DropdownMenu>
-            </Dropdown>
-            <div className="search-context-dropdown__separator" />
-        </>
+                )}
+            </DropdownMenu>
+        </Dropdown>
     )
 }

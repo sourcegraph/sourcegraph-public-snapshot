@@ -41,11 +41,6 @@ type Repo struct {
 	Enabled bool
 }
 
-func (Repo) Fork() bool {
-	// TODO(sqs): update callers
-	return false
-}
-
 // ExternalRepoSpec specifies a repository on an external service (such as GitHub or GitLab).
 type ExternalRepoSpec struct {
 	// ID is the repository's ID on the external service. Its value is opaque except to the repo-updater.

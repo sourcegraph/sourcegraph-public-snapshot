@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -199,7 +200,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 		route         string
 		path          string
 		common        *Common
-		mockStat      os.FileInfo
+		mockStat      fs.FileInfo
 		expHandled    bool
 		expStatusCode int
 		expLocation   string
@@ -392,7 +393,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			git.Mocks.Stat = func(commit api.CommitID, name string) (os.FileInfo, error) {
+			git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 				return test.mockStat, nil
 			}
 			t.Cleanup(git.ResetMocks)

@@ -2,8 +2,8 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -88,6 +88,14 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 	return res, nil
 }
 
+func (r *bulkOperationResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.bulkOperation.UserID)
+}
+
+func (r *bulkOperationResolver) ChangesetCount() int32 {
+	return r.bulkOperation.ChangesetCount
+}
+
 func (r *bulkOperationResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.bulkOperation.CreatedAt}
 }
@@ -103,8 +111,16 @@ func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, err
 	switch t {
 	case btypes.ChangesetJobTypeComment:
 		return "COMMENT", nil
+	case btypes.ChangesetJobTypeDetach:
+		return "DETACH", nil
+	case btypes.ChangesetJobTypeReenqueue:
+		return "REENQUEUE", nil
+	case btypes.ChangesetJobTypeMerge:
+		return "MERGE", nil
+	case btypes.ChangesetJobTypeClose:
+		return "CLOSE", nil
 	default:
-		return "", fmt.Errorf("invalid job type %q", t)
+		return "", errors.Errorf("invalid job type %q", t)
 	}
 }
 

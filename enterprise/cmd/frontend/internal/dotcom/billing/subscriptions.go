@@ -1,9 +1,7 @@
 package billing
 
 import (
-	"errors"
-	"fmt"
-
+	"github.com/cockroachdb/errors"
 	"github.com/stripe/stripe-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -26,7 +24,7 @@ func GetSubscriptionItemIDToReplace(billingSub *stripe.Subscription, billingCust
 		return "", errors.New("product subscription's billing customer does not match the provided account parameter")
 	}
 	if len(billingSub.Items.Data) != 1 {
-		return "", fmt.Errorf("product subscription has unexpected number of invoice items (got %d, want 1)", len(billingSub.Items.Data))
+		return "", errors.Errorf("product subscription has unexpected number of invoice items (got %d, want 1)", len(billingSub.Items.Data))
 	}
 	return billingSub.Items.Data[0].ID, nil
 }

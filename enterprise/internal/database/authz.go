@@ -2,10 +2,9 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -92,7 +91,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 		})
 
 	default:
-		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
+		return errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
 	txs, err := s.store.Transact(ctx)

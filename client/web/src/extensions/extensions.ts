@@ -1,20 +1,26 @@
 import {
     ConfiguredRegistryExtension,
-    toConfiguredRegistryExtension,
     isExtensionEnabled,
+    toConfiguredRegistryExtension,
 } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 
 import { validCategories } from './extension/extension'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
 
+export type MinimalConfiguredRegistryExtension = Pick<
+    ConfiguredRegistryExtension<RegistryExtensionFieldsForList>,
+    'manifest' | 'id'
+>
+
 export interface ConfiguredRegistryExtensions {
-    [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
+    [id: string]: MinimalConfiguredRegistryExtension
 }
 
 export interface ConfiguredExtensionRegistry {
@@ -84,52 +90,79 @@ export function configureExtensionRegistry(
     return { extensions, extensionIDsByCategory }
 }
 
-/** Groups extensions by category */
-export function applyCategoryFilter(
-    extensionIDsByCategory: ConfiguredExtensionRegistry['extensionIDsByCategory'],
-    categories: ExtensionCategory[],
-    selectedCategories: ExtensionCategory[]
-): Record<ExtensionCategory, string[]> {
-    if (selectedCategories.length === 0) {
-        // Primary categories
-        return createRecord(categories, category => [...extensionIDsByCategory[category].primaryExtensionIDs])
-    }
+/**
+ * Configures featured extensions to be displayed on the extension registry.
+ *
+ * Share configured extension cache with `configureExtensionRegistry`
+ * since featured extensions are likely to be displayed twice on the page.
+ */
+export function configureFeaturedExtensions(
+    featuredExtensions: RegistryExtensionFieldsForList[],
+    configuredExtensionCache: ConfiguredExtensionCache
+): MinimalConfiguredRegistryExtension[] {
+    const extensions: MinimalConfiguredRegistryExtension[] = []
 
-    // Categorize in toggle order, make sure the same extension doesn't appear twice.
-    const filteredCategorizedExtensions = createRecord<ExtensionCategory, string[]>(selectedCategories, () => [])
-
-    // To "blacklist" extension ID after it has been used
-    const takenIDs = new Set<string>()
-
-    for (const category of selectedCategories) {
-        for (const extensionID of extensionIDsByCategory[category].allExtensionIDs) {
-            if (!takenIDs.has(extensionID)) {
-                filteredCategorizedExtensions[category].push(extensionID)
-
-                takenIDs.add(extensionID)
-            }
+    for (const featuredExtension of featuredExtensions) {
+        let configuredRegistryExtension = configuredExtensionCache.get(featuredExtension.id)
+        if (!configuredRegistryExtension) {
+            configuredRegistryExtension = toConfiguredRegistryExtension(featuredExtension)
+            configuredExtensionCache.set(featuredExtension.id, configuredRegistryExtension)
         }
+        extensions.push(configuredRegistryExtension)
     }
 
-    return filteredCategorizedExtensions
+    return extensions
 }
 
 /**
- * Filters categorized registry extensions by enablement (enabled | disabled | all)
+ * Removes extensions that do not satify the enablement filter.
+ *
+ * For example, if the user wants to see only enabled extensions, remove disabled extensions.
  */
-export function applyExtensionsEnablement(
-    categorizedExtensions: Record<ExtensionCategory, string[]>,
-    filteredCategoryIDs: ExtensionCategory[],
-    enablement: ExtensionsEnablement,
+export function applyEnablementFilter(
+    extensionIDs: string[],
+    enablementFilter: ExtensionsEnablement,
     settings: Settings | ErrorLike | null
-): Record<ExtensionCategory, string[]> {
-    if (enablement === 'all') {
-        return categorizedExtensions
+): string[] {
+    if (enablementFilter === 'all') {
+        return extensionIDs
     }
 
-    return createRecord(filteredCategoryIDs, category =>
-        categorizedExtensions[category].filter(
-            extensionID => (enablement === 'enabled') === isExtensionEnabled(settings, extensionID)
-        )
-    )
+    return extensionIDs.filter(extensionID => {
+        const showEnabled = enablementFilter === 'enabled'
+        const isEnabled = isExtensionEnabled(settings, extensionID)
+
+        return showEnabled === isEnabled
+    })
+}
+
+/**
+ * Removes extensions that do not satisfy the WIP/experimental filter.
+ *
+ * For example, if the user does not want to see experimental extensions,
+ * remove all extensions where WIP === true.
+ */
+export function applyWIPFilter(
+    extensionIDs: string[],
+    wipFilter: boolean,
+    extensions: ConfiguredRegistryExtensions
+): string[] {
+    if (wipFilter === true) {
+        return extensionIDs
+    }
+
+    return extensionIDs.filter(extensionID => {
+        const extension = extensions[extensionID]
+        if (!extension) {
+            return false // Shouldn't be reached
+        }
+
+        if (extension.manifest && !isErrorLike(extension.manifest) && isDefined(extension.manifest.wip)) {
+            return !extension.manifest.wip // Don't include WIP extensions
+        }
+
+        // Don't filter it out if we don't have enough information to determine
+        // that the extension is WIP.
+        return true
+    })
 }

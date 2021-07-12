@@ -8,15 +8,17 @@ import (
 	"github.com/dghubble/gologin"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const sessionKey = "gitlaboauth@0"
 
-func parseProvider(callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
+func parseProvider(db dbutil.DB, callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
 	if rawURL == "" {
 		rawURL = "https://gitlab.com/"
@@ -53,6 +55,7 @@ func parseProvider(callbackURL string, p *schema.GitLabAuthProvider, sourceCfg s
 			return CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(&sessionIssuerHelper{
+					db:       db,
 					CodeHost: codeHost,
 					clientID: p.ClientID,
 				}, sessionKey),
@@ -74,8 +77,14 @@ func getStateConfig() gologin.CookieConfig {
 }
 
 func requestedScopes(extraScopes []string) []string {
-	scopes := []string{"read_user", "read_api"}
-
+	scopes := []string{"read_user"}
+	if envvar.SourcegraphDotComMode() {
+		// By default, request `read_api`. User's who are allowed to add private code
+		// will request full `api` access via extraScopes.
+		scopes = append(scopes, "read_api")
+	} else {
+		scopes = append(scopes, "api")
+	}
 	// Append extra scopes and ensure there are no duplicates
 	for _, s := range extraScopes {
 		var found bool

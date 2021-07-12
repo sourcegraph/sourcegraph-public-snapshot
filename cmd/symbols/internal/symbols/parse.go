@@ -2,20 +2,19 @@ package symbols
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	nettrace "golang.org/x/net/trace"
 
-	ctags "github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -157,7 +156,7 @@ func (s *Service) parse(ctx context.Context, req parseRequest) (entries []*ctags
 		defer func() {
 			if err == nil {
 				if e := recover(); e != nil {
-					err = fmt.Errorf("panic: %s", e)
+					err = errors.Errorf("panic: %s", e)
 				}
 			}
 			if err == nil {

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -11,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -60,7 +59,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
+			err = errors.Errorf("%s (output follows)\n\n%s", err, out)
 		}
 		return err
 	}
@@ -115,7 +114,7 @@ func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDi
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		return errors.Wrapf(err, "failed to update with output %q", string(output))
+		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 	return nil
 }
@@ -163,7 +162,7 @@ func p4ping(ctx context.Context, host, username, password string) error {
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
+			err = errors.Errorf("%s (output follows)\n\n%s", err, out)
 		}
 		return err
 	}
@@ -186,7 +185,7 @@ func p4trust(ctx context.Context, host string) error {
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
+			err = errors.Errorf("%s (output follows)\n\n%s", err, out)
 		}
 		return err
 	}
@@ -279,7 +278,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
-		return errors.Wrapf(err, "failed to update with output %q", string(output))
+		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 
 	// Force update "master" to "refs/remotes/p4/master" where changes are synced into

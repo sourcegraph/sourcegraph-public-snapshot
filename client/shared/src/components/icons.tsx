@@ -167,7 +167,7 @@ export const CloudCheckIconRefresh: React.FunctionComponent<IconProps> = props =
         {...props}
         {...sizeProps(props)}
         className={`phabricator-icon mdi-icon${props.className ? ' ' + props.className : ''}`}
-        viewBox="0 0 20 20"
+        viewBox="0 -4 20 20"
         fill="currentColor"
     >
         <g>

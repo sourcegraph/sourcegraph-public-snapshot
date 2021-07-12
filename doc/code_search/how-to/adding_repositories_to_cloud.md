@@ -31,9 +31,13 @@ To add public repositories from GitHub or Gitlab without creating a code host co
 1. Specify public repositories on GitHub and GitLab using complete URLs to the repositories. One repository per line.
 1. Press the **Save** button.
 
-### Troubleshooting
+## Who can see your code on Sourcegraph Cloud.
 
-#### Repositories from code hosts are missing or not showing up while adding repositories
+Please see [who can see your code on Sourcegraph Cloud](../explanations/code_visibility_on_sourcegraph_cloud.md).
+
+## Troubleshooting
+
+### Repositories from code hosts are missing or not showing up while adding repositories
 
 If you've connected with a code host and repositories you expect to find are not shown while adding repositories in **User menu > Settings > Repositories > Manage repositories**, you may not have permission on the remote code host to add those repositories to Sourcegraph.
 

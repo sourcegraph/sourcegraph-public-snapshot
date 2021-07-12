@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
@@ -31,16 +32,17 @@ type Config struct {
 	// merge-base with origin/master.
 	changedFiles []string
 
-	taggedRelease       bool
-	releaseBranch       bool
-	isBextReleaseBranch bool
-	isBextNightly       bool
-	isRenovateBranch    bool
-	patch               bool
-	patchNoTest         bool
-	isQuick             bool
-	isMasterDryRun      bool
-	isBackendDryRun     bool
+	taggedRelease         bool
+	releaseBranch         bool
+	isBextReleaseBranch   bool
+	isBextNightly         bool
+	isRenovateBranch      bool
+	patch                 bool
+	patchNoTest           bool
+	buildCandidatesNoTest bool
+	isQuick               bool
+	isMainDryRun          bool
+	isBackendDryRun       bool
 
 	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
 	// for each command
@@ -72,10 +74,11 @@ func ComputeConfig() Config {
 	if patchNoTest || patch {
 		version = version + "_patch"
 	}
+	buildCandidatesNoTest := branch == "docker-images-candidates-notest-all"
 
 	isBackendDryRun := strings.HasPrefix(branch, "backend-dry-run/")
 
-	isMasterDryRun := strings.HasPrefix(branch, "master-dry-run/")
+	isMainDryRun := strings.HasPrefix(branch, "main-dry-run/") || strings.HasPrefix(branch, "master-dry-run/")
 
 	isQuick := strings.HasPrefix(branch, "quick/")
 
@@ -105,17 +108,18 @@ func ComputeConfig() Config {
 		changedFiles:      changedFiles,
 		buildNumber:       buildNumber,
 
-		taggedRelease:       taggedRelease,
-		releaseBranch:       lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
-		isBextReleaseBranch: branch == "bext/release",
-		isRenovateBranch:    strings.HasPrefix(branch, "renovate/"),
-		patch:               patch,
-		patchNoTest:         patchNoTest,
-		isQuick:             isQuick,
-		isMasterDryRun:      isMasterDryRun,
-		isBackendDryRun:     isBackendDryRun,
-		profilingEnabled:    profilingEnabled,
-		isBextNightly:       os.Getenv("BEXT_NIGHTLY") == "true",
+		taggedRelease:         taggedRelease,
+		releaseBranch:         lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
+		isBextReleaseBranch:   branch == "bext/release",
+		isRenovateBranch:      strings.HasPrefix(branch, "renovate/"),
+		patch:                 patch,
+		patchNoTest:           patchNoTest,
+		buildCandidatesNoTest: buildCandidatesNoTest,
+		isQuick:               isQuick,
+		isMainDryRun:          isMainDryRun,
+		isBackendDryRun:       isBackendDryRun,
+		profilingEnabled:      profilingEnabled,
+		isBextNightly:         os.Getenv("BEXT_NIGHTLY") == "true",
 	}
 }
 
@@ -145,7 +149,7 @@ func (c Config) ensureCommit() error {
 			found = true
 			break
 		}
-		errs = multierror.Append(errs, fmt.Errorf("%v | Output: %q", err, string(output)))
+		errs = multierror.Append(errs, errors.Errorf("%v | Output: %q", err, string(output)))
 	}
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.branch, c.commit, strings.Join(c.mustIncludeCommit, ", "))
@@ -162,13 +166,23 @@ func (c Config) isPR() bool {
 		!c.taggedRelease &&
 		c.branch != "master" &&
 		!c.isMainBranch() &&
-		!c.isMasterDryRun &&
+		!c.isMainDryRun &&
 		!c.patch
 }
 
 func (c Config) isDocsOnly() bool {
 	for _, p := range c.changedFiles {
 		if !strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
+			return false
+		}
+	}
+	return true
+}
+
+// isSgOnly returns whether the changedFiles are only in the ./dev/sg folder.
+func (c Config) isSgOnly() bool {
+	for _, p := range c.changedFiles {
+		if !strings.HasPrefix(p, "dev/sg/") {
 			return false
 		}
 	}
@@ -185,7 +199,7 @@ func (c Config) isGoOnly() bool {
 }
 
 func (c Config) shouldRunE2EandQA() bool {
-	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMasterDryRun
+	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMainDryRun
 }
 
 // candidateImageTag provides the tag for a candidate image built for this Buildkite run.

@@ -5,6 +5,7 @@
     &__items {
         overflow-x: auto;
         white-space: nowrap;
+        margin: 0;
 
         scrollbar-width: none;
         &::-webkit-scrollbar {
@@ -18,7 +19,11 @@
         padding: 0;
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
+        }
+
+        .theme-redesign & {
+            color: var(--icon-color);
         }
 
         &--disabled {
@@ -37,9 +42,9 @@
             padding-right: 0.5rem !important;
         }
 
-        &--tooltipped {
+        &--interactive {
             &:hover {
-                background-color: var(--link-hover-bg-color);
+                background-color: var(--color-bg-2);
                 color: var(--link-hover-color);
             }
         }

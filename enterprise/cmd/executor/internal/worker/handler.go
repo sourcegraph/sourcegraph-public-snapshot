@@ -3,20 +3,21 @@ package worker
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -30,6 +31,9 @@ type handler struct {
 
 var _ workerutil.Handler = &handler{}
 
+// ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
+var ErrJobAlreadyExists = errors.New("job already exists")
+
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -38,16 +42,23 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	defer cancel()
 
 	wrapError := func(err error, message string) error {
-		for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-			if ex == context.DeadlineExceeded {
-				err = fmt.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
-			}
+		if errors.Is(err, context.DeadlineExceeded) {
+			err = errors.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
 		}
 
 		return errors.Wrap(err, message)
 	}
 
-	h.idSet.Add(job.ID)
+	start := time.Now()
+	defer func() {
+		if honey.Enabled() {
+			_ = createHoneyEvent(ctx, job, err, time.Since(start)).Send()
+		}
+	}()
+
+	if !h.idSet.Add(job.ID, cancel) {
+		return ErrJobAlreadyExists
+	}
 	defer h.idSet.Remove(job.ID)
 
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
@@ -59,12 +70,14 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	logger := command.NewLogger(union(h.options.RedactedValues, job.RedactedValues))
 
 	defer func() {
+		log15.Info("Writing log entries", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+
 		for _, entry := range logger.Entries() {
 			// Perform this outside of the task execution context. If there is a timeout or
 			// cancellation error we don't want to skip uploading these logs as users will
 			// often want to see how far something progressed prior to a timeout.
 			if err := h.store.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
-				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
+				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "id", record.RecordID(), "repositoryName", job.RepositoryName, "commit", job.Commit, "error", err)
 			}
 		}
 	}()
@@ -72,6 +85,8 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
+
+	log15.Info("Creating workspace", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
@@ -90,10 +105,10 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 
 		if !strings.HasPrefix(path, workingDirectory) {
-			return fmt.Errorf("refusing to write outside of working directory")
+			return errors.Errorf("refusing to write outside of working directory")
 		}
 
-		if err := ioutil.WriteFile(path, []byte(content), os.ModePerm); err != nil {
+		if err := os.WriteFile(path, []byte(content), os.ModePerm); err != nil {
 			return err
 		}
 	}
@@ -127,12 +142,14 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		scriptName := scriptNameFromJobStep(job, i)
 		scriptPath := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
 
-		if err := ioutil.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
+		if err := os.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
 			return err
 		}
 
 		scriptNames = append(scriptNames, scriptName)
 	}
+
+	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 	// Setup Firecracker VM (if enabled)
 	if err := runner.Setup(ctx, imageNames, nil); err != nil {
@@ -158,6 +175,8 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 			Operation:  h.operations.Exec,
 		}
 
+		log15.Info(fmt.Sprintf("Running docker step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
 			return wrapError(err, "failed to perform docker step")
 		}
@@ -165,10 +184,13 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
+		log15.Info(fmt.Sprintf("Running src-cli step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+
 		cliStepCommand := command.CommandSpec{
-			Key:       fmt.Sprintf("step.src.%d", i),
-			Command:   append([]string{"src"}, cliStep.Commands...),
-			Dir:       cliStep.Dir,
+			Key:     fmt.Sprintf("step.src.%d", i),
+			Command: append([]string{"src"}, cliStep.Commands...),
+			Dir:     cliStep.Dir,
+			// TODO: We need $HOME/$PATH from the machine on which this is executed
 			Env:       cliStep.Env,
 			Operation: h.operations.Exec,
 		}
@@ -204,4 +226,25 @@ func union(a, b map[string]string) map[string]string {
 
 func scriptNameFromJobStep(job executor.Job, i int) string {
 	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
+}
+
+func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) *libhoney.Event {
+	fields := map[string]interface{}{
+		"duration_ms":    duration.Milliseconds(),
+		"recordID":       job.RecordID(),
+		"repositoryName": job.RepositoryName,
+		"commit":         job.Commit,
+		"numDockerSteps": len(job.DockerSteps),
+		"numCliSteps":    len(job.CliSteps),
+	}
+
+	if err != nil {
+		fields["error"] = err.Error()
+	}
+	// Currently disabled as the import pulls in conf packages
+	// if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
+	// 	fields["trace"] = spanURL
+	// }
+
+	return honey.EventWithFields("executor", fields)
 }

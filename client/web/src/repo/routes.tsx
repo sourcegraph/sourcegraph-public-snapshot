@@ -2,17 +2,28 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import { isLegacyFragment, parseHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import {
+    appendLineRangeQueryParameter,
+    isLegacyFragment,
+    parseQueryAndHash,
+    toRepoURL,
+} from '@sourcegraph/shared/src/util/url'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
+import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
-import { formatHash } from '../util/url'
+import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
+const RepositoryDocumentationPage = lazyComponent(
+    () => import('./docs/RepositoryDocumentationPage'),
+    'RepositoryDocumentationPage'
+)
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
@@ -71,9 +82,18 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/compare/:spec*',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryCompareArea {...context} />
-            </RepositoryGitDataContainer>
+            <div className="repo-revision-container">
+                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                    <RepositoryCompareArea {...context} />
+                </RepositoryGitDataContainer>
+                <ActionItemsBar
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    telemetryService={context.telemetryService}
+                />
+            </div>
         ),
     },
     {
@@ -109,7 +129,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             setPatternType,
             caseSensitive,
             setCaseSensitivity,
-            copyQueryButton,
             versionContext,
             globbing,
             ...context
@@ -135,12 +154,17 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
             // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
             if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(window.location.hash)) {
-                const hash = parseHash(window.location.hash)
-                const newHash = new URLSearchParams()
-                if (hash.viewState) {
-                    newHash.set('tab', hash.viewState)
+                const parsedQuery = parseQueryAndHash(window.location.search, window.location.hash)
+                const hashParameters = new URLSearchParams()
+                if (parsedQuery.viewState) {
+                    hashParameters.set('tab', parsedQuery.viewState)
                 }
-                return <Redirect to={window.location.pathname + window.location.search + formatHash(hash, newHash)} />
+                const range = formatLineOrPositionOrRange(parsedQuery)
+                const url = appendLineRangeQueryParameter(
+                    window.location.pathname + window.location.search,
+                    range ? `L${range}` : undefined
+                )
+                return <Redirect to={url + formatHash(hashParameters)} />
             }
 
             const repoRevisionProps = {
@@ -150,7 +174,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 setPatternType,
                 caseSensitive,
                 setCaseSensitivity,
-                copyQueryButton,
                 versionContext,
                 globbing,
             }
@@ -167,7 +190,9 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         defaultBranch={defaultBranch || 'HEAD'}
                     />
                     {!hideRepoRevisionContent && (
-                        <div className="repo-revision-container__content">
+                        // Add `.blob-status-bar__container` because this is the
+                        // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
+                        <div className="repo-revision-container__content blob-status-bar__container">
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
                                     <BlobPage
@@ -205,6 +230,33 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     {...context}
                     commitID={commitID}
                     repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
+                />
+                <ActionItemsBar
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    telemetryService={context.telemetryService}
+                />
+            </>
+        ),
+    },
+    {
+        path: '/-/docs/:pathID*',
+        condition: ({ settingsCascade }) => {
+            if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
+                return false
+            }
+            const settings: Settings = settingsCascade.final
+            return settings.experimentalFeatures?.apiDocs !== false
+        },
+        render: ({ resolvedRev: { commitID }, match, repoHeaderContributionsLifecycleProps, ...context }: any) => (
+            <>
+                <RepositoryDocumentationPage
+                    {...context}
+                    match={match}
+                    commitID={commitID}
+                    pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
                 />
                 <ActionItemsBar
                     useActionItemsBar={context.useActionItemsBar}

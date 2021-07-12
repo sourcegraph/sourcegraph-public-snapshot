@@ -2,13 +2,13 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -57,7 +57,8 @@ func TestUserEmails_Get(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -104,7 +105,8 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -155,7 +157,8 @@ func TestUserEmails_SetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -198,7 +201,8 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -267,7 +271,8 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	const emailA = "a@example.com"
@@ -347,7 +352,8 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	const email = "a@example.com"
@@ -402,7 +408,7 @@ func isUserEmailVerified(ctx context.Context, db dbutil.DB, userID int32, email 
 			return v.VerifiedAt != nil, nil
 		}
 	}
-	return false, fmt.Errorf("email not found: %s", email)
+	return false, errors.Errorf("email not found: %s", email)
 }
 
 func isUserEmailPrimary(ctx context.Context, db dbutil.DB, userID int32, email string) (bool, error) {
@@ -417,14 +423,15 @@ func isUserEmailPrimary(ctx context.Context, db dbutil.DB, userID int32, email s
 			return v.Primary, nil
 		}
 	}
-	return false, fmt.Errorf("email not found: %s", email)
+	return false, errors.Errorf("email not found: %s", email)
 }
 
 func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
@@ -471,7 +478,8 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
@@ -529,7 +537,8 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	newUsers := []NewUser{

@@ -2,11 +2,11 @@ package search
 
 import (
 	"context"
-	"errors"
 	"os"
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/rpc"
@@ -109,7 +109,7 @@ func reposAtEndpoint(ctx context.Context, endpoint string) map[string]struct{} {
 	cl := rpc.Client(endpoint)
 	defer cl.Close()
 
-	resp, err := cl.List(ctx, &query.Const{Value: true})
+	resp, err := cl.List(ctx, &query.Const{Value: true}, nil)
 	if err != nil {
 		return map[string]struct{}{}
 	}

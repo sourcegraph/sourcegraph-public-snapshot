@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -25,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	codeintelutils "github.com/sourcegraph/sourcegraph/lib/codeintel/utils"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 )
 
 type UploadHandler struct {
@@ -79,12 +78,13 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := h.handleEnqueueErr(w, r, repositoryID)
 	if err != nil {
-		if cerr, ok := err.(*ClientError); ok {
-			http.Error(w, cerr.Error(), http.StatusBadRequest)
+		var e *ClientError
+		if errors.As(err, &e) {
+			http.Error(w, e.Error(), http.StatusBadRequest)
 			return
 		}
 
-		if err == codeintelutils.ErrMetadataExceedsBuffer {
+		if err == upload.ErrMetadataExceedsBuffer {
 			http.Error(w, "Could not read indexer name from metaData vertex. Please supply it explicitly.", http.StatusBadRequest)
 			return
 		}
@@ -275,20 +275,12 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 // data to the bundle manager and marks the part index in the upload record.
 func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (interface{}, error) {
 	ctx := r.Context()
-
-	tx, err := h.dbStore.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
-
-	if err := tx.AddUploadPart(ctx, upload.ID, partIndex); err != nil {
-		return nil, err
-	}
 	if _, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", upload.ID, partIndex), r.Body); err != nil {
-		h.markUploadAsFailed(context.Background(), tx, upload.ID, err)
+		h.markUploadAsFailed(context.Background(), h.dbStore, upload.ID, err)
+		return nil, err
+	}
+
+	if err := h.dbStore.AddUploadPart(ctx, upload.ID, partIndex); err != nil {
 		return nil, err
 	}
 
@@ -340,8 +332,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 // trying to modify the record, it will be logged but will not be directly visible to the user.
 func (h *UploadHandler) markUploadAsFailed(ctx context.Context, tx DBStore, uploadID int, err error) {
 	var reason string
-
-	if _, ok := err.(*ClientError); ok {
+	if errors.HasType(err, &ClientError{}) {
 		reason = fmt.Sprintf("client misbehaving:\n* %s", err)
 	} else if awsErr := formatAWSError(err); awsErr != "" {
 		reason = fmt.Sprintf("object store error:\n* %s", awsErr)
@@ -376,7 +367,7 @@ func inferIndexer(r *http.Request) (string, error) {
 
 	// Read from the stream until we extract a tool name. This method is careful not to
 	// take too much resident memory in the case of a malformed bundle.
-	name, err := codeintelutils.ReadIndexerName(gzipReader)
+	name, err := upload.ReadIndexerName(gzipReader)
 	if err != nil {
 		return "", err
 	}
@@ -384,7 +375,7 @@ func inferIndexer(r *http.Request) (string, error) {
 	// Replace the body of the request with a reader that will produce all of the same
 	// content: all of the data that was already read from r.Body, plus the remaining
 	// content from r.Body.
-	r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
+	r.Body = io.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
 
 	return name, nil
 }
@@ -408,7 +399,7 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	}
 
 	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
-		if gitserver.IsRevisionNotFound(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 			return nil, false
 		}
@@ -428,10 +419,10 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 // formatAWSError returns the unwrapped, root AWS/S3 error. This method returns
 // an empty string when the given error value is neither an AWS nor an S3 error.
 func formatAWSError(err error) string {
-	var multipartErr manager.MultiUploadFailure
-	if !errors.As(err, &multipartErr) {
-		return ""
+	var e manager.MultiUploadFailure
+	if errors.As(err, &e) {
+		return e.Error()
 	}
 
-	return multipartErr.Error()
+	return ""
 }

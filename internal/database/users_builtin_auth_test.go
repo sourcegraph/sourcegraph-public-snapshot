@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -15,7 +15,8 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	if _, err := Users(db).Create(ctx, NewUser{
@@ -90,13 +91,31 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if isPassword, err := Users(db).IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
 		t.Fatal("old password still works")
 	}
+
+	// Creating a new user with an already verified email address should fail
+	_, err = Users(db).Create(ctx, NewUser{
+		Email:                 "foo@bar.com",
+		Username:              "another",
+		DisplayName:           "another",
+		Password:              "right-password",
+		EmailVerificationCode: "email-code",
+	})
+	if err == nil {
+		t.Fatal("Expected an error, got none")
+	}
+	want := "cannot create user: err_email_exists"
+	if err.Error() != want {
+		t.Fatalf("Want %q, got %q", want, err.Error())
+	}
+
 }
 
 func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -122,7 +141,8 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	oldPasswordResetRateLimit := passwordResetRateLimit
@@ -161,7 +181,8 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	usr, err := Users(db).Create(ctx, NewUser{
@@ -208,7 +229,8 @@ func TestUsers_CreatePassword(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// User without a password
@@ -273,7 +295,8 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{

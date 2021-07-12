@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -104,7 +104,7 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, repositoryName, commit string) error {
 	var commitDateString string
 	if commitDate, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit); err != nil {
-		if !isRepositoryNotFound(err) && !isRevisionNotFound(err) {
+		if !vcs.IsRepoNotExist(err) && !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			return errors.Wrap(err, "gitserver.CommitDate")
 		}
 
@@ -140,23 +140,3 @@ const committedAtDownQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:Down
 UPDATE lsif_uploads SET committed_at = NULL WHERE id IN (SELECT id FROM lsif_uploads WHERE state = 'completed' AND committed_at IS NOT NULL LIMIT %s)
 `
-
-func isRepositoryNotFound(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if vcs.IsRepoNotExist(ex) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isRevisionNotFound(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if basegitserver.IsRevisionNotFound(ex) {
-			return true
-		}
-	}
-
-	return false
-}

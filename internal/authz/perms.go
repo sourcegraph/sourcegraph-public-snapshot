@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -54,7 +54,7 @@ func (p Perms) String() string {
 // PermType is the object type of the user permissions.
 type PermType string
 
-// The list of available user permission types.
+// PermRepos is the list of available user permission types.
 const (
 	PermRepos PermType = "repos"
 )

@@ -98,7 +98,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 			ServiceID:   "https://git-host.com/",
 			ServiceType: extsvc.TypeOther,
 		},
-		Metadata: &types.OtherRepoMetadata{},
+		Metadata: &extsvc.OtherRepoMetadata{},
 	}).With(
 		types.Opt.RepoSources(otherService.URN()),
 	)
@@ -204,8 +204,8 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				err:  "<nil>",
 			},
 			testCase{
-				// If the source is unauthorized we should treat this as if zero repos were returned as it indicates
-				// that the source no longer has access to its repos
+				// If the source is unauthorized we should treat this as if zero repos were
+				// returned as it indicates that the source no longer has access to its repos
 				name:    string(tc.repo.Name) + "/unauthorized",
 				sourcer: repos.NewFakeSourcer(&repos.ErrUnauthorized{}),
 				store:   s,
@@ -218,6 +218,22 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				)}},
 				svcs: []*types.ExternalService{tc.svc},
 				err:  "bad credentials",
+			},
+			testCase{
+				// If the source is forbidden we should treat this as if zero repos were returned
+				// as it indicates that the source no longer has access to its repos
+				name:    string(tc.repo.Name) + "/forbidden",
+				sourcer: repos.NewFakeSourcer(&repos.ErrForbidden{}),
+				store:   s,
+				stored: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN()),
+				)},
+				now: clock.Now,
+				diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+				)}},
+				svcs: []*types.ExternalService{tc.svc},
+				err:  "forbidden",
 			},
 			testCase{
 				// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
@@ -587,6 +603,7 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 		Description: "The description",
 		Archived:    false,
 		Fork:        false,
+		Stars:       100,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 			ServiceType: extsvc.TypeGitHub,
@@ -599,11 +616,12 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 			},
 		},
 		Metadata: &github.Repository{
-			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			URL:           "github.com/foo/bar",
-			DatabaseID:    1234,
-			Description:   "The description",
-			NameWithOwner: "foo/bar",
+			ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:            "github.com/foo/bar",
+			DatabaseID:     1234,
+			Description:    "The description",
+			NameWithOwner:  "foo/bar",
+			StargazerCount: 100,
 		},
 	}
 
@@ -619,7 +637,12 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 	}, {
 		name:    "update",
 		sourced: repo,
-		stored:  types.Repos{repo.With(types.Opt.RepoCreatedAt(clock.Time(2)))},
+		stored: types.Repos{
+			repo.With(
+				types.Opt.RepoCreatedAt(clock.Time(2)),
+				func(r *types.Repo) { r.Stars = 0 },
+			),
+		},
 		assert: types.Assert.ReposEqual(repo.With(
 			types.Opt.RepoModifiedAt(clock.Time(2)),
 			types.Opt.RepoCreatedAt(clock.Time(2)))),
@@ -998,11 +1021,11 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *test
 			sourced := types.Repos{mk("initial"), mk("new")}
 
 			syncer := &repos.Syncer{
-				Sourcer:      repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
-				Store:        store,
-				Synced:       make(chan repos.Diff),
-				SubsetSynced: make(chan repos.Diff),
-				Now:          time.Now,
+				Sourcer:          repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
+				Store:            store,
+				Synced:           make(chan repos.Diff),
+				SingleRepoSynced: make(chan repos.Diff),
+				Now:              time.Now,
 			}
 
 			// Initial repos in store
@@ -1029,14 +1052,14 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *test
 				t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
 			}
 
-			// Next up it should find the new repo and send it down SubsetSynced
-			diff = <-syncer.SubsetSynced
+			// Next up it should find the new repo and send it down SingleRepoSynced
+			diff = <-syncer.SingleRepoSynced
 			if d := cmp.Diff(repos.Diff{Added: types.Repos{mk("new")}}, diff, ignore); d != "" {
-				t.Fatalf("SubsetSynced mismatch (-want +got):\n%s", d)
+				t.Fatalf("SingleRepoSynced mismatch (-want +got):\n%s", d)
 			}
 
 			// Finally we get the final diff, which will have everything listed as
-			// Unmodified since we added when we did SubsetSynced.
+			// Unmodified since we added when we did SingleRepoSynced.
 			diff = <-syncer.Synced
 			if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
 				t.Fatalf("final Synced mismatch (-want +got):\n%s", d)

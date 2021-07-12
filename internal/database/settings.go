@@ -3,9 +3,9 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 
@@ -13,7 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type SettingStore struct {
@@ -45,12 +47,12 @@ func (o *SettingStore) CreateIfUpToDate(ctx context.Context, subject api.Setting
 	}
 
 	if strings.TrimSpace(contents) == "" {
-		return nil, fmt.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
+		return nil, errors.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
 	}
 
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
-		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
+		return nil, errors.Errorf("invalid settings JSON: %v", errs)
 	}
 
 	// Validate setting schema
@@ -59,7 +61,7 @@ func (o *SettingStore) CreateIfUpToDate(ctx context.Context, subject api.Setting
 		return nil, err
 	}
 	if len(problems) > 0 {
-		return nil, fmt.Errorf("invalid settings: %s", strings.Join(problems, ","))
+		return nil, errors.Errorf("invalid settings: %s", strings.Join(problems, ","))
 	}
 
 	s := api.Settings{
@@ -102,6 +104,26 @@ func (o *SettingStore) GetLatest(ctx context.Context, subject api.SettingsSubjec
 	}
 
 	return o.getLatest(ctx, subject)
+}
+
+func (o *SettingStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+	apiSettings, err := o.GetLatest(ctx, subject)
+	if err != nil {
+		return nil, err
+	}
+
+	if apiSettings == nil {
+		// Settings have never been saved for this subject; equivalent to `{}`.
+		return &schema.Settings{}, nil
+	}
+
+	var v schema.Settings
+	if err := jsonc.Unmarshal(apiSettings.Contents, &v); err != nil {
+		return nil, err
+	}
+
+	return &v, nil
+
 }
 
 // ListAll lists ALL settings (across all users, orgs, etc).

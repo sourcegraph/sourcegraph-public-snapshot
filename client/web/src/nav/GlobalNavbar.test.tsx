@@ -1,12 +1,17 @@
+import { render } from '@testing-library/react'
 import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
+import { MemoryRouter } from 'react-router'
 
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../searchContexts/testHelpers'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -40,7 +45,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
     showSearchBox: true,
-    copyQueryButton: false,
     versionContext: undefined,
     setVersionContext: () => Promise.resolve(),
     availableVersionContexts: [],
@@ -51,23 +55,45 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     defaultSearchContextSpec: '',
     variant: 'default',
     globbing: false,
-    enableSmartQuery: false,
     showOnboardingTour: false,
     branding: undefined,
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    featureFlags: new Map(),
 }
 
 describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
-    test('default', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())
+    test('default', () => {
+        const { asFragment } = render(
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} />
+            </MemoryRouter>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
 
-    test('low-profile', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile" />).toJSON()).toMatchSnapshot())
+    test('low-profile', () => {
+        const { asFragment } = render(
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} variant="low-profile" />
+            </MemoryRouter>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
 
-    test('no-search-input', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} variant="no-search-input" />).toJSON()).toMatchSnapshot())
+    test('no-search-input', () => {
+        const { asFragment } = render(
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} variant="no-search-input" />
+            </MemoryRouter>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
 })

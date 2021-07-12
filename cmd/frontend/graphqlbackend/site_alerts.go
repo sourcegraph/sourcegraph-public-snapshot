@@ -2,13 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -69,7 +69,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 
 	args := AlertFuncArgs{
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:         backend.CheckCurrentUserIsSiteAdmin(ctx) == nil,
+		IsSiteAdmin:         backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
 	}
 

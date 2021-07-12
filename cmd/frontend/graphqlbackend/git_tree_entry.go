@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	neturl "net/url"
 	"os"
@@ -10,8 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -43,13 +44,13 @@ type GitTreeEntryResolver struct {
 
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
-	stat os.FileInfo
+	stat fs.FileInfo
 
 	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat os.FileInfo) *GitTreeEntryResolver {
+func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat fs.FileInfo) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
@@ -125,7 +126,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		if strings.HasPrefix(url, "../") {
 			url = path.Join(r.Repository().Name(), url)
 		}
-		repoName, err := cloneURLToRepoName(ctx, url)
+		repoName, err := cloneURLToRepoName(ctx, r.db, url)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
 			return "", nil
@@ -181,8 +182,8 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	return nil
 }
 
-func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, cloneURL)
+func cloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL string) (string, error) {
+	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {
 		return "", err
 	}
@@ -192,7 +193,7 @@ func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
 	return string(repoName), nil
 }
 
-func CreateFileInfo(path string, isDir bool) os.FileInfo {
+func CreateFileInfo(path string, isDir bool) fs.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
 

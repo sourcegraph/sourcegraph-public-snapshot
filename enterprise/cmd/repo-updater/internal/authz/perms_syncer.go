@@ -3,15 +3,14 @@ package authz
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -183,6 +182,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
+	accounts := database.ExternalAccountsWith(s.reposStore)
+
 	user, err := database.GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "get user")
@@ -238,7 +239,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			continue
 		}
 
-		err = database.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			log15.Error("Could not associate external account to user",
 				"userID", user.ID,
@@ -265,19 +266,21 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
-			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
+			unauthorized := errcode.IsUnauthorized(err)
+
+			forbidden := errcode.IsForbidden(err)
 
 			// Detect GitHub account suspension error
-			accountSuspended := errcode.IsAccountSuspended(errors.Cause(err))
+			accountSuspended := errcode.IsAccountSuspended(err)
 
-			if unauthorized || accountSuspended {
-				err = database.GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
+			if unauthorized || accountSuspended || forbidden {
+				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
 				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
 					"userID", user.ID, "id", acct.ID,
-					"unauthorized", unauthorized, "accountSuspended", accountSuspended)
+					"unauthorized", unauthorized, "accountSuspended", accountSuspended, "forbidden", forbidden)
 
 				// We still want to continue processing other external accounts
 				continue
@@ -289,7 +292,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		} else {
-			err = database.GlobalExternalAccounts.TouchLastValid(ctx, acct.ID)
+			err = accounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
 				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
 			}
@@ -444,7 +447,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	// when the owner of the token only has READ access. However, we don't want to fail
 	// so the scheduler won't keep trying to fetch permissions of this same repository, so we
 	// return a nil error and log a warning message.
-	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
+	var e *github.APIError
+	if errors.As(err, &e) && e.Code == http.StatusNotFound {
 		log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err, "suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions")
 		return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
 	}
@@ -552,7 +556,7 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	case requestTypeRepo:
 		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms)
 	default:
-		err = fmt.Errorf("unexpected request type: %v", request.Type)
+		err = errors.Errorf("unexpected request type: %v", request.Type)
 	}
 
 	return err
@@ -861,7 +865,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 		case requestTypeUser:
 			typLabel = "user"
 		default:
-			tr.SetError(fmt.Errorf("unexpected request type: %v", typ))
+			tr.SetError(errors.Errorf("unexpected request type: %v", typ))
 			return
 		}
 

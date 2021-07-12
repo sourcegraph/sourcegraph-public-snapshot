@@ -5,12 +5,11 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"net/url"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -209,12 +208,8 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 	}
 
 	isFrontendUnreachableError := func(err error) bool {
-		if urlErr, ok := errors.Cause(err).(*url.Error); ok {
-			if netErr, ok := urlErr.Err.(*net.OpError); ok && netErr.Op == "dial" {
-				return true
-			}
-		}
-		return false
+		var e *net.OpError
+		return errors.As(err, &e) && e.Op == "dial"
 	}
 
 	start := time.Now()

@@ -1,9 +1,33 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
+import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BehaviorSubject, combineLatest, EMPTY, from, fromEvent, of, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, filter, first, map, mapTo, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import {
+    BehaviorSubject,
+    combineLatest,
+    merge,
+    EMPTY,
+    from,
+    fromEvent,
+    of,
+    ReplaySubject,
+    Subject,
+    Subscription,
+} from 'rxjs'
+import {
+    catchError,
+    concatMap,
+    distinctUntilChanged,
+    filter,
+    first,
+    map,
+    mapTo,
+    switchMap,
+    tap,
+    throttleTime,
+    withLatestFrom,
+} from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { createHoverifier, findPositionsFromEvents, HoveredToken } from '@sourcegraph/codeintellify'
@@ -32,19 +56,22 @@ import {
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
     ModeSpec,
-    parseHash,
     UIPositionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
-    toPositionOrRangeHash,
     toURIWithPath,
+    parseQueryAndHash,
+    toPositionOrRangeQueryParameter,
+    addLineRangeQueryParameter,
+    formatSearchParameters,
 } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { LineDecorator } from './LineDecorator'
@@ -114,6 +141,9 @@ const domFunctions = {
     },
 }
 
+const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
+const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
+
 /**
  * Renders a code view augmented by Sourcegraph extensions
  *
@@ -169,7 +199,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    const parsedHash = useMemo(() => parseHash(location.hash), [location.hash])
+    const parsedHash = useMemo(() => parseQueryAndHash(location.search, location.hash), [
+        location.search,
+        location.hash,
+    ])
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
@@ -269,7 +302,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         window.getSelection()!.removeAllRanges()
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
-                        let hash: string
+                        let query: string | undefined
                         if (
                             position &&
                             event.shiftKey &&
@@ -277,7 +310,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             hoverifier.hoverState.selectedPosition.line !== undefined
                         ) {
                             // Compare with previous selections (maintained by hoverifier)
-                            hash = toPositionOrRangeHash({
+                            query = toPositionOrRangeQueryParameter({
                                 range: {
                                     start: {
                                         line: Math.min(hoverifier.hoverState.selectedPosition.line, position.line),
@@ -288,14 +321,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                                 },
                             })
                         } else {
-                            hash = toPositionOrRangeHash({ position })
+                            query = toPositionOrRangeQueryParameter({ position })
                         }
 
-                        if (!hash.startsWith('#')) {
-                            hash = '#' + hash
-                        }
-
-                        props.history.push({ ...location, hash })
+                        props.history.push({
+                            ...location,
+                            search: formatSearchParameters(
+                                addLineRangeQueryParameter(new URLSearchParams(location.search), query)
+                            ),
+                        })
                     }),
                     mapTo(undefined)
                 ),
@@ -499,6 +533,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Passed to HoverOverlay
     const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
 
+    // Status bar
     const getStatusBarItems = useCallback(
         () =>
             viewerUpdates.pipe(
@@ -513,13 +548,62 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [viewerUpdates]
     )
 
+    const statusBarElements = useMemo(() => new ReplaySubject<HTMLDivElement | null>(1), [])
+    const nextStatusBarElement = useCallback(
+        (statusBarElement: HTMLDivElement | null) => statusBarElements.next(statusBarElement),
+        [statusBarElements]
+    )
+
+    // Floating status bar: add scrollbar size with "base" gaps to achieve
+    // our desired gap between the scrollbar and status bar
+    useObservable(
+        useMemo(
+            () =>
+                combineLatest([blobElements, statusBarElements]).pipe(
+                    switchMap(([blobElement, statusBarElement]) => {
+                        if (!(blobElement && statusBarElement)) {
+                            return EMPTY
+                        }
+
+                        // ResizeObserver doesn't reliably fire when navigating between documents
+                        // in Firefox, so recalculate on blobInfoChanges as well.
+                        return merge(observeResize(blobElement), blobInfoChanges).pipe(
+                            // Throttle reflow without losing final value.
+                            throttleTime(100, undefined, { leading: true, trailing: true }),
+                            map(() => {
+                                // Read
+                                const blobRightScrollbarWidth = blobElement.offsetWidth - blobElement.clientWidth
+                                const blobBottomScollbarHeight = blobElement.offsetHeight - blobElement.clientHeight
+
+                                return { blobRightScrollbarWidth, blobBottomScollbarHeight }
+                            }),
+                            distinctUntilChanged((a, b) => isEqual(a, b)),
+                            tap(({ blobRightScrollbarWidth, blobBottomScollbarHeight }) => {
+                                // Write
+                                statusBarElement.style.right = `calc(var(${STATUS_BAR_HORIZONTAL_GAP_VAR}) + ${blobRightScrollbarWidth}px)`
+                                statusBarElement.style.bottom = `calc(var(${STATUS_BAR_VERTICAL_GAP_VAR}) + ${blobBottomScollbarHeight}px)`
+
+                                // Maintain an equal gap with the left side of the container when the status bar is overflowing.
+                                statusBarElement.style.maxWidth = `calc(100% - ((2 * var(${STATUS_BAR_HORIZONTAL_GAP_VAR})) + ${blobRightScrollbarWidth}px))`
+                            })
+                        )
+                    }),
+                    mapTo(undefined),
+                    catchError(() => EMPTY)
+                ),
+            [blobElements, statusBarElements, blobInfoChanges]
+        )
+    )
+
     return (
         <>
             <div className={`blob ${props.className}`} ref={nextBlobElement}>
                 <code
                     className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
                     ref={nextCodeViewElement}
-                    dangerouslySetInnerHTML={{ __html: blobInfo.html }}
+                    dangerouslySetInnerHTML={{
+                        __html: blobInfo.html,
+                    }}
                 />
                 {hoverState.hoverOverlayProps && (
                     <WebHoverOverlay
@@ -553,6 +637,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 extensionsController={extensionsController}
                 uri={toURIWithPath(blobInfo)}
                 location={location}
+                className="blob-status-bar__body"
+                statusBarRef={nextStatusBarElement}
+                hideWhileInitializing={true}
             />
         </>
     )

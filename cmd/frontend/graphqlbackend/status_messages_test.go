@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -26,6 +24,10 @@ func TestStatusMessages(t *testing.T) {
 				}
 
 				... on SyncError {
+					message
+				}
+
+				... on IndexingError {
 					message
 				}
 
@@ -62,7 +64,7 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { repos.MockStatusMessages = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query:  graphqlQuery,
@@ -104,12 +106,17 @@ func TestStatusMessages(t *testing.T) {
 						Message: "Could not save to database",
 					},
 				},
+				{
+					IndexingError: &repos.IndexingError{
+						Message: "Could not complete indexing.",
+					},
+				},
 			}
 			return res, nil
 		}
 		defer func() { repos.MockStatusMessages = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query:  graphqlQuery,
@@ -131,6 +138,10 @@ func TestStatusMessages(t *testing.T) {
 							{
 								"__typename": "SyncError",
 								"message": "Could not save to database"
+							},
+							{
+								"__typename": "IndexingError",
+								"message": "Could not complete indexing."
 							}
 						]
 					}

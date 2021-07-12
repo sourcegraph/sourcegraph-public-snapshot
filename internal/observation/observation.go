@@ -138,6 +138,28 @@ type Args struct {
 	LogFields []log.Field
 }
 
+// LogFieldMap returns a string-to-interface map containing the contents of this Arg value's
+// log fields.
+func (args Args) LogFieldMap() map[string]interface{} {
+	fields := make(map[string]interface{}, len(args.LogFields))
+	for _, field := range args.LogFields {
+		fields[field.Key()] = field.Value()
+	}
+
+	return fields
+}
+
+// LogFieldPairs returns a slice of key, value, key, value, ... pairs containing the contents
+// of this Arg value's log fields.
+func (args Args) LogFieldPairs() []interface{} {
+	pairs := make([]interface{}, 0, len(args.LogFields)*2)
+	for _, field := range args.LogFields {
+		pairs = append(pairs, field.Key(), field.Value())
+	}
+
+	return pairs
+}
+
 // With prepares the necessary timers, loggers, and metrics to observe the invocation  of an
 // operation. This method returns a modified context and a function to be deferred until the
 // end of the operation.

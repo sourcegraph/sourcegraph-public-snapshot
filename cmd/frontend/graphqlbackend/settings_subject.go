@@ -2,8 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -39,7 +39,7 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, erro
 
 	case *UserResolver:
 		// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, s.user.ID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
 			return nil, err
 		}
 		return &settingsSubject{user: s}, nil

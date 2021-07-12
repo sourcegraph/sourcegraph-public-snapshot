@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -24,13 +25,18 @@ func TestHorizontalSearcher(t *testing.T) {
 		Dial: func(endpoint string) zoekt.Streamer {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
+			repoID, _ := strconv.Atoi(endpoint)
 			client := &mockSearcher{
 				searchResult: &zoekt.SearchResult{
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
 				},
-				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
+				listResult: &zoekt.RepoList{
+					Repos:   []*zoekt.RepoListEntry{&rle},
+					Crashes: 0,
+					Minimal: map[uint32]*zoekt.MinimalRepoListEntry{uint32(repoID): {}},
+				},
 			}
 			// Return metered searcher to test that codepath
 			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
@@ -87,13 +93,22 @@ func TestHorizontalSearcher(t *testing.T) {
 		}
 
 		// Our list results should be one per server
-		rle, err := searcher.List(context.Background(), nil)
+		rle, err := searcher.List(context.Background(), nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 		got = []string{}
 		for _, r := range rle.Repos {
 			got = append(got, r.Repository.Name)
+		}
+		sort.Strings(got)
+		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
+			t.Errorf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		}
+
+		got = []string{}
+		for r := range rle.Minimal {
+			got = append(got, strconv.Itoa(int(r)))
 		}
 		sort.Strings(got)
 		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
@@ -113,7 +128,7 @@ func TestDoStreamSearch(t *testing.T) {
 		Dial: func(endpoint string) zoekt.Streamer {
 			client := &mockSearcher{
 				searchResult: nil,
-				searchError:  fmt.Errorf("test error"),
+				searchError:  errors.Errorf("test error"),
 			}
 			// Return metered searcher to test that codepath
 			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
@@ -307,7 +322,7 @@ func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
 				errC <- err
 				return
 			}
-			_, err = searcher.List(context.Background(), nil)
+			_, err = searcher.List(context.Background(), nil, nil)
 			if err != nil {
 				errC <- err
 				return
@@ -353,7 +368,7 @@ func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.
 	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts, streamer)
 }
 
-func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {
+func (s *mockSearcher) List(context.Context, query.Q, *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	return s.listResult, s.listError
 }
 

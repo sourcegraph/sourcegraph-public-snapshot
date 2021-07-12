@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 const (
@@ -86,11 +88,11 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 			for _, r := range g.Rows {
 				for _, o := range r {
 					if err := docs.renderAlertSolutionEntry(c, o); err != nil {
-						return nil, fmt.Errorf("error rendering alert solution entry %q %q: %w",
+						return nil, errors.Errorf("error rendering alert solution entry %q %q: %w",
 							c.Name, o.Name, err)
 					}
 					if err := docs.renderDashboardPanelEntry(c, o); err != nil {
-						return nil, fmt.Errorf("error rendering dashboard panel entry  %q %q: %w",
+						return nil, errors.Errorf("error rendering dashboard panel entry  %q %q: %w",
 							c.Name, o.Name, err)
 					}
 				}
@@ -148,8 +150,10 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 		fmt.Fprintf(&d.alertSolutions, "> NOTE: More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n\n",
 			dashboardsDocsFile, observableDocAnchor(c, o))
 	}
-	// add owner
-	fprintOwnedBy(&d.alertSolutions, o.Owner)
+	if o.Owner != "" {
+		// add owner
+		fprintOwnedBy(&d.alertSolutions, o.Owner)
+	}
 	// render break for readability
 	fmt.Fprint(&d.alertSolutions, "\n<br />\n\n")
 	return nil
@@ -168,8 +172,10 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) er
 		fmt.Fprintf(&d.dashboards, "> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./%s#%s).\n\n",
 			alertSolutionsFile, observableDocAnchor(c, o))
 	}
-	// add owner
-	fprintOwnedBy(&d.dashboards, o.Owner)
+	if o.Owner != "" {
+		// add owner
+		fprintOwnedBy(&d.dashboards, o.Owner)
+	}
 	// render break for readability
 	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
 	return nil

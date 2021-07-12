@@ -118,7 +118,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "66464926",
 	}
-	userID, err := database.GlobalExternalAccounts.CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+	userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}

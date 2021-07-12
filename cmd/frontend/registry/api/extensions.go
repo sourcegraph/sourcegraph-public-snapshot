@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -24,15 +25,15 @@ import (
 func SplitExtensionID(extensionID string) (prefix, publisher, name string, err error) {
 	parts := strings.Split(extensionID, "/")
 	if len(parts) == 0 || len(parts) == 1 {
-		return "", "", "", fmt.Errorf("invalid extension ID: %q (2+ slash-separated path components required)", extensionID)
+		return "", "", "", errors.Errorf("invalid extension ID: %q (2+ slash-separated path components required)", extensionID)
 	}
 	name = parts[len(parts)-1] // last
 	if name == "" {
-		return "", "", "", fmt.Errorf("invalid extension ID: %q (trailing slash is forbidden)", extensionID)
+		return "", "", "", errors.Errorf("invalid extension ID: %q (trailing slash is forbidden)", extensionID)
 	}
 	publisher = parts[len(parts)-2] // 2nd to last
 	if publisher == "" {
-		return "", "", "", fmt.Errorf("invalid extension ID: %q (empty publisher)", extensionID)
+		return "", "", "", errors.Errorf("invalid extension ID: %q (empty publisher)", extensionID)
 	}
 	prefix = strings.Join(parts[:len(parts)-2], "/") // prefix
 	return
@@ -54,12 +55,12 @@ func ParseExtensionID(extensionID string) (prefix, extensionIDWithoutPrefix stri
 		if configuredPrefix == nil {
 			// Don't look up fully qualified extensions from Sourcegraph.com; it only cares about
 			// its own extensions.
-			return "", "", false, fmt.Errorf("remote extension lookup is not supported for host %q", prefix)
+			return "", "", false, errors.Errorf("remote extension lookup is not supported for host %q", prefix)
 		}
 
 		// Local extension on non-Sourcegraph.com instance.
 		if prefix != *configuredPrefix {
-			return "", "", false, fmt.Errorf("remote extension lookup is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", prefix, *configuredPrefix)
+			return "", "", false, errors.Errorf("remote extension lookup is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", prefix, *configuredPrefix)
 		}
 		isLocal = true
 	} else if configuredPrefix == nil { // Extension ID is publisher/name.
@@ -170,7 +171,7 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 	}
 
 	if x != nil && !IsRemoteExtensionAllowed(x.ExtensionID) {
-		return nil, fmt.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
+		return nil, errors.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
 	}
 
 	return x, err
@@ -202,6 +203,41 @@ func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 		x.RegistryURL = registryURL.String()
 	}
 	return xs, nil
+}
+
+// GetLocalFeaturedExtensions looks up and returns the featured registry extensions in the local registry
+// If this is not sourcegraph.com, it is not implemented.
+var GetLocalFeaturedExtensions func(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error)
+
+// GetFeaturedExtensions returns the set of featured extensions.
+//
+// If this is sourcegraph.com, these are local extensions. Otherwise, these are remote extensions
+// retrieved from sourcegraph.com.
+func GetFeaturedExtensions(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error) {
+	if envvar.SourcegraphDotComMode() && GetLocalFeaturedExtensions != nil {
+		return GetLocalFeaturedExtensions(ctx, db)
+	}
+
+	// Get remote featured extensions if the remote registry is sourcegraph.com.
+	registryURL, err := getRemoteRegistryURL()
+	if registryURL == nil || registryURL.String() != "https://sourcegraph.com/.api/registry" || err != nil {
+		return nil, err
+	}
+
+	remote, err := registry.GetFeaturedExtensions(ctx, registryURL)
+	if err != nil {
+		return nil, err
+	}
+	remote = FilterRemoteExtensions(remote)
+	for _, x := range remote {
+		x.RegistryURL = registryURL.String()
+	}
+	registryExtensions := make([]graphqlbackend.RegistryExtension, len(remote))
+	for i, x := range remote {
+		registryExtensions[i] = &registryExtensionRemoteResolver{v: x}
+	}
+
+	return registryExtensions, nil
 }
 
 // IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is

@@ -15,12 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-const defaultMaxSearchResults = 30
-
 var defaultTimeout = 20 * time.Second
 
 func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
-	return ParseRe(pattern, true, false, queryIsCaseSensitive)
+	return parseRe(pattern, true, false, queryIsCaseSensitive)
 }
 
 func noOpAnyChar(re *syntax.Regexp) {
@@ -32,7 +30,7 @@ func noOpAnyChar(re *syntax.Regexp) {
 	}
 }
 
-func ParseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
+func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	// these are the flags used by zoekt, which differ to searcher.
 	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	if err != nil {
@@ -85,44 +83,38 @@ func SearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt
 		MaxDocDisplayCount: int(query.FileMatchLimit) + 2000,
 	}
 
-	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := query.FileMatchLimit > search.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(search.DefaultMaxSearchResults))
 	}
 
 	return searchOpts
 }
 
-func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
-	if globalSearch {
-		// for globalSearch, numRepos = 0, but effectively we are searching over all
-		// indexed repos, hence k should be 1
+func ResultCountFactor(numRepos int, fileMatchLimit int32) (k int) {
+	// If we're only searching a small number of repositories, return more
+	// comprehensive results. This is arbitrary.
+	switch {
+	case numRepos <= 5:
+		k = 100
+	case numRepos <= 10:
+		k = 10
+	case numRepos <= 25:
+		k = 8
+	case numRepos <= 50:
+		k = 5
+	case numRepos <= 100:
+		k = 3
+	case numRepos <= 500:
+		k = 2
+	default:
 		k = 1
-	} else {
-		// If we're only searching a small number of repositories, return more
-		// comprehensive results. This is arbitrary.
-		switch {
-		case numRepos <= 5:
-			k = 100
-		case numRepos <= 10:
-			k = 10
-		case numRepos <= 25:
-			k = 8
-		case numRepos <= 50:
-			k = 5
-		case numRepos <= 100:
-			k = 3
-		case numRepos <= 500:
-			k = 2
-		default:
-			k = 1
-		}
 	}
-	if fileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(defaultMaxSearchResults))
+	if fileMatchLimit > search.DefaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
 	}
 	return k
 }
 
-// RepoRevFunc is a function which maps repository names returned from Zoekt
+// repoRevFunc is a function which maps repository names returned from Zoekt
 // into the Sourcegraph's resolved repository revisions for the search.
-type RepoRevFunc func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool)
+type repoRevFunc func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool)

@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,7 +20,7 @@ var canReloadSite = processrestart.CanRestart()
 func (r *schemaResolver) ReloadSite(ctx context.Context) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Reloading the site is an interruptive action, so only admins
 	// may do it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

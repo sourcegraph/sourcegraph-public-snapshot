@@ -11,6 +11,7 @@ export const SELECTORS: Access[] = [
     },
     {
         name: 'file',
+        fields: [{ name: 'directory' }, { name: 'path' }],
     },
     {
         name: 'content',

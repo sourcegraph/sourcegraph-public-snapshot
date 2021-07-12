@@ -5,8 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
@@ -44,7 +45,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, s
 				_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 				return err
 			}
-			return discoverAndEnqueueInsights(ctx, time.Now, settingStore, queryRunnerEnqueueJob)
+			return discoverAndEnqueueInsights(ctx, time.Now, settingStore, insights.NewLoader(workerBaseStore.Handle().DB()), queryRunnerEnqueueJob)
 		},
 	), operation)
 }
@@ -57,9 +58,10 @@ func discoverAndEnqueueInsights(
 	ctx context.Context,
 	now func() time.Time,
 	settingStore discovery.SettingStore,
+	loader insights.Loader,
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error,
 ) error {
-	insights, err := discovery.Discover(ctx, settingStore)
+	foundInsights, err := discovery.Discover(ctx, settingStore, loader, discovery.InsightFilterArgs{})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
@@ -67,13 +69,13 @@ func discoverAndEnqueueInsights(
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (
-		uniqueSeries = map[string]*schema.InsightSeries{}
+		uniqueSeries = map[string]insights.TimeSeries{}
 		multi        error
 		offset       time.Duration
 	)
-	for _, insight := range insights {
+	for _, insight := range foundInsights {
 		for _, series := range insight.Series {
-			seriesID, err := discovery.EncodeSeriesID(series)
+			seriesID := discovery.Encode(series)
 			if err != nil {
 				multi = multierror.Append(multi, err)
 				continue
@@ -86,14 +88,11 @@ func discoverAndEnqueueInsights(
 
 			// Enqueue jobs for each unique series, offsetting each job execution by a minute so we
 			// don't execute all queries at once and harm search performance in general.
-			if series.Webhook != "" {
-				continue // TODO(slimsag): future: add support for webhook insights
-			}
 			processAfter := now().Add(offset)
 			offset += queryJobOffsetTime
 			err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 				SeriesID:     seriesID,
-				SearchQuery:  withCountUnlimited(series.Search),
+				SearchQuery:  withCountUnlimited(series.Query),
 				ProcessAfter: &processAfter,
 				State:        "queued",
 			})

@@ -11,7 +11,7 @@ const { add } = storiesOf('web/SyntaxHighlightedSearchQuery', module).addParamet
 add('Examples', () => (
     <WebStory>
         {() => (
-            <p className="web-content">
+            <p>
                 <SyntaxHighlightedSearchQuery query="test AND spec" />
                 <br />
                 <SyntaxHighlightedSearchQuery query="test or spec repo:sourcegraph" />

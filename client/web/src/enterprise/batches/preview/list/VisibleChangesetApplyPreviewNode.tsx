@@ -12,7 +12,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { DiffStat } from '../../../../components/diff/DiffStat'
+import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -252,7 +252,9 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'diff' && 'active'
                             )}
                         >
-                            Changed files
+                            <span className="text-content" data-tab-content="Changed files">
+                                Changed files
+                            </span>
                             {node.delta.diffChanged && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     <CheckboxBlankCircleIcon
@@ -277,7 +279,9 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'description' && 'active'
                             )}
                         >
-                            Description
+                            <span className="text-content" data-tab-content="Description">
+                                Description
+                            </span>
                             {(node.delta.titleChanged || node.delta.bodyChanged) && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     <CheckboxBlankCircleIcon
@@ -302,7 +306,9 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'commits' && 'active'
                             )}
                         >
-                            Commits
+                            <span className="text-content" data-tab-content="Commits">
+                                Commits
+                            </span>
                             {(node.delta.authorEmailChanged ||
                                 node.delta.authorNameChanged ||
                                 node.delta.commitMessageChanged) && (
@@ -525,7 +531,7 @@ const ApplyDiffStat: React.FunctionComponent<{ spec: VisibleChangesetApplyPrevie
     } else {
         diffStat = spec.targets.changesetSpec.description.diffStat
     }
-    return <DiffStat {...diffStat} expandedCounts={true} separateLines={true} />
+    return <DiffStatStack {...diffStat} />
 }
 
 const VisibleChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<

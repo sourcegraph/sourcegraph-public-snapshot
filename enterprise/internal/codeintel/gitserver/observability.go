@@ -1,8 +1,9 @@
 package gitserver
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -11,13 +12,14 @@ import (
 
 type operations struct {
 	commitDate        *observation.Operation
+	commitExists      *observation.Operation
 	commitGraph       *observation.Operation
 	directoryChildren *observation.Operation
 	fileExists        *observation.Operation
-	commitExists      *observation.Operation
 	head              *observation.Operation
 	listFiles         *observation.Operation
 	rawContents       *observation.Operation
+	refDescriptions   *observation.Operation
 	resolveRevision   *observation.Operation
 }
 
@@ -35,26 +37,21 @@ func newOperations(observationContext *observation.Context) *operations {
 			MetricLabels: []string{name},
 			Metrics:      metrics,
 			ErrorFilter: func(err error) bool {
-				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-					if gitserver.IsRevisionNotFound(ex) {
-						return true
-					}
-				}
-
-				return false
+				return errors.HasType(err, &gitserver.RevisionNotFoundError{})
 			},
 		})
 	}
 
 	return &operations{
 		commitDate:        op("CommitDate"),
+		commitExists:      op("CommitExists"),
 		commitGraph:       op("CommitGraph"),
 		directoryChildren: op("DirectoryChildren"),
 		fileExists:        op("FileExists"),
-		commitExists:      op("CommitExists"),
 		head:              op("Head"),
 		listFiles:         op("ListFiles"),
 		rawContents:       op("RawContents"),
+		refDescriptions:   op("RefDescriptions"),
 		resolveRevision:   op("ResolveRevision"),
 	}
 }

@@ -16,14 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-type TestWorkRecord struct {
-	ID int
-}
-
-func (r TestWorkRecord) RecordID() int {
-	return r.ID
-}
-
 func testStore(db dbutil.DB, options Options) *store {
 	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
 }
@@ -129,7 +121,8 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 			num_resets      integer NOT NULL default 0,
 			num_failures    integer NOT NULL default 0,
 			uploaded_at     timestamp with time zone NOT NULL default NOW(),
-			execution_logs  json[]
+			execution_logs  json[],
+			worker_hostname text NOT NULL default ''
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)

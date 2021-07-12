@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 const (
@@ -25,11 +27,11 @@ type client struct {
 func newClient() (*client, error) {
 	tkn := os.Getenv(envToken)
 	if tkn == "" {
-		return nil, fmt.Errorf("%s not set", envToken)
+		return nil, errors.Errorf("%s not set", envToken)
 	}
 	endpoint := os.Getenv(envEndpoint)
 	if endpoint == "" {
-		return nil, fmt.Errorf("%s not set", envEndpoint)
+		return nil, errors.Errorf("%s not set", envEndpoint)
 	}
 
 	return &client{
@@ -41,7 +43,6 @@ func newClient() (*client, error) {
 
 func (s *client) search(ctx context.Context, query, queryName string) (*metrics, error) {
 	var body bytes.Buffer
-	m := &metrics{}
 	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
 		"query":     graphQLQuery,
 		"variables": map[string]string{"query": query},
@@ -49,7 +50,7 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), ioutil.NopCloser(&body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), io.NopCloser(&body))
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +61,6 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
-	m.took = time.Since(start).Milliseconds()
-
 	if err != nil {
 		return nil, err
 	}
@@ -71,17 +70,23 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 	case 200:
 		break
 	default:
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-
-	m.trace = resp.Header.Get("x-trace")
 
 	// Decode the response.
 	respDec := rawResult{Data: result{}}
 	if err := json.NewDecoder(resp.Body).Decode(&respDec); err != nil {
 		return nil, err
 	}
-	return m, nil
+
+	duration := time.Since(start)
+
+	return &metrics{
+		took:        duration,
+		firstResult: duration,
+		matchCount:  respDec.Data.Search.Results.ResultCount,
+		trace:       resp.Header.Get("x-trace"),
+	}, nil
 }
 
 func (s *client) url() string {

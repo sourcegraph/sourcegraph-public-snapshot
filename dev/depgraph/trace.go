@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
@@ -26,7 +27,7 @@ var traceCommand = &ffcli.Command{
 
 func trace(ctx context.Context, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("expected exactly one package")
+		return errors.Errorf("expected exactly one package")
 	}
 	pkg := args[0]
 
@@ -79,7 +80,7 @@ func traceTraverse(pkg string, relation map[string][]string, maxDepth int) (pack
 	sort.Strings(packages)
 
 	// Ensure we don't point to anything we don't have an explicit
-	// vertex for. This can happen at the edge of hte last frontier.
+	// vertex for. This can happen at the edge of the last frontier.
 	pruneEdges(edges, packageMap)
 
 	return packages, edges

@@ -20,8 +20,24 @@
             "pointer": true
           }
         },
+        "codeInsightsDashboards": {
+          "description": "Enables code insights dashboards separation for the code insight page.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "apiDocs": {
+          "description": "Enables API documentation.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -37,7 +53,7 @@
           }
         },
         "searchStats": {
-          "description": "Enables a new page that shows language statistics about the results for a search query.",
+          "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -45,7 +61,7 @@
           }
         },
         "searchStreaming": {
-          "description": "Enables experimental streaming support.",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables streaming search support.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -53,7 +69,7 @@
           }
         },
         "copyQueryButton": {
-          "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -117,7 +133,7 @@
           }
         },
         "enableSmartQuery": {
-          "description": "Enables contextual syntax highlighting and hovers for search queries in the web app",
+          "description": "REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -126,6 +142,46 @@
         },
         "enableFastResultLoading": {
           "description": "Enables optimized search result loading (syntax highlighting / file contents fetching)",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "designRefreshToggleEnabled": {
+          "description": "Enables access to the design refresh toggle in the user menu.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "fuzzyFinder": {
+          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "fuzzyFinderCaseInsensitiveFileCountThreshold": {
+          "description": "The maximum number of files a repo can have to use case-insensitive fuzzy finding",
+          "type": "number",
+          "default": 25000,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "acceptSearchSuggestionOnEnter": {
+          "description": "Whether the search bar should select completion suggestions when pressing enter",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "batchChangesExecution": {
+          "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -179,7 +235,7 @@
       }
     },
     "search.scopes": {
-      "description": "Predefined search scopes",
+      "description": "Predefined search snippets that can be appended to any search (also known as search scopes)",
       "type": "array",
       "items": {
         "$ref": "#/definitions/SearchScope"
@@ -369,13 +425,24 @@
       "items": {
         "$ref": "#/definitions/Insight"
       }
+    },
+    "insights.dashboards": {
+      "description": "EXPERIMENTAL: Code Insights Dashboards",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "A valid dashboards ID."
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/InsightDashboard"
+      }
     }
   },
   "definitions": {
     "Insight": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["title", "description", "series"],
+      "required": ["title", "description", "series", "id"],
       "properties": {
         "title": {
           "type": "string",
@@ -391,6 +458,10 @@
           "items": {
             "$ref": "#/definitions/InsightSeries"
           }
+        },
+        "id": {
+          "type": "string",
+          "description": "A globally  unique identifier for this insight."
         }
       }
     },
@@ -414,6 +485,26 @@
         "webhook": {
           "type": "string",
           "description": "(not yet supported) Fetch data from a webhook URL."
+        }
+      }
+    },
+    "InsightDashboard": {
+      "type": "object",
+      "required": ["id", "title"],
+      "properties": {
+        "title": {
+          "description": "Title of the dashboard.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "insightIds": {
+          "description": "Insights ids that will be included in the dashboard.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

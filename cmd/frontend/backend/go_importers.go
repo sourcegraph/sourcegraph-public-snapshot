@@ -3,8 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -93,7 +93,7 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 				Path string
 			}
 		}
-		bytes, err := ioutil.ReadAll(response.Body)
+		bytes, err := io.ReadAll(response.Body)
 		if err != nil {
 			return 0, err
 		}

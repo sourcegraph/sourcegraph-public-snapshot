@@ -1,11 +1,22 @@
 @import '../../search/input/SearchButton';
-@import '../../insights/components/InsightsViewGrid/InsightsViewGrid';
+@import '../../insights/components/insights-view-grid/InsightsViewGrid';
 @import './TreeEntriesSection';
 
 .tree-page {
-    overflow-y: auto;
-    padding: 1rem 2rem;
-    flex: 1;
+    // For the other sub-pages in the RepoArea, we use a child selector to add the
+    // border and radius to the sub-page containers. Since we use the Container
+    // component here, we already have a pair of borders and had duplicate borders
+    // without it. This should be removed once we can get rid of that child selector.
+    border: none !important;
+    border-radius: 0 !important;
+    height: 100%;
+
+    &__container {
+        overflow-y: auto;
+        height: 100%;
+        flex: 1;
+        background-color: var(--code-bg);
+    }
 
     &__title {
         display: flex;
@@ -14,12 +25,7 @@
     }
 
     &__section {
-        margin-bottom: 1.75rem;
         width: 100%;
-
-        &-header {
-            margin-bottom: 0.125rem;
-        }
 
         max-width: map-get($grid-breakpoints, xl);
 

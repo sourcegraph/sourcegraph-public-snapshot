@@ -6,9 +6,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"

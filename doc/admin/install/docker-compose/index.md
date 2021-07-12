@@ -4,6 +4,8 @@ If you need scalability and high-availability beyond what a single-node [Docker 
 
 If you want to migrate from the single-container server (`sourcegraph/server`) to the Docker Compose deployment, refer to this [migration guide](./migrate.md).
 
+If you want to backup and/or restore your Docker Compose deployment, refer to this [backup and restore guide](./backup.md)
+
 ## Requirements
 
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
@@ -33,7 +35,7 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker Compose
 
 git clone https://github.com/sourcegraph/deploy-sourcegraph-docker
 cd deploy-sourcegraph-docker/docker-compose
-export SOURCEGRAPH_VERSION="v3.27.4"
+export SOURCEGRAPH_VERSION="v3.29.1"
 git checkout $SOURCEGRAPH_VERSION
 docker-compose up -d
 ```
@@ -42,7 +44,7 @@ Once the server is ready (the `sourcegraph-frontend-0` service is healthy when r
 
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
-> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@sourcegraph)](https://twitter.com/sourcegraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
 ## Cloud installation guides
 

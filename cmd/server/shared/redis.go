@@ -2,13 +2,13 @@ package shared
 
 import (
 	"bytes"
-	"errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"text/template"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
 )
@@ -88,7 +88,7 @@ func tryCreateRedisConf(c redisProcfileConfig) (string, error) {
 
 	// Always replace redis.conf
 	path := filepath.Join(os.Getenv("CONFIG_DIR"), c.name+".conf")
-	return path, ioutil.WriteFile(path, b.Bytes(), 0644)
+	return path, os.WriteFile(path, b.Bytes(), 0644)
 }
 
 func redisProcFileEntry(name, conf string) string {

@@ -3,7 +3,7 @@ package apiclient
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,7 +22,7 @@ func TestDequeue(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorHostname": "", "executorName": "deadbeef"}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `{"id": 42}`,
 	}
@@ -48,7 +48,7 @@ func TestDequeueNoRecord(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorHostname": "", "executorName": "deadbeef"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
 	}
@@ -70,7 +70,7 @@ func TestDequeueBadResponse(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorHostname": "", "executorName": "deadbeef"}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
 	}
@@ -251,13 +251,18 @@ func TestHeartbeat(t *testing.T) {
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
-		responseStatus:   http.StatusNoContent,
-		responsePayload:  ``,
+		responseStatus:   http.StatusOK,
+		responsePayload:  `[1]`,
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err != nil {
+		unknownIDs, err := client.Heartbeat(context.Background(), []int{1, 2, 3})
+		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
+		}
+
+		if diff := cmp.Diff([]int{1}, unknownIDs); diff != "" {
+			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -274,7 +279,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
+		if _, err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
@@ -323,7 +328,7 @@ func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 			t.Errorf("unexpected password. want=%s have=%s", spec.expectedPassword, password)
 		}
 
-		content, err := ioutil.ReadAll(r.Body)
+		content, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
 		}

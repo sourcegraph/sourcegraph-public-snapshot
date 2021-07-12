@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/awskms"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cache"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/mounted"
@@ -114,7 +117,7 @@ type Ring struct {
 
 func NewKey(ctx context.Context, k *schema.EncryptionKey, config *schema.EncryptionKeys) (encryption.Key, error) {
 	if k == nil {
-		return nil, fmt.Errorf("cannot configure nil key")
+		return nil, errors.Errorf("cannot configure nil key")
 	}
 	var (
 		key encryption.Key
@@ -123,12 +126,14 @@ func NewKey(ctx context.Context, k *schema.EncryptionKey, config *schema.Encrypt
 	switch {
 	case k.Cloudkms != nil:
 		key, err = cloudkms.NewKey(ctx, *k.Cloudkms)
+	case k.Awskms != nil:
+		key, err = awskms.NewKey(ctx, *k.Awskms)
 	case k.Mounted != nil:
 		key, err = mounted.NewKey(ctx, *k.Mounted)
 	case k.Noop != nil:
 		key = &encryption.NoopKey{}
 	default:
-		return nil, fmt.Errorf("couldn't configure key: %v", *k)
+		return nil, errors.Errorf("couldn't configure key: %v", *k)
 	}
 	if err != nil {
 		return nil, err

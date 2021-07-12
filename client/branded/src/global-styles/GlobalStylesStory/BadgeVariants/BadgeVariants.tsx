@@ -9,10 +9,11 @@ import styles from './BadgeVariants.module.scss'
 
 interface BadgeProps {
     variant?: string
+    small?: boolean
 }
 
-const Badge: React.FunctionComponent<BadgeProps> = ({ variant }) => {
-    const className = classNames('badge', variant && `badge-${variant}`)
+const Badge: React.FunctionComponent<BadgeProps> = ({ variant, small }) => {
+    const className = classNames('badge', small && 'badge-sm', variant && `badge-${variant}`)
     return (
         <>
             <span className={className}>{startCase(variant || 'Default')}</span>
@@ -25,14 +26,15 @@ const Badge: React.FunctionComponent<BadgeProps> = ({ variant }) => {
 }
 
 interface BadgeVariantProps {
-    variants: readonly typeof SEMANTIC_COLORS[number][]
+    variants?: readonly (typeof SEMANTIC_COLORS[number] | 'outline-secondary')[]
+    small?: boolean
 }
 
-export const BadgeVariants: React.FunctionComponent<BadgeVariantProps> = ({ variants }) => (
+export const BadgeVariants: React.FunctionComponent<BadgeVariantProps> = ({ variants, small }) => (
     <div className={styles.grid}>
-        <Badge />
-        {variants.map(variant => (
-            <Badge key={variant} variant={variant} />
+        <Badge small={small} />
+        {variants?.map(variant => (
+            <Badge key={variant} small={small} variant={variant} />
         ))}
     </div>
 )

@@ -38,6 +38,8 @@ export interface VersionContextDropdownProps
      */
     alwaysExpanded?: boolean
     portal?: boolean
+
+    className?: string
 }
 
 export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = ({
@@ -51,6 +53,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     selectedSearchContextSpec,
     alwaysExpanded,
     portal,
+    className,
 }: VersionContextDropdownProps) => {
     /** Whether the user has dismissed the info blurb in the dropdown. */
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, false)
@@ -109,7 +112,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     return (
         <>
             {availableVersionContexts ? (
-                <div className="version-context-dropdown text-nowrap">
+                <div className={classNames('version-context-dropdown text-nowrap', className)}>
                     <ListboxInput value={currentVersionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
                             <>

@@ -11,7 +11,11 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../searchContexts/testHelpers'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -40,7 +44,6 @@ const defaultProps = (
     setVersionContext: () => Promise.resolve(undefined),
     availableVersionContexts: [],
     globbing: false,
-    enableSmartQuery: false,
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
@@ -48,7 +51,6 @@ const defaultProps = (
     setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    copyQueryButton: false,
     versionContext: undefined,
     showSearchContext: false,
     showSearchContextManagement: false,
@@ -67,6 +69,10 @@ const defaultProps = (
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    featureFlags: new Map(),
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

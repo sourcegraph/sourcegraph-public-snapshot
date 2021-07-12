@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -69,80 +70,84 @@ func servePhabricatorRepoCreate(db dbutil.DB) func(w http.ResponseWriter, r *htt
 
 // serveExternalServiceConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
-func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServiceConfigsRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-
-	options := database.ExternalServicesListOptions{
-		Kinds:   []string{req.Kind},
-		AfterID: int64(req.AfterID),
-	}
-	if req.Limit > 0 {
-		options.LimitOffset = &database.LimitOffset{
-			Limit: req.Limit,
+func serveExternalServiceConfigs(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var req api.ExternalServiceConfigsRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			return err
 		}
-	}
 
-	services, err := database.GlobalExternalServices.List(r.Context(), options)
-	if err != nil {
-		return err
-	}
-
-	// Instead of returning an intermediate response type, we directly return
-	// the array of configs (which are themselves JSON objects).
-	// This makes it possible for the caller to directly unmarshal the response into
-	// a slice of connection configurations for this external service kind.
-	configs := make([]map[string]interface{}, 0, len(services))
-	for _, service := range services {
-		var config map[string]interface{}
-		// Raw configs may have comments in them so we have to use a json parser
-		// that supports comments in json.
-		if err := jsonc.Unmarshal(service.Config, &config); err != nil {
-			log15.Error(
-				"ignoring external service config that has invalid json",
-				"id", service.ID,
-				"displayName", service.DisplayName,
-				"config", service.Config,
-				"err", err,
-			)
-			continue
+		options := database.ExternalServicesListOptions{
+			Kinds:   []string{req.Kind},
+			AfterID: int64(req.AfterID),
 		}
-		configs = append(configs, config)
+		if req.Limit > 0 {
+			options.LimitOffset = &database.LimitOffset{
+				Limit: req.Limit,
+			}
+		}
+
+		services, err := database.ExternalServices(db).List(r.Context(), options)
+		if err != nil {
+			return err
+		}
+
+		// Instead of returning an intermediate response type, we directly return
+		// the array of configs (which are themselves JSON objects).
+		// This makes it possible for the caller to directly unmarshal the response into
+		// a slice of connection configurations for this external service kind.
+		configs := make([]map[string]interface{}, 0, len(services))
+		for _, service := range services {
+			var config map[string]interface{}
+			// Raw configs may have comments in them so we have to use a json parser
+			// that supports comments in json.
+			if err := jsonc.Unmarshal(service.Config, &config); err != nil {
+				log15.Error(
+					"ignoring external service config that has invalid json",
+					"id", service.ID,
+					"displayName", service.DisplayName,
+					"config", service.Config,
+					"err", err,
+				)
+				continue
+			}
+			configs = append(configs, config)
+		}
+		return json.NewEncoder(w).Encode(configs)
 	}
-	return json.NewEncoder(w).Encode(configs)
 }
 
 // serveExternalServicesList serves a JSON response that is an array of all external services
 // of the given kind
-func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServicesListRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-
-	if len(req.Kinds) == 0 {
-		req.Kinds = append(req.Kinds, req.Kind)
-	}
-
-	options := database.ExternalServicesListOptions{
-		Kinds:   []string{req.Kind},
-		AfterID: int64(req.AfterID),
-	}
-	if req.Limit > 0 {
-		options.LimitOffset = &database.LimitOffset{
-			Limit: req.Limit,
+func serveExternalServicesList(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var req api.ExternalServicesListRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			return err
 		}
-	}
 
-	services, err := database.GlobalExternalServices.List(r.Context(), options)
-	if err != nil {
-		return err
+		if len(req.Kinds) == 0 {
+			req.Kinds = append(req.Kinds, req.Kind)
+		}
+
+		options := database.ExternalServicesListOptions{
+			Kinds:   []string{req.Kind},
+			AfterID: int64(req.AfterID),
+		}
+		if req.Limit > 0 {
+			options.LimitOffset = &database.LimitOffset{
+				Limit: req.Limit,
+			}
+		}
+
+		services, err := database.ExternalServices(db).List(r.Context(), options)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(w).Encode(services)
 	}
-	return json.NewEncoder(w).Encode(services)
 }
 
 func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
@@ -155,6 +160,27 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
+}
+
+func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
+	val := 0.0
+	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+		return val
+	}
+	scores := siteConfig.ExperimentalFeatures.Ranking.RepoScores
+	if len(scores) == 0 {
+		return val
+	}
+	// try every "directory" in the repo name to assign it a value, so a repoName like
+	// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
+	// and "github.com/sourcegraph/zoekt" tested.
+	for i := 0; i < len(repoName); i++ {
+		if repoName[i] == '/' {
+			val += scores[repoName[:i]]
+		}
+	}
+	val += scores[repoName]
+	return val
 }
 
 // serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -186,8 +212,12 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			return string(commitID), err
 		}
 
+		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+
 		return &searchbackend.RepoIndexOptions{
 			RepoID:     int32(repo.ID),
+			Public:     !repo.Private,
+			Priority:   priority,
 			GetVersion: getVersion,
 		}, nil
 	}
@@ -576,7 +606,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 		req.URL.Scheme = "http"
 		req.URL.Host = addr
 		req.URL.Path = "/exec"
-		req.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
+		req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
 		req.ContentLength = int64(buf.Len())
 	}
 

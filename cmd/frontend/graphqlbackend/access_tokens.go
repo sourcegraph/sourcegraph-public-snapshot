@@ -2,15 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sort"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -26,20 +26,24 @@ type createAccessTokenInput struct {
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
-	// 🚨 SECURITY: Only site admins and the user can create an access token for a user.
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
-		return nil, err
-	}
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
 
 	switch conf.AccessTokensAllow() {
 	case conf.AccessTokensAll:
-		// Allow
+		// 🚨 SECURITY: Only the current logged in user should be able to create a token
+		// for themselves. A site admin should NOT be allowed to do this since they could
+		// then use the token to impersonate a user and gain access to their private
+		// code.
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
 	case conf.AccessTokensAdmin:
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		// 🚨 SECURITY: The site has opted in to only allow site admins to create access
+		// tokens. In this case, they can create a token for any user.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
 		}
 	case conf.AccessTokensNone:
@@ -58,20 +62,22 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			hasUserAllScope = true
 		case authz.ScopeSiteAdminSudo:
 			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
-			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
+			} else if envvar.SourcegraphDotComMode() {
+				return nil, errors.New("creation of access tokens with sudo scope is disabled")
 			}
 		default:
-			return nil, fmt.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
+			return nil, errors.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
 		}
 
 		if _, seen := seenScope[scope]; seen {
-			return nil, fmt.Errorf("access token scope %q may not be specified multiple times", scope)
+			return nil, errors.Errorf("access token scope %q may not be specified multiple times", scope)
 		}
 		seenScope[scope] = struct{}{}
 	}
 	if !hasUserAllScope {
-		return nil, fmt.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
+		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
 	id, token, err := database.AccessTokens(r.db).Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
@@ -120,7 +126,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		subjectUserID = token.SubjectUserID
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, token.SubjectUserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
 		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
@@ -154,8 +160,9 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins can list all access tokens.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
+	// token values themselves are not stored in our database.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +175,7 @@ func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's access tokens.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 

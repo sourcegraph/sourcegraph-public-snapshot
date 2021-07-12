@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 type DBStore interface {
@@ -24,6 +24,7 @@ type DBStore interface {
 	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []semantic.PackageReference) error
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int) (int, error)
 	UpdateCommitedAt(ctx context.Context, dumpID int, committedAt time.Time) error
 }
 
@@ -53,6 +54,8 @@ type LSIFStore interface {
 	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan semantic.IndexedResultChunkData) error
 	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
 	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
+	WriteDocumentationPages(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPageData) error
+	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPathInfoData) error
 }
 
 type LSIFStoreShim struct {

@@ -9,15 +9,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 )
 
 type Client struct {
@@ -51,14 +51,25 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	return false, err
 }
 
-// Head determines the tip commit of the default branch for the given repository.
-func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err error) {
+// Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
+// for the given repository (which occurs with empty repositories), a false-valued flag is returned along with
+// a nil error and empty revision.
+func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.head.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	if err != nil {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			err = nil
+		}
+
+		return "", false, err
+	}
+
+	return revision, true, nil
 }
 
 // CommitDate returns the time that the given commit was committed.
@@ -103,21 +114,21 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}})
 	defer endObservation(1, observation.Args{})
 
-	commands := []string{"log", "--pretty=%H %P", "--topo-order"}
+	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
-		commands = append(commands, "--all")
+		args = append(args, "--all")
 	}
 	if opts.Commit != "" {
-		commands = append(commands, opts.Commit)
+		args = append(args, opts.Commit)
 	}
 	if opts.Since != nil {
-		commands = append(commands, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
+		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
 	}
 	if opts.Limit > 0 {
-		commands = append(commands, fmt.Sprintf("-%d", opts.Limit))
+		args = append(args, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, commands...)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -130,22 +141,22 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 // is listed but has no ancestors then its parent slice is empty, but is still present in
 // the map and the ordering. If the ordering is to be correct, the git log output must be
 // formatted with --topo-order.
-func ParseCommitGraph(pair []string) *CommitGraph {
+func ParseCommitGraph(lines []string) *CommitGraph {
 	// Process lines backwards so that we see all parents before children.
-	// We get a topological ordering by simply scraping the keys off in
-	// this order.
+	// We get a topological ordering by simply scraping the keys off in this
+	// order.
 
-	n := len(pair) - 1
-	for i := 0; i < len(pair)/2; i++ {
-		pair[i], pair[n-i] = pair[n-i], pair[i]
+	n := len(lines) - 1
+	for i := 0; i < len(lines)/2; i++ {
+		lines[i], lines[n-i] = lines[n-i], lines[i]
 	}
 
-	graph := make(map[string][]string, len(pair))
-	order := make([]string, 0, len(pair))
+	graph := make(map[string][]string, len(lines))
+	order := make([]string, 0, len(lines))
 
 	var prefix []string
-	for _, pair := range pair {
-		line := strings.TrimSpace(pair)
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
@@ -172,6 +183,101 @@ func ParseCommitGraph(pair []string) *CommitGraph {
 		graph: graph,
 		order: append(prefix, order...),
 	}
+}
+
+// RefDescription describes a commit at the head of a branch or tag.
+type RefDescription struct {
+	Name            string
+	Type            RefType
+	IsDefaultBranch bool
+	CreatedDate     time.Time
+}
+
+type RefType int
+
+const (
+	RefTypeUnknown RefType = iota
+	RefTypeBranch
+	RefTypeTag
+)
+
+var refPrefixes = map[string]RefType{
+	"refs/heads/": RefTypeBranch,
+	"refs/tags/":  RefTypeTag,
+}
+
+// RefDescriptions returns a map from commits to descriptions of the tip of each
+// branch and tag of the given repository.
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string]RefDescription, err error) {
+	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	args := []string{"for-each-ref", "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)"}
+	for prefix := range refPrefixes {
+		args = append(args, prefix)
+	}
+
+	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseRefDescriptions(strings.Split(out, "\n"))
+}
+
+// parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
+// method to a map from commits to RefDescription objects. Each line should conform to the format
+// string `%(objectname):%(refname):%(HEAD):%(creatordate)`, where
+//
+// - %(objectname) is the 40-character revhash
+// - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
+// - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
+// - %(creatordate) is the ISO-formatted date the object was created
+func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
+	refDescriptions := make(map[string]RefDescription, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 4)
+		if len(parts) != 4 {
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+		}
+
+		commit := parts[0]
+		isDefaultBranch := parts[2] == "*"
+
+		var name string
+		var refType RefType
+		for prefix, typ := range refPrefixes {
+			if strings.HasPrefix(parts[1], prefix) {
+				name = parts[1][len(prefix):]
+				refType = typ
+				break
+			}
+		}
+		if refType == RefTypeUnknown {
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+		}
+
+		createdDate, err := time.Parse(time.RFC3339, parts[3])
+		if err != nil {
+			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+		}
+
+		refDescriptions[commit] = RefDescription{
+			Name:            name,
+			Type:            refType,
+			IsDefaultBranch: isDefaultBranch,
+			CreatedDate:     createdDate,
+		}
+	}
+
+	return refDescriptions, nil
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.
@@ -264,8 +370,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	return matching, nil
 }
 
-// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
-// commit of a repository.
+// ResolveRevision returns the absolute commit for a commit-ish spec.
 func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionString string) (commitID api.CommitID, err error) {
 	ctx, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),

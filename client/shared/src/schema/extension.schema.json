@@ -24,6 +24,15 @@
       "description": "A dark-mode-friendly icon URL for this extension (data: URIs are OK).",
       "type": "string"
     },
+    "headerColor": {
+      "description": "Background color for the header in the extension registry.",
+      "type": "string",
+      "enum": ["blue", "yellow", "orange", "pink", "red", "purple", "green", "grey"]
+    },
+    "wip": {
+      "description": "Whether the extension is in development and not ready for use ('work-in-progress').",
+      "type": "boolean"
+    },
     "url": {
       "description": "A URL to a file containing the bundled JavaScript source code of this extension.",
       "type": "string",

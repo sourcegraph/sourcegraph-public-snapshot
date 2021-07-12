@@ -3,7 +3,7 @@ package resolvers
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"strconv"
 	"strings"
 
@@ -129,7 +129,7 @@ func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sour
 	}
 	defer reader.Close()
 
-	output, err := ioutil.ReadAll(reader)
+	output, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func findHunk(hunks []*diff.Hunk, line int) *diff.Hunk {
 	return hunks[i-1]
 }
 
-// adjustRange translates the given range by calling adjustPosition on both of hte range's
+// adjustRange translates the given range by calling adjustPosition on both of the range's
 // endpoints. This function returns a boolean flag indicating that the translation was
 // successful (which occurs when both endpoints of the range can be translated).
 func adjustRange(hunks []*diff.Hunk, r lsifstore.Range) (lsifstore.Range, bool) {

@@ -27,39 +27,40 @@ import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNa
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 import { AuthenticatedUser } from '../auth'
-import { BatchChangesIconNav } from '../batches/icons'
+import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
+import { Settings } from '../schema/settings.schema'
 import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
+    SearchContextInputProps,
 } from '../search'
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
 import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
-import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
@@ -71,14 +72,11 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         CodeMonitoringProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        FeatureFlagProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
@@ -93,8 +91,6 @@ interface Props
     // Whether globbing is enabled for filters.
     globbing: boolean
 
-    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
-    enableSmartQuery: boolean
     userSettingsSideBarItems?: UserSettingsSidebarItems
 
     /**
@@ -123,9 +119,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
     navbarSearchQueryState,
-    versionContext,
-    setVersionContext,
-    availableVersionContexts,
     caseSensitive,
     patternType,
     onNavbarQueryChange,
@@ -136,6 +129,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     location,
     history,
     minimalNavLinks,
+    isSourcegraphDotCom,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -148,7 +142,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Design Refresh will include repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
     const showRepositorySection = useMemo(
-        () => !!props.userSettingsSideBarItems?.account.find(item => item.label === 'Repositories'),
+        () => !!props.userSettingsSideBarItems?.find(item => item.label === 'Repositories'),
         [props.userSettingsSideBarItems]
     )
 
@@ -198,6 +192,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const [isRedesignEnabled] = useRedesignToggle()
 
+    const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
+    const codeInsights =
+        settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
+
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
             <BrandLogo
@@ -215,6 +213,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
+            isSourcegraphDotCom={isSourcegraphDotCom}
             {...props}
         />
     )
@@ -226,10 +225,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             onChange={onNavbarQueryChange}
             location={location}
             history={history}
-            versionContext={versionContext}
             isLightTheme={isLightTheme}
             patternType={patternType}
             caseSensitive={caseSensitive}
+            isSourcegraphDotCom={isSourcegraphDotCom}
         />
     )
 
@@ -250,15 +249,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <NavItem icon={MagnifyIcon}>
                             <NavLink to="/search">Code Search</NavLink>
                         </NavItem>
-                        <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
-                        </NavItem>
-                        <NavItem icon={BatchChangesIconNav}>
-                            <NavLink to="/batch-changes">Batch Changes</NavLink>
-                        </NavItem>
-                        <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights">Insights</NavLink>
-                        </NavItem>
+                        {props.enableCodeMonitoring && (
+                            <NavItem icon={CodeMonitoringLogo}>
+                                <NavLink to="/code-monitoring">Monitoring</NavLink>
+                            </NavItem>
+                        )}
+                        {props.showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
+                        {codeInsights && (
+                            <NavItem icon={BarChartIcon}>
+                                <NavLink to="/insights">Insights</NavLink>
+                            </NavItem>
+                        )}
                         <NavItem icon={PuzzleOutlineIcon}>
                             <NavLink to="/extensions">Extensions</NavLink>
                         </NavItem>
@@ -310,18 +311,16 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             />
                         </NavAction>
                         {props.authenticatedUser &&
-                            (window.context?.externalServicesUserModeEnabled ||
-                                props.authenticatedUser?.siteAdmin ||
-                                props.authenticatedUser?.tags?.some(
-                                    tag =>
-                                        tag === 'AllowUserExternalServicePublic' ||
-                                        tag === 'AllowUserExternalServicePrivate'
-                                )) && (
+                            (props.authenticatedUser.siteAdmin ||
+                                userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                                 <NavAction>
                                     <StatusMessagesNavItem
-                                        isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
+                                        user={{
+                                            id: props.authenticatedUser.id,
+                                            username: props.authenticatedUser.username,
+                                            isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
+                                        }}
                                         history={history}
-                                        isRedesignEnabled={isRedesignEnabled}
                                     />
                                 </NavAction>
                             )}
@@ -362,18 +361,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     </NavActions>
                 </NavBar>
                 {showSearchBox && (
-                    <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">
-                        <VersionContextDropdown
-                            history={history}
-                            navbarSearchQuery={navbarSearchQueryState.query}
-                            caseSensitive={caseSensitive}
-                            patternType={patternType}
-                            versionContext={versionContext}
-                            setVersionContext={setVersionContext}
-                            availableVersionContexts={availableVersionContexts}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        />
-                        {searchNavBar}
+                    <div className="w-100 px-3 pt-2">
+                        <div className="pb-2 border-bottom">{searchNavBar}</div>
                     </div>
                 )}
             </>
@@ -411,16 +400,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <div className="flex-1" />
                     ) : (
                         <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                            <VersionContextDropdown
-                                history={history}
-                                navbarSearchQuery={navbarSearchQueryState.query}
-                                caseSensitive={caseSensitive}
-                                patternType={patternType}
-                                versionContext={versionContext}
-                                setVersionContext={setVersionContext}
-                                availableVersionContexts={availableVersionContexts}
-                                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            />
                             {searchNavBar}
                         </div>
                     )}

@@ -1,3 +1,4 @@
+import { subDays } from 'date-fns'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useMemo, useCallback } from 'react'
@@ -67,11 +68,13 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     closeBatchChange,
 }) => {
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
+    const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange = useObservable(
-        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName), [
+        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter), [
+            fetchBatchChangeByNamespace,
             namespaceID,
             batchChangeName,
-            fetchBatchChangeByNamespace,
+            createdAfter,
         ])
     )
 

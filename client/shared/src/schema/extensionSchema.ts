@@ -19,8 +19,8 @@ import { Contributions, Raw } from '../api/protocol/contribution'
  * string constant (e.g., `ProgrammingLanguages = 'Programming languages'`).
  */
 export const EXTENSION_CATEGORIES = array([
-    'Reports and stats',
     'External services',
+    'Reports and stats',
     'Linters',
     'Code editors',
     'Code analysis',
@@ -33,10 +33,32 @@ export const EXTENSION_CATEGORIES = array([
  */
 export type ExtensionCategory = typeof EXTENSION_CATEGORIES[number]
 
+/**
+ * The set of valid extension card header colors for the extension registry.
+ *
+ * Keep this in sync with <extension.schema.json>'s #/headerColor/enum set.
+ */
+export const EXTENSION_HEADER_COLORS = new Set([
+    'blue',
+    'yellow',
+    'orange',
+    'pink',
+    'red',
+    'purple',
+    'green',
+    'grey',
+] as const)
+
+/**
+ * The set of valid extension card header colors for the extension registry.
+ */
+export type ExtensionHeaderColor = typeof EXTENSION_HEADER_COLORS extends Set<infer T> ? T : never
+
 export interface ExtensionManifest {
     description?: string
     readme?: string
     url: string
+    wip?: boolean
     repository?: {
         type?: string
         url: string
@@ -51,6 +73,7 @@ export interface ExtensionManifest {
     tags?: string[]
     icon?: string
     iconDark?: string
+    headerColor?: ExtensionHeaderColor
     activationEvents: string[]
     contributes?: Raw<Contributions> & { configuration?: { [key: string]: any } }
     publisher?: string

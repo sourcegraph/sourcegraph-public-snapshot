@@ -2,17 +2,16 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/ffcli"
 	"gopkg.in/yaml.v2"
 )
@@ -81,7 +80,7 @@ func shortenErrHelp(cmd *ffcli.Command, cmdPath string) {
 	exec := cmd.Exec
 	cmd.Exec = func(args []string) error {
 		err := exec(args)
-		if _, ok := err.(*usageError); ok {
+		if errors.HasType(err, &usageError{}) {
 			var w io.Writer
 			if cmd.FlagSet != nil {
 				w = cmd.FlagSet.Output()
@@ -114,14 +113,14 @@ func main() {
 
 	newLogger := func(prefix string) *log.Logger {
 		if *globalQuiet {
-			return log.New(ioutil.Discard, "", log.LstdFlags)
+			return log.New(io.Discard, "", log.LstdFlags)
 		}
 		return log.New(os.Stderr, prefix, log.LstdFlags)
 	}
 
 	newVerbose := func(prefix string) *log.Logger {
 		if !*globalVerbose {
-			return log.New(ioutil.Discard, "", log.LstdFlags)
+			return log.New(io.Discard, "", log.LstdFlags)
 		}
 		return log.New(os.Stderr, prefix, log.LstdFlags)
 	}
@@ -129,12 +128,12 @@ func main() {
 	globalSnapshotter := func() (*Snapshotter, error) {
 		var s Snapshotter
 		if *globalConfig != "" {
-			b, err := ioutil.ReadFile(*globalConfig)
+			b, err := os.ReadFile(*globalConfig)
 			if err != nil {
-				return nil, fmt.Errorf("could read configuration at %s: %w", *globalConfig, err)
+				return nil, errors.Errorf("could read configuration at %s: %w", *globalConfig, err)
 			}
 			if err := yaml.Unmarshal(b, &s); err != nil {
-				return nil, fmt.Errorf("could not parse configuration at %s: %w", *globalConfig, err)
+				return nil, errors.Errorf("could not parse configuration at %s: %w", *globalConfig, err)
 			}
 		}
 
@@ -281,7 +280,7 @@ See https://github.com/sourcegraph/sourcegraph/tree/main/dev/src-expose/examples
 	shortenErrHelp(root, "")
 
 	if err := root.Run(os.Args[1:]); err != nil {
-		if !errors.Is(err, flag.ErrHelp) && !errors.Is(err, errSilent) {
+		if !errors.IsAny(err, flag.ErrHelp, errSilent) {
 			_, _ = fmt.Fprintf(root.FlagSet.Output(), "\nerror: %v\n", err)
 		}
 		os.Exit(1)

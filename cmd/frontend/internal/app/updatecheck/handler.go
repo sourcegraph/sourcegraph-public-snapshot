@@ -2,9 +2,7 @@ package updatecheck
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -13,9 +11,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-semver/semver"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -35,17 +33,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.27.4")
+	latestReleaseDockerServerImageBuild = newBuild("3.29.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.27.4")
+	latestReleaseKubernetesBuild = newBuild("3.29.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.27.4")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.29.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -148,7 +146,7 @@ var timeNow = time.Now
 func canUpdateDate(clientVersionString string) (bool, error) {
 	match := dateRegex.FindStringSubmatch(clientVersionString)
 	if len(match) != 2 {
-		return false, fmt.Errorf("no date in version string %q", clientVersionString)
+		return false, errors.Errorf("no date in version string %q", clientVersionString)
 	}
 
 	t, err := time.ParseInLocation("2006-01-02", match[1], time.UTC)
@@ -192,6 +190,7 @@ type pingRequest struct {
 	ExtensionsUsage     json.RawMessage `json:"extensionsUsage"`
 	CodeInsightsUsage   json.RawMessage `json:"codeInsightsUsage"`
 	CodeMonitoringUsage json.RawMessage `json:"codeMonitoringUsage"`
+	CodeHostVersions    json.RawMessage `json:"codeHostVersions"`
 	InitialAdminEmail   string          `json:"initAdmin"`
 	TotalUsers          int32           `json:"totalUsers"`
 	HasRepos            bool            `json:"repos"`
@@ -240,7 +239,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 
 func readPingRequestFromBody(body io.ReadCloser) (*pingRequest, error) {
 	defer body.Close()
-	contents, err := ioutil.ReadAll(body)
+	contents, err := io.ReadAll(body)
 	if err != nil {
 		return nil, err
 	}
@@ -296,6 +295,7 @@ type pingPayload struct {
 	ExtensionsUsage      json.RawMessage `json:"extensions_usage"`
 	CodeInsightsUsage    json.RawMessage `json:"code_insights_usage"`
 	CodeMonitoringUsage  json.RawMessage `json:"code_monitoring_usage"`
+	CodeHostVersions     json.RawMessage `json:"code_host_versions"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`
@@ -379,6 +379,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ExtensionsUsage:      pr.ExtensionsUsage,
 		CodeInsightsUsage:    pr.CodeInsightsUsage,
 		CodeMonitoringUsage:  pr.CodeMonitoringUsage,
+		CodeHostVersions:     pr.CodeHostVersions,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed: strconv.FormatBool(pr.BuiltinSignupAllowed),

@@ -2,7 +2,8 @@ package backend
 
 import (
 	"context"
-	"errors"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -35,7 +36,7 @@ func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin b
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	currentUser, err := CurrentUser(ctx)
+	currentUser, err := CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}

@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -54,7 +54,7 @@ func (h Webhook) getRepoForPR(
 	}
 
 	if len(rs) != 1 {
-		return nil, fmt.Errorf("fetched repositories have wrong length: %d", len(rs))
+		return nil, errors.Errorf("fetched repositories have wrong length: %d", len(rs))
 	}
 
 	return rs[0], nil

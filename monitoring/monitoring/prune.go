@@ -1,11 +1,12 @@
 package monitoring
 
 import (
-	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 )
 
@@ -13,7 +14,7 @@ func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir str
 	// Prune Grafana assets
 	if grafanaDir != "" {
 		logger.Info("Pruning Grafana assets", "dir", grafanaDir)
-		err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(grafanaDir, func(path string, info fs.FileInfo, err error) error {
 			plog := logger.New("path", path)
 			if err != nil {
 				plog.Debug("Unable to access file, ignoring")
@@ -34,14 +35,14 @@ func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir str
 			return os.Remove(path)
 		})
 		if err != nil {
-			return fmt.Errorf("error pruning Grafana assets: %w", err)
+			return errors.Errorf("error pruning Grafana assets: %w", err)
 		}
 	}
 
 	// Prune Prometheus assets
 	if promDir != "" {
 		logger.Info("Pruning Prometheus assets", "dir", promDir)
-		err := filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(promDir, func(path string, info fs.FileInfo, err error) error {
 			plog := logger.New("path", path)
 			if err != nil {
 				plog.Debug("Unable to access file, ignoring")
@@ -63,7 +64,7 @@ func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir str
 			return os.Remove(path)
 		})
 		if err != nil {
-			return fmt.Errorf("error pruning Prometheus assets: %w", err)
+			return errors.Errorf("error pruning Prometheus assets: %w", err)
 		}
 	}
 

@@ -6,14 +6,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -68,7 +68,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 
 		"PathPatternsAreRegExps": []string{"true"},
 		"IndexerEndpoints":       indexerEndpoints,
-		"Select":                 []string{string(p.Select.Type)},
+		"Select":                 []string{p.Select.Root()},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
@@ -77,7 +77,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 		}
 		q.Set("Deadline", string(t))
 	}
-	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
+	q.Set("Limit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")
 	}
@@ -183,7 +183,7 @@ func textSearchURL(ctx context.Context, url string) ([]*protocol.FileMatch, bool
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, false, err
 		}

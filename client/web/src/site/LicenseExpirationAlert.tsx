@@ -1,5 +1,5 @@
+import classNames from 'classnames'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
-import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -18,9 +18,8 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
 }> = ({ expiresAt, daysLeft, className = '' }) => (
     <DismissibleAlert
         partialStorageKey={`licenseExpiring.${daysLeft}`}
-        className={`alert alert-warning align-items-center ${className}`}
+        className={classNames('alert-warning align-items-center', className)}
     >
-        <WarningIcon className="redesign-d-none icon-inline mr-2 flex-shrink-0" />
         Your Sourcegraph license{' '}
         {
             isProductLicenseExpired(expiresAt)

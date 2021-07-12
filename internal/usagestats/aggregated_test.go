@@ -122,15 +122,36 @@ func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
 func newSearchUsagePeriod(t time.Time, structuralEvent, commitEvent *types.SearchEventStatistics) []*types.SearchUsagePeriod {
 	return []*types.SearchUsagePeriod{
 		{
-			StartTime:          t,
-			Literal:            newSearchEventStatistics(),
-			Regexp:             newSearchEventStatistics(),
-			Structural:         structuralEvent,
-			File:               newSearchEventStatistics(),
-			Repo:               newSearchEventStatistics(),
-			Diff:               newSearchEventStatistics(),
-			Commit:             commitEvent,
-			Symbol:             newSearchEventStatistics(),
+			StartTime:  t,
+			Literal:    newSearchEventStatistics(),
+			Regexp:     newSearchEventStatistics(),
+			Structural: structuralEvent,
+			File:       newSearchEventStatistics(),
+			Repo:       newSearchEventStatistics(),
+			Diff:       newSearchEventStatistics(),
+			Commit:     commitEvent,
+			Symbol:     newSearchEventStatistics(),
+
+			// Counts of search query attributes. Ref: RFC 384.
+			OperatorOr:              newSearchCountStatistics(),
+			OperatorAnd:             newSearchCountStatistics(),
+			OperatorNot:             newSearchCountStatistics(),
+			SelectRepo:              newSearchCountStatistics(),
+			SelectFile:              newSearchCountStatistics(),
+			SelectContent:           newSearchCountStatistics(),
+			SelectSymbol:            newSearchCountStatistics(),
+			SelectCommitDiffAdded:   newSearchCountStatistics(),
+			SelectCommitDiffRemoved: newSearchCountStatistics(),
+			RepoContains:            newSearchCountStatistics(),
+			RepoContainsFile:        newSearchCountStatistics(),
+			RepoContainsContent:     newSearchCountStatistics(),
+			RepoContainsCommitAfter: newSearchCountStatistics(),
+			CountAll:                newSearchCountStatistics(),
+			NonGlobalContext:        newSearchCountStatistics(),
+			OnlyPatterns:            newSearchCountStatistics(),
+			OnlyPatternsThreeOrMore: newSearchCountStatistics(),
+
+			// DEPRECATED.
 			Case:               newSearchCountStatistics(),
 			Committer:          newSearchCountStatistics(),
 			Lang:               newSearchCountStatistics(),
@@ -171,7 +192,7 @@ func TestGroupAggregateSearchStats(t *testing.T) {
 	t2 := t1.Add(time.Hour)
 	t3 := t2.Add(time.Hour)
 
-	searchStats := groupAggregatedSearchStats([]types.AggregatedEvent{
+	searchStats := groupAggregatedSearchStats([]types.SearchAggregatedEvent{
 		{
 			Name:           "search.latencies.structural",
 			Month:          t1,

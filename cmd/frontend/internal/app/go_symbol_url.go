@@ -2,37 +2,34 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/build"
 	"go/doc"
 	"go/token"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/sourcegraph/ctxvfs"
-	"golang.org/x/tools/go/buildutil"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-
-	"github.com/sourcegraph/go-lsp"
-
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/go-lsp"
+	"golang.org/x/tools/go/buildutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/gosrc"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // serveGoSymbolURL handles Go symbol URLs (e.g.,
@@ -53,7 +50,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	cloneURL := dir.CloneURL
 
 	if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
-		return fmt.Errorf("non-github clone URL resolved for import path %s", spec.Pkg)
+		return errors.Errorf("non-github clone URL resolved for import path %s", spec.Pkg)
 	}
 
 	repoName := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
@@ -149,7 +146,7 @@ func parseGoSymbolURLPath(path string) (*goSymbolSpec, error) {
 		receiver = &symbolComponents[0]
 		symbolName = symbolComponents[1]
 	default:
-		return nil, fmt.Errorf("invalid def %s (must have 1 or 2 path components)", def)
+		return nil, errors.Errorf("invalid def %s (must have 1 or 2 path components)", def)
 	}
 
 	return &goSymbolSpec{
@@ -253,7 +250,7 @@ func repoVFS(ctx context.Context, name api.RepoName, rev api.CommitID) (ctxvfs.F
 	}
 
 	// Fall back to a full git clone for non-github.com repos.
-	return nil, fmt.Errorf("unable to fetch repo %s (only github.com repos are supported)", name)
+	return nil, errors.Errorf("unable to fetch repo %s (only github.com repos are supported)", name)
 }
 
 func parseFiles(fset *token.FileSet, bctx *build.Context, importPath, srcDir string) (*ast.Package, error) {
@@ -278,18 +275,18 @@ func parseFiles(fset *token.FileSet, bctx *build.Context, importPath, srcDir str
 	return pkg, errs
 }
 
-func PrepareContext(bctx *build.Context, ctx context.Context, fs ctxvfs.FileSystem) {
+func PrepareContext(bctx *build.Context, ctx context.Context, vfs ctxvfs.FileSystem) {
 	// HACK: in the all Context's methods below we are trying to convert path to virtual one (/foo/bar/..)
 	// because some code may pass OS-specific arguments.
 	// See golang.org/x/tools/go/buildutil/allpackages.go which uses `filepath` for example
 
 	bctx.OpenFile = func(path string) (io.ReadCloser, error) {
 		path = filepath.ToSlash(path)
-		return fs.Open(ctx, path)
+		return vfs.Open(ctx, path)
 	}
 	bctx.IsDir = func(path string) bool {
 		path = filepath.ToSlash(path)
-		fi, err := fs.Stat(ctx, path)
+		fi, err := vfs.Stat(ctx, path)
 		return err == nil && fi.Mode().IsDir()
 	}
 	bctx.HasSubdir = func(root, dir string) (rel string, ok bool) {
@@ -301,9 +298,9 @@ func PrepareContext(bctx *build.Context, ctx context.Context, fs ctxvfs.FileSyst
 		}
 		return PathTrimPrefix(dir, root), true
 	}
-	bctx.ReadDir = func(path string) ([]os.FileInfo, error) {
+	bctx.ReadDir = func(path string) ([]fs.FileInfo, error) {
 		path = filepath.ToSlash(path)
-		return fs.ReadDir(ctx, path)
+		return vfs.ReadDir(ctx, path)
 	}
 	bctx.IsAbsPath = func(path string) bool {
 		path = filepath.ToSlash(path)
@@ -440,7 +437,7 @@ func Panicf(r interface{}, format string, v ...interface{}) error {
 		buf = buf[:runtime.Stack(buf, false)]
 		id := fmt.Sprintf(format, v...)
 		log.Printf("panic serving %s: %v\n%s", id, r, string(buf))
-		return fmt.Errorf("unexpected panic: %v", r)
+		return errors.Errorf("unexpected panic: %v", r)
 	}
 	return nil
 }

@@ -1,4 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -25,6 +26,7 @@ import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combin
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
+import styles from './Panel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
@@ -120,7 +122,7 @@ export const Panel = React.memo<Props>(props => {
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
-    const { hash, pathname } = location
+    const { hash, pathname, search } = location
     const history = useHistory()
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
@@ -212,28 +214,28 @@ export const Panel = React.memo<Props>(props => {
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${currentTabLabel}=${items[index].id}`)
+            history.replace(`${pathname}${search}${currentTabLabel}=${items[index].id}`)
         },
-        [currentTabLabel, history, items, pathname]
+        [currentTabLabel, history, items, pathname, search]
     )
 
     useEffect(() => {
         setTabIndex(items.findIndex(({ id }) => id === currentTabID))
     }, [items, hash, currentTabID])
 
-    const activeTab: PanelItem | undefined = items[tabIndex]
-
     if (!areExtensionsReady) {
-        return <ExtensionsLoadingPanelView />
+        return <ExtensionsLoadingPanelView className={styles.panel} />
     }
 
     if (!items) {
-        return <EmptyPanelView />
+        return <EmptyPanelView className={styles.panel} />
     }
 
+    const activeTab: PanelItem | undefined = items[tabIndex]
+
     return (
-        <Tabs className="panel" index={tabIndex} onChange={handleActiveTab}>
-            <div className="tablist-wrapper bg-body d-flex justify-content-between">
+        <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
+            <div className={classNames('tablist-wrapper d-flex justify-content-between', styles.header)}>
                 <TabList>
                     <div className="d-flex w-100">
                         {items.map(({ label, id }) => (
@@ -243,30 +245,32 @@ export const Panel = React.memo<Props>(props => {
                         ))}
                     </div>
                 </TabList>
-                <div className="align-items-center d-flex mr-2">
-                    {activeTab && (
-                        <ActionsNavItems
-                            {...props}
-                            // TODO remove references to Bootstrap from shared, get class name from prop
-                            // This is okay for now because the Panel is currently only used in the webapp
-                            listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                            listItemClass="pr-4"
-                            // actionItemClass="d-flex flex-nowrap"
-                            actionItemIconClass="icon-inline"
-                            menu={ContributableMenu.PanelToolbar}
-                            scope={{
-                                type: 'panelView',
-                                id: activeTab.id,
-                                hasLocations: Boolean(activeTab.hasLocations),
-                            }}
-                            wrapInList={true}
-                            location={location}
-                        />
-                    )}
+                <div className="align-items-center d-flex">
+                    <small>
+                        {activeTab && (
+                            <ActionsNavItems
+                                {...props}
+                                // TODO remove references to Bootstrap from shared, get class name from prop
+                                // This is okay for now because the Panel is currently only used in the webapp
+                                listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                                listItemClass="px-2 mx-2"
+                                actionItemClass="font-weight-medium"
+                                actionItemIconClass="icon-inline"
+                                menu={ContributableMenu.PanelToolbar}
+                                scope={{
+                                    type: 'panelView',
+                                    id: activeTab.id,
+                                    hasLocations: Boolean(activeTab.hasLocations),
+                                }}
+                                wrapInList={true}
+                                location={location}
+                            />
+                        )}
+                    </small>
                     <button
                         type="button"
                         onClick={handlePanelClose}
-                        className="btn btn-icon"
+                        className={classNames('btn btn-icon ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"
@@ -275,10 +279,10 @@ export const Panel = React.memo<Props>(props => {
                     </button>
                 </div>
             </div>
-            <TabPanels>
+            <TabPanels className={styles.tabs}>
                 {activeTab ? (
                     items.map(({ id, element }) => (
-                        <TabPanel className="panel__tabs-content" key={id} data-test-content={id}>
+                        <TabPanel key={id} className={styles.tabsContent} data-testid="panel-tabs-content">
                             {id === activeTab.id ? element : null}
                         </TabPanel>
                     ))
@@ -293,7 +297,7 @@ export const Panel = React.memo<Props>(props => {
 /** A wrapper around Panel that makes it resizable. */
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
     <Resizable
-        className="resizable-panel"
+        className={styles.resizablePanel}
         handlePosition="top"
         defaultSize={350}
         storageKey="panel-size"

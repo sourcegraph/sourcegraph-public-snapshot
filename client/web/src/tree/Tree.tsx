@@ -8,7 +8,7 @@ import { Key } from 'ts-key-enum'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
+import { AbsoluteRepo, formatSearchParameters } from '@sourcegraph/shared/src/util/url'
 
 import { dirname } from '../util/path'
 
@@ -280,7 +280,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     queryParameters.delete('subtree')
                     if (queryParametersHasSubtree && !queryParameters.has('tab')) {
                         this.props.history.replace({
-                            search: queryParameters.toString(),
+                            search: formatSearchParameters(queryParameters),
                             hash: this.props.history.location.hash,
                         })
                     }

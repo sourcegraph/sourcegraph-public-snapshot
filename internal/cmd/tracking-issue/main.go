@@ -5,13 +5,12 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
 
@@ -37,11 +36,11 @@ func main() {
 
 func run(token, org string, dry, verbose bool) (err error) {
 	if token == "" {
-		return fmt.Errorf("no -token given")
+		return errors.Errorf("no -token given")
 	}
 
 	if org == "" {
-		return fmt.Errorf("no -org given")
+		return errors.Errorf("no -org given")
 	}
 
 	ctx := context.Background()

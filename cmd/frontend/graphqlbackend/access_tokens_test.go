@@ -2,18 +2,23 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/gqltesting"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.
@@ -46,7 +51,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: false}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -111,7 +116,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -135,7 +140,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		})
 	})
 
-	t.Run("authenticated as different user who is a site-admin", func(t *testing.T) {
+	t.Run("authenticated as different user who is a site-admin. Default config", func(t *testing.T) {
 		resetMocks()
 		const differentSiteAdminUID = 234
 		mockAccessTokensCreate(t, differentSiteAdminUID, []string{authz.ScopeUserAll})
@@ -144,7 +149,43 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
+				Schema:  mustParseGraphQLSchema(t),
+				Query: `
+				mutation {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
+						id
+						token
+					}
+				}
+			`,
+				ExpectedResult: `null`,
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:          []interface{}{"createAccessToken"},
+						Message:       "Must be authenticated as user with id 1",
+						ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("authenticated as different user who is a site-admin. Admin allowed", func(t *testing.T) {
+		resetMocks()
+		const differentSiteAdminUID = 234
+		mockAccessTokensCreate(t, differentSiteAdminUID, []string{authz.ScopeUserAll})
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil
+		}
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
+		defer func() { conf.Get().AuthAccessTokens = nil }()
+
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -206,6 +247,30 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 			t.Errorf("got result %v, want nil", result)
 		}
 	})
+
+	t.Run("disable sudo token for dotcom", func(t *testing.T) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
+		defer func() { conf.Get().AuthAccessTokens = nil }()
+
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{
+			User:   uid1GQLID,
+			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
+		})
+		got := fmt.Sprintf("%v", err)
+		want := "creation of access tokens with sudo scope is disabled"
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 // 🚨 SECURITY: This tests that users can't delete tokens they shouldn't be allowed to delete.
@@ -238,7 +303,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: false}, nil
 		}
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -269,7 +334,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
 				Schema:  mustParseGraphQLSchema(t),

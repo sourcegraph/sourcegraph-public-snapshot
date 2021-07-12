@@ -15,7 +15,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -26,7 +26,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -164,6 +164,61 @@ func TestChangesetSpecResolver(t *testing.T) {
 							},
 						},
 						Published: batches.PublishedValue{Val: "draft"},
+						Diff: struct{ FileDiffs apitest.FileDiffs }{
+							FileDiffs: apitest.FileDiffs{
+								DiffStat: apitest.DiffStat{
+									Added:   1,
+									Deleted: 1,
+									Changed: 2,
+								},
+							},
+						},
+						DiffStat: apitest.DiffStat{
+							Added:   1,
+							Deleted: 1,
+							Changed: 2,
+						},
+					},
+					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+				}
+			},
+		},
+		{
+			name:    "GitBranchChangesetDescription publish from UI",
+			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: nil}),
+			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
+				return apitest.ChangesetSpec{
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
+					Description: apitest.ChangesetSpecDescription{
+						Typename: "GitBranchChangesetDescription",
+						BaseRepository: apitest.Repository{
+							ID: string(spec.Spec.BaseRepository),
+						},
+						ExternalID: "",
+						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						HeadRepository: apitest.Repository{
+							ID: string(spec.Spec.HeadRepository),
+						},
+						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						Title:   spec.Spec.Title,
+						Body:    spec.Spec.Body,
+						Commits: []apitest.GitCommitDescription{
+							{
+								Author: apitest.Person{
+									Email: spec.Spec.Commits[0].AuthorEmail,
+									Name:  user.Username,
+									User: &apitest.User{
+										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+									},
+								},
+								Diff:    spec.Spec.Commits[0].Diff,
+								Message: spec.Spec.Commits[0].Message,
+								Subject: "git commit message",
+								Body:    "and some more content in a second paragraph.",
+							},
+						},
+						Published: batches.PublishedValue{Val: nil},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{

@@ -45,6 +45,14 @@ type AWSCodeCommitGitCredentials struct {
 	// Username description: The Git username
 	Username string `json:"username"`
 }
+
+// AWSKMSEncryptionKey description: AWS KMS Encryption Key, used to encrypt data in AWS environments
+type AWSKMSEncryptionKey struct {
+	CredentialsFile string `json:"credentialsFile,omitempty"`
+	KeyId           string `json:"keyId"`
+	Region          string `json:"region,omitempty"`
+	Type            string `json:"type"`
+}
 type AdditionalProperties struct {
 	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
 	Format string `json:"format,omitempty"`
@@ -228,7 +236,7 @@ type BitbucketServerConnection struct {
 	//
 	// If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// InitialRepositoryEnablement description: Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.
+	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. BitBucket repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Password description: The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding "username" field.
 	//
@@ -360,8 +368,8 @@ type ChangesetTemplate struct {
 	Branch string `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
-	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
-	Published interface{} `json:"published"`
+	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.
+	Published interface{} `json:"published,omitempty"`
 	// Title description: The title of the changeset.
 	Title string `json:"title"`
 }
@@ -404,6 +412,7 @@ type Dotcom struct {
 // EncryptionKey description: Config for a key
 type EncryptionKey struct {
 	Cloudkms *CloudKMSEncryptionKey
+	Awskms   *AWSKMSEncryptionKey
 	Mounted  *MountedEncryptionKey
 	Noop     *NoOpEncryptionKey
 }
@@ -411,6 +420,9 @@ type EncryptionKey struct {
 func (v EncryptionKey) MarshalJSON() ([]byte, error) {
 	if v.Cloudkms != nil {
 		return json.Marshal(v.Cloudkms)
+	}
+	if v.Awskms != nil {
+		return json.Marshal(v.Awskms)
 	}
 	if v.Mounted != nil {
 		return json.Marshal(v.Mounted)
@@ -428,6 +440,8 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "awskms":
+		return json.Unmarshal(data, &v.Awskms)
 	case "cloudkms":
 		return json.Unmarshal(data, &v.Cloudkms)
 	case "mounted":
@@ -435,7 +449,7 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 	case "noop":
 		return json.Unmarshal(data, &v.Noop)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "mounted", "noop"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "awskms", "mounted", "noop"})
 }
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
@@ -521,6 +535,8 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// Ranking description: Experimental search result ranking options.
+	Ranking *Ranking `json:"ranking,omitempty"`
 	// RateLimitAnonymous description: Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.
 	RateLimitAnonymous int `json:"rateLimitAnonymous,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
@@ -707,7 +723,7 @@ type GitLabConnection struct {
 	//
 	// If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// InitialRepositoryEnablement description: Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.
+	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitLab repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// NameTransformations description: An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after "repositoryPathPattern" is processed.
 	NameTransformations []*GitLabNameTransformation `json:"nameTransformations,omitempty"`
@@ -832,9 +848,18 @@ type ImportChangesets struct {
 type Insight struct {
 	// Description description: The description of this insight
 	Description string `json:"description"`
+	// Id description: A globally  unique identifier for this insight.
+	Id string `json:"id"`
 	// Series description: Series of data to show for this insight
 	Series []*InsightSeries `json:"series"`
 	// Title description: The short title of this insight
+	Title string `json:"title"`
+}
+type InsightDashboard struct {
+	Id string `json:"id"`
+	// InsightIds description: Insights ids that will be included in the dashboard.
+	InsightIds []string `json:"insightIds,omitempty"`
+	// Title description: Title of the dashboard.
 	Title string `json:"title"`
 }
 type InsightSeries struct {
@@ -932,12 +957,15 @@ type NotifierEmail struct {
 
 // NotifierOpsGenie description: OpsGenie notifier
 type NotifierOpsGenie struct {
-	ApiKey   string `json:"apiKey,omitempty"`
-	ApiUrl   string `json:"apiUrl,omitempty"`
+	ApiKey string `json:"apiKey,omitempty"`
+	ApiUrl string `json:"apiUrl,omitempty"`
+	// Priority description: Defines the importance of an alert. Allowed values are P1, P2, P3, P4, P5 - or a Go template that resolves to one of those values. By default, Sourcegraph will fill this in for you if a value isn't specified here.
 	Priority string `json:"priority,omitempty"`
 	// Responders description: List of responders responsible for notifications.
 	Responders []*Responders `json:"responders,omitempty"`
-	Type       string        `json:"type"`
+	// Tags description: Comma separated list of tags attached to the notifications - or a Go template that produces such a list. Sourcegraph provides some default ones if this value isn't specified.
+	Tags string `json:"tags,omitempty"`
+	Type string `json:"type"`
 }
 
 // NotifierPagerduty description: PagerDuty notifier
@@ -1122,6 +1150,12 @@ type QuickLink struct {
 	// Url description: The URL of this quick link (absolute or relative)
 	Url string `json:"url"`
 }
+
+// Ranking description: Experimental search result ranking options.
+type Ranking struct {
+	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
+	RepoScores map[string]float64 `json:"repoScores,omitempty"`
+}
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.
 	Callsign string `json:"callsign"`
@@ -1240,10 +1274,12 @@ type Settings struct {
 	// ExtensionsActiveLoggers description: The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
-	Insights                            []*Insight `json:"insights,omitempty"`
-	InsightsDisplayLocationDirectory    *bool      `json:"insights.displayLocation.directory,omitempty"`
-	InsightsDisplayLocationHomepage     *bool      `json:"insights.displayLocation.homepage,omitempty"`
-	InsightsDisplayLocationInsightsPage *bool      `json:"insights.displayLocation.insightsPage,omitempty"`
+	Insights []*Insight `json:"insights,omitempty"`
+	// InsightsDashboards description: EXPERIMENTAL: Code Insights Dashboards
+	InsightsDashboards                  map[string]InsightDashboard `json:"insights.dashboards,omitempty"`
+	InsightsDisplayLocationDirectory    *bool                       `json:"insights.displayLocation.directory,omitempty"`
+	InsightsDisplayLocationHomepage     *bool                       `json:"insights.displayLocation.homepage,omitempty"`
+	InsightsDisplayLocationInsightsPage *bool                       `json:"insights.displayLocation.insightsPage,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
@@ -1280,7 +1316,7 @@ type Settings struct {
 	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
-	// SearchScopes description: Predefined search scopes
+	// SearchScopes description: Predefined search snippets that can be appended to any search (also known as search scopes)
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
 	// SearchUppercase description: REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.
 	SearchUppercase *bool `json:"search.uppercase,omitempty"`
@@ -1288,19 +1324,33 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
+	// AcceptSearchSuggestionOnEnter description: Whether the search bar should select completion suggestions when pressing enter
+	AcceptSearchSuggestionOnEnter *bool `json:"acceptSearchSuggestionOnEnter,omitempty"`
+	// ApiDocs description: Enables API documentation.
+	ApiDocs *bool `json:"apiDocs,omitempty"`
+	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
+	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
+	// CodeInsightsDashboards description: Enables code insights dashboards separation for the code insight page.
+	CodeInsightsDashboards *bool `json:"codeInsightsDashboards,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
-	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
+	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// DesignRefreshToggleEnabled description: Enables access to the design refresh toggle in the user menu.
+	DesignRefreshToggleEnabled *bool `json:"designRefreshToggleEnabled,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
-	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
+	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
-	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
+	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.
+	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
+	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
+	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
-	// SearchStreaming description: Enables experimental streaming support.
+	// SearchStreaming description: DEPRECATED: This feature is now permanently enabled. Enables streaming search support.
 	SearchStreaming *bool `json:"searchStreaming,omitempty"`
 	// ShowCodeMonitoringTestEmailButton description: Enables the 'Send test email' debugging button for code monitoring.
 	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
@@ -1368,7 +1418,7 @@ type SiteConfiguration struct {
 	CampaignsEnabled *bool `json:"campaigns.enabled,omitempty"`
 	// CampaignsRestrictToAdmins description: DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.
 	CampaignsRestrictToAdmins *bool `json:"campaigns.restrictToAdmins,omitempty"`
-	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature.
+	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
@@ -1428,6 +1478,12 @@ type SiteConfiguration struct {
 	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
 	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
+	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
+	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
+	// InsightsQueryWorkerConcurrency description: Number of concurrent executions of a code insight query on a worker node
+	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
+	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
+	InsightsQueryWorkerRateLimit *float64 `json:"insights.query.worker.rateLimit,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.

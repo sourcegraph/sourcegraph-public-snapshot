@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,10 +27,11 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	var cancel int
@@ -64,17 +66,18 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	var cancel int
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, func() { cancel++ }, true, nil)
 	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
 	store.MarkErroredFunc.SetDefaultReturn(true, nil)
-	handler.HandleFunc.SetDefaultReturn(fmt.Errorf("oops"))
+	handler.HandleFunc.SetDefaultReturn(errors.Errorf("oops"))
 
 	worker := newWorker(context.Background(), store, handler, options, clock)
 	go func() { worker.Start() }()
@@ -110,10 +113,11 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	var cancel int
@@ -149,6 +153,8 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 }
 
 func TestWorkerConcurrent(t *testing.T) {
+	t.Skip("Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/22595")
+
 	NumTestRecords := 50
 
 	for numHandlers := 1; numHandlers < NumTestRecords; numHandlers++ {
@@ -159,10 +165,11 @@ func TestWorkerConcurrent(t *testing.T) {
 			handler := NewMockHandlerWithHooks()
 			clock := glock.NewMockClock()
 			options := WorkerOptions{
-				Name:        "test",
-				NumHandlers: numHandlers,
-				Interval:    time.Second,
-				Metrics:     NewMetrics(&observation.TestContext, "", nil),
+				Name:           "test",
+				WorkerHostname: "test",
+				NumHandlers:    numHandlers,
+				Interval:       time.Second,
+				Metrics:        NewMetrics(&observation.TestContext, "", nil),
 			}
 
 			cancelCalls := make([]int, NumTestRecords)
@@ -252,10 +259,11 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, func() {}, true, nil)
@@ -279,10 +287,11 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:        "test",
-		NumHandlers: 1,
-		Interval:    time.Second,
-		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+		Name:           "test",
+		WorkerHostname: "test",
+		NumHandlers:    1,
+		Interval:       time.Second,
+		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	var cancel1, cancel2, cancel3 int
@@ -311,7 +320,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 		t.Errorf("unexpected dequeue call count. want=%d have=%d", 3, callCount)
 	} else {
 		for i, expected := range []string{"A", "B", "C"} {
-			if extra := store.DequeueFunc.History()[i].Arg1; extra != expected {
+			if extra := store.DequeueFunc.History()[i].Arg2; extra != expected {
 				t.Errorf("unexpected extra argument for dequeue call %d. want=%q have=%q", i, expected, extra)
 			}
 		}

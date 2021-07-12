@@ -3,7 +3,7 @@ package gitlaboauth
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -30,6 +32,8 @@ func TestMiddleware(t *testing.T) {
 
 	const mockUserID = 123
 
+	db := dbtest.NewDB(t, "")
+
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("got through"))
 		if err != nil {
@@ -40,8 +44,8 @@ func TestMiddleware(t *testing.T) {
 	authedHandler.Handle("/.api/", Middleware(nil).API(h))
 	authedHandler.Handle("/", Middleware(nil).App(h))
 
-	mockGitLabCom := newMockProvider(t, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
-	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instance-client", "github-private-instance-secret", "https://mycompany.com/")
+	mockGitLabCom := newMockProvider(t, db, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
+	mockPrivateGitLab := newMockProvider(t, db, "gitlab-private-instance-client", "github-private-instance-secret", "https://mycompany.com/")
 	providers.MockProviders = []providers.Provider{mockGitLabCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
@@ -99,7 +103,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,7 +127,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitLabCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "read_user read_api"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -156,7 +160,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockPrivateGitLab.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "read_user read_api"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -189,7 +193,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitLabCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "read_user read_api"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -249,7 +253,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -262,7 +266,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -277,7 +281,7 @@ type MockProvider struct {
 	lastCallbackRequestURL *url.URL
 }
 
-func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *MockProvider {
+func newMockProvider(t *testing.T, db dbutil.DB, clientID, clientSecret, baseURL string) *MockProvider {
 	var (
 		mp       MockProvider
 		problems []string
@@ -288,7 +292,7 @@ func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *Mock
 		ClientID:     clientID,
 		Type:         extsvc.TypeGitLab,
 	}}
-	mp.Provider, problems = parseProvider("https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
+	mp.Provider, problems = parseProvider(db, "https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
 	if len(problems) > 0 {
 		t.Fatalf("Expected 0 problems, but got %d: %+v", len(problems), problems)
 	}

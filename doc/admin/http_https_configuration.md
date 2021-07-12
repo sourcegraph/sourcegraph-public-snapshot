@@ -37,12 +37,12 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.27.4
+  sourcegraph/server:3.29.1
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
 
-We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md) documentation for more information.
+We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](https://docs.sourcegraph.com/admin/install/kubernetes/configure) documentation for more information.
 
 ### NGINX SSL/HTTPS configuration
 
@@ -161,7 +161,41 @@ Sourcegraph's [Docker Compose deployment](../admin/install/docker-compose/index.
 - HTTPS with automatically provisioned Let's Encrypt certificates
 - HTTPS with custom certificates that you provide
 
-Usage instructions are provided via [the `caddy` service's inline comments inside the `docker-compose.yaml` definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.14/docker-compose/docker-compose.yaml#L3:L58).
+Usage instructions are provided via [the `caddy` service's inline comments inside the `docker-compose.yaml` definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.14/docker-compose/docker-compose.yaml#L3:L58). Detailed steps are found below.
+
+**Important:** When setting up caddy's automatic Lets Encypt TLS certification for HTTPS we strongly recommended to test with the staging configuration first, however TLS certs provided by Lets Encrypt staging will not be verifiable, and the production env variable must be uncommented for functional HTTPS.
+
+### HTTPS with Custom Certificates in Docker Compose
+
+In https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml:
+    
+1. In the Environment section of the compose file uncomment & update this line with your Sourcegraph Site Address:
+
+```
+- 'SRC_SITE_ADDRESS=sourcegraph.example.com'
+```    
+
+2. In Volumes section of the compose file comment out the following line 
+
+```
+- '../caddy/builtins/http.Caddyfile:/etc/caddy/Caddyfile'
+```        
+      
+
+3. In Volumes section of the compose file uncomment the following line: 
+```
+- '../caddy/builtins/https.custom-cert.Caddyfile:/etc/caddy/Caddyfile' 
+``` 
+
+4. In Volumes section of the compose file uncomment and update the following line with your custom cert path: 
+```
+- '/LOCAL/CERT/PATH.pem:/sourcegraph.pem'
+```
+
+5. In Volumes section of the compose file uncomment and update the following line with your custom cert path: 
+```
+- '/LOCAL/KEY/PATH.key:/sourcegraph.key'
+```
 
 ## Other Sourcegraph clusters (e.g. pure-Docker)
 

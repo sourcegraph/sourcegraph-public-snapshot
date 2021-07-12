@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -244,6 +244,16 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ 
 	return json.Marshal(codeMonitoringUsage)
 }
 
+func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
+
+	versions, err := versions.GetVersions()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(versions)
+}
+
 func getDependencyVersions(ctx context.Context, db dbutil.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
 	var (
 		err error
@@ -297,7 +307,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 
 		parts := bytes.Split(line, []byte(":"))
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("expected a key:value line, got %q", string(line))
+			return nil, errors.Errorf("expected a key:value line, got %q", string(line))
 		}
 		m[string(parts[0])] = string(parts[1])
 	}
@@ -420,7 +430,12 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
 		}
 
-		r.ExternalServices, err = externalServiceKinds(ctx)
+		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeHostVersionsJSON failed", "error", err)
+		}
+
+		r.ExternalServices, err = externalServiceKinds(ctx, db)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
 		}
@@ -501,9 +516,9 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
+func externalServiceKinds(ctx context.Context, db dbutil.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = database.GlobalExternalServices.DistinctKinds(ctx)
+	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
 	return kinds, err
 }
 
@@ -532,14 +547,14 @@ func check(db dbutil.DB) {
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 			var description string
-			if body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 30)); err != nil {
+			if body, err := io.ReadAll(io.LimitReader(resp.Body, 30)); err != nil {
 				description = err.Error()
 			} else if len(body) == 0 {
 				description = "(no response body)"
 			} else {
 				description = strconv.Quote(string(bytes.TrimSpace(body)))
 			}
-			return "", fmt.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
+			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
 		}
 
 		if resp.StatusCode == http.StatusNoContent {

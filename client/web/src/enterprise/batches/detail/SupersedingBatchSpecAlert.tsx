@@ -1,5 +1,4 @@
 import { parseISO } from 'date-fns'
-import CreationIcon from 'mdi-react/CreationIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -20,13 +19,10 @@ export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatch
     const { applyURL, createdAt } = spec
     return (
         <DismissibleAlert
-            className="alert alert-info"
+            className="alert-info"
             partialStorageKey={`superseding-spec-${parseISO(spec.createdAt).getTime()}`}
         >
             <div className="d-flex align-items-center">
-                <div className="d-none d-md-block redesign-d-none">
-                    <CreationIcon className="icon icon-inline mr-2" />
-                </div>
                 <div className="flex-grow-1">
                     A <Link to={applyURL}>modified batch spec</Link> was uploaded but not applied{' '}
                     <Timestamp date={createdAt} />.

@@ -33,6 +33,12 @@ if [ -f .env ]; then
 fi
 
 # Verify postgresql config.
+export PGPORT=${PGPORT:-5432}
+export PGHOST=${PGHOST:-localhost}
+export PGUSER=${PGUSER:-sourcegraph}
+export PGPASSWORD=${PGPASSWORD:-sourcegraph}
+export PGDATABASE=${PGDATABASE:-sourcegraph}
+export PGSSLMODE=${PGSSLMODE:-disable}
 hash psql 2>/dev/null || {
   # "brew install postgres" does not put psql on the $PATH by default;
   # try to fix this automatically if we can.
@@ -178,14 +184,6 @@ EOF
 
 # Kick off all build processes in parallel
 goreman --set-ports=false --exit-on-error -f "${tmp_install_procfile}" start
-
-# Once we've built the Go code and the frontend code, we build the frontend
-# code once in the background to make sure editor codeintel works.
-# This is fast if no changes were made.
-# Don't fail if it errors as this is only for codeintel, not for the build.
-trap 'kill $build_ts_pid; exit' EXIT
-(yarn --silent run build-ts || true) &
-build_ts_pid="$!"
 
 # Now launch the services in $PROCFILE
 export PROCFILE=${PROCFILE:-dev/Procfile}

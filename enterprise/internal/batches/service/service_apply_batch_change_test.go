@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -14,7 +15,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -24,7 +25,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	admin := ct.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
@@ -704,12 +705,12 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error, but got none")
 			}
-			notFoundErr, ok := err.(*database.RepoNotFoundErr)
-			if !ok {
+			var e *database.RepoNotFoundErr
+			if !errors.As(err, &e) {
 				t.Fatalf("expected RepoNotFoundErr but got: %s", err)
 			}
-			if notFoundErr.ID != repos[1].ID {
-				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
+			if e.ID != repos[1].ID {
+				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", e.ID)
 			}
 		})
 

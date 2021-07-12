@@ -3,13 +3,12 @@ package authz
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -114,12 +114,12 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		if p.UserID != 1 {
-			return fmt.Errorf("UserID: want 1 but got %d", p.UserID)
+			return errors.Errorf("UserID: want 1 but got %d", p.UserID)
 		}
 
 		wantIDs := []uint32{1}
 		if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
-			return fmt.Errorf("IDs mismatch (-want +got):\n%s", diff)
+			return errors.Errorf("IDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
@@ -221,6 +221,27 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 			return nil, &github.APIError{Code: http.StatusUnauthorized}
+		}
+
+		err := s.syncUserPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !calledTouchExpired {
+			t.Fatal("!calledTouchExpired")
+		}
+	})
+
+	t.Run("forbidden", func(t *testing.T) {
+		calledTouchExpired := false
+		database.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
+			calledTouchExpired = true
+			return nil
+		}
+
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+			return nil, gitlab.NewHTTPError(http.StatusForbidden, nil)
 		}
 
 		err := s.syncUserPerms(context.Background(), 1, false)
@@ -393,12 +414,12 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		}
 		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 			if p.RepoID != 1 {
-				return fmt.Errorf("RepoID: want 1 but got %d", p.RepoID)
+				return errors.Errorf("RepoID: want 1 but got %d", p.RepoID)
 			}
 
 			wantUserIDs := []uint32{1}
 			if diff := cmp.Diff(wantUserIDs, p.UserIDs.ToArray()); diff != "" {
-				return fmt.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
+				return errors.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
 			}
 			return nil
 		}
@@ -447,12 +468,12 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 	edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 		if p.RepoID != 1 {
-			return fmt.Errorf("RepoID: want 1 but got %d", p.RepoID)
+			return errors.Errorf("RepoID: want 1 but got %d", p.RepoID)
 		}
 
 		wantUserIDs := []uint32{1}
 		if diff := cmp.Diff(wantUserIDs, p.UserIDs.ToArray()); diff != "" {
-			return fmt.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
+			return errors.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
@@ -463,7 +484,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			AccountIDs:  []string{"pending_user"},
 		}
 		if diff := cmp.Diff(wantAccounts, accounts); diff != "" {
-			return fmt.Errorf("accounts mismatch (-want +got):\n%s", diff)
+			return errors.Errorf("accounts mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}

@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -99,10 +98,21 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 	return mux
 }
 
+// serviceType -> scopes
+var extraScopes = map[string][]string{
+	// We need `repo` scopes for reading private repos
+	extsvc.TypeGitHub: {"repo"},
+	// We need full `api` scope for cloning private repos
+	extsvc.TypeGitLab: {"api"},
+}
+
 func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]string, error) {
-	// On Sourcegraph Cloud and for GitHub or GitLab, check if the user is allowed to
-	// add private code and if so, ask the code host for additional scopes
-	if !envvar.SourcegraphDotComMode() || (serviceType != extsvc.TypeGitHub && serviceType != extsvc.KindGitLab) {
+	// Extra scopes are only needed on Sourcegraph.com
+	if !envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+	scopes, ok := extraScopes[serviceType]
+	if !ok {
 		return nil, nil
 	}
 
@@ -113,15 +123,7 @@ func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]st
 	if mode != conf.ExternalServiceModeAll {
 		return nil, nil
 	}
-
-	switch serviceType {
-	case extsvc.TypeGitHub:
-		return []string{"repo"}, nil
-	case extsvc.TypeGitLab:
-		return []string{}, nil
-	default:
-		return nil, errors.Errorf("unknown service type: %q", serviceType)
-	}
+	return scopes, nil
 }
 
 // withOAuthExternalHTTPClient updates client such that the
@@ -149,7 +151,7 @@ func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReade
 		return "", reader, nil
 	}
 	defer reader.Close()
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return "", nil, err
 	}
@@ -157,7 +159,7 @@ func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReade
 	if len(preview) > 1000 {
 		preview = preview[:1000]
 	}
-	return preview, ioutil.NopCloser(bytes.NewReader(b)), nil
+	return preview, io.NopCloser(bytes.NewReader(b)), nil
 }
 
 func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {

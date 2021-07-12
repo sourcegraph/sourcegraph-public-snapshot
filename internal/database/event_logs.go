@@ -8,12 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -55,6 +56,8 @@ type Event struct {
 	Argument        json.RawMessage
 	Source          string
 	Timestamp       time.Time
+	FeatureFlags    featureflag.FlagSet
+	CohortID        *string // date in YYYY-MM-DD format
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -63,9 +66,14 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 		argument = json.RawMessage([]byte(`{}`))
 	}
 
-	_, err := l.Handle().DB().ExecContext(
+	featureFlags, err := json.Marshal(e.FeatureFlags)
+	if err != nil {
+		return err
+	}
+
+	_, err = l.Handle().DB().ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
 		e.Name,
 		e.URL,
 		e.UserID,
@@ -74,6 +82,8 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 		argument,
 		version.Version(),
 		e.Timestamp.UTC(),
+		featureFlags,
+		e.CohortID,
 	)
 	if err != nil {
 		return errors.Wrap(err, "INSERT")
@@ -310,12 +320,12 @@ type PercentileValue struct {
 func (l *EventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
 
 	endDate, ok := calcEndDate(startDate, periodType, periods)
 	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
@@ -748,7 +758,7 @@ SELECT
 	(SELECT count FROM active_repositories_with_upload) AS repositories_with_uploads
 `
 
-// AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
+// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
 func (l *EventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
@@ -825,13 +835,22 @@ SELECT
 FROM events GROUP BY name, current_week, language_id;
 `
 
-// AggregatedSearchEvents calculates AggregatedEvent for each every unique event type related to search.
-func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
-	return l.aggregatedSearchEvents(ctx, time.Now().UTC())
+// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
+func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
+	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
+	if err != nil {
+		return nil, err
+	}
+
+	usageEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchUsageEventsQuery, now)
+	if err != nil {
+		return nil, err
+	}
+	return append(latencyEvents, usageEvents...), nil
 }
 
-func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
-	query := sqlf.Sprintf(aggregatedSearchEventsQuery, now, now, now, now)
+func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, queryString string, now time.Time) (events []types.SearchAggregatedEvent, err error) {
+	query := sqlf.Sprintf(queryString, now, now, now, now)
 
 	rows, err := l.Query(ctx, query)
 	if err != nil {
@@ -840,7 +859,7 @@ func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Tim
 	defer rows.Close()
 
 	for rows.Next() {
-		var event types.AggregatedEvent
+		var event types.SearchAggregatedEvent
 		err := rows.Scan(
 			&event.Name,
 			&event.Month,
@@ -870,7 +889,7 @@ func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Tim
 	return events, nil
 }
 
-var searchEventNames = []string{
+var searchLatencyEventNames = []string{
 	"'search.latencies.literal'",
 	"'search.latencies.regexp'",
 	"'search.latencies.structural'",
@@ -881,8 +900,8 @@ var searchEventNames = []string{
 	"'search.latencies.symbol'",
 }
 
-var aggregatedSearchEventsQuery = `
--- source: internal/database/event_logs.go:aggregatedSearchEvents
+var aggregatedSearchLatencyEventsQuery = `
+-- source: internal/database/event_logs.go:aggregatedSearchLatencyEvents
 WITH events AS (
   SELECT
     name,
@@ -898,7 +917,7 @@ WITH events AS (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND name IN (` + strings.Join(searchEventNames, ", ") + `)
+    AND name IN (` + strings.Join(searchLatencyEventNames, ", ") + `)
 )
 SELECT
   name,
@@ -915,6 +934,63 @@ SELECT
   PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
   PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
 FROM events GROUP BY name, current_month, current_week, current_day
+`
+
+var aggregatedSearchUsageEventsQuery = `
+-- source: internal/database/event_logs.go:aggregatedSearchUsageEvents
+WITH events AS (
+  SELECT
+    json.key::text,
+    json.value::text,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+  FROM event_logs
+  CROSS JOIN LATERAL jsonb_each(argument->'code_search'->'query_data'->'query') json
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    AND name = 'SearchResultsQueried'
+)
+SELECT
+  key,
+  current_month,
+  current_week,
+  current_day,
+  SUM(case when month = current_month then value::int else 0 end) AS total_month,
+  SUM(case when week = current_week then value::int else 0 end) AS total_week,
+  SUM(case when day = current_day then value::int else 0 end) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  NULL,
+  NULL,
+  NULL
+FROM events
+WHERE key IN
+  (
+	'count_or',
+	'count_and',
+	'count_not',
+	'count_select_repo',
+	'count_select_file',
+	'count_select_content',
+	'count_select_symbol',
+	'count_select_commit_diff_added',
+	'count_select_commit_diff_removed',
+	'count_repo_contains',
+	'count_repo_contains_file',
+	'count_repo_contains_content',
+	'count_repo_contains_commit_after',
+	'count_count_all',
+	'count_non_global_context',
+	'count_only_patterns',
+	'count_only_patterns_three_or_more'
+  )
+GROUP BY key, current_month, current_week, current_day
 `
 
 // userIDQueryFragment is a query fragment that can be used to return the anonymous user ID

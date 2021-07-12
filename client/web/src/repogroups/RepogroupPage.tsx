@@ -18,17 +18,17 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ShowQueryBuilderProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/input/SearchPageInput'
@@ -49,14 +49,11 @@ export interface RepogroupPageProps
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         OnboardingTourProps,
-        ShowQueryBuilderProps {
+        ShowQueryBuilderProps,
+        FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -69,9 +66,6 @@ export interface RepogroupPageProps
 
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-
-    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
-    enableSmartQuery: boolean
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {
@@ -102,7 +96,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     }
 
     return (
-        <div className="web-content repogroup-page">
+        <div className="repogroup-page">
             <PageTitle title={props.repogroupMetadata.title} />
             <RepogroupPageLogo
                 className="repogroup-page__logo"
@@ -150,7 +144,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                     </small>
                                     <div className="d-flex">
                                         <button
-                                            className="btn btn-primary btn-sm search-button__btn test-search-button btn-secondary"
+                                            className="btn btn-secondary btn-sm repogroup-page__search-button"
                                             type="button"
                                             aria-label="Search"
                                             onClick={onSubmitExample(
@@ -168,7 +162,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     <div className="repogroup-page__column col-xs-12 col-lg-5">
                         <div className="order-2-lg order-1-xs">
                             <div className="repogroup-page__repo-card card">
-                                <h2 className="web-content__title">
+                                <h2>
                                     <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                                     Repositories
                                 </h2>

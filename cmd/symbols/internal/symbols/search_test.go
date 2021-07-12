@@ -3,7 +3,6 @@ package symbols
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -47,7 +46,7 @@ func BenchmarkSearch(b *testing.B) {
 	runIndexTest := func(test protocol.SearchArgs) {
 		b.Run(fmt.Sprintf("indexing %s@%s", path.Base(string(test.Repo)), test.CommitID[:3]), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				tempFile, err := ioutil.TempFile("", "")
+				tempFile, err := os.CreateTemp("", "")
 				if err != nil {
 					b.Fatal(err)
 				}

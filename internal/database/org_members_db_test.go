@@ -2,11 +2,12 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -15,7 +16,8 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create fixtures.
@@ -73,7 +75,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 			}
 		}
 		if !reflect.DeepEqual(got, want) {
-			return fmt.Errorf("got membership %+v, want %+v", got, want)
+			return errors.Errorf("got membership %+v, want %+v", got, want)
 		}
 		return nil
 	}

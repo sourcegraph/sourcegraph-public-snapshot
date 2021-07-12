@@ -36,7 +36,7 @@ module.exports = api => {
             'web.url-search-params',
             // Commonly needed by extensions (used by vscode-jsonrpc)
             'web.immediate',
-            // Avoids issues with RxJS interop
+            // Always define Symbol.observable before libraries are loaded, ensuring interopability between different libraries.
             'esnext.symbol.observable',
             // Webpack v4 chokes on optional chaining and nullish coalescing syntax, fix will be released with webpack v5.
             '@babel/plugin-proposal-optional-chaining',
@@ -49,12 +49,7 @@ module.exports = api => {
       '@babel/preset-typescript',
       '@babel/preset-react',
     ],
-    plugins: [
-      ['@babel/plugin-transform-typescript', { isTSX: true }],
-      'babel-plugin-lodash',
-      // Node 12 (released 2019 Apr 23) supports these natively, but there seem to be issues when used with TypeScript.
-      ['@babel/plugin-proposal-class-properties', { loose: true }],
-    ],
+    plugins: [['@babel/plugin-transform-typescript', { isTSX: true }], 'babel-plugin-lodash'],
     // Required for d3-array v1.2 (dependency of recharts). See https://github.com/babel/babel/issues/11038
     ignore: [new RegExp('d3-array/src/cumsum.js')],
   }

@@ -10,12 +10,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -61,17 +61,22 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		uc := &UserCredential{
-			EncryptionKeyID:     "",
-			EncryptedCredential: enc,
-			key:                 et.TestKey{},
-		}
 
-		have, err := uc.Authenticator(ctx)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		} else if diff := cmp.Diff(have, a); diff != "" {
-			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+		for _, keyID := range []string{"", UserCredentialUnmigratedEncryptionKeyID} {
+			t.Run(keyID, func(t *testing.T) {
+				uc := &UserCredential{
+					EncryptionKeyID:     keyID,
+					EncryptedCredential: enc,
+					key:                 et.TestKey{},
+				}
+
+				have, err := uc.Authenticator(ctx)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				} else if diff := cmp.Diff(have, a); diff != "" {
+					t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+				}
+			})
 		}
 	})
 
@@ -153,7 +158,8 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 }
 
 func TestUserCredentials_CreateUpdate(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
@@ -240,7 +246,8 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 }
 
 func TestUserCredentials_Delete(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -249,8 +256,8 @@ func TestUserCredentials_Delete(t *testing.T) {
 			t.Error("unexpected nil error")
 		}
 
-		e, ok := err.(UserCredentialNotFoundErr)
-		if !ok {
+		var e UserCredentialNotFoundErr
+		if !errors.As(err, &e) {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
 		if len(e.args) != 1 || e.args[0].(int64) != 1 {
@@ -277,14 +284,15 @@ func TestUserCredentials_Delete(t *testing.T) {
 		}
 
 		_, err = UserCredentials(db, key).GetByID(ctx, cred.ID)
-		if _, ok := err.(UserCredentialNotFoundErr); !ok {
+		if !errors.HasType(err, UserCredentialNotFoundErr{}) {
 			t.Errorf("unexpected error retrieving credential after deletion: %v", err)
 		}
 	})
 }
 
 func TestUserCredentials_GetByID(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -296,8 +304,8 @@ func TestUserCredentials_GetByID(t *testing.T) {
 			t.Error("unexpected nil error")
 		}
 
-		e, ok := err.(UserCredentialNotFoundErr)
-		if !ok {
+		var e UserCredentialNotFoundErr
+		if !errors.As(err, &e) {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
 		if len(e.args) != 1 || e.args[0].(int64) != 1 {
@@ -330,7 +338,8 @@ func TestUserCredentials_GetByID(t *testing.T) {
 }
 
 func TestUserCredentials_GetByScope(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	scope := UserCredentialScope{
@@ -350,8 +359,8 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 			t.Error("unexpected nil error")
 		}
 
-		e, ok := err.(UserCredentialNotFoundErr)
-		if !ok {
+		var e UserCredentialNotFoundErr
+		if !errors.As(err, &e) {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
 		if diff := cmp.Diff(e.args, []interface{}{scope}); diff != "" {
@@ -376,7 +385,8 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 }
 
 func TestUserCredentials_List(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	githubScope := UserCredentialScope{
@@ -513,7 +523,8 @@ func TestUserCredentials_List(t *testing.T) {
 }
 
 func TestUserCredentials_Invalid(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("marshal", func(t *testing.T) {

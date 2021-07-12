@@ -2,9 +2,8 @@ package sources
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -51,6 +50,7 @@ type FakeChangesetSource struct {
 	CreateCommentCalled         bool
 	AuthenticatedUsernameCalled bool
 	ValidateAuthenticatorCalled bool
+	MergeChangesetCalled        bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -110,11 +110,11 @@ func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Chang
 	}
 
 	if c.HeadRef != s.WantHeadRef {
-		return s.ChangesetExists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
+		return s.ChangesetExists, errors.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
 	}
 
 	if c.BaseRef != s.WantBaseRef {
-		return s.ChangesetExists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
+		return s.ChangesetExists, errors.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
 	if err := c.SetMetadata(s.FakeMetadata); err != nil {
@@ -153,11 +153,11 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *Changeset)
 	}
 
 	if c.HeadRef != s.WantHeadRef {
-		return s.ChangesetExists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
+		return s.ChangesetExists, errors.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
 	}
 
 	if c.BaseRef != s.WantBaseRef {
-		return s.ChangesetExists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
+		return s.ChangesetExists, errors.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
 	if err := c.SetMetadata(s.FakeMetadata); err != nil {
@@ -179,7 +179,7 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *Changeset)
 	}
 
 	if c.BaseRef != s.WantBaseRef {
-		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
+		return errors.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
 	s.UpdatedChangesets = append(s.UpdatedChangesets, c)
@@ -277,4 +277,9 @@ func (s *FakeChangesetSource) ValidateAuthenticator(context.Context) error {
 func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {
 	s.AuthenticatedUsernameCalled = true
 	return s.Username, nil
+}
+
+func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+	s.MergeChangesetCalled = true
+	return s.Err
 }

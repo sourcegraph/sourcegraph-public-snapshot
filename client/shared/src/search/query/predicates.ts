@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { Completion } from './filters'
+import { Completion, resolveFieldAlias } from './filters'
 
 interface Access {
     name: string
@@ -28,6 +28,15 @@ export const PREDICATES: Access[] = [
             },
         ],
     },
+    {
+        name: 'file',
+        fields: [
+            {
+                name: 'contains',
+                fields: [{ name: 'content' }],
+            },
+        ],
+    },
 ]
 
 /** Represents a predicate's components corresponding to the syntax path(parameters). */
@@ -51,6 +60,12 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
     return resolveAccess(path.slice(1), subtree.fields)
 }
 
+// scans a string up to closing parentheses. Examples:
+// - `foo` succeeds, parentheses are absent, so it is vacuously balanced
+// - `foo(...)` succeeds up to the closing `)`
+// - `foo(...))` succeeds up to the first `)`, which is recognized as the closing paren
+// - `foo(` does not succeed, it is not balanced
+// - `foo)` does not succeed, it is not balanced
 export const scanBalancedParens = (input: string): string | undefined => {
     let adjustedStart = 0
     let balanced = 0
@@ -70,6 +85,10 @@ export const scanBalancedParens = (input: string): string | undefined => {
         } else if (current === ')') {
             balanced -= 1
             result.push(current)
+            if (balanced === 0) {
+                // we've reached a closing parenthesis where the string is balanced
+                break
+            }
         } else if (current === '\\') {
             if (input[adjustedStart] !== undefined) {
                 nextChar() // consume escaped
@@ -105,6 +124,7 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
     const name = match[0]
     const path = name.split('.')
+    field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)
     if (!access) {
         return undefined

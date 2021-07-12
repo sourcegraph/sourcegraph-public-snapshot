@@ -2,12 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -33,7 +33,16 @@ func TestRepositories(t *testing.T) {
 	}
 
 	database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return 3, nil }
-	gqltesting.RunTests(t, []*gqltesting.Test{
+
+	// Test as non site admin first
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{
+			ID:        1,
+			SiteAdmin: false,
+		}, nil
+	}
+
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -54,6 +63,49 @@ func TestRepositories(t *testing.T) {
 							{ "name": "repo3" }
 						],
 						"totalCount": null,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:          []interface{}{"repositories", "totalCount"},
+					Message:       backend.ErrMustBeSiteAdmin.Error(),
+					ResolverError: backend.ErrMustBeSiteAdmin,
+				},
+			},
+		},
+	})
+
+	// Then test as site admin
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{
+			ID:        1,
+			SiteAdmin: true,
+		}, nil
+	}
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+				{
+					repositories {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo1" },
+							{ "name": "repo2" },
+							{ "name": "repo3" }
+						],
+						"totalCount": 3,
 						"pageInfo": {"hasNextPage": false}
 					}
 				}
@@ -81,7 +133,7 @@ func TestRepositories(t *testing.T) {
 							{ "name": "repo2" },
 							{ "name": "repo3" }
 						],
-						"totalCount": null,
+						"totalCount": 3,
 						"pageInfo": {"hasNextPage": false}
 					}
 				}
@@ -192,7 +244,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -229,7 +281,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -266,7 +318,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -303,7 +355,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -344,7 +396,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -379,7 +431,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		}
 		defer func() { database.Mocks.Repos.List = nil }()
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `
@@ -397,9 +449,9 @@ func TestRepositories_CursorPagination(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
-						Message:       `cannot unmarshal repository cursor type: ""`,
 						Path:          []interface{}{"repositories"},
+						Message:       `cannot unmarshal repository cursor type: ""`,
+						ResolverError: errors.Errorf(`cannot unmarshal repository cursor type: ""`),
 					},
 				},
 			},

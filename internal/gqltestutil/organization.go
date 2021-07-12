@@ -1,7 +1,7 @@
 package gqltestutil
 
 import (
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // Organization contains basic information of an organization.

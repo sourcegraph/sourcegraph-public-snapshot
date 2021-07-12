@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -340,9 +340,15 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = p.mr
 			p.mockGetMergeRequest(43, nil, gitlab.ErrMergeRequestNotFound)
 
+			expected := ChangesetNotFoundError{
+				Changeset: &Changeset{
+					Changeset: &btypes.Changeset{ExternalID: "43"},
+				},
+			}
+
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); err == nil {
 				t.Fatal("unexpectedly no error for not found changeset")
-			} else if err.Error() != (ChangesetNotFoundError{Changeset: &Changeset{Changeset: &btypes.Changeset{ExternalID: "43"}}}).Error() {
+			} else if !errors.Is(err, expected) {
 				t.Fatalf("unexpected error: %+v", err)
 			}
 		})
@@ -1056,7 +1062,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 				src, err = src.WithAuthenticator(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {

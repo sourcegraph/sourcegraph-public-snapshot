@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -73,127 +73,11 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
-	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
-	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
 	return mux
-}
-
-func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoExternalServicesRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	rs, err := s.Store.RepoStore.List(r.Context(), database.ReposListOptions{
-		IDs: []api.RepoID{req.ID},
-	})
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	if len(rs) == 0 {
-		respond(w, http.StatusNotFound, errors.Errorf("repository with ID %v does not exist", req.ID))
-		return
-	}
-
-	var resp protocol.RepoExternalServicesResponse
-
-	svcIDs := rs[0].ExternalServiceIDs()
-	if len(svcIDs) == 0 {
-		respond(w, http.StatusOK, resp)
-		return
-	}
-
-	args := database.ExternalServicesListOptions{
-		IDs:              svcIDs,
-		OrderByDirection: "ASC",
-	}
-
-	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	resp.ExternalServices = newExternalServices(es...)
-
-	respond(w, http.StatusOK, resp)
-}
-
-func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
-	var req protocol.ExcludeRepoRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	rs, err := s.Store.RepoStore.List(r.Context(), database.ReposListOptions{
-		IDs: []api.RepoID{req.ID},
-	})
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	var resp protocol.ExcludeRepoResponse
-	if len(rs) == 0 {
-		log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
-		respond(w, http.StatusOK, resp)
-		return
-	}
-
-	args := database.ExternalServicesListOptions{
-		Kinds:            types.Repos(rs).Kinds(),
-		OrderByDirection: "ASC",
-	}
-
-	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	tmp := make([]*types.Repo, len(rs))
-	for i, r := range rs {
-		tmp[i] = &types.Repo{
-			ID:           r.ID,
-			ExternalRepo: r.ExternalRepo,
-			Name:         r.Name,
-			Private:      r.Private,
-			URI:          r.URI,
-			Description:  r.Description,
-			Fork:         r.Fork,
-			Archived:     r.Archived,
-			CreatedAt:    r.CreatedAt,
-			UpdatedAt:    r.UpdatedAt,
-			DeletedAt:    r.DeletedAt,
-			Metadata:     r.Metadata,
-		}
-	}
-
-	for _, e := range es {
-		if err := e.Exclude(tmp...); err != nil {
-			respond(w, http.StatusInternalServerError, err)
-			return
-		}
-	}
-
-	err = s.Store.ExternalServiceStore.Upsert(r.Context(), es...)
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	resp.ExternalServices = newExternalServices(es...)
-
-	respond(w, http.StatusOK, resp)
 }
 
 // TODO(tsenart): Reuse this function in all handlers.
@@ -219,29 +103,6 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 			log15.Error("failed to write response", "error", err)
 		}
 	}
-}
-
-func newExternalServices(es ...*types.ExternalService) []api.ExternalService {
-	svcs := make([]api.ExternalService, 0, len(es))
-
-	for _, e := range es {
-		svc := api.ExternalService{
-			ID:          e.ID,
-			Kind:        e.Kind,
-			DisplayName: e.DisplayName,
-			Config:      e.Config,
-			CreatedAt:   e.CreatedAt,
-			UpdatedAt:   e.UpdatedAt,
-		}
-
-		if e.IsDeleted() {
-			svc.DeletedAt = e.DeletedAt
-		}
-
-		svcs = append(svcs, svc)
-	}
-
-	return svcs
 }
 
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
@@ -465,10 +326,10 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		repo = list[0]
 	}
 
-	// If we are sourcegraph.com we don't sync our site level code hosts in the background
-	// since there are too many repos. Instead we use an incremental approach where we check
-	// for changes everytime a user browses a repo. RepoLookup is the signal
-	// we rely on to check metadata.
+	// If we are sourcegraph.com we don't sync our "cloud_default" code hosts in the background
+	// since there are too many repos. Instead we use an incremental approach where we check for
+	// changes everytime a user browses a repo. RepoLookup is the signal we rely on to check
+	// metadata.
 
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 	if s.SourcegraphDotComMode && codehost != nil {
@@ -645,7 +506,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
-		return nil, fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)
+		return nil, errors.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)
 	}
 
 	info := protocol.RepoInfo{

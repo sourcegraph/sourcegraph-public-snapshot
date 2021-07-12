@@ -11,9 +11,9 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/gosyntect"
@@ -307,7 +307,7 @@ func splitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML,
 
 	table := doc.FirstChild.LastChild.FirstChild // html > body > table
 	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
-		return nil, fmt.Errorf("expected html->body->table, found %+v", table)
+		return nil, errors.Errorf("expected html->body->table, found %+v", table)
 	}
 
 	// Iterate over each table row and extract content

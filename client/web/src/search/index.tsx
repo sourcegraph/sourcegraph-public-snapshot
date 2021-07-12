@@ -7,6 +7,7 @@ import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { replaceRange } from '@sourcegraph/shared/src/util/strings'
@@ -20,8 +21,11 @@ import {
     fetchSearchContexts,
     convertVersionContextToSearchContext,
     fetchSearchContext,
+    createSearchContext,
+    updateSearchContext,
+    deleteSearchContext,
+    getUserSearchContextNamespaces,
 } from './backend'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -176,10 +180,6 @@ export interface MutableVersionContextProps extends VersionContextProps {
     previousVersionContext: string | null
 }
 
-export interface CopyQueryButtonProps {
-    copyQueryButton: boolean
-}
-
 export interface RepogroupHomepageProps {
     showRepogroupHomepage: boolean
 }
@@ -191,16 +191,37 @@ export interface OnboardingTourProps {
 export interface SearchContextProps {
     showSearchContext: boolean
     showSearchContextManagement: boolean
-    showSearchContextHighlightTourStep?: boolean
+    showSearchContextFeatureTour?: boolean
+    hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
+    getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
     fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof fetchSearchContexts
-    fetchSearchContext: typeof fetchSearchContext
     convertVersionContextToSearchContext: typeof convertVersionContextToSearchContext
     isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
+    fetchSearchContext: typeof fetchSearchContext
+    createSearchContext: typeof createSearchContext
+    updateSearchContext: typeof updateSearchContext
+    deleteSearchContext: typeof deleteSearchContext
 }
+
+export type SearchContextInputProps = Pick<
+    SearchContextProps,
+    | 'showSearchContext'
+    | 'hasUserAddedRepositories'
+    | 'hasUserAddedExternalServices'
+    | 'showSearchContextManagement'
+    | 'showSearchContextFeatureTour'
+    | 'defaultSearchContextSpec'
+    | 'selectedSearchContextSpec'
+    | 'setSelectedSearchContextSpec'
+    | 'fetchAutoDefinedSearchContexts'
+    | 'fetchSearchContexts'
+    | 'getUserSearchContextNamespaces'
+>
 
 export interface ShowQueryBuilderProps {
     showQueryBuilder: boolean

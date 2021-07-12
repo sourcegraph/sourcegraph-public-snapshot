@@ -2,7 +2,11 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { Observable } from 'rxjs'
 
+import { PageHeader } from '@sourcegraph/wildcard'
+
 import { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -10,7 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-export interface CreateCodeMonitorPageProps {
+interface CreateCodeMonitorPageProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
@@ -18,7 +22,7 @@ export interface CreateCodeMonitorPageProps {
     createCodeMonitor?: typeof _createCodeMonitor
 }
 
-export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
+const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
     authenticatedUser,
     history,
     location,
@@ -56,17 +60,21 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
     return (
         <div className="container col-8">
             <PageTitle title="Create new code monitor" />
-            <div className="page-header d-flex flex-wrap align-items-center">
-                <h2 className="flex-grow-1">Create code monitor</h2>
-            </div>
-            Code monitors watch your code for specific triggers and run actions in response.{' '}
-            <a
-                href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
-                target="_blank"
-                rel="noopener"
-            >
-                Learn more
-            </a>
+            <PageHeader
+                path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Create code monitor' }]}
+                description={
+                    <>
+                        Code monitors watch your code for specific triggers and run actions in response.{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Learn more
+                        </a>
+                    </>
+                }
+            />
             <CodeMonitorForm
                 history={history}
                 location={location}
@@ -78,3 +86,5 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
         </div>
     )
 }
+
+export const CreateCodeMonitorPage = withAuthenticatedUser(AuthenticatedCreateCodeMonitorPage)

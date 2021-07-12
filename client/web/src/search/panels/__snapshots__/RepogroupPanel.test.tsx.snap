@@ -82,6 +82,26 @@ exports[`RepogroupPanel renders correctly 1`] = `
           <img
             alt=""
             className="repogroup-panel__repogroup-icon mr-4"
+            src="https://avatars.githubusercontent.com/u/56493103?s=200&v=4"
+          />
+          <div
+            className="d-flex flex-column"
+          >
+            <AnchorLink
+              className="mb-1"
+              onClick={[Function]}
+              to="/temporal"
+            >
+              Temporal
+            </AnchorLink>
+          </div>
+        </div>
+        <div
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+        >
+          <img
+            alt=""
+            className="repogroup-panel__repogroup-icon mr-4"
             src="https://avatars.githubusercontent.com/u/4969009?s=200&v=4"
           />
           <div
@@ -276,6 +296,33 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   onClick={[Function]}
                 >
                   Android
+                </a>
+              </AnchorLink>
+            </div>
+          </div>
+          <div
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+            key="temporalio"
+          >
+            <img
+              alt=""
+              className="repogroup-panel__repogroup-icon mr-4"
+              src="https://avatars.githubusercontent.com/u/56493103?s=200&v=4"
+            />
+            <div
+              className="d-flex flex-column"
+            >
+              <AnchorLink
+                className="mb-1"
+                onClick={[Function]}
+                to="/temporal"
+              >
+                <a
+                  className="mb-1"
+                  href="/temporal"
+                  onClick={[Function]}
+                >
+                  Temporal
                 </a>
               </AnchorLink>
             </div>

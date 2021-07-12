@@ -13,6 +13,7 @@ import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
 import { BrandedStory } from '../../components/BrandedStory'
@@ -22,11 +23,14 @@ import { Form } from '../../components/Form'
 import { AlertsStory } from './AlertsStory'
 import { BadgeVariants } from './BadgeVariants/BadgeVariants'
 import { ButtonVariants } from './ButtonVariants'
+import { CardsStory } from './CardsStory'
 import { ColorVariants } from './ColorVariants'
 import { SEMANTIC_COLORS } from './constants'
 import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
+
+registerHighlightContributions()
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
@@ -42,52 +46,12 @@ add(
         </>
     ),
     {
-        design: [
-            {
-                name: 'Figma',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=771%3A0',
-            },
-            {
-                name: 'Figma Redesign',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-            },
-        ],
-    }
-)
-
-add(
-    'Web content',
-    () => (
-        <div className="web-content">
-            <h1>Web content</h1>
-            <p>
-                The <code>web-content</code> class changes the text styles of all descendants for content that more
-                closely matches rich web sites as opposed to our high-information-density, application-like code content
-                areas.
-            </p>
-
-            <TextStory />
-        </div>
-    ),
-    {
-        design: [
-            {
-                name: 'Figma',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=742%3A532',
-            },
-            {
-                name: 'Figma Redesign',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-            },
-        ],
+        design: {
+            name: 'Figma',
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
+        },
     }
 )
 
@@ -170,18 +134,12 @@ add(
         </>
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
-            },
-        ],
+        design: {
+            name: 'Figma',
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+        },
     }
 )
 
@@ -280,18 +238,13 @@ add('Alerts', AlertsStory, {
     design: [
         {
             type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=127%3A4',
-        },
-        {
-            type: 'figma',
-            name: 'Figma Redesign Light',
+            name: 'Figma Light',
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
         },
         {
             type: 'figma',
-            name: 'Figma Redesign Dark',
+            name: 'Figma Dark',
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
         },
@@ -374,7 +327,10 @@ add(
             </table>
 
             <h2>Reference</h2>
-            <BadgeVariants variants={SEMANTIC_COLORS} />
+            <BadgeVariants variants={[...SEMANTIC_COLORS, 'outline-secondary']} />
+            <h3>Size</h3>
+            <p>We can also make our badges smaller.</p>
+            <BadgeVariants small={true} variants={['primary', 'secondary']} />
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>
             <div className="mb-4">
@@ -384,12 +340,22 @@ add(
                 <ul className="nav nav-tabs mb-2">
                     <li className="nav-item">
                         <a className="nav-link active" href="/" onClick={preventDefault}>
-                            Comments <span className="badge badge-pill badge-secondary">14</span>
+                            <span>
+                                <span className="text-content" data-test-tab="Comments">
+                                    Comments
+                                </span>{' '}
+                                <span className="badge badge-pill badge-secondary">14</span>
+                            </span>
                         </a>
                     </li>
                     <li className="nav-item">
                         <a className="nav-link" href="/" onClick={preventDefault}>
-                            Changed files <span className="badge badge-pill badge-secondary">6</span>
+                            <span>
+                                <span className="text-content" data-test-tab="Changed files">
+                                    Changed files
+                                </span>{' '}
+                                <span className="badge badge-pill badge-secondary">6</span>
+                            </span>
                         </a>
                     </li>
                 </ul>
@@ -410,18 +376,13 @@ add(
         design: [
             {
                 type: 'figma',
-                name: 'Figma',
-                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign - Light',
+                name: 'Figma - Light',
                 url:
                     'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
             },
             {
                 type: 'figma',
-                name: 'Figma Redesign - Dark',
+                name: 'Figma - Dark',
                 url:
                     'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
             },
@@ -468,18 +429,12 @@ add(
         </>
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
-            },
-        ],
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
+        },
     }
 )
 
@@ -607,7 +562,9 @@ add(
     {
         design: {
             type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
         },
     }
 )
@@ -795,54 +752,14 @@ add(
     }
 )
 
-add(
-    'Cards',
-    () => (
-        <>
-            <h1>Cards</h1>
-            <p>
-                A card is a flexible and extensible content container. It includes options for headers and footers, a
-                wide variety of content, contextual background colors, and powerful display options.{' '}
-                <a href="https://getbootstrap.com/docs/4.5/components/card/">Bootstrap documentation</a>
-            </p>
-
-            <h2>Examples</h2>
-
-            <div className="card mb-3">
-                <div className="card-body">This is some text within a card body.</div>
-            </div>
-
-            <div className="card mb-3" style={{ maxWidth: '18rem' }}>
-                <div className="card-body">
-                    <h3 className="card-title">Card title</h3>
-                    <p className="card-text">
-                        Some quick example text to build on the card title and make up the bulk of the card's content.
-                    </p>
-                    <button type="button" className="btn btn-primary">
-                        Do something
-                    </button>
-                </div>
-            </div>
-
-            <div className="card">
-                <div className="card-header">Featured</div>
-                <div className="card-body">
-                    <h3 className="card-title">Special title treatment</h3>
-                    <p className="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                    <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-                        Go somewhere
-                    </a>
-                </div>
-            </div>
-        </>
-    ),
-    {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=109%3A2',
-        },
-    }
-)
+add('Cards', CardsStory, {
+    design: {
+        name: 'Figma',
+        type: 'figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1172%3A285',
+    },
+})
 
 add('List groups', () => (
     <>

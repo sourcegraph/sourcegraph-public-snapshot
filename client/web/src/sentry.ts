@@ -12,8 +12,7 @@ if (window.context.sentryDSN) {
     authenticatedUser.subscribe(user => {
         sentry.configureScope(scope => {
             if (user) {
-                const { id, username, email } = user
-                scope.setUser({ id, username, email })
+                scope.setUser({ id: user.id })
             }
         })
     })

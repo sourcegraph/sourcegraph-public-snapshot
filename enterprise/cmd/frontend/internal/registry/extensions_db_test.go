@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -53,7 +55,8 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := (dbExtensions{}).Create(ctx, user.ID, 0, test.name); err != nil {
-				if e, ok := err.(*pgconn.PgError); ok && (e.ConstraintName == "registry_extensions_name_valid_chars" || e.ConstraintName == "registry_extensions_name_length") {
+				var e *pgconn.PgError
+				if errors.As(err, &e) && (e.ConstraintName == "registry_extensions_name_valid_chars" || e.ConstraintName == "registry_extensions_name_length") {
 					valid = false
 				} else {
 					t.Fatal(err)
@@ -421,6 +424,68 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 		testListCount(t, dbExtensionsListOptions{Tag: "t"}, nil)  // no partial matches
 		testListCount(t, dbExtensionsListOptions{Tag: "t3"}, nil)
 	})
+}
+
+func TestFeaturedExtensions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createAndGet := func(t *testing.T, name, manifest string) *dbExtension {
+		t.Helper()
+		xID, err := dbExtensions{}.Create(ctx, user.ID, 0, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if manifest != "" {
+			_, err = dbReleases{}.Create(ctx, &dbRelease{
+				RegistryExtensionID: xID,
+				CreatorUserID:       user.ID,
+				ReleaseTag:          "release",
+				Manifest:            manifest,
+				Bundle:              strptr(""),
+				SourceMap:           strptr(""),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		x, err := dbExtensions{}.GetByID(ctx, xID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return x
+	}
+
+	mockFeaturedExtensionIDs := []string{"u/one", "u/two", "u/three"}
+
+	one := createAndGet(t, "one", `{"name": "one", "publisher": "u"}`)
+	two := createAndGet(t, "two", `{"name": "two", "publisher": "u"}`)
+	three := createAndGet(t, "three", `{"name": "three", "publisher": "u"}`)
+	// Non-featured extension shouldn't be returned.
+	createAndGet(t, "four", `{"name": "four", "publisher": "u"}`)
+
+	want := []*dbExtension{
+		one,
+		two,
+		three,
+	}
+
+	featuredExtensions, err := dbExtensions{}.getFeaturedExtensions(ctx, mockFeaturedExtensionIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(want, featuredExtensions); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func asJSON(t *testing.T, v interface{}) string {

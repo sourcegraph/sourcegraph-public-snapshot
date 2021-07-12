@@ -2,12 +2,12 @@ package app
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 
@@ -123,7 +123,8 @@ func TestGrafanaLicensing(t *testing.T) {
 		defer func() { PreMountGrafanaHook = nil }()
 
 		router := mux.NewRouter()
-		addGrafana(router)
+		// nil db as calls are mocked above
+		addGrafana(router, nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
 
@@ -142,7 +143,8 @@ func TestGrafanaLicensing(t *testing.T) {
 		defer func() { PreMountGrafanaHook = nil }()
 
 		router := mux.NewRouter()
-		addGrafana(router)
+		// nil db as calls are mocked above
+		addGrafana(router, nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
 

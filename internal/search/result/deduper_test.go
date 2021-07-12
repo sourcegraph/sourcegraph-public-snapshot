@@ -13,7 +13,7 @@ import (
 func TestDeduper(t *testing.T) {
 	commit := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
-			RepoName: types.RepoName{
+			Repo: types.RepoName{
 				Name: api.RepoName(repo),
 			},
 			Commit: git.Commit{
@@ -24,7 +24,7 @@ func TestDeduper(t *testing.T) {
 
 	diff := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
-			RepoName: types.RepoName{
+			Repo: types.RepoName{
 				Name: api.RepoName(repo),
 			},
 			Commit: git.Commit{

@@ -13,7 +13,7 @@ const { add } = storiesOf('web/searchContexts/SearchContextPage', module)
     .addParameters({
         chromatic: { viewports: [1200] },
     })
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
 
 const repositories: ISearchContextRepositoryRevisions[] = [
     {
@@ -39,11 +39,14 @@ const fetchPublicContext = (): Observable<ISearchContext> =>
         __typename: 'SearchContext',
         id: '1',
         spec: 'public-ctx',
+        name: 'public-ctx',
+        namespace: null,
         public: true,
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
+        viewerCanManage: true,
     })
 
 const fetchPrivateContext = (): Observable<ISearchContext> =>
@@ -51,11 +54,14 @@ const fetchPrivateContext = (): Observable<ISearchContext> =>
         __typename: 'SearchContext',
         id: '1',
         spec: 'private-ctx',
+        name: 'private-ctx',
+        namespace: null,
         public: false,
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
+        viewerCanManage: true,
     })
 
 add(

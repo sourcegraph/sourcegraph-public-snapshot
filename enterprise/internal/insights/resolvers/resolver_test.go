@@ -30,7 +30,7 @@ func TestResolver_Insights(t *testing.T) {
 	postgres := dbtesting.GetDB(t)
 	resolver := newWithClock(timescale, postgres, clock)
 
-	insightsConnection, err := resolver.Insights(ctx)
+	insightsConnection, err := resolver.Insights(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

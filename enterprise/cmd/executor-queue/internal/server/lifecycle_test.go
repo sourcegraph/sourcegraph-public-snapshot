@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
+	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -15,7 +16,7 @@ import (
 func TestHeartbeat(t *testing.T) {
 	store1 := workerstoremocks.NewMockStore()
 	store2 := workerstoremocks.NewMockStore()
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
@@ -36,10 +37,10 @@ func TestHeartbeat(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := newHandler(options, clock)
 
-	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef")
-	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal")
-	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef")
-	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal")
+	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef", "test")
+	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal", "test")
+	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef", "test")
+	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal", "test")
 	if !dequeued1 || !dequeued2 || !dequeued3 || !dequeued4 {
 		t.Fatalf("failed to dequeue records")
 	}
@@ -55,49 +56,62 @@ func TestHeartbeat(t *testing.T) {
 
 	// missing all jobs, but they're less than UnreportedMaxAge
 	clock.Advance(time.Second / 2)
-	if err := handler.heartbeat(context.Background(), "deadbeef", []int{}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	if err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
 	assertDoneCounts(0, 0)
 
 	// missing no jobs
 	clock.Advance(time.Minute * 2)
-	if err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 42}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 43}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	if err := handler.heartbeat(context.Background(), "deadveal", []int{42, 43}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
 	assertDoneCounts(0, 0)
 
 	// missing one deadbeef jobs
 	clock.Advance(time.Minute * 2)
-	if err := handler.heartbeat(context.Background(), "deadbeef", []int{41}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{41}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	if err := handler.heartbeat(context.Background(), "deadveal", []int{42, 43}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
 	assertDoneCounts(0, 1)
 
 	// missing two deadveal jobs
 	clock.Advance(time.Minute * 2)
-	if err := handler.heartbeat(context.Background(), "deadbeef", []int{41}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{41}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	if err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
+	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
 	assertDoneCounts(1, 2)
+
+	// unknown jobs
+	clock.Advance(time.Minute * 2)
+	if unknownIDs, err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 43, 45}); err != nil {
+		t.Fatalf("unexpected error performing heartbeat: %s", err)
+	} else if diff := cmp.Diff([]int{43, 45}, unknownIDs); diff != "" {
+		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+	}
+	if unknownIDs, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44, 45}); err != nil {
+		t.Fatalf("unexpected error performing heartbeat: %s", err)
+	} else if diff := cmp.Diff([]int{42, 44, 45}, unknownIDs); diff != "" {
+		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+	}
 }
 
 func TestCleanup(t *testing.T) {
 	store1 := workerstoremocks.NewMockStore()
 	store2 := workerstoremocks.NewMockStore()
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
@@ -118,10 +132,10 @@ func TestCleanup(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := newHandler(options, clock)
 
-	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef")
-	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal")
-	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef")
-	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal")
+	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef", "test")
+	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal", "test")
+	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef", "test")
+	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal", "test")
 	if !dequeued1 || !dequeued2 || !dequeued3 || !dequeued4 {
 		t.Fatalf("failed to dequeue records")
 	}
@@ -129,7 +143,7 @@ func TestCleanup(t *testing.T) {
 	for i := 0; i < 6; i++ {
 		clock.Advance(time.Minute)
 
-		if err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 42}); err != nil {
+		if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 43}); err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
 	}

@@ -3,7 +3,7 @@ package githuboauth
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -27,6 +29,8 @@ func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
+	db := dbtest.NewDB(t, "")
+
 	const mockUserID = 123
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,8 +40,8 @@ func TestMiddleware(t *testing.T) {
 	authedHandler.Handle("/.api/", Middleware(nil).API(h))
 	authedHandler.Handle("/", Middleware(nil).App(h))
 
-	mockGitHubCom := newMockProvider(t, "githubcomclient", "githubcomsecret", "https://github.com/")
-	mockGHE := newMockProvider(t, "githubenterpriseclient", "githubenterprisesecret", "https://mycompany.com/")
+	mockGitHubCom := newMockProvider(t, db, "githubcomclient", "githubcomsecret", "https://github.com/")
+	mockGHE := newMockProvider(t, db, "githubenterpriseclient", "githubenterprisesecret", "https://mycompany.com/")
 	providers.MockProviders = []providers.Provider{mockGitHubCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
@@ -95,7 +99,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -245,7 +249,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -258,7 +262,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -273,7 +277,7 @@ type MockProvider struct {
 	lastCallbackRequestURL *url.URL
 }
 
-func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *MockProvider {
+func newMockProvider(t *testing.T, db dbutil.DB, clientID, clientSecret, baseURL string) *MockProvider {
 	var (
 		mp       MockProvider
 		problems []string
@@ -284,7 +288,7 @@ func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *Mock
 		ClientID:     clientID,
 		AllowOrgs:    []string{"myorg"},
 	}}
-	mp.Provider, problems = parseProvider(cfg.Github, cfg)
+	mp.Provider, problems = parseProvider(cfg.Github, db, cfg)
 	if len(problems) > 0 {
 		t.Fatalf("Expected 0 problems, but got %d: %+v", len(problems), problems)
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	codecommittypes "github.com/aws/aws-sdk-go-v2/service/codecommit/types"
 	"github.com/aws/smithy-go"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -50,18 +50,11 @@ var ErrNotFound = errors.New("AWS CodeCommit repository not found")
 // IsNotFound reports whether err is a AWS CodeCommit API not-found error or the
 // equivalent cached response error.
 func IsNotFound(err error) bool {
-	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
-		return true
-	}
-	var rdnee codecommittypes.RepositoryDoesNotExistException
-	return errors.As(err, &rdnee)
+	return errors.Is(err, ErrNotFound) || errors.HasType(err, &codecommittypes.RepositoryDoesNotExistException{})
 }
 
 // IsUnauthorized reports whether err is a AWS CodeCommit API unauthorized error.
 func IsUnauthorized(err error) bool {
-	var ae smithy.APIError
-	if errors.As(err, &ae) {
-		return ae.ErrorCode() == "SignatureDoesNotMatch"
-	}
-	return false
+	var e smithy.APIError
+	return errors.As(err, &e) && e.ErrorCode() == "SignatureDoesNotMatch"
 }

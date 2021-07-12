@@ -101,8 +101,8 @@ func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc {
 		defer func() { err = tx.Done(err) }()
 
 		processor := &bulkProcessor{
+			tx:      tx,
 			sourcer: b.sourcer,
-			store:   tx,
 		}
 		return processor.process(ctx, record.(*btypes.ChangesetJob))
 	}

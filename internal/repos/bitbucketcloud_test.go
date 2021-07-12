@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -111,7 +110,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 }
 
 func TestBitbucketCloudSource_makeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +169,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 }
 
 func TestBitbucketCloudSource_Exclude(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

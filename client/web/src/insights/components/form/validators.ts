@@ -1,4 +1,5 @@
-import { ValidationResult, Validator } from './hooks/useField'
+import { Validator } from './hooks/useField'
+import { ValidationResult } from './hooks/useForm'
 
 /**
  * Validator for required form field which returns error massage
@@ -6,6 +7,11 @@ import { ValidationResult, Validator } from './hooks/useField'
  * */
 export const createRequiredValidator = <Value>(errorMessage: string): Validator<Value> => (value, validity) => {
     if (validity?.valueMissing) {
+        return errorMessage
+    }
+
+    // Handle the string value case.
+    if (typeof value === 'string' && value.trim() === '') {
         return errorMessage
     }
 

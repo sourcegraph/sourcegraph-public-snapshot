@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,13 +17,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -228,7 +227,7 @@ func (c *Client) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOpti
 		}
 	default:
 		resp.Body.Close()
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 }
 
@@ -282,7 +281,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	default:
 		resp.Body.Close()
-		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 }
 
@@ -325,7 +324,7 @@ func (c *Client) P4Exec(ctx context.Context, host, user, password string, args .
 		// Read response body at best effort
 		body, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
-		return nil, nil, fmt.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
+		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
 	}
 }
 
@@ -363,7 +362,7 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	stdout, err := ioutil.ReadAll(rc)
+	stdout, err := io.ReadAll(rc)
 	rc.Close()
 	if err != nil {
 		return nil, nil, err
@@ -430,10 +429,10 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 			stderr = stderr[:100] + "... (truncated)"
 		}
 		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
-			return 0, fmt.Errorf("%s (stderr: %q)", errorMsg, stderr)
+			return 0, errors.Errorf("%s (stderr: %q)", errorMsg, stderr)
 		}
 		if exitStatus := c.trailer.Get("X-Exec-Exit-Status"); exitStatus != "0" {
-			return 0, fmt.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
+			return 0, errors.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
 		}
 	}
 	return n, err
@@ -491,7 +490,7 @@ func (c *Client) ping(ctx context.Context, addr string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
+		return errors.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
 	}
 
 	return nil
@@ -611,8 +610,8 @@ func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
 	}
 
 	var info *protocol.RepoUpdateResponse
@@ -637,12 +636,12 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
 		return err
 	}
 	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
 	if r.StatusCode != http.StatusOK {
-		return fmt.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
+		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
 	}
 
 	var resp protocol.IsRepoCloneableResponse
@@ -897,8 +896,8 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
-		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
-		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: fmt.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
 	}
 	return nil
 }
@@ -974,17 +973,17 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log15.Warn("reading gitserver create-commit-from-patch response", "err", err.Error())
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.CreateCommitFromPatchResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
 		log15.Warn("decoding gitserver create-commit-from-patch response", "err", err.Error())
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
 	}
 
 	if res.Error != nil {

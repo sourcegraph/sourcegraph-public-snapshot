@@ -4,6 +4,9 @@ set -e
 
 export GO111MODULE=on
 
+# Disable proxy since it can cache the value of master
+export GOPROXY="${GOPROXY:-direct}"
+
 # Can specify a SHA pushed to our fork instead of master
 version="${1:-master}"
 
@@ -20,6 +23,7 @@ echo "git log --pretty=format:'- %h %s' $oldsha...$newsha"
 
 go mod edit "-replace=${upstream}=${module}"
 go mod download ${upstream}
+go mod tidy
 
 # Ensure we update go.sum by actually compiling some code which depends on
 # zoekt

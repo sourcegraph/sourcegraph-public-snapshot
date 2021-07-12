@@ -1,14 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<HierarchicalLocationsView /> displays a single location when complete 1`] = `
-<div
-  className="hierarchical-locations-wrapper"
->
+<div>
   <div
-    className="hierarchical-locations-view "
+    className="referencesContainer"
+    data-testid="hierarchical-locations-view"
   >
     <div
-      className="file-locations hierarchical-locations-view__content"
+      className="d-flex"
+    />
+    <div
+      className="file-locations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -23,7 +25,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               className="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline"
+                className="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -40,7 +42,25 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <div>
+                <span
+                  aria-label="github.com"
+                  title="github.com"
+                >
+                  <svg
+                    className="mdi-icon icon-inline text-muted"
+                    fill="currentColor"
+                    height={24}
+                    viewBox="0 0 24 24"
+                    width={24}
+                  >
+                    <path
+                      d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                    />
+                  </svg>
+                </span>
+                <div
+                  className="ml-1"
+                >
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -49,7 +69,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                    ›
                    
                   <a
-                    href="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong>
                       
@@ -57,26 +77,14 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </a>
                 </div>
                 <span
-                  className="ml-2"
+                  className="result-container__header-description ml-2"
                 />
               </div>
-              <button
-                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
-                onClick={[Function]}
-                type="button"
+              <small
+                className="mr-1"
               >
-                <svg
-                  className="mdi-icon icon-inline"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                  />
-                </svg>
-              </button>
+                1 match
+              </small>
             </div>
             <div
               className="file-match-children"
@@ -86,7 +94,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <a
                   className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                  href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                  href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   onClick={[Function]}
                 >
                   <VisibilitySensor
@@ -155,88 +163,94 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
 `;
 
 exports[`<HierarchicalLocationsView /> displays multiple locations grouped by file 1`] = `
-<div
-  className="hierarchical-locations-wrapper"
->
+<div>
   <div
-    className="hierarchical-locations-view "
+    className="referencesContainer"
+    data-testid="hierarchical-locations-view"
   >
     <div
-      className="resizable resizable--right hierarchical-locations-view__resizable"
-      style={
-        Object {
-          "width": "200px",
-        }
-      }
+      className="d-flex"
     >
       <div
-        className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list"
+        className="resizable resizableGroup"
+        style={
+          Object {
+            "width": "200px",
+          }
+        }
       >
-        <button
-          className="list-group-item list-group-item-action hierarchical-locations-view__item active"
-          onClick={[Function]}
-          type="button"
+        <div
+          className="list-group groupList"
+          data-testid="hierarchical-locations-view-list"
         >
-          <span
-            className="hierarchical-locations-view__item-name"
-            title="file1.txt"
+          <button
+            className="list-group-item list-group-item-action locationButton active"
+            data-testid="hierarchical-locations-view-button"
+            onClick={[Function]}
+            type="button"
           >
             <span
-              className="hierarchical-locations-view__item-name-text"
+              className="locationName"
+              title="file1.txt"
             >
               <span
-                className=""
+                className="locationNameText"
               >
-                 
-                <span>
-                  file1.txt
+                <span
+                  className=""
+                >
+                   
+                  <span>
+                    file1.txt
+                  </span>
                 </span>
               </span>
             </span>
-          </span>
-          <span
-            className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
-          >
-            2
-          </span>
-        </button>
-        <button
-          className="list-group-item list-group-item-action hierarchical-locations-view__item "
-          onClick={[Function]}
-          type="button"
-        >
-          <span
-            className="hierarchical-locations-view__item-name"
-            title="file2.txt"
+            <span
+              className="locationBadge ml-1"
+            >
+              2
+            </span>
+          </button>
+          <button
+            className="list-group-item list-group-item-action locationButton"
+            data-testid="hierarchical-locations-view-button"
+            onClick={[Function]}
+            type="button"
           >
             <span
-              className="hierarchical-locations-view__item-name-text"
+              className="locationName"
+              title="file2.txt"
             >
               <span
-                className=""
+                className="locationNameText"
               >
-                 
-                <span>
-                  file2.txt
+                <span
+                  className=""
+                >
+                   
+                  <span>
+                    file2.txt
+                  </span>
                 </span>
               </span>
             </span>
-          </span>
-          <span
-            className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
-          >
-            3
-          </span>
-        </button>
+            <span
+              className="locationBadge ml-1"
+            >
+              3
+            </span>
+          </button>
+        </div>
+        <div
+          className="handle handleRight resizableHandle"
+          onMouseDown={[Function]}
+          role="presentation"
+        />
       </div>
-      <div
-        className="resizable__handle resizable__handle--right "
-        onMouseDown={[Function]}
-        role="presentation"
-      />
     </div>
     <div
-      className="file-locations hierarchical-locations-view__content"
+      className="file-locations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -251,7 +265,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               className="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline"
+                className="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -268,7 +282,25 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <div>
+                <span
+                  aria-label="github.com"
+                  title="github.com"
+                >
+                  <svg
+                    className="mdi-icon icon-inline text-muted"
+                    fill="currentColor"
+                    height={24}
+                    viewBox="0 0 24 24"
+                    width={24}
+                  >
+                    <path
+                      d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                    />
+                  </svg>
+                </span>
+                <div
+                  className="ml-1"
+                >
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -285,26 +317,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </a>
                 </div>
                 <span
-                  className="ml-2"
+                  className="result-container__header-description ml-2"
                 />
               </div>
-              <button
-                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
-                onClick={[Function]}
-                type="button"
+              <small
+                className="mr-1"
               >
-                <svg
-                  className="mdi-icon icon-inline"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                  />
-                </svg>
-              </button>
+                2 matches
+              </small>
             </div>
             <div
               className="file-match-children"
@@ -314,7 +334,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               >
                 <a
                   className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                  href="/github.com/foo/bar/-/blob/file1.txt?subtree=true#L2:1"
+                  href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
                   onClick={[Function]}
                 >
                   <VisibilitySensor
@@ -407,14 +427,16 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
 `;
 
 exports[`<HierarchicalLocationsView /> displays partial locations before complete 1`] = `
-<div
-  className="hierarchical-locations-wrapper"
->
+<div>
   <div
-    className="hierarchical-locations-view "
+    className="referencesContainer"
+    data-testid="hierarchical-locations-view"
   >
     <div
-      className="file-locations hierarchical-locations-view__content"
+      className="d-flex"
+    />
+    <div
+      className="file-locations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -429,7 +451,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               className="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline"
+                className="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -446,7 +468,25 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <div>
+                <span
+                  aria-label="github.com"
+                  title="github.com"
+                >
+                  <svg
+                    className="mdi-icon icon-inline text-muted"
+                    fill="currentColor"
+                    height={24}
+                    viewBox="0 0 24 24"
+                    width={24}
+                  >
+                    <path
+                      d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                    />
+                  </svg>
+                </span>
+                <div
+                  className="ml-1"
+                >
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -455,7 +495,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                    ›
                    
                   <a
-                    href="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong>
                       
@@ -463,26 +503,14 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </a>
                 </div>
                 <span
-                  className="ml-2"
+                  className="result-container__header-description ml-2"
                 />
               </div>
-              <button
-                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
-                onClick={[Function]}
-                type="button"
+              <small
+                className="mr-1"
               >
-                <svg
-                  className="mdi-icon icon-inline"
-                  fill="currentColor"
-                  height={24}
-                  viewBox="0 0 24 24"
-                  width={24}
-                >
-                  <path
-                    d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                  />
-                </svg>
-              </button>
+                1 match
+              </small>
             </div>
             <div
               className="file-match-children"
@@ -492,7 +520,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <a
                   className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                  href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                  href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   onClick={[Function]}
                 >
                   <VisibilitySensor

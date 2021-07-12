@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -12,9 +11,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/fsnotify/fsnotify"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -65,7 +64,7 @@ func overrideSiteConfig(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		site, err := ioutil.ReadFile(path)
+		site, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 		}
@@ -93,7 +92,7 @@ func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
 	}
 	settings := database.Settings(db)
 	var update = func(ctx context.Context) error {
-		globalSettingsBytes, err := ioutil.ReadFile(path)
+		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
@@ -143,7 +142,7 @@ func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 		}
 		confGet := func() *conf.Unified { return parsed }
 
-		extsvcConfig, err := ioutil.ReadFile(path)
+		extsvcConfig, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 		}
@@ -425,16 +424,16 @@ func gitServers() []string {
 func comparePostgresDSNs(dsn1, dsn2 string) error {
 	url1, err := url.Parse(dsn1)
 	if err != nil {
-		return fmt.Errorf("illegal Postgres DSN: %s", dsn1)
+		return errors.Errorf("illegal Postgres DSN: %s", dsn1)
 	}
 
 	url2, err := url.Parse(dsn2)
 	if err != nil {
-		return fmt.Errorf("illegal Postgres DSN: %s", dsn2)
+		return errors.Errorf("illegal Postgres DSN: %s", dsn2)
 	}
 
 	if url1.Host == url2.Host && url1.Path == url2.Path {
-		return fmt.Errorf("codeintel and frontend databases must be distinct: %s and %s seem to refer to the same database", dsn1, dsn2)
+		return errors.Errorf("codeintel and frontend databases must be distinct: %s and %s seem to refer to the same database", dsn1, dsn2)
 	}
 
 	return nil

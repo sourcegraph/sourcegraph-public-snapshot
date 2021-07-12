@@ -35,10 +35,12 @@
 - [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
+- [High-performance SQL](sql.md)
 
 ## [Languages](languages/index.md)
 
 - [Go](languages/go.md)
+  - [Error handling in Go](languages/go_errors.md)
 - [TypeScript](languages/typescript.md)
 - [Bash](languages/bash.md)
 - [Terraform](languages/terraform.md)

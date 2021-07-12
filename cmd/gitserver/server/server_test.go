@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -162,7 +162,7 @@ func TestRequest(t *testing.T) {
 				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
 			}
 
-			body, err := ioutil.ReadAll(res.Body)
+			body, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -238,7 +238,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
 			}
 
-			body, err := ioutil.ReadAll(res.Body)
+			body, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -256,7 +256,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
-	tmp, err := ioutil.TempDir("", "gitserver_test")
+	tmp, err := os.MkdirTemp("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err = ioutil.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
+	err = os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -334,7 +334,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
-	tmp, err := ioutil.TempDir("", "gitserver_test")
+	tmp, err := os.MkdirTemp("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -360,7 +360,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 		if err != nil {
 			b.Fatal(err)
 		}
-		err = ioutil.WriteFile(path, []byte(content), 0600)
+		err = os.WriteFile(path, []byte(content), 0600)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -482,7 +482,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 
 func TestCloneRepo(t *testing.T) {
 	ctx := context.Background()
-	remote := tmpDir(t)
+	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
 
@@ -523,7 +523,7 @@ func TestCloneRepo(t *testing.T) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir := tmpDir(t)
+	reposDir := t.TempDir()
 	s := makeTestServer(ctx, reposDir, remote, db)
 
 	_, err := s.cloneRepo(ctx, repoName, nil)
@@ -552,7 +552,7 @@ func TestCloneRepo(t *testing.T) {
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
 	_, err = s.cloneRepo(context.Background(), repoName, &cloneOptions{Block: true})
-	if !os.IsExist(errors.Cause(err)) {
+	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
 	assertCloneStatus(types.CloneStatusCloned)
@@ -579,7 +579,7 @@ func TestCloneRepo(t *testing.T) {
 
 func TestHandleRepoUpdate(t *testing.T) {
 	ctx := context.Background()
-	remote := tmpDir(t)
+	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
 
@@ -601,7 +601,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir := tmpDir(t)
+	reposDir := t.TempDir()
 
 	s := makeTestServer(ctx, reposDir, remote, db)
 	s.ctx = context.Background()
@@ -667,7 +667,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 }
 
 func TestRemoveBadRefs(t *testing.T) {
-	dir := tmpDir(t)
+	dir := t.TempDir()
 	gitDir := GitDir(filepath.Join(dir, ".git"))
 
 	cmd := func(name string, arg ...string) string {
@@ -691,7 +691,7 @@ func TestRemoveBadRefs(t *testing.T) {
 		}
 
 		// Ref
-		if err := ioutil.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0600); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -713,8 +713,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 	t.Run("with no remote HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -731,8 +731,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 	t.Run("with an empty remote HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -749,8 +749,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 	t.Run("with no local HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -777,7 +777,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		head, err := ioutil.ReadFile(fmt.Sprintf("%s/HEAD", dst))
+		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
 			t.Fatal("expected a reconstituted HEAD, but no file exists")
 		}
@@ -787,8 +787,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 	t.Run("with an empty local HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -815,7 +815,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		head, err := ioutil.ReadFile(fmt.Sprintf("%s/HEAD", dst))
+		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
 			t.Fatal("expected a reconstituted HEAD, but no file exists")
 		}
@@ -887,7 +887,7 @@ func TestHostnameMatch(t *testing.T) {
 func TestSyncRepoState(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
-	remoteDir := tmpDir(t)
+	remoteDir := t.TempDir()
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
@@ -900,7 +900,7 @@ func TestSyncRepoState(t *testing.T) {
 	cmd("git", "add", "hello.txt")
 	cmd("git", "commit", "-m", "hello")
 
-	reposDir := tmpDir(t)
+	reposDir := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	hostname := "test"
 
@@ -931,7 +931,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	err = s.syncRepoState([]string{hostname}, 10, 10)
+	err = s.syncRepoState([]string{hostname}, 10, 10, true)
 	if err != nil {
 		t.Fatal(err)
 	}

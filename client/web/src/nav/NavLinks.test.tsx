@@ -74,6 +74,8 @@ describe('NavLinks', () => {
         isSourcegraphDotCom: false,
         showBatchChanges: true,
         enableCodeMonitoring: true,
+        showSearchContext: true,
+        showSearchContextManagement: true,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed

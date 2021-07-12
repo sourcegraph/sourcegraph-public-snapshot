@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -106,6 +106,11 @@ type AffiliatedRepositorySource interface {
 	AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
 }
 
+// A VersionSource is a source that can query the version of the code host.
+type VersionSource interface {
+	Version(context.Context) (string, error)
+}
+
 // UnsupportedAuthenticatorError is returned by WithAuthenticator if the
 // authenticator isn't supported on that code host.
 type UnsupportedAuthenticatorError struct {
@@ -141,11 +146,12 @@ type SourceError struct {
 }
 
 func (s *SourceError) Error() string {
-	if multiErr, ok := s.Err.(*multierror.Error); ok {
+	var e *multierror.Error
+	if errors.As(s.Err, &e) {
 		// Create new Error with custom formatter. Do not mutate otherwise can
 		// race with other callers of Error.
 		return (&multierror.Error{
-			Errors:      multiErr.Errors,
+			Errors:      e.Errors,
 			ErrorFormat: sourceErrorFormatFunc,
 		}).Error()
 	}

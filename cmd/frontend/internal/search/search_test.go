@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -43,7 +45,7 @@ func TestServeStream_empty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
 		t.Fatal(err)
@@ -124,6 +126,16 @@ func TestDisplayLimit(t *testing.T) {
 		t.Run(fmt.Sprintf("q=%s;displayLimit=%d", c.queryString, c.displayLimit), func(t *testing.T) {
 			mock := &mockSearchResolver{
 				done: make(chan struct{}),
+			}
+
+			database.Mocks.Repos.GetByIDs = func(ctx context.Context, ids ...api2.RepoID) (_ []*types.Repo, err error) {
+				res := make([]*types.Repo, 0, len(ids))
+				for _, id := range ids {
+					res = append(res, &types.Repo{
+						ID: id,
+					})
+				}
+				return res, nil
 			}
 
 			ts := httptest.NewServer(&streamHandler{
@@ -219,7 +231,8 @@ func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.Searc
 		return nil, ctx.Err()
 	case <-h.done:
 		return &graphqlbackend.SearchResultsResolver{
-			UserSettings: &schema.Settings{},
+			UserSettings:  &schema.Settings{},
+			SearchResults: &graphqlbackend.SearchResults{},
 		}, nil
 	}
 }

@@ -5,7 +5,7 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/all-in-one:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine:3.12@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174
+FROM sourcegraph/alpine-3.12:99212_2021-06-14_51f6e1e@sha256:0b98031f67bda9b088421f137a1d7d959b44ad360175cfac59c4d6ccd19a4e57
 USER root
 RUN apk update
 # hadolint ignore=DL3018
@@ -50,6 +50,9 @@ VOLUME ["/tmp"]
 
 # Used in order to reverse proxy the Jaeger UI
 ENV QUERY_BASE_PATH="/-/debug/jaeger"
+
+# Default configuration file for setting sampling strategies, we override the command in docker-compose
+ENV SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json
 
 ENTRYPOINT ["/go/bin/all-in-one-linux"]
 CMD ["--sampling.strategies-file=/etc/jaeger/sampling_strategies.json"]

@@ -9,9 +9,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -22,6 +22,8 @@ import (
 type Resolver interface {
 	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
 	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
@@ -78,6 +80,14 @@ func (r *resolver) GetUploadByID(ctx context.Context, id int) (store.Upload, boo
 
 func (r *resolver) GetIndexByID(ctx context.Context, id int) (store.Index, bool, error) {
 	return r.dbStore.GetIndexByID(ctx, id)
+}
+
+func (r *resolver) GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error) {
+	return r.dbStore.GetUploadsByIDs(ctx, ids...)
+}
+
+func (r *resolver) GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error) {
+	return r.dbStore.GetIndexesByIDs(ctx, ids...)
 }
 
 func (r *resolver) UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver {
@@ -142,7 +152,7 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 }
 
 func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error {
-	return r.indexEnqueuer.ForceQueueIndex(ctx, repositoryID)
+	return r.indexEnqueuer.ForceQueueIndexesForRepository(ctx, repositoryID)
 }
 
 const slowQueryResolverRequestThreshold = time.Second

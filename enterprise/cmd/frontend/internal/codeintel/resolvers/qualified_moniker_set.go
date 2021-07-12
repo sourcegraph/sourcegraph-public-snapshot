@@ -3,7 +3,7 @@ package resolvers
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 type qualifiedMonikerSet struct {
