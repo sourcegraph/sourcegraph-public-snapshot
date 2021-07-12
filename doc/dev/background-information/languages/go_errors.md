@@ -2,7 +2,7 @@
 
 We disallow use of error packages — including the stdlib [`errors`](https://golang.org/pkg/errors/) package — (enforced by a lint pass in CI) other than [`github.com/cockroachdb/errors`](https://github.com/cockroachdb/errors).
 
-We also encourage the use of `errors.New` or `errors.Errorf` over the use of `fmt.Errorf`, which also constructs an error type. This is to ensure that each error constructed by Sourcegraph is tagged with a stack depth and allows redaction of content within user-visible strings.
+We also require the use of `errors.New` or `errors.Errorf` over the use of `fmt.Errorf`, which also constructs an error type. This is to ensure that each error constructed by Sourcegraph is tagged with a stack depth and allows redaction of content within user-visible strings.
 
 #### Use of `errors.New`
 
