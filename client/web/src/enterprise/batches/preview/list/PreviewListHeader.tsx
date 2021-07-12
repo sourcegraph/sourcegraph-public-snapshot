@@ -32,8 +32,8 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
 )
 
 const SelectAll: React.FunctionComponent<
-    Pick<MultiSelectContextState, 'selectVisible' | 'selectAll' | 'selected' | 'visible'>
-> = ({ selectVisible, selectAll, selected, visible }) => {
+    Pick<MultiSelectContextState, 'deselectAll' | 'selectVisible' | 'selectAll' | 'selected' | 'visible'>
+> = ({ deselectAll, selectVisible, selectAll, selected, visible }) => {
     const isVisible = useMemo(() => selected === 'all' || selected.size === visible.size, [selected, visible])
     const onClick = useCallback(() => {
         if (selected === 'all') {

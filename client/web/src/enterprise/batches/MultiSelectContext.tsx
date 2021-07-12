@@ -68,15 +68,15 @@ export const MultiSelectContextProvider: React.FunctionComponent<{}> = ({ childr
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
 
     const selectVisible = useCallback(() => {
-        // If all items are currently selected, all visible items are therefore
-        // selected by definition, and we don't need to do anything.
         if (selected === 'all') {
-            return
+            // If all items are currently selected, we're going to switch to
+            // only selecting the visible items.
+            setSelected(new Set([...visible]))
+        } else {
+            // Otherwise, we can merge the visible items with any previously
+            // selected items.
+            setSelected(new Set([...visible, ...selected]))
         }
-
-        // Otherwise, we can merge the visible items with any previously
-        // selected items.
-        setSelected(new Set([...visible, ...selected]))
     }, [selected, visible])
 
     const deselectVisible = useCallback(() => {
