@@ -17,9 +17,9 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	"github.com/jackc/pgx/v4/stdlib"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/command"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	stdout "github.com/sourcegraph/sourcegraph/dev/sg/internal/out"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/util"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -67,13 +67,13 @@ func RunFixup(database db.Database, main string, run bool) error {
 	localMigrations, err := getMigrationsForFiles(localFiles)
 	if err != nil {
 		return err
-	}
-
-	block := out.Block(output.Linef("", output.StyleItalic, "Checking for conflicting migrations in '%s'...", database.Name))
-	defer block.Close()
-
+		}
+	
+		block := out.Block(output.Linef("", output.StyleItalic, "Checking for conflicting migrations in '%s'...", database.Name))
+		defer block.Close()
+	
 	_, missing, err := findConflictingMigrations(mainMigrations, localMigrations)
-	if err != nil {
+		if err != nil {
 		return err
 	}
 
@@ -390,7 +390,7 @@ func getMigrationFilesFromGit(database db.Database, revision string) ([]string, 
 		return nil, err
 	}
 
-	output, err := util.RunGitCmd("ls-tree", "--name-only", "-r", revision, baseDir)
+	output, err := command.RunGit("ls-tree", "--name-only", "-r", revision, baseDir)
 	if err != nil {
 		return nil, err
 	}

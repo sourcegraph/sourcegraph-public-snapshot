@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/command"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	stdout "github.com/sourcegraph/sourcegraph/dev/sg/internal/out"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/util"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -91,7 +91,7 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 	pgDump := func(args ...string) (string, error) {
 		cmd := exec.Command("pg_dump", append([]string{postgresDSN}, args...)...)
 		cmd.Env = []string{}
-		return util.RunCommandInRoot(cmd)
+		return command.RunInRoot(cmd)
 	}
 
 	pgDumpOutput, err := pgDump("--schema-only", "--no-owner", "--exclude-table", "*schema_migrations")
@@ -170,7 +170,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 			"kill",
 			squasherContainerName,
 		}
-		if _, killErr := util.RunDockerCmd(killArgs...); killErr != nil {
+		if _, killErr := command.RunDocker(killArgs...); killErr != nil {
 			err = multierror.Append(err, fmt.Errorf("failed to stop docker container: %s", killErr))
 		}
 
@@ -185,7 +185,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
 		"postgres:12.6",
 	}
-	if _, err := util.RunDockerCmd(runArgs...); err != nil {
+	if _, err := command.RunDocker(runArgs...); err != nil {
 		return nil, err
 	}
 
@@ -200,7 +200,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 		squasherContainerName,
 		"createdb", databaseName,
 	}
-	if _, err := util.RunDockerCmd(execArgs...); err != nil {
+	if _, err := command.RunDocker(execArgs...); err != nil {
 		return nil, teardown(err)
 	}
 
@@ -214,7 +214,7 @@ func runMigrate(database db.Database, postgresDSN string, args ...string) (strin
 		return "", err
 	}
 
-	return util.RunCommandInRoot(exec.Command("migrate", append([]string{"-database", postgresDSN, "-path", baseDir}, args...)...))
+	return command.RunInRoot(exec.Command("migrate", append([]string{"-database", postgresDSN, "-path", baseDir}, args...)...))
 }
 
 // lastMigrationIndexAtCommit returns the index of the last migration for the given database
@@ -223,7 +223,7 @@ func runMigrate(database db.Database, postgresDSN string, args ...string) (strin
 func lastMigrationIndexAtCommit(database db.Database, commit string) (int, bool, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
-	output, err := util.RunGitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
+	output, err := command.RunGit("ls-tree", "-r", "--name-only", commit, migrationsDir)
 	if err != nil {
 		return 0, false, err
 	}
