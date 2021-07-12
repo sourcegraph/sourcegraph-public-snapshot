@@ -971,7 +971,8 @@ func TestService(t *testing.T) {
 					store.ListChangesetsOpts{
 						PublicationState: &published,
 						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-						ExternalState:    &openState},
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
+					},
 				)
 				if err != nil {
 					t.Fatal(err)
@@ -994,7 +995,70 @@ func TestService(t *testing.T) {
 					store.ListChangesetsOpts{
 						PublicationState: &published,
 						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-						ExternalState:    &openState,
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
+					},
+				)
+				if err != ErrChangesetsForJobNotFound {
+					t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)
+				}
+			})
+		})
+
+		t.Run("CloseChangesets", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(admin.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+			published := btypes.ChangesetPublicationStatePublished
+			openState := btypes.ChangesetExternalStateOpen
+			t.Run("open changeset", func(t *testing.T) {
+				changeset := ct.CreateChangeset(t, adminCtx, s, ct.TestChangesetOpts{
+					Repo:             rs[0].ID,
+					ReconcilerState:  btypes.ReconcilerStateCompleted,
+					ExternalState:    btypes.ChangesetExternalStateOpen,
+					PublicationState: btypes.ChangesetPublicationStatePublished,
+					BatchChange:      batchChange.ID,
+					IsArchived:       false,
+				})
+				_, err := svc.CreateChangesetJobs(
+					adminCtx,
+					batchChange.ID,
+					[]int64{changeset.ID},
+					btypes.ChangesetJobTypeClose,
+					btypes.ChangesetJobClosePayload{},
+					store.ListChangesetsOpts{
+						PublicationState: &published,
+						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
+					},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+			})
+			t.Run("closed changeset", func(t *testing.T) {
+				closedChangeset := ct.CreateChangeset(t, adminCtx, s, ct.TestChangesetOpts{
+					Repo:             rs[0].ID,
+					ReconcilerState:  btypes.ReconcilerStateCompleted,
+					ExternalState:    btypes.ChangesetExternalStateClosed,
+					PublicationState: btypes.ChangesetPublicationStatePublished,
+					BatchChange:      batchChange.ID,
+				})
+				_, err := svc.CreateChangesetJobs(
+					adminCtx,
+					batchChange.ID,
+					[]int64{closedChangeset.ID},
+					btypes.ChangesetJobTypeClose,
+					btypes.ChangesetJobClosePayload{},
+					store.ListChangesetsOpts{
+						PublicationState: &published,
+						ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+						ExternalStates:   []btypes.ChangesetExternalState{openState},
 					},
 				)
 				if err != ErrChangesetsForJobNotFound {

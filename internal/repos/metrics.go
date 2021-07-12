@@ -13,6 +13,7 @@ import (
 
 const (
 	tagFamily  = "family"
+	tagOwner   = "owner"
 	tagID      = "id"
 	tagState   = "state"
 	tagSuccess = "success"
@@ -32,7 +33,7 @@ var (
 	syncStarted = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_start_sync",
 		Help: "A sync was started",
-	}, []string{tagFamily})
+	}, []string{tagFamily, tagOwner})
 
 	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_synced_repos_total",
@@ -42,7 +43,7 @@ var (
 	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_sync_errors_total",
 		Help: "Total number of sync errors",
-	}, []string{tagFamily})
+	}, []string{tagFamily, tagOwner})
 
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_repoupdater_syncer_sync_duration_seconds",
@@ -214,18 +215,27 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
 	})
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_errored_sync_jobs_total",
-		Help: "The total number of errored sync jobs",
+		Name: "src_repoupdater_errored_sync_jobs_percentage",
+		Help: "The percentage of external services that have failed their most recent sync",
 	}, func() float64 {
-		count, err := scanCount(`
--- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
-SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
+		percentage, err := scanNullFloat(`
+with latest_state as (
+    -- Get the most recent state per external service
+    select distinct on (external_service_id) external_service_id, state
+    from external_service_sync_jobs
+    order by external_service_id, finished_at desc
+)
+select round((select cast(count(*) as float) from latest_state where state = 'errored') /
+             (select cast(count(*) as float) from latest_state) * 100)
 `)
 		if err != nil {
 			log15.Error("Failed to get total errored sync jobs", "err", err)
 			return 0
 		}
-		return count
+		if !percentage.Valid {
+			return 0
+		}
+		return percentage.Float64
 	})
 
 	backoffQuery := `

@@ -353,7 +353,7 @@
       }
     },
     "codeIntelAutoIndexing.enabled": {
-      "description": "Enables/disables the code intel auto indexing feature.",
+      "description": "Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
@@ -1440,9 +1440,11 @@
         },
         "apiKey": { "type": "string" },
         "apiUrl": { "type": "string" },
+        "tags": {
+          "type": "string"
+        },
         "priority": {
-          "type": "string",
-          "enum": ["P1", "P2", "P3", "P4", "P5"]
+          "type": "string"
         },
         "responders": {
           "type": "array",

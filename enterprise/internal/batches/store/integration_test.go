@@ -26,6 +26,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("ListChangesetsTextSearch", storeTest(db, nil, testStoreListChangesetsTextSearch))
 		t.Run("BatchSpecs", storeTest(db, nil, testStoreBatchSpecs))
 		t.Run("ChangesetSpecs", storeTest(db, nil, testStoreChangesetSpecs))
+		t.Run("GetRewirerMappingWithArchivedChangesets", storeTest(db, nil, testStoreGetRewirerMappingWithArchivedChangesets))
 		t.Run("ChangesetSpecsCurrentState", storeTest(db, nil, testStoreChangesetSpecsCurrentState))
 		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, nil, testStoreChangesetSpecsCurrentStateAndTextSearch))
 		t.Run("ChangesetSpecsTextSearch", storeTest(db, nil, testStoreChangesetSpecsTextSearch))
@@ -33,6 +34,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
 		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))
 		t.Run("BulkOperations", storeTest(db, nil, testStoreBulkOperations))
+		t.Run("BatchSpecExecutions", storeTest(db, nil, testStoreChangesetSpecExecutions))
 
 		for name, key := range map[string]encryption.Key{
 			"no key":   nil,

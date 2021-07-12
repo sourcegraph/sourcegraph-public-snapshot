@@ -114,6 +114,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>
                     Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS
                     CodeCommit, Other)
+                    <ul>
+                        <li>Which versions of the code hosts are used</li>
+                    </ul>
                 </li>
                 <li>Whether new user signup is allowed (true/false)</li>
                 <li>Whether a repository has ever been added (true/false)</li>

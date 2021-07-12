@@ -2,10 +2,12 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -376,7 +378,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 }
 
-func TestListDefaultReposUncloned(t *testing.T) {
+func TestListIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -384,18 +386,36 @@ func TestListDefaultReposUncloned(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t, "")
 
-	reposToAdd := []types.RepoName{
+	reposToAdd := []types.Repo{
 		{
-			ID:   api.RepoID(1),
-			Name: "github.com/foo/bar1",
+			ID:    api.RepoID(1),
+			Name:  "github.com/foo/bar1",
+			Stars: 20,
 		},
 		{
-			ID:   api.RepoID(2),
-			Name: "github.com/baz/bar2",
+			ID:    api.RepoID(2),
+			Name:  "github.com/baz/bar2",
+			Stars: 30,
 		},
 		{
-			ID:   api.RepoID(3),
-			Name: "github.com/foo/bar3",
+			ID:      api.RepoID(3),
+			Name:    "github.com/foo/bar3",
+			Private: true,
+			Stars:   0, // Will still be returned because it gets added by a user.
+		},
+		{
+			ID:    api.RepoID(4),
+			Name:  "github.com/foo/bar4",
+			Stars: 10, // Not enough stars
+		},
+		{
+			ID:    api.RepoID(5),
+			Name:  "github.com/foo/bar5",
+			Stars: 400,
+			Blocked: &types.RepoBlock{
+				At:     time.Now().UTC().Unix(),
+				Reason: "Failed to index too many times.",
+			},
 		},
 	}
 
@@ -409,16 +429,25 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, r := range reposToAdd {
+		blocked, err := json.Marshal(r.Blocked)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.ExecContext(ctx,
+			`INSERT INTO repo(id, name, stars, private, blocked) VALUES ($1, $2, $3, $4, NULLIF($5, 'null'::jsonb))`,
+			r.ID, r.Name, r.Stars, r.Private, blocked,
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if r.Private {
+			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2, 1);`, r.ID, r.Name); err != nil {
+				t.Fatal(err)
+			}
+		}
+
 		cloned := int(r.ID) > 1
-		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name, cloned) VALUES ($1, $2, $3)`, r.ID, r.Name, cloned); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, 'https://github.com/foo/bar13', 1);`, r.ID); err != nil {
-			t.Fatal(err)
-		}
 		cloneStatus := types.CloneStatusCloned
 		if !cloned {
 			cloneStatus = types.CloneStatusNotCloned
@@ -428,16 +457,116 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		}
 	}
 
-	repos, err := Repos(db).ListDefaultRepos(ctx, ListDefaultReposOptions{
-		OnlyUncloned: true,
-	})
+	for _, tc := range []struct {
+		name string
+		opts ListIndexableReposOptions
+		want []api.RepoID
+	}{
+		{
+			name: "no opts",
+			want: []api.RepoID{2, 1}, // No private repos returned by default
+		},
+		{
+			name: "only uncloned",
+			opts: ListIndexableReposOptions{OnlyUncloned: true},
+			want: []api.RepoID{1},
+		},
+		{
+			name: "include private",
+			opts: ListIndexableReposOptions{IncludePrivate: true},
+			want: []api.RepoID{2, 1, 3},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			repos, err := Repos(db).ListIndexableRepos(ctx, tc.opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have := make([]api.RepoID, 0, len(repos))
+			for _, r := range repos {
+				have = append(have, r.ID)
+			}
+
+			if diff := cmp.Diff(tc.want, have, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("mismatch (-want +have):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestRepoStore_Blocking(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	rs := Repos(db)
+
+	ctx := context.Background()
+
+	repos := []*types.Repo{
+		{
+			ID:      1,
+			Name:    "foo",
+			URI:     "foo-uri",
+			Sources: map[string]*types.SourceInfo{},
+		},
+		{
+			ID:      2,
+			Name:    "bar",
+			URI:     "bar-uri",
+			Sources: map[string]*types.SourceInfo{},
+		},
+	}
+
+	err := rs.Create(ctx, repos...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	sort.Sort(types.RepoNames(repos))
-	sort.Sort(types.RepoNames(reposToAdd))
-	if diff := cmp.Diff(reposToAdd[:1], repos, cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("mismatch (-want +got):\n%s", diff)
+	err = rs.Block(ctx, "too big", repos[1].ID)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	t.Run("GetByName_Name", func(t *testing.T) {
+		_, err := rs.GetByName(ctx, repos[0].Name)
+		if have, want := fmt.Sprint(err), "<nil>"; have != want {
+			t.Errorf("error, have: %q, want: %q", have, want)
+		}
+
+		_, err = rs.GetByName(ctx, repos[1].Name)
+		if have, want := fmt.Sprint(err), `repository bar has been blocked. reason: too big`; have != want {
+			t.Errorf("error, have: %q, want: %q", have, want)
+		}
+	})
+
+	t.Run("GetByName_URI", func(t *testing.T) {
+		_, err := rs.GetByName(ctx, api.RepoName(repos[0].URI))
+		if have, want := fmt.Sprint(err), "<nil>"; have != want {
+			t.Errorf("error, have: %q, want: %q", have, want)
+		}
+
+		_, err = rs.GetByName(ctx, api.RepoName(repos[1].URI))
+		if have, want := fmt.Sprint(err), `repository bar has been blocked. reason: too big`; have != want {
+			t.Errorf("error, have: %q, want: %q", have, want)
+		}
+	})
+
+	t.Run("List", func(t *testing.T) {
+		have, err := rs.List(ctx, ReposListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := repos[:1]
+		if !cmp.Equal(have, want) {
+			t.Errorf("mismatch: (-have, +want):\n:%s", cmp.Diff(have, want))
+		}
+	})
 }

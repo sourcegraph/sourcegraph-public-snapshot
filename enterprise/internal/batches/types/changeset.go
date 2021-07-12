@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // ChangesetState defines the possible states of a Changeset.
@@ -80,6 +81,36 @@ func (s ChangesetPublicationState) Published() bool { return s == ChangesetPubli
 // Unpublished returns true if the given state is ChangesetPublicationStateUnpublished.
 func (s ChangesetPublicationState) Unpublished() bool {
 	return s == ChangesetPublicationStateUnpublished
+}
+
+type ChangesetUiPublicationState string
+
+var (
+	ChangesetUiPublicationStateUnpublished ChangesetUiPublicationState = "UNPUBLISHED"
+	ChangesetUiPublicationStateDraft       ChangesetUiPublicationState = "DRAFT"
+	ChangesetUiPublicationStatePublished   ChangesetUiPublicationState = "PUBLISHED"
+)
+
+func ChangesetUiPublicationStateFromPublishedValue(value batches.PublishedValue) *ChangesetUiPublicationState {
+	if value.True() {
+		return &ChangesetUiPublicationStatePublished
+	} else if value.Draft() {
+		return &ChangesetUiPublicationStateDraft
+	} else if !value.Nil() {
+		return &ChangesetUiPublicationStateUnpublished
+	}
+	return nil
+}
+
+func (s ChangesetUiPublicationState) Valid() bool {
+	switch s {
+	case ChangesetUiPublicationStateUnpublished,
+		ChangesetUiPublicationStateDraft,
+		ChangesetUiPublicationStatePublished:
+		return true
+	default:
+		return false
+	}
 }
 
 // ReconcilerState defines the possible states of a Reconciler.
@@ -237,7 +268,8 @@ type Changeset struct {
 	CurrentSpecID  int64
 	PreviousSpecID int64
 
-	PublicationState ChangesetPublicationState // "unpublished", "published"
+	PublicationState   ChangesetPublicationState // "unpublished", "published"
+	UiPublicationState *ChangesetUiPublicationState
 
 	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState  ReconcilerState

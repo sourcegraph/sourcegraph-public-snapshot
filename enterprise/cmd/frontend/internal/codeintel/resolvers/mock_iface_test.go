@@ -2552,29 +2552,15 @@ type MockEnqueuerDBStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *EnqueuerDBStoreHandleFunc
-	// IndexableRepositoriesFunc is an instance of a mock function object
-	// controlling the behavior of the method IndexableRepositories.
-	IndexableRepositoriesFunc *EnqueuerDBStoreIndexableRepositoriesFunc
 	// InsertIndexFunc is an instance of a mock function object controlling
 	// the behavior of the method InsertIndex.
 	InsertIndexFunc *EnqueuerDBStoreInsertIndexFunc
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
 	IsQueuedFunc *EnqueuerDBStoreIsQueuedFunc
-	// RepoUsageStatisticsFunc is an instance of a mock function object
-	// controlling the behavior of the method RepoUsageStatistics.
-	RepoUsageStatisticsFunc *EnqueuerDBStoreRepoUsageStatisticsFunc
-	// ResetIndexableRepositoriesFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// ResetIndexableRepositories.
-	ResetIndexableRepositoriesFunc *EnqueuerDBStoreResetIndexableRepositoriesFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *EnqueuerDBStoreTransactFunc
-	// UpdateIndexableRepositoryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UpdateIndexableRepository.
-	UpdateIndexableRepositoryFunc *EnqueuerDBStoreUpdateIndexableRepositoryFunc
 }
 
 // NewMockEnqueuerDBStore creates a new mock of the EnqueuerDBStore
@@ -2607,11 +2593,6 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 				return nil
 			},
 		},
-		IndexableRepositoriesFunc: &EnqueuerDBStoreIndexableRepositoriesFunc{
-			defaultHook: func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-				return nil, nil
-			},
-		},
 		InsertIndexFunc: &EnqueuerDBStoreInsertIndexFunc{
 			defaultHook: func(context.Context, dbstore.Index) (int, error) {
 				return 0, nil
@@ -2622,24 +2603,9 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 				return false, nil
 			},
 		},
-		RepoUsageStatisticsFunc: &EnqueuerDBStoreRepoUsageStatisticsFunc{
-			defaultHook: func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-				return nil, nil
-			},
-		},
-		ResetIndexableRepositoriesFunc: &EnqueuerDBStoreResetIndexableRepositoriesFunc{
-			defaultHook: func(context.Context, time.Time) error {
-				return nil
-			},
-		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
 			defaultHook: func(context.Context) (enqueuer.DBStore, error) {
 				return nil, nil
-			},
-		},
-		UpdateIndexableRepositoryFunc: &EnqueuerDBStoreUpdateIndexableRepositoryFunc{
-			defaultHook: func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-				return nil
 			},
 		},
 	}
@@ -2665,26 +2631,14 @@ func NewMockEnqueuerDBStoreFrom(i EnqueuerDBStore) *MockEnqueuerDBStore {
 		HandleFunc: &EnqueuerDBStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		IndexableRepositoriesFunc: &EnqueuerDBStoreIndexableRepositoriesFunc{
-			defaultHook: i.IndexableRepositories,
-		},
 		InsertIndexFunc: &EnqueuerDBStoreInsertIndexFunc{
 			defaultHook: i.InsertIndex,
 		},
 		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
 			defaultHook: i.IsQueued,
 		},
-		RepoUsageStatisticsFunc: &EnqueuerDBStoreRepoUsageStatisticsFunc{
-			defaultHook: i.RepoUsageStatistics,
-		},
-		ResetIndexableRepositoriesFunc: &EnqueuerDBStoreResetIndexableRepositoriesFunc{
-			defaultHook: i.ResetIndexableRepositories,
-		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
 			defaultHook: i.Transact,
-		},
-		UpdateIndexableRepositoryFunc: &EnqueuerDBStoreUpdateIndexableRepositoryFunc{
-			defaultHook: i.UpdateIndexableRepository,
 		},
 	}
 }
@@ -3231,119 +3185,6 @@ func (c EnqueuerDBStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// EnqueuerDBStoreIndexableRepositoriesFunc describes the behavior when the
-// IndexableRepositories method of the parent MockEnqueuerDBStore instance
-// is invoked.
-type EnqueuerDBStoreIndexableRepositoriesFunc struct {
-	defaultHook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
-	hooks       []func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
-	history     []EnqueuerDBStoreIndexableRepositoriesFuncCall
-	mutex       sync.Mutex
-}
-
-// IndexableRepositories delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) IndexableRepositories(v0 context.Context, v1 dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-	r0, r1 := m.IndexableRepositoriesFunc.nextHook()(v0, v1)
-	m.IndexableRepositoriesFunc.appendCall(EnqueuerDBStoreIndexableRepositoriesFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// IndexableRepositories method of the parent MockEnqueuerDBStore instance
-// is invoked and the hook queue is empty.
-func (f *EnqueuerDBStoreIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// IndexableRepositories method of the parent MockEnqueuerDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *EnqueuerDBStoreIndexableRepositoriesFunc) PushHook(hook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerDBStoreIndexableRepositoriesFunc) SetDefaultReturn(r0 []dbstore.IndexableRepository, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerDBStoreIndexableRepositoriesFunc) PushReturn(r0 []dbstore.IndexableRepository, r1 error) {
-	f.PushHook(func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-		return r0, r1
-	})
-}
-
-func (f *EnqueuerDBStoreIndexableRepositoriesFunc) nextHook() func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerDBStoreIndexableRepositoriesFunc) appendCall(r0 EnqueuerDBStoreIndexableRepositoriesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// EnqueuerDBStoreIndexableRepositoriesFuncCall objects describing the
-// invocations of this function.
-func (f *EnqueuerDBStoreIndexableRepositoriesFunc) History() []EnqueuerDBStoreIndexableRepositoriesFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreIndexableRepositoriesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerDBStoreIndexableRepositoriesFuncCall is an object that describes
-// an invocation of method IndexableRepositories on an instance of
-// MockEnqueuerDBStore.
-type EnqueuerDBStoreIndexableRepositoriesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 dbstore.IndexableRepositoryQueryOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.IndexableRepository
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerDBStoreIndexableRepositoriesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerDBStoreIndexableRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // EnqueuerDBStoreInsertIndexFunc describes the behavior when the
 // InsertIndex method of the parent MockEnqueuerDBStore instance is invoked.
 type EnqueuerDBStoreInsertIndexFunc struct {
@@ -3565,225 +3406,6 @@ func (c EnqueuerDBStoreIsQueuedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// EnqueuerDBStoreRepoUsageStatisticsFunc describes the behavior when the
-// RepoUsageStatistics method of the parent MockEnqueuerDBStore instance is
-// invoked.
-type EnqueuerDBStoreRepoUsageStatisticsFunc struct {
-	defaultHook func(context.Context) ([]dbstore.RepoUsageStatistics, error)
-	hooks       []func(context.Context) ([]dbstore.RepoUsageStatistics, error)
-	history     []EnqueuerDBStoreRepoUsageStatisticsFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoUsageStatistics delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) RepoUsageStatistics(v0 context.Context) ([]dbstore.RepoUsageStatistics, error) {
-	r0, r1 := m.RepoUsageStatisticsFunc.nextHook()(v0)
-	m.RepoUsageStatisticsFunc.appendCall(EnqueuerDBStoreRepoUsageStatisticsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoUsageStatistics
-// method of the parent MockEnqueuerDBStore instance is invoked and the hook
-// queue is empty.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) SetDefaultHook(hook func(context.Context) ([]dbstore.RepoUsageStatistics, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoUsageStatistics method of the parent MockEnqueuerDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) PushHook(hook func(context.Context) ([]dbstore.RepoUsageStatistics, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) SetDefaultReturn(r0 []dbstore.RepoUsageStatistics, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) PushReturn(r0 []dbstore.RepoUsageStatistics, r1 error) {
-	f.PushHook(func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-		return r0, r1
-	})
-}
-
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) nextHook() func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) appendCall(r0 EnqueuerDBStoreRepoUsageStatisticsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnqueuerDBStoreRepoUsageStatisticsFuncCall
-// objects describing the invocations of this function.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) History() []EnqueuerDBStoreRepoUsageStatisticsFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreRepoUsageStatisticsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerDBStoreRepoUsageStatisticsFuncCall is an object that describes an
-// invocation of method RepoUsageStatistics on an instance of
-// MockEnqueuerDBStore.
-type EnqueuerDBStoreRepoUsageStatisticsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.RepoUsageStatistics
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerDBStoreRepoUsageStatisticsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerDBStoreRepoUsageStatisticsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// EnqueuerDBStoreResetIndexableRepositoriesFunc describes the behavior when
-// the ResetIndexableRepositories method of the parent MockEnqueuerDBStore
-// instance is invoked.
-type EnqueuerDBStoreResetIndexableRepositoriesFunc struct {
-	defaultHook func(context.Context, time.Time) error
-	hooks       []func(context.Context, time.Time) error
-	history     []EnqueuerDBStoreResetIndexableRepositoriesFuncCall
-	mutex       sync.Mutex
-}
-
-// ResetIndexableRepositories delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) ResetIndexableRepositories(v0 context.Context, v1 time.Time) error {
-	r0 := m.ResetIndexableRepositoriesFunc.nextHook()(v0, v1)
-	m.ResetIndexableRepositoriesFunc.appendCall(EnqueuerDBStoreResetIndexableRepositoriesFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// ResetIndexableRepositories method of the parent MockEnqueuerDBStore
-// instance is invoked and the hook queue is empty.
-func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, time.Time) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ResetIndexableRepositories method of the parent MockEnqueuerDBStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) PushHook(hook func(context.Context, time.Time) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, time.Time) error {
-		return r0
-	})
-}
-
-func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) nextHook() func(context.Context, time.Time) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) appendCall(r0 EnqueuerDBStoreResetIndexableRepositoriesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// EnqueuerDBStoreResetIndexableRepositoriesFuncCall objects describing the
-// invocations of this function.
-func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) History() []EnqueuerDBStoreResetIndexableRepositoriesFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreResetIndexableRepositoriesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerDBStoreResetIndexableRepositoriesFuncCall is an object that
-// describes an invocation of method ResetIndexableRepositories on an
-// instance of MockEnqueuerDBStore.
-type EnqueuerDBStoreResetIndexableRepositoriesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerDBStoreResetIndexableRepositoriesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerDBStoreResetIndexableRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // EnqueuerDBStoreTransactFunc describes the behavior when the Transact
 // method of the parent MockEnqueuerDBStore instance is invoked.
 type EnqueuerDBStoreTransactFunc struct {
@@ -3890,119 +3512,6 @@ func (c EnqueuerDBStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// EnqueuerDBStoreUpdateIndexableRepositoryFunc describes the behavior when
-// the UpdateIndexableRepository method of the parent MockEnqueuerDBStore
-// instance is invoked.
-type EnqueuerDBStoreUpdateIndexableRepositoryFunc struct {
-	defaultHook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error
-	hooks       []func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error
-	history     []EnqueuerDBStoreUpdateIndexableRepositoryFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateIndexableRepository delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) UpdateIndexableRepository(v0 context.Context, v1 dbstore.UpdateableIndexableRepository, v2 time.Time) error {
-	r0 := m.UpdateIndexableRepositoryFunc.nextHook()(v0, v1, v2)
-	m.UpdateIndexableRepositoryFunc.appendCall(EnqueuerDBStoreUpdateIndexableRepositoryFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UpdateIndexableRepository method of the parent MockEnqueuerDBStore
-// instance is invoked and the hook queue is empty.
-func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateIndexableRepository method of the parent MockEnqueuerDBStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-		return r0
-	})
-}
-
-func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) nextHook() func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) appendCall(r0 EnqueuerDBStoreUpdateIndexableRepositoryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// EnqueuerDBStoreUpdateIndexableRepositoryFuncCall objects describing the
-// invocations of this function.
-func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) History() []EnqueuerDBStoreUpdateIndexableRepositoryFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreUpdateIndexableRepositoryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerDBStoreUpdateIndexableRepositoryFuncCall is an object that
-// describes an invocation of method UpdateIndexableRepository on an
-// instance of MockEnqueuerDBStore.
-type EnqueuerDBStoreUpdateIndexableRepositoryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 dbstore.UpdateableIndexableRepository
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerDBStoreUpdateIndexableRepositoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerDBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // MockEnqueuerGitserverClient is a mock implementation of the
 // EnqueuerGitserverClient interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
@@ -4036,8 +3545,8 @@ func NewMockEnqueuerGitserverClient() *MockEnqueuerGitserverClient {
 			},
 		},
 		HeadFunc: &EnqueuerGitserverClientHeadFunc{
-			defaultHook: func(context.Context, int) (string, error) {
-				return "", nil
+			defaultHook: func(context.Context, int) (string, bool, error) {
+				return "", false, nil
 			},
 		},
 		ListFilesFunc: &EnqueuerGitserverClientListFilesFunc{
@@ -4202,24 +3711,24 @@ func (c EnqueuerGitserverClientFileExistsFuncCall) Results() []interface{} {
 // EnqueuerGitserverClientHeadFunc describes the behavior when the Head
 // method of the parent MockEnqueuerGitserverClient instance is invoked.
 type EnqueuerGitserverClientHeadFunc struct {
-	defaultHook func(context.Context, int) (string, error)
-	hooks       []func(context.Context, int) (string, error)
+	defaultHook func(context.Context, int) (string, bool, error)
+	hooks       []func(context.Context, int) (string, bool, error)
 	history     []EnqueuerGitserverClientHeadFuncCall
 	mutex       sync.Mutex
 }
 
 // Head delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockEnqueuerGitserverClient) Head(v0 context.Context, v1 int) (string, error) {
-	r0, r1 := m.HeadFunc.nextHook()(v0, v1)
-	m.HeadFunc.appendCall(EnqueuerGitserverClientHeadFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockEnqueuerGitserverClient) Head(v0 context.Context, v1 int) (string, bool, error) {
+	r0, r1, r2 := m.HeadFunc.nextHook()(v0, v1)
+	m.HeadFunc.appendCall(EnqueuerGitserverClientHeadFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Head method of the
 // parent MockEnqueuerGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *EnqueuerGitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+func (f *EnqueuerGitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -4227,7 +3736,7 @@ func (f *EnqueuerGitserverClientHeadFunc) SetDefaultHook(hook func(context.Conte
 // Head method of the parent MockEnqueuerGitserverClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *EnqueuerGitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, error)) {
+func (f *EnqueuerGitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4235,21 +3744,21 @@ func (f *EnqueuerGitserverClientHeadFunc) PushHook(hook func(context.Context, in
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *EnqueuerGitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (string, error) {
-		return r0, r1
+func (f *EnqueuerGitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *EnqueuerGitserverClientHeadFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, int) (string, error) {
-		return r0, r1
+func (f *EnqueuerGitserverClientHeadFunc) PushReturn(r0 string, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *EnqueuerGitserverClientHeadFunc) nextHook() func(context.Context, int) (string, error) {
+func (f *EnqueuerGitserverClientHeadFunc) nextHook() func(context.Context, int) (string, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4293,7 +3802,10 @@ type EnqueuerGitserverClientHeadFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -4305,7 +3817,7 @@ func (c EnqueuerGitserverClientHeadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnqueuerGitserverClientHeadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // EnqueuerGitserverClientListFilesFunc describes the behavior when the
@@ -5215,6 +4727,9 @@ type MockLSIFStore struct {
 	// DocumentationPageFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationPage.
 	DocumentationPageFunc *LSIFStoreDocumentationPageFunc
+	// DocumentationPathInfoFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationPathInfo.
+	DocumentationPathInfoFunc *LSIFStoreDocumentationPathInfoFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *LSIFStoreExistsFunc
@@ -5256,6 +4771,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 		},
 		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
 			defaultHook: func(context.Context, int, string) (*semantic.DocumentationPageData, error) {
+				return nil, nil
+			},
+		},
+		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
 				return nil, nil
 			},
 		},
@@ -5307,6 +4827,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
 			defaultHook: i.DocumentationPage,
+		},
+		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
+			defaultHook: i.DocumentationPathInfo,
 		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: i.Exists,
@@ -5811,6 +5334,120 @@ func (c LSIFStoreDocumentationPageFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LSIFStoreDocumentationPageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LSIFStoreDocumentationPathInfoFunc describes the behavior when the
+// DocumentationPathInfo method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreDocumentationPathInfoFunc struct {
+	defaultHook func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)
+	hooks       []func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)
+	history     []LSIFStoreDocumentationPathInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationPathInfo delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) DocumentationPathInfo(v0 context.Context, v1 int, v2 string) (*semantic.DocumentationPathInfoData, error) {
+	r0, r1 := m.DocumentationPathInfoFunc.nextHook()(v0, v1, v2)
+	m.DocumentationPathInfoFunc.appendCall(LSIFStoreDocumentationPathInfoFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DocumentationPathInfo method of the parent MockLSIFStore instance is
+// invoked and the hook queue is empty.
+func (f *LSIFStoreDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationPathInfo method of the parent MockLSIFStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LSIFStoreDocumentationPathInfoFunc) PushHook(hook func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreDocumentationPathInfoFunc) SetDefaultReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreDocumentationPathInfoFunc) PushReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
+	f.PushHook(func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreDocumentationPathInfoFunc) nextHook() func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDocumentationPathInfoFunc) appendCall(r0 LSIFStoreDocumentationPathInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreDocumentationPathInfoFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreDocumentationPathInfoFunc) History() []LSIFStoreDocumentationPathInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDocumentationPathInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDocumentationPathInfoFuncCall is an object that describes an
+// invocation of method DocumentationPathInfo on an instance of
+// MockLSIFStore.
+type LSIFStoreDocumentationPathInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *semantic.DocumentationPathInfoData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDocumentationPathInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDocumentationPathInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

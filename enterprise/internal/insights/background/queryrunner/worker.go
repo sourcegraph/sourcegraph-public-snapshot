@@ -290,8 +290,17 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 	return jobs, nil
 }
 
-var jobsColumns = append([]*sqlf.Query{
+var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("insights_query_runner_jobs.series_id"),
 	sqlf.Sprintf("insights_query_runner_jobs.search_query"),
 	sqlf.Sprintf("insights_query_runner_jobs.record_time"),
-}, dbworkerstore.DefaultColumnExpressions()...)
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("execution_logs"),
+}

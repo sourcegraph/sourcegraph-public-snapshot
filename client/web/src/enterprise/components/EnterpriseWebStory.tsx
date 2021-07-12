@@ -8,5 +8,5 @@ import enterpriseWebStyles from '../../enterprise.scss'
  * Takes a render function as children that gets called with the props.
  */
 export const EnterpriseWebStory: React.FunctionComponent<WebStoryProps> = props => (
-    <WebStory {...props} webStyles={enterpriseWebStyles} />
+    <WebStory {...props} additionalWebStyles={enterpriseWebStyles} />
 )

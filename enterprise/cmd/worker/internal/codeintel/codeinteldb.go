@@ -12,6 +12,10 @@ import (
 // InitCodeIntelDatabase initializes and returns a connection to the codeintel db.
 func InitCodeIntelDatabase() (*sql.DB, error) {
 	conn, err := initCodeIntelDatabaseMemo.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	return conn.(*sql.DB), err
 }
 
@@ -20,7 +24,7 @@ var initCodeIntelDatabaseMemo = shared.NewMemoizedConstructor(func() (interface{
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 
-	db, err := dbconn.New(postgresDSN, "_codeintel")
+	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "worker"})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to codeintel database: %s", err)
 	}

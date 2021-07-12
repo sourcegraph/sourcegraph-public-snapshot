@@ -51,7 +51,15 @@ func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRo
 	}
 
 	routines := []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(dbStore, locker, gitserverClient, commitGraphConfigInst.CommitGraphUpdateTaskInterval, observationContext),
+		commitgraph.NewUpdater(
+			dbStore,
+			locker,
+			gitserverClient,
+			commitGraphConfigInst.MaxAgeForNonStaleBranches,
+			commitGraphConfigInst.MaxAgeForNonStaleTags,
+			commitGraphConfigInst.CommitGraphUpdateTaskInterval,
+			observationContext,
+		),
 	}
 
 	return routines, nil

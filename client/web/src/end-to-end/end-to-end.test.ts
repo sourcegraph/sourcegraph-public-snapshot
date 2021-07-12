@@ -751,13 +751,13 @@ describe('e2e test suite', () => {
                     name: 'navigates to file on symbol click for Go',
                     repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
                     filePath: '/tree/cmd',
-                    symbolPath: '/blob/cmd/go-diff/go-diff.go#L19:2-19:10',
+                    symbolPath: '/blob/cmd/go-diff/go-diff.go?L19:2-19:10',
                 },
                 {
                     name: 'navigates to file on symbol click for Java',
                     repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
                     filePath: '/tree/src/main/java/com/sourcegraph/common',
-                    symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
+                    symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java?L14:20-14:26',
                     skip: true,
                 },
                 {
@@ -765,14 +765,14 @@ describe('e2e test suite', () => {
                         'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/examples',
-                    symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
+                    symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go?L26:6-26:10',
                     skip: true,
                 },
                 {
                     name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/sqltrace',
-                    symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
+                    symbolPath: '/blob/sqltrace/sql.go?L14:2-14:5',
                     skip: true,
                 },
             ]

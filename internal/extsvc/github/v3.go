@@ -212,6 +212,21 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
+func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
+	if c.githubDotCom {
+		return "unknown", nil
+	}
+
+	var empty interface{}
+
+	header, err := c.requestGetWithHeader(ctx, "/", &empty)
+	if err != nil {
+		return "", err
+	}
+	v := header.Get("X-GitHub-Enterprise-Version")
+	return v, nil
+}
+
 func (c *V3Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {
 	var u User
 	err := c.requestGet(ctx, "/user", &u)
@@ -386,8 +401,8 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 // ListOrgRepositories lists GitHub repositories from the specified organization.
 // org is the name of the organization. page is the page of results to return.
 // Pages are 1-indexed (so the first call should be for page 1).
-func (c *V3Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("orgs/%s/repos?sort=created&page=%d&per_page=100", org, page)
+func (c *V3Client) ListOrgRepositories(ctx context.Context, org string, page int, repoType string) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+	path := fmt.Sprintf("orgs/%s/repos?sort=created&page=%d&per_page=100&type=%s", org, page, repoType)
 	repos, err = c.listRepositories(ctx, path)
 	return repos, len(repos) > 0, 1, err
 }

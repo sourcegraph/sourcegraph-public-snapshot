@@ -55,7 +55,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     defaultSearchContextSpec: '',
     variant: 'default',
     globbing: false,
-    enableSmartQuery: false,
     showOnboardingTour: false,
     branding: undefined,
     routes: [],

@@ -1021,11 +1021,11 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *test
 			sourced := types.Repos{mk("initial"), mk("new")}
 
 			syncer := &repos.Syncer{
-				Sourcer:      repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
-				Store:        store,
-				Synced:       make(chan repos.Diff),
-				SubsetSynced: make(chan repos.Diff),
-				Now:          time.Now,
+				Sourcer:          repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
+				Store:            store,
+				Synced:           make(chan repos.Diff),
+				SingleRepoSynced: make(chan repos.Diff),
+				Now:              time.Now,
 			}
 
 			// Initial repos in store
@@ -1052,14 +1052,14 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *test
 				t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
 			}
 
-			// Next up it should find the new repo and send it down SubsetSynced
-			diff = <-syncer.SubsetSynced
+			// Next up it should find the new repo and send it down SingleRepoSynced
+			diff = <-syncer.SingleRepoSynced
 			if d := cmp.Diff(repos.Diff{Added: types.Repos{mk("new")}}, diff, ignore); d != "" {
-				t.Fatalf("SubsetSynced mismatch (-want +got):\n%s", d)
+				t.Fatalf("SingleRepoSynced mismatch (-want +got):\n%s", d)
 			}
 
 			// Finally we get the final diff, which will have everything listed as
-			// Unmodified since we added when we did SubsetSynced.
+			// Unmodified since we added when we did SingleRepoSynced.
 			diff = <-syncer.Synced
 			if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
 				t.Fatalf("final Synced mismatch (-want +got):\n%s", d)

@@ -33,7 +33,7 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 	}
 
 	// Create a connection to TimescaleDB, so we can record results.
-	timescale, err := insights.InitializeCodeInsightsDB()
+	timescale, err := insights.InitializeCodeInsightsDB("repo-updater")
 	if err != nil {
 		// e.g. migration failed, DB unavailable, etc. code insights is non-functional so we do not
 		// want to continue.
@@ -43,7 +43,8 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 		// behave if the frontend had not yet migrated the main app DB.
 		log.Fatal("failed to initialize code insights (set DISABLE_CODE_INSIGHTS=true if needed)", err)
 	}
-	insightsStore := store.New(timescale)
+	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
+	insightsStore := store.New(timescale, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the TimescaleDB (which we use only for storing insights data.)
@@ -72,7 +73,7 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
 
-	//todo(insights) add setting to disable this indexer
+	// todo(insights) add setting to disable this indexer
 	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, timescale))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues

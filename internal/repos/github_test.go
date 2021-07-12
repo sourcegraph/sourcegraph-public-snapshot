@@ -473,3 +473,66 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 		}
 	}
 }
+
+func TestGithubSource_GetVersion(t *testing.T) {
+	t.Run("github.com", func(t *testing.T) {
+		svc := &types.ExternalService{
+			Kind: extsvc.KindGitHub,
+			Config: marshalJSON(t, &schema.GitHubConnection{
+				Url: "https://github.com",
+			}),
+		}
+
+		githubSrc, err := NewGithubSource(svc, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := githubSrc.Version(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if want := "unknown"; have != want {
+			t.Fatalf("wrong version returned. want=%s, have=%s", want, have)
+		}
+	})
+
+	t.Run("github enterprise", func(t *testing.T) {
+		// The GithubSource uses the github.Client under the hood, which
+		// uses rcache, a caching layer that uses Redis.
+		// We need to clear the cache before we run the tests
+		rcache.SetupForTest(t)
+
+		fixtureName := "githubenterprise-version"
+		gheToken := os.Getenv("GHE_TOKEN")
+		if update(fixtureName) && gheToken == "" {
+			t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
+		}
+
+		cf, save := newClientFactory(t, fixtureName)
+		defer save(t)
+
+		svc := &types.ExternalService{
+			Kind: extsvc.KindGitHub,
+			Config: marshalJSON(t, &schema.GitHubConnection{
+				Url:   "https://ghe.sgdev.org",
+				Token: gheToken,
+			}),
+		}
+
+		githubSrc, err := NewGithubSource(svc, cf)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := githubSrc.Version(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if want := "2.22.6"; have != want {
+			t.Fatalf("wrong version returned. want=%s, have=%s", want, have)
+		}
+	})
+}

@@ -39,6 +39,37 @@ func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_
 			return page, nil
 		}
 	}
+	return nil, err
+}
 
+const slowDocumentationPathInfoRequestThreshold = time.Second
+
+// DocumentationPathIDInfo returns information about what is located at the given pathID.
+//
+// nil, nil is returned if the page does not exist.
+func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string) (_ *semantic.DocumentationPathInfoData, err error) {
+	ctx, traceLog, endObservation := observeResolver(ctx, &err, "DocumentationPathInfo", r.operations.documentationPathInfo, slowDocumentationPathInfoRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.Int("numUploads", len(r.uploads)),
+			log.String("uploads", uploadIDsToString(r.uploads)),
+			log.String("pathID", pathID),
+		},
+	})
+	defer endObservation()
+
+	for i := range r.uploads {
+		traceLog(log.Int("uploadID", r.uploads[i].ID))
+
+		// In the case of multiple LSIF uploads, we merely return the most-recent info from a
+		// matching bundle.
+		var pathInfo *semantic.DocumentationPathInfoData
+		pathInfo, err = r.lsifStore.DocumentationPathInfo(ctx, r.uploads[i].ID, pathID)
+		if err == nil {
+			return pathInfo, nil
+		}
+	}
 	return nil, err
 }

@@ -115,7 +115,6 @@ type SearchResultsResolver struct {
 type SearchResults struct {
 	Matches []result.Match
 	Stats   streaming.Stats
-	Cursor  *run.SearchCursor
 	Alert   *searchAlert
 }
 
@@ -447,13 +446,51 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
 			go func() {
-				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags)
+				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
 			}()
 		}
 	}
+}
+
+func (r *searchResolver) toTextParameters(q query.Q) (search.TextParameters, error) {
+	forceResultTypes := result.TypeEmpty
+	if r.PatternType == query.SearchTypeStructural {
+		forceResultTypes = result.TypeFile
+	}
+
+	b, err := query.ToBasicQuery(q)
+	if err != nil {
+		return search.TextParameters{}, err
+	}
+	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
+
+	// Fallback to literal search for searching repos and files if
+	// the structural search pattern is empty.
+	if r.PatternType == query.SearchTypeStructural && p.Pattern == "" {
+		r.PatternType = query.SearchTypeLiteral
+		p.IsStructuralPat = false
+		forceResultTypes = result.Types(0)
+	}
+
+	args := search.TextParameters{
+		PatternInfo: p,
+		Query:       r.Query, // TODO(rvantonder) remove setQuery and use q here.
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil || r.stream != nil,
+
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
+		RepoPromise:  &search.RepoPromise{},
+	}
+	if err := args.PatternInfo.Validate(); err != nil {
+		return search.TextParameters{}, &badRequestError{err}
+	}
+	args = withResultTypes(args, forceResultTypes)
+	return args, nil
 }
 
 // evaluateLeaf performs a single search operation and corresponds to the
@@ -464,57 +501,6 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, er
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	// If the request specifies stable:truthy, use pagination to return a stable ordering.
-	if r.Query.BoolValue(query.FieldStable) {
-		var stableResultCount int32 = defaultMaxSearchResults
-		if count := r.Query.Count(); count != nil {
-			stableResultCount = int32(*count)
-			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrapResults(), nil
-			}
-		}
-
-		r.Pagination = &run.SearchPaginationInfo{
-			Limit: stableResultCount,
-		}
-
-		// Pagination only works for file content searches, and will
-		// raise an error otherwise. If stable is explicitly set, this
-		// is implied. So, force this query to only return file content
-		// results.
-		r.Query = query.OverrideField(r.Query, query.FieldType, "file")
-		result, err := r.paginatedResults(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if result == nil {
-			// Panic if paginatedResults does not ensure a non-nil search result.
-			panic("stable search: paginated search returned nil results")
-		}
-		if result.Cursor == nil {
-			// Perhaps an alert was raised.
-			return result, err
-		}
-		if !result.Cursor.Finished {
-			// For stable result queries limitHit = true implies
-			// there is a next cursor, and more results may exist.
-			result.Stats.IsLimitHit = true
-		}
-		if r.stream != nil {
-			r.stream.Send(streaming.SearchEvent{
-				Results: result.Matches,
-				Stats:   result.Stats,
-			})
-		}
-		return result, err
-	}
-
-	// If the request is a paginated one, we handle it separately. See
-	// paginatedResults for more details.
-	if r.Pagination != nil {
-		return r.paginatedResults(ctx)
-	}
 
 	return r.resultsWithTimeoutSuggestion(ctx)
 }
@@ -733,16 +719,14 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	return result, nil
 }
 
-// setQuery sets a new query in the search resolver, for potentially repeated
-// calls in the search pipeline. The important part is it takes care of
-// invalidating cached repo info.
-func (r *searchResolver) setQuery(q []query.Node) {
+// invalidateCache invalidates the repo cache if we are preparing to evaluate
+// subexpressions that require resolving potentially disjoint repository data.
+func (r *searchResolver) invalidateCache() {
 	if r.invalidateRepoCache {
 		r.resolved.RepoRevs = nil
 		r.resolved.MissingRepoRevs = nil
 		r.repoErr = nil
 	}
-	r.Query = q
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -759,11 +743,13 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
-			r.setQuery(q.ToParseTree())
+			r.invalidateCache()
+			r.Query = q.ToParseTree()
 			return r.evaluateLeaf(ctx)
 		}
 	case query.Pattern:
-		r.setQuery(q.ToParseTree())
+		r.invalidateCache()
+		r.Query = q.ToParseTree()
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
@@ -776,18 +762,19 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
-		r.setQuery(query.ToNodes(q.Parameters))
+		r.invalidateCache()
+		r.Query = query.ToNodes(q.Parameters)
 		return r.evaluateLeaf(ctx)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
 
-// invalidateRepoCache returns whether resolved repos should be invalidated when
+// shouldInvalidateRepoCache returns whether resolved repos should be invalidated when
 // evaluating subexpressions. If a query contains more than one repo, revision,
 // or repogroup field, we should invalidate resolved repos, since multiple
 // repos, revisions, or repogroups imply that different repos may need to be
 // resolved.
-func invalidateRepoCache(plan query.Plan) bool {
+func shouldInvalidateRepoCache(plan query.Plan) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
 	query.VisitParameter(plan.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
 		switch field {
@@ -895,6 +882,11 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		}
 		return srr, err
 	}
+	if sp, _ := r.Plan.ToParseTree().StringValue(query.FieldSelect); sp != "" {
+		// Ensure downstream events sent on the stream are processed by `select:`.
+		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
+		r.stream = streaming.WithSelect(r.stream, selectPath)
+	}
 	sr, err := r.resultsRecursive(ctx, r.Plan)
 	srr := r.resultsToResolver(sr)
 	return srr, err
@@ -945,7 +937,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		tr.Finish()
 	}()
 
-	if invalidateRepoCache(plan) {
+	if shouldInvalidateRepoCache(plan) {
 		r.invalidateRepoCache = true
 	}
 
@@ -1022,12 +1014,46 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
+// searchResultsToFileNodes converts a set of search results into repo/file nodes so that they
+// can replace a file predicate
+func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
+	nodes := make([]query.Node, 0, len(matches))
+	for _, match := range matches {
+		fileMatch, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, fmt.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
+		}
+
+		// We create AND nodes to match both the repo and the file at the same time so
+		// we don't get files of the same name from different repositories.
+		nodes = append(nodes, query.Operator{
+			Kind: query.And,
+			Operands: []query.Node{
+				query.Parameter{
+					Field: query.FieldRepo,
+					Value: "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$",
+				},
+				query.Parameter{
+					Field: query.FieldFile,
+					Value: "^" + regexp.QuoteMeta(fileMatch.Path) + "$",
+				},
+			},
+		})
+	}
+
+	return nodes, nil
+}
+
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
 func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResults, error) {
 	start := time.Now()
-	rr, err := r.doResults(ctx, result.TypeEmpty)
+	args, err := r.toTextParameters(r.Query)
+	if err != nil {
+		return nil, err
+	}
+	rr, err := r.doResults(ctx, args)
 
 	// If we encountered a context timeout, it indicates one of the many result
 	// type searchers (file, diff, symbol, etc) completely timed out and could not
@@ -1081,6 +1107,12 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 		switch predicate.Field() {
 		case query.FieldRepo:
 			nodes, err = searchResultsToRepoNodes(srr.Matches)
+			if err != nil {
+				topErr = err
+				return nil
+			}
+		case query.FieldFile:
+			nodes, err = searchResultsToFileNodes(srr.Matches)
 			if err != nil {
 				topErr = err
 				return nil
@@ -1202,7 +1234,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		results, err := r.doResults(ctx, result.TypeEmpty)
+		args, err := r.toTextParameters(r.Query)
+		if err != nil {
+			return nil, err
+		}
+		results, err := r.doResults(ctx, args)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1257,18 +1293,13 @@ var (
 	defaultTimeout = 20 * time.Second
 )
 
-func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout := r.Query.Timeout()
-	return timeout != nil || r.countIsSet()
-}
-
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
 	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
 	timeout := r.Query.Timeout()
 	if timeout != nil {
 		d = *timeout
-	} else if r.countIsSet() {
+	} else if r.Query.Count() != nil {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
@@ -1279,13 +1310,14 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func (r *searchResolver) determineResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
-	// Determine which types of results to return.
+// withResultTypes populates the ResultTypes field of args, which drives the kind
+// of search to run (e.g., text search, symbol search).
+func withResultTypes(args search.TextParameters, forceTypes result.Types) search.TextParameters {
 	var rts result.Types
 	if forceTypes != 0 {
 		rts = forceTypes
 	} else {
-		stringTypes, _ := r.Query.StringValues(query.FieldType)
+		stringTypes, _ := args.Query.StringValues(query.FieldType)
 		if len(stringTypes) == 0 {
 			rts = result.TypeFile | result.TypePath | result.TypeRepo
 		} else {
@@ -1302,8 +1334,8 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 	if rts.Has(result.TypePath) {
 		args.PatternInfo.PatternMatchesPath = true
 	}
-
-	return rts
+	args.ResultTypes = rts
+	return args
 }
 
 // determineRepos wraps resolveRepositories. It interprets the response and
@@ -1318,9 +1350,6 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
 		return nil, r.errorForNoResolvedRepos(ctx)
-	}
-	if resolved.OverLimit {
-		return nil, r.errorForOverRepoLimit(ctx)
 	}
 	return &resolved, nil
 }
@@ -1348,7 +1377,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.Types) (_ *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, args search.TextParameters) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1364,41 +1393,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	defer cancel()
 
 	limit := r.MaxResults()
-	if r.PatternType == query.SearchTypeStructural {
-		forceResultTypes = result.TypeFile
-	}
-
-	q, err := query.ToBasicQuery(r.Query)
-	if err != nil {
-		return nil, err
-	}
-	p := search.ToTextPatternInfo(q, r.protocol(), query.Identity)
-
-	// Fallback to literal search for searching repos and files if
-	// the structural search pattern is empty.
-	if r.PatternType == query.SearchTypeStructural && p.Pattern == "" {
-		r.PatternType = query.SearchTypeLiteral
-		p.IsStructuralPat = false
-		forceResultTypes = result.Types(0)
-	}
-
-	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       r.Query,
-
-		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: r.searchTimeoutFieldSet() || r.stream != nil,
-
-		Zoekt:        r.zoekt,
-		SearcherURLs: r.searcherURLs,
-		RepoPromise:  &search.Promise{},
-	}
-	if err := args.PatternInfo.Validate(); err != nil {
-		return nil, &badRequestError{err}
-	}
-
-	resultTypes := r.determineResultTypes(args, forceResultTypes)
-	tr.LazyPrintf("resultTypes: %s", resultTypes)
+	tr.LazyPrintf("resultTypes: %s", args.ResultTypes)
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
@@ -1440,7 +1435,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		_, _, _ = agg.Get()
 	}()
 
-	isFileOrPath := resultTypes.Has(result.TypeFile) || resultTypes.Has(result.TypePath)
+	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
@@ -1496,7 +1491,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	// results before the above reporting.
 	args.RepoPromise.Resolve(resolved.RepoRevs)
 
-	if resultTypes.Has(result.TypeRepo) {
+	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1506,8 +1501,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	}
 
-	if resultTypes.Has(result.TypeSymbol) {
-		wg := waitGroup(resultTypes.Without(result.TypeSymbol) == 0)
+	if args.ResultTypes.Has(result.TypeSymbol) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
@@ -1515,7 +1510,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		})
 	}
 
-	if resultTypes.Has(result.TypeFile | result.TypePath) {
+	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 		if args.Mode != search.NoFilePath {
 			wg := waitGroup(true)
 			wg.Add(1)
@@ -1526,8 +1521,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		}
 	}
 
-	if resultTypes.Has(result.TypeDiff) {
-		wg := waitGroup(resultTypes.Without(result.TypeDiff) == 0)
+	if args.ResultTypes.Has(result.TypeDiff) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
@@ -1535,8 +1530,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		})
 	}
 
-	if resultTypes.Has(result.TypeCommit) {
-		wg := waitGroup(resultTypes.Without(result.TypeCommit) == 0)
+	if args.ResultTypes.Has(result.TypeCommit) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()

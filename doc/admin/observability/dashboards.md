@@ -398,6 +398,72 @@ This panel indicates out-of-band down migration errors every 5m.
 
 <br />
 
+### Frontend: Database connections
+
+#### frontend: max_open_conns
+
+This panel indicates maximum open.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: open_conns
+
+This panel indicates established.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: in_use
+
+This panel indicates used.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: idle
+
+This panel indicates idle.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: mean_blocked_seconds_per_conn_request
+
+This panel indicates mean blocked seconds per conn request.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: closed_max_idle
+
+This panel indicates closed by SetMaxIdleConns.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: closed_max_lifetime
+
+This panel indicates closed by SetConnMaxLifetime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: closed_max_idle_time
+
+This panel indicates closed by SetConnMaxIdleTime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Frontend: Internal service requests
 
 #### frontend: internal_indexed_search_error_responses
@@ -776,11 +842,21 @@ This panel indicates i/o write throughput.
 
 #### gitserver: running_git_commands
 
-This panel indicates git commands sent to each gitserver instance.
+This panel indicates git commands running on each gitserver instance.
 
 A high value signals load.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-running-git-commands).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: git_commands_received
+
+This panel indicates rate of git commands received across all instances.
+
+per second rate per command across all instances
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -827,6 +903,104 @@ If this value is consistently high, consider the following:
 This panel indicates frontend-internal API error responses every 5m by route.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-frontend-internal-api-error-responses).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+### Git Server: Gitserver cleanup jobs
+
+#### gitserver: janitor_running
+
+This panel indicates if the janitor process is running.
+
+1, if the janitor process is currently running
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: janitor_job_duration
+
+This panel indicates 95th percentile job run duration.
+
+95th percentile job run duration
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: repos_removed
+
+This panel indicates repositories removed due to disk pressure.
+
+Repositories removed due to disk pressure
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+### Git Server: Database connections
+
+#### gitserver: max_open_conns
+
+This panel indicates maximum open.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: open_conns
+
+This panel indicates established.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: in_use
+
+This panel indicates used.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: idle
+
+This panel indicates idle.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: mean_blocked_seconds_per_conn_request
+
+This panel indicates mean blocked seconds per conn request.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: closed_max_idle
+
+This panel indicates closed by SetMaxIdleConns.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: closed_max_lifetime
+
+This panel indicates closed by SetConnMaxLifetime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: closed_max_idle_time
+
+This panel indicates closed by SetConnMaxIdleTime.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1429,6 +1603,72 @@ This panel indicates gitserver client errors every 5m.
 
 <br />
 
+### Precise Code Intel Worker: Database connections
+
+#### precise-code-intel-worker: max_open_conns
+
+This panel indicates maximum open.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: open_conns
+
+This panel indicates established.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: in_use
+
+This panel indicates used.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: idle
+
+This panel indicates idle.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: mean_blocked_seconds_per_conn_request
+
+This panel indicates mean blocked seconds per conn request.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: closed_max_idle
+
+This panel indicates closed by SetMaxIdleConns.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: closed_max_lifetime
+
+This panel indicates closed by SetConnMaxLifetime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: closed_max_idle_time
+
+This panel indicates closed by SetConnMaxIdleTime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Precise Code Intel Worker: Internal service requests
 
 #### precise-code-intel-worker: frontend_internal_api_error_responses
@@ -1893,6 +2133,72 @@ This panel indicates index enqueuer errors every 5m.
 
 <br />
 
+### Worker: Database connections
+
+#### worker: max_open_conns
+
+This panel indicates maximum open.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### worker: open_conns
+
+This panel indicates established.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### worker: in_use
+
+This panel indicates used.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### worker: idle
+
+This panel indicates idle.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### worker: mean_blocked_seconds_per_conn_request
+
+This panel indicates mean blocked seconds per conn request.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### worker: closed_max_idle
+
+This panel indicates closed by SetMaxIdleConns.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### worker: closed_max_lifetime
+
+This panel indicates closed by SetConnMaxLifetime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### worker: closed_max_idle_time
+
+This panel indicates closed by SetConnMaxIdleTime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Worker: Internal service requests
 
 #### worker: frontend_internal_api_error_responses
@@ -2043,7 +2349,7 @@ This panel indicates frontend-internal API error responses every 5m by route.
 
 This panel indicates time since last sync.
 
-A high value here indicates issues synchronizing repository permissions.
+A high value here indicates issues synchronizing repo metadata.
 If the value is persistently high, make sure all external services have valid tokens.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
@@ -2062,7 +2368,7 @@ This panel indicates time since oldest sync.
 
 #### repo-updater: src_repoupdater_syncer_sync_errors_total
 
-This panel indicates sync error rate.
+This panel indicates site level external service sync error rate.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-syncer-sync-errors-total).
 
@@ -2072,7 +2378,7 @@ This panel indicates sync error rate.
 
 #### repo-updater: syncer_sync_start
 
-This panel indicates sync was started.
+This panel indicates repo metadata sync was started.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-sync-start).
 
@@ -2305,11 +2611,11 @@ This panel indicates the total number of completed sync jobs.
 
 <br />
 
-#### repo-updater: repoupdater_errored_sync_jobs_total
+#### repo-updater: repoupdater_errored_sync_jobs_percentage
 
-This panel indicates the total number of errored sync jobs.
+This panel indicates the percentage of external services that have failed their most recent sync.
 
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-errored-sync-jobs-total).
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-errored-sync-jobs-percentage).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -2390,6 +2696,72 @@ This panel indicates remaining calls to GitLab rest API before hitting the rate 
 This panel indicates time spent waiting for the GitLab rest API rate limiter.
 
 Indicates how long we`re waiting on the rate limit once it has been exceeded
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+### Repo Updater: Database connections
+
+#### repo-updater: max_open_conns
+
+This panel indicates maximum open.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### repo-updater: open_conns
+
+This panel indicates established.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### repo-updater: in_use
+
+This panel indicates used.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### repo-updater: idle
+
+This panel indicates idle.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### repo-updater: mean_blocked_seconds_per_conn_request
+
+This panel indicates mean blocked seconds per conn request.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### repo-updater: closed_max_idle
+
+This panel indicates closed by SetMaxIdleConns.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### repo-updater: closed_max_lifetime
+
+This panel indicates closed by SetConnMaxLifetime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### repo-updater: closed_max_idle_time
+
+This panel indicates closed by SetConnMaxIdleTime.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -3499,6 +3871,72 @@ This panel indicates worker store errors every 5m.
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-codeintel-workerstore-errors).
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Executor Queue: Database connections
+
+#### executor-queue: max_open_conns
+
+This panel indicates maximum open.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### executor-queue: open_conns
+
+This panel indicates established.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### executor-queue: in_use
+
+This panel indicates used.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### executor-queue: idle
+
+This panel indicates idle.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### executor-queue: mean_blocked_seconds_per_conn_request
+
+This panel indicates mean blocked seconds per conn request.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### executor-queue: closed_max_idle
+
+This panel indicates closed by SetMaxIdleConns.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### executor-queue: closed_max_lifetime
+
+This panel indicates closed by SetConnMaxLifetime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### executor-queue: closed_max_idle_time
+
+This panel indicates closed by SetConnMaxIdleTime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 

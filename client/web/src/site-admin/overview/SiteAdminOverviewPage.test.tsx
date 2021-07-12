@@ -7,7 +7,6 @@ import sinon from 'sinon'
 import { ISiteUsagePeriod } from '@sourcegraph/shared/src/graphql/schema'
 
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 
@@ -21,18 +20,6 @@ describe('SiteAdminOverviewPage', () => {
         isLightTheme: true,
         overviewComponents: [],
     }
-
-    let stub: sinon.SinonStub<[string, (boolean | undefined)?], void>
-
-    beforeAll(() => {
-        stub = sinon.stub(eventLogger, 'logViewEvent')
-    })
-
-    afterAll(() => {
-        if (stub) {
-            stub.restore()
-        }
-    })
 
     test('activation in progress', done => {
         const component = renderer.create(

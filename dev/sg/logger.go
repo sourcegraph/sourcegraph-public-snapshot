@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"hash/fnv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -14,8 +15,9 @@ var tickDuration = 2 * time.Millisecond
 // cmdLogger is a simplified version of goreman's logger:
 // https://github.com/mattn/goreman/blob/master/log.go
 type cmdLogger struct {
-	out  *output.Output
-	name string
+	out   *output.Output
+	name  string
+	color output.Style
 
 	// buf is used to keep partial lines buffered before flushing them (either
 	// on the next newline or after tickDuration)
@@ -24,12 +26,20 @@ type cmdLogger struct {
 	done   chan struct{}
 }
 
+func nameToColor(s string, v ...interface{}) output.Style {
+	h := fnv.New32()
+	h.Write([]byte(s))
+	// We don't use 256 colors because some of those are too dark/bright and hard to read
+	return output.Fg256Color((int(h.Sum32()) % 220))
+}
+
 // newCmdLogger returns a new cmdLogger instance and spawns a goroutine in the
 // background that regularily flushed the logged output to the given output..
 func newCmdLogger(name string, out *output.Output) *cmdLogger {
 	l := &cmdLogger{
 		name:   name,
 		out:    out,
+		color:  nameToColor(name),
 		writes: make(chan []byte),
 		done:   make(chan struct{}),
 		buf:    &bytes.Buffer{},
@@ -53,7 +63,7 @@ func (l *cmdLogger) flush() {
 	// we flush partial lines, we don't want to add a newline character. What
 	// we need to do: extend the `*output.Output` type to have a
 	// `WritefNoNewline` (yes, bad name) method.
-	l.out.Writef("%s[%s]%s %s", output.StyleBold, l.name, output.StyleReset, l.buf.String())
+	l.out.Writef("%s%s[%s]%s %s", output.StyleBold, l.color, l.name, output.StyleReset, l.buf.String())
 	l.buf.Reset()
 }
 

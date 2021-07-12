@@ -2,7 +2,6 @@ package enqueuer
 
 import (
 	"context"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -61,8 +60,8 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil {
+	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
+	if err != nil || !ok {
 		return nil, errors.Wrap(err, "gitserver.Head")
 	}
 	traceLog(log.String("commit", commit))
@@ -131,8 +130,8 @@ func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryI
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil {
+	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
+	if err != nil || !ok {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 	traceLog(log.String("commit", commit))
@@ -194,18 +193,6 @@ func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, comm
 		)
 	}
 
-	now := time.Now().UTC()
-	update := store.UpdateableIndexableRepository{
-		RepositoryID:        repositoryID,
-		LastIndexEnqueuedAt: &now,
-	}
-
-	// TODO(efritz) - this may create records once a repository has an explicit
-	// index configuration. This shouldn't affect any indexing behavior at all.
-	if err := tx.UpdateIndexableRepository(ctx, update, now); err != nil {
-		return errors.Wrap(err, "dbstore.UpdateIndexableRepository")
-	}
-
 	return nil
 }
 
@@ -232,11 +219,5 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 }
 
 func isNotFoundError(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if errcode.IsNotFound(ex) {
-			return true
-		}
-	}
-
-	return false
+	return errcode.IsNotFound(errors.Cause(err))
 }

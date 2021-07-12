@@ -67,7 +67,6 @@ export function experimentalFeaturesFromSettings(
     showSearchContext: boolean
     showSearchContextManagement: boolean
     showQueryBuilder: boolean
-    enableSmartQuery: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
     designRefreshToggleEnabled: boolean
@@ -84,10 +83,9 @@ export function experimentalFeaturesFromSettings(
         showSearchContextManagement = false,
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
-        enableSmartQuery = true,
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
-        apiDocs = false,
+        apiDocs = true, // Default to true if not set
         designRefreshToggleEnabled = false,
     } = experimentalFeatures
 
@@ -99,7 +97,6 @@ export function experimentalFeaturesFromSettings(
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
         showQueryBuilder,
-        enableSmartQuery,
         enableCodeMonitoring: codeMonitoring,
         enableAPIDocs: apiDocs,
         designRefreshToggleEnabled,

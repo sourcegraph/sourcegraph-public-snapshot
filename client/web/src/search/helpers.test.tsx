@@ -5,8 +5,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { getSearchTypeFromQuery, toggleSearchType, toggleSearchFilter, submitSearch } from './helpers'
 import { SearchType } from './results/StreamingSearchResults'
 
-jest.mock('../tracking/eventLogger', () => ({ eventLogger: { log: () => undefined } }))
-
 describe('search/helpers', () => {
     describe('submitSearch()', () => {
         test('should update history', () => {

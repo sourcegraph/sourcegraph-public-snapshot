@@ -91,6 +91,23 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if isPassword, err := Users(db).IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
 		t.Fatal("old password still works")
 	}
+
+	// Creating a new user with an already verified email address should fail
+	_, err = Users(db).Create(ctx, NewUser{
+		Email:                 "foo@bar.com",
+		Username:              "another",
+		DisplayName:           "another",
+		Password:              "right-password",
+		EmailVerificationCode: "email-code",
+	})
+	if err == nil {
+		t.Fatal("Expected an error, got none")
+	}
+	want := "cannot create user: err_email_exists"
+	if err.Error() != want {
+		t.Fatalf("Want %q, got %q", want, err.Error())
+	}
+
 }
 
 func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {

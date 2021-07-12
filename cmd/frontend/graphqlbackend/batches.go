@@ -106,6 +106,12 @@ type CreateBatchChangeArgs struct {
 type ApplyBatchChangeArgs struct {
 	BatchSpec         graphql.ID
 	EnsureBatchChange *graphql.ID
+	PublicationStates *[]ChangesetSpecPublicationStateInput
+}
+
+type ChangesetSpecPublicationStateInput struct {
+	ChangesetSpec    graphql.ID
+	PublicationState batches.PublishedValue
 }
 
 type ListBatchChangesArgs struct {
@@ -228,6 +234,14 @@ type MergeChangesetsArgs struct {
 	Squash bool
 }
 
+type CreateBatchSpecExecutionArgs struct {
+	Spec string
+}
+
+type CloseChangesetsArgs struct {
+	BulkOperationBaseArgs
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -258,6 +272,8 @@ type BatchChangesResolver interface {
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
+	CreateBatchSpecExecution(ctx context.Context, args *CreateBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
+	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 
 	// Queries
 
@@ -483,7 +499,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() batches.PublishedValue
+	Published() *batches.PublishedValue
 }
 
 type GitCommitDescriptionResolver interface {
@@ -691,4 +707,18 @@ type ChangesetCountsResolver interface {
 	OpenApproved() int32
 	OpenChangesRequested() int32
 	OpenPending() int32
+}
+
+type BatchSpecExecutionResolver interface {
+	ID() graphql.ID
+	InputSpec() string
+	State() string
+	CreatedAt() DateTime
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+	Failure() *string
+	PlaceInQueue() *int32
+	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
+	Initiator(ctx context.Context) (*UserResolver, error)
+	Namespace(ctx context.Context) (*NamespaceResolver, error)
 }

@@ -82,6 +82,26 @@ Associates documentation pathIDs to their documentation page hierarchy chunk.
 
 **path_id**: The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.
 
+# Table "public.lsif_data_documentation_path_info"
+```
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ dump_id | integer |           | not null | 
+ path_id | text    |           | not null | 
+ data    | bytea   |           |          | 
+Indexes:
+    "lsif_data_documentation_path_info_pkey" PRIMARY KEY, btree (dump_id, path_id)
+
+```
+
+Associates documentation page pathIDs to information about what is at that pathID, its immediate children, etc.
+
+**data**: A gob-encoded payload conforming to a `type DocumentationPathInoData struct` pointer (lib/codeintel/semantic/types.go)
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**path_id**: The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.
+
 # Table "public.lsif_data_documents"
 ```
      Column      |  Type   | Collation | Nullable | Default 

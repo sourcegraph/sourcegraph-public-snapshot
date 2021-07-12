@@ -14,6 +14,10 @@ import (
 // InitDBStore initializes and returns a db store instance.
 func InitDBStore() (*dbstore.Store, error) {
 	conn, err := initDBStore.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	return conn.(*dbstore.Store), err
 }
 

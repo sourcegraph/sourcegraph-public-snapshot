@@ -7,6 +7,7 @@
     "yarn": ">1.10.0"
   },
   "scripts": {
+    "storybook": "STORIES_GLOB=client/browser/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
     "fetch-code-intel-extensions": "node scripts/fetch-code-intel-extensions",
     "build-inline-extensions": "node scripts/build-inline-extensions",
     "dev": "yarn run build-inline-extensions && NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" node -r ts-node/register scripts/development",

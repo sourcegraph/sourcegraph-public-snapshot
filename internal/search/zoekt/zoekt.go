@@ -15,8 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-const defaultMaxSearchResults = 30
-
 var defaultTimeout = 20 * time.Second
 
 func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
@@ -85,8 +83,8 @@ func SearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt
 		MaxDocDisplayCount: int(query.FileMatchLimit) + 2000,
 	}
 
-	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := query.FileMatchLimit > search.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(search.DefaultMaxSearchResults))
 	}
 
 	return searchOpts
@@ -117,8 +115,8 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 			k = 1
 		}
 	}
-	if fileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(defaultMaxSearchResults))
+	if fileMatchLimit > search.DefaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
 	}
 	return k
 }

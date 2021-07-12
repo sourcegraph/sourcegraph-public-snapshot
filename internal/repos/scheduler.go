@@ -300,19 +300,30 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	}
 }
 
-// SetCloned will ensure only repos in names are treated as cloned. All other
-// repositories in the scheduler will be marked as uncloned.
+// PrioritiseUncloned will treat any repos listed in names as uncloned, which in effect
+// will move them to the front of he queue for updating ASAP.
 //
 // This method should be called periodically with the list of all repositories
-// cloned on gitserver. This ensures the scheduler treats uncloned
-// repositories with a higher priority.
-func (s *updateScheduler) SetCloned(names []string) {
-	s.schedule.setCloned(names)
+// managed by the scheduler that are not cloned on gitserver.
+func (s *updateScheduler) PrioritiseUncloned(names []string) {
+	s.schedule.prioritiseUncloned(names)
 }
 
 // EnsureScheduled ensures that all repos in repos exist in the scheduler.
 func (s *updateScheduler) EnsureScheduled(repos []types.RepoName) {
 	s.schedule.insertNew(repos)
+}
+
+// ListRepos list all repos managed by the scheduler
+func (s *updateScheduler) ListRepos() []string {
+	s.schedule.mu.Lock()
+	defer s.schedule.mu.Unlock()
+
+	names := make([]string, len(s.schedule.heap))
+	for i := range s.schedule.heap {
+		names[i] = string(s.schedule.heap[i].Repo.Name)
+	}
+	return names
 }
 
 // upsert adds r to the scheduler for periodic updates. If r.ID is already in
@@ -679,11 +690,11 @@ func (s *schedule) upsert(repo configuredRepo) (updated bool) {
 	return false
 }
 
-func (s *schedule) setCloned(names []string) {
+func (s *schedule) prioritiseUncloned(names []string) {
 	// Set of names created outside of lock for fast checking.
-	cloned := make(map[string]struct{}, len(names))
+	uncloned := make(map[string]struct{}, len(names))
 	for _, n := range names {
-		cloned[strings.ToLower(n)] = struct{}{}
+		uncloned[strings.ToLower(n)] = struct{}{}
 	}
 
 	// All non-cloned repos will be due for cloning as if they are newly added
@@ -698,7 +709,8 @@ func (s *schedule) setCloned(names []string) {
 	// heap.
 	rescheduleTimer := false
 	for _, repoUpdate := range s.index {
-		if _, ok := cloned[strings.ToLower(string(repoUpdate.Repo.Name))]; ok {
+		if _, ok := uncloned[strings.ToLower(string(repoUpdate.Repo.Name))]; !ok {
+			// It not in the uncloned list, skip
 			continue
 		}
 		if repoUpdate.Due.After(notClonedDue) {

@@ -1,5 +1,6 @@
 import 'focus-visible'
 
+import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
@@ -32,6 +33,7 @@ import {
 } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
+import { client } from './backend/graphql'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'
@@ -80,7 +82,7 @@ import { QueryState } from './search/helpers'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { GitHubServiceScopeProvider } from './site/GitHubCodeHostScopeAlert/GithubScopeProvider'
+import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
@@ -184,6 +186,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
     hasUserAddedRepositories: boolean
+    hasUserSyncedPublicRepositories: boolean
     hasUserAddedExternalServices: boolean
 
     /**
@@ -200,11 +203,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether we show the mulitiline editor at /search/query-builder
      */
     showQueryBuilder: boolean
-
-    /**
-     * Wether to enable enable contextual syntax highlighting and hovers for search queries
-     */
-    enableSmartQuery: boolean
 
     /**
      * Whether the code monitoring feature flag is enabled.
@@ -307,12 +305,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
+            hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
             showQueryBuilder: false,
-            enableSmartQuery: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
@@ -502,88 +500,90 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const { children, ...props } = this.props
 
         return (
-            <ErrorBoundary location={null}>
-                <ShortcutProvider>
-                    <BrowserRouter key={0}>
-                        <Route
-                            path="/"
-                            render={routeComponentProps => (
-                                <GitHubServiceScopeProvider authenticatedUser={authenticatedUser}>
-                                    <LayoutWithActivation
-                                        {...props}
-                                        {...routeComponentProps}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        showBatchChanges={this.props.showBatchChanges}
-                                        // Theme
-                                        isLightTheme={this.isLightTheme()}
-                                        themePreference={this.state.themePreference}
-                                        onThemePreferenceChange={this.onThemePreferenceChange}
-                                        // Search query
-                                        navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                        onNavbarQueryChange={this.onNavbarQueryChange}
-                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                        parsedSearchQuery={this.state.parsedSearchQuery}
-                                        setParsedSearchQuery={this.setParsedSearchQuery}
-                                        patternType={this.state.searchPatternType}
-                                        setPatternType={this.setPatternType}
-                                        caseSensitive={this.state.searchCaseSensitivity}
-                                        setCaseSensitivity={this.setCaseSensitivity}
-                                        versionContext={this.state.versionContext}
-                                        setVersionContext={this.setVersionContext}
-                                        availableVersionContexts={this.state.availableVersionContexts}
-                                        previousVersionContext={this.state.previousVersionContext}
-                                        // Extensions
-                                        platformContext={this.platformContext}
-                                        extensionsController={this.extensionsController}
-                                        telemetryService={eventLogger}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        showRepogroupHomepage={this.state.showRepogroupHomepage}
-                                        showOnboardingTour={this.state.showOnboardingTour}
-                                        showSearchContext={this.state.showSearchContext}
-                                        hasUserAddedRepositories={this.state.hasUserAddedRepositories}
-                                        hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
-                                        showSearchContextManagement={this.state.showSearchContextManagement}
-                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                        fetchSearchContexts={fetchSearchContexts}
-                                        fetchSearchContext={fetchSearchContext}
-                                        createSearchContext={createSearchContext}
-                                        updateSearchContext={updateSearchContext}
-                                        deleteSearchContext={deleteSearchContext}
-                                        convertVersionContextToSearchContext={convertVersionContextToSearchContext}
-                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                        defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                        showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
-                                        globbing={this.state.globbing}
-                                        showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                        showQueryBuilder={this.state.showQueryBuilder}
-                                        enableSmartQuery={this.state.enableSmartQuery}
-                                        enableCodeMonitoring={this.state.enableCodeMonitoring}
-                                        fetchSavedSearches={fetchSavedSearches}
-                                        fetchRecentSearches={fetchRecentSearches}
-                                        fetchRecentFileViews={fetchRecentFileViews}
-                                        streamSearch={aggregateStreamingSearch}
-                                        onUserExternalServicesOrRepositoriesUpdate={
-                                            this.onUserExternalServicesOrRepositoriesUpdate
-                                        }
-                                        featureFlags={this.state.featureFlags}
-                                    />
-                                </GitHubServiceScopeProvider>
-                            )}
+            <ApolloProvider client={client}>
+                <ErrorBoundary location={null}>
+                    <ShortcutProvider>
+                        <BrowserRouter key={0}>
+                            <Route
+                                path="/"
+                                render={routeComponentProps => (
+                                    <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                        <LayoutWithActivation
+                                            {...props}
+                                            {...routeComponentProps}
+                                            authenticatedUser={authenticatedUser}
+                                            viewerSubject={this.state.viewerSubject}
+                                            settingsCascade={this.state.settingsCascade}
+                                            showBatchChanges={this.props.showBatchChanges}
+                                            // Theme
+                                            isLightTheme={this.isLightTheme()}
+                                            themePreference={this.state.themePreference}
+                                            onThemePreferenceChange={this.onThemePreferenceChange}
+                                            // Search query
+                                            navbarSearchQueryState={this.state.navbarSearchQueryState}
+                                            onNavbarQueryChange={this.onNavbarQueryChange}
+                                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                            parsedSearchQuery={this.state.parsedSearchQuery}
+                                            setParsedSearchQuery={this.setParsedSearchQuery}
+                                            patternType={this.state.searchPatternType}
+                                            setPatternType={this.setPatternType}
+                                            caseSensitive={this.state.searchCaseSensitivity}
+                                            setCaseSensitivity={this.setCaseSensitivity}
+                                            versionContext={this.state.versionContext}
+                                            setVersionContext={this.setVersionContext}
+                                            availableVersionContexts={this.state.availableVersionContexts}
+                                            previousVersionContext={this.state.previousVersionContext}
+                                            // Extensions
+                                            platformContext={this.platformContext}
+                                            extensionsController={this.extensionsController}
+                                            telemetryService={eventLogger}
+                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                            showRepogroupHomepage={this.state.showRepogroupHomepage}
+                                            showOnboardingTour={this.state.showOnboardingTour}
+                                            showSearchContext={this.state.showSearchContext}
+                                            hasUserAddedRepositories={this.hasUserAddedRepositories()}
+                                            hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
+                                            showSearchContextManagement={this.state.showSearchContextManagement}
+                                            selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                            setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                            fetchSearchContexts={fetchSearchContexts}
+                                            fetchSearchContext={fetchSearchContext}
+                                            createSearchContext={createSearchContext}
+                                            updateSearchContext={updateSearchContext}
+                                            deleteSearchContext={deleteSearchContext}
+                                            convertVersionContextToSearchContext={convertVersionContextToSearchContext}
+                                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                            defaultSearchContextSpec={this.state.defaultSearchContextSpec}
+                                            showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
+                                            globbing={this.state.globbing}
+                                            showMultilineSearchConsole={this.state.showMultilineSearchConsole}
+                                            showQueryBuilder={this.state.showQueryBuilder}
+                                            enableCodeMonitoring={this.state.enableCodeMonitoring}
+                                            fetchSavedSearches={fetchSavedSearches}
+                                            fetchRecentSearches={fetchRecentSearches}
+                                            fetchRecentFileViews={fetchRecentFileViews}
+                                            streamSearch={aggregateStreamingSearch}
+                                            onUserExternalServicesOrRepositoriesUpdate={
+                                                this.onUserExternalServicesOrRepositoriesUpdate
+                                            }
+                                            onSyncedPublicRepositoriesUpdate={this.onSyncedPublicRepositoriesUpdate}
+                                            featureFlags={this.state.featureFlags}
+                                        />
+                                    </CodeHostScopeProvider>
+                                )}
+                            />
+                        </BrowserRouter>
+                        <Tooltip key={1} />
+                        <Notifications
+                            key={2}
+                            extensionsController={this.extensionsController}
+                            notificationClassNames={notificationClassNames}
                         />
-                    </BrowserRouter>
-                    <Tooltip key={1} />
-                    <Notifications
-                        key={2}
-                        extensionsController={this.extensionsController}
-                        notificationClassNames={notificationClassNames}
-                    />
-                </ShortcutProvider>
-            </ErrorBoundary>
+                    </ShortcutProvider>
+                </ErrorBoundary>
+            </ApolloProvider>
         )
     }
 
@@ -637,6 +637,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             hasUserAddedRepositories: userRepoCount > 0,
         })
     }
+
+    private onSyncedPublicRepositoriesUpdate = (publicReposCount: number): void => {
+        this.setState({
+            hasUserSyncedPublicRepositories: publicReposCount > 0,
+        })
+    }
+
+    private hasUserAddedRepositories = (): boolean =>
+        this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined

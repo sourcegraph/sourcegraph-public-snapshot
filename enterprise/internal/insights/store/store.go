@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -30,18 +31,19 @@ var _ Interface = &Store{}
 // persistent storage.
 type Store struct {
 	*basestore.Store
-	now func() time.Time
+	now       func() time.Time
+	permStore InsightPermissionStore
 }
 
 // New returns a new Store backed by the given Timescale db.
-func New(db dbutil.DB) *Store {
-	return NewWithClock(db, timeutil.Now)
+func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
+	return NewWithClock(db, permStore, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
+func NewWithClock(db dbutil.DB, permStore InsightPermissionStore, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock, permStore: permStore}
 }
 
 var _ basestore.ShareableStore = &Store{}
@@ -66,6 +68,7 @@ var _ Interface = &Store{}
 // otherwise.
 type SeriesPoint struct {
 	// Time (always UTC).
+	SeriesID string
 	Time     time.Time
 	Value    float64
 	Metadata []byte
@@ -83,6 +86,9 @@ type SeriesPointsOpts struct {
 	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
 	RepoID *api.RepoID
 
+	Excluded []api.RepoID
+	Included []api.RepoID
+
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
@@ -93,12 +99,32 @@ type SeriesPointsOpts struct {
 	Limit int
 }
 
-// SeriesPoints queries data points over time for a specific insights' series.
+//SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
-	err := s.query(ctx, seriesPointsQuery(opts), func(sc scanner) error {
+
+	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
+	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
+	// time series results. 🚨
+	// We think this is faster for a few reasons:
+	//
+	// 1. Any repos set 'public' show for everyone, and this is the default state without configuring otherwise
+	// 2. We have quite a bit of customer feedback that suggests they don't even use repo permissions - they just don't install their private repos onto that Sourcegraph instance.
+	// 3. Cloud will likely be one of best case scenarios for this - currently we have indexed 550k+ repos all of which are public. Even if we add 20,000 private repos that's only ~3.5% of the total set that needs to be fetched to do this authorization filter.
+	//
+	// Since Code Insights is in a different database, we can't trivially join the repo table directly, so this approach is preferred.
+
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return []SeriesPoint{}, err
+	}
+	opts.Excluded = append(opts.Excluded, denylist...)
+
+	q := seriesPointsQuery(opts)
+	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
+			&point.SeriesID,
 			&point.Time,
 			&point.Value,
 			&point.Metadata,
@@ -111,6 +137,25 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	})
 	return points, err
 }
+
+// This query is a barebones implementation of per-repo per-series last-observation carried forward. Long term
+// this query is too expensive to run in real-time and should be moved to a materialized view.
+const lastObservationCarriedPointsSql = `select sub.series_id, sub.interval_time, sum(value) as value, null as metadata from (WITH target_times AS (SELECT *
+FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '26 weeks', CURRENT_TIMESTAMP::date, '2 weeks') as interval_time)
+SELECT sub.series_id, sub.repo_id, sub.value, interval_time
+FROM (select distinct repo_id, series_id from series_points) as r
+cross join target_times tt
+join LATERAL (
+    select sp.* from series_points as sp
+    where sp.repo_id = r.repo_id and sp.time <= tt.interval_time and sp.series_id = r.series_id
+    order by time DESC
+    limit 1
+    ) sub on sub.repo_id = r.repo_id and r.series_id = sub.series_id
+order by interval_time, repo_id) as sub
+where %s
+group by sub.series_id, sub.interval_time
+order by interval_time desc
+`
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular
 // intervals. In specific:
@@ -126,45 +171,10 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 //    thus the interval between data points may be irregular.
 // 4. Searches may not complete at the same exact time, so even in a perfect world if the interval
 //    should be 12h it may be off by a minute or so.
+// 5. Intervals that are missing a data point will need to resolve the last observation and carry it forward.
 //
 // Additionally, it is important to note that there may be data points associated with a repo OR not
 // associated with a repo at all (global.)
-//
-// Because we want 1 point per N interval, and do not want to display duplicate points in the UI, we
-// use a time_bucket() with an MAX() aggregation. This gives us one data point for some time interval,
-// even if multiple were recorded in that timeframe.
-//
-// One goal of this query is to get e.g. the total number of search results (value) across all repos
-// (or some subset selected by the WHERE clause.) In this case, you can imagine each repo having its
-// results recorded at the 12h interval. There may be duplicate points. The subquery uses a time_bucket()
-// and MAX() aggregation to get the "# of search results per unique repository", eliminating duplicate
-// data points, and the top-level SUM() adds those together to get "# of search results across all
-// repositories."
-//
-// Another goal of this query is to get e.g. "total # of services (value) deployed at our company",
-// in which case `repo_id` and other repo fields will be NULL. The inner query still eliminates potential
-// duplicate data points and the outer query in this case just SUMs one data point (as we don't have
-// points per repository.)
-var seriesPointsQueryFmtstr = `
--- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT sub.time_bucket,
-	SUM(sub.max),
-	sub.metadata
-FROM (
-	SELECT time_bucket(INTERVAL '15 days', time) AS time_bucket,
-		MAX(value),
-		m.metadata,
-		series_id,
-		repo_id
-	FROM series_points p
-	LEFT JOIN metadata m ON p.metadata_id = m.id
-	WHERE %s
-	GROUP BY time_bucket, metadata, series_id, repo_id
-	ORDER BY time_bucket DESC
-) sub
-GROUP BY time_bucket, metadata
-ORDER BY time_bucket DESC
-`
 
 func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
@@ -176,23 +186,50 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
 	}
 	if opts.From != nil {
-		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
+		preds = append(preds, sqlf.Sprintf("interval_time >= %s", *opts.From))
 	}
 	if opts.To != nil {
-		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = append(preds, sqlf.Sprintf("interval_time <= %s", *opts.To))
 	}
 	limitClause := ""
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
+	if len(opts.Included) > 0 {
+		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
+		preds = append(preds, sqlf.Sprintf(s))
+	}
+	if len(opts.Excluded) > 0 {
+		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
+		preds = append(preds, sqlf.Sprintf(s))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
 	return sqlf.Sprintf(
-		seriesPointsQueryFmtstr+limitClause,
+		lastObservationCarriedPointsSql+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+//values constructs a SQL values statement out of an array of repository ids
+func values(ids []api.RepoID) string {
+	if len(ids) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString("VALUES ")
+	for _, repoID := range ids {
+		_, err := fmt.Fprintf(&b, "(%v),", repoID)
+		if err != nil {
+			return ""
+		}
+	}
+	query := b.String()
+	query = query[:b.Len()-1] // remove the trailing comma
+	return query
 }
 
 type CountDataOpts struct {

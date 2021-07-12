@@ -12,8 +12,8 @@ import (
 type ObservablePanel struct {
 	options []ObservablePanelOption
 
-	// panelType is "graph" or "heatmap"
-	panelType string
+	// panelType defines the type of panel
+	panelType PanelType
 
 	// unitType is used by other parts of the generator
 	unitType UnitType
@@ -23,7 +23,7 @@ type ObservablePanel struct {
 // with recommended defaults.
 func Panel() ObservablePanel {
 	return ObservablePanel{
-		panelType: "graph",
+		panelType: PanelTypeGraph,
 		options: []ObservablePanelOption{
 			PanelOptions.basicPanel(), // required basic values
 			PanelOptions.OpinionatedDefaults(),
@@ -32,24 +32,11 @@ func Panel() ObservablePanel {
 	}
 }
 
-// PanelMinimal provides a builder for customizing an Observable visualization starting
-// with an extremely minimal graph panel.
-//
-// In general, we advise using Panel() instead to start with recommended defaults.
-func PanelMinimal() ObservablePanel {
-	return ObservablePanel{
-		panelType: "graph",
-		options: []ObservablePanelOption{
-			PanelOptions.basicPanel(), // required basic values
-		},
-	}
-}
-
 // PanelHeatmap provides a builder for customizing an Observable visualization starting
 // with an extremely minimal heatmap panel.
 func PanelHeatmap() ObservablePanel {
 	return ObservablePanel{
-		panelType: "heatmap",
+		panelType: PanelTypeHeatmap,
 		options: []ObservablePanelOption{
 			PanelOptions.basicPanel(), // required basic values
 		},
@@ -64,7 +51,7 @@ func (p ObservablePanel) Min(min float64) ObservablePanel {
 	return p
 }
 
-// Min sets the minimum value of the Y axis on the panel to auto, instead of
+// MinAuto sets the minimum value of the Y axis on the panel to auto, instead of
 // the default zero.
 //
 // This is generally only useful if trying to show negative numbers.

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -26,7 +27,7 @@ const (
 //
 // It is used to enable our e2e tests to authenticate to https://sourcegraph.sgdev.org without
 // needing to give them Google Workspace access.
-func OverrideAuthMiddleware(next http.Handler) http.Handler {
+func OverrideAuthMiddleware(db dbutil.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		secret := envOverrideAuthSecret
 		// Accept both old header (X-Oidc-Override, deprecated) and new overrideSecretHeader for now.
@@ -36,7 +37,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 				username = defaultUsername
 			}
 
-			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
+			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
 				UserProps: database.NewUser{
 					Username:        username,
 					Email:           username + "+override@example.com",

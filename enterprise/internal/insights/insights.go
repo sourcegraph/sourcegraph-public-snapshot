@@ -44,7 +44,7 @@ func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oob
 		}
 		return nil
 	}
-	timescale, err := InitializeCodeInsightsDB()
+	timescale, err := InitializeCodeInsightsDB("frontend")
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oob
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
-func InitializeCodeInsightsDB() (*sql.DB, error) {
+func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 	timescaleDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN; timescaleDSN != newDSN {
@@ -64,7 +64,7 @@ func InitializeCodeInsightsDB() (*sql.DB, error) {
 		}
 	})
 
-	db, err := dbconn.New(timescaleDSN, "")
+	db, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to codeinsights database: %s", err)
 	}

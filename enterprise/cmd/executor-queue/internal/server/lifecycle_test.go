@@ -16,7 +16,7 @@ import (
 func TestHeartbeat(t *testing.T) {
 	store1 := workerstoremocks.NewMockStore()
 	store2 := workerstoremocks.NewMockStore()
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
@@ -36,10 +36,10 @@ func TestHeartbeat(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := newHandler(options, clock)
 
-	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef")
-	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal")
-	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef")
-	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal")
+	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef", "test")
+	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal", "test")
+	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef", "test")
+	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal", "test")
 	if !dequeued1 || !dequeued2 || !dequeued3 || !dequeued4 {
 		t.Fatalf("failed to dequeue records")
 	}
@@ -110,7 +110,7 @@ func TestHeartbeat(t *testing.T) {
 func TestCleanup(t *testing.T) {
 	store1 := workerstoremocks.NewMockStore()
 	store2 := workerstoremocks.NewMockStore()
-	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
@@ -130,10 +130,10 @@ func TestCleanup(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := newHandler(options, clock)
 
-	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef")
-	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal")
-	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef")
-	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal")
+	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef", "test")
+	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal", "test")
+	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef", "test")
+	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal", "test")
 	if !dequeued1 || !dequeued2 || !dequeued3 || !dequeued4 {
 		t.Fatalf("failed to dequeue records")
 	}

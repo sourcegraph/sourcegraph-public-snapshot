@@ -183,6 +183,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
+	accounts := database.ExternalAccountsWith(s.reposStore)
+
 	user, err := database.GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "get user")
@@ -238,7 +240,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			continue
 		}
 
-		err = database.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			log15.Error("Could not associate external account to user",
 				"userID", user.ID,
@@ -267,17 +269,19 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
 
+			forbidden := errcode.IsForbidden(errors.Cause(err))
+
 			// Detect GitHub account suspension error
 			accountSuspended := errcode.IsAccountSuspended(errors.Cause(err))
 
-			if unauthorized || accountSuspended {
-				err = database.GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
+			if unauthorized || accountSuspended || forbidden {
+				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
 				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
 					"userID", user.ID, "id", acct.ID,
-					"unauthorized", unauthorized, "accountSuspended", accountSuspended)
+					"unauthorized", unauthorized, "accountSuspended", accountSuspended, "forbidden", forbidden)
 
 				// We still want to continue processing other external accounts
 				continue
@@ -289,7 +293,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		} else {
-			err = database.GlobalExternalAccounts.TouchLastValid(ctx, acct.ID)
+			err = accounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
 				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
 			}
