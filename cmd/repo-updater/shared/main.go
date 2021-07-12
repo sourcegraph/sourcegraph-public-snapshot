@@ -243,6 +243,10 @@ func Main(enterpriseInit EnterpriseInit) {
 		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") == "true",
 	}
 
+	if syncer.Streaming {
+		log15.Info("Running syncer in streaming mode because ENABLE_STREAMING_REPOS_SYNCER is set to true ")
+	}
+
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
