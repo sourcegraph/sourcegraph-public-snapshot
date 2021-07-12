@@ -20,6 +20,10 @@ logger.info('Using mode', mode)
 
 const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
+const isCI = process.env.CI === 'true'
+const isCacheEnabled = isDevelopment && !isCI
+const isHotReloadEnabled = isDevelopment && !isCI
+
 const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 
 const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
@@ -72,7 +76,7 @@ const config = {
   },
   target: 'browserslist',
   // Use cache only in `development` mode to speed up production build.
-  cache: isDevelopment && {
+  cache: isCacheEnabled && {
     type: 'filesystem',
     buildDependencies: {
       // Invalidate cache on config change.
@@ -101,7 +105,7 @@ const config = {
     ...(isDevelopment && {
       // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
       // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
-      runtimeChunk: 'single',
+      runtimeChunk: isHotReloadEnabled ? 'single' : false,
       removeAvailableModules: false,
       removeEmptyChunks: false,
       splitChunks: false,
@@ -166,8 +170,8 @@ const config = {
       }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     shouldAnalyze && new BundleAnalyzerPlugin(),
-    isDevelopment && new webpack.HotModuleReplacementPlugin(),
-    isDevelopment && new ReactRefreshWebpackPlugin({ overlay: false }),
+    isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
+    isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
   ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
@@ -192,7 +196,7 @@ const config = {
             loader: 'babel-loader',
             options: {
               cacheDirectory: true,
-              ...(isDevelopment && { plugins: [isDevelopment && 'react-refresh/babel'] }),
+              ...(isHotReloadEnabled && { plugins: ['react-refresh/babel'] }),
             },
           },
         ],
