@@ -1071,11 +1071,16 @@ func transact(ctx context.Context, s *repos.Store, test func(testing.TB, *repos.
 	}
 }
 
-func createExternalServices(t *testing.T, store *repos.Store) map[string]*types.ExternalService {
+func createExternalServices(t *testing.T, store *repos.Store, opts ...func(*types.ExternalService)) map[string]*types.ExternalService {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svcs := mkExternalServices(now)
+	for _, svc := range svcs {
+		for _, opt := range opts {
+			opt(svc)
+		}
+	}
 
 	// create a few external services
 	if err := store.ExternalServiceStore.Upsert(context.Background(), svcs...); err != nil {

@@ -553,11 +553,25 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 	}
 }
 
-func testSyncRepo(s *repos.Store) func(*testing.T) {
+func testBatchSyncRepo(s *repos.Store) func(*testing.T) {
+	return testSyncRepo(s, false)
+}
+
+func testStreamingSyncRepo(s *repos.Store) func(*testing.T) {
+	return testSyncRepo(s, true)
+}
+
+func testSyncRepo(s *repos.Store, streaming bool) func(*testing.T) {
 	return func(t *testing.T) {
 		clock := timeutil.NewFakeClock(time.Now(), time.Second)
 
-		servicesPerKind := createExternalServices(t, s)
+		opts := []func(*types.ExternalService){}
+		if streaming {
+			// Streaming SyncRepo only syncs repos if it finds a cloud default external service of the same type.
+			opts = append(opts, func(svc *types.ExternalService) { svc.CloudDefault = true })
+		}
+
+		servicesPerKind := createExternalServices(t, s, opts...)
 
 		repo := &types.Repo{
 			ID:          0, // explicitly make default value for sourced repo
@@ -649,12 +663,6 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 			ctx := context.Background()
 
 			t.Run(tc.name, transact(ctx, s, func(t testing.TB, st *repos.Store) {
-				defer func() {
-					if err := recover(); err != nil {
-						t.Fatalf("%q panicked: %v", tc.name, err)
-					}
-				}()
-
 				if len(tc.stored) > 0 {
 					if err := st.RepoStore.Create(ctx, tc.stored.Clone()...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
@@ -663,7 +671,9 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 
 				clock := clock
 				syncer := &repos.Syncer{
-					Now: clock.Now,
+					Now:       clock.Now,
+					Store:     st,
+					Streaming: streaming,
 				}
 				err := syncer.SyncRepo(ctx, st, tc.sourced.Clone())
 				if err != nil {
