@@ -1,12 +1,13 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import styles from './SearchNotebookBlockMenu.module.scss'
 
 interface BlockMenuAction {
     onClick: (id: string) => void
-    // icon: string
+    icon: JSX.Element
     label: string
-    // keyboardShortcutLabel: string
+    keyboardShortcutLabel: string
     isDisabled?: boolean
 }
 
@@ -23,28 +24,36 @@ export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBloc
 }) => (
     <div className={styles.blockMenu} role="menu">
         {mainAction && (
-            <div className={styles.mainActionButton}>
+            <div className={styles.mainActionButtonWrapper}>
                 <button
-                    className="btn btn-sm btn-primary w-100"
+                    className="btn btn-sm btn-primary d-flex align-items-center w-100"
                     type="button"
                     role="menuitem"
                     disabled={mainAction.isDisabled ?? false}
                     onClick={() => mainAction.onClick(id)}
                 >
-                    <div>{mainAction.label}</div>
+                    <div>{mainAction.icon}</div>
+                    <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{mainAction.label}</div>
+                    <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
+                    <small className={styles.hideOnSmallScreen}>{mainAction.keyboardShortcutLabel}</small>
                 </button>
             </div>
         )}
         {actions.map(action => (
             <button
                 key={action.label}
-                className="btn btn-sm btn-secondary mb-2"
+                className="btn btn-sm btn-secondary d-flex align-items-center mb-2"
                 type="button"
                 role="menuitem"
                 disabled={action.isDisabled ?? false}
                 onClick={() => action.onClick(id)}
             >
-                <div>{action.label}</div>
+                <div>{action.icon}</div>
+                <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{action.label}</div>
+                <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
+                <small className={classNames('text-muted', styles.hideOnSmallScreen)}>
+                    {action.keyboardShortcutLabel}
+                </small>
             </button>
         ))}
     </div>

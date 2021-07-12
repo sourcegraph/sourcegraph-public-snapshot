@@ -66,46 +66,8 @@ export const useMonacoBlockInput = ({
             keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
             run: () => onRunBlock(id),
         })
-        const moveUpOnFirstLineDisposable = editor.addAction({
-            id: 'move-up-on-first-line',
-            label: 'Move up on first line',
-            keybindings: [Monaco.KeyCode.UpArrow],
-            run: editor => {
-                const position = editor.getPosition()
-                if (!position) {
-                    return
-                }
-                if (position.lineNumber === 1) {
-                    onMoveBlockSelection(id, 'up')
-                } else {
-                    editor.setPosition({ lineNumber: position.lineNumber - 1, column: position.column })
-                }
-            },
-        })
-        const moveDownOnLastLineDisposable = editor.addAction({
-            id: 'move-down-on-last-line',
-            label: 'Move down on last line',
-            keybindings: [Monaco.KeyCode.DownArrow],
-            run: editor => {
-                const position = editor.getPosition()
-                if (!position) {
-                    return
-                }
-                const lineCount = editor.getModel()?.getLineCount()
-                if (!lineCount) {
-                    return
-                }
-                if (position.lineNumber === lineCount) {
-                    onMoveBlockSelection(id, 'down')
-                } else {
-                    editor.setPosition({ lineNumber: position.lineNumber + 1, column: position.column })
-                }
-            },
-        })
         return () => {
             addRunBlockActionDisposable.dispose()
-            moveUpOnFirstLineDisposable.dispose()
-            moveDownOnLastLineDisposable.dispose()
         }
     }, [editor, id, onRunBlock, onMoveBlockSelection])
 

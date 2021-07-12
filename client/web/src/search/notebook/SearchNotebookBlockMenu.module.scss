@@ -1,7 +1,15 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .block-menu {
     position: absolute;
     margin-left: 1rem;
+
     width: 12rem;
+    // Collapse menu to show just icons on small screens
+    @media (--md-breakpoint-down) {
+        width: 2rem;
+    }
+
     left: 100%;
     top: 0;
 
@@ -9,8 +17,17 @@
     flex-direction: column;
 }
 
-.main-action-button {
+.main-action-button-wrapper {
     padding-bottom: 0.25rem;
     margin-bottom: 0.25rem;
     border-bottom: 1px solid var(--border-color);
+}
+
+.hide-on-small-screen {
+    visibility: visible;
+
+    @media (--md-breakpoint-down) {
+        visibility: hidden;
+        display: none;
+    }
 }

@@ -12,6 +12,7 @@ import { fetchSuggestions } from '../backend'
 import { SOURCEGRAPH_SEARCH } from '../input/MonacoQueryInput'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
+import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
@@ -206,7 +207,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
     }, [])
 
     return (
-        <div className="w-100">
+        <div className={styles.searchNotebook}>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
                     <SearchNotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
