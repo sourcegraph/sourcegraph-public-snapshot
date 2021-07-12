@@ -138,7 +138,8 @@ func extractBatchSpecRandID(logs []workerutil.ExecutionLogEntry) (string, error)
 
 		var e srcCLILogLine
 		if err := json.Unmarshal([]byte(jsonPart), &e); err != nil {
-			return "", ErrNoBatchSpecRandID
+			// If we can't unmarshal the line as JSON we skip it
+			continue
 		}
 
 		if e.Operation == operationCreatingBatchSpec && e.Status == "SUCCESS" {
