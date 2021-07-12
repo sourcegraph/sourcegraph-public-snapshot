@@ -643,7 +643,7 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 					Now:   clock.Now,
 					Store: st,
 				}
-				err := syncer.SyncRepo(ctx, tc.sourced.Clone())
+				err := syncer.SyncRepo(ctx, st, tc.sourced.Clone())
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -977,7 +977,6 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 				IsCloud:         false,
 				MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
 				DequeueInterval: 1 * time.Millisecond,
-				Transact:        true,
 			})
 		}()
 
@@ -1122,7 +1121,6 @@ func testSyncer(store *repos.Store) func(t *testing.T) {
 				IsCloud:         false,
 				MinSyncInterval: func() time.Duration { return 1 * time.Minute },
 				DequeueInterval: 1 * time.Millisecond,
-				Transact:        true,
 			})
 		}()
 
@@ -1534,7 +1532,7 @@ func testSyncRepoMaintainsOtherSources(store *repos.Store) func(t *testing.T) {
 				CloneURL: "cloneURL",
 			},
 		}
-		if err := syncer.SyncRepo(ctx, githubRepo); err != nil {
+		if err := syncer.SyncRepo(ctx, store, githubRepo); err != nil {
 			t.Fatal(err)
 		}
 

@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -54,10 +52,6 @@ type Syncer struct {
 	// UserReposMaxPerSite can be used to override the value read from config.
 	// If zero, we'll read from config instead.
 	UserReposMaxPerSite int
-
-	// Streaming if true will sync external services in a streaming manner so that
-	// changes in large sync jobs show up quickly (except deletions).
-	Streaming bool
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -66,14 +60,10 @@ type RunOptions struct {
 	IsCloud         bool                 // Defaults to false
 	MinSyncInterval func() time.Duration // Defaults to 1 minute
 	DequeueInterval time.Duration        // Default to 10 seconds
-	// Run each job in a transaction. We parameterise this because a
-	// sync job can take a very long time, and we want incremental updates
-	// and inserts to show up.
-	Transact bool
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, db *sql.DB, store *Store, opts RunOptions) error {
+func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -92,7 +82,6 @@ func (s *Syncer) Run(ctx context.Context, db *sql.DB, store *Store, opts RunOpti
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
-		transact:        opts.Transact,
 	}, SyncWorkerOptions{
 		WorkerInterval:       opts.DequeueInterval,
 		NumHandlers:          ConfRepoConcurrentExternalServiceSyncers(),
@@ -119,12 +108,16 @@ func (s *Syncer) Run(ctx context.Context, db *sql.DB, store *Store, opts RunOpti
 	return ctx.Err()
 }
 
+// An ExternalServiceSyncer knows how to sync an external service, from sourcing repositories, to creating, updating
+// and deleting them.
+type ExternalServiceSyncer interface {
+	SyncExternalService(ctx context.Context, tx *Store, id int64, minSyncInterval time.Duration) (err error)
+}
+
 type syncHandler struct {
-	db              *sql.DB
-	syncer          *Syncer
+	syncer          ExternalServiceSyncer
 	store           *Store
 	minSyncInterval func() time.Duration
-	transact        bool
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) (err error) {
@@ -133,10 +126,7 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	store := s.store
-	if s.transact {
-		store = store.With(tx)
-	}
+	store := s.store.With(tx)
 
 	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
 }
