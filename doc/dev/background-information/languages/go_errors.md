@@ -26,7 +26,7 @@ Use this function to create an error value with non-static message.
 return errors.Errorf("user %d does not exist", userID)
 ```
 
-The formatting directives are the same as `fmt.Sprintf`.
+The formatting directives are the same as `fmt.Sprintf`. The [`'%w` formatting directive](https://blog.golang.org/go1.13-errors#TOC_3.3.) special cases error values. Prefer to use `errors.Wrap` over this directive.
 
 #### Use of `errors.Wrap`
 
