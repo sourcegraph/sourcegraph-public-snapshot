@@ -98,6 +98,7 @@ Indexes:
  namespace_user_id | integer                  |           |          | 
  namespace_org_id  | integer                  |           |          | 
  rand_id           | text                     |           | not null | 
+ last_updated_at   | timestamp with time zone |           |          | 
 Indexes:
     "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
     "batch_spec_executions_rand_id" btree (rand_id)
@@ -793,6 +794,7 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
  execution_logs  | json[]                   |           |          | 
  upload_id       | integer                  |           |          | 
  worker_hostname | text                     |           | not null | ''::text
+ last_updated_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
