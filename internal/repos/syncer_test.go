@@ -1393,7 +1393,15 @@ func testOrphanedRepo(store *repos.Store, streaming bool) func(*testing.T) {
 	}
 }
 
-func testConflictingSyncers(store *repos.Store) func(*testing.T) {
+func testConflictingBatchSyncers(store *repos.Store) func(*testing.T) {
+	return testConflictingSyncers(store, false)
+}
+
+func testConflictingStreamingSyncers(store *repos.Store) func(*testing.T) {
+	return testConflictingSyncers(store, true)
+}
+
+func testConflictingSyncers(store *repos.Store, streaming bool) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1438,8 +1446,9 @@ func testConflictingSyncers(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1451,8 +1460,9 @@ func testConflictingSyncers(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1495,44 +1505,78 @@ func testConflictingSyncers(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc1, nil, updatedRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, tx1, svc1.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
 		}
 
-		errChan := make(chan error)
-		upsertCalledCh := make(chan struct{})
-		go func() {
-			// Start syncing using tx2
+		if !streaming {
+			errChan := make(chan error)
+			upsertCalledCh := make(chan struct{})
+			go func() {
+				// Start syncing using tx2
+				syncer2 := &repos.Syncer{
+					Sourcer: func(services ...*types.ExternalService) (repos.Sources, error) {
+						s := repos.NewFakeSource(svc2, nil, updatedRepo.With(func(r *types.Repo) {
+							r.Description = newDescription
+						}))
+						return repos.Sources{s}, nil
+					},
+					Store: store,
+					Now:   time.Now,
+				}
+				storeCp := *store
+				storeCp.Mocks.UpsertRepos = func(ctx context.Context, repos ...*types.Repo) (err error) {
+					close(upsertCalledCh)
+					return store.UpsertRepos(ctx, repos...)
+				}
+				err := syncer2.SyncExternalService(ctx, &storeCp, svc2.ID, 10*time.Second)
+				errChan <- err
+			}()
+
+			<-upsertCalledCh
+			tx1.Done(nil)
+
+			err = <-errChan
+			if err != nil {
+				t.Fatalf("Error in syncer2: %v", err)
+			}
+			tx2.Done(nil)
+		} else {
 			syncer2 := &repos.Syncer{
 				Sourcer: func(services ...*types.ExternalService) (repos.Sources, error) {
-					s := repos.NewFakeSource(svc2, nil, updatedRepo.With(func(r *types.Repo) {
+					s := repos.NewFakeSource(svc2, nil, githubRepo.With(func(r *types.Repo) {
 						r.Description = newDescription
 					}))
 					return repos.Sources{s}, nil
 				},
-				Store: store,
-				Now:   time.Now,
+				Store:     tx2,
+				Synced:    make(chan repos.Diff, 2),
+				Now:       time.Now,
+				Streaming: true,
 			}
-			storeCp := *store
-			storeCp.Mocks.UpsertRepos = func(ctx context.Context, repos ...*types.Repo) (err error) {
-				close(upsertCalledCh)
-				return store.UpsertRepos(ctx, repos...)
+
+			errChan := make(chan error)
+			go func() {
+				errChan <- syncer2.SyncExternalService(ctx, tx2, svc2.ID, 10*time.Second)
+			}()
+
+			tx1.Done(nil)
+
+			if err = <-errChan; err != nil {
+				t.Fatalf("syncer2 err: %v", err)
 			}
-			err := syncer2.SyncExternalService(ctx, &storeCp, svc2.ID, 10*time.Second)
-			errChan <- err
-		}()
 
-		<-upsertCalledCh
-		tx1.Done(nil)
+			diff := <-syncer2.Synced
+			if have, want := diff.Repos().Names(), []string{string(updatedRepo.Name)}; !cmp.Equal(want, have) {
+				t.Fatalf("syncer2 Synced mismatch: (-want, +have): %s", cmp.Diff(want, have))
+			}
 
-		err = <-errChan
-		if err != nil {
-			t.Fatalf("Error in syncer2: %v", err)
+			tx2.Done(nil)
 		}
-		tx2.Done(nil)
 
 		fromDB, err = store.RepoStore.List(ctx, database.ReposListOptions{})
 		if err != nil {
@@ -1548,8 +1592,16 @@ func testConflictingSyncers(store *repos.Store) func(*testing.T) {
 	}
 }
 
+func testBatchSyncRepoMaintainsOtherSources(store *repos.Store) func(*testing.T) {
+	return testSyncRepoMaintainsOtherSources(store, false)
+}
+
+func testStreamingSyncRepoMaintainsOtherSources(store *repos.Store) func(*testing.T) {
+	return testSyncRepoMaintainsOtherSources(store, true)
+}
+
 // Test that sync repo does not clear out any other repo relationships
-func testSyncRepoMaintainsOtherSources(store *repos.Store) func(*testing.T) {
+func testSyncRepoMaintainsOtherSources(store *repos.Store, streaming bool) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1594,8 +1646,9 @@ func testSyncRepoMaintainsOtherSources(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
@@ -1607,8 +1660,9 @@ func testSyncRepoMaintainsOtherSources(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 			t.Fatal(err)

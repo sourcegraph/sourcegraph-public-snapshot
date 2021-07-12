@@ -73,8 +73,11 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/Batch/NameConflictOnRename", testBatchNameOnConflictOnRename},
 		{"DBStore/Syncer/Streaming/NameConflictOnRename", testStreamingNameOnConflictOnRename},
 
-		{"DBStore/Syncer/Batch/ConflictingSyncers", testConflictingSyncers},
-		{"DBStore/Syncer/Batch/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
+		{"DBStore/Syncer/Batch/ConflictingSyncers", testConflictingBatchSyncers},
+		{"DBStore/Syncer/Streaming/ConflictingSyncers", testConflictingStreamingSyncers},
+
+		{"DBStore/Syncer/Batch/SyncRepoMaintainsOtherSources", testBatchSyncRepoMaintainsOtherSources},
+		{"DBStore/Syncer/Streaming/SyncRepoMaintainsOtherSources", testStreamingSyncRepoMaintainsOtherSources},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db := dbtest.NewDB(t, *dsn)
