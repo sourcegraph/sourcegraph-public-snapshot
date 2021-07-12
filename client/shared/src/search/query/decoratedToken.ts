@@ -195,6 +195,12 @@ export interface MetaPredicate {
 }
 
 /**
+ * Returns a new range from the given range, where start and end values are offset
+ * relative to the start of the given range.
+ */
+const withOffset = (range: CharacterRange, start: number, end: number): CharacterRange => ({ start: range.start + start, end: range.start + end})
+
+/**
  * Coalesces consecutive pattern tokens. Used, for example, when parsing
  * literal characters like 'f', 'o', 'o' in regular expressions, which are
  * coalesced to 'foo' for hovers.
@@ -229,7 +235,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
     const tokens: DecoratedToken[] = []
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
-        const offset = pattern.range.start
+        const range = pattern.range
         visitRegExpAST(ast, {
             onAlternativeEnter(node: Alternative) {
                 // regexpp doesn't tell us where a '|' operator is. We infer it by visiting any
@@ -239,7 +245,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 if (pattern.value[node.end] && pattern.value[node.end] === '|') {
                     tokens.push({
                         type: 'metaRegexp',
-                        range: { start: offset + node.end, end: offset + node.end + 1 },
+                        range: withOffset(range, node.end, node.end + 1),
                         value: '|',
                         kind: MetaRegexpKind.Alternative,
                     })
@@ -248,7 +254,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
             onAssertionEnter(node: Assertion) {
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.start, end: offset + node.end },
+                    range: withOffset(range, node.start, node.end),
                     value: node.raw,
                     kind: MetaRegexpKind.Assertion,
                 })
@@ -257,14 +263,14 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 // Push the leading '('
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.start, end: offset + node.start + 1 },
+                    range: withOffset(range, node.start, node.end + 1)                    ,
                     value: '(',
                     kind: MetaRegexpKind.Delimited,
                 })
                 // Push the trailing ')'
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.end - 1, end: offset + node.end },
+                    range: withOffset(range, node.end - 1, node.end),
                     value: ')',
                     kind: MetaRegexpKind.Delimited,
                 })
@@ -273,16 +279,16 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 // Push the leading '('
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.start, end: offset + node.start + 1 },
-                    groupRange: { start: offset + node.start, end: offset + node.end },
+                    range: withOffset(range, node.start, node.start + 1),
+                    groupRange: withOffset(range, node.start, node.end),
                     value: '(',
                     kind: MetaRegexpKind.Delimited,
                 })
                 // Push the trailing ')'
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.end - 1, end: offset + node.end },
-                    groupRange: { start: offset + node.start, end: offset + node.end },
+                    range: withOffset(range, node.end - 1, node.end),
+                    groupRange: withOffset(range, node.start, node.end),
                     value: ')',
                     kind: MetaRegexpKind.Delimited,
                 })
@@ -290,7 +296,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
             onCharacterSetEnter(node: CharacterSet) {
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.start, end: offset + node.end },
+                    range: withOffset(range, node.start, node.end),
                     value: node.raw,
                     kind: MetaRegexpKind.CharacterSet,
                 })
@@ -300,16 +306,16 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 // Push the leading '['
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.start, end: offset + node.start + 1 + negatedOffset },
-                    groupRange: { start: offset + node.start, end: offset + node.end },
+                    range: withOffset(range, node.start, node.end + 1 + negatedOffset),
+                    groupRange: withOffset(range, node.start, node.end),
                     value: node.negate ? '[^' : '[',
                     kind: MetaRegexpKind.CharacterClass,
                 })
                 // Push the trailing ']'
                 tokens.push({
                     type: 'metaRegexp',
-                    range: { start: offset + node.end - 1, end: offset + node.end },
-                    groupRange: { start: offset + node.start, end: offset + node.end },
+                    range: withOffset(range, node.end - 1, node.end),
+                    groupRange: withOffset(range, node.start, node.end),
                     value: ']',
                     kind: MetaRegexpKind.CharacterClass,
                 })
@@ -320,8 +326,8 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 tokens.push(
                     {
                         type: 'metaRegexp',
-                        range: { start: offset + node.min.start, end: offset + node.min.end },
-                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        range: withOffset(range, node.min.start, node.min.end),
+                        groupRange: withOffset(range, node.start, node.end),
                         value: node.raw,
                         kind: MetaRegexpKind.CharacterClassRange,
                     },
@@ -330,15 +336,15 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                     // two-character offset as in [\--z].
                     {
                         type: 'metaRegexp',
-                        range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
-                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        range: withOffset(range, node.min.end, node.min.end + 1),
+                        groupRange: withOffset(range, node.start, node.end),
                         value: node.raw,
                         kind: MetaRegexpKind.CharacterClassRangeHyphen,
                     },
                     {
                         type: 'metaRegexp',
-                        range: { start: offset + node.max.start, end: offset + node.max.end },
-                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        range: withOffset(range, node.max.start, node.max.end),
+                        groupRange: withOffset(range, node.start, node.end),
                         value: node.raw,
                         kind: MetaRegexpKind.CharacterClassRange,
                     }
@@ -350,7 +356,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 if (!node.greedy) {
                     tokens.push({
                         type: 'metaRegexp',
-                        range: { start: offset + node.end - 1, end: offset + node.end },
+                        range: withOffset(range, node.end - 1, node.end),
                         value: '?',
                         kind: MetaRegexpKind.LazyQuantifier,
                     })
@@ -360,10 +366,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 if (quantifier === '+' || quantifier === '*' || quantifier === '?') {
                     tokens.push({
                         type: 'metaRegexp',
-                        range: {
-                            start: offset + node.end - 1 - lazyQuantifierOffset,
-                            end: offset + node.end - lazyQuantifierOffset,
-                        },
+                        range: withOffset(range, node.end - 1 - lazyQuantifierOffset, node.end - lazyQuantifierOffset),
                         value: quantifier,
                         kind: MetaRegexpKind.RangeQuantifier,
                     })
@@ -379,7 +382,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                     }
                     tokens.push({
                         type: 'metaRegexp',
-                        range: { start: offset + openBrace, end: offset + node.end - lazyQuantifierOffset },
+                        range: withOffset(range, openBrace, node.end - lazyQuantifierOffset),
                         value: pattern.value.slice(openBrace, node.end - lazyQuantifierOffset),
                         kind: MetaRegexpKind.RangeQuantifier,
                     })
@@ -392,11 +395,11 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                     // set the group range to associate it with hovers.
                     const groupRange =
                         node.parent.type === 'CharacterClassRange'
-                            ? { start: offset + node.parent.start, end: offset + node.parent.end }
+                            ? withOffset(range, node.parent.start, node.parent.end)
                             : undefined
                     tokens.push({
                         type: 'metaRegexp',
-                        range: { start: offset + node.start, end: offset + node.end },
+                        range: withOffset(range, node.start, node.end),
                         groupRange,
                         value: node.raw,
                         kind: MetaRegexpKind.EscapedCharacter,
@@ -410,7 +413,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                     // This character is inside a character class like [abcd] and is contextually special for hover tooltips.
                     tokens.push({
                         type: 'metaRegexp',
-                        range: { start: offset + node.start, end: offset + node.end },
+                        range: withOffset(range, node.start, node.end),
                         value: node.raw,
                         kind: MetaRegexpKind.CharacterClassMember,
                     })
@@ -418,7 +421,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
                 }
                 tokens.push({
                     type: 'pattern',
-                    range: { start: offset + node.start, end: offset + node.end },
+                    range: withOffset(range, node.start, node.end),
                     value: node.raw,
                     kind: PatternKind.Regexp,
                 })
