@@ -534,8 +534,7 @@ WHERE external_service_id = %s AND repo_id != ALL(%s)
 `
 
 // DeleteExternalServiceRepo deletes a repo's association to an external service and the repo itself if there are no
-// more associations to that repo by any other external service (which is done by a trigger in the database called
-// trig_soft_delete_orphan_repo_by_external_service_repo).
+// more associations to that repo by any other external service.
 func (s *Store) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceRepo")
 	tr.LogFields(
