@@ -110,3 +110,27 @@ func TestLockBlockingAcquire(t *testing.T) {
 		t.Errorf("lock not acquired before release")
 	}
 }
+
+func TestLockBadTransactionState(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	locker := NewWithDB(db, "test")
+
+	key := rand.Intn(1000)
+
+	// Start txn before acquiring locks outside of txn
+	tx, err := locker.Transact(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error starting transaction: %s", err)
+	}
+
+	if _, _, err := locker.LockInTransaction(context.Background(), key, true); err == nil {
+		t.Fatalf("expected an error calling LockInTransaction outside of transaction")
+	}
+
+	if _, _, err := tx.Lock(context.Background(), key, true); err == nil {
+		t.Fatalf("expected an error calling Lock inside of transaction")
+	}
+}
