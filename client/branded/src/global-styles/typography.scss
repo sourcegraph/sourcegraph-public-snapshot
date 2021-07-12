@@ -38,15 +38,19 @@ h6 {
     font-weight: 400;
 }
 
-// Body / Small / Regular
-small {
+%small {
     // Use string interpolation and calc() to avoid using Sass own max() function.
     // See: https://github.com/sass/node-sass/issues/2815#issuecomment-575926329
     font-size: calc(min(0.75rem, #{(11/12)}em));
+    line-height: 1rem;
+}
+
+// Body / Small / Regular
+small {
+    @extend %small;
     // Bootstrap applies `font-weight: 400;` to `small` element,
     // but we want to control `font-weight` only with `strong` or `.font-weight-medium`.
     font-weight: inherit;
-    line-height: 1rem;
 }
 
 sup,
@@ -79,6 +83,7 @@ $input-font-size-sm: (11/14) + em;
 .custom-select-sm,
 %custom-select-sm {
     font-size: $input-font-size-sm;
+    line-height: 1rem;
 }
 
 // Label / Base
@@ -90,6 +95,7 @@ label,
 
 label small,
 %label-base-small {
+    @extend %small;
     letter-spacing: -(0.25/12) + em;
 }
 
