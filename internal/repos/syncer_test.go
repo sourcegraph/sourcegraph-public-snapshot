@@ -1277,7 +1277,15 @@ func testSyncerMultipleServices(store *repos.Store, streaming bool) func(t *test
 	}
 }
 
-func testOrphanedRepo(store *repos.Store) func(*testing.T) {
+func testBatchOrphanedRepo(store *repos.Store) func(*testing.T) {
+	return testOrphanedRepo(store, false)
+}
+
+func testStreamingOrphanedRepo(store *repos.Store) func(*testing.T) {
+	return testOrphanedRepo(store, true)
+}
+
+func testOrphanedRepo(store *repos.Store, streaming bool) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -1322,8 +1330,9 @@ func testOrphanedRepo(store *repos.Store) func(*testing.T) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return repos.Sources{s}, nil
 			},
-			Store: store,
-			Now:   time.Now,
+			Store:     store,
+			Now:       time.Now,
+			Streaming: streaming,
 		}
 		if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 			t.Fatal(err)
