@@ -3,7 +3,7 @@ import React from 'react'
 
 import styles from './SearchNotebookBlockMenu.module.scss'
 
-interface BlockMenuAction {
+export interface BlockMenuAction {
     onClick: (id: string) => void
     icon: JSX.Element
     label: string

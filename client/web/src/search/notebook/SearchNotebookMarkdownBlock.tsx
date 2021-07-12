@@ -1,8 +1,4 @@
 import classNames from 'classnames'
-import ArrowDownIcon from 'mdi-react/ArrowDownIcon'
-import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
-import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
@@ -17,6 +13,7 @@ import { SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
 import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
+import { useCommonBlockMenuActions } from './useCommonBlockMenuActions'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, MarkdownBlock } from '.'
@@ -98,56 +95,31 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     }, [isEditing, editor])
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
+    const commonMenuActions = useCommonBlockMenuActions({
+        modifierKeyLabel,
+        isInputFocused,
+        onDeleteBlock,
+        onMoveBlock,
+        onDuplicateBlock,
+    })
     const menuActions = useMemo(
-        () => [
-            isEditing
-                ? {
-                      label: 'Render',
-                      icon: <PlayCircleOutlineIcon className="icon-inline" />,
-                      onClick: runBlock,
-                      keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
-                  }
-                : {
-                      label: 'Edit',
-                      icon: <PencilIcon className="icon-inline" />,
-                      onClick: onEnterBlock,
-                      keyboardShortcutLabel: '↵',
-                  },
-            {
-                label: 'Duplicate',
-                icon: <ContentDuplicateIcon className="icon-inline" />,
-                onClick: onDuplicateBlock,
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
-            },
-            {
-                label: 'Move Up',
-                icon: <ArrowUpIcon className="icon-inline" />,
-                onClick: id => onMoveBlock(id, 'up'),
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
-            },
-            {
-                label: 'Move Down',
-                icon: <ArrowDownIcon className="icon-inline" />,
-                onClick: id => onMoveBlock(id, 'down'),
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
-            },
-            {
-                label: 'Delete',
-                icon: <DeleteIcon className="icon-inline" />,
-                onClick: onDeleteBlock,
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ⌫` : '',
-            },
-        ],
-        [
-            isInputFocused,
-            isEditing,
-            modifierKeyLabel,
-            runBlock,
-            onEnterBlock,
-            onMoveBlock,
-            onDeleteBlock,
-            onDuplicateBlock,
-        ]
+        () =>
+            [
+                isEditing
+                    ? {
+                          label: 'Render',
+                          icon: <PlayCircleOutlineIcon className="icon-inline" />,
+                          onClick: runBlock,
+                          keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
+                      }
+                    : {
+                          label: 'Edit',
+                          icon: <PencilIcon className="icon-inline" />,
+                          onClick: onEnterBlock,
+                          keyboardShortcutLabel: '↵',
+                      },
+            ].concat(commonMenuActions),
+        [isEditing, modifierKeyLabel, runBlock, onEnterBlock, commonMenuActions]
     )
 
     const blockMenu = isSelected && <SearchNotebookBlockMenu id={id} actions={menuActions} />

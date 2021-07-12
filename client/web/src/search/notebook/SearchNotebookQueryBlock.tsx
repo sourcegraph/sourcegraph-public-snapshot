@@ -1,8 +1,4 @@
 import classNames from 'classnames'
-import ArrowDownIcon from 'mdi-react/ArrowDownIcon'
-import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
-import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useState, useCallback, useRef, useMemo } from 'react'
@@ -25,6 +21,7 @@ import { SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
 import styles from './SearchNotebookQueryBlock.module.scss'
 import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
+import { useCommonBlockMenuActions } from './useCommonBlockMenuActions'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
 
 import { BlockProps, QueryBlock } from '.'
@@ -105,35 +102,13 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         }
     }, [onRunBlock, modifierKeyLabel, searchResults])
 
-    const menuActions = useMemo(
-        () => [
-            {
-                label: 'Duplicate',
-                icon: <ContentDuplicateIcon className="icon-inline" />,
-                onClick: onDuplicateBlock,
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
-            },
-            {
-                label: 'Move Up',
-                icon: <ArrowUpIcon className="icon-inline" />,
-                onClick: id => onMoveBlock(id, 'up'),
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
-            },
-            {
-                label: 'Move Down',
-                icon: <ArrowDownIcon className="icon-inline" />,
-                onClick: id => onMoveBlock(id, 'down'),
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
-            },
-            {
-                label: 'Delete',
-                icon: <DeleteIcon className="icon-inline" />,
-                onClick: onDeleteBlock,
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ⌫` : '',
-            },
-        ],
-        [onDuplicateBlock, onMoveBlock, onDeleteBlock, isInputFocused, modifierKeyLabel]
-    )
+    const commonMenuActions = useCommonBlockMenuActions({
+        modifierKeyLabel,
+        isInputFocused,
+        onDeleteBlock,
+        onMoveBlock,
+        onDuplicateBlock,
+    })
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)}>
@@ -194,7 +169,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                     </div>
                 )}
             </div>
-            {isSelected && <SearchNotebookBlockMenu id={id} mainAction={mainMenuAction} actions={menuActions} />}
+            {isSelected && <SearchNotebookBlockMenu id={id} mainAction={mainMenuAction} actions={commonMenuActions} />}
         </div>
     )
 }
