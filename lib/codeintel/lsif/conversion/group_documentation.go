@@ -10,9 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
-// TODO(slimsag): future: today we do not consume state.DocumentationResultsByResultSet which will
-// become important for e.g. letting one documentationResult link to another.
-
 func collectDocumentationPages(ctx context.Context, state *State) (chan *semantic.DocumentationPageData, chan *semantic.DocumentationPathInfoData) {
 	pages := make(chan *semantic.DocumentationPageData, 1024)
 	pathInfo := make(chan *semantic.DocumentationPathInfoData, 1024)

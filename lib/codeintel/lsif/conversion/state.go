@@ -30,7 +30,6 @@ type State struct {
 	// Sourcegraph extensions
 	DocumentationResultsData        map[int]protocol.Documentation // maps documentationResult vertices -> their data
 	DocumentationStringsData        map[int]protocol.MarkupContent // maps documentationString vertices -> their data
-	DocumentationResultsByResultSet map[int]int                    // maps resultSet vertex -> documentationResult vertex
 	DocumentationResultRoot         int                            // the documentationResult vertex corresponding to the project root.
 	DocumentationChildren           map[int][]int                  // maps documentationResult vertex -> ordered list of children documentationResult vertices
 	DocumentationStringLabel        map[int]int                    // maps documentationResult vertex -> label documentationString vertex
@@ -61,7 +60,6 @@ func newState() *State {
 		// Sourcegraph extensions
 		DocumentationResultsData:        map[int]protocol.Documentation{},
 		DocumentationStringsData:        map[int]protocol.MarkupContent{},
-		DocumentationResultsByResultSet: map[int]int{},
 		DocumentationResultRoot:         -1,
 		DocumentationChildren:           map[int][]int{},
 		DocumentationStringLabel:        map[int]int{},
