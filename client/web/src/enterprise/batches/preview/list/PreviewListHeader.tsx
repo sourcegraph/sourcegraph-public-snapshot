@@ -15,8 +15,10 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
             <MultiSelectContext.Consumer>{props => <SelectAll {...props} />}</MultiSelectContext.Consumer>
         )}
         <span className="p-2 d-none d-sm-block" />
-        {selectionEnabled && (
+        {selectionEnabled ? (
             <MultiSelectContext.Consumer>{props => <SelectVisibleCheckbox {...props} />}</MultiSelectContext.Consumer>
+        ) : (
+            <span className="d-none d-sm-block p-0 m-0" />
         )}
         <h5 className="p-2 d-none d-sm-block text-uppercase text-center">Current state</h5>
         <h5 className="d-none d-sm-block text-uppercase text-center">
@@ -59,7 +61,7 @@ const SelectVisibleCheckbox: React.FunctionComponent<
 > = ({ deselectVisible: deselectVisible, selectVisible: selectVisible, selected, visible }) => {
     const checked = useMemo(() => selected === 'all' || selected.size === visible.size, [selected, visible])
     const disabled = useMemo(() => selected === 'all', [selected])
-    const onClick = useCallback(() => {
+    const onChange = useCallback(() => {
         if (checked) {
             deselectVisible()
         } else {
@@ -73,7 +75,7 @@ const SelectVisibleCheckbox: React.FunctionComponent<
                 type="checkbox"
                 checked={checked}
                 disabled={disabled}
-                onClick={onClick}
+                onChange={onChange}
                 data-tooltip={`Click to ${checked ? 'deselect' : 'select'} all visible changesets`}
             />
         </span>

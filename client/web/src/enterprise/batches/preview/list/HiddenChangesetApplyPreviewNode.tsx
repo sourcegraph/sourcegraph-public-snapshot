@@ -20,7 +20,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
 }) => (
     <>
         <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
-        <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
+        <span className="d-none d-sm-block p-0 m-0" />
         <HiddenChangesetApplyPreviewNodeStatusCell
             node={node}
             className={classNames(

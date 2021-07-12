@@ -93,7 +93,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                         </MultiSelectContext.Consumer>
                     ) : undefined}
                 </span>
-            ) : undefined}
+            ) : (
+                <span className="d-block p-0 m-0" />
+            )}
             <VisibleChangesetApplyPreviewNodeStatusCell
                 node={node}
                 className={classNames(
@@ -571,7 +573,7 @@ const SelectCheckbox: React.FunctionComponent<SelectCheckboxProps> = ({
 }) => {
     const checked = useMemo(() => selected === 'all' || selected.has(id), [id, selected])
     const disabled = useMemo(() => selected === 'all', [selected])
-    const onClick = useCallback(() => {
+    const onChange = useCallback(() => {
         if (checked) {
             deselectSingle(id)
         } else {
@@ -581,7 +583,7 @@ const SelectCheckbox: React.FunctionComponent<SelectCheckboxProps> = ({
 
     return (
         <span className={classNames(styles.visibleChangesetApplyPreviewNodeListCell)}>
-            <input type="checkbox" disabled={disabled} checked={checked} onClick={onClick} />
+            <input type="checkbox" disabled={disabled} checked={checked} onChange={onChange} />
         </span>
     )
 }

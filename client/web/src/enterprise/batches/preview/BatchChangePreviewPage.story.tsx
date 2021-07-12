@@ -79,6 +79,7 @@ const batchSpec = (): BatchSpecFields => ({
             added: 5,
             modified: 10,
             removed: 3,
+            uiPublished: boolean('uiPublished', false) ? 10 : 0,
         },
         totalCount: 18,
     },
@@ -121,7 +122,21 @@ const queryChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConnectio
             hasNextPage: false,
         },
         totalCount: nodes.length,
-        nodes,
+        nodes: boolean('uiPublished', false)
+            ? nodes.map(node => {
+                  if (
+                      node.targets.__typename === 'VisibleApplyPreviewTargetsAttach' ||
+                      node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
+                  ) {
+                      if (node.targets.changesetSpec.description.__typename === 'GitBranchChangesetDescription') {
+                          node.targets.changesetSpec.description.published = null
+                          return node
+                      }
+                  }
+
+                  return node
+              })
+            : nodes,
     })
 
 const queryEmptyChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConnectionFields> =>
