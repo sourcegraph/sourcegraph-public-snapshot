@@ -2846,7 +2846,13 @@ A batch spec execution describes one server-side run of a batch change yaml inpu
 """
 type BatchSpecExecution implements Node {
     """
-    The unique ID for the batch spec execution.
+    The unique ID for a batch spec execution.
+
+    The ID is unguessable (i.e., long and randomly generated, not sequential).
+    Consider a batch change to fix a security vulnerability: the batch change
+    author may prefer to prepare the batch change in private so that the window
+    between revealing the problem and merging the fixes is as short as
+    possible.
     """
     id: ID!
 
@@ -2881,8 +2887,10 @@ type BatchSpecExecution implements Node {
     """
     failure: String
 
-    ### TODO(eseliger): We want to provide more information here. Take inspiration
-    # steps: IndexSteps!
+    """
+    The configuration and execution summary (if completed or errored) of this execution.
+    """
+    steps: BatchSpecExecutionSteps!
 
     """
     The rank of this execution in the queue. The value of this field is null if the
@@ -2907,6 +2915,27 @@ type BatchSpecExecution implements Node {
     namespace.
     """
     namespace: Namespace!
+}
+
+"""
+Configuration and execution summary of a batch spec execution.
+"""
+type BatchSpecExecutionSteps {
+    """
+    Execution log entries related to setting up the workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Execution log entry related to running src batch preview.
+    This field is null, if the step had not been executed.
+    """
+    srcPreview: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
 }
 
 """
