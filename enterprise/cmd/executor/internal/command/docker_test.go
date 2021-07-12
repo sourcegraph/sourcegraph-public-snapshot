@@ -82,9 +82,9 @@ func TestFormatRawOrDockerCommandDockerCommand(t *testing.T) {
 
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
-			Command: []string{"ls", "-a"},
-			Dir:     "subdir",
-			Env:     []string{"TEST=true"},
+			Command:         []string{"ls", "-a"},
+			Dir:             "subdir",
+			Env:             []string{"TEST=true"},
 			InheritLocalEnv: []string{"TEST2"},
 		},
 		"/proj/src",
