@@ -28,7 +28,7 @@ func TestLock(t *testing.T) {
 		t.Fatalf("unexpected error starting transaction: %s", err)
 	}
 
-	acquired, unlock, err := locker.lock(context.Background(), key, true)
+	acquired, unlock, err := locker.Lock(context.Background(), key, true)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}
@@ -36,7 +36,7 @@ func TestLock(t *testing.T) {
 		t.Errorf("expected lock to be acquired")
 	}
 
-	acquired, _, err = tx.lock(context.Background(), key, false)
+	acquired, _, err = tx.LockInTransaction(context.Background(), key, false)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}
@@ -46,7 +46,7 @@ func TestLock(t *testing.T) {
 
 	unlock(nil)
 
-	acquired, _, err = tx.lock(context.Background(), key, false)
+	acquired, _, err = tx.LockInTransaction(context.Background(), key, false)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}
@@ -71,7 +71,7 @@ func TestLockBlockingAcquire(t *testing.T) {
 		return
 	}
 
-	acquired, unlock, err := locker.lock(context.Background(), key, true)
+	acquired, unlock, err := locker.Lock(context.Background(), key, true)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}
@@ -83,7 +83,7 @@ func TestLockBlockingAcquire(t *testing.T) {
 	go func() {
 		defer close(sync)
 
-		acquired, unlock, err := tx.lock(context.Background(), key, true)
+		acquired, unlock, err := tx.LockInTransaction(context.Background(), key, true)
 		if err != nil {
 			t.Errorf("unexpected error attempting to acquire lock: %s", err)
 			return
