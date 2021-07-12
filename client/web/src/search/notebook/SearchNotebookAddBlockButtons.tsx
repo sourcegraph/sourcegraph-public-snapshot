@@ -23,14 +23,14 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
         <div className={styles.addBlockButtons}>
             <button
                 type="button"
-                className="btn btn-secondary btn-sm mr-2"
+                className={classNames('btn btn-outline-secondary btn-sm mr-2', styles.addBlockButton)}
                 onClick={() => onAddBlock(index, 'query', '// Enter search query')}
             >
                 + Query
             </button>
             <button
                 type="button"
-                className="btn btn-sm btn-secondary"
+                className={classNames('btn btn-outline-secondary btn-sm', styles.addBlockButton)}
                 onClick={() => onAddBlock(index, 'md', '*Enter markdown*')}
             >
                 + Markdown

@@ -39,7 +39,6 @@ interface SearchNotebookQueryBlockProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-// TODO: Use React.memo
 export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQueryBlockProps> = ({
     id,
     input,
@@ -112,28 +111,28 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 label: 'Duplicate',
                 icon: <ContentDuplicateIcon className="icon-inline" />,
                 onClick: onDuplicateBlock,
-                keyboardShortcutLabel: `${modifierKeyLabel} + D`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
             },
             {
                 label: 'Move Up',
                 icon: <ArrowUpIcon className="icon-inline" />,
                 onClick: id => onMoveBlock(id, 'up'),
-                keyboardShortcutLabel: `${modifierKeyLabel} + ↑`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
             },
             {
                 label: 'Move Down',
                 icon: <ArrowDownIcon className="icon-inline" />,
                 onClick: id => onMoveBlock(id, 'down'),
-                keyboardShortcutLabel: `${modifierKeyLabel} + ↓`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
             },
             {
                 label: 'Delete',
                 icon: <DeleteIcon className="icon-inline" />,
                 onClick: onDeleteBlock,
-                keyboardShortcutLabel: `${modifierKeyLabel} + ⌫`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ⌫` : '',
             },
         ],
-        [onDuplicateBlock, onMoveBlock, onDeleteBlock, modifierKeyLabel]
+        [onDuplicateBlock, onMoveBlock, onDeleteBlock, isInputFocused, modifierKeyLabel]
     )
 
     return (
@@ -157,14 +156,12 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 data-block-id={id}
                 ref={blockElement}
             >
-                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
                 <div
                     className={classNames(
                         blockStyles.monacoWrapper,
                         isInputFocused && blockStyles.selected,
                         styles.queryInputMonacoWrapper
                     )}
-                    onKeyDown={event => event.stopPropagation()}
                 >
                     <MonacoEditor
                         language={SOURCEGRAPH_SEARCH}

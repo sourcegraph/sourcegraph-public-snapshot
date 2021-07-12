@@ -42,13 +42,13 @@ export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBloc
         {actions.map(action => (
             <button
                 key={action.label}
-                className="btn btn-sm btn-secondary d-flex align-items-center mb-2"
+                className={classNames('btn btn-sm d-flex align-items-center', styles.actionButton)}
                 type="button"
                 role="menuitem"
                 disabled={action.isDisabled ?? false}
                 onClick={() => action.onClick(id)}
             >
-                <div>{action.icon}</div>
+                <div className="text-muted">{action.icon}</div>
                 <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{action.label}</div>
                 <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
                 <small className={classNames('text-muted', styles.hideOnSmallScreen)}>

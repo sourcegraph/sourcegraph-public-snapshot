@@ -25,7 +25,6 @@ interface SearchNotebookMarkdownBlockProps extends BlockProps, Omit<MarkdownBloc
     isMacPlatform: boolean
 }
 
-// TODO: Use React.memo
 export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebookMarkdownBlockProps> = ({
     id,
     input,
@@ -118,28 +117,37 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                 label: 'Duplicate',
                 icon: <ContentDuplicateIcon className="icon-inline" />,
                 onClick: onDuplicateBlock,
-                keyboardShortcutLabel: `${modifierKeyLabel} + D`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
             },
             {
                 label: 'Move Up',
                 icon: <ArrowUpIcon className="icon-inline" />,
                 onClick: id => onMoveBlock(id, 'up'),
-                keyboardShortcutLabel: `${modifierKeyLabel} + ↑`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
             },
             {
                 label: 'Move Down',
                 icon: <ArrowDownIcon className="icon-inline" />,
                 onClick: id => onMoveBlock(id, 'down'),
-                keyboardShortcutLabel: `${modifierKeyLabel} + ↓`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
             },
             {
                 label: 'Delete',
                 icon: <DeleteIcon className="icon-inline" />,
                 onClick: onDeleteBlock,
-                keyboardShortcutLabel: `${modifierKeyLabel} + ⌫`,
+                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ⌫` : '',
             },
         ],
-        [isEditing, modifierKeyLabel, runBlock, onEnterBlock, onMoveBlock, onDeleteBlock, onDuplicateBlock]
+        [
+            isInputFocused,
+            isEditing,
+            modifierKeyLabel,
+            runBlock,
+            onEnterBlock,
+            onMoveBlock,
+            onDeleteBlock,
+            onDuplicateBlock,
+        ]
     )
 
     const blockMenu = isSelected && <SearchNotebookBlockMenu id={id} actions={menuActions} />
@@ -191,8 +199,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                 data-block-id={id}
                 ref={blockElement}
             >
-                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-                <div className={blockStyles.monacoWrapper} onKeyDown={event => event.stopPropagation()}>
+                <div className={blockStyles.monacoWrapper}>
                     <MonacoEditor
                         language="markdown"
                         value={input}

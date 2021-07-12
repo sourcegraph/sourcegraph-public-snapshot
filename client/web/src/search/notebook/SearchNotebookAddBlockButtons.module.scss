@@ -22,3 +22,9 @@
     top: 0;
     left: 1rem;
 }
+
+.add-block-button {
+    // Match the notebook background color instead of being transparent
+    // to hide the underlying line.
+    background-color: var(--color-bg-1) !important;
+}

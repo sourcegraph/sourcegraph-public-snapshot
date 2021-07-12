@@ -23,6 +23,12 @@
     border-bottom: 1px solid var(--border-color);
 }
 
+.action-button {
+    &:not(:disabled):hover {
+        background-color: var(--color-bg-2);
+    }
+}
+
 .hide-on-small-screen {
     visibility: visible;
 
