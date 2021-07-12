@@ -8,7 +8,7 @@ import { Literal } from './token'
  * | awk -F : '/^var LanguageByAliasMap/ { MATCH=1; next } /^}/ { exit } MATCH==1 { gsub(/^ +/, "", $2); print $2 }' \
  * | sort | uniq
  */
-export const allLanguages = [
+export const ALL_LANGUAGES = [
     '1C Enterprise',
     '4D',
     'ABAP',
@@ -602,7 +602,7 @@ export const allLanguages = [
     'Zimpl',
 ]
 
-export const popularLanguages: string[] = [
+export const POPULAR_LANGUAGES: string[] = [
     'Assembly',
     'Bash',
     'C',
