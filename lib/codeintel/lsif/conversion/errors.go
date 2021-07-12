@@ -1,9 +1,10 @@
 package conversion
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 // ErrMissingMetaData occurs when no metadata vertex is present or not the first lne in the upload.

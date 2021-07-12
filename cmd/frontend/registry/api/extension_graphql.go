@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"errors"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 

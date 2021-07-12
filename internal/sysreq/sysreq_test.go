@@ -1,11 +1,10 @@
 package sysreq
 
 import (
-	"errors"
-	"reflect"
+	"context"
 	"testing"
 
-	"context"
+	"github.com/cockroachdb/errors"
 )
 
 func TestCheck(t *testing.T) {
@@ -18,9 +17,13 @@ func TestCheck(t *testing.T) {
 		},
 	}
 	st := Check(context.Background(), nil)
-	want := []Status{{Name: "a", Err: errors.New("foo")}}
-	if !reflect.DeepEqual(st, want) {
-		t.Errorf("got %v, want %v", st, want)
+	if len(st) != 1 {
+		t.Fatalf("unexpected number of statuses. want=%d have=%d", 1, len(st))
+	}
+
+	want := Status{Name: "a", Err: errors.New("foo")}
+	if !st[0].Equals(want) {
+		t.Errorf("got %v, want %v", st[0], want)
 	}
 }
 
@@ -34,8 +37,12 @@ func TestCheck_skip(t *testing.T) {
 		},
 	}
 	st := Check(context.Background(), []string{"A"})
-	want := []Status{{Name: "a", Skipped: true}}
-	if !reflect.DeepEqual(st, want) {
-		t.Errorf("got %v, want %v", st, want)
+	if len(st) != 1 {
+		t.Fatalf("unexpected number of statuses. want=%d have=%d", 1, len(st))
+	}
+
+	want := Status{Name: "a", Skipped: true}
+	if !st[0].Equals(want) {
+		t.Errorf("got %v, want %v", st[0], want)
 	}
 }

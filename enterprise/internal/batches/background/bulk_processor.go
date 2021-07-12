@@ -90,7 +90,7 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) error {
 	typedPayload, ok := job.Payload.(*btypes.ChangesetJobCommentPayload)
 	if !ok {
-		return fmt.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobCommentPayload{}, job.Payload)
+		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobCommentPayload{}, job.Payload)
 	}
 	cs := &sources.Changeset{
 		Changeset: b.ch,
@@ -129,7 +129,7 @@ func (b *bulkProcessor) reenqueueChangeset(ctx context.Context, job *btypes.Chan
 func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
 	typedPayload, ok := job.Payload.(*btypes.ChangesetJobMergePayload)
 	if !ok {
-		return fmt.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload)
+		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload)
 	}
 
 	cs := &sources.Changeset{

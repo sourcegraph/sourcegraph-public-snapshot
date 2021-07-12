@@ -1,9 +1,10 @@
 package monitoring
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 // upperFirst returns s with an uppercase first rune.
@@ -50,7 +51,7 @@ func toMarkdown(m string, forceList bool) (string, error) {
 		for i, l := range lines[:len(lines)-1] {
 			trimmedLine := strings.TrimPrefix(l, removeIndention)
 			if l != "" && l == trimmedLine {
-				return "", fmt.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
+				return "", errors.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
 			}
 			lines[i] = trimmedLine
 		}

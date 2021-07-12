@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"

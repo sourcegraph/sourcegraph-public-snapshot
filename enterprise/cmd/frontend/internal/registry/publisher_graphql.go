@@ -2,9 +2,8 @@ package registry
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -124,7 +123,7 @@ func unmarshalRegistryPublisherID(id graphql.ID) (*registryPublisherID, error) {
 	case "Org":
 		p.orgID, err = graphqlbackend.UnmarshalOrgID(id)
 	default:
-		return nil, fmt.Errorf("unknown registry extension publisher type: %q", kind)
+		return nil, errors.Errorf("unknown registry extension publisher type: %q", kind)
 	}
 	if err != nil {
 		return nil, err

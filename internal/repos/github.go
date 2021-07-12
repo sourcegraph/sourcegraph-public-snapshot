@@ -57,7 +57,7 @@ var _ VersionSource = &GithubSource{}
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGithubSource(svc, &c, cf)
 }
@@ -359,8 +359,9 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 		s.paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 			defer func() {
 				if page == 1 {
-					if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
-						oerr = fmt.Errorf("organisation %q not found", org)
+					var e *github.APIError
+					if errors.As(err, &e) && e.Code == 404 {
+						oerr = errors.Errorf("organisation %q not found", org)
 						err = nil
 					}
 				}
@@ -750,7 +751,7 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	for hasNextPage {
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("context canceled")
+			return nil, errors.Errorf("context canceled")
 		default:
 		}
 		repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)

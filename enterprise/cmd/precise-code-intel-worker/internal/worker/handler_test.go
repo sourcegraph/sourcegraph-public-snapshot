@@ -2,13 +2,13 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -175,7 +175,7 @@ func TestHandleError(t *testing.T) {
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
 
 	// Set a different tip commit
-	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(fmt.Errorf("uh-oh!"))
+	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
 	handler := &handler{
 		lsifStore:       mockLSIFStore,

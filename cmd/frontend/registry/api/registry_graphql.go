@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"errors"
-	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -69,7 +69,7 @@ func getExtensionByExtensionID(ctx context.Context, db dbutil.DB, extensionID st
 		return local, nil
 	}
 	if remote == nil {
-		return nil, fmt.Errorf("no remote extension found with ID %q", extensionID)
+		return nil, errors.Errorf("no remote extension found with ID %q", extensionID)
 	}
 	return &registryExtensionRemoteResolver{v: remote}, nil
 }

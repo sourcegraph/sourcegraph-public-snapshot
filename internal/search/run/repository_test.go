@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
-	"errors"
 	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 

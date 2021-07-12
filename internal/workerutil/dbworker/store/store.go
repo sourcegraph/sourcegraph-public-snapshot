@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -78,7 +79,7 @@ type ExecutionLogEntry workerutil.ExecutionLogEntry
 func (e *ExecutionLogEntry) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	return json.Unmarshal(b, &e)

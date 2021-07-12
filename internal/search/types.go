@@ -3,6 +3,7 @@ package search
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -127,6 +128,7 @@ func (m GlobalSearchMode) String() string {
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
 	ResultTypes result.Types
+	Timeout     time.Duration
 
 	// Performance optimization: For global queries, resolving repositories and
 	// querying zoekt happens concurrently.
