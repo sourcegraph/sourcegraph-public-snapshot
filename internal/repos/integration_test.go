@@ -61,6 +61,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
 		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},
+
 		{"DBStore/Syncer/Sync", testSyncerSync},
 		{"DBStore/Syncer/SyncRepo", testSyncRepo},
 		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing(db)},
@@ -74,6 +75,20 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/NameConflictOnRename", testNameOnConflictOnRename(db)},
 		{"DBStore/Syncer/ConflictingSyncers", testConflictingSyncers(db)},
 		{"DBStore/Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources(db)},
+
+		{"DBStore/StreamingSyncer/Sync", testSyncerSync},
+		{"DBStore/StreamingSyncer/SyncRepo", testSyncRepo},
+		{"DBStore/StreamingSyncer/SyncWorker", testSyncWorkerPlumbing(db)},
+		{"DBStore/StreamingSyncer/Run", testSyncRun(db)},
+		{"DBStore/StreamingSyncer/MultipleServices", testSyncer(db)},
+		{"DBStore/StreamingSyncer/OrphanedRepos", testOrphanedRepo(db)},
+		{"DBStore/StreamingSyncer/UserAddedRepos", testUserAddedRepos(db, userID)},
+		{"DBStore/StreamingSyncer/DeleteExternalService", testDeleteExternalService(db)},
+		{"DBStore/StreamingSyncer/NameConflictDiscardOld", testNameOnConflictDiscardOld(db)},
+		{"DBStore/StreamingSyncer/NameConflictDiscardNew", testNameOnConflictDiscardNew(db)},
+		{"DBStore/StreamingSyncer/NameConflictOnRename", testNameOnConflictOnRename(db)},
+		{"DBStore/StreamingSyncer/ConflictingSyncers", testConflictingSyncers(db)},
+		{"DBStore/StreamingSyncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
