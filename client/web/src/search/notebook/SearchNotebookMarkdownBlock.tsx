@@ -127,7 +127,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
 
     if (!isEditing) {
         return (
-            <div className={classNames('block-wrapper', blockStyles.blockWrapper)}>
+            <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
                 {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
                 <div
                     className={classNames(blockStyles.block, isSelected && blockStyles.selected, styles.outputWrapper)}
@@ -135,12 +135,10 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                     onFocus={onSelect}
                     onDoubleClick={onDoubleClick}
                     onKeyDown={onKeyDown}
+                    // A tabIndex is necessary to make the block focusable.
                     // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                     tabIndex={0}
-                    // eslint-disable-next-line jsx-a11y/aria-role
-                    role="notebook-block"
-                    aria-label="Notebook block"
-                    data-block-id={id}
+                    aria-label="Notebook markdown block"
                     ref={blockElement}
                 >
                     <div className={styles.output}>
@@ -153,7 +151,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     }
 
     return (
-        <div className={classNames('block-wrapper', blockStyles.blockWrapper)}>
+        <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div
                 className={classNames(
@@ -164,12 +162,10 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                 onClick={onSelect}
                 onFocus={onSelect}
                 onKeyDown={onKeyDown}
+                // A tabIndex is necessary to make the block focusable.
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                 tabIndex={0}
-                // eslint-disable-next-line jsx-a11y/aria-role
-                role="notebook-block"
-                aria-label="Notebook block"
-                data-block-id={id}
+                aria-label="Notebook markdown block"
                 ref={blockElement}
             >
                 <div className={blockStyles.monacoWrapper}>

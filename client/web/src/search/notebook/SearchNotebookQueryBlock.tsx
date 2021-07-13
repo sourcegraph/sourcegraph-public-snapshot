@@ -132,7 +132,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     }, [editor])
 
     return (
-        <div className={classNames('block-wrapper', blockStyles.blockWrapper)}>
+        <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div
                 className={classNames(
@@ -144,12 +144,10 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 onClick={onSelect}
                 onKeyDown={onKeyDown}
                 onFocus={onSelect}
+                // A tabIndex is necessary to make the block focusable.
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                 tabIndex={0}
-                // eslint-disable-next-line jsx-a11y/aria-role
-                role="notebook-block"
-                aria-label="Notebook block"
-                data-block-id={id}
+                aria-label="Notebook query block"
                 ref={blockElement}
             >
                 <div
