@@ -36,7 +36,7 @@ export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps)
 
             await updateSubjectSettings(platformContext, dashboard.owner.id, updatedSettings).toPromise()
 
-            setLoadingOrError(true)
+            setLoadingOrError(false)
             onSuccess()
         } catch (error: unknown) {
             setLoadingOrError(asError(error))
