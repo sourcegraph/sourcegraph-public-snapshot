@@ -386,6 +386,21 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             }
         }
     }, [editor, onSubmit, acceptSearchSuggestionOnEnter])
+    // useEffect(() => {
+    //     if (!editor) {
+    //         return
+    //     }
+    //     const disposable = editor.addAction({
+    //         id: 'activateFuzzyFinder',
+    //         label: 'submitOnEnter',
+    //         keybindings: [Monaco.KeyCode.KEY_P | Monaco.KeyMod.CtrlCmd],
+    //         run: () => {
+    //             console.log('FUZZY FINDER')
+
+    //         },
+    //     })
+    //     return () => disposable.dispose()
+    // }, [editor])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,

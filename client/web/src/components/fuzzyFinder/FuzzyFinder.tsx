@@ -39,15 +39,20 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
 
     return (
         <>
-            <Shortcut
-                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
-                onMatch={() => {
-                    setIsVisible(true)
-                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
-                    input?.focus()
-                    input?.select()
-                }}
-            />
+            {KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings.map((keybinding, index) => (
+                <Shortcut
+                    {...keybinding}
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={`fuzzy-finder-keybinding-${index}`}
+                    allowDefault={false}
+                    onMatch={() => {
+                        setIsVisible(true)
+                        const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+                        input?.focus()
+                        input?.select()
+                    }}
+                />
+            ))}
             <Shortcut {...KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER.keybindings[0]} onMatch={() => setIsVisible(false)} />
             {isVisible && (
                 <FuzzyModal
