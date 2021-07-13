@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { ReactElement, useMemo } from 'react'
+import React, { useMemo } from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -93,9 +93,6 @@ export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPagePro
 
 const ACTION_CLASSNAMES = 'd-flex flex-column text-muted justify-content-center align-items-center mx-2'
 
-// TODO: Generalize icon label type to accept strings
-const element = (string: string): ReactElement => <span>{string}</span>
-
 interface StatsBarProps {
     stats: RepoBatchChangeStats['changesetsStats']
 }
@@ -105,9 +102,9 @@ const StatsBar: React.FunctionComponent<StatsBarProps> = ({
 }) => (
     <div className="d-flex flex-wrap align-items-center">
         <BatchChangeStatsTotalAction count={total} />
-        <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={element(`${(draft + open).toString()} Open`)} />
-        <ChangesetStatusUnpublished className={ACTION_CLASSNAMES} label={element(`${unpublished} Unpublished`)} />
-        <ChangesetStatusClosed className={ACTION_CLASSNAMES} label={element(`${closed} Closed`)} />
-        <ChangesetStatusMerged className={ACTION_CLASSNAMES} label={element(`${merged} Merged`)} />
+        <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={`${(draft + open).toString()} Open`} />
+        <ChangesetStatusUnpublished className={ACTION_CLASSNAMES} label={`${unpublished} Unpublished`} />
+        <ChangesetStatusClosed className={ACTION_CLASSNAMES} label={`${closed} Closed`} />
+        <ChangesetStatusMerged className={ACTION_CLASSNAMES} label={`${merged} Merged`} />
     </div>
 )
