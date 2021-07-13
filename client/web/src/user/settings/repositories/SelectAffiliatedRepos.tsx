@@ -1,3 +1,4 @@
+import { FetchResult } from '@apollo/client'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
@@ -7,8 +8,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
+import { useSaveSelectedRepos, SELECTED_REPOS } from '../../../auth/useSelectedRepos'
 import { AwayPrompt } from '../../../components/AwayPrompt'
-import { setExternalServiceRepos } from '../../../components/externalServices/backend'
 import {
     ExternalServiceKind,
     Maybe,
@@ -16,6 +17,7 @@ import {
     UserRepositoriesResult,
     SiteAdminRepositoryFields,
     ListExternalServiceFields,
+    SetExternalServiceReposResult,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
@@ -24,7 +26,7 @@ import { externalServiceUserModeFromTags } from '../cloud-ga'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
 export interface AffiliatedReposReference {
-    submit: () => Promise<void[] | void>
+    submit: () => Promise<FetchResult<SetExternalServiceReposResult>[] | void>
 }
 
 interface authenticatedUser {
@@ -90,7 +92,14 @@ const initialSelectionState = {
  */
 export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>(
     (
-        { repos: affiliatedRepos, selectedRepos, externalServices, authenticatedUser, telemetryService, onSelection },
+        {
+            repos: affiliatedRepos,
+            selectedRepos = [],
+            externalServices,
+            authenticatedUser,
+            telemetryService,
+            onSelection,
+        },
         reference
     ) => {
         useEffect(() => {
@@ -105,6 +114,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
 
         // set up state hooks
         const [isRedesignEnabled] = useRedesignToggle()
+        const saveSelectedRepos = useSaveSelectedRepos()
 
         const [currentPage, setPage] = useState(1)
         const [repoState, setRepoState] = useState(initialRepoState)
@@ -270,7 +280,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
 
         // save changes and update code hosts
         useImperativeHandle(reference, () => ({
-            submit: async (): Promise<void[] | void> => {
+            submit: async (): Promise<FetchResult<SetExternalServiceReposResult>[] | void> => {
                 if (externalServices) {
                     eventLogger.log('UserManageRepositoriesSave')
 
@@ -286,10 +296,28 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                         }
 
                         codeHostRepoPromises.push(
-                            setExternalServiceRepos({
-                                id: host.id,
-                                allRepos: selectionState.radio === 'all',
-                                repos: (selectionState.radio === 'selected' && repos) || null,
+                            saveSelectedRepos({
+                                variables: {
+                                    id: host.id,
+                                    allRepos: selectionState.radio === 'all',
+                                    repos: (selectionState.radio === 'selected' && repos) || null,
+                                },
+                                awaitRefetchQueries: true,
+                                refetchQueries: [
+                                    {
+                                        query: SELECTED_REPOS,
+                                        variables: {
+                                            id: authenticatedUser.id,
+                                            cloned: true,
+                                            notCloned: true,
+                                            indexed: true,
+                                            notIndexed: true,
+                                            first: 2000,
+                                            query: null,
+                                            externalServiceID: null,
+                                        },
+                                    },
+                                ],
                             })
                         )
                     }
