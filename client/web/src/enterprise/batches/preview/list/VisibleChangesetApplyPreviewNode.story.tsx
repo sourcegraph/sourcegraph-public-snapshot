@@ -662,6 +662,7 @@ for (const storyName of Object.keys(visibleChangesetApplyPreviewNodeStories)) {
                         email: 'alice@email.test',
                     }}
                     queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                    selectionEnabled={false}
                 />
             )}
         </EnterpriseWebStory>

@@ -1,3 +1,4 @@
+import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
 import React from 'react'
@@ -37,6 +38,7 @@ add('Overview', () => {
                                 email: 'alice@email.test',
                             }}
                             queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                            selectionEnabled={boolean('selectionEnabled', true)}
                         />
                     ))}
                 </>

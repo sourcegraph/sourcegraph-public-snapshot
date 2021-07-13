@@ -14,29 +14,35 @@ const { add } = storiesOf('web/batches/preview/CreateUpdateBatchChangeAlert', mo
         },
     })
 
-add('Create', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CreateUpdateBatchChangeAlert
-                {...props}
-                specID="123"
-                toBeArchived={18}
-                batchChange={null}
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
-            />
-        )}
-    </EnterpriseWebStory>
-))
-add('Update', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CreateUpdateBatchChangeAlert
-                {...props}
-                specID="123"
-                toBeArchived={199}
-                batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
-                viewerCanAdminister={boolean('viewerCanAdminister', true)}
-            />
-        )}
-    </EnterpriseWebStory>
-))
+for (const showPublishUI of [true, false]) {
+    const label = showPublishUI ? ' with publish UI' : ''
+
+    add('Create' + label, () => (
+        <EnterpriseWebStory>
+            {props => (
+                <CreateUpdateBatchChangeAlert
+                    {...props}
+                    specID="123"
+                    toBeArchived={18}
+                    batchChange={null}
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    showPublishUI={showPublishUI}
+                />
+            )}
+        </EnterpriseWebStory>
+    ))
+    add('Update' + label, () => (
+        <EnterpriseWebStory>
+            {props => (
+                <CreateUpdateBatchChangeAlert
+                    {...props}
+                    specID="123"
+                    toBeArchived={199}
+                    batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    showPublishUI={showPublishUI}
+                />
+            )}
+        </EnterpriseWebStory>
+    ))
+}

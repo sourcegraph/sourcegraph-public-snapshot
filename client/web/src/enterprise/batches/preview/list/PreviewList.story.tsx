@@ -1,3 +1,4 @@
+import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of, Observable } from 'rxjs'
@@ -48,6 +49,7 @@ add('List view', () => (
                 }}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                selectionEnabled={boolean('selectionEnabled', false)}
             />
         )}
     </EnterpriseWebStory>
