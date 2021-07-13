@@ -40,9 +40,9 @@
 - [Principles](#principles)
 - [Inspiration](#inspiration)
 - [Ideas](#ideas)
-    - [Generators](#generators)
-    - [Edit configuration files](#edit-configuration-files)
-    - [Tail logs](#tail-logs)
+  - [Generators](#generators)
+  - [Edit configuration files](#edit-configuration-files)
+  - [Tail logs](#tail-logs)
 
 ## Quickstart
 
