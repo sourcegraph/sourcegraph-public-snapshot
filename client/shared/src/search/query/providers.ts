@@ -181,9 +181,5 @@ export function getProvidersNoCache(
                     )
                     .toPromise(),
         },
-        // TODO
-        // diagnostics: scannedQueries.pipe(
-        //     map(({ scanned }) => (scanned.type === 'success' ? getDiagnostics(scanned.term, options.patternType) : []))
-        // ),
     }
 }

@@ -2,12 +2,15 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -110,6 +113,23 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         onMoveBlock,
         onDuplicateBlock,
     })
+
+    useEffect(() => {
+        if (!editor) {
+            return
+        }
+        const disposable = editor.onDidChangeModelContent(() => {
+            const model = editor.getModel()
+            if (!model) {
+                return
+            }
+            const patternType = SearchPatternType.literal
+            const scanned = scanSearchQuery(model.getValue(), true, patternType)
+            const markers = scanned.type === 'success' ? getDiagnostics(scanned.term, patternType) : []
+            Monaco.editor.setModelMarkers(model, 'diagnostics', markers)
+        })
+        return () => disposable.dispose()
+    }, [editor])
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)}>

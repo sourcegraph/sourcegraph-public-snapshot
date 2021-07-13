@@ -60,13 +60,6 @@ function addSourcegraphSearchCodeIntelligence(
         toUnsubscribable(Monaco.languages.registerCompletionItemProvider(SOURCEGRAPH_SEARCH, providers.completion))
     )
 
-    // TODO
-    // subscriptions.add(
-    //     providers.diagnostics.subscribe(markers => {
-    //         monaco.editor.setModelMarkers(monaco.editor.getModels()[0], 'diagnostics', markers)
-    //     })
-    // )
-
     return subscriptions
 }
 
