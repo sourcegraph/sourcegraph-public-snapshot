@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Backend Code Insights will aggregate viewable repositories based on the authenticated user. [#22471](https://github.com/sourcegraph/sourcegraph/pull/22471)
 - Added support for highlighting .frugal files as Thrift syntax.
 - Added `file:contains.content(regexp)` predicate, which filters only to files that contain matches of the given pattern. [#22666](https://github.com/sourcegraph/sourcegraph/pull/22666)
+- Repository syncing can now be done in a streaming mode via the `ENABLE_STREAMING_REPOS_SYNCER` environment variable in `repo-updater`. Customers with many repositories should notice code host updates much faster when this is enabled. It will become default in the next release. [#22756](https://github.com/sourcegraph/sourcegraph/pull/22756)
 - Added "Groovy" to `lang:` filter suggestions in the search bar. [#22755](https://github.com/sourcegraph/sourcegraph/pull/22755)
 
 ### Changed

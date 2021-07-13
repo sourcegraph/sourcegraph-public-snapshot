@@ -236,8 +236,7 @@ const listReposQueryFmtstr = `
 SELECT %s
 FROM %%s
 WHERE
-	repo.deleted_at IS NULL
-AND %%s   -- Populates "queryConds"
+%%s       -- Populates "queryConds"
 AND (%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
 `
@@ -495,6 +494,9 @@ type ReposListOptions struct {
 	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
 	// automatically or manually for different reasons, like being too big or having copyright issues.
 	IncludeBlocked bool
+
+	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
+	IncludeDeleted bool
 
 	*LimitOffset
 }
@@ -803,8 +805,11 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	fromClause := sqlf.Sprintf("repo %s", sqlf.Join(from, " "))
 
 	baseConds := sqlf.Sprintf("TRUE")
+	if !opt.IncludeDeleted {
+		baseConds = sqlf.Sprintf("deleted_at IS NULL")
+	}
 	if !opt.IncludeBlocked {
-		baseConds = sqlf.Sprintf("blocked IS NULL")
+		baseConds = sqlf.Sprintf("%s AND blocked IS NULL", baseConds)
 	}
 
 	whereConds := sqlf.Sprintf("TRUE")

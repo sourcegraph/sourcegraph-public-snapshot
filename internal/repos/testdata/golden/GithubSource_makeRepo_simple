@@ -30,7 +30,7 @@
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
-    "ViewerPermission": "READ"
+    "ViewerPermission": ""
    }
   },
   {
@@ -64,7 +64,7 @@
     "IsPrivate": true,
     "IsFork": false,
     "IsArchived": false,
-    "ViewerPermission": "ADMIN"
+    "ViewerPermission": ""
    }
   }
  ]

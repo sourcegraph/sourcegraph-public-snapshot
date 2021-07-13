@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -239,6 +240,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
+		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") == "true",
+	}
+
+	if syncer.Streaming {
+		log15.Info("Running syncer in streaming mode because ENABLE_STREAMING_REPOS_SYNCER is set to true ")
 	}
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
@@ -253,7 +259,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go watchSyncer(ctx, syncer, scheduler, gps)
 	go func() {
-		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
+		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
 			IsCloud:         envvar.SourcegraphDotComMode(),
 			MinSyncInterval: repos.ConfRepoListUpdateInterval,
