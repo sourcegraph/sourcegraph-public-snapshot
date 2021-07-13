@@ -138,9 +138,12 @@ sg doctor
 ### `sg live` - See currently deployed version
 
 ```bash
-# See which version is deployed on an environment
+# See which version is deployed on a preset environment
 sg live dot-com
 sg live k8s
+
+# See which version is deployed on a custom environment
+sg live https://demo.sourcegraph.com
 
 # List environments:
 sg live -help

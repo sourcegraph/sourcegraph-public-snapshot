@@ -3,10 +3,11 @@ import { useMemo } from 'react'
 import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../../schema/settings.schema'
-import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
+import { Settings } from '../../../schema/settings.schema'
+import { InsightDashboard, InsightsDashboardType } from '../../core/types'
+import { isSubjectInsightSupported } from '../../core/types/subjects'
 
-import { getSubjectDashboards, isSubjectSupported } from './utils'
+import { getSubjectDashboards } from './utils'
 
 /**
  * Special virtual dashboard - "All Insights"
@@ -36,7 +37,7 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
     const subjectDashboards = subjects.flatMap(configuredSubject => {
         const { settings, subject } = configuredSubject
 
-        if (isErrorLike(settings) || !settings || !isSubjectSupported(subject)) {
+        if (isErrorLike(settings) || !settings || !isSubjectInsightSupported(subject)) {
             return []
         }
 

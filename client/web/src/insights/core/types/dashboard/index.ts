@@ -23,3 +23,6 @@ export const isPersonalDashboard = (dashboard: InsightDashboard): dashboard is R
     dashboard.type === InsightsDashboardType.Personal
 export const isVirtualDashboard = (dashboard: InsightDashboard): dashboard is VirtualInsightsDashboard =>
     dashboard.type === InsightsDashboardType.All
+
+export const isRealDashboard = (dashboard: InsightDashboard): dashboard is RealInsightDashboard =>
+    isOrganizationDashboard(dashboard) || isPersonalDashboard(dashboard)

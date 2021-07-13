@@ -148,22 +148,22 @@ func TestGithubSource_makeRepo(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		schmea *schema.GitHubConnection
+		schema *schema.GitHubConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url: "https://github.com",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url:        "https://github.com",
 				GitURLType: "ssh",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url:                   "https://github.com",
 				RepositoryPathPattern: "gh/{nameWithOwner}",
 			},
@@ -175,7 +175,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(&svc, test.schmea, nil)
+			s, err := newGithubSource(&svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

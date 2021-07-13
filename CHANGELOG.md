@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Backend Code Insights will aggregate viewable repositories based on the authenticated user. [#22471](https://github.com/sourcegraph/sourcegraph/pull/22471)
 - Added support for highlighting .frugal files as Thrift syntax.
 - Added `file:contains.content(regexp)` predicate, which filters only to files that contain matches of the given pattern. [#22666](https://github.com/sourcegraph/sourcegraph/pull/22666)
+- Repository syncing can now be done in a streaming mode via the `ENABLE_STREAMING_REPOS_SYNCER` environment variable in `repo-updater`. Customers with many repositories should notice code host updates much faster when this is enabled. It will become default in the next release. [#22756](https://github.com/sourcegraph/sourcegraph/pull/22756)
 - Added "Groovy" to `lang:` filter suggestions in the search bar. [#22755](https://github.com/sourcegraph/sourcegraph/pull/22755)
 
 ### Changed
@@ -38,6 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Jaeger works in Docker-compose deployments again. [#22691](https://github.com/sourcegraph/sourcegraph/pull/22691)
 - A bug where the pattern `)` makes the browser unresponsive. [#22738](https://github.com/sourcegraph/sourcegraph/pull/22738)
 - An issue where using `select:repo` in conjunction with `and` patterns did not yield expected repo results. [#22743](https://github.com/sourcegraph/sourcegraph/pull/22743)
+- The `isLocked` and `isDisabled` fields of GitHub repositories are now fetched correctly from the GraphQL API of GitHub Enterprise instances. Users that rely on the `repos` config in GitHub code host connections should update so that locked and disabled repositories defined in that list are actually skipped. [#22788](https://github.com/sourcegraph/sourcegraph/pull/22788)
 
 ### Removed
 
