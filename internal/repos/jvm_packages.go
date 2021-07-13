@@ -14,8 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// A JVMPackagesSource yields depots from a single Maven connection configured
-// in Sourcegraph via the external services configuration.
+// A JVMPackagesSource creates git repositories from `*-sources.jar` files of
+// published Maven dependencies from the JVM ecosystem.
 type JVMPackagesSource struct {
 	svc    *types.ExternalService
 	config *schema.JVMPackagesConnection
@@ -71,7 +71,7 @@ func (s *JVMPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*
 	}
 
 	for _, dep := range dependencies {
-		if dep.Module == module {
+		if dep.MavenModule == module {
 			exists, err := coursier.Exists(ctx, s.config, dep)
 			if err != nil {
 				return nil, err
@@ -88,7 +88,7 @@ func (s *JVMPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*
 }
 
 type mavenArtifactNotFound struct {
-	dependency reposource.Dependency
+	dependency reposource.MavenDependency
 }
 
 func (mavenArtifactNotFound) NotFound() bool {
@@ -99,7 +99,7 @@ func (e *mavenArtifactNotFound) Error() string {
 	return fmt.Sprintf("not found: maven dependency '%v'", e.dependency)
 }
 
-func (s *JVMPackagesSource) makeRepo(module reposource.Module) *types.Repo {
+func (s *JVMPackagesSource) makeRepo(module reposource.MavenModule) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := module.CloneURL()
 	return &types.Repo{
@@ -128,7 +128,7 @@ func (s *JVMPackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []reposource.Dependency, err error) {
+func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []reposource.MavenDependency, err error) {
 	for _, dep := range connection.Maven.Dependencies {
 		dependency, err := reposource.ParseMavenDependency(dep)
 		if err != nil {
@@ -139,15 +139,15 @@ func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []
 	return dependencies, nil
 }
 
-func MavenModules(connection schema.JVMPackagesConnection) ([]reposource.Module, error) {
-	isAdded := make(map[reposource.Module]bool)
-	modules := []reposource.Module{}
+func MavenModules(connection schema.JVMPackagesConnection) ([]reposource.MavenModule, error) {
+	isAdded := make(map[reposource.MavenModule]bool)
+	modules := []reposource.MavenModule{}
 	dependencies, err := MavenDependencies(connection)
 	if err != nil {
 		return nil, err
 	}
 	for _, dep := range dependencies {
-		module := dep.Module
+		module := dep.MavenModule
 		if _, added := isAdded[module]; !added {
 			modules = append(modules, module)
 		}

@@ -73,10 +73,12 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 		return nil, err
 	}
 
+	// The Fetch method is responsible for cleaning up temporary directories.
 	if err := s.Fetch(ctx, remoteURL, GitDir(bareGitDirectory)); err != nil {
 		return nil, err
 	}
 
+	// no-op command to satisfy VCSSyncer interface, see docstring for more details.
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
@@ -102,9 +104,10 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	}
 
 	for i, dependency := range dependencies {
-		if _, ok := tags[dependency.GitTagFromVersion()]; ok {
+		if tags[dependency.GitTagFromVersion()] {
 			continue
 		}
+		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
 			return errors.Wrapf(err, "error pushing dependency %q", dependency)
 		}
@@ -136,7 +139,7 @@ func (s *JVMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 // packageDependencies returns the list of JVM dependencies that belong to the given URL path.
 // The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s *JVMPackagesSyncer) packageDependencies(repoUrlPath string) (dependencies []reposource.Dependency, err error) {
+func (s *JVMPackagesSyncer) packageDependencies(repoUrlPath string) (dependencies []reposource.MavenDependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
@@ -161,11 +164,12 @@ func (s *JVMPackagesSyncer) packageDependencies(repoUrlPath string) (dependencie
 // tag points to a commit that adds all sources of given dependency. When
 // isMainBranch is true, the main branch of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.Dependency, isLatestVersion bool) error {
+func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.MavenDependency, isLatestVersion bool) error {
 	tmpDirectory, err := ioutil.TempDir("", "maven")
 	if err != nil {
 		return err
 	}
+	// Always clean up created temporary directories.
 	defer os.RemoveAll(tmpDirectory)
 
 	paths, err := coursier.FetchSources(ctx, s.Config, dependency)
@@ -215,7 +219,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
-func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.Dependency, workingDirectory, jarPath string) error {
+func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency, workingDirectory, jarPath string) error {
 	cmd := exec.CommandContext(ctx, "unzip", jarPath)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err

@@ -23,7 +23,7 @@ func ListVersions(ctx context.Context, config *schema.JVMPackagesConnection, gro
 	return runCoursierCommand(ctx, config, "complete", groupID+":"+artifactID+":")
 }
 
-func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.Dependency) ([]string, error) {
+func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) ([]string, error) {
 	return runCoursierCommand(
 		ctx,
 		config,
@@ -33,7 +33,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 	)
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.Dependency) (bool, error) {
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (bool, error) {
 	versions, err := runCoursierCommand(
 		ctx,
 		config,

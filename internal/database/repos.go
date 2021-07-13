@@ -344,7 +344,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
 	if !ok {
-		log15.Error("scanRepo - failed to parse service type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
+		log15.Warn("scanRepo - failed to parse service type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
 		return nil
 	}
 	switch typ {
@@ -369,7 +369,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypeJVMPackages:
 		r.Metadata = new(jvmpackages.Metadata)
 	default:
-		log15.Error("scanRepo - unknown service type", "typ", typ)
+		log15.Warn("scanRepo - unknown service type", "typ", typ)
 		return nil
 	}
 
