@@ -1092,7 +1092,7 @@ SELECT
 		AND reconciler_state = 'completed') AS unpublished,
 	COUNT(*) FILTER (WHERE external_state = 'CLOSED') AS closed,
 	COUNT(*) FILTER (WHERE external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS open
+	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS OPEN
 FROM (
 	-- filter to changesets that are not archived on at least one batch change
 	SELECT
