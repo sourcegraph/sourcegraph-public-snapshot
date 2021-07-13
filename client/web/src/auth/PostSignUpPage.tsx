@@ -91,8 +91,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             </>
         ),
         // step is considered complete when user has at least one external service connected.
-        // isComplete: (): boolean => !!externalServices && externalServices?.length > 0,
-        isComplete: () => true,
+        isComplete: (): boolean => !!externalServices && externalServices?.length > 0,
     }
 
     const secondStep = {

@@ -494,7 +494,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
         )
 
         return (
-            <>
+            <div className="user-settings-repos mb-0">
                 <Container>
                     <ul className="list-group">
                         <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
@@ -536,7 +536,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                     button_ok_text="Discard"
                     when={didSelectionChange}
                 />
-            </>
+            </div>
         )
     }
 )
