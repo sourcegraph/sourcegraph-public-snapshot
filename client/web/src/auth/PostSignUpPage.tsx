@@ -220,7 +220,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                 />
             </LinkOrSpan>
 
-            <div className="signin-signup-page post-signup-page mb-5">
+            <div className="signin-signup-page post-signup-page">
                 <PageTitle title="Welcome" />
 
                 <HeroPage
