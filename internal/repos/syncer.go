@@ -1035,7 +1035,7 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 	// Remove associations and any repos that are no longer associated with any external service.
 	deleted, err := s.delete(ctx, tx, svc, seen)
 	if err != nil {
-		multierror.Append(err, errors.Wrap(err, "some repos couldn't be deleted"))
+		multierror.Append(errs, errors.Wrap(err, "some repos couldn't be deleted"))
 	}
 
 	now := s.Now()
@@ -1048,7 +1048,7 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 
 	err = tx.ExternalServiceStore.Upsert(ctx, svc)
 	if err != nil {
-		multierror.Append(errors.Wrap(err, "upserting external service"))
+		multierror.Append(errs, errors.Wrap(err, "upserting external service"))
 	}
 
 	return errs.ErrorOrNil()
