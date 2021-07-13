@@ -25,7 +25,7 @@ interface SearchNotebookProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
     globbing: boolean
     isMacPlatform: boolean
 
