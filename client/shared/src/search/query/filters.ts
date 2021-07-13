@@ -1,8 +1,8 @@
 import { Omit } from 'utility-types'
 
 import { SearchSuggestion } from '../suggestions'
-import { languageCompletion } from './languageFilter'
 
+import { languageCompletion } from './languageFilter'
 import { predicateCompletion } from './predicates'
 import { selectorCompletion } from './selectFilter'
 import { Filter, Literal } from './token'
@@ -233,7 +233,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.lang]: {
         alias: 'l',
-        discreteValues: value => languageCompletion(value).map(value => ({ label: value })),
+        discreteValues: value => languageCompletion(value).map(toCompletionItem),
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} results from the given language`,
     },
@@ -455,4 +455,16 @@ export const escapeSpaces = (value: string): string => {
         }
     }
     return escaped.join('')
+}
+
+/**
+ * Helper function to convert a string to a completion item. It quotes the
+ * string as necessary.
+ */
+function toCompletionItem(value: string): Completion {
+    const item: Completion = { label: value }
+    if (/\s/.test(value)) {
+        item.insertText = `"${value}"`
+    }
+    return item
 }
