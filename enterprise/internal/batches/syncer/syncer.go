@@ -41,7 +41,7 @@ type SyncStore interface {
 	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*btypes.CodeHost, error)
 	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error)
 	GetChangeset(context.Context, store.GetChangesetOpts) (*btypes.Changeset, error)
-	UpdateChangeset(ctx context.Context, cs *btypes.Changeset) error
+	UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) error
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	Transact(context.Context) (*store.Store, error)
@@ -444,7 +444,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 			// Store the error as the syncer error.
 			errMsg := err.Error()
 			c.SyncErrorMessage = &errMsg
-			if err2 := syncStore.UpdateChangeset(ctx, c); err2 != nil {
+			if err2 := syncStore.UpdateChangesetCodeHostState(ctx, c); err2 != nil {
 				return errors.Wrap(err, err2.Error())
 			}
 			return err
@@ -470,7 +470,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 	// Reset syncer error message state.
 	c.SyncErrorMessage = nil
 
-	err = tx.UpdateChangeset(ctx, c)
+	err = tx.UpdateChangesetCodeHostState(ctx, c)
 	if err != nil {
 		return err
 	}

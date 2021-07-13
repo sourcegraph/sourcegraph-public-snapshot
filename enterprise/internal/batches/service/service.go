@@ -330,6 +330,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 	// reconciler.
 	// So enqueue all, except the ones that are completed and closed/merged,
 	// for closing. If after being processed they're not open, it'll be a noop.
+	// TODO: We need to loop in here.
 	if err := tx.EnqueueChangesetsToClose(ctx, batchChange.ID); err != nil {
 		return nil, err
 	}
@@ -462,13 +463,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 		return nil, nil, authErr
 	}
 
-	if changeset.ReconcilerState != btypes.ReconcilerStateFailed {
-		return nil, nil, errors.New("cannot re-enqueue changeset not in failed state")
-	}
-
-	changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
-
-	if err = s.store.UpdateChangeset(ctx, changeset); err != nil {
+	if err := s.store.EnqueueChangeset(ctx, changeset, global.DefaultReconcilerEnqueueState(), btypes.ReconcilerStateFailed); err != nil {
 		return nil, nil, err
 	}
 

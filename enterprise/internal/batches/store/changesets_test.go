@@ -1097,6 +1097,72 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 	})
 
+	t.Run("UpdateChangesetCodeHostState", func(t *testing.T) {
+		unpublished := btypes.ChangesetUiPublicationStateUnpublished
+		published := btypes.ChangesetUiPublicationStatePublished
+		cs := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			Repo:                repo.ID,
+			BatchChange:         123,
+			CurrentSpec:         123,
+			PreviousSpec:        123,
+			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: 123}},
+			ExternalServiceType: "github",
+			ExternalID:          "123",
+			ExternalBranch:      "refs/heads/branch",
+			ExternalState:       btypes.ChangesetExternalStateOpen,
+			ExternalReviewState: btypes.ChangesetReviewStatePending,
+			ExternalCheckState:  btypes.ChangesetCheckStatePending,
+			DiffStatAdded:       10,
+			DiffStatChanged:     10,
+			DiffStatDeleted:     10,
+			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+			UiPublicationState:  &unpublished,
+			ReconcilerState:     btypes.ReconcilerStateQueued,
+			FailureMessage:      "very bad",
+			NumFailures:         10,
+			OwnedByBatchChange:  123,
+			Metadata:            &github.PullRequest{Title: "Se titel"},
+		})
+		intptr := func(i int32) *int32 { return &i }
+		strptr := func(i string) *string { return &i }
+
+		cs.ExternalBranch = "refs/heads/branch-2"
+		cs.ExternalState = btypes.ChangesetExternalStateDeleted
+		cs.ExternalReviewState = btypes.ChangesetReviewStateApproved
+		cs.ExternalCheckState = btypes.ChangesetCheckStateFailed
+		cs.DiffStatAdded = intptr(100)
+		cs.DiffStatChanged = intptr(100)
+		cs.DiffStatDeleted = intptr(100)
+		cs.Metadata = &github.PullRequest{Title: "The title"}
+		want := cs.Clone()
+
+		// These should not be updated.
+		cs.RepoID = gitlabRepo.ID
+		cs.CurrentSpecID = 234
+		cs.PreviousSpecID = 234
+		cs.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 234}}
+		cs.ExternalID = "234"
+		cs.PublicationState = btypes.ChangesetPublicationStatePublished
+		cs.UiPublicationState = &published
+		cs.ReconcilerState = btypes.ReconcilerStateCompleted
+		cs.FailureMessage = strptr("very bad for real this time")
+		cs.NumFailures = 100
+		cs.OwnedByBatchChangeID = 234
+		cs.Closing = true
+
+		// Expect some not changed after update:
+		if err := s.UpdateChangesetCodeHostState(ctx, cs); err != nil {
+			t.Fatal(err)
+		}
+		have, err := s.GetChangesetByID(ctx, cs.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("invalid changeset state in DB: %s", diff)
+		}
+	})
+
 	t.Run("CancelQueuedBatchChangeChangesets", func(t *testing.T) {
 		var batchChangeID int64 = 99999
 
