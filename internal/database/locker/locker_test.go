@@ -115,7 +115,7 @@ func TestLockBadTransactionState(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	locker := NewWithDB(db, "test")
 
 	key := rand.Intn(1000)
