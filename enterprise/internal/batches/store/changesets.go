@@ -1085,14 +1085,14 @@ func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Que
 }
 
 const getRepoChangesetsStatsFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:GetRepoChangesetsStats
+-- source: enterprise/internal/batches/store/changesets.go:GetRepoChangesetsStats
 SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE publication_state = 'UNPUBLISHED'
 		AND reconciler_state = 'completed') AS unpublished,
 	COUNT(*) FILTER (WHERE external_state = 'CLOSED') AS closed,
 	COUNT(*) FILTER (WHERE external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS OPEN
+	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS open
 FROM (
 	-- filter to changesets that are not archived on at least one batch change
 	SELECT
@@ -1115,8 +1115,8 @@ FROM (
 			AND changesets.repo_id = %s
 			-- authz conditions:
 			AND %s
-			) AS csa
-		INNER JOIN changesets AS cs ON cs.id = csa.id
+		) AS csa
+	INNER JOIN changesets AS cs ON cs.id = csa.id
 	GROUP BY
 		cs.id
 	HAVING

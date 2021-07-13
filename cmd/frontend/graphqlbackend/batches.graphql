@@ -2745,7 +2745,7 @@ extend type User {
 
 extend type Repository {
     """
-    Stats on all the changesets that have been applied to this repository by batch
+    Stats on all the changesets that have been created in this repository by batch
     changes.
     """
     changesetsStats: RepoChangesetsStats!
