@@ -60,6 +60,9 @@ func (r *repoChangesetsStatsResolver) Unpublished() int32 {
 func (r *repoChangesetsStatsResolver) Open() int32 {
 	return r.stats.Open
 }
+func (r *repoChangesetsStatsResolver) Draft() int32 {
+	return r.stats.Draft
+}
 func (r *repoChangesetsStatsResolver) Merged() int32 {
 	return r.stats.Merged
 }

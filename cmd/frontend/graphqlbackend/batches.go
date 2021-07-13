@@ -601,13 +601,16 @@ type BatchChangesConnectionResolver interface {
 
 type CommonChangesetsStatsResolver interface {
 	Unpublished() int32
+	Draft() int32
 	Open() int32
 	Merged() int32
 	Closed() int32
 	Total() int32
 }
 
-type RepoChangesetsStatsResolver interface{}
+type RepoChangesetsStatsResolver interface {
+	CommonChangesetsStatsResolver
+}
 
 type ChangesetsStatsResolver interface {
 	CommonChangesetsStatsResolver
@@ -615,7 +618,6 @@ type ChangesetsStatsResolver interface {
 	Failed() int32
 	Scheduled() int32
 	Processing() int32
-	Draft() int32
 	Deleted() int32
 	Archived() int32
 }

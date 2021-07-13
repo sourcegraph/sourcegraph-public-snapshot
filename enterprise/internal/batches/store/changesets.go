@@ -955,6 +955,7 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 		if err := sc.Scan(
 			&stats.Total,
 			&stats.Unpublished,
+			&stats.Draft,
 			&stats.Closed,
 			&stats.Merged,
 			&stats.Open,
@@ -1090,9 +1091,10 @@ SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE publication_state = 'UNPUBLISHED'
 		AND reconciler_state = 'completed') AS unpublished,
+	COUNT(*) FILTER (WHERE external_state = 'DRAFT') AS draft,
 	COUNT(*) FILTER (WHERE external_state = 'CLOSED') AS closed,
 	COUNT(*) FILTER (WHERE external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS OPEN
+	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS open
 FROM (
 	-- filter to changesets that are not archived on at least one batch change
 	SELECT

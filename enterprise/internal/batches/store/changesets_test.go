@@ -1449,12 +1449,20 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts8.PublicationState = btypes.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts8)
 
+		// Draft changeset
+		opts9 := baseOpts
+		opts9.ExternalState = btypes.ChangesetExternalStateDraft
+		opts9.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts9.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts9)
+		wantStats.Draft += 1
+
 		haveStats, err := s.GetRepoChangesetsStats(ctx, r.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		wantStats.Total = wantStats.Open + wantStats.Closed
+		wantStats.Total = wantStats.Open + wantStats.Closed + wantStats.Draft
 
 		if diff := cmp.Diff(wantStats, *haveStats); diff != "" {
 			t.Fatalf("wrong stats returned. diff=%s", diff)
