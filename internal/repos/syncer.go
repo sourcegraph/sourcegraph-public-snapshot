@@ -987,6 +987,9 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 	}
 
 	results := make(chan SourceResult)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)
@@ -1002,7 +1005,10 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 		if err := res.Err; err != nil {
 			multierror.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 			if errcode.IsUnauthorized(errs) || errcode.IsForbidden(errs) || errcode.IsAccountSuspended(errs) {
-				seen = map[api.RepoID]struct{}{} // Delete all external service repos of this external service
+				// Delete all external service repos of this external service
+				seen = map[api.RepoID]struct{}{}
+				// Eagerly stop sourcing, instead of waiting for all the follow up deletions to finish.
+				cancel()
 				break
 			}
 			continue
