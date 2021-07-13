@@ -1,5 +1,7 @@
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
+
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { ConnectionQueryArguments } from '../ConnectionType'
 import { QUERY_KEY } from '../constants'
@@ -12,7 +14,7 @@ interface UsePaginationConnectionOptions {
 export const useConnectionVariables = <TVariables>(
     variables: TVariables & ConnectionQueryArguments,
     options: UsePaginationConnectionOptions
-): [TVariables & ConnectionQueryArguments, Dispatch<SetStateAction<TVariables & ConnectionQueryArguments>>] => {
+): [TVariables & ConnectionQueryArguments, (variables: TVariables & ConnectionQueryArguments) => void] => {
     const history = useHistory()
     const location = useLocation()
     const searchParameters = new URLSearchParams(location.search)
@@ -25,23 +27,23 @@ export const useConnectionVariables = <TVariables>(
         query: (options.useURLQuery && searchParameters.get(QUERY_KEY)) || variables.query,
     })
 
-    useEffect(() => {
-        if (options.useURLQuery) {
-            const searchFragment = getUrlQuery({
-                query: connectionVariables.query,
-                first: connectionVariables.first,
-                defaultFirst,
-                location,
-                visible: 0,
-            })
-            if (searchFragment && location.search !== `?${searchFragment}`) {
-                history.replace({
-                    search: searchFragment,
-                    hash: location.hash,
-                })
-            }
-        }
-    }, [connectionVariables, defaultFirst, history, location, options.useURLQuery])
+    const searchFragment = useDebounce(
+        getUrlQuery({
+            query: connectionVariables.query,
+            first: connectionVariables.first,
+            defaultFirst,
+            location,
+            visible: 0,
+        }),
+        200
+    )
+
+    if (options.useURLQuery && searchFragment && location.search !== `?${searchFragment}`) {
+        history.replace({
+            search: searchFragment,
+            hash: location.hash,
+        })
+    }
 
     return [connectionVariables, setConnectionVariables]
 }
