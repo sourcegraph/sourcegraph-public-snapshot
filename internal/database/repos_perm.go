@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -20,7 +18,7 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
-func AuthzQueryConds(ctx context.Context, db dbutil.DB, requester string) (*sqlf.Query, error) {
+func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
@@ -32,35 +30,22 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB, requester string) (*sqlf
 		}
 		authzAllowByDefault = false
 	}
+
 	authenticatedUserID := int32(0)
 
 	// Authz is bypassed when the request is coming from an internal actor or there
 	// is no authz provider configured and access to all repositories are allowed by
 	// default. Authz can be bypassed by site admins unless
 	// conf.AuthEnforceForSiteAdmins is set to "true".
-	isInternal := isInternalActor(ctx)
-	meta := bypassRequestMetadata{
-		Requester:      requester,
-		InternalActor:  isInternal,
-		AllowByDefault: authzAllowByDefault,
-		ProviderCount:  len(authzProviders),
-	}
-
-	bypassAuthz := isInternal || (authzAllowByDefault && len(authzProviders) == 0)
+	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
 	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
 		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
 		if err != nil {
-			meta.Error = err.Error()
-			logSecurityBypass(ctx, db, false, meta)
 			return nil, err
 		}
 		authenticatedUserID = currentUser.ID
-		enforceForSiteAdmins := conf.Get().AuthzEnforceForSiteAdmins
-		bypassAuthz = currentUser.SiteAdmin && !enforceForSiteAdmins
-		meta.SiteAdmin = currentUser.SiteAdmin
-		meta.EnforceForSiteAdmins = enforceForSiteAdmins
+		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 	}
-	logSecurityBypass(ctx, db, bypassAuthz, meta)
 
 	q := authzQuery(bypassAuthz,
 		usePermissionsUserMapping,
@@ -70,37 +55,6 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB, requester string) (*sqlf
 	return q, nil
 }
 
-type bypassRequestMetadata = struct {
-	Requester            string `json:"requester"`
-	InternalActor        bool   `json:"internal_actor"`
-	AllowByDefault       bool   `json:"allow_by_default"`
-	ProviderCount        int    `json:"provider_count"`
-	SiteAdmin            bool   `json:"site_admin"`
-	EnforceForSiteAdmins bool   `json:"enforce_for_site_admins"`
-	Error                string `json:"error"`
-}
-
-func logSecurityBypass(ctx context.Context, db dbutil.DB, granted bool, meta bypassRequestMetadata) {
-	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(meta)
-
-	name := SecurityEventNameBypassDenied
-	if granted {
-		name = SecurityEventNameBypassGranted
-	}
-
-	event := &SecurityEvent{
-		Name:            name,
-		URL:             "",
-		UserID:          uint32(a.UID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	SecurityEventLogs(db).LogEvent(ctx, event)
-}
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
 	const queryFmtString = `(
     %s                            -- TRUE or FALSE to indicate whether to bypass the check
