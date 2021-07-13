@@ -26,12 +26,10 @@ interface Props extends ThemeProps {
     queryRepoBatchChanges?: typeof _queryRepoBatchChanges
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
-    /** For testing only. */
-    expandByDefault?: boolean
 }
 
 /**
- * A list of a batch change's changesets.
+ * A list of batch changes affecting a particular repo.
  */
 export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     viewerCanAdminister,
@@ -42,7 +40,6 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     hideFilters = false,
     queryRepoBatchChanges = _queryRepoBatchChanges,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
-    expandByDefault,
 }) => {
     // Whether all the changesets are selected, beyond the scope of what's on screen right now.
     const [allSelected, setAllSelected] = useState<boolean>(false)
@@ -203,7 +200,6 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                     viewerCanAdminister,
                     history,
                     location,
-                    expandByDefault,
                     queryExternalChangesetWithFileDiffs,
                     isChangesetSelected: changesetSelected,
                     onSelectChangeset,

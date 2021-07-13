@@ -7,18 +7,19 @@ import { requestGraphQL } from '../../../backend/graphql'
 import { RepoBatchChangesResult, RepoBatchChangesVariables } from '../../../graphql-operations'
 import { changesetFieldsFragment } from '../detail/backend'
 
-const changesetsStatsFragment = gql`
-    fragment ChangesetsStatsFields on ChangesetsStats {
-        total
-        closed
-        deleted
-        draft
-        merged
-        open
-        unpublished
-        archived
-    }
-`
+// TODO: Changeset stats/diff stats queries
+// const changesetsStatsFragment = gql`
+//     fragment ChangesetsStatsFields on ChangesetsStats {
+//         total
+//         closed
+//         deleted
+//         draft
+//         merged
+//         open
+//         unpublished
+//         archived
+//     }
+// `
 
 const repoBatchChangeFragment = gql`
     fragment RepoBatchChange on BatchChange {
