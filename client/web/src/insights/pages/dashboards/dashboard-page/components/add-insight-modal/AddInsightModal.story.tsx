@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { Settings } from '../../../../../../schema/settings.schema'
@@ -29,7 +29,7 @@ const dashboard: SettingsBasedInsightDashboard = {
     },
 }
 
-const ORG_1_SETTINGS = {
+const ORG_1_SETTINGS: ConfiguredSubjectOrError = {
     lastID: 100,
     settings: {
         'searchInsights.insight.testOrg1graphQLTypesMigration': {
@@ -61,7 +61,7 @@ const ORG_1_SETTINGS = {
     },
 }
 
-const ORG_2_SETTINGS = {
+const ORG_2_SETTINGS: ConfiguredSubjectOrError = {
     lastID: 101,
     settings: {
         'searchInsights.insight.testOrg2graphQLTypesMigration': {
@@ -80,7 +80,7 @@ const ORG_2_SETTINGS = {
     },
 }
 
-const USER_SETTINGS = {
+const USER_SETTINGS: ConfiguredSubjectOrError = {
     lastID: 102,
     settings: {
         'searchInsights.insight.personalGraphQLTypesMigration': {

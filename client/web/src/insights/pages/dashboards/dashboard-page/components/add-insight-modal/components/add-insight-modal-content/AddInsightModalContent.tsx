@@ -49,11 +49,11 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                 title="Filter your insights"
                 description={
                     <span className="">
-                        Couldn't find your insight? Check your insight's visibillty settings or{' '}
+                        Don't see an insight? Check the insight's visibility settings or{' '}
                         <Link to="/insights/create">create a new insight</Link>
                     </span>
                 }
-                placeholder="Example: My graphql migrations insight"
+                placeholder="Example: My GraphQL migration insight"
                 {...searchInput.input}
             />
 

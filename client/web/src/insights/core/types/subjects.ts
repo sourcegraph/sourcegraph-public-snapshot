@@ -5,6 +5,11 @@ import { SettingsOrgSubject, SettingsSubject, SettingsUserSubject } from '@sourc
  */
 export type SupportedInsightSubject = SettingsUserSubject | SettingsOrgSubject
 
+/**
+ * Supported insight subject types.
+ *
+ * Values of this enum are synced with settings subject __typename values.
+ */
 export enum SupportedInsightSubjectType {
     User = 'User',
     Organization = 'Org',

@@ -33,7 +33,7 @@ export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<Fo
     const setFieldStateReference = useRef<FormAPI<FormValues>['setFieldState']>(setFieldState)
     setFieldStateReference.current = setFieldState
 
-    // Sync field state with state on form level - useForm hook will used this state to run
+    // Sync field state with the state on form level - useForm hook will use this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
     useEffect(() => setFieldStateReference.current(name, { ...state, validState: 'VALID', validity: null }), [
@@ -46,7 +46,7 @@ export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<Fo
             isChecked: (value: string) => state.value.includes(value),
             onBlur: () => setState(state => ({ ...state, touched: true })),
             onChange: (event: ChangeEvent<HTMLInputElement>) => {
-                const checkboxValue = (event.target.value as unknown) as string
+                const checkboxValue = event.target.value
 
                 if (event.target.checked) {
                     setState(state => ({ ...state, value: [...state.value, checkboxValue] }))

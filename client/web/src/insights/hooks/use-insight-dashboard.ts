@@ -12,7 +12,7 @@ export interface UseInsightDashboardsProps extends SettingsCascadeProps<Settings
 }
 
 /**
- * Returns all dashboards (built-in - personal or org) that have insight Ids
+ * Returns all dashboards (built-in - personal or org) that have insight Id
  */
 export function useInsightDashboards(props: UseInsightDashboardsProps): RealInsightDashboard[] {
     const { settingsCascade, insightId } = props

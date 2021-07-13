@@ -66,8 +66,12 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
 
             <span className="text-muted d-block mb-4">
                 Dashboards group your insights and let you share them with others.{' '}
-                <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                    Learn more
+                <a
+                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
+                    target="_blank"
+                    rel="noopener"
+                >
+                    Learn more.
                 </a>
             </span>
 

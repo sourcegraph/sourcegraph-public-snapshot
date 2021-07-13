@@ -44,10 +44,14 @@ export function useHandleSubmit(props: UseHandleSubmitProps): useHandleSubmitOut
             const subjectUpdateRequests = Object.keys(subjectsToUpdate).map(subjectId => {
                 async function updateSettings(): Promise<void> {
                     const editOperations = subjectsToUpdate[subjectId]
+
+                    // Get jsonc subject settings file.
                     const settings = await getSubjectSettings(subjectId).toPromise()
 
+                    // Modify this jsonc file according to this subject's operations
                     const nextSubjectSettings = applyEditOperations(settings.contents, editOperations)
 
+                    // Call the async update mutation for the new subject's settings file
                     await updateSubjectSettings(platformContext, subjectId, nextSubjectSettings).toPromise()
                 }
 

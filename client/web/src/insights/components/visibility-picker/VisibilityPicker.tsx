@@ -1,5 +1,7 @@
 import React, { ChangeEvent } from 'react'
 
+import { SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+
 import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../core/types/subjects'
 import { FormGroup } from '../form/form-group/FormGroup'
 import { FormRadioInput } from '../form/form-radio-input/FormRadioInput'
@@ -36,8 +38,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
         onChange(event.target.value)
     }
 
-    // We always have user subject in our settings cascade
-    const userSubject = subjects.find(isUserSubject)!
+    const userSubject = getUserSubject(subjects)
     const organizationSubjects = subjects.filter(isOrganizationSubject)
 
     return (
@@ -85,4 +86,14 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             )}
         </FormGroup>
     )
+}
+
+/**
+ * Returns a user setting subject from the settings cascade subjects.
+ *
+ * @param subjects - insight supported settings subjects
+ */
+export function getUserSubject(subjects: SupportedInsightSubject[]): SettingsUserSubject {
+    // We always have user subject in our settings cascade
+    return subjects.find(isUserSubject)!
 }

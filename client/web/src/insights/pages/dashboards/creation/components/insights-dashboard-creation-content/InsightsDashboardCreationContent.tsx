@@ -10,6 +10,7 @@ import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../c
 import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../../../../core/types/subjects'
 
 import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
+import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -59,7 +60,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     const visibility = useField('visibility', formAPI)
 
     // We always have user subject in our settings cascade
-    const userSubject = subjects.find(isUserSubject)!
+    const userSubject = getUserSubject(subjects)
     const organizationSubjects = subjects.filter(isOrganizationSubject)
 
     return (

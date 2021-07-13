@@ -91,6 +91,17 @@ export function applyEditOperations(settings: string, operations: SettingsOperat
 
 /**
  * Returns all operation that have to be applied if insight edit operation has happened.
+ *
+ * This function should simplify the editing of all insight-related entities in the setting cascade.
+ * For instance, let's say we have insight in org level dashboard. Then you make this insight private
+ * (change the visibility setting to personal) By this operation, we have to do a few edits
+ *
+ * 1. Remove an insight configuration from the org level setting
+ * 2. Remove an insight's id from the all org-level dashboard configurations
+ * 3. Put an insight configuration in personal/user settings.
+ *
+ * To achieve that we have to have low-level API for setting editing. This function absorbs
+ * complexity and logic over insight/dashboard management.
  */
 export function getUpdatedSubjectSettings(props: EditInsightProps): Record<string, SettingsOperation[]> {
     const { oldInsight, newInsight, settingsCascade } = props
