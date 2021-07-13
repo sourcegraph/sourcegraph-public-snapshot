@@ -599,7 +599,7 @@ type BatchChangesConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type RepoChangesetsStatsResolver interface {
+type CommonChangesetsStatsResolver interface {
 	Unpublished() int32
 	Open() int32
 	Merged() int32
@@ -607,8 +607,10 @@ type RepoChangesetsStatsResolver interface {
 	Total() int32
 }
 
+type RepoChangesetsStatsResolver interface{}
+
 type ChangesetsStatsResolver interface {
-	RepoChangesetsStatsResolver
+	CommonChangesetsStatsResolver
 	Retrying() int32
 	Failed() int32
 	Scheduled() int32
