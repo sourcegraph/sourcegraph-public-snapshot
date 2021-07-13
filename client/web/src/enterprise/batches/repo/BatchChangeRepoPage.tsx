@@ -100,10 +100,12 @@ interface StatsBarProps {
     stats: RepoBatchChangeStats['changesetsStats']
 }
 
-const StatsBar: React.FunctionComponent<StatsBarProps> = ({ stats: { total, open, unpublished, closed, merged } }) => (
+const StatsBar: React.FunctionComponent<StatsBarProps> = ({
+    stats: { total, draft, open, unpublished, closed, merged },
+}) => (
     <div className="d-flex flex-wrap align-items-center">
         <BatchChangeStatsTotalAction count={total} />
-        <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={element(`${open} Open`)} />
+        <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={element(`${(draft + open).toString()} Open`)} />
         <ChangesetStatusUnpublished className={ACTION_CLASSNAMES} label={element(`${unpublished} Unpublished`)} />
         <ChangesetStatusClosed className={ACTION_CLASSNAMES} label={element(`${closed} Closed`)} />
         <ChangesetStatusMerged className={ACTION_CLASSNAMES} label={element(`${merged} Merged`)} />

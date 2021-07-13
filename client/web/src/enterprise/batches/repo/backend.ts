@@ -21,6 +21,7 @@ const repoBatchChangeStatsFragment = gql`
         }
         changesetsStats {
             unpublished
+            draft
             open
             merged
             closed

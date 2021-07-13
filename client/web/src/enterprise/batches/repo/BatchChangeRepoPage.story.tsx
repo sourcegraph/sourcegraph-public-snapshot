@@ -40,10 +40,11 @@ const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
         },
         changesetsStats: {
             unpublished: 1,
+            draft: 1,
             open: 2,
             merged: 47,
             closed: 9,
-            total: 59,
+            total: 60,
         },
     })
 
@@ -56,6 +57,7 @@ const queryEmptyRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
         },
         changesetsStats: {
             unpublished: 0,
+            draft: 0,
             open: 0,
             merged: 0,
             closed: 0,
