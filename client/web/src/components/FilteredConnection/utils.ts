@@ -5,7 +5,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { Connection } from './ConnectionType'
+import { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 
@@ -118,5 +118,26 @@ export const asGraphQLResult = <T>({ data, errors }: asGraphQLResultParameters<T
     return {
         data,
         errors: undefined,
+    }
+}
+
+export const getPaginationArguments = (
+    connection: Connection<unknown>,
+    variables: ConnectionQueryArguments
+): ConnectionQueryArguments => {
+    const cursor = connection.pageInfo?.endCursor
+
+    if (cursor) {
+        return {
+            after: cursor,
+        }
+    }
+
+    if (!variables.first) {
+        throw new Error('bleh')
+    }
+
+    return {
+        first: variables.first * 2,
     }
 }
