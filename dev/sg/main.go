@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -352,8 +353,12 @@ func liveExec(ctx context.Context, args []string) error {
 
 	e, ok := getEnvironment(args[0])
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: environment %q not found :(\n", args[0]))
-		return flag.ErrHelp
+		if customURL, err := url.Parse(args[0]); err == nil {
+			e = environment{Name: customURL.Host, URL: customURL.String()}
+		} else {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: environment %q not found, or is not a valid URL :(\n", args[0]))
+			return flag.ErrHelp
+		}
 	}
 
 	return printDeployedVersion(e)
@@ -632,9 +637,9 @@ func printLiveUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg live <environment>\n")
+	fmt.Fprintf(&out, "  sg live <environment|url>\n")
 	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE ENVIRONMENTS\n")
+	fmt.Fprintf(&out, "AVAILABLE PRESET ENVIRONMENTS\n")
 
 	for _, name := range environmentNames() {
 		fmt.Fprintf(&out, "  %s\n", name)

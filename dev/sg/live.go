@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"golang.org/x/mod/semver"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -56,7 +57,16 @@ func printDeployedVersion(e environment) error {
 		return err
 	}
 
-	elems := strings.Split(string(body), "_")
+	bodyStr := string(body)
+	if semver.IsValid("v" + bodyStr) {
+		out.WriteLine(output.Linef(
+			output.EmojiLightbulb, output.StyleLogo,
+			"Live on %q: v%s",
+			e.Name, bodyStr,
+		))
+		return nil
+	}
+	elems := strings.Split(bodyStr, "_")
 	if len(elems) != 3 {
 		return errors.Errorf("unknown format of /__version response: %q", body)
 	}
