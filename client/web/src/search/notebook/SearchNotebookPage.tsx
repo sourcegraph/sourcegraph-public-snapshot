@@ -1,7 +1,8 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FeedbackBadge } from '@sourcegraph/web/src/components/FeedbackBadge'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -19,12 +20,15 @@ import { Block, BlockInitializer } from '.'
 interface SearchNotebookPageProps
     extends SearchStreamingProps,
         ThemeProps,
+        TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded'> {
     globbing: boolean
     isMacPlatform: boolean
 }
 
 export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps> = props => {
+    useEffect(() => props.telemetryService.logViewEvent('SearchNotebookPage'), [props.telemetryService])
+
     const history = useHistory()
     const location = useLocation()
 

@@ -125,6 +125,10 @@ export class Notebook {
         return block
     }
 
+    public getBlockById(id: string): Block | null {
+        return this.idToBlock.get(id) ?? null
+    }
+
     public moveBlockById(id: string, direction: BlockDirection): void {
         const index = this.blockOrder.indexOf(id)
         if ((direction === 'up' && index < 1) || (direction === 'down' && index === this.blockOrder.length - 1)) {

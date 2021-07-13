@@ -5,6 +5,7 @@ import { Observable, Subscription, Unsubscribable } from 'rxjs'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { getProvidersNoCache } from '@sourcegraph/shared/src/search/query/providers'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchStreamingProps } from '..'
@@ -23,6 +24,7 @@ import { Block, BlockDirection, BlockInitializer, BlockType, Notebook } from '.'
 interface SearchNotebookProps
     extends SearchStreamingProps,
         ThemeProps,
+        TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded'> {
     globbing: boolean
     isMacPlatform: boolean
@@ -89,8 +91,10 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         (id: string) => {
             notebook.runBlockById(id)
             updateBlocks()
+
+            props.telemetryService.log('SearchNotebookRunBlock', { type: notebook.getBlockById(id)?.type })
         },
-        [notebook, updateBlocks]
+        [notebook, props.telemetryService, updateBlocks]
     )
 
     const onBlockInputChange = useCallback(
@@ -109,26 +113,33 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
             }
             setSelectedBlockId(addedBlock.id)
             updateBlocks()
+
+            props.telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type })
         },
-        [notebook, updateBlocks, setSelectedBlockId]
+        [notebook, props.telemetryService, updateBlocks, setSelectedBlockId]
     )
 
     const onDeleteBlock = useCallback(
         (id: string) => {
+            const block = notebook.getBlockById(id)
             const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
             notebook.deleteBlockById(id)
             setSelectedBlockId(blockToFocusAfterDelete)
             updateBlocks()
+
+            props.telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type })
         },
-        [notebook, setSelectedBlockId, updateBlocks]
+        [notebook, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
 
     const onMoveBlock = useCallback(
         (id: string, direction: BlockDirection) => {
             notebook.moveBlockById(id, direction)
             updateBlocks()
+
+            props.telemetryService.log('SearchNotebookMoveBlock', { type: notebook.getBlockById(id)?.type, direction })
         },
-        [notebook, updateBlocks]
+        [notebook, props.telemetryService, updateBlocks]
     )
 
     const onDuplicateBlock = useCallback(
@@ -141,8 +152,10 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                 notebook.runBlockById(duplicateBlock.id)
             }
             updateBlocks()
+
+            props.telemetryService.log('SearchNotebookDuplicateBlock', { type: duplicateBlock?.type })
         },
-        [notebook, setSelectedBlockId, updateBlocks]
+        [notebook, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
 
     const onSelectBlock = useCallback(
