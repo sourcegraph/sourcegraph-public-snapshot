@@ -67,13 +67,13 @@ func RunFixup(database db.Database, main string, run bool) error {
 	localMigrations, err := getMigrationsForFiles(localFiles)
 	if err != nil {
 		return err
-		}
-	
-		block := out.Block(output.Linef("", output.StyleItalic, "Checking for conflicting migrations in '%s'...", database.Name))
-		defer block.Close()
-	
+	}
+
+	block := out.Block(output.Linef("", output.StyleItalic, "Checking for conflicting migrations in '%s'...", database.Name))
+	defer block.Close()
+
 	_, missing, err := findConflictingMigrations(mainMigrations, localMigrations)
-		if err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -130,7 +130,6 @@ func RunFixup(database db.Database, main string, run bool) error {
 
 		var errIdx int
 		for currentIdx, op := range operations {
-			// TODO: Make sure to check the error and do reverse if something bad happens.
 			if err := op.Execute(&options); err != nil {
 				errIdx = currentIdx
 				break
@@ -142,7 +141,7 @@ func RunFixup(database db.Database, main string, run bool) error {
 		if err != nil {
 			if true {
 				// TODO: https://github.com/sourcegraph/sourcegraph/issues/22775
-				panic("Unimplemented!")
+				panic("Unimplemented! https://github.com/sourcegraph/sourcegraph/issues/22775")
 			}
 
 			block.WriteLine(output.Linef(output.EmojiFailure, output.StyleBold, "An operation has failed. Reversing operations now"))
@@ -172,6 +171,7 @@ func RunAdd(database db.Database, migrationName string) (up, down string, _ erro
 		return "", "", err
 	}
 
+	// TODO: We can probably convert to migrations and use getMaxMigrationID
 	names, err := ReadFilenamesNamesInDirectory(baseDir)
 	if err != nil {
 		return "", "", err
@@ -231,18 +231,6 @@ func ParseMigrationIndex(name string) (int, bool) {
 	return index, true
 }
 
-// Returns the migration name from a filepath (e.g., 12341234_hello.up.sql -> hello).
-func parseMigrationName(name string) (string, bool) {
-	names := strings.SplitN(filepath.Base(name), "_", 2)
-	if len(names) < 2 {
-		return "", false
-	}
-
-	baseName := names[1]
-	migrationName := strings.ReplaceAll(strings.ReplaceAll(baseName, ".down.sql", ""), ".up.sql", "")
-	return migrationName, true
-}
-
 // ParseLastMigrationIndex parses a list of filenames and returns the highest migration
 // index available.
 func ParseLastMigrationIndex(names []string) (int, bool) {
@@ -259,6 +247,18 @@ func ParseLastMigrationIndex(names []string) (int, bool) {
 	}
 
 	return indices[len(indices)-1], true
+}
+
+// Returns the migration name from a filepath (e.g., 12341234_hello.up.sql -> hello).
+func ParseMigrationName(name string) (string, bool) {
+	names := strings.SplitN(filepath.Base(name), "_", 2)
+	if len(names) < 2 {
+		return "", false
+	}
+
+	baseName := names[1]
+	migrationName := strings.ReplaceAll(strings.ReplaceAll(baseName, ".down.sql", ""), ".up.sql", "")
+	return migrationName, true
 }
 
 const migrationFileTemplate = `
@@ -306,7 +306,7 @@ func doRunMigrations(database db.Database, n *int, name string, f func(*migrate.
 	defer block.Close()
 
 	logger := mLogger{block: block, prefix: "  applying: "}
-	m, err := getMigrateForDatabase(database, logger)
+	m, err := getMigrate(database, logger)
 	if err != nil {
 		block.WriteLine(output.Linef(output.EmojiFailure, output.StyleBold, "Could not get database"))
 		return err
@@ -498,7 +498,7 @@ func getMigrationsForFiles(files []string) (map[int]migration, error) {
 			return nil, errors.Newf("missing down migration for ID: %d", migrationID)
 		}
 
-		migrationName, ok := parseMigrationName(upMigration)
+		migrationName, ok := ParseMigrationName(upMigration)
 		if !ok {
 			return nil, errors.Newf("bad migration file name: %s", upMigration)
 		}
@@ -515,7 +515,7 @@ func getMigrationsForFiles(files []string) (map[int]migration, error) {
 	return migrations, nil
 }
 
-func checkFile(path string, block *output.Block) error {
+func isFileInRepo(path string, block *output.Block) error {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -524,8 +524,7 @@ func checkFile(path string, block *output.Block) error {
 	_, err = os.Stat(path)
 	if os.IsNotExist(err) {
 		relativePath, _ := filepath.Rel(repoRoot, path)
-
-		block.WriteLine(output.Linef(output.EmojiFailure, output.StyleItalic, "File does not: %s", relativePath))
+		block.WriteLine(output.Linef(output.EmojiFailure, output.StyleItalic, "File does not exist: %s", relativePath))
 	}
 
 	return err
@@ -550,13 +549,13 @@ func getPostgresDB(database db.Database) (*sql.DB, error) {
 }
 
 func getDatabaseMigrationVersion(database db.Database) (int, error) {
-	db, err := getPostgresDB(database)
+	sqlDB, err := getPostgresDB(database)
 	if err != nil {
 		return 0, err
 	}
 
 	var version int
-	row := db.QueryRow(fmt.Sprintf("SELECT version FROM %s", database.MigrationsTable))
+	row := sqlDB.QueryRow(fmt.Sprintf("SELECT version FROM %s", database.MigrationsTable))
 	if err := row.Scan(&version); err != nil {
 		return 0, err
 	}
@@ -564,7 +563,7 @@ func getDatabaseMigrationVersion(database db.Database) (int, error) {
 	return version, nil
 }
 
-func getMigrateForDatabase(database db.Database, logger mLogger) (*migrate.Migrate, error) {
+func getMigrate(database db.Database, logger mLogger) (*migrate.Migrate, error) {
 	db, err := getPostgresDB(database)
 	if err != nil {
 		return nil, err
@@ -588,7 +587,7 @@ func getMigrateForDatabase(database db.Database, logger mLogger) (*migrate.Migra
 	return m, err
 }
 
-// Just wrapper for logging for our migrations in cli
+// mLogger implements the logger struct for migrate.Migrate
 type mLogger struct {
 	block  *output.Block
 	prefix string
@@ -597,4 +596,6 @@ type mLogger struct {
 func (m mLogger) Printf(f string, i ...interface{}) {
 	m.block.Writef(m.prefix+strings.TrimSpace(f), i...)
 }
-func (mLogger) Verbose() bool { return false }
+func (mLogger) Verbose() bool {
+	return false
+}

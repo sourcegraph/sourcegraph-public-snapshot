@@ -19,9 +19,14 @@ func getFSForPath(path string) fs.FS {
 }
 
 type Database struct {
-	Name            string
+	// Name of database, used to convert from arguments to Database
+	Name string
+
+	// Table in database for storing information about migrations.
 	MigrationsTable string
-	DataTables      []string
+
+	// Additional data tables for database
+	DataTables []string
 
 	// Used for retrieving the directory where migrations live
 	FS fs.FS

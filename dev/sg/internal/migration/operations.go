@@ -237,7 +237,7 @@ func resolveOneConflict(database db.Database, conflict migrationConflict, maxID 
 	block.Writef("  Resolving migration conflict: %d %s", conflict.ID, conflict.Main.Name)
 
 	// Check to make sure both up and down exist for this migration
-	if checkFile(oldUp, block) != nil || checkFile(oldDown, block) != nil {
+	if isFileInRepo(oldUp, block) != nil || isFileInRepo(oldDown, block) != nil {
 		// This should not be possible :) We should have died earlier but it's good to confirm
 		return errors.Newf(
 			"could not find both migration files for migration (%d): %s || %s",
@@ -338,7 +338,7 @@ type OpDatabaseDown struct {
 
 func (op OpDatabaseDown) Execute(options *OperationOptions) error {
 	logger := mLogger{block: options.Block, prefix: "  OpDbDown: "}
-	m, err := getMigrateForDatabase(options.Database, logger)
+	m, err := getMigrate(options.Database, logger)
 	if err != nil {
 		return err
 	}
@@ -354,7 +354,7 @@ func (op OpDatabaseDown) Execute(options *OperationOptions) error {
 }
 func (op OpDatabaseDown) Reset(options *OperationOptions) error {
 	logger := mLogger{block: options.Block, prefix: "  OpDbDown - Reset: "}
-	m, err := getMigrateForDatabase(options.Database, logger)
+	m, err := getMigrate(options.Database, logger)
 	if err != nil {
 		return err
 	}
@@ -376,7 +376,7 @@ type OpDatabaseSync struct{}
 
 func (op OpDatabaseSync) Execute(options *OperationOptions) error {
 	logger := mLogger{block: options.Block, prefix: "  OpDatabaseSync: "}
-	m, err := getMigrateForDatabase(options.Database, logger)
+	m, err := getMigrate(options.Database, logger)
 	if err != nil {
 		return err
 	}
