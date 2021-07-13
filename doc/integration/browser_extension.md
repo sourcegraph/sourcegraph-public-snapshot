@@ -22,7 +22,7 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
   </a>
 </p>
 
->NOTE: IfThe Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
+>NOTE: If you were using our self-hosted version of Firefox Extension and are looking to upgrade, please check our [migration guide](migrating_firefox_extension.md).
 
 <video class="theme-dark-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
