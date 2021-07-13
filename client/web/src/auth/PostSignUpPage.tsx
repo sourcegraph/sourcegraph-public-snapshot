@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState, useRef } from 'react'
+import React, { FunctionComponent, useState } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
@@ -6,7 +6,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
-import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
+import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { PageTitle } from '../components/PageTitle'
 import { UserAreaUserFields } from '../graphql-operations'
@@ -19,6 +19,7 @@ import { useExternalServices } from './useExternalServices'
 import { useRepoCloningStatus } from './useRepoCloningStatus'
 import { useSelectedRepos } from './useSelectedRepos'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
+import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
 
 interface PostSignUpPage {
@@ -42,11 +43,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     telemetryService,
 }) => {
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
-    const [isNextStepLoading, setIsNextStepLoading] = useState(false)
     const location = useLocation()
     const history = useHistory()
-    const [_didSelectAffiliatedRepos, setDidSelectAffiliatedRepos] = useState(false)
-    const AffiliatedReposReference = useRef<AffiliatedReposReference>()
 
     const {
         trigger: fetchCloningStatus,
@@ -232,15 +230,55 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                 Three quick steps to add your repositories and get searching with Sourcegraph
                             </p>
                             <div className="mt-4 pb-3">
-                                <Steps current={currentStepNumber} numbered={true} onTabClick={onStepTabClick}>
-                                    {/* <StepList> */}
-                                    <Step title="Connect with code hosts" borderColor="purple" />
-                                    <Step title="Add repositories" borderColor="blue" />
-                                    <Step title="Start searching" borderColor="orange" />
-                                    {/* </StepList> */}
-                                    {/* <StepPanels> */}
-                                    {/* <StepPanel></StepPanel> */}
-                                    {/* </StepPanels> */}
+                                <Steps initialStep={1}>
+                                    <StepList numeric={true}>
+                                        <Step borderColor="purple">Connect with code hosts</Step>
+                                        <Step borderColor="blue">Add repositories</Step>
+                                        <Step borderColor="orange">Start searching</Step>
+                                    </StepList>
+                                    <StepPanels>
+                                        <StepPanel>
+                                            {externalServices && (
+                                                <CodeHostsConnection
+                                                    loading={loadingServices}
+                                                    user={user}
+                                                    error={errorServices}
+                                                    externalServices={externalServices}
+                                                    context={context}
+                                                    refetch={refetchExternalServices}
+                                                />
+                                            )}
+                                        </StepPanel>
+                                        <StepPanel>
+                                            <>
+                                                <h3>Add repositories</h3>
+                                                <p className="text-muted">
+                                                    Choose repositories you own or collaborate on from your code hosts
+                                                    to search with Sourcegraph. We’ll sync and index these repositories
+                                                    so you can search your code all in one place.
+                                                </p>
+                                                <SelectAffiliatedRepos
+                                                    ref={AffiliatedReposReference}
+                                                    onSelection={setDidSelectAffiliatedRepos}
+                                                    repos={affiliatedRepos}
+                                                    externalServices={externalServices}
+                                                    selectedRepos={selectedRepos}
+                                                    authenticatedUser={user}
+                                                    telemetryService={telemetryService}
+                                                />
+                                            </>
+                                        </StepPanel>
+                                        <StepPanel>
+                                            <StartSearching
+                                                isDoneCloning={isDoneCloning}
+                                                cloningStatusLines={cloningStatusLines}
+                                                cloningStatusLoading={cloningStatusLoading}
+                                            />
+                                        </StepPanel>
+                                    </StepPanels>
+                                    <StepActions>
+                                        <Footer />
+                                    </StepActions>
                                 </Steps>
                             </div>
                             {/* This should be part of step panel */}
@@ -251,9 +289,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                     alwaysShowLabel={true}
                                     label={isLastStep ? 'Start searching' : 'Continue'}
                                     className="btn btn-primary float-right ml-2"
-                                    spinnerClassName="mr-2"
-                                    disabled={!isCurrentStepComplete() || isNextStepLoading}
-                                    loading={isNextStepLoading}
+                                    disabled={!!externalServices && externalServices?.length === 0}
+                                    // disabled={!isCurrentStepComplete()}
                                     onClick={isLastStep ? goToSearch : goToNextTab}
                                 />
 
