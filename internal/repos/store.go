@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"sort"
 	"time"
@@ -395,45 +396,37 @@ WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT cloned
 `
 
 // CountUserAddedRepos counts the total number of repos that have been added
-// by user owned external services.
-func (s *Store) CountUserAddedRepos(ctx context.Context) (count uint64, err error) {
+// by user owned external services. If userIDs are specified, only repos owned by the given
+// users are counted.
+func (s *Store) CountUserAddedRepos(ctx context.Context, userIDs ...int32) (count uint64, err error) {
 	tr, ctx := s.trace(ctx, "Store.CountUserAddedRepos")
-
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
+		uids := fmt.Sprint(userIDs)
+		tr.LogFields(otlog.String("user-ids", uids))
 		s.Metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.Log, "store.count-user-added-repos", &err, "count", count)
+		logging.Log(s.Log, "store.count-user-added-repos", &err, "count", count, "user-ids", uids)
 
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
-	q := sqlf.Sprintf(CountTotalUserAddedReposQueryFmtstr)
-	c, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
-	if err != nil || !ok {
-		return 0, err
+	var q *sqlf.Query
+	if len(userIDs) > 0 {
+		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr+"\nAND user_id = ANY(%s)", pq.Array(userIDs))
+	} else {
+		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr)
 	}
-	return uint64(c), nil
+
+	err = s.QueryRow(ctx, q).Scan(&count)
+	return count, err
 }
 
-const CountTotalUserAddedReposQueryFmtstr = `
--- source: internal/repos/store.go:DBStore.CountUserAddedRepos
-SELECT COUNT(*)
-FROM
-    repo r
-WHERE
-    EXISTS (
-        SELECT
-        FROM
-            external_service_repos sr
-            INNER JOIN external_services s ON s.id = sr.external_service_id
-        WHERE
-            sr.user_id IS NOT NULL
-            AND s.deleted_at IS NULL
-            AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL)
-`
+const countTotalUserAddedReposQueryFmtstr = `
+SELECT COUNT(DISTINCT(repo_id))
+FROM external_service_repos
+WHERE user_id IS NOT NULL`
 
 // a paginatedQuery returns a query with the given pagination
 // parameters

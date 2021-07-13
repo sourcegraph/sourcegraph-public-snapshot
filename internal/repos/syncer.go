@@ -980,23 +980,6 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 		} else if mode != conf.ExternalServiceModeAll {
 			allowed = func(r *types.Repo) bool { return !r.Private }
 		}
-		// If we are over our limit for user added repos we abort the sync
-		totalAllowed := uint64(s.UserReposMaxPerSite)
-		if totalAllowed == 0 {
-			totalAllowed = uint64(conf.UserReposMaxPerSite())
-		}
-		userAdded, err := tx.CountUserAddedRepos(ctx)
-		if err != nil {
-			return errors.Wrap(err, "counting user added repos")
-		}
-		if userAdded >= totalAllowed {
-			return errors.Errorf("reached maximum allowed user added repos: %d", userAdded)
-		}
-	}
-
-	limit := s.UserReposMaxPerUser
-	if limit == 0 {
-		limit = conf.UserReposMaxPerUser()
 	}
 
 	src, err := s.Sourcer(svc)
@@ -1013,7 +996,6 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 	modified := false
 	seen := make(map[api.RepoID]struct{})
 	errs := new(multierror.Error)
-	count := 0
 
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
@@ -1030,11 +1012,6 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 		sourced := res.Repo
 		if !allowed(sourced) {
 			continue
-		}
-
-		if count++; count > limit {
-			multierror.Append(errs, errors.Errorf("syncer: per user repo count has exceeded allowed limit: %d", limit))
-			break
 		}
 
 		diff, err := s.sync(ctx, tx, svc, sourced)
@@ -1070,6 +1047,20 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 	}
 
 	return errs.ErrorOrNil()
+}
+
+func (s *Syncer) userReposMaxPerSite() uint64 {
+	if n := uint64(s.UserReposMaxPerSite); n > 0 {
+		return n
+	}
+	return uint64(conf.UserReposMaxPerSite())
+}
+
+func (s *Syncer) userReposMaxPerUser() uint64 {
+	if s.UserReposMaxPerUser == 0 {
+		return uint64(conf.UserReposMaxPerUser())
+	}
+	return uint64(s.UserReposMaxPerUser)
 }
 
 // syncs a sourced repo of a given external service, returning a diff with a single repo.
@@ -1126,6 +1117,27 @@ func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService
 
 		d.Modified = append(d.Modified, stored[0])
 	case 0: // New repo, create.
+		if svc.NamespaceUserID != 0 { // enforce user repo limits
+			siteAdded, err := tx.CountUserAddedRepos(ctx)
+			if err != nil {
+				return Diff{}, errors.Wrap(err, "counting total user added repos")
+			}
+
+			userAdded, err := tx.CountUserAddedRepos(ctx, svc.NamespaceUserID)
+			if err != nil {
+				return Diff{}, errors.Wrap(err, "counting user added repos")
+			}
+
+			userLimit, siteLimit := s.userReposMaxPerUser(), s.userReposMaxPerSite()
+			if siteAdded >= siteLimit || userAdded >= userLimit {
+				return Diff{}, errors.Errorf(
+					"reached maximum allowed user added repos: site:%d/%d, user:%d/%d",
+					siteAdded, siteLimit,
+					userAdded, userLimit,
+				)
+			}
+		}
+
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}
