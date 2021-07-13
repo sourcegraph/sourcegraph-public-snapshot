@@ -14,8 +14,6 @@ import {
     isUserSubject,
     SupportedInsightSubject,
 } from '../../../../../core/types/subjects'
-import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
-import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../../../../core/types/subjects'
 
 import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
 

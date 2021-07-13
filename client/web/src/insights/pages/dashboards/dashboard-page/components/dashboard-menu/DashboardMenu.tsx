@@ -55,15 +55,6 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                     data-tooltip={getTooltipMessage(permissions)}
                     data-placement="right"
                     className={classnames(styles.menuItem, 'btn btn-outline')}
-                    onSelect={() => onSelect(DashboardMenuAction.AddRemoveInsights)}
-                >
-                    Add insights
-                </MenuItem>
-
-                <MenuItem
-                    as="button"
-                    disabled={!isConfigurable}
-                    className={classnames(styles.menuItem, 'btn btn-outline')}
                     onSelect={() => onSelect(DashboardMenuAction.Configure)}
                 >
                     Configure dashboard
