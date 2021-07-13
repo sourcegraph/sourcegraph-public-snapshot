@@ -39,6 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Jaeger works in Docker-compose deployments again. [#22691](https://github.com/sourcegraph/sourcegraph/pull/22691)
 - A bug where the pattern `)` makes the browser unresponsive. [#22738](https://github.com/sourcegraph/sourcegraph/pull/22738)
 - An issue where using `select:repo` in conjunction with `and` patterns did not yield expected repo results. [#22743](https://github.com/sourcegraph/sourcegraph/pull/22743)
+- The `isLocked` and `isDisabled` fields of GitHub repositories are now fetched correctly from the GraphQL API of GitHub Enterprise instances. Users that rely on the `repos` config in GitHub code host connections should update so that locked and disabled repositories defined in that list are actually skipped. [#22788](https://github.com/sourcegraph/sourcegraph/pull/22788)
 
 ### Removed
 
