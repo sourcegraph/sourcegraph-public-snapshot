@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -123,7 +122,7 @@ type syncHandler struct {
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
-		return fmt.Errorf("expected repos.SyncJob, got %T", record)
+		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
 	store := s.store
@@ -209,7 +208,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 			return errors.Wrap(err, "counting user added repos")
 		}
 		if userAdded >= totalAllowed {
-			return fmt.Errorf("reached maximum allowed user added repos: %d", userAdded)
+			return errors.Errorf("reached maximum allowed user added repos: %d", userAdded)
 		}
 
 		// If this is a user owned external service we won't stream our inserts as we limit the number allowed.
@@ -222,7 +221,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		onSourced = func(r *types.Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
 			if newCount >= int64(maxAllowed) {
-				return fmt.Errorf("per user repo count has exceeded allowed limit: %d", maxAllowed)
+				return errors.Errorf("per user repo count has exceeded allowed limit: %d", maxAllowed)
 			}
 			return nil
 		}

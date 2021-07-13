@@ -154,7 +154,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			return nil, nil
 		}
 		return nil, err
@@ -201,7 +201,7 @@ func getDefaultBranchForRepo(ctx context.Context, repoName api.RepoName) (string
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
+		if vcs.IsCloneInProgress(err) || errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			return "", nil
 		}
 		return "", err
@@ -421,7 +421,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !gitserver.IsRevisionNotFound(err)) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitserver.RevisionNotFoundError{})) {
 		return commit, err
 	}
 

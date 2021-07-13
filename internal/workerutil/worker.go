@@ -90,7 +90,7 @@ loop:
 	for {
 		ok, err := w.dequeueAndHandle()
 		if err != nil {
-			if errors.Cause(err) == w.ctx.Err() {
+			if w.ctx.Err() != nil && errors.Is(err, w.ctx.Err()) {
 				// If the error is due to the loop being shut down, just break
 				break loop
 			}

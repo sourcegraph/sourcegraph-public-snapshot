@@ -222,7 +222,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	// If Zoekt is disabled just fallback to Unindexed.
 	if !args.Zoekt.Enabled() {
 		if args.PatternInfo.Index == query.Only {
-			return nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
+			return nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
 		}
 
 		return &IndexedSearchRequest{
@@ -234,7 +234,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	// Fallback to Unindexed if the query contains ref-globs
 	if query.ContainsRefGlobs(args.Query) {
 		if args.PatternInfo.Index == query.Only {
-			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
+			return nil, errors.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &IndexedSearchRequest{
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),

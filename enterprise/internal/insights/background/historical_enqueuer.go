@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 
 	"golang.org/x/time/rate"
@@ -291,7 +292,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		if err != nil {
 			// Ignore RepoNotFoundErr because it could just be that the repository was actually
 			// deleted and allReposIterator had it cached.
-			if _, ok := err.(*database.RepoNotFoundErr); !ok {
+			if errors.HasType(err, &database.RepoNotFoundErr{}) {
 				return err // hard DB error
 			} else {
 				return nil
@@ -306,7 +307,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
-			if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
+			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
@@ -463,7 +464,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	// timeframe we're trying to fill in historical data for.
 	nearestCommit, err := h.gitFindNearestCommit(ctx, bctx.repo.Name, "HEAD", frameMidpoint)
 	if err != nil {
-		if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
 		hardErr = errors.Wrap(err, "FindNearestCommit")

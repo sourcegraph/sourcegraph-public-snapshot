@@ -2,11 +2,12 @@ package repos_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -83,7 +84,7 @@ type fakeRepoSyncHandler struct {
 func (h *fakeRepoSyncHandler) Handle(ctx context.Context, tx dbws.Store, record workerutil.Record) error {
 	sj, ok := record.(*repos.SyncJob)
 	if !ok {
-		return fmt.Errorf("expected repos.SyncJob, got %T", record)
+		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 	select {
 	case <-ctx.Done():

@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -127,7 +128,7 @@ func TestDoStreamSearch(t *testing.T) {
 		Dial: func(endpoint string) zoekt.Streamer {
 			client := &mockSearcher{
 				searchResult: nil,
-				searchError:  fmt.Errorf("test error"),
+				searchError:  errors.Errorf("test error"),
 			}
 			// Return metered searcher to test that codepath
 			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -944,7 +945,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 	for _, match := range matches {
 		fm, ok := match.(*result.FileMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected only file match results")
+			return nil, errors.Errorf("expected only file match results")
 		}
 		fms = append(fms, fm)
 	}
