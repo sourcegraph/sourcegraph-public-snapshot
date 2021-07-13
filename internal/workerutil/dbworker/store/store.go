@@ -115,7 +115,7 @@ type Options struct {
 	//   - state: text (may be updated to `queued`, `processing`, `errored`, or `failed`)
 	//   - failure_message: text
 	//   - started_at: timestamp with time zone
-	//   - last_updated_at: timestamp with time zone
+	//   - last_heartbeat_at: timestamp with time zone
 	//   - finished_at: timestamp with time zone
 	//   - process_after: timestamp with time zone
 	//   - num_resets: integer not null
@@ -161,12 +161,12 @@ type Options struct {
 	// expressions may use the alias provided in `ViewName`, if one was supplied.
 	ColumnExpressions []*sqlf.Query
 
-	// HeartbeatInterval is the interval between heartbeat updates to a job's last_updated_at field. This
+	// HeartbeatInterval is the interval between heartbeat updates to a job's last_heartbeat_at field. This
 	// field is periodically updated while being actively processed to signal to other workers that the
 	// record is neither pending nor abandoned.
 	HeartbeatInterval time.Duration
 
-	// StalledMaxAge is the maximum allowed duration between heartbeat updates of a job's last_updated_at
+	// StalledMaxAge is the maximum allowed duration between heartbeat updates of a job's last_heartbeat_at
 	// field. An unmodified row that is marked as processing likely indicates that the worker that dequeued
 	// the record has died.
 	StalledMaxAge time.Duration
@@ -254,7 +254,7 @@ var columns = []struct {
 	{"state", true},
 	{"failure_message", true},
 	{"started_at", true},
-	{"last_updated_at", false},
+	{"last_heartbeat_at", false},
 	{"finished_at", true},
 	{"process_after", true},
 	{"num_resets", true},
@@ -315,7 +315,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		return nil, nil, false, ErrDequeueTransaction
 	}
 
-	now := s.options.clock.Now()
+	now := s.now()
 
 	// Select and "lock" candidate record
 	id, exists, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
@@ -368,9 +368,9 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 			case <-s.options.clock.After(s.options.HeartbeatInterval):
 			}
 
-			if err = s.Exec(heartbeatCtx, s.formatQuery(updateCandidateQuery, quote(s.options.TableName), s.options.clock.Now(), record.RecordID())); err != nil {
+			if err = s.Exec(heartbeatCtx, s.formatQuery(updateCandidateQuery, quote(s.options.TableName), s.now(), record.RecordID())); err != nil {
 				if err != heartbeatCtx.Err() {
-					log15.Error("Failed to refresh last_updated_at", "name", s.options.Name, "id", id, "error", err)
+					log15.Error("Failed to refresh last_heartbeat_at", "name", s.options.Name, "id", id, "error", err)
 				}
 			}
 		}
@@ -404,7 +404,7 @@ UPDATE %s
 SET
 	{state} = 'processing',
 	{started_at} = %s,
-	{last_updated_at} = %s,
+	{last_heartbeat_at} = %s,
 	{finished_at} = NULL,
 	{failure_message} = NULL,
 	{worker_hostname} = %s
@@ -420,7 +420,7 @@ SELECT %s FROM %s WHERE {id} = %s
 const updateCandidateQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 UPDATE %s
-SET {last_updated_at} = %s
+SET {last_heartbeat_at} = %s
 WHERE {id} = %s AND {state} = 'processing'
 `
 
@@ -570,7 +570,7 @@ func (s *store) resetStalled(ctx context.Context, q string) ([]int, error) {
 		s.formatQuery(
 			q,
 			quote(s.options.TableName),
-			s.options.clock.Now(),
+			s.now(),
 			int(s.options.StalledMaxAge/time.Second),
 			s.options.MaxNumResets,
 			quote(s.options.TableName),
@@ -584,7 +584,7 @@ WITH stalled AS (
 	SELECT {id} FROM %s
 	WHERE
 		{state} = 'processing' AND
-		%s - {last_updated_at} > (%s * '1 second'::interval) AND
+		%s - {last_heartbeat_at} > (%s * '1 second'::interval) AND
 		{num_resets} < %s
 	FOR UPDATE SKIP LOCKED
 )
@@ -603,7 +603,7 @@ WITH stalled AS (
 	SELECT {id} FROM %s
 	WHERE
 		{state} = 'processing' AND
-		%s - {last_updated_at} > (%s * '1 second'::interval) AND
+		%s - {last_heartbeat_at} > (%s * '1 second'::interval) AND
 		{num_resets} >= %s
 	FOR UPDATE SKIP LOCKED
 )
@@ -618,6 +618,10 @@ RETURNING {id}
 
 func (s *store) formatQuery(query string, args ...interface{}) *sqlf.Query {
 	return sqlf.Sprintf(s.columnReplacer.Replace(query), args...)
+}
+
+func (s *store) now() time.Time {
+	return s.options.clock.Now().UTC()
 }
 
 // quote wraps the given string in a *sqlf.Query so that it is not passed to the database

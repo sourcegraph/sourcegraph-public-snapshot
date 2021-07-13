@@ -127,7 +127,7 @@ func TestStoreDequeueKeepsHeartbeat(t *testing.T) {
 	}
 
 	getTime := func() time.Time {
-		time, ok, err := basestore.ScanFirstTime(db.QueryContext(context.Background(), "SELECT last_updated_at FROM workerutil_test WHERE id = 4"))
+		time, ok, err := basestore.ScanFirstTime(db.QueryContext(context.Background(), "SELECT last_heartbeat_at FROM workerutil_test WHERE id = 4"))
 		if err != nil {
 			t.Fatalf("unexpected error scanning last updated at: %s", err)
 		}
@@ -781,7 +781,7 @@ func TestStoreResetStalled(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, last_updated_at, num_resets)
+		INSERT INTO workerutil_test (id, state, last_heartbeat_at, num_resets)
 		VALUES
 			(1, 'processing', NOW() - '6 second'::interval, 1),
 			(2, 'processing', NOW() - '2 second'::interval, 0),

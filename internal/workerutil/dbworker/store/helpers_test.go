@@ -111,18 +111,18 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (
-			id              integer NOT NULL,
-			state           text NOT NULL,
-			failure_message text,
-			started_at      timestamp with time zone,
-			last_updated_at timestamp with time zone,
-			finished_at     timestamp with time zone,
-			process_after   timestamp with time zone,
-			num_resets      integer NOT NULL default 0,
-			num_failures    integer NOT NULL default 0,
-			uploaded_at     timestamp with time zone NOT NULL default NOW(),
-			execution_logs  json[],
-			worker_hostname text NOT NULL default ''
+			id                integer NOT NULL,
+			state             text NOT NULL,
+			failure_message   text,
+			started_at        timestamp with time zone,
+			last_heartbeat_at timestamp with time zone,
+			finished_at       timestamp with time zone,
+			process_after     timestamp with time zone,
+			num_resets        integer NOT NULL default 0,
+			num_failures      integer NOT NULL default 0,
+			uploaded_at       timestamp with time zone NOT NULL default NOW(),
+			execution_logs    json[],
+			worker_hostname   text NOT NULL default ''
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
