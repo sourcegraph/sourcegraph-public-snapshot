@@ -1078,8 +1078,11 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 }
 
 func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
+	publishedAndCompleted := sqlf.Sprintf("publication_state = 'PUBLISHED' AND reconciler_state = 'completed'")
+
 	return sqlf.Sprintf(
 		getRepoChangesetsStatsFmtstr,
+		publishedAndCompleted, publishedAndCompleted, publishedAndCompleted, publishedAndCompleted,
 		strconv.Itoa(int(repoID)),
 		authzConds,
 	)
@@ -1091,10 +1094,10 @@ SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE publication_state = 'UNPUBLISHED'
 		AND reconciler_state = 'completed') AS unpublished,
-	COUNT(*) FILTER (WHERE external_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE external_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS open
+	COUNT(*) FILTER (WHERE %s AND external_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE %s AND external_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE %s AND external_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE %s AND external_state = 'OPEN') AS open
 FROM (
 	SELECT
 		changesets.id,
