@@ -3,14 +3,15 @@ import classnames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
+import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/out/src/settings/settings'
+
+import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightDashboard, isRealDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
+import { isGlobalSubject } from '../../../../../core/types/subjects'
+import { useInsightSubjects } from '../../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import styles from './DashboardMenu.module.scss'
-import { isGlobalSubject, isSubjectInsightSupported } from '../../../../../core/types/subjects'
-import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/out/src/settings/settings'
-import { Settings } from '../../../../../../schema/settings.schema'
-import { useInsightSubjects } from '../../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 export enum DashboardMenuAction {
     CopyLink,
@@ -91,7 +92,7 @@ function useDashboardPermissions(
     settingsCascade: SettingsCascadeOrError<Settings>
 ): DashboardPermissions {
     const supportedSubject = useInsightSubjects({ settingsCascade })
-    const dashboardOwner = supportedSubject.find(subject => subject.id === dashboard?.owner?.id)
+    const dashboardOwner = supportedSubject.find(subject => !isVirtualDashboard(dashboard) && subject.id === dashboard?.owner?.id)
 
     // No dashboard can't be modified
     if (!dashboard || !dashboardOwner) {

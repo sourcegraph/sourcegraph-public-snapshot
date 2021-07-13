@@ -9,6 +9,7 @@ import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
 import {
+    isGlobalSubject,
     isOrganizationSubject,
     isUserSubject,
     SupportedInsightSubject,
