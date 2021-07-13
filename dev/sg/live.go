@@ -58,18 +58,17 @@ func printDeployedVersion(e environment) error {
 	}
 
 	bodyStr := string(body)
+	if semver.IsValid("v" + bodyStr) {
+		out.WriteLine(output.Linef(
+			output.EmojiLightbulb, output.StyleLogo,
+			"Live on %q: v%s",
+			e.Name, bodyStr,
+		))
+		return nil
+	}
 	elems := strings.Split(bodyStr, "_")
 	if len(elems) != 3 {
-		if semver.IsValid("v" + bodyStr) {
-			out.WriteLine(output.Linef(
-				output.EmojiLightbulb, output.StyleLogo,
-				"Live on %q: v%s",
-				e.Name, bodyStr,
-			))
-			return nil
-		} else {
-			return errors.Errorf("unknown format of /__version response: %q", body)
-		}
+		return errors.Errorf("unknown format of /__version response: %q", body)
 	}
 
 	buildDate := elems[1]
