@@ -1096,31 +1096,19 @@ SELECT
 	COUNT(*) FILTER (WHERE external_state = 'MERGED') AS merged,
 	COUNT(*) FILTER (WHERE external_state = 'OPEN') AS open
 FROM (
-	-- filter to changesets that are not archived on at least one batch change
 	SELECT
-		cs.id,
-		cs.publication_state,
-		cs.reconciler_state,
-		cs.external_state,
-		cs.repo_id
-	FROM (
-		-- split each relevant changeset into a separate row with the archived status per owning batch change id
-		SELECT
-			changesets.id,
-			COALESCE((value -> 'isArchived')::boolean, (value -> 'archive')::boolean, FALSE) AS is_archived
-		FROM
-			changesets,
-			jsonb_each(batch_change_ids),
-			repo
-		WHERE
-			changesets.repo_id = repo.id
-			AND changesets.repo_id = %s
-			-- authz conditions:
-			AND %s
-		) AS csa
-	INNER JOIN changesets AS cs ON cs.id = csa.id
-	GROUP BY
-		cs.id
-	HAVING
-		NOT bool_and(is_archived)) AS gcs;
+		changesets.id,
+		changesets.publication_state,
+		changesets.reconciler_state,
+		changesets.external_state
+	FROM
+		changesets
+		INNER JOIN repo ON changesets.repo_id = repo.id
+	WHERE
+		repo.id = %s
+		-- where the changeset is not archived on at least one batch change
+		AND jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
+		-- authz conditions:
+		AND %s
+) AS fcs;
 `
