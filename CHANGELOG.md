@@ -17,9 +17,14 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- `count:all` was not supported in repository search queries for batch changes. This is now fixed. [#566](https://github.com/sourcegraph/src-cli/pull/566)
-
 ### Removed
+
+## 3.29.3
+
+### Fixed
+
+- `count:all` was not supported in repository search queries for batch changes. This is now fixed. [#566](https://github.com/sourcegraph/src-cli/pull/566)
+- For internal use only: `-text-only` received a few tiny fixes for pluralisation and missing log messages. [#565](https://github.com/sourcegraph/src-cli/pull/565)
 
 ## 3.29.2
 
