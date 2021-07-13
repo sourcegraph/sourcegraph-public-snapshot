@@ -30,4 +30,4 @@ export const isVirtualDashboard = (dashboard: InsightDashboard): dashboard is Vi
     dashboard.type === InsightsDashboardType.All
 
 export const isRealDashboard = (dashboard: InsightDashboard): dashboard is RealInsightDashboard =>
-    isOrganizationDashboard(dashboard) || isPersonalDashboard(dashboard)
+    isOrganizationDashboard(dashboard) || isPersonalDashboard(dashboard) || isGlobalDashboard(dashboard)

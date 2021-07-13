@@ -111,7 +111,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     className={classnames(styles.dashboardSelect, 'mr-2')}
                 />
 
-                <DashboardMenu dashboard={currentDashboard} onSelect={handleSelect} />
+                <DashboardMenu dashboard={currentDashboard} settingsCascade={settingsCascade} onSelect={handleSelect} />
             </section>
 
             <hr className="mt-2 mb-3" />

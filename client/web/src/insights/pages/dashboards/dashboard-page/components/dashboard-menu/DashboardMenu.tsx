@@ -3,10 +3,14 @@ import classnames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isRealDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 
 import styles from './DashboardMenu.module.scss'
+import { isGlobalSubject, isSubjectInsightSupported } from '../../../../../core/types/subjects'
+import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/out/src/settings/settings'
+import { Settings } from '../../../../../../schema/settings.schema'
+import { useInsightSubjects } from '../../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 export enum DashboardMenuAction {
     CopyLink,
@@ -15,16 +19,16 @@ export enum DashboardMenuAction {
     AddRemoveInsights,
 }
 
-export interface DashboardMenuProps {
+export interface DashboardMenuProps extends SettingsCascadeProps<Settings> {
     dashboard?: InsightDashboard
     onSelect?: (action: DashboardMenuAction) => void
 }
 
 export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
-    const { dashboard, onSelect = () => {} } = props
+    const { dashboard, settingsCascade, onSelect = () => {} } = props
 
     const hasDashboard = dashboard !== undefined
-    const isConfigurable = dashboard && !isVirtualDashboard(dashboard) && isSettingsBasedInsightsDashboard(dashboard)
+    const { isConfigurable } = useDashboardPermissions(dashboard, settingsCascade)
 
     return (
         <Menu>
@@ -72,4 +76,52 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
             </MenuList>
         </Menu>
     )
+}
+
+interface DashboardPermissions {
+    isConfigurable: boolean
+}
+
+const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
+    isConfigurable: false,
+}
+
+function useDashboardPermissions(
+    dashboard: InsightDashboard | undefined,
+    settingsCascade: SettingsCascadeOrError<Settings>
+): DashboardPermissions {
+    const supportedSubject = useInsightSubjects({ settingsCascade })
+    const dashboardOwner = supportedSubject.find(subject => subject.id === dashboard?.owner?.id)
+
+    // No dashboard can't be modified
+    if (!dashboard || !dashboardOwner) {
+        return DEFAULT_DASHBOARD_PERMISSIONS
+    }
+
+    if (isVirtualDashboard(dashboard)) {
+        return DEFAULT_DASHBOARD_PERMISSIONS
+    }
+
+    if (isRealDashboard(dashboard)) {
+        // Settings based insights dashboards (custom dashboards created by users)
+        if (isSettingsBasedInsightsDashboard(dashboard)) {
+            // Global scope permission handling
+            if (isGlobalSubject(dashboardOwner)) {
+                return {
+                    isConfigurable: dashboardOwner.viewerCanAdminister && dashboardOwner.allowSiteSettingsEdits,
+                }
+            }
+
+            return {
+                isConfigurable: true,
+            }
+        }
+
+        // Not settings based dashboard (built-in-dashboard case)
+        return {
+            isConfigurable: false,
+        }
+    }
+
+    return DEFAULT_DASHBOARD_PERMISSIONS
 }
