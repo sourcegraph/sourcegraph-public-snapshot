@@ -24,6 +24,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -796,9 +797,6 @@ mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
 `
 
 func TestListChangesetOptsFromArgs(t *testing.T) {
-	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
-
 	var wantFirst int32 = 10
 	wantPublicationStates := []btypes.ChangesetPublicationState{
 		"PUBLISHED",
@@ -813,8 +811,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
-	repoID := rs[0].ID
+	var repoID api.RepoID = 123
 	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
 
 	tcs := []struct {
