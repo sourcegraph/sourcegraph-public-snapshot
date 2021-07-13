@@ -38,11 +38,11 @@ const defaultState = (): MultiSelectContextState => ({
     visible: new Set(),
     deselectAll: () => {},
     deselectVisible: () => {},
-    deselectSingle: (id: string) => {},
+    deselectSingle: () => {},
     selectAll: () => {},
     selectVisible: () => {},
-    selectSingle: (id: string) => {},
-    setVisible: (ids: string[]) => {},
+    selectSingle: () => {},
+    setVisible: () => {},
 })
 // eslint-enable @typescript-eslint/no-unused-vars
 
@@ -56,14 +56,16 @@ const defaultState = (): MultiSelectContextState => ({
  */
 export const MultiSelectContext = React.createContext<MultiSelectContextState>(defaultState())
 
-export const MultiSelectContextProvider: React.FunctionComponent<{}> = ({ children }) => {
+export const MultiSelectContextProvider: React.FunctionComponent<{
+    initialVisible?: string[]
+}> = ({ children, initialVisible }) => {
     // Set up state and callbacks for the visible items.
     const [visible, setVisibleInternal] = useState<Set<string>>(new Set())
     const setVisible = useCallback((ids: string[]) => {
         setVisibleInternal(new Set(ids))
     }, [])
 
-    const [selected, setSelected] = useState<MultiSelectContextSelected>(new Set())
+    const [selected, setSelected] = useState<MultiSelectContextSelected>(new Set(initialVisible ?? []))
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
 

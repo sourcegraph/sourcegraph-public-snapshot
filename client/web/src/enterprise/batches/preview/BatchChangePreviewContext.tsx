@@ -26,26 +26,44 @@ const defaultPagination = (): BatchChangePreviewPagination => ({
 })
 
 export interface BatchChangePreviewContextState {
+    // Filters are required to fetch all the changeset specs if all are selected
+    // when publishing.
     filters: BatchChangePreviewFilters
     setFilters: (filters: BatchChangePreviewFilters) => void
 
+    // Pagination is required to fetch all the changeset specs if all are
+    // selected when publishing.
     pagination: BatchChangePreviewPagination
     setPagination: (pagination: BatchChangePreviewPagination) => void
+
+    // We need to track if there are more pages than are currently visible: if
+    // so, then the UI to select all changesets must be distinct from selecting
+    // visible changesets.
+    hasMorePages: boolean
+    setHasMorePages: (hasMorePages: boolean) => void
+
+    // It's also helpful to know how many total changesets there are.
+    totalCount: number
+    setTotalCount: (totalCount: number) => void
 }
 
-const defaultState = (): BatchChangePreviewContextState => ({
+export const defaultState = (): BatchChangePreviewContextState => ({
     filters: defaultFilters(),
     setFilters: () => {},
     pagination: defaultPagination(),
     setPagination: () => {},
+    hasMorePages: false,
+    setHasMorePages: () => {},
+    totalCount: 0,
+    setTotalCount: () => {},
 })
 
 /**
- * A context tracking the filters and pagination for an instance of the Batch
- * Changes preview page.
+ * A context tracking the filters, pagination, and other miscellany for an
+ * instance of the Batch Changes preview page.
  *
- * Generally, this context will own the filter state, but NOT the pagination
- * state, as that has to be owned by FilteredConnection. Use
+ * Generally, this context will own the filter and connection state, but NOT the
+ * pagination state, as that has to be owned by FilteredConnection. Use
  * BatchChangePreviewContextProvider to instantiate a context that owns the
  * filter state.
  *
@@ -53,7 +71,10 @@ const defaultState = (): BatchChangePreviewContextState => ({
  */
 export const BatchChangePreviewContext = React.createContext<BatchChangePreviewContextState>(defaultState())
 
-export const BatchChangePreviewContextProvider: React.FunctionComponent<{}> = ({ children }) => {
+export const BatchChangePreviewContextProvider: React.FunctionComponent<{ initialHasMorePages?: boolean }> = ({
+    children,
+    initialHasMorePages,
+}) => {
     const urlParameters = new URLSearchParams(location.search)
 
     const [filters, setFilters] = useState<BatchChangePreviewFilters>(() => {
@@ -68,7 +89,9 @@ export const BatchChangePreviewContextProvider: React.FunctionComponent<{}> = ({
         }
     })
 
-    const [pagination, setPagination] = useState<BatchChangePreviewPagination>(defaultPagination())
+    const [pagination, setPagination] = useState(defaultPagination())
+    const [hasMorePages, setHasMorePages] = useState(!!initialHasMorePages)
+    const [totalCount, setTotalCount] = useState(0)
 
     return (
         <BatchChangePreviewContext.Provider
@@ -77,6 +100,10 @@ export const BatchChangePreviewContextProvider: React.FunctionComponent<{}> = ({
                 setFilters,
                 pagination,
                 setPagination,
+                hasMorePages,
+                setHasMorePages,
+                totalCount,
+                setTotalCount,
             }}
         >
             {children}

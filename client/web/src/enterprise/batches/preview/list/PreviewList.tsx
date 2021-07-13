@@ -51,8 +51,8 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
-    const { filters, setPagination } = useContext(BatchChangePreviewContext)
-    const { setVisible: onLoad } = useContext(MultiSelectContext)
+    const { filters, setPagination, setHasMorePages, setTotalCount } = useContext(BatchChangePreviewContext)
+    const { setVisible } = useContext(MultiSelectContext)
 
     const queryChangesetApplyPreviewConnection = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -61,7 +61,10 @@ export const PreviewList: React.FunctionComponent<Props> = ({
 
             return queryChangesetApplyPreview({ batchSpec: batchSpecID, ...filters, ...pagination }).pipe(
                 tap(connection => {
-                    onLoad(
+                    setHasMorePages(connection.pageInfo.hasNextPage)
+                    setTotalCount(connection.totalCount)
+
+                    setVisible(
                         connection.nodes
                             .map(node => {
                                 if (node.__typename === 'HiddenChangesetApplyPreview') {
@@ -77,7 +80,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 })
             )
         },
-        [setPagination, queryChangesetApplyPreview, batchSpecID, filters, onLoad]
+        [setPagination, queryChangesetApplyPreview, batchSpecID, filters, setHasMorePages, setTotalCount, setVisible]
     )
 
     return (

@@ -1,7 +1,11 @@
 import classNames from 'classnames'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useCallback } from 'react'
 
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { MultiSelectContext, MultiSelectContextState } from '../../MultiSelectContext'
+import { BatchChangePreviewContext, BatchChangePreviewContextState } from '../BatchChangePreviewContext'
 
 import styles from './PreviewListHeader.module.scss'
 
@@ -12,7 +16,13 @@ export interface PreviewListHeaderProps {
 export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = ({ selectionEnabled }) => (
     <>
         {selectionEnabled && (
-            <MultiSelectContext.Consumer>{props => <SelectAll {...props} />}</MultiSelectContext.Consumer>
+            <MultiSelectContext.Consumer>
+                {selectProps => (
+                    <BatchChangePreviewContext.Consumer>
+                        {previewProps => <SelectAll {...selectProps} {...previewProps} />}
+                    </BatchChangePreviewContext.Consumer>
+                )}
+            </MultiSelectContext.Consumer>
         )}
         <span className="p-2 d-none d-sm-block" />
         {selectionEnabled ? (
@@ -32,9 +42,9 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
 )
 
 const SelectAll: React.FunctionComponent<
-    Pick<MultiSelectContextState, 'deselectAll' | 'selectVisible' | 'selectAll' | 'selected' | 'visible'>
-> = ({ deselectAll, selectVisible, selectAll, selected, visible }) => {
-    const isVisible = useMemo(() => selected === 'all' || selected.size === visible.size, [selected, visible])
+    Pick<MultiSelectContextState, 'selectVisible' | 'selectAll' | 'selected' | 'visible'> &
+        Pick<BatchChangePreviewContextState, 'hasMorePages' | 'totalCount'>
+> = ({ selectVisible, selectAll, selected, hasMorePages, totalCount, visible }) => {
     const onClick = useCallback(() => {
         if (selected === 'all') {
             selectVisible()
@@ -43,15 +53,23 @@ const SelectAll: React.FunctionComponent<
         }
     }, [selected, selectVisible, selectAll])
 
-    if (!isVisible) {
+    if (selected !== 'all' && selected.size === 0) {
         return null
     }
 
     return (
-        <span className={classNames('p-2 d-none d-sm-block', styles.previewListHeaderSelectAll)}>
-            <button type="button" className="btn btn-link" onClick={onClick}>
-                {selected === 'all' ? 'Deselect' : 'Select'} all changesets
-            </button>
+        <span className={classNames('m-0 p-0 d-none d-sm-block', styles.previewListHeaderSelectAll)}>
+            <div className="ml-2 col d-flex align-items-center">
+                <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
+                {selected === 'all'
+                    ? `All ${totalCount} ${pluralize('changeset', totalCount)} selected`
+                    : `${selected.size} ${pluralize('changeset', selected.size)} selected`}
+                {hasMorePages && (
+                    <button type="button" className="btn btn-link py-0 px-1" onClick={onClick}>
+                        ({selected === 'all' ? 'Deselect' : 'Select'} all {totalCount})
+                    </button>
+                )}
+            </div>
         </span>
     )
 }

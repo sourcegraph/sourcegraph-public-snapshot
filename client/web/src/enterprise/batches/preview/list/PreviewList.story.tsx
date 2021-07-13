@@ -1,10 +1,13 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
+import React, { useContext } from 'react'
 import { of, Observable } from 'rxjs'
+import { tap } from 'rxjs/operators'
 
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
+import { BatchChangePreviewContext, BatchChangePreviewContextProvider } from '../BatchChangePreviewContext'
 
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { PreviewList } from './PreviewList'
@@ -38,19 +41,32 @@ const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: nul
 add('List view', () => (
     <EnterpriseWebStory>
         {props => (
-            <PreviewList
-                {...props}
-                batchSpecID="123123"
-                authenticatedUser={{
-                    url: '/users/alice',
-                    displayName: 'Alice',
-                    username: 'alice',
-                    email: 'alice@email.test',
-                }}
-                queryChangesetApplyPreview={queryChangesetApplyPreview}
-                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                selectionEnabled={boolean('selectionEnabled', false)}
-            />
+            <MultiSelectContextProvider
+                initialVisible={nodes
+                    .map(node =>
+                        node.targets.__typename === 'VisibleApplyPreviewTargetsAttach' ||
+                        node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
+                            ? node.targets.changesetSpec.id
+                            : null
+                    )
+                    .filter((maybeID): maybeID is string => maybeID !== null)}
+            >
+                <BatchChangePreviewContextProvider initialHasMorePages={boolean('hasMorePages', true)}>
+                    <PreviewList
+                        {...props}
+                        batchSpecID="123123"
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        selectionEnabled={boolean('selectionEnabled', false)}
+                    />
+                </BatchChangePreviewContextProvider>
+            </MultiSelectContextProvider>
         )}
     </EnterpriseWebStory>
 ))

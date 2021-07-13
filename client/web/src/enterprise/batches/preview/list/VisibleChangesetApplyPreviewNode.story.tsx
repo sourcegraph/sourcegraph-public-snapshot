@@ -23,7 +23,7 @@ const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode'
 const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }
 
 function baseChangesetSpec(
-    published: Scalars['PublishedValue'],
+    published: Scalars['PublishedValue'] | null,
     overrides: Partial<VisibleChangesetSpecFields> = {}
 ): VisibleChangesetSpecFields {
     return {
@@ -140,6 +140,23 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
             changesetSpec: baseChangesetSpec(false),
+        },
+    },
+    'Create changeset UI published': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsAttach',
+            changesetSpec: baseChangesetSpec(null),
         },
     },
     'Update changeset title': {
@@ -275,6 +292,59 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 externalURL: {
                     url: 'http://test.test/123',
                 },
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                        body: 'body',
+                        commits: [
+                            {
+                                subject: 'Abc',
+                                body: null,
+                                author: {
+                                    avatarURL: null,
+                                    displayName: 'alice',
+                                    email: 'alice@sourcegraph.test',
+                                    user: null,
+                                },
+                            },
+                        ],
+                        title: 'Title',
+                    },
+                },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+            },
+        },
+    },
+    'Publish existing changeset from UI': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(null),
+            changeset: {
+                id: '123123',
+                title: 'Le UI unpublished changeset',
+                state: ChangesetState.UNPUBLISHED,
+                externalID: null,
+                externalURL: null,
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
