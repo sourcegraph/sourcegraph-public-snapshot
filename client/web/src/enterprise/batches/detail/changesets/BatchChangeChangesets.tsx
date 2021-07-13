@@ -252,7 +252,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     history={history}
                     location={location}
                     onFiltersChange={setChangesetFiltersAndDeselectAll}
-                    searchPlaceholderText="Search title and repository name"
                 />
             )}
             {showSelectRow && queryArguments && (
