@@ -860,39 +860,69 @@ WHERE
 // It does not update the changesets that are fully processed and already
 // closed/merged.
 //
-// This method will *block* if some of the changesets are currently being processed.
-// TODO: This needs to loop until there are no processing rows anymore.
+// This will loop until there are no processing rows anymore, or until 2 minutes
+// passed.
 func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) error {
-	q := sqlf.Sprintf(
-		enqueueChangesetsToCloseFmtstr,
-		btypes.ReconcilerStateQueued.ToDB(),
-		batchChangeID,
-		btypes.ChangesetPublicationStatePublished,
-		btypes.ChangesetExternalStateClosed,
-		btypes.ChangesetExternalStateMerged,
-	)
-	return s.Store.Exec(ctx, q)
+	// Just for safety, so we don't end up with stray cancel requests bombarding
+	// the DB with 10 requests a second forever:
+	ctx, cancel := context.WithDeadline(ctx, s.now().Add(2*time.Minute))
+	defer cancel()
+
+	for {
+		q := sqlf.Sprintf(
+			enqueueChangesetsToCloseFmtstr,
+			batchChangeID,
+			btypes.ChangesetPublicationStatePublished,
+			btypes.ReconcilerStateCompleted.ToDB(),
+			btypes.ChangesetExternalStateClosed,
+			btypes.ChangesetExternalStateMerged,
+			btypes.ReconcilerStateQueued.ToDB(),
+			btypes.ReconcilerStateProcessing.ToDB(),
+			btypes.ReconcilerStateProcessing.ToDB(),
+		)
+		processing, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, q))
+		if err != nil {
+			return err
+		}
+		if !ok || processing == 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil
 }
 
 const enqueueChangesetsToCloseFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:EnqueueChangesetsToClose
-UPDATE
-  changesets
-SET
-  reconciler_state = %s,
-  failure_message = NULL,
-  num_resets = 0,
-  num_failures = 0,
-  closing = TRUE,
-  syncer_error = NULL
-WHERE
-  owned_by_batch_change_id = %d AND
-  publication_state = %s AND
-  NOT (
-    reconciler_state = 'completed'
-    AND
-    (external_state = %s OR external_state = %s)
-  )
+WITH all_matching AS (
+	SELECT
+		id, reconciler_state
+	FROM
+		changesets
+	WHERE
+		owned_by_batch_change_id = %d
+		AND
+		publication_state = %s
+		AND
+		NOT (
+			reconciler_state = %s
+			AND
+			(external_state = %s OR external_state = %s)
+		)
+),
+updated_records AS (
+	UPDATE
+		changesets
+	SET
+		reconciler_state = %s,
+		failure_message = NULL,
+		num_resets = 0,
+		num_failures = 0,
+		closing = TRUE
+	WHERE
+		changesets.id IN (SELECT id FROM all_matching WHERE NOT all_matching.reconciler_state = %s)
+)
+SELECT COUNT(id) FROM all_matching WHERE NOT all_matching.reconciler_state = %s
 `
 
 func ScanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
