@@ -478,6 +478,7 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 	args := search.TextParameters{
 		PatternInfo: p,
 		Query:       q,
+		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
 		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || r.stream != nil,
@@ -567,10 +568,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	maxTryCount := 40000
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
-	ctx, cancel, err := r.withTimeout(ctx)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, search.TimeoutDuration(q))
 	defer cancel()
 
 	if count := q.GetCount(); count != "" {
@@ -720,7 +718,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		return &SearchResults{}, nil
 	}
 	// Unreachable.
-	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
+	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
 // evaluate evaluates all expressions of a search query.
@@ -929,7 +927,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			}
 			return r.resultsRecursive(ctx, plan)
 		})
-		if err != nil && errors.Is(err, ErrPredicateNoResults) {
+		if errors.Is(err, ErrPredicateNoResults) {
 			continue
 		}
 		if err != nil {
@@ -970,7 +968,7 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 	for _, match := range matches {
 		repoMatch, ok := match.(*result.RepoMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
+			return nil, errors.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
 		}
 
 		nodes = append(nodes, query.Parameter{
@@ -989,7 +987,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	for _, match := range matches {
 		fileMatch, ok := match.(*result.FileMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
+			return nil, errors.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
 		}
 
 		// We create AND nodes to match both the repo and the file at the same time so
@@ -1082,7 +1080,7 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 				return nil
 			}
 		default:
-			topErr = fmt.Errorf("unsupported predicate result type %q", predicate.Field())
+			topErr = errors.Errorf("unsupported predicate result type %q", predicate.Field())
 			return nil
 		}
 
@@ -1219,7 +1217,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 		if attempts > 5 {
 			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
-			return nil, fmt.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", len(v.Cloning()), len(v.Timedout()))
+			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", len(v.Cloning()), len(v.Timedout()))
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed
@@ -1250,28 +1248,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		searchResultsStatsCache.Set(cacheKey, jsonRes)
 	}
 	return stats, nil
-}
-
-var (
-	// The default timeout to use for queries.
-	defaultTimeout = 20 * time.Second
-)
-
-func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	d := defaultTimeout
-	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
-	timeout := r.Query.Timeout()
-	if timeout != nil {
-		d = *timeout
-	} else if r.Query.Count() != nil {
-		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
-		d = maxTimeout
-	}
-	if d > maxTimeout {
-		d = maxTimeout
-	}
-	ctx, cancel := context.WithTimeout(ctx, d)
-	return ctx, cancel, nil
 }
 
 // withResultTypes populates the ResultTypes field of args, which drives the kind
@@ -1313,7 +1289,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, q query.Q, tr *trac
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
-		return nil, r.errorForNoResolvedRepos(ctx)
+		return nil, r.errorForNoResolvedRepos(ctx, q)
 	}
 	return &resolved, nil
 }
@@ -1350,10 +1326,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	start := time.Now()
 
-	ctx, cancel, err := r.withTimeout(ctx)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, args.Timeout)
 	defer cancel()
 
 	limit := r.MaxResults()

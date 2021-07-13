@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -70,7 +71,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatalf("expected error. got none")
 		}
 		if err != nil {
-			if _, ok := err.(*backend.InsufficientAuthorizationError); !ok {
+			if !errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 				t.Fatalf("wrong error: %s (%T)", err, err)
 			}
 		}
@@ -80,7 +81,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Helper()
 
 		// Ignore other errors, we only want to check whether it's an auth error
-		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 			t.Fatalf("got auth error")
 		}
 	}

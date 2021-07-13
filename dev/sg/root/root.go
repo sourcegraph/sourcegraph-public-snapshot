@@ -1,11 +1,12 @@
 package root
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/cockroachdb/errors"
 )
 
 var once sync.Once
@@ -44,6 +45,6 @@ func findRoot() (string, error) {
 			continue
 		}
 
-		return "", fmt.Errorf("not running inside sourcegraph/sourcegraph")
+		return "", errors.Errorf("not running inside sourcegraph/sourcegraph")
 	}
 }

@@ -440,7 +440,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		},
 	}
 
-	alert, err := errorToAlert(sr.errorForNoResolvedRepos(context.Background()))
+	alert, err := errorToAlert(sr.errorForNoResolvedRepos(context.Background(), q))
 	require.NoError(t, err)
 	require.Equal(t, wantAlert, alert)
 }

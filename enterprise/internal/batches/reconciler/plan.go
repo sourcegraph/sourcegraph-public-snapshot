@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
@@ -226,7 +228,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		}
 
 	default:
-		return pl, fmt.Errorf("unknown changeset publication state: %s", ch.PublicationState)
+		return pl, errors.Errorf("unknown changeset publication state: %s", ch.PublicationState)
 	}
 
 	return pl, nil
