@@ -28,7 +28,7 @@ You can upgrade an extension in your private extension registry by simpily runni
 
 #### What does it mean when a red dot shows up on the Sourcegraph browser extension icon?
 
-The red dot indicates that either the Sourcegraph URL entered is invalid, or you are currently on a private repository. More infomration can be found in our [browser extension docs](https://docs.sourcegraph.com/integration/browser_extension#make-it-work-on-your-code-host).
+The red dot indicates that either the Sourcegraph URL entered is invalid, or you are currently on a private repository. Visit our [browser extension docs](https://docs.sourcegraph.com/integration/browser_extension#make-it-work-for-private-code) for more information about enabling Sourcegraph to work with private repositories.
 
 ## Extension Specific FAQs
 
