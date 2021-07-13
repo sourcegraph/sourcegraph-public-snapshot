@@ -499,7 +499,7 @@ checks:
 commandsets:
   # TODO: Should we be able to define "env" vars _per set_?
 
-  default:
+  oss:
     - frontend
     - worker
     - repo-updater
@@ -517,7 +517,7 @@ commandsets:
     - zoekt-webserver-0
     - zoekt-webserver-1
 
-  enterprise:
+  enterprise: &enterprise_set
     - enterprise-frontend
     - enterprise-worker
     - enterprise-repo-updater
@@ -535,6 +535,8 @@ commandsets:
     - zoekt-webserver-0
     - zoekt-webserver-1
     - executor-queue
+
+  default: *enterprise_set
 
   enterprise-codeintel:
     - enterprise-frontend
