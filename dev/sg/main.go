@@ -16,8 +16,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	stdout "github.com/sourcegraph/sourcegraph/dev/sg/internal/out"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
