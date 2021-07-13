@@ -49,8 +49,10 @@ Examples:
 		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		spec, _, err := batchParseSpec(out, fileFlag, svc)
+		spec, _, err := batchParseSpec(fileFlag, svc)
 		if err != nil {
+			ui := &batchExecTUI{out: out}
+			ui.ParsingBatchSpecFailure(err)
 			return err
 		}
 

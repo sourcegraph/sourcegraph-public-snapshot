@@ -39,33 +39,25 @@ Examples:
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		var err error
+		var ui batchExecUI
 		if flags.textOnly {
-			err = textOnlyExecuteBatchSpec(ctx, executeBatchSpecOpts{
-				flags:  flags,
-				client: cfg.apiClient(flags.api, flagSet.Output()),
-
-				// Do not apply the uploaded batch spec
-				applyBatchSpec: false,
-			})
-			if err != nil {
-				fmt.Printf("ERROR: %s\n", err)
-				return &exitCodeError{nil, 1}
-			}
+			ui = &batchExecJSONLinesUI{}
 		} else {
 			out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-			err = executeBatchSpec(ctx, executeBatchSpecOpts{
-				flags:  flags,
-				out:    out,
-				client: cfg.apiClient(flags.api, flagSet.Output()),
-				// Do not apply the uploaded batch spec
-				applyBatchSpec: false,
-			})
-			if err != nil {
-				printExecutionError(out, err)
-				out.Write("")
-				return &exitCodeError{nil, 1}
-			}
+			ui = &batchExecTUI{out: out}
+		}
+
+		err := executeBatchSpec(ctx, executeBatchSpecOpts{
+			flags:  flags,
+			client: cfg.apiClient(flags.api, flagSet.Output()),
+
+			// Do not apply the uploaded batch spec
+			applyBatchSpec: false,
+
+			ui: ui,
+		})
+		if err != nil {
+			return &exitCodeError{nil, 1}
 		}
 
 		return nil

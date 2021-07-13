@@ -38,7 +38,8 @@ Examples:
 		svc := service.New(&service.Opts{})
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		if _, _, err := batchParseSpec(out, fileFlag, svc); err != nil {
+		if _, _, err := batchParseSpec(fileFlag, svc); err != nil {
+			(&batchExecTUI{out: out}).ParsingBatchSpecFailure(err)
 			return err
 		}
 
