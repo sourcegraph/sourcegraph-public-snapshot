@@ -118,8 +118,8 @@ func TestCleanup(t *testing.T) {
 	var cancel1, cancel2 int
 	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, func() { cancel1++ } /* store1 */, true, nil)
 	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel1++ } /* store1 */, true, nil)
-	store2.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel2++ } /* store2 */, true, nil)
 	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, func() { cancel2++ } /* store2 */, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 44}, func() { cancel2++ } /* store2 */, true, nil)
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
