@@ -7,10 +7,10 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
+import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../../../../core/types/subjects'
 
 import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
-import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
