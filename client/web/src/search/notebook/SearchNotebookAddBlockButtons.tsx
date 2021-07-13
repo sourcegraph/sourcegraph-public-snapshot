@@ -25,6 +25,7 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
                 type="button"
                 className={classNames('btn btn-outline-secondary btn-sm mr-2', styles.addBlockButton)}
                 onClick={() => onAddBlock(index, 'query', '// Enter search query')}
+                data-testid="add-query-button"
             >
                 + Query
             </button>
@@ -32,6 +33,7 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
                 type="button"
                 className={classNames('btn btn-outline-secondary btn-sm', styles.addBlockButton)}
                 onClick={() => onAddBlock(index, 'md', '*Enter markdown*')}
+                data-testid="add-md-button"
             >
                 + Markdown
             </button>

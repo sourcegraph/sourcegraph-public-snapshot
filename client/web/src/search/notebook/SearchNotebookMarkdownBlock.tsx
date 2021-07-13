@@ -141,7 +141,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                     aria-label="Notebook markdown block"
                     ref={blockElement}
                 >
-                    <div className={styles.output}>
+                    <div className={styles.output} data-testid="output">
                         <Markdown dangerousInnerHTML={output ?? ''} />
                     </div>
                 </div>

@@ -29,6 +29,7 @@ export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBloc
                     className="btn btn-sm btn-primary d-flex align-items-center w-100"
                     type="button"
                     role="menuitem"
+                    data-testid={mainAction.label}
                     disabled={mainAction.isDisabled ?? false}
                     onClick={() => mainAction.onClick(id)}
                 >
@@ -45,6 +46,7 @@ export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBloc
                 className={classNames('btn btn-sm d-flex align-items-center', styles.actionButton)}
                 type="button"
                 role="menuitem"
+                data-testid={action.label}
                 disabled={action.isDisabled ?? false}
                 onClick={() => action.onClick(id)}
             >
