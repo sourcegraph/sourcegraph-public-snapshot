@@ -194,6 +194,24 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
+func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
+	UserID graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+	userID, err := UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if err := session.InvalidateSessionsByID(ctx, userID); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+
+}
+
 func logRoleChangeAttempt(ctx context.Context, db dbutil.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
 	// To avoid a panic, it's important to check for a nil parentErr before we dereference it.
 	if parentErr != nil && *parentErr != nil {
@@ -216,22 +234,4 @@ func logRoleChangeAttempt(ctx context.Context, db dbutil.DB, name *database.Secu
 	}
 
 	database.SecurityEventLogs(db).LogEvent(ctx, event)
-}
-
-func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
-	UserID graphql.ID
-}) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	userID, err := UnmarshalUserID(args.UserID)
-	if err != nil {
-		return nil, err
-	}
-	if err := session.InvalidateSessionsByID(ctx, userID); err != nil {
-		return nil, err
-	}
-	return &EmptyResponse{}, nil
-
 }
