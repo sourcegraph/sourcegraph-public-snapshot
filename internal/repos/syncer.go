@@ -1107,8 +1107,9 @@ func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService
 			return Diff{}, errors.Wrap(err, "syncer: failed to delete conflicting repo")
 		}
 
+		// We fallthrough to the next case after removing the conflicting repo in order to update
+		// the winner (i.e. existing). This works because we mutate stored to contain it, which the case expects.
 		stored = types.Repos{existing}
-
 		fallthrough
 	case 1: // Existing repo, update.
 		if !stored[0].Update(sourced) {
