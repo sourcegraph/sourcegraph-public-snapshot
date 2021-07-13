@@ -127,6 +127,7 @@ export interface LayoutProps
 
     globbing: boolean
     showMultilineSearchConsole: boolean
+    showSearchNotebook: boolean
     showQueryBuilder: boolean
     isSourcegraphDotCom: boolean
     showBatchChanges: boolean

@@ -1368,6 +1368,8 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
 	// ShowSearchContextManagement description: Enables search context management.
 	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
+	// ShowSearchNotebook description: Enables the search notebook at search/notebook
+	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

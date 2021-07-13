@@ -107,8 +107,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search/notebook',
-        // TODO: Redirect to search if feature flag not enabled
-        render: props => <SearchNotebookPage {...props} isMacPlatform={isMacPlatform} />,
+        render: props =>
+            props.showSearchNotebook ? (
+                <SearchNotebookPage {...props} isMacPlatform={isMacPlatform} />
+            ) : (
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {
