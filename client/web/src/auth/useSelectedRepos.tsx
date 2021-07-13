@@ -1,0 +1,116 @@
+import { ApolloError, ApolloQueryResult, QueryLazyOptions } from '@apollo/client'
+
+import { useLazyQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { Maybe, Exact, UserRepositoriesResult, UserRepositoriesVariables } from '../graphql-operations'
+
+interface UseSelectedReposResult {
+    selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | undefined
+    loadingSelectedRepos: boolean
+    errorSelectedRepos: ApolloError | undefined
+    refetchSelectedRepos:
+        | ((
+              variables?:
+                  | Partial<
+                        Exact<{
+                            user: string
+                            codeHost: Maybe<string>
+                            query: Maybe<string>
+                        }>
+                    >
+                  | undefined
+          ) => Promise<ApolloQueryResult<UserRepositoriesResult>>)
+        | undefined
+    fetchSelectedRepos: (
+        options?:
+            | QueryLazyOptions<
+                  Exact<{
+                      id: string
+                      cloned: Maybe<boolean>
+                      notCloned: Maybe<boolean>
+                      indexed: Maybe<boolean>
+                      notIndexed: Maybe<boolean>
+                      first: Maybe<number>
+                      query: Maybe<string>
+                      externalServiceID: Maybe<string>
+                  }>
+              >
+            | undefined
+    ) => void
+}
+
+const SELECTED_REPOS = gql`
+    query UserSelectedRepositories(
+        $id: ID!
+        $first: Int
+        $query: String
+        $cloned: Boolean
+        $notCloned: Boolean
+        $indexed: Boolean
+        $notIndexed: Boolean
+        $externalServiceID: ID
+    ) {
+        node(id: $id) {
+            ... on User {
+                repositories(
+                    first: $first
+                    query: $query
+                    cloned: $cloned
+                    notCloned: $notCloned
+                    indexed: $indexed
+                    notIndexed: $notIndexed
+                    externalServiceID: $externalServiceID
+                ) {
+                    nodes {
+                        id
+                        name
+                        createdAt
+                        viewerCanAdminister
+                        url
+                        isPrivate
+                        mirrorInfo {
+                            cloned
+                            cloneInProgress
+                            cloneProgress
+                            updatedAt
+                        }
+                        externalRepository {
+                            serviceType
+                            serviceID
+                        }
+                    }
+                    totalCount(precise: true)
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const useSelectedRepos = (userId: string, first?: number): UseSelectedReposResult => {
+    const [trigger, { data, loading, error, refetch }] = useLazyQuery<
+        UserRepositoriesResult,
+        UserRepositoriesVariables
+    >(SELECTED_REPOS, {
+        variables: {
+            id: userId,
+            cloned: true,
+            notCloned: true,
+            indexed: true,
+            notIndexed: true,
+            first: first || 2000,
+            query: null,
+            externalServiceID: null,
+        },
+    })
+
+    return {
+        selectedRepos: data?.node?.repositories.nodes,
+        loadingSelectedRepos: loading,
+        errorSelectedRepos: error,
+        refetchSelectedRepos: refetch,
+        fetchSelectedRepos: trigger,
+    }
+}

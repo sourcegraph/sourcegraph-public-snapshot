@@ -1,39 +1,50 @@
-import React, { useState } from 'react'
+import React, { FunctionComponent, useState } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { Steps, Step, StepList, StepPanels, StepPanel, useSteps } from '@sourcegraph/wildcard/src/components/Steps'
+import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
+import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
+import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from '@sourcegraph/wildcard/src/components/Steps'
 
-import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { UserAreaUserFields } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
+import { SelectAffiliatedRepos, AffiliatedReposReference } from '../user/settings/repositories/SelectAffiliatedRepos'
 
 import { getReturnTo } from './SignInSignUpCommon'
+import { useAffiliatedRepos } from './useAffiliatedRepos'
 import { useExternalServices } from './useExternalServices'
 import { useRepoCloningStatus } from './useRepoCloningStatus'
+import { useSelectedRepos } from './useSelectedRepos'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
+import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
 
 interface PostSignUpPage {
     authenticatedUser: UserAreaUserFields
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
+    telemetryService: TelemetryService
 }
 
 interface Step {
     content: React.ReactElement
     isComplete: () => boolean
     prefetch?: () => void
+    onNextButtonClick?: () => Promise<void>
 }
 
-export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authenticatedUser: user, context }) => {
+const delay = (milliseconds: number): Promise<void> => new Promise(resolve => setTimeout(resolve, milliseconds))
+
+export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
+    authenticatedUser: user,
+    context,
+    telemetryService,
+}) => {
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
-    const toLog = useSteps()
     const location = useLocation()
     const history = useHistory()
-
-    console.log('useSteps =>>>>', toLog)
 
     const {
         trigger: fetchCloningStatus,
@@ -43,6 +54,8 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
     } = useRepoCloningStatus({ userId: user.id, pollInterval: 2000 })
 
     const { externalServices, loadingServices, errorServices, refetchExternalServices } = useExternalServices(user.id)
+    const { fetchAffiliatedRepos, affiliatedRepos } = useAffiliatedRepos(user.id)
+    const { fetchSelectedRepos, selectedRepos } = useSelectedRepos(user.id)
 
     /**
      * post sign-up flow is available only for .com and only in two cases, user:
@@ -90,11 +103,27 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
                             Sourcegraph. We’ll sync and index these repositories so you can search your code all in one
                             place.
                         </p>
+                        <SelectAffiliatedRepos
+                            ref={AffiliatedReposReference}
+                            onSelection={setDidSelectAffiliatedRepos}
+                            repos={affiliatedRepos}
+                            externalServices={externalServices}
+                            selectedRepos={selectedRepos}
+                            authenticatedUser={user}
+                            telemetryService={telemetryService}
+                        />
                     </>
                 )}
             </>
         ),
-        isComplete: () => true,
+        isComplete: () => true /* didSelectAffiliatedRepos */,
+        onNextButtonClick: async () => {
+            await AffiliatedReposReference.current?.submit()
+        },
+        prefetch: () => {
+            fetchSelectedRepos()
+            fetchAffiliatedRepos()
+        },
     }
 
     const thirdStep = {
@@ -109,8 +138,8 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
                 )}
             </>
         ),
-        isComplete: () => false,
-        prefetch: fetchCloningStatus,
+        isComplete: () => isDoneCloning,
+        prefetch: () => fetchCloningStatus(),
     }
 
     const steps: Step[] = [firstStep, secondStep, thirdStep]
@@ -119,7 +148,15 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
     const isLastStep = currentStepNumber === steps.length
     const currentStep = steps[currentStepNumber - 1]
 
-    const goToNextTab = (): void => {
+    const goToNextTab = async (): Promise<void> => {
+        if (currentStep.onNextButtonClick) {
+            setIsNextStepLoading(true)
+            await currentStep.onNextButtonClick()
+            // TODO: remove this
+            await delay(3000)
+            setIsNextStepLoading(false)
+        }
+
         // currentStepNumber is not zero based, it'll get the next step
         const nextStep = steps[currentStepNumber]
         if (nextStep.prefetch) {
@@ -154,7 +191,6 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
             // forward navigation
 
             // if navigating to the next tab, check if the current step is completed
-
             if (isCurrentStepComplete()) {
                 setCurrentStepNumber(clickedStepTabNumber)
             }
@@ -194,7 +230,7 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
                                 Three quick steps to add your repositories and get searching with Sourcegraph
                             </p>
                             <div className="mt-4 pb-3">
-                                <Steps current={currentStepNumber}>
+                                <Steps initialStep={1}>
                                     <StepList numeric={true}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
@@ -231,19 +267,23 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
                                             />
                                         </StepPanel>
                                     </StepPanels>
+                                    <StepActions>
+                                        <Footer />
+                                    </StepActions>
                                 </Steps>
                             </div>
                             {/* This should be part of step panel */}
-                            {/* <div className="mt-4 pb-3">{currentStep.content}</div> */}
+                            <div className="mt-4 pb-3">{currentStep.content}</div>
                             <div className="mt-4">
-                                <button
+                                <LoaderButton
                                     type="button"
+                                    alwaysShowLabel={true}
+                                    label={isLastStep ? 'Start searching' : 'Continue'}
                                     className="btn btn-primary float-right ml-2"
-                                    disabled={!isCurrentStepComplete()}
+                                    disabled={!!externalServices && externalServices?.length === 0}
+                                    // disabled={!isCurrentStepComplete()}
                                     onClick={isLastStep ? goToSearch : goToNextTab}
-                                >
-                                    {isLastStep ? 'Start searching' : 'Continue'}
-                                </button>
+                                />
 
                                 {!isLastStep && (
                                     <button
@@ -254,29 +294,6 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPage> = ({ authen
                                         Not right now
                                     </button>
                                 )}
-                            </div>
-                            {/* debugging */}
-                            <div className="pt-5">
-                                <hr />
-                                <br />
-                                <p>🚧&nbsp; Debugging navigation&nbsp;🚧</p>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    disabled={currentStepNumber === 1}
-                                    onClick={() => setCurrentStepNumber(currentStepNumber - 1)}
-                                >
-                                    previous tab
-                                </button>
-                                &nbsp;&nbsp;
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    disabled={currentStepNumber === steps.length}
-                                    onClick={goToNextTab}
-                                >
-                                    next tab
-                                </button>
                             </div>
                         </div>
                     }

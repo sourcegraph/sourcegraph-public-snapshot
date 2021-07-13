@@ -74,6 +74,7 @@ const USER_AFFILIATED_REPOS_MIRROR_INFO = gql`
                             updatedAt
                         }
                     }
+                    totalCount
                 }
             }
         }
@@ -96,11 +97,12 @@ export const useRepoCloningStatus = ({
             notCloned: true,
             indexed: true,
             notIndexed: true,
-            first: null,
+            first: 2000,
             query: null,
             externalServiceID: null,
         },
         pollInterval,
+        fetchPolicy: 'no-cache',
     })
 
     const repos = data?.node?.repositories.nodes
@@ -115,7 +117,7 @@ export const useRepoCloningStatus = ({
         }
     }
 
-    const repoLines = repos.reduce((lines, { id, name, mirrorInfo }) => {
+    const repoLines: RepoLine[] = repos.reduce((lines, { id, name, mirrorInfo }) => {
         const { details, progress, cloned } = parseMirrorInfo(id, mirrorInfo)
 
         if (!cloned) {

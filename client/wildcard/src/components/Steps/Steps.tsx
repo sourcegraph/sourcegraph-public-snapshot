@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import React, { JSXElementConstructor, ReactElement, ReactNode, useState } from 'react'
+import React, { useRef, useState, useMemo } from 'react'
 
 import stepsStyles from './Steps.module.scss'
 
@@ -8,7 +8,7 @@ type Color = 'orange' | 'blue' | 'purple'
 
 export interface StepProps {
     borderColor: Color
-    children: ReactNode
+    children: React.ReactNode
 }
 
 interface StepContext {
@@ -17,23 +17,29 @@ interface StepContext {
     initialStep: number
 }
 
-interface StepsContext extends StepContext, StepListContext {}
+interface StepsData {
+    stepIndex: number
+    visited: boolean
+}
+interface StepListContext {
+    current: number
+    steps: StepsData[] | []
+}
+
+interface StepsContext {
+    actions: StepContext
+    steps: StepListContext
+}
 
 interface StepList {
     numeric: boolean
-    children: ReactElement<StepProps> | ReactElement<StepProps, string | JSXElementConstructor<any>>[]
-}
-
-interface StepListContext {
-    stepIndex: number
+    children: React.ReactElement<StepProps> | React.ReactElement<StepProps, string | React.JSXElementConstructor<any>>[]
 }
 
 export interface StepsProps {
-    current: number
-    children: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
     numeric?: boolean
-    onTabClick?: (index: number) => void
-    initialStep?: number
+    children: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
+    initialStep: number
 }
 
 const StepContext = React.createContext<StepContext | null>(null)
@@ -50,7 +56,7 @@ const useStepListContext = (): StepListContext => {
     return context
 }
 
-export const useStepsContext = (): StepContext => {
+const useStepsContext = (): StepContext => {
     const context = React.useContext(StepContext)
     if (!context) {
         throw new Error('Steps compound components cannot be rendered outside the <Steps> component')
@@ -61,21 +67,22 @@ export const useStepsContext = (): StepContext => {
 export const useSteps = (): StepsContext | null => {
     const stepsContext = React.useContext(StepContext)
     const stepListContext = React.useContext(StepListContext)
-
+    console.log(stepsContext, stepListContext)
     if (!stepsContext || !stepListContext) {
         return null
     }
 
-    return { ...stepsContext, ...stepListContext }
+    return { actions: stepsContext, data: stepListContext }
 }
 
 export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor }) => {
     const { setCurrent, current } = useStepsContext()
-    const { stepIndex } = useStepListContext()
+    const context = useStepListContext()
 
-    const disabled = current < stepIndex + 1
-    const active = current === stepIndex + 1
+    console.log('context ma frend', context)
 
+    const disabled = current < context[0].stepIndex + 1
+    const active = current === context[0].stepIndex + 1
     return (
         <li
             role="presentation"
@@ -87,7 +94,7 @@ export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor
                 borderColor && stepsStyles[`color${upperFirst(borderColor)}` as keyof typeof stepsStyles]
             )}
             aria-current={active}
-            onClick={() => setCurrent(stepIndex + 1)}
+            onClick={() => setCurrent(context[0].stepIndex + 1)}
         >
             {children}
         </li>
@@ -96,6 +103,7 @@ export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor
 
 export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, children }) => {
     const [current, setCurrent] = useState(initialStep)
+    // const { current } = useSteps(initialStep, React.Children.toArray(children).length)
 
     if (!children) {
         throw new Error('Steps must include at least one child')
@@ -111,16 +119,26 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, ch
         initialStep,
     }
 
-    return <StepContext.Provider value={value}>{children}</StepContext.Provider>
+    return <StepContext.Provider value={value}>{useMemo(() => children, [children])}</StepContext.Provider>
 }
 
 export const StepList: React.FunctionComponent<StepList> = ({ children, numeric }) => {
+    const { current } = useStepsContext()
+    const data = useRef<StepListContext>({ current: 1, [{stepIndex: 1, visited: true}]})
+    // let data: { stepIndex: number; visited: boolean }[] | [] = []
+
     const element = React.Children.map(children, (child: React.ReactElement<StepProps>, index) => {
         if (child.type !== Step) {
             throw new Error(`${child.type.toString()} element is not <Step> component`)
         }
 
-        return <StepListContext.Provider value={{ stepIndex: index }}>{child}</StepListContext.Provider>
+        const visited = current === index
+
+        // setStepData(previous => [...previous, { stepIndex: index, visited }])
+        console.log(data.current)
+        data.current = { current, steps: [...data.current, { stepIndex: index, visited }] }
+
+        return <StepListContext.Provider value={data.current}>{child}</StepListContext.Provider>
     })
 
     return (
@@ -140,3 +158,5 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
 }
 
 export const StepPanel: React.FunctionComponent = ({ children }) => <>{children}</>
+
+export const StepActions: React.FunctionComponent = ({ children }) => <>{children}</>
