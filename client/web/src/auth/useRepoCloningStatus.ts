@@ -102,6 +102,7 @@ export const useRepoCloningStatus = ({
             externalServiceID: null,
         },
         pollInterval,
+        fetchPolicy: 'no-cache',
     })
 
     const repos = data?.node?.repositories.nodes
@@ -116,7 +117,7 @@ export const useRepoCloningStatus = ({
         }
     }
 
-    const repoLines = repos.reduce((lines, { id, name, mirrorInfo }) => {
+    const repoLines: RepoLine[] = repos.reduce((lines, { id, name, mirrorInfo }) => {
         const { details, progress, cloned } = parseMirrorInfo(id, mirrorInfo)
 
         if (!cloned) {

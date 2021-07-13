@@ -1,19 +1,14 @@
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useState /* , useRef*/, forwardRef, useImperativeHandle } from 'react'
-import { RouteComponentProps /* useHistory*/ } from 'react-router'
-// import { Subscription } from 'rxjs'
+import React, { useCallback, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
+import { RouteComponentProps } from 'react-router'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-// import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError /* ErrorLike, isErrorLike*/ } from '@sourcegraph/shared/src/util/errors'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
-import { /* ALLOW_NAVIGATION,*/ AwayPrompt } from '../../../components/AwayPrompt'
+import { AwayPrompt } from '../../../components/AwayPrompt'
 import { setExternalServiceRepos } from '../../../components/externalServices/backend'
-// import { LoaderButton } from '../../../components/LoaderButton'
 import {
     ExternalServiceKind,
     Maybe,
@@ -29,7 +24,7 @@ import { externalServiceUserModeFromTags } from '../cloud-ga'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
 export interface AffiliatedReposReference {
-    submit: () => Promise<void>
+    submit: () => Promise<void[] | void>
 }
 
 interface authenticatedUser {
@@ -43,9 +38,9 @@ interface Props
         TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
     authenticatedUser: authenticatedUser
-    repos: AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']
-    selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes']
-    externalServices: ListExternalServiceFields[]
+    repos: AffiliatedRepositoriesResult['affiliatedRepositories']['nodes'] | undefined
+    selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | undefined
+    externalServices: ListExternalServiceFields[] | undefined
     onSelection: (changed: boolean) => void
 }
 
@@ -70,7 +65,7 @@ interface GitLabConfig {
     url: string
 }
 
-const PER_PAGE = 25
+const PER_PAGE = 20
 
 // project queries that are used when user syncs all repos from a code host
 const GITLAB_SYNC_ALL_PROJECT_QUERY = 'projects?membership=true&archived=no'
@@ -111,7 +106,6 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
         // set up state hooks
         const [isRedesignEnabled] = useRedesignToggle()
 
-        // const history = useHistory()
         const [currentPage, setPage] = useState(1)
         const [repoState, setRepoState] = useState(initialRepoState)
         const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
@@ -120,142 +114,122 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
         const [query, setQuery] = useState('')
         const [codeHostFilter, setCodeHostFilter] = useState('')
         const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
-        // const externalServiceSubscription = useRef<Subscription>()
-
-        // since we're making many different GraphQL requests - track affiliate and
-        // manually added public repo errors separately
-        // const [affiliateRepoProblems, setAffiliateRepoProblems] = useState<affiliateRepoProblemType>()
 
         const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
 
         useEffect(() => {
-            const codeHostsHaveSyncAllQuery = []
+            if (externalServices && affiliatedRepos) {
+                const codeHostsHaveSyncAllQuery = []
 
-            // if external services may return code hosts with errors or warnings -
-            // we can't safely continue
-            const codeHostProblems = []
-
-            for (const host of externalServices) {
-                let hostHasProblems = false
-
-                if (host.lastSyncError) {
-                    hostHasProblems = true
-                    codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
-                }
-
-                if (host.warning) {
-                    hostHasProblems = true
-                    codeHostProblems.push(asError(`${host.displayName} warning: ${host.warning}`))
-                }
-
-                if (hostHasProblems) {
-                    // skip this code hots
-                    continue
-                }
-
-                const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
-                switch (host.kind) {
-                    case ExternalServiceKind.GITLAB: {
-                        const gitLabCfg = cfg as GitLabConfig
-
-                        if (Array.isArray(gitLabCfg.projectQuery)) {
-                            codeHostsHaveSyncAllQuery.push(
-                                gitLabCfg.projectQuery.includes(GITLAB_SYNC_ALL_PROJECT_QUERY)
-                            )
-                        }
-
-                        break
+                for (const host of externalServices) {
+                    if (host.lastSyncError || host.warning) {
+                        continue
                     }
 
-                    case ExternalServiceKind.GITHUB: {
-                        const gitHubCfg = cfg as GitHubConfig
+                    const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
+                    switch (host.kind) {
+                        case ExternalServiceKind.GITLAB: {
+                            const gitLabCfg = cfg as GitLabConfig
 
-                        if (Array.isArray(gitHubCfg.repositoryQuery)) {
-                            codeHostsHaveSyncAllQuery.push(
-                                gitHubCfg.repositoryQuery.includes(GITHUB_SYNC_ALL_PROJECT_QUERY)
-                            )
+                            if (Array.isArray(gitLabCfg.projectQuery)) {
+                                codeHostsHaveSyncAllQuery.push(
+                                    gitLabCfg.projectQuery.includes(GITLAB_SYNC_ALL_PROJECT_QUERY)
+                                )
+                            }
+
+                            break
                         }
 
-                        break
+                        case ExternalServiceKind.GITHUB: {
+                            const gitHubCfg = cfg as GitHubConfig
+
+                            if (Array.isArray(gitHubCfg.repositoryQuery)) {
+                                codeHostsHaveSyncAllQuery.push(
+                                    gitHubCfg.repositoryQuery.includes(GITHUB_SYNC_ALL_PROJECT_QUERY)
+                                )
+                            }
+
+                            break
+                        }
                     }
                 }
+
+                const selectedAffiliatedRepos = new Map<string, Repo>()
+
+                const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
+                    const foundInSelected = selectedRepos.find(
+                        ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
+                            // selected repo names formatted: code-host/owner/repository
+                            const selectedRepoName = name.slice(name.indexOf('/') + 1)
+
+                            return (
+                                selectedRepoName === affiliatedRepo.name &&
+                                selectedRepoServiceType === affiliatedRepo.codeHost?.kind.toLocaleLowerCase()
+                            )
+                        }
+                    )
+
+                    if (foundInSelected) {
+                        // save off only selected repos
+                        selectedAffiliatedRepos.set(getRepoServiceAndName(affiliatedRepo), affiliatedRepo)
+
+                        // add mirror info object where it exists - will be used for filters
+                        return { ...affiliatedRepo, mirrorInfo: foundInSelected.mirrorInfo }
+                    }
+
+                    return affiliatedRepo
+                })
+
+                // sort affiliated repos with already selected repos at the top
+                affiliatedReposWithMirrorInfo.sort((repoA, repoB): number => {
+                    const isRepoASelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoA))
+                    const isRepoBSelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoB))
+
+                    if (!isRepoASelected && isRepoBSelected) {
+                        return 1
+                    }
+
+                    if (isRepoASelected && !isRepoBSelected) {
+                        return -1
+                    }
+
+                    return 0
+                })
+
+                // safe off initial selection state
+                setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedAffiliatedRepos.keys()])
+
+                /**
+                 * 1. if every code host has a project query to sync all repos or the
+                 * number of affiliated repos equals to the number of selected repos -
+                 * set radio to 'all'
+                 * 2. if only some repos were selected - set radio to 'selected'
+                 * 3. if no repos selected - empty state
+                 */
+
+                const radioSelectOption =
+                    ALLOW_SYNC_ALL &&
+                    ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
+                        codeHostsHaveSyncAllQuery.every(Boolean)) ||
+                        affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
+                        ? 'all'
+                        : selectedAffiliatedRepos.size > 0
+                        ? 'selected'
+                        : ''
+
+                // set sorted repos and mark as loaded
+                setRepoState(previousRepoState => ({
+                    ...previousRepoState,
+                    repos: affiliatedReposWithMirrorInfo,
+                    loaded: true,
+                }))
+
+                setSelectionState({
+                    repos: selectedAffiliatedRepos,
+                    radio: radioSelectOption,
+                    loaded: true,
+                })
             }
-
-            const selectedAffiliatedRepos = new Map<string, Repo>()
-
-            const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
-                const foundInSelected = selectedRepos.find(
-                    ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
-                        // selected repo names formatted: code-host/owner/repository
-                        const selectedRepoName = name.slice(name.indexOf('/') + 1)
-
-                        return (
-                            selectedRepoName === affiliatedRepo.name &&
-                            selectedRepoServiceType === affiliatedRepo.codeHost?.kind.toLocaleLowerCase()
-                        )
-                    }
-                )
-
-                if (foundInSelected) {
-                    // save off only selected repos
-                    selectedAffiliatedRepos.set(getRepoServiceAndName(affiliatedRepo), affiliatedRepo)
-
-                    // add mirror info object where it exists - will be used for filters
-                    return { ...affiliatedRepo, mirrorInfo: foundInSelected.mirrorInfo }
-                }
-
-                return affiliatedRepo
-            })
-
-            // sort affiliated repos with already selected repos at the top
-            affiliatedReposWithMirrorInfo.sort((repoA, repoB): number => {
-                const isRepoASelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoA))
-                const isRepoBSelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoB))
-
-                if (!isRepoASelected && isRepoBSelected) {
-                    return 1
-                }
-
-                if (isRepoASelected && !isRepoBSelected) {
-                    return -1
-                }
-
-                return 0
-            })
-
-            // safe off initial selection state
-            setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedAffiliatedRepos.keys()])
-
-            /**
-             * 1. if every code host has a project query to sync all repos or the
-             * number of affiliated repos equals to the number of selected repos -
-             * set radio to 'all'
-             * 2. if only some repos were selected - set radio to 'selected'
-             * 3. if no repos selected - empty state
-             */
-
-            const radioSelectOption =
-                ALLOW_SYNC_ALL &&
-                ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
-                    codeHostsHaveSyncAllQuery.every(Boolean)) ||
-                    affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
-                    ? 'all'
-                    : selectedAffiliatedRepos.size > 0
-                    ? 'selected'
-                    : ''
-
-            // set sorted repos and mark as loaded
-            setRepoState(previousRepoState => ({
-                ...previousRepoState,
-                repos: affiliatedReposWithMirrorInfo,
-                loaded: true,
-            }))
-
-            setSelectionState({
-                repos: selectedAffiliatedRepos,
-                radio: radioSelectOption,
-                loaded: true,
-            })
         }, [externalServices, affiliatedRepos, selectedRepos, ALLOW_SYNC_ALL])
 
         // select repos by code host and query
@@ -296,48 +270,36 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
 
         // save changes and update code hosts
         useImperativeHandle(reference, () => ({
-            submit: async (): Promise<void> => {
-                eventLogger.log('UserManageRepositoriesSave')
+            submit: async (): Promise<void[] | void> => {
+                if (externalServices) {
+                    eventLogger.log('UserManageRepositoriesSave')
 
-                const codeHostRepoPromises = []
+                    const codeHostRepoPromises = []
 
-                for (const host of externalServices) {
-                    const repos: string[] = []
-                    for (const repo of selectionState.repos.values()) {
-                        if (repo.codeHost?.id !== host.id) {
-                            continue
+                    for (const host of externalServices) {
+                        const repos: string[] = []
+                        for (const repo of selectionState.repos.values()) {
+                            if (repo.codeHost?.id !== host.id) {
+                                continue
+                            }
+                            repos.push(repo.name)
                         }
-                        repos.push(repo.name)
+
+                        codeHostRepoPromises.push(
+                            setExternalServiceRepos({
+                                id: host.id,
+                                allRepos: selectionState.radio === 'all',
+                                repos: (selectionState.radio === 'selected' && repos) || null,
+                            })
+                        )
                     }
 
-                    codeHostRepoPromises.push(
-                        setExternalServiceRepos({
-                            id: host.id,
-                            allRepos: selectionState.radio === 'all',
-                            repos: (selectionState.radio === 'selected' && repos) || null,
-                        })
-                    )
+                    return Promise.all(codeHostRepoPromises)
                 }
 
-                try {
-                    await Promise.all(codeHostRepoPromises)
-                } catch (error) {
-                    setAffiliateRepoProblems(asError(error))
-                    //  setFetchingRepos(undefined)
-                    return
-                }
-
-                // location state is used here to prevent AwayPrompt from blocking
-                // return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
+                return Promise.resolve()
             },
         }))
-
-        // useEffect(
-        //     () => () => {
-        //         externalServiceSubscription.current?.unsubscribe()
-        //     },
-        //     []
-        // )
 
         const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
             setSelectionState({
@@ -399,10 +361,8 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
             </>
         )
 
-        const preventSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => event.preventDefault(), [])
-
         const filterControls: JSX.Element = (
-            <Form onSubmit={preventSubmit} className="w-100 d-inline-flex justify-content-between flex-row mt-3">
+            <div className="w-100 d-inline-flex justify-content-between flex-row mt-3">
                 <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                     <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
                     <select
@@ -412,7 +372,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                         onChange={event => setCodeHostFilter(event.target.value)}
                     >
                         <option key="any" value="" label="Any" />
-                        {externalServices.map(value => (
+                        {externalServices?.map(value => (
                             <option key={value.id} value={value.id} label={value.displayName} />
                         ))}
                     </select>
@@ -420,7 +380,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                 <input
                     className="form-control user-settings-repos__filter-input"
                     type="search"
-                    placeholder="Search repositories..."
+                    placeholder="Search..."
                     name="query"
                     autoComplete="off"
                     autoCorrect="off"
@@ -430,7 +390,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                         setQuery(event.target.value)
                     }}
                 />
-            </Form>
+            </div>
         )
 
         const onRepoClicked = useCallback(
@@ -518,7 +478,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
         )
 
         const modeSelectShimmer: JSX.Element = (
-            <div className="container mt-4">
+            <div className="container">
                 <div className="mt-2 row">
                     <div className="user-settings-repos__shimmer-circle mr-2" />
                     <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
@@ -539,8 +499,7 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                     <ul className="list-group">
                         <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
                             <div className={classNames(!isRedesignEnabled && 'p-4')}>
-                                {/* display radio buttons shimmer only when user has code hosts */}
-                                {hasCodeHosts && !selectionState.loaded && modeSelectShimmer}
+                                {!affiliatedRepos && modeSelectShimmer}
 
                                 {/* display type of repo sync radio buttons */}
                                 {hasCodeHosts && selectionState.loaded && modeSelect}

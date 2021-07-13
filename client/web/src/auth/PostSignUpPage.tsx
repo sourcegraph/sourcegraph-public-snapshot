@@ -4,9 +4,10 @@ import { useLocation, useHistory } from 'react-router'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { Steps, Step, StepList } from '@sourcegraph/wildcard/src/components/Steps'
+import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
+import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
+import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
 
-import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { UserAreaUserFields } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
@@ -24,7 +25,6 @@ interface PostSignUpPage {
     authenticatedUser: UserAreaUserFields
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
     telemetryService: TelemetryService
-    routingPrefix: string
 }
 
 interface Step {
@@ -34,16 +34,18 @@ interface Step {
     onNextButtonClick?: () => Promise<void>
 }
 
+const delay = (milliseconds: number): Promise<void> => new Promise(resolve => setTimeout(resolve, milliseconds))
+
 export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     authenticatedUser: user,
     context,
-    routingPrefix,
     telemetryService,
 }) => {
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
+    const [isNextStepLoading, setIsNextStepLoading] = useState(false)
     const location = useLocation()
     const history = useHistory()
-    const [didSelectAffiliatedRepos, setDidSelectAffiliatedRepos] = useState(false)
+    const [_didSelectAffiliatedRepos, setDidSelectAffiliatedRepos] = useState(false)
     const AffiliatedReposReference = useRef<AffiliatedReposReference>()
 
     const {
@@ -89,7 +91,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             </>
         ),
         // step is considered complete when user has at least one external service connected.
-        isComplete: (): boolean => !!externalServices && externalServices?.length > 0,
+        // isComplete: (): boolean => !!externalServices && externalServices?.length > 0,
+        isComplete: () => true,
     }
 
     const secondStep = {
@@ -103,31 +106,26 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             Sourcegraph. We’ll sync and index these repositories so you can search your code all in one
                             place.
                         </p>
-                        {externalServices && selectedRepos && affiliatedRepos ? (
-                            <SelectAffiliatedRepos
-                                ref={AffiliatedReposReference}
-                                onSelection={setDidSelectAffiliatedRepos}
-                                repos={affiliatedRepos}
-                                externalServices={externalServices}
-                                selectedRepos={selectedRepos}
-                                authenticatedUser={user}
-                                telemetryService={telemetryService}
-                                routingPrefix={routingPrefix}
-                            />
-                        ) : (
-                            <h1>Loading...</h1>
-                        )}
+                        <SelectAffiliatedRepos
+                            ref={AffiliatedReposReference}
+                            onSelection={setDidSelectAffiliatedRepos}
+                            repos={affiliatedRepos}
+                            externalServices={externalServices}
+                            selectedRepos={selectedRepos}
+                            authenticatedUser={user}
+                            telemetryService={telemetryService}
+                        />
                     </>
                 )}
             </>
         ),
-        isComplete: () => didSelectAffiliatedRepos,
+        isComplete: () => true /* didSelectAffiliatedRepos */,
         onNextButtonClick: async () => {
             await AffiliatedReposReference.current?.submit()
         },
         prefetch: () => {
-            fetchAffiliatedRepos()
             fetchSelectedRepos()
+            fetchAffiliatedRepos()
         },
     }
 
@@ -144,7 +142,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             </>
         ),
         isComplete: () => isDoneCloning,
-        prefetch: fetchCloningStatus,
+        prefetch: () => fetchCloningStatus(),
     }
 
     const steps: Step[] = [firstStep, secondStep, thirdStep]
@@ -155,7 +153,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
     const goToNextTab = async (): Promise<void> => {
         if (currentStep.onNextButtonClick) {
+            setIsNextStepLoading(true)
             await currentStep.onNextButtonClick()
+            // TODO: remove this
+            await delay(3000)
+            setIsNextStepLoading(false)
         }
 
         // currentStepNumber is not zero based, it'll get the next step
@@ -192,7 +194,6 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             // forward navigation
 
             // if navigating to the next tab, check if the current step is completed
-
             if (isCurrentStepComplete()) {
                 setCurrentStepNumber(clickedStepTabNumber)
             }
@@ -219,7 +220,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                 />
             </LinkOrSpan>
 
-            <div className="signin-signup-page post-signup-page">
+            <div className="signin-signup-page post-signup-page mb-5">
                 <PageTitle title="Welcome" />
 
                 <HeroPage
@@ -233,11 +234,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             </p>
                             <div className="mt-4 pb-3">
                                 <Steps current={currentStepNumber} numbered={true} onTabClick={onStepTabClick}>
-                                    <StepList>
-                                        <Step title="Connect with code hosts" borderColor="purple" />
-                                        <Step title="Add repositories" borderColor="blue" />
-                                        <Step title="Start searching" borderColor="orange" />
-                                    </StepList>
+                                    {/* <StepList> */}
+                                    <Step title="Connect with code hosts" borderColor="purple" />
+                                    <Step title="Add repositories" borderColor="blue" />
+                                    <Step title="Start searching" borderColor="orange" />
+                                    {/* </StepList> */}
                                     {/* <StepPanels> */}
                                     {/* <StepPanel></StepPanel> */}
                                     {/* </StepPanels> */}
@@ -246,14 +247,16 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             {/* This should be part of step panel */}
                             <div className="mt-4 pb-3">{currentStep.content}</div>
                             <div className="mt-4">
-                                <button
+                                <LoaderButton
                                     type="button"
+                                    alwaysShowLabel={true}
+                                    label={isLastStep ? 'Start searching' : 'Continue'}
                                     className="btn btn-primary float-right ml-2"
-                                    disabled={!isCurrentStepComplete()}
+                                    spinnerClassName="mr-2"
+                                    disabled={!isCurrentStepComplete() || isNextStepLoading}
+                                    loading={isNextStepLoading}
                                     onClick={isLastStep ? goToSearch : goToNextTab}
-                                >
-                                    {isLastStep ? 'Start searching' : 'Continue'}
-                                </button>
+                                />
 
                                 {!isLastStep && (
                                     <button
