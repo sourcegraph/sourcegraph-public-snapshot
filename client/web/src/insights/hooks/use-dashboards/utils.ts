@@ -1,8 +1,7 @@
-import { IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings } from '../../../../../../schema/settings.schema'
+import { Settings } from '../../../schema/settings.schema'
 import {
     INSIGHTS_DASHBOARDS_SETTINGS_KEY,
     InsightsDashboardType,
@@ -10,23 +9,14 @@ import {
     isInsightSettingKey,
     SettingsBasedInsightDashboard,
     InsightDashboardOwner,
-} from '../../../../../core/types'
-
-/**
- * Currently we support only two types of subject that can have insights dashboard.
- */
-type SupportedSubject = IUser | IOrg
-
-const SUPPORTED_TYPES_OF_SUBJECT = new Set<SettingsSubject['__typename']>(['User', 'Org'])
-
-export const isSubjectSupported = (subject: SettingsSubject): subject is SupportedSubject =>
-    SUPPORTED_TYPES_OF_SUBJECT.has(subject.__typename)
+} from '../../core/types'
+import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects'
 
 /**
  * Returns all subject dashboards and one special (built-in) dashboard that includes
  * all insights from subject settings.
  */
-export function getSubjectDashboards(subject: SupportedSubject, settings: Settings): InsightDashboard[] {
+export function getSubjectDashboards(subject: SupportedInsightSubject, settings: Settings): InsightDashboard[] {
     const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
 
     const subjectBuiltInDashboard: InsightDashboard = {
@@ -58,7 +48,7 @@ export function getSubjectDashboardByID(
     settings: Settings,
     dashboardKey: string
 ): SettingsBasedInsightDashboard | undefined {
-    if (!isSubjectSupported(subject)) {
+    if (!isSubjectInsightSupported(subject)) {
         return undefined
     }
 
@@ -89,7 +79,7 @@ interface DashboardOwnerInfo extends InsightDashboardOwner {
  *
  * @param subject - subject settings (User, Organization, Site, Client)
  */
-function getDashboardOwnerInfo(subject: SupportedSubject): DashboardOwnerInfo {
+export function getDashboardOwnerInfo(subject: SupportedInsightSubject): DashboardOwnerInfo {
     switch (subject.__typename) {
         case 'Org':
             return {

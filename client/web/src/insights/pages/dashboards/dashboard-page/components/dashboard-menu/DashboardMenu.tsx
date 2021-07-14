@@ -12,6 +12,7 @@ export enum DashboardMenuAction {
     CopyLink,
     Delete,
     Configure,
+    AddRemoveInsights,
 }
 
 export interface DashboardMenuProps {
@@ -32,6 +33,15 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
             </MenuButton>
 
             <MenuList className={classnames(styles.menuList, 'dropdown-menu')}>
+                <MenuItem
+                    as="button"
+                    disabled={!isConfigurable}
+                    className={classnames(styles.menuItem, 'btn btn-outline')}
+                    onSelect={() => onSelect(DashboardMenuAction.AddRemoveInsights)}
+                >
+                    Add insights
+                </MenuItem>
+
                 <MenuItem
                     as="button"
                     disabled={!isConfigurable}

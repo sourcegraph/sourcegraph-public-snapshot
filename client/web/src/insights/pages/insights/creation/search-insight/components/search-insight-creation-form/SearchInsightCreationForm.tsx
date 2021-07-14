@@ -9,11 +9,8 @@ import { FormRadioInput } from '../../../../../../components/form/form-radio-inp
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
-import {
-    getVisibilityValue,
-    Organization,
-    VisibilityPicker,
-} from '../../../../../../components/visibility-picker/VisibilityPicker'
+import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
+import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -35,7 +32,7 @@ interface CreationSearchInsightFormProps {
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
 
     visibility: useFieldAPI<CreateInsightFormFields['visibility']>
-    organizations: Organization[]
+    subjects: SupportedInsightSubject[]
 
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
@@ -76,7 +73,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         title,
         repositories,
         visibility,
-        organizations,
+        subjects,
         series,
         stepValue,
         step,
@@ -156,10 +153,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 />
 
                 <VisibilityPicker
-                    organizations={organizations}
+                    subjects={subjects}
                     value={visibility.input.value}
                     labelClassName={styles.creationInsightFormGroupLabel}
-                    onChange={event => visibility.input.onChange(getVisibilityValue(event))}
+                    onChange={visibility.input.onChange}
                 />
 
                 <FormGroup

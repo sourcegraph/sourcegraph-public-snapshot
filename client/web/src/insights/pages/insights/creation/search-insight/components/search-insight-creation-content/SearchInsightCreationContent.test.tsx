@@ -7,8 +7,17 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { FORM_ERROR } from '../../../../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../../../core/backend/insights-api'
+import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
+
+const USER_TEST_SUBJECT: SupportedInsightSubject = {
+    __typename: 'User' as const,
+    id: 'user_test_id',
+    username: 'testusername',
+    displayName: 'test',
+    viewerCanAdminister: true,
+}
 
 describe('CreateInsightContent', () => {
     const mockAPI = createMockInsightAPI({
@@ -18,7 +27,7 @@ describe('CreateInsightContent', () => {
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
         render(
             <InsightsApiContext.Provider value={mockAPI}>
-                <SearchInsightCreationContent {...props} />
+                <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT]} />
             </InsightsApiContext.Provider>
         )
     const onSubmitMock = sinon.spy()

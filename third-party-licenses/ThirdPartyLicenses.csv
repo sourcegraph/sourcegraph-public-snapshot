@@ -7,28 +7,28 @@ Yarn,@popperjs/core,2.9.2,MIT,Unknown,Approved
 Yarn,@reach/accordion,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/auto-id,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/auto-id,0.13.0,MIT,Unknown,Approved
-Yarn,@reach/auto-id,0.15.0,MIT,Unknown,Approved
-Yarn,@reach/combobox,0.15.1,MIT,Unknown,Approved
+Yarn,@reach/auto-id,0.15.2,MIT,Unknown,Approved
+Yarn,@reach/combobox,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/descendants,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/descendants,0.13.0,MIT,Unknown,Approved
-Yarn,@reach/descendants,0.15.0,MIT,Unknown,Approved
+Yarn,@reach/descendants,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/dialog,0.11.2,MIT,Unknown,Approved
 Yarn,@reach/listbox,0.10.1,MIT,Unknown,Approved
 Yarn,@reach/machine,0.10.1,MIT,Unknown,Approved
-Yarn,@reach/menu-button,0.10.2,MIT,Unknown,Approved
+Yarn,@reach/menu-button,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/observe-rect,1.2.0,MIT,Unknown,Approved
 Yarn,@reach/popover,0.10.2,MIT,Unknown,Approved
-Yarn,@reach/popover,0.15.0,MIT,Unknown,Approved
+Yarn,@reach/popover,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/portal,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/portal,0.11.2,MIT,Unknown,Approved
-Yarn,@reach/portal,0.15.0,MIT,Unknown,Approved
+Yarn,@reach/portal,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/rect,0.10.2,MIT,Unknown,Approved
-Yarn,@reach/rect,0.15.0,MIT,Unknown,Approved
+Yarn,@reach/rect,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/tabs,0.13.0,MIT,Unknown,Approved
 Yarn,@reach/utils,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/utils,0.11.2,MIT,Unknown,Approved
 Yarn,@reach/utils,0.13.0,MIT,Unknown,Approved
-Yarn,@reach/utils,0.15.0,MIT,Unknown,Approved
+Yarn,@reach/utils,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/visually-hidden,0.15.2,MIT,Unknown,Approved
 Yarn,@sentry/browser,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/browser,Approved
 Yarn,@sentry/core,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/core,Approved
