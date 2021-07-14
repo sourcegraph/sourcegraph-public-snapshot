@@ -2,6 +2,10 @@ import { uniq } from 'lodash'
 
 import { Literal } from './token'
 
+/**
+ * List of languages that is shown initially when the `lang:` filter doesn't
+ * have a value yet.
+ */
 export const POPULAR_LANGUAGES: string[] = [
     'Assembly',
     'Bash',
@@ -43,7 +47,9 @@ export const POPULAR_LANGUAGES: string[] = [
 ]
 
 /**
- * A list of all supported languages. It was extracted from
+ * A list of all supported languages, ranking the popular languages higher by
+ * including them first.
+ * The whole list was extracted from
  * https://github.com/go-enry/go-enry/blob/master/data/alias.go via
  *
    curl "https://raw.githubusercontent.com/go-enry/go-enry/$(grep go-enry go.mod|cut -d ' ' -f 2)/data/alias.go" \
