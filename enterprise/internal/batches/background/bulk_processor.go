@@ -115,11 +115,16 @@ func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) er
 		return nil
 	}
 
+	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
+
+	// We do two `UPDATE` queries here: first we update all of the changesets
+	// columns to refelct the changes made here in the bulkProcessor. Then,
+	// with `EnqueueChangeset`, we do a second UPDATE that only updates the
+	// worker/reconciler-related columns.
 	if err := b.tx.UpdateChangeset(ctx, b.ch); err != nil {
 		return err
 	}
 
-	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
 	return b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), "")
 }
 

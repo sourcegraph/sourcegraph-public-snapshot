@@ -698,7 +698,9 @@ RETURNING
   %s
 `
 
-// UpdateChangesetCodeHostState updates the given Changeset state columns.
+// UpdateChangesetCodeHostState updates only the columns of the given Changeset
+// that relate to the state of the changeset on the code host, e.g.
+// external_branch, external_state, etc.
 func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) error {
 	cs.UpdatedAt = s.now()
 
@@ -792,7 +794,9 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 // applying the new batch spec.
 var CanceledChangesetFailureMessage = "Canceled"
 
-// This needs to loop until there are no processing rows anymore.
+// CancelQueuedBatchChangeChangesets cancels all scheduled, queued, or errored
+// changesets that are owned by the given batch change. It blocks until all
+// currently processing changesets have finished executing.
 func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChangeID int64) error {
 	// Just for safety, so we don't end up with stray cancel requests bombarding
 	// the DB with 10 requests a second forever:
@@ -812,12 +816,13 @@ func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChan
 			btypes.ReconcilerStateErrored.ToDB(),
 			btypes.ReconcilerStateFailed.ToDB(),
 			CanceledChangesetFailureMessage,
-			btypes.ReconcilerStateProcessing.ToDB(),
 			batchChangeID,
+			btypes.ReconcilerStateProcessing.ToDB(),
 		)
-		processing, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, q))
+
+		processing, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "canceling queued batch change changesets failed")
 		}
 		if !ok || processing == 0 {
 			break
@@ -828,7 +833,7 @@ func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChan
 }
 
 const cancelQueuedBatchChangeChangesetsFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:CancelQueuedBatchChangeChangesets
+-- source: enterprise/internal/batches/store/changesets.go:CancelQueuedBatchChangeChangesets
 WITH changeset_ids AS (
   SELECT id FROM changesets
   WHERE
@@ -848,7 +853,7 @@ SELECT
 	COUNT(id) AS remaining_processing
 FROM changesets
 WHERE
-	owned_by_batch_change_id = %s
+	owned_by_batch_change_id = %d
 	AND
 	reconciler_state = %s
 `
@@ -880,7 +885,7 @@ func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int6
 			btypes.ReconcilerStateProcessing.ToDB(),
 			btypes.ReconcilerStateProcessing.ToDB(),
 		)
-		processing, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, q))
+		processing, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 		if err != nil {
 			return err
 		}
@@ -922,7 +927,7 @@ updated_records AS (
 	WHERE
 		changesets.id IN (SELECT id FROM all_matching WHERE NOT all_matching.reconciler_state = %s)
 )
-SELECT COUNT(id) FROM all_matching WHERE NOT all_matching.reconciler_state = %s
+SELECT COUNT(id) FROM all_matching WHERE all_matching.reconciler_state = %s
 `
 
 func ScanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
