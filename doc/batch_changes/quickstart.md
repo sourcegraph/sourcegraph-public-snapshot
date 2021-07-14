@@ -28,7 +28,6 @@ In order to create batch changes we need to [install the Sourcegraph CLI](../cli
     curl -L https://YOUR-SOURCEGRAPH-INSTANCE/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
     chmod +x /usr/local/bin/src
     ```
-    **Windows**: see ["Sourcegraph CLI for Windows"](../cli/explanations/windows.md)
 2. Authenticate `src` with your Sourcegraph instance by running **`src login`** and following the instructions:
 
     ```
