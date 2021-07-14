@@ -10,7 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { HeroPage } from '../../../../../../components/HeroPage'
 import { Settings } from '../../../../../../schema/settings.schema'
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { useDashboards } from '../../../../../hooks/use-dashboards/use-dashboards'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
@@ -20,6 +20,9 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
 import styles from './DashboardsContent.module.scss'
+import { useCopyURLHandler } from './hooks/use-copy-url-handler'
+import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
+import { findDashboardByURLId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps
@@ -46,36 +49,9 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    const currentDashboard = dashboards.find(dashboard => {
-        if (isVirtualDashboard(dashboard)) {
-            return (
-                dashboard.id === dashboardID.toLowerCase() || dashboard.type.toLowerCase() === dashboardID.toLowerCase()
-            )
-        }
-
-        return (
-            dashboard.id === dashboardID ||
-            dashboard.title.toLowerCase() === dashboardID?.toLowerCase() ||
-            (isSettingsBasedInsightsDashboard(dashboard) &&
-                dashboard.settingsKey.toLowerCase() === dashboardID?.toLowerCase())
-        )
-    })
-
-    const handleDashboardSelect = (dashboard: InsightDashboard): void => {
-        if (isVirtualDashboard(dashboard)) {
-            history.push(`/insights/dashboards/${dashboard.type}`)
-
-            return
-        }
-
-        if (isSettingsBasedInsightsDashboard(dashboard)) {
-            history.push(`/insights/dashboards/${dashboard.settingsKey}`)
-
-            return
-        }
-
-        history.push(`/insights/dashboards/${dashboard.id}`)
-    }
+    const currentDashboard = findDashboardByURLId(dashboards, dashboardID)
+    const handleDashboardSelect = useDashboardSelectHandler()
+    const [copyURL, isCopied] = useCopyURLHandler()
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -83,23 +59,20 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 if (!isVirtualDashboard(currentDashboard) && isSettingsBasedInsightsDashboard(currentDashboard)) {
                     history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
                 }
-
                 return
             }
-
             case DashboardMenuAction.AddRemoveInsights: {
                 setAddInsightsState(true)
-
                 return
             }
-
             case DashboardMenuAction.Delete: {
                 setDeleteDashboardActive(true)
-
                 return
             }
-
-            // Implement other actions
+            case DashboardMenuAction.CopyLink: {
+                copyURL()
+                return
+            }
         }
     }
 
@@ -115,7 +88,12 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     className={classnames(styles.dashboardSelect, 'mr-2')}
                 />
 
-                <DashboardMenu dashboard={currentDashboard} settingsCascade={settingsCascade} onSelect={handleSelect} />
+                <DashboardMenu
+                    tooltipText={isCopied ? 'Copied!' : undefined}
+                    dashboard={currentDashboard}
+                    settingsCascade={settingsCascade}
+                    onSelect={handleSelect}
+                />
             </section>
 
             <hr className="mt-2 mb-3" />
