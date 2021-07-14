@@ -2,7 +2,12 @@ import React, { ChangeEvent } from 'react'
 
 import { SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
-import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../core/types/subjects'
+import {
+    isGlobalSubject,
+    isOrganizationSubject,
+    isUserSubject,
+    SupportedInsightSubject,
+} from '../../core/types/subjects'
 import { FormGroup } from '../form/form-group/FormGroup'
 import { FormRadioInput } from '../form/form-radio-input/FormRadioInput'
 
@@ -40,6 +45,9 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
 
     const userSubject = getUserSubject(subjects)
     const organizationSubjects = subjects.filter(isOrganizationSubject)
+    const globalSubject = subjects.find(isGlobalSubject)!
+
+    const canGlobalSubjectBeEdited = globalSubject.allowSiteSettingsEdits && globalSubject.viewerCanAdminister
 
     return (
         <FormGroup
@@ -84,6 +92,17 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                     labelTooltipText="Create or join the Organization to share code insights with others!"
                 />
             )}
+
+            <FormRadioInput
+                name="visibility"
+                value={globalSubject.id}
+                title="Global"
+                description="visible to everyone on your Sourcegraph instance"
+                checked={value === globalSubject.id}
+                disabled={!canGlobalSubjectBeEdited}
+                className="mr-3"
+                onChange={handleChange}
+            />
         </FormGroup>
     )
 }

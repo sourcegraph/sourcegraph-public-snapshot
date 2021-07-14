@@ -123,16 +123,24 @@ export function getUpdatedSubjectSettings(props: EditInsightProps): Record<strin
     }
 
     const editOperations = [
-        ...updateInsightSettings({ oldInsight, newInsight, settingsCascade }),
-        ...updateDashboardInsightOwnership({ oldInsight, newInsight, settingsCascade }),
-        ...updateInsightIdInDashboardIds({ oldInsight, newInsight, settingsCascade }),
-    ]
+        updateInsightSettings,
+        updateDashboardInsightOwnership,
+        updateInsightIdInDashboardIds,
+    ].reduce<SettingsOperation[]>(
+        (operations, transformer: SettingsTransformer) => [
+            ...operations,
+            ...transformer({ oldInsight, newInsight, settingsCascade }, operations),
+        ],
+        []
+    )
 
     // Group all operations by subject id to calculate list of subject for updates
     return groupBy(editOperations, operation => operation.subjectId)
 }
 
-export function updateInsightSettings(props: EditInsightProps): SettingsOperation[] {
+export type SettingsTransformer = (props: EditInsightProps, operations: SettingsOperation[]) => SettingsOperation[]
+
+export const updateInsightSettings: SettingsTransformer = props => {
     const { oldInsight, newInsight } = props
 
     const removeOldInsightOperation: RemoveInsight = {
@@ -150,7 +158,7 @@ export function updateInsightSettings(props: EditInsightProps): SettingsOperatio
     return [removeOldInsightOperation, addNewInsightOperation]
 }
 
-export function updateDashboardInsightOwnership(props: EditInsightProps): SettingsOperation[] {
+export const updateDashboardInsightOwnership: SettingsTransformer = props => {
     const { oldInsight, newInsight, settingsCascade } = props
 
     const hasVisibilityChanged = oldInsight.visibility !== newInsight.visibility
@@ -193,16 +201,13 @@ export function updateDashboardInsightOwnership(props: EditInsightProps): Settin
     // operation. We have to remove insight id from all dashboards from all subjects with previous
     // shared level.
     if (nextShareLevel < previousShareLevel) {
-        const subjectsToUpdate = [
-            // Get all subject from old top share level
-            ...settingsCascade.subjects.filter(
-                configuredSubject => configuredSubject.subject.__typename === previousSubjectType
-            ),
-            // Get all subjects with new share level but not the subject that will have insight
-            ...settingsCascade.subjects
-                .filter(configuredSubject => configuredSubject.subject.__typename === nextSubjectType)
-                .filter(configuredSubject => configuredSubject.subject.id !== newInsight.visibility),
-        ]
+        // Get all subjects that have same or higher sharing level than next share level
+        // except next subject itself.
+        const subjectsToUpdate = settingsCascade.subjects.filter(
+            configuredSubject =>
+                SUBJECT_SHARING_LEVELS[configuredSubject.subject.__typename] >= nextShareLevel &&
+                configuredSubject.subject.id !== newInsight.visibility
+        )
 
         return subjectsToUpdate.flatMap(configuredSubject =>
             removeInsightFromAllSubjectDashboards(oldInsight, configuredSubject)
@@ -212,7 +217,7 @@ export function updateDashboardInsightOwnership(props: EditInsightProps): Settin
     return []
 }
 
-function updateInsightIdInDashboardIds(props: EditInsightProps): SettingsOperation[] {
+const updateInsightIdInDashboardIds: SettingsTransformer = (props, operations) => {
     const { oldInsight, newInsight, settingsCascade } = props
     // Since we use camel cased title as id for the insight is users changed title
     // this means id is also changed and we have to re-create insight with new id.
@@ -226,7 +231,14 @@ function updateInsightIdInDashboardIds(props: EditInsightProps): SettingsOperati
     return settingsCascade.subjects.flatMap(configuredSubject => {
         const { settings, subject } = configuredSubject
 
-        if (!settings || isErrorLike(settings)) {
+        const hasInsightRemoved = operations.find(
+            operation =>
+                operation.subjectId === subject.id &&
+                operation.type === SettingsOperationType.removeInsightFromDashboard &&
+                operation.insightId === oldInsight.id
+        )
+
+        if (!settings || isErrorLike(settings) || hasInsightRemoved) {
             return []
         }
 

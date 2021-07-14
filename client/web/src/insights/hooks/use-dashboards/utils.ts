@@ -70,8 +70,10 @@ export function getSubjectDashboardByID(
 }
 
 interface DashboardOwnerInfo extends InsightDashboardOwner {
-    /** Currently we support only two types of subject that can have insights dashboard. */
-    dashboardType: InsightsDashboardType.Personal | InsightsDashboardType.Organization
+    /**
+     * Currently we support three types of subject that can have insights dashboard.
+     */
+    dashboardType: InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global
 }
 
 /**
@@ -81,6 +83,13 @@ interface DashboardOwnerInfo extends InsightDashboardOwner {
  */
 export function getDashboardOwnerInfo(subject: SupportedInsightSubject): DashboardOwnerInfo {
     switch (subject.__typename) {
+        case 'Site': {
+            return {
+                id: subject.id,
+                name: 'Global',
+                dashboardType: InsightsDashboardType.Global,
+            }
+        }
         case 'Org':
             return {
                 id: subject.id,
