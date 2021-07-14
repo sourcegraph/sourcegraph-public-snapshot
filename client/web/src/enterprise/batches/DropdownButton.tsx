@@ -29,6 +29,7 @@ export interface Props {
     defaultAction?: number
     disabled?: boolean
     initiallyOpen?: boolean
+    onLabel?: (label: string | undefined) => void
     placeholder?: string
     tooltip?: string
 }
@@ -38,6 +39,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     defaultAction,
     disabled,
     initiallyOpen,
+    onLabel,
     placeholder,
     tooltip,
 }) => {
@@ -50,18 +52,28 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     const [isOpen, setIsOpen] = useState(!!initiallyOpen)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
-    const [selected, setSelected] = useState<Action | undefined>(() => {
-        if (defaultAction !== undefined && defaultAction >= 0 && defaultAction < actions.length) {
-            return actions[defaultAction]
-        }
+    const [selected, setSelected] = useState<number | undefined>(undefined)
+    const selectedAction = useMemo(() => {
         if (actions.length === 1) {
             return actions[0]
         }
+
+        const id = selected !== undefined ? selected : defaultAction
+        if (id !== undefined && id >= 0 && id < actions.length && actions[id].isAvailable()) {
+            return actions[id]
+        }
         return undefined
-    })
+    }, [actions, defaultAction, selected])
+
     const onSelectedTypeSelect = useCallback(
         (type: string) => {
-            setSelected(actions.find(action => action.type === type))
+            const index = actions.findIndex(action => action.type === type)
+            if (index >= 0) {
+                setSelected(actions.findIndex(action => action.type === type))
+            } else {
+                setSelected(undefined)
+            }
+
             setIsOpen(false)
         },
         [actions, setIsOpen, setSelected]
@@ -69,13 +81,13 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
 
     const [renderedElement, setRenderedElement] = useState<JSX.Element | undefined>()
     const onTriggerAction = useCallback(async () => {
-        if (selected === undefined) {
+        if (selectedAction === undefined) {
             return
         }
 
         // TODO: can we do something useful with the onDone/onCancel split?
         setIsDisabled(true)
-        const element = await selected.onTrigger(
+        const element = await selectedAction.onTrigger(
             () => {
                 setIsDisabled(false)
                 setRenderedElement(undefined)
@@ -88,7 +100,18 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
         if (element !== undefined) {
             setRenderedElement(element)
         }
-    }, [selected, setIsDisabled, setRenderedElement])
+    }, [selectedAction])
+
+    const label = useMemo(() => {
+        const label = selectedAction?.isAvailable()
+            ? selectedAction.buttonLabel + (selectedAction.experimental ? ' (Experimental)' : '')
+            : undefined
+
+        if (onLabel) {
+            onLabel(label)
+        }
+        return label ?? placeholder
+    }, [onLabel, placeholder, selectedAction])
 
     return (
         <>
@@ -98,11 +121,10 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
                     type="button"
                     className="btn btn-primary text-nowrap"
                     onClick={onTriggerAction}
-                    disabled={isDisabled || actions.length === 0 || selected === undefined}
+                    disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
                     data-tooltip={tooltip}
                 >
-                    {selected === undefined ? placeholder : selected.buttonLabel}
-                    {selected?.experimental && ' (Experimental)'}
+                    {label}
                 </button>
                 {actions.length > 1 && (
                     <>
