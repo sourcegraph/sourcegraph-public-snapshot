@@ -231,12 +231,13 @@ func (panelOptionsLibrary) NoLegend() ObservablePanelOption {
 //
 // This is different from Grafana's "null as zero", since "no data" is not "null".
 func (panelOptionsLibrary) ZeroIfNoData() ObservablePanelOption {
+	orZero := " OR on() vector(0)"
 	return func(o Observable, p *sdk.Panel) {
 		switch o.Panel.panelType {
 		case PanelTypeGraph:
-			p.GraphPanel.Targets[0].Expr += " OR on() vector(0)"
-		case Panel().panelType:
-			p.HeatmapPanel.Targets[0].Expr += " OR on() vector(0)"
+			p.GraphPanel.Targets[0].Expr += orZero
+		case PanelTypeHeatmap:
+			p.HeatmapPanel.Targets[0].Expr += orZero
 		}
 	}
 }
