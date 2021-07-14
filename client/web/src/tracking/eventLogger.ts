@@ -116,6 +116,7 @@ export class EventLogger implements TelemetryService {
 
     public getReferrer(): string {
         const referrer = this.referrer || document.referrer
+        this.referrer = referrer
         return referrer
     }
 
