@@ -33,6 +33,15 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 	)
 }
 
+func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) ([]string, error) {
+	return runCoursierCommand(
+		ctx,
+		config,
+		"fetch", "--intransitive",
+		dependency.CoursierSyntax(),
+	)
+}
+
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (bool, error) {
 	versions, err := runCoursierCommand(
 		ctx,

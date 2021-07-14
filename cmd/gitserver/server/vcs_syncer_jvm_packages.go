@@ -1,6 +1,7 @@
 package server
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -172,23 +173,34 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	// Always clean up created temporary directories.
 	defer os.RemoveAll(tmpDirectory)
 
-	paths, err := coursier.FetchSources(ctx, s.Config, dependency)
+	sourceCodes, err := coursier.FetchSources(ctx, s.Config, dependency)
 	if err != nil {
 		return err
 	}
 
-	if len(paths) == 0 {
+	if len(sourceCodes) == 0 {
 		return errors.Errorf("no sources.jar for dependency %s", dependency)
 	}
 
-	path := paths[0]
+	sourceCode := sourceCodes[0]
+
+	byteCodes, err := coursier.FetchByteCode(ctx, s.Config, dependency)
+	if err != nil {
+		return err
+	}
+
+	if len(byteCodes) == 0 {
+		return errors.Errorf("no bytecode jar for dependency %s", dependency)
+	}
+
+	byteCode := byteCodes[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
 
-	err = s.commitJar(ctx, dependency, tmpDirectory, path)
+	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCode, byteCode)
 	if err != nil {
 		return err
 	}
@@ -219,8 +231,9 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
-func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency, workingDirectory, jarPath string) error {
-	cmd := exec.CommandContext(ctx, "unzip", jarPath)
+func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
+	workingDirectory, sourceCodeJarPath, byteCodeJarPath string) error {
+	cmd := exec.CommandContext(ctx, "unzip", sourceCodeJarPath)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
@@ -231,9 +244,14 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 	defer file.Close()
 
+	jvmVersion, err := inferJVMVersionFromByteCode(byteCodeJarPath)
+	if err != nil {
+		return err
+	}
+
 	jsonContents, err := json.Marshal(&lsifJavaJSON{
 		Kind:         "maven",
-		JVM:          "8",
+		JVM:          jvmVersion,
 		Dependencies: []string{dependency.CoursierSyntax()},
 	})
 	if err != nil {
@@ -261,6 +279,38 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 
 	return nil
+}
+
+func inferJVMVersionFromByteCode(byteCodeJarPath string) (string, error) {
+}
+
+func classfileMajorVersion(byteCodeJarPath string) (string, error) {
+	file, err := os.OpenFile(byteCodeJarPath, os.O_RDONLY, 0644)
+	if err != nil {
+		return "", err
+	}
+	zipReader, err := zip.NewReader(file, 8)
+	if err != nil {
+		return "", err
+	}
+	for _, zipEntry := range zipReader.File {
+		if strings.HasSuffix(zipEntry.Name, ".class") {
+			classFileReader, err := zipEntry.Open()
+			if err != nil {
+				return "", err
+			}
+			defer classFileReader.Close()
+			magicBytes := make([]byte, 8)
+			read, err := classFileReader.Read(magicBytes)
+			if err != nil {
+				return "", err
+			}
+			if read != len(magicBytes) {
+				return "", errors.Errorf("failed to read 8 bytes from file %s", byteCodeJarPath)
+			}
+			return "", nil
+		}
+	}
 }
 
 func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string) (string, error) {
