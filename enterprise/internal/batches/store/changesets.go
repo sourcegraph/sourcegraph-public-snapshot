@@ -235,7 +235,7 @@ type CountChangesetsOpts struct {
 
 // CountChangesets returns the number of changesets in the database.
 func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (int, error) {
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB(), "BatchChanges.CountChangesets")
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
 	}
@@ -490,7 +490,7 @@ type ListChangesetsOpts struct {
 
 // ListChangesets lists Changesets with the given filters.
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs btypes.Changesets, next int64, err error) {
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB(), "BatchChanges.ListChangesets")
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 	}

@@ -283,7 +283,7 @@ type GetBatchChangeDiffStatOpts struct {
 }
 
 func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (*diff.Stat, error) {
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB(), "BatchChanges.GetBatchChangeDiffStat")
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}

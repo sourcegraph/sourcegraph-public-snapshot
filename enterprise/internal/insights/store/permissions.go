@@ -24,7 +24,7 @@ type InsightPermStore struct {
 func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error) {
 	db := i.Store.Handle().DB()
 	store := database.Repos(db)
-	conds, err := database.AuthzQueryConds(ctx, db, "CodeInsights.GetUnauthorizedRepoIDs")
+	conds, err := database.AuthzQueryConds(ctx, db)
 	if err != nil {
 		return []api.RepoID{}, err
 	}

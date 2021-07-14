@@ -56,7 +56,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
 		defer authz.SetProviders(true, nil)
 
-		_, err := AuthzQueryConds(context.Background(), db, "Test")
+		_, err := AuthzQueryConds(context.Background(), db)
 		gotErr := fmt.Sprintf("%v", err)
 		if diff := cmp.Diff(errPermissionsUserMappingConflict.Error(), gotErr); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
@@ -68,7 +68,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
 
-		got, err := AuthzQueryConds(context.Background(), db, "Test")
+		got, err := AuthzQueryConds(context.Background(), db)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -157,7 +157,7 @@ func TestAuthzQueryConds(t *testing.T) {
 			authz.SetProviders(test.authzAllowByDefault, nil)
 			defer authz.SetProviders(true, nil)
 
-			q, err := AuthzQueryConds(test.setup(t), db, "Test")
+			q, err := AuthzQueryConds(test.setup(t), db)
 			if err != nil {
 				t.Fatal(err)
 			}
