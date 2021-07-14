@@ -2,12 +2,15 @@ package server
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -25,6 +28,8 @@ const (
 	// timestamp will cause links to JVM package repos to return 404s
 	// because Sourcegraph URLs can optionally include the git commit sha.
 	stableGitCommitDate = "Thu Apr 8 14:24:52 2021 +0200"
+
+	jvmMajorVersion0 = 44
 )
 
 type JVMPackagesSyncer struct {
@@ -281,36 +286,53 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	return nil
 }
 
+// inferJVMVersionFromByteCode returns the JVM version that was used to compile
+// the bytecode in the given jar file.
 func inferJVMVersionFromByteCode(byteCodeJarPath string) (string, error) {
+	majorVersionString, err := classFileMajorVersion(byteCodeJarPath)
+	if err != nil {
+		return "", err
+	}
+	majorVersion, err := strconv.Atoi(majorVersionString)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to convert string %s to int", majorVersion)
+	}
+
+	// Java 1.1 (aka "Java 1") has major version 45 and Java 8 has major
+	// version 52.  To go from the major version of Java version we subtract
+	// 44.
+	jvmVersion := majorVersion - jvmMajorVersion0
+
+	// The motivation to round the JVM version to the nearst stable release
+	// is so that we reduce the number of JDKs on sourcegraph.com. By having
+	// fewer JDK versions, features like "find references" will return more
+	// aggregated results for non-LTS releases.
+	roundedJvmVersion := roundJVMVersionToNearestStableVersion(jvmVersion)
+
+	return strconv.Itoa(roundedJvmVersion), nil
 }
 
-func classfileMajorVersion(byteCodeJarPath string) (string, error) {
-	file, err := os.OpenFile(byteCodeJarPath, os.O_RDONLY, 0644)
-	if err != nil {
-		return "", err
+// roundJVMVersionToNearestStableVersion returns the oldest stable JVM version
+// that is compatible with the given version. Java uses a time-based release
+// schedule since Java 11. A new major version is released every 6 month and
+// every 6th release is an LTS release. This means that a new LTS release gets
+// published every 3rd year.  See
+// https://www.baeldung.com/java-time-based-releases for more details.  This
+// method rounds up non-LTS versions to the nearest LTS release. For example, a
+// library that's published for Java 10 should be indexed with Java 11.
+func roundJVMVersionToNearestStableVersion(javaVersion int) int {
+	if javaVersion <= 8 {
+		return 8
 	}
-	zipReader, err := zip.NewReader(file, 8)
-	if err != nil {
-		return "", err
+	if javaVersion <= 11 {
+		return 11
 	}
-	for _, zipEntry := range zipReader.File {
-		if strings.HasSuffix(zipEntry.Name, ".class") {
-			classFileReader, err := zipEntry.Open()
-			if err != nil {
-				return "", err
-			}
-			defer classFileReader.Close()
-			magicBytes := make([]byte, 8)
-			read, err := classFileReader.Read(magicBytes)
-			if err != nil {
-				return "", err
-			}
-			if read != len(magicBytes) {
-				return "", errors.Errorf("failed to read 8 bytes from file %s", byteCodeJarPath)
-			}
-			return "", nil
-		}
+	// TODO: bump this up to 17 once Java 17 LTS has been released, see https://github.com/sourcegraph/lsif-java/issues/263
+	if javaVersion <= 16 {
+		return 16
 	}
+	// Version from the future, do not round up to the next stable release.
+	return javaVersion
 }
 
 func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string) (string, error) {
@@ -326,4 +348,64 @@ type lsifJavaJSON struct {
 	Kind         string   `json:"kind"`
 	JVM          string   `json:"jvm"`
 	Dependencies []string `json:"dependencies"`
+}
+
+// classFileMajorVersion returns the "major" version of the first `*.class` file
+// inside the given jar file. For example, a jar file for a Java 8 library has
+// the major version 49.
+func classFileMajorVersion(byteCodeJarPath string) (string, error) {
+	file, err := os.OpenFile(byteCodeJarPath, os.O_RDONLY, 0644)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	stat, err := os.Stat(byteCodeJarPath)
+	if err != nil {
+		return "", err
+	}
+	zipReader, err := zip.NewReader(file, stat.Size())
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to read jar file %s", byteCodeJarPath)
+	}
+
+	for _, zipEntry := range zipReader.File {
+		if strings.HasSuffix(zipEntry.Name, ".class") {
+			classFileReader, err := zipEntry.Open()
+			if err != nil {
+				return "", err
+			}
+			defer classFileReader.Close()
+
+			magicBytes := make([]byte, 8)
+			read, err := classFileReader.Read(magicBytes)
+			if err != nil {
+				return "", err
+			}
+			if read != len(magicBytes) {
+				return "", errors.Errorf("failed to read 8 bytes from file %s", byteCodeJarPath)
+			}
+
+			// The structure of `*.class` files is documented here
+			// https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html#jvms-4.1 and also
+			// https://en.wikipedia.org/wiki/Java_class_file#General_layout
+			// - Bytes 0-4 must match 0xcafebabe.
+			// - Bytes 4-5 represent the uint16 formatted "minor" version.
+			// - Bytes 5-6 represent the uint16 formatted "major" version.
+			// We're only interested in the major version.
+			var cafebabe uint32
+			var minor uint16
+			var major uint16
+			buf := bytes.NewReader(magicBytes)
+			binary.Read(buf, binary.BigEndian, &cafebabe)
+			if cafebabe != 0xcafebabe {
+				continue // Not a classfile
+			}
+			binary.Read(buf, binary.BigEndian, &minor)
+			binary.Read(buf, binary.BigEndian, &major)
+			return strconv.Itoa(int(major)), nil
+		}
+	}
+
+	return "", errors.Errorf("failed to infer JVM version for jar %s because it doesn't contain any classfiles", byteCodeJarPath)
 }
