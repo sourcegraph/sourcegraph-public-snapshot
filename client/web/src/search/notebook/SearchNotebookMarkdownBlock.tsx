@@ -31,12 +31,8 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     isLightTheme,
     isMacPlatform,
     onRunBlock,
-    onBlockInputChange,
     onSelectBlock,
-    onMoveBlockSelection,
-    onDeleteBlock,
-    onMoveBlock,
-    onDuplicateBlock,
+    ...props
 }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
@@ -50,14 +46,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         [onRunBlock, setIsEditing]
     )
 
-    const { isInputFocused } = useMonacoBlockInput({
-        editor,
-        id,
-        onRunBlock: runBlock,
-        onBlockInputChange,
-        onSelectBlock,
-        onMoveBlockSelection,
-    })
+    const { isInputFocused } = useMonacoBlockInput({ editor, id, ...props, onSelectBlock, onRunBlock: runBlock })
 
     const onDoubleClick = useCallback(() => {
         if (!isEditing) {
@@ -71,21 +60,13 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     const { onSelect } = useBlockSelection({
         id,
         blockElement: blockElement.current,
-        onSelectBlock,
         isSelected,
         isInputFocused,
+        onSelectBlock,
+        ...props,
     })
 
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onMoveBlockSelection,
-        onEnterBlock,
-        onDeleteBlock,
-        onRunBlock: runBlock,
-        onMoveBlock,
-        onDuplicateBlock,
-    })
+    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, ...props, onRunBlock: runBlock })
 
     useEffect(() => {
         if (isEditing) {
@@ -96,13 +77,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     }, [isEditing, editor])
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
-        isInputFocused,
-        onDeleteBlock,
-        onMoveBlock,
-        onDuplicateBlock,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, ...props })
     const menuActions = useMemo(
         () =>
             [

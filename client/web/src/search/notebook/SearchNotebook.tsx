@@ -214,6 +214,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         return () => disposable.dispose()
     }, [])
 
+    const blockCallbackProps = {
+        onSelectBlock,
+        onRunBlock,
+        onBlockInputChange,
+        onMoveBlockSelection,
+        onDeleteBlock,
+        onMoveBlock,
+        onDuplicateBlock,
+    }
+
     return (
         <div className={styles.searchNotebook}>
             {blocks.map((block, blockIndex) => (
@@ -224,28 +234,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                             <SearchNotebookMarkdownBlock
                                 {...props}
                                 {...block}
+                                {...blockCallbackProps}
                                 isSelected={selectedBlockId === block.id}
-                                onSelectBlock={onSelectBlock}
-                                onRunBlock={onRunBlock}
-                                onBlockInputChange={onBlockInputChange}
-                                onMoveBlockSelection={onMoveBlockSelection}
-                                onDeleteBlock={onDeleteBlock}
-                                onMoveBlock={onMoveBlock}
-                                onDuplicateBlock={onDuplicateBlock}
                             />
                         )}
                         {block.type === 'query' && (
                             <SearchNotebookQueryBlock
                                 {...props}
                                 {...block}
+                                {...blockCallbackProps}
                                 isSelected={selectedBlockId === block.id}
-                                onSelectBlock={onSelectBlock}
-                                onRunBlock={onRunBlock}
-                                onBlockInputChange={onBlockInputChange}
-                                onMoveBlockSelection={onMoveBlockSelection}
-                                onDeleteBlock={onDeleteBlock}
-                                onMoveBlock={onMoveBlock}
-                                onDuplicateBlock={onDuplicateBlock}
                             />
                         )}
                     </>

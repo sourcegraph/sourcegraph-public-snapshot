@@ -51,26 +51,14 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     isMacPlatform,
     fetchHighlightedFileLineRanges,
     onRunBlock,
-    onBlockInputChange,
-    onSelectBlock,
-    onMoveBlockSelection,
-    onDeleteBlock,
-    onMoveBlock,
-    onDuplicateBlock,
+    ...props
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const blockElement = useRef<HTMLDivElement>(null)
     const searchResults = useObservable(output ?? of(undefined))
     const location = useLocation()
 
-    const { isInputFocused } = useMonacoBlockInput({
-        editor,
-        id,
-        onRunBlock,
-        onBlockInputChange,
-        onSelectBlock,
-        onMoveBlockSelection,
-    })
+    const { isInputFocused } = useMonacoBlockInput({ editor, id, onRunBlock, ...props })
 
     // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => {
@@ -79,20 +67,11 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     const { onSelect } = useBlockSelection({
         id,
         blockElement: blockElement.current,
-        onSelectBlock,
         isSelected,
         isInputFocused,
+        ...props,
     })
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onMoveBlockSelection,
-        onEnterBlock,
-        onDeleteBlock,
-        onRunBlock,
-        onMoveBlock,
-        onDuplicateBlock,
-    })
+    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, onRunBlock, ...props })
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const mainMenuAction = useMemo(() => {
@@ -106,13 +85,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         }
     }, [onRunBlock, modifierKeyLabel, searchResults])
 
-    const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
-        isInputFocused,
-        onDeleteBlock,
-        onMoveBlock,
-        onDuplicateBlock,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, ...props })
 
     useEffect(() => {
         if (!editor) {
