@@ -118,18 +118,7 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 	return err == nil && len(resolved.RepoRevs) > 0
 }
 
-type errNoResolvedRepos struct {
-	PrometheusType  string
-	Title           string
-	Description     string
-	ProposedQueries []*searchQueryDescription
-}
-
-func (e *errNoResolvedRepos) Error() string {
-	return "no resolved repositories"
-}
-
-func (r *searchResolver) errorForNoResolvedRepos(ctx context.Context, q query.Q) *errNoResolvedRepos {
+func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q) *searchAlert {
 	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
 	repoFilters, minusRepoFilters := q.Repositories()
@@ -146,24 +135,24 @@ func (r *searchResolver) errorForNoResolvedRepos(ctx context.Context, q query.Q)
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
-		return &errNoResolvedRepos{
-			PrometheusType: "no_resolved_repos__no_repositories",
-			Title:          "Add repositories or connect repository hosts",
-			Description:    "There are no repositories to search. Add an external service connection to your code host.",
+		return &searchAlert{
+			prometheusType: "no_resolved_repos__no_repositories",
+			title:          "Add repositories or connect repository hosts",
+			description:    "There are no repositories to search. Add an external service connection to your code host.",
 		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
-		return &errNoResolvedRepos{
-			PrometheusType: "no_resolved_repos__repogroup_empty",
-			Title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
-			Description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
+		return &searchAlert{
+			prometheusType: "no_resolved_repos__repogroup_empty",
+			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
+			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
 		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
-		return &errNoResolvedRepos{
-			PrometheusType: "no_resolved_repos__repogroup_none_in_common",
-			Title:          "Repository groups have no repositories in common",
-			Description:    "No repository exists in all of the specified repository groups.",
+		return &searchAlert{
+			prometheusType: "no_resolved_repos__repogroup_none_in_common",
+			title:          "Repository groups have no repositories in common",
+			description:    "No repository exists in all of the specified repository groups.",
 		}
 	}
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && (len(repoFilters) > 0 || len(repoGroupFilters) > 0) {
@@ -174,10 +163,10 @@ func (r *searchResolver) errorForNoResolvedRepos(ctx context.Context, q query.Q)
 			patternType: r.PatternType,
 		}}
 
-		return &errNoResolvedRepos{
-			PrometheusType:  "no_resolved_repos__context_none_in_common",
-			Title:           fmt.Sprintf("No repositories found for your query within the context %s", contextFilters[0]),
-			ProposedQueries: proposedQueries,
+		return &searchAlert{
+			prometheusType:  "no_resolved_repos__context_none_in_common",
+			title:           fmt.Sprintf("No repositories found for your query within the context %s", contextFilters[0]),
+			proposedQueries: proposedQueries,
 		}
 	}
 
@@ -185,25 +174,25 @@ func (r *searchResolver) errorForNoResolvedRepos(ctx context.Context, q query.Q)
 	if !envvar.SourcegraphDotComMode() {
 		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
-				return &errNoResolvedRepos{
-					Title:       "No repositories or code hosts configured",
-					Description: "To start searching code, first go to site admin to configure repositories and code hosts.",
+				return &searchAlert{
+					title:       "No repositories or code hosts configured",
+					description: "To start searching code, first go to site admin to configure repositories and code hosts.",
 				}
 
 			} else {
-				return &errNoResolvedRepos{
-					Title:       "No repositories or code hosts configured",
-					Description: "To start searching code, ask the site admin to configure and enable repositories.",
+				return &searchAlert{
+					title:       "No repositories or code hosts configured",
+					description: "To start searching code, ask the site admin to configure and enable repositories.",
 				}
 			}
 		}
 	}
 
 	if globbing {
-		return &errNoResolvedRepos{
-			PrometheusType: "no_resolved_repos__generic",
-			Title:          "No repositories found",
-			Description:    "Try using a different `repo:<regexp>` filter to see results",
+		return &searchAlert{
+			prometheusType: "no_resolved_repos__generic",
+			title:          "No repositories found",
+			description:    "Try using a different `repo:<regexp>` filter to see results",
 		}
 	}
 
@@ -241,18 +230,18 @@ func (r *searchResolver) errorForNoResolvedRepos(ctx context.Context, q query.Q)
 	}
 
 	if len(proposedQueries) > 0 {
-		return &errNoResolvedRepos{
-			PrometheusType:  "no_resolved_repos__repos_exist_when_altered",
-			Title:           "No repositories found",
-			Description:     "Try alter the query or use a different `repo:<regexp>` filter to see results",
-			ProposedQueries: proposedQueries,
+		return &searchAlert{
+			prometheusType:  "no_resolved_repos__repos_exist_when_altered",
+			title:           "No repositories found",
+			description:     "Try alter the query or use a different `repo:<regexp>` filter to see results",
+			proposedQueries: proposedQueries,
 		}
 	}
 
-	return &errNoResolvedRepos{
-		PrometheusType: "no_resolved_repos__generic",
-		Title:          "No repositories found",
-		Description:    "Try using a different `repo:<regexp>` filter to see results",
+	return &searchAlert{
+		prometheusType: "no_resolved_repos__generic",
+		title:          "No repositories found",
+		description:    "Try using a different `repo:<regexp>` filter to see results",
 	}
 }
 
@@ -584,18 +573,6 @@ func errorToAlert(err error) (*searchAlert, error) {
 			return &searchAlert{
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
-				proposedQueries: e.ProposedQueries,
-				description:     e.Description,
-			}, nil
-		}
-	}
-
-	{
-		var e *errNoResolvedRepos
-		if errors.As(err, &e) {
-			return &searchAlert{
-				prometheusType:  e.PrometheusType,
-				title:           e.Title,
 				proposedQueries: e.ProposedQueries,
 				description:     e.Description,
 			}, nil
