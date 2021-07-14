@@ -2,7 +2,7 @@ import Dialog from '@reach/dialog'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classnames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useRef } from 'react'
+import React from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
@@ -20,21 +20,12 @@ export interface DeleteDashboardModalProps extends PlatformContextProps<'updateS
     onClose: () => void
 }
 
-/**
- * Displays dashboard delete modal window.
- */
 export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalProps> = props => {
     const { dashboard, platformContext, onClose } = props
     const history = useHistory()
 
-    // Remember dashboard in first render of this component.
-    // We have to have a kind of snapshot of dashboard cause in updating handler
-    // we remove this dashboard from the settings cascade and dashboard prop will be equal
-    // to undefined at some point but we have to use dashboard info to redirect user
-    const dashboardReference = useRef(dashboard)
-
     const handleDeleteSuccess = (): void => {
-        history.push(`/insights/dashboards/${dashboardReference.current.owner.id}`)
+        history.push(`/insights/dashboards/${dashboard.owner.id}`)
         onClose()
     }
 
@@ -53,10 +44,10 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
                 <CloseIcon />
             </button>
 
-            <h2 className="text-danger">Delete "{dashboard.title}"</h2>
+            <h2 className="text-danger">Delete ”{dashboard.title}”</h2>
 
             <span className="d-block mb-4">
-                This can't be undone. You will still be able to access insights from this dashboard in "All insights”.
+                This can't be undone. You will still be able to access insights from this dashboard in ”All insights”.
             </span>
 
             {isErrorLike(loadingOrError) && <ErrorAlert className='className="mt-3"' error={loadingOrError} />}

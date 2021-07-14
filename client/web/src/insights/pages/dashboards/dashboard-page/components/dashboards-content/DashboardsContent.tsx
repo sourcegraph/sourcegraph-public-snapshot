@@ -14,7 +14,7 @@ import { HeroPage } from '../../../../../../components/HeroPage'
 import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightsViewGrid } from '../../../../../components'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { InsightDashboard, isRealDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { useDashboards } from '../../../../../hooks/use-dashboards/use-dashboards'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
@@ -23,6 +23,7 @@ import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
 
 import styles from './DashboardsContent.module.scss'
+import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps
     extends SettingsCascadeProps<Settings>,
@@ -132,26 +133,22 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
             )}
 
-            {isAddInsightOpen &&
-                isRealDashboard(currentDashboard) &&
-                isSettingsBasedInsightsDashboard(currentDashboard) && (
-                    <AddInsightModal
-                        platformContext={platformContext}
-                        settingsCascade={settingsCascade}
-                        dashboard={currentDashboard}
-                        onClose={() => setAddInsightsState(false)}
-                    />
-                )}
+            {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (
+                <AddInsightModal
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
+                    dashboard={currentDashboard}
+                    onClose={() => setAddInsightsState(false)}
+                />
+            )}
 
-            {isDeleteDashboardActive &&
-                isRealDashboard(currentDashboard) &&
-                isSettingsBasedInsightsDashboard(currentDashboard) && (
-                    <DeleteDashboardModal
-                        dashboard={currentDashboard}
-                        platformContext={platformContext}
-                        onClose={() => setDeleteDashboardActive(false)}
-                    />
-                )}
+            {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
+                <DeleteDashboardModal
+                    dashboard={currentDashboard}
+                    platformContext={platformContext}
+                    onClose={() => setDeleteDashboardActive(false)}
+                />
+            )}
         </div>
     )
 }
