@@ -6,6 +6,7 @@ import React from 'react'
 import {
     InsightDashboard,
     InsightsDashboardType,
+    isGlobalDashboard,
     isOrganizationDashboard,
     isPersonalDashboard,
     RealInsightDashboard,
@@ -62,6 +63,20 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                             </ListboxGroupLabel>
 
                             {dashboards.filter(isPersonalDashboard).map(dashboard => (
+                                <SelectDashboardOption
+                                    key={dashboard.id}
+                                    dashboard={dashboard}
+                                    className={styles.option}
+                                />
+                            ))}
+                        </ListboxGroup>
+
+                        <ListboxGroup>
+                            <ListboxGroupLabel className={classnames(styles.groupLabel, 'text-muted')}>
+                                Global
+                            </ListboxGroupLabel>
+
+                            {dashboards.filter(isGlobalDashboard).map(dashboard => (
                                 <SelectDashboardOption
                                     key={dashboard.id}
                                     dashboard={dashboard}
