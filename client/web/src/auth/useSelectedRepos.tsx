@@ -5,6 +5,7 @@ import {
     gql,
     MutationFunctionOptions,
     FetchResult,
+    makeVar,
 } from '@apollo/client'
 
 import { useLazyQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
@@ -17,6 +18,18 @@ import {
     SetExternalServiceReposResult,
     SetExternalServiceReposVariables,
 } from '../graphql-operations'
+
+export interface MinSelectedRepo {
+    name: string
+    externalRepository: {
+        serviceType: string
+    }
+}
+
+type SelectedRepos = MinSelectedRepo[] | undefined
+const SelectedReposInitialValue: SelectedRepos = undefined
+
+export const selectedReposVar = makeVar<SelectedRepos>(SelectedReposInitialValue)
 
 interface UseSelectedReposResult {
     selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | undefined

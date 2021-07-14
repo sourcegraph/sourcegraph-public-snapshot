@@ -8,7 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
-import { useSaveSelectedRepos, SELECTED_REPOS } from '../../../auth/useSelectedRepos'
+import { useSaveSelectedRepos, selectedReposVar, MinSelectedRepo } from '../../../auth/useSelectedRepos'
 import { AwayPrompt } from '../../../components/AwayPrompt'
 import {
     ExternalServiceKind,
@@ -41,7 +41,7 @@ interface Props
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
     authenticatedUser: authenticatedUser
     repos: AffiliatedRepositoriesResult['affiliatedRepositories']['nodes'] | undefined
-    selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | undefined
+    selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | MinSelectedRepo[] | undefined
     externalServices: ListExternalServiceFields[] | undefined
     onSelection: (changed: boolean) => void
 }
@@ -166,8 +166,11 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
 
                 const selectedAffiliatedRepos = new Map<string, Repo>()
 
+                const cachedSelectedRepos = selectedReposVar()
+                const userSelectedRepos = cachedSelectedRepos || selectedRepos
+
                 const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
-                    const foundInSelected = selectedRepos.find(
+                    const foundInSelected = userSelectedRepos.find(
                         ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
                             // selected repo names formatted: code-host/owner/repository
                             const selectedRepoName = name.slice(name.indexOf('/') + 1)
@@ -182,9 +185,6 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                     if (foundInSelected) {
                         // save off only selected repos
                         selectedAffiliatedRepos.set(getRepoServiceAndName(affiliatedRepo), affiliatedRepo)
-
-                        // add mirror info object where it exists - will be used for filters
-                        return { ...affiliatedRepo, mirrorInfo: foundInSelected.mirrorInfo }
                     }
 
                     return affiliatedRepo
@@ -302,27 +302,22 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
                                     allRepos: selectionState.radio === 'all',
                                     repos: (selectionState.radio === 'selected' && repos) || null,
                                 },
-                                awaitRefetchQueries: true,
-                                refetchQueries: [
-                                    {
-                                        query: SELECTED_REPOS,
-                                        variables: {
-                                            id: authenticatedUser.id,
-                                            cloned: true,
-                                            notCloned: true,
-                                            indexed: true,
-                                            notIndexed: true,
-                                            first: 2000,
-                                            query: null,
-                                            externalServiceID: null,
-                                        },
-                                    },
-                                ],
                             })
                         )
                     }
 
-                    return Promise.all(codeHostRepoPromises)
+                    return Promise.all(codeHostRepoPromises).then(() => {
+                        const selection = [...selectionState.repos.values()].reduce((accumulator, repo) => {
+                            accumulator.push({
+                                name: `${repo.codeHost?.kind || 'unknown'}/${repo.name}`,
+                                externalRepository: { serviceType: repo.codeHost?.kind.toLowerCase() || 'unknown' },
+                            })
+                            return accumulator
+                        }, [] as MinSelectedRepo[])
+
+                        // safe off repo selection to apollo
+                        selectedReposVar(selection)
+                    })
                 }
 
                 return Promise.resolve()
