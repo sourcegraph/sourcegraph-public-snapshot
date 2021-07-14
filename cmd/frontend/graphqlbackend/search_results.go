@@ -1354,23 +1354,6 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	return args
 }
 
-// determineRepos wraps resolveRepositories. It interprets the response and
-// error to see if an alert needs to be returned. Only one of the return
-// values will be non-nil.
-func (r *searchResolver) determineRepos(ctx context.Context, q query.Q, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
-	repoOptions := r.toRepoOptions(q, resolveRepositoriesOpts{})
-	resolved, err := r.resolveRepositories(ctx, repoOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
-	if len(resolved.RepoRevs) == 0 {
-		return nil, r.errorForNoResolvedRepos(ctx, q)
-	}
-	return &resolved, nil
-}
-
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
 // repohasfile filters. For structural queries, queries with version context,
 // and queries with non-global search context, isGlobalSearch always return false.
@@ -1473,13 +1456,24 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	resolved, err := r.determineRepos(ctx, args.Query, tr, start)
+	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return alert.wrapResults(), err
 		}
 		return nil, err
 	}
+
+	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
+	if len(resolved.RepoRevs) == 0 {
+		localErr := r.errorForNoResolvedRepos(ctx, args.Query)
+		if alert, err := errorToAlert(localErr); alert != nil {
+			return alert.wrapResults(), err
+		}
+		return nil, localErr
+	}
+
 	if len(resolved.MissingRepoRevs) > 0 {
 		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
 	}
