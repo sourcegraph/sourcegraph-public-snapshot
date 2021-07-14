@@ -48,7 +48,7 @@ export interface MonacoQueryInputProps
     className?: string
 }
 
-const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
+export const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
 
 /**
  * Maps a Monaco IDisposable to an rxjs Unsubscribable.
