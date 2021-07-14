@@ -524,7 +524,7 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 		OnlyPrivate:        visibility == query.Private,
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
-		Query:              r.Query,
+		Query:              q,
 		Ranked:             true,
 		Limit:              opts.limit,
 		CacheLookup:        CacheLookup,
