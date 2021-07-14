@@ -336,6 +336,21 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): Hover
 
     """
+    The documentation of the symbol under the given document position, if any.
+    """
+    documentation(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): Documentation
+
+    """
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
@@ -388,6 +403,17 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
     """
     documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
+}
+
+"""
+Documentation at some position in a file.
+"""
+type Documentation {
+    """
+    The path ID of the documentation, which can be used to build a link to the documentation or
+    (after trimming the URL hash) passed to documentationPage or documentationPathInfo.
+    """
+    pathID: String!
 }
 
 """

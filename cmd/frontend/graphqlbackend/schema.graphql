@@ -6120,6 +6120,11 @@ type CodeIntelligenceRange {
     The hover result of the symbol occurring within the range.
     """
     hover: Hover
+
+    """
+    The documentation result of the symbol occurring within the range, if any.
+    """
+    documentation: Documentation
 }
 
 """
