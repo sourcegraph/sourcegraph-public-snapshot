@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of, asyncScheduler } from 'rxjs'
+import { Observable, fromEventPattern, of, asyncScheduler, Subject } from 'rxjs'
 import { map, takeUntil, switchMap, debounceTime, share, observeOn } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
@@ -29,7 +29,7 @@ const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜ�
 
 /**
  * Returns the providers used by the Monaco query input to provide syntax highlighting,
- * hovers, completions and diagnostics for the Sourcegraph search syntax.
+ * hovers and completions for the Sourcegraph search syntax.
  */
 export function getProviders(
     fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
@@ -40,6 +40,12 @@ export function getProviders(
         isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
+    // To debounce the dynamic suggestions we have to pipe them through a Subject and supply the queries in `provideCompletionItems`.
+    // Debouncing the `fetchSuggestions` request directly in `provideCompletionItems` would have no effect, since the observables
+    // are not connected between `provideCompletionItems` calls.
+    const completionRequests = new Subject<string>()
+    const debouncedDynamicSuggestions = completionRequests.pipe(debounceTime(300), switchMap(fetchSuggestions), share())
+
     return {
         tokens: {
             getInitialState: () => SCANNER_STATE,
@@ -69,11 +75,7 @@ export function getProviders(
             triggerCharacters: [...printable, ...latin1Alpha],
             provideCompletionItems: (textModel, position, context, token) => {
                 const value = textModel.getValue()
-                const debouncedDynamicSuggestions = of(value).pipe(
-                    debounceTime(300),
-                    switchMap(fetchSuggestions),
-                    share()
-                )
+                completionRequests.next(value)
                 return of(value)
                     .pipe(
                         map(value => scanSearchQuery(value, options.interpretComments ?? false, options.patternType)),

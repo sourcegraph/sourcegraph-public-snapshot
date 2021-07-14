@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Observable } from 'rxjs'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
@@ -22,30 +22,39 @@ export function useQueryIntelligence(
         isSourcegraphDotCom?: boolean
     }
 ): void {
+    const memoizedOptions = useMemo(
+        () => ({
+            patternType: options.patternType,
+            globbing: options.globbing,
+            interpretComments: options.interpretComments,
+            isSourcegraphDotCom: options.isSourcegraphDotCom,
+        }),
+        [options.patternType, options.globbing, options.interpretComments, options.isSourcegraphDotCom]
+    )
+
     useEffect(() => {
         // Register language ID
         Monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
         // Register providers
-        const providers = getProviders(fetchSuggestions, options)
-        const setTokensProviderDisposable = Monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)
-        const registerHoverProviderDisposable = Monaco.languages.registerHoverProvider(
-            SOURCEGRAPH_SEARCH,
-            providers.hover
-        )
-        const registerCompletionItemProviderDisposable = Monaco.languages.registerCompletionItemProvider(
-            SOURCEGRAPH_SEARCH,
-            providers.completion
-        )
-
+        const providers = getProviders(fetchSuggestions, memoizedOptions)
+        const disposables = [
+            Monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens),
+            Monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover),
+            Monaco.languages.registerCompletionItemProvider(SOURCEGRAPH_SEARCH, providers.completion),
+        ]
         return () => {
-            setTokensProviderDisposable.dispose()
-            registerHoverProviderDisposable.dispose()
-            registerCompletionItemProviderDisposable.dispose()
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
         }
-    }, [fetchSuggestions, options])
+    }, [fetchSuggestions, memoizedOptions])
 }
 
+/**
+ * Adds diagnostic markers for the Sourcegraph search syntax to Monaco.
+ * For example, it adds a marker if the query contains a filter with an invalid value: `patterntype:invalid`.
+ */
 export function useQueryDiagnostics(
     editor: Monaco.editor.IStandaloneCodeEditor | undefined,
     options: {
@@ -53,6 +62,14 @@ export function useQueryDiagnostics(
         interpretComments?: boolean
     }
 ): void {
+    const memoizedOptions = useMemo(
+        () => ({
+            patternType: options.patternType,
+            interpretComments: options.interpretComments,
+        }),
+        [options.patternType, options.interpretComments]
+    )
+
     useEffect(() => {
         if (!editor) {
             return
@@ -62,10 +79,14 @@ export function useQueryDiagnostics(
             if (!model) {
                 return
             }
-            const scanned = scanSearchQuery(model.getValue(), options.interpretComments ?? false, options.patternType)
-            const markers = scanned.type === 'success' ? getDiagnostics(scanned.term, options.patternType) : []
+            const scanned = scanSearchQuery(
+                model.getValue(),
+                memoizedOptions.interpretComments ?? false,
+                memoizedOptions.patternType
+            )
+            const markers = scanned.type === 'success' ? getDiagnostics(scanned.term, memoizedOptions.patternType) : []
             Monaco.editor.setModelMarkers(model, 'diagnostics', markers)
         })
         return () => disposable.dispose()
-    }, [editor, options])
+    }, [editor, memoizedOptions])
 }
