@@ -17,7 +17,6 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
-    private referrer?: string
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
