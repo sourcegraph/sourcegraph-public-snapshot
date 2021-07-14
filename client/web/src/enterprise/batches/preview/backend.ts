@@ -15,10 +15,12 @@ import {
     BatchSpecByIDVariables,
     BatchSpecFields,
     BatchSpecApplyPreviewVariables,
-    AllChangesetSpecIDsVariables,
-    AllChangesetSpecIDsResult,
-    ChangesetSpecIDConnectionFields,
+    BatchSpecApplyPreviewConnectionFields,
+    BatchSpecApplyPreviewResult,
 } from '../../../graphql-operations'
+import { personLinkFieldsFragment } from '../../../person/PersonLink'
+
+import { canSetPublishedState } from './utils'
 
 export const viewerBatchChangesCodeHostsFragment = gql`
     fragment ViewerBatchChangesCodeHostsFields on BatchChangesCodeHostConnection {
@@ -178,75 +180,71 @@ export const applyBatchChange = ({
         )
         .toPromise()
 
-export const queryAllChangesetSpecIDs = ({
+export const queryChangesetApplyPreview = ({
+    batchSpec,
+    first,
+    after,
+    search,
+    currentState,
+    action,
+}: BatchSpecApplyPreviewVariables): Observable<BatchSpecApplyPreviewConnectionFields> =>
+    requestGraphQL<BatchSpecApplyPreviewResult, BatchSpecApplyPreviewVariables>(
+        gql`
+            query BatchSpecApplyPreview(
+                $batchSpec: ID!
+                $first: Int
+                $after: String
+                $search: String
+                $currentState: ChangesetState
+                $action: ChangesetSpecOperation
+            ) {
+                node(id: $batchSpec) {
+                    __typename
+                    ... on BatchSpec {
+                        applyPreview(
+                            first: $first
+                            after: $after
+                            search: $search
+                            currentState: $currentState
+                            action: $action
+                        ) {
+                            ...BatchSpecApplyPreviewConnectionFields
+                        }
+                    }
+                }
+            }
+
+            ${batchSpecApplyPreviewConnectionFieldsFragment}
+        `,
+        { batchSpec, first, after, search, currentState, action }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`BatchSpec with ID ${batchSpec} does not exist`)
+            }
+            if (node.__typename !== 'BatchSpec') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
+            }
+            return node.applyPreview
+        })
+    )
+
+export const queryPublishableChangesetSpecs = ({
     batchSpec,
     search,
     currentState,
     action,
 }: BatchSpecApplyPreviewVariables): Observable<Scalars['ID'][]> => {
-    const request = (after: string | null): Observable<ChangesetSpecIDConnectionFields> =>
-        requestGraphQL<AllChangesetSpecIDsResult, AllChangesetSpecIDsVariables>(
-            gql`
-                query AllChangesetSpecIDs(
-                    $batchSpec: ID!
-                    $after: String
-                    $search: String
-                    $currentState: ChangesetState
-                    $action: ChangesetSpecOperation
-                ) {
-                    node(id: $batchSpec) {
-                        __typename
-                        ... on BatchSpec {
-                            applyPreview(
-                                first: 10000
-                                after: $after
-                                search: $search
-                                currentState: $currentState
-                                action: $action
-                            ) {
-                                ...ChangesetSpecIDConnectionFields
-                            }
-                        }
-                    }
-                }
-
-                fragment ChangesetSpecIDConnectionFields on ChangesetApplyPreviewConnection {
-                    nodes {
-                        __typename
-                        ... on VisibleChangesetApplyPreview {
-                            targets {
-                                ... on VisibleApplyPreviewTargetsAttach {
-                                    changesetSpec {
-                                        id
-                                    }
-                                }
-                                ... on VisibleApplyPreviewTargetsUpdate {
-                                    changesetSpec {
-                                        id
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    pageInfo {
-                        hasNextPage
-                        endCursor
-                    }
-                }
-            `,
-            { batchSpec, after, search, currentState, action }
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(({ node }) => {
-                if (!node) {
-                    throw new Error(`BatchSpec with ID ${batchSpec} does not exist`)
-                }
-                if (node.__typename !== 'BatchSpec') {
-                    throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
-                }
-                return node.applyPreview
-            })
-        )
+    const request = (after: string | null): Observable<BatchSpecApplyPreviewConnectionFields> =>
+        queryChangesetApplyPreview({
+            batchSpec,
+            first: 10000,
+            after,
+            search,
+            currentState,
+            action,
+        })
 
     return request(null).pipe(
         expand(connection => (connection.pageInfo.hasNextPage ? request(connection.pageInfo.endCursor) : EMPTY)),
@@ -254,15 +252,209 @@ export const queryAllChangesetSpecIDs = ({
             (previous, next) =>
                 previous.concat(
                     next.nodes
-                        .map(node => {
-                            if (node.__typename !== 'VisibleChangesetApplyPreview') {
-                                return undefined
-                            }
-                            return node.targets.changesetSpec.id
-                        })
-                        .filter((maybeID): maybeID is string => maybeID !== undefined)
+                        .map(node => canSetPublishedState(node))
+                        .filter((maybeID): maybeID is string => maybeID !== null)
                 ),
             [] as Scalars['ID'][]
         )
     )
 }
+
+const changesetSpecFieldsFragment = gql`
+    fragment CommonChangesetSpecFields on ChangesetSpec {
+        type
+    }
+
+    fragment HiddenChangesetSpecFields on HiddenChangesetSpec {
+        __typename
+        id
+        ...CommonChangesetSpecFields
+    }
+
+    fragment VisibleChangesetSpecFields on VisibleChangesetSpec {
+        __typename
+        id
+        ...CommonChangesetSpecFields
+        description {
+            __typename
+            ...ExistingChangesetReferenceFields
+            ...GitBranchChangesetDescriptionFields
+        }
+    }
+
+    fragment ExistingChangesetReferenceFields on ExistingChangesetReference {
+        baseRepository {
+            name
+            url
+        }
+        externalID
+    }
+
+    fragment GitBranchChangesetDescriptionFields on GitBranchChangesetDescription {
+        baseRepository {
+            name
+            url
+        }
+        title
+        published
+        body
+        commits {
+            author {
+                avatarURL
+                email
+                displayName
+                user {
+                    username
+                    displayName
+                    url
+                }
+            }
+            subject
+            body
+        }
+        baseRef
+        headRef
+        diffStat {
+            ...DiffStatFields
+        }
+    }
+
+    ${diffStatFields}
+`
+
+export const batchSpecApplyPreviewConnectionFieldsFragment = gql`
+    fragment BatchSpecApplyPreviewConnectionFields on ChangesetApplyPreviewConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...ChangesetApplyPreviewFields
+        }
+    }
+
+    fragment ChangesetApplyPreviewFields on ChangesetApplyPreview {
+        __typename
+        ... on HiddenChangesetApplyPreview {
+            ...HiddenChangesetApplyPreviewFields
+        }
+        ... on VisibleChangesetApplyPreview {
+            ...VisibleChangesetApplyPreviewFields
+        }
+    }
+
+    fragment HiddenChangesetApplyPreviewFields on HiddenChangesetApplyPreview {
+        __typename
+        targets {
+            __typename
+            ... on HiddenApplyPreviewTargetsAttach {
+                changesetSpec {
+                    ...HiddenChangesetSpecFields
+                }
+            }
+            ... on HiddenApplyPreviewTargetsUpdate {
+                changesetSpec {
+                    ...HiddenChangesetSpecFields
+                }
+                changeset {
+                    id
+                    state
+                }
+            }
+            ... on HiddenApplyPreviewTargetsDetach {
+                changeset {
+                    id
+                    state
+                }
+            }
+        }
+    }
+
+    fragment VisibleChangesetApplyPreviewFields on VisibleChangesetApplyPreview {
+        __typename
+        operations
+        delta {
+            titleChanged
+            bodyChanged
+            baseRefChanged
+            diffChanged
+            authorEmailChanged
+            authorNameChanged
+            commitMessageChanged
+        }
+        targets {
+            __typename
+            ... on VisibleApplyPreviewTargetsAttach {
+                changesetSpec {
+                    ...VisibleChangesetSpecFields
+                }
+            }
+            ... on VisibleApplyPreviewTargetsUpdate {
+                changesetSpec {
+                    ...VisibleChangesetSpecFields
+                }
+                changeset {
+                    id
+                    title
+                    state
+                    externalURL {
+                        url
+                    }
+                    externalID
+                    currentSpec {
+                        description {
+                            __typename
+                            ... on GitBranchChangesetDescription {
+                                baseRef
+                                title
+                                body
+                                commits {
+                                    author {
+                                        avatarURL
+                                        email
+                                        displayName
+                                        user {
+                                            username
+                                            displayName
+                                            url
+                                        }
+                                    }
+                                    body
+                                    subject
+                                }
+                            }
+                        }
+                    }
+                    author {
+                        ...PersonLinkFields
+                    }
+                }
+            }
+            ... on VisibleApplyPreviewTargetsDetach {
+                changeset {
+                    id
+                    title
+                    state
+                    externalURL {
+                        url
+                    }
+                    externalID
+                    repository {
+                        url
+                        name
+                    }
+                    diffStat {
+                        added
+                        changed
+                        deleted
+                    }
+                }
+            }
+        }
+    }
+
+    ${changesetSpecFieldsFragment}
+
+    ${personLinkFieldsFragment}
+`

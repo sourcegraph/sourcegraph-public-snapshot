@@ -27,12 +27,12 @@ import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
 import { MultiSelectContext, MultiSelectContextState } from '../../MultiSelectContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import { canSetPublishedState } from '../utils'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
-import { canSetPublishedState } from './utils'
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {

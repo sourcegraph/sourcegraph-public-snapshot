@@ -9,16 +9,17 @@ import { Container } from '@sourcegraph/wildcard'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { MultiSelectContext } from '../../MultiSelectContext'
+import { queryChangesetApplyPreview as _queryChangesetApplyPreview } from '../backend'
 import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import { canSetPublishedState } from '../utils'
 
-import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'
+import { queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow } from './PreviewFilterRow'
 import styles from './PreviewList.module.scss'
 import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
-import { canSetPublishedState } from './utils'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']

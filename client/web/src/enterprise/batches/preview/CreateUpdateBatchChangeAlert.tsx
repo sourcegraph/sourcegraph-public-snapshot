@@ -11,7 +11,7 @@ import { BatchSpecFields, ChangesetSpecPublicationStateInput } from '../../../gr
 import { Action, DropdownButton } from '../DropdownButton'
 import { MultiSelectContext } from '../MultiSelectContext'
 
-import { applyBatchChange, createBatchChange, queryAllChangesetSpecIDs } from './backend'
+import { applyBatchChange, createBatchChange, queryPublishableChangesetSpecs } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
@@ -59,7 +59,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                 if (action !== CreateUpdateBatchChangeAlertAction.Apply) {
                     const ids =
                         selected === 'all'
-                            ? await queryAllChangesetSpecIDs({
+                            ? await queryPublishableChangesetSpecs({
                                   batchSpec: specID,
                                   ...filters,
                                   ...pagination,
