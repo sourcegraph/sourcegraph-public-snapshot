@@ -7,8 +7,8 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
 import { useInsightTitleValidator } from '../../../../../../components/form/hooks/useInsightTitleValidator'
-import { Organization } from '../../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../../core/types'
+import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
@@ -33,7 +33,7 @@ export interface LangStatsInsightCreationContentProps {
     /** Final settings cascade. Used for title field validation. */
     settings?: Settings | null
 
-    organizations?: Organization[]
+    subjects?: SupportedInsightSubject[]
 
     /** Initial value for all form fields. */
     initialValues?: LangStatsCreationFormFields
@@ -51,16 +51,19 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     const {
         mode = 'creation',
         settings,
-        organizations = [],
-        initialValues = INITIAL_VALUES,
+        subjects = [],
+        initialValues,
         className,
         onSubmit,
         onCancel = noop,
         onChange = noop,
     } = props
 
+    // Calculate initial value for the visibility settings
+    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
+
     const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
-        initialValues,
+        initialValues: initialValues ?? { ...INITIAL_VALUES, visibility: userSubjectID },
         onSubmit,
         onChange,
         touched: mode === 'edit',
@@ -107,7 +110,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
                 repository={repository}
                 threshold={threshold}
                 visibility={visibility}
-                organizations={organizations}
+                subjects={subjects}
                 isFormClearActive={hasFilledValue}
                 onCancel={onCancel}
                 className={styles.contentForm}

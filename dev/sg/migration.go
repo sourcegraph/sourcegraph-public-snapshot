@@ -254,7 +254,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 			squasherContainerName,
 		}
 		if _, killErr := runDockerCmd(killArgs...); killErr != nil {
-			err = multierror.Append(err, fmt.Errorf("failed to stop docker container: %s", killErr))
+			err = multierror.Append(err, errors.Errorf("failed to stop docker container: %s", killErr))
 		}
 
 		return err

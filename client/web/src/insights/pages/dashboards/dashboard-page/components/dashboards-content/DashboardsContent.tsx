@@ -1,10 +1,11 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -13,9 +14,10 @@ import { HeroPage } from '../../../../../../components/HeroPage'
 import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightsViewGrid } from '../../../../../components'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isRealDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
-import { useDashboards } from '../../hooks/use-dashboards/use-dashboards'
+import { useDashboards } from '../../../../../hooks/use-dashboards/use-dashboards'
+import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 
@@ -24,7 +26,8 @@ import styles from './DashboardsContent.module.scss'
 export interface DashboardsContentProps
     extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'updateSettings'> {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -35,10 +38,13 @@ export interface DashboardsContentProps
 }
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
-    const { extensionsController, settingsCascade, dashboardID, telemetryService } = props
+    const { extensionsController, settingsCascade, dashboardID, telemetryService, platformContext } = props
 
     const history = useHistory()
     const dashboards = useDashboards(settingsCascade)
+
+    // State to open/close add/remove insights modal UI
+    const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
 
     const currentDashboard = dashboards.find(dashboard => {
         if (isVirtualDashboard(dashboard)) {
@@ -85,6 +91,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 return
             }
 
+            case DashboardMenuAction.AddRemoveInsights: {
+                setAddInsightsState(true)
+            }
+
             // Implement other actions
         }
     }
@@ -115,6 +125,18 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             ) : (
                 <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
             )}
+
+            {isAddInsightOpen &&
+                currentDashboard &&
+                isRealDashboard(currentDashboard) &&
+                isSettingsBasedInsightsDashboard(currentDashboard) && (
+                    <AddInsightModal
+                        platformContext={platformContext}
+                        settingsCascade={settingsCascade}
+                        dashboard={currentDashboard}
+                        onClose={() => setAddInsightsState(false)}
+                    />
+                )}
         </div>
     )
 }

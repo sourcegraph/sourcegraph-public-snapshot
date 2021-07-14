@@ -718,7 +718,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		return &SearchResults{}, nil
 	}
 	// Unreachable.
-	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
+	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
 // evaluate evaluates all expressions of a search query.
@@ -927,7 +927,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			}
 			return r.resultsRecursive(ctx, plan)
 		})
-		if err != nil && errors.Is(err, ErrPredicateNoResults) {
+		if errors.Is(err, ErrPredicateNoResults) {
 			continue
 		}
 		if err != nil {
@@ -968,7 +968,7 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 	for _, match := range matches {
 		repoMatch, ok := match.(*result.RepoMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
+			return nil, errors.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
 		}
 
 		nodes = append(nodes, query.Parameter{
@@ -987,7 +987,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	for _, match := range matches {
 		fileMatch, ok := match.(*result.FileMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
+			return nil, errors.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
 		}
 
 		// We create AND nodes to match both the repo and the file at the same time so
@@ -1080,7 +1080,7 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 				return nil
 			}
 		default:
-			topErr = fmt.Errorf("unsupported predicate result type %q", predicate.Field())
+			topErr = errors.Errorf("unsupported predicate result type %q", predicate.Field())
 			return nil
 		}
 
@@ -1217,7 +1217,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 		if attempts > 5 {
 			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
-			return nil, fmt.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", len(v.Cloning()), len(v.Timedout()))
+			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", len(v.Cloning()), len(v.Timedout()))
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed
