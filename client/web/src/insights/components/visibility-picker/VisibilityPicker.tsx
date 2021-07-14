@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from 'react'
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'
 
 import { SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
@@ -55,8 +55,10 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             name="visibility"
             title="Visibility"
             subtitle={
-                <span>This insight will be always displayed in the {' '}
-                    <Link to='/insights/dashboards/all'>‘All Insights’ dashboard</Link>{' '} by default</span>
+                <span>
+                    This insight will be always displayed in the{' '}
+                    <Link to="/insights/dashboards/all">‘All Insights’ dashboard</Link> by default
+                </span>
             }
             className="mb-0 mt-4"
             labelClassName={labelClassName}
