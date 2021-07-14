@@ -26,7 +26,7 @@ export async function startDevelopmentServer(): Promise<void> {
     const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
     signale.start('Starting webpack-dev-server with environment config:\n', environmentConfig)
 
-    const proxyConfig = {
+    const proxyConfig: ProxyConfigArrayItem = {
         context: PROXY_ROUTES,
         ...getAPIProxySettings({
             csrfContextValue,
@@ -54,7 +54,7 @@ export async function startDevelopmentServer(): Promise<void> {
             publicPath: [STATIC_ASSETS_URL, '/'],
         },
         firewall: false,
-        proxy: [proxyConfig as ProxyConfigArrayItem],
+        proxy: [proxyConfig],
         onBeforeSetupMiddleware(app: Application) {
             app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
         },

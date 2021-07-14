@@ -89,6 +89,8 @@ async function webpackDevelopmentServer() {
   }
 
   const options = {
+    // react-refresh plugin triggers page reload if needed.
+    liveReload: false,
     hot: !process.env.NO_HOT,
     firewall: false,
     host: 'localhost',
@@ -96,6 +98,7 @@ async function webpackDevelopmentServer() {
     client: {
       host: sockHost,
       port: sockPort,
+      overlay: false,
     },
     static: {
       directory: './ui/assets',
