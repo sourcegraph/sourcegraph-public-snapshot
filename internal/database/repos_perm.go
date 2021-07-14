@@ -50,8 +50,6 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB, requester string) (*sqlf
 	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
 		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
 		if err != nil {
-			meta.Error = err.Error()
-			logSecurityBypass(ctx, db, false, meta)
 			return nil, err
 		}
 		authenticatedUserID = currentUser.ID
@@ -60,7 +58,9 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB, requester string) (*sqlf
 		meta.SiteAdmin = currentUser.SiteAdmin
 		meta.EnforceForSiteAdmins = enforceForSiteAdmins
 	}
-	logSecurityBypass(ctx, db, bypassAuthz, meta)
+	if bypassAuthz {
+		logSecurityBypass(ctx, db, meta)
+	}
 
 	q := authzQuery(bypassAuthz,
 		usePermissionsUserMapping,
@@ -80,17 +80,12 @@ type bypassRequestMetadata = struct {
 	Error                string `json:"error"`
 }
 
-func logSecurityBypass(ctx context.Context, db dbutil.DB, granted bool, meta bypassRequestMetadata) {
+func logSecurityBypass(ctx context.Context, db dbutil.DB, meta bypassRequestMetadata) {
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(meta)
 
-	name := SecurityEventNameBypassDenied
-	if granted {
-		name = SecurityEventNameBypassGranted
-	}
-
 	event := &SecurityEvent{
-		Name:            name,
+		Name:            SecurityEventNameBypassGranted,
 		URL:             "",
 		UserID:          uint32(a.UID),
 		AnonymousUserID: "",
