@@ -1,6 +1,13 @@
 import { modify } from '@sourcegraph/shared/src/util/jsonc'
 
-import { Insight, InsightTypePrefix, isLangStatsInsight, isSearchBasedInsight } from '../types'
+import {
+    Insight,
+    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
+    InsightType,
+    InsightTypePrefix,
+    isLangStatsInsight,
+    isSearchBasedInsight,
+} from '../types'
 
 /**
  * Returns insights extension name based on insight id.
@@ -18,6 +25,30 @@ const getExtensionNameByInsight = (insight: Insight): string | undefined => {
 }
 
 /**
+ * Returns insight settings key. Since different types of insight live in different
+ * places in the settings we have to derive this place (settings key) by insight types
+ */
+const getInsightSettingKey = (insight: Insight): string[] => {
+    // Lang stats insight always lives on top level by its unique id
+    if (isLangStatsInsight(insight)) {
+        return [insight.id]
+    }
+
+    // Search based insight may live in two main places
+    switch (insight.type) {
+        // Extension based lives on top level of settings file by its id
+        case InsightType.Extension: {
+            return [insight.id]
+        }
+
+        // Backend based insight lives in insights.allrepos map
+        case InsightType.Backend: {
+            return [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insight.id]
+        }
+    }
+}
+
+/**
  * Serializes and adds insight configurations to the settings content string (jsonc).
  * Returns settings content string with serialized insight inside.
  *
@@ -25,7 +56,8 @@ const getExtensionNameByInsight = (insight: Insight): string | undefined => {
  * @param insight - insight configuration to add in settings file
  */
 export const addInsightToSettings = (settings: string, insight: Insight): string => {
-    const { id, visibility, ...originalInsight } = insight
+    // remove all synthetic properties from the insight object
+    const { id, visibility, type, ...originalInsight } = insight
 
     const extensionName = getExtensionNameByInsight(insight)
 
@@ -35,9 +67,10 @@ export const addInsightToSettings = (settings: string, insight: Insight): string
 
     // Turn on extension if user in creation code insight.
     const settingsWithExtension = modify(settings, ['extensions', extensionName], true)
+    const insightSettingsKey = getInsightSettingKey(insight)
 
     // Add insight to the user settings
-    return modify(settingsWithExtension, [id], originalInsight)
+    return modify(settingsWithExtension, insightSettingsKey, originalInsight)
 }
 
 interface RemoveInsightFromSettingsInputs {
@@ -75,11 +108,20 @@ export const removeInsightFromSettings = (props: RemoveInsightFromSettingsInputs
         )
     }
 
-    // Remove insight settings from subject (user/org settings)
-    return modify(
-        originalSettings,
-        // According to our naming convention <type>.insight.<name>
-        [insightID],
-        undefined
-    )
+    // Just to be sure that we removed this insight whatever this insight is (backend or extension based)
+    // Remove this insight from top level of settings file and from insights.allrepos
+    const allPossibleInsightSettingsKeys = [[insightID], [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insightID]]
+
+    let editedSettings = originalSettings
+
+    for (const settingsKey of allPossibleInsightSettingsKeys) {
+        editedSettings = modify(
+            originalSettings,
+            // According to our naming convention <type>.insight.<name>
+            settingsKey,
+            undefined
+        )
+    }
+
+    return editedSettings
 }
