@@ -17,11 +17,9 @@ import {
 } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadLink } from '../BatchSpec'
 
+import { queryChangesetApplyPreview as _queryChangesetApplyPreview } from './backend'
 import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
-import {
-    queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
-    queryChangesetApplyPreview as _queryChangesetApplyPreview,
-} from './list/backend'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './list/backend'
 import { PreviewList } from './list/PreviewList'
 
 export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {

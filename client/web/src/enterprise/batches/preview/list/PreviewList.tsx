@@ -14,7 +14,7 @@ import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { canSetPublishedState } from '../utils'
 
-import { queryChangesetSpecFileDiffs } from './backend'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow } from './PreviewFilterRow'
@@ -32,7 +32,7 @@ interface Props extends ThemeProps {
     /** For testing only. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
     /** For testing only. */
-    queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
+    queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
     expandChangesetDescriptions?: boolean
 }
@@ -50,7 +50,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     selectionEnabled,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
-    queryChangesetSpecFileDiffs,
+    queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
     const { filters, setPagination, setHasMorePages, setTotalCount } = useContext(BatchChangePreviewContext)
