@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
@@ -154,7 +155,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 
 func TimeoutDuration(b query.Basic) time.Duration {
 	d := DefaultTimeout
-	maxTimeout := time.Duration(SearchLimits().MaxTimeoutSeconds) * time.Second
+	maxTimeout := time.Duration(SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
 	timeout := b.GetTimeout()
 	if timeout != nil {
 		d = *timeout
