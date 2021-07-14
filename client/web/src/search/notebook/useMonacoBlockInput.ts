@@ -60,25 +60,28 @@ export const useMonacoBlockInput = ({
         if (!editor) {
             return
         }
-        const addRunBlockActionDisposable = editor.addAction({
-            id: 'run-block-on-cmd-enter',
-            label: 'Run block',
-            keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
-            run: () => onRunBlock(id),
-        })
-        const blurOnEscapeDisposable = editor.addAction({
-            id: 'blur-on-esacpe',
-            label: 'Blur on escape',
-            keybindings: [Monaco.KeyCode.Escape],
-            run: () => {
-                if (document.activeElement instanceof HTMLElement) {
-                    document.activeElement.blur()
-                }
-            },
-        })
+        const disposables = [
+            editor.addAction({
+                id: 'run-block-on-cmd-enter',
+                label: 'Run block',
+                keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
+                run: () => onRunBlock(id),
+            }),
+            editor.addAction({
+                id: 'blur-on-esacpe',
+                label: 'Blur on escape',
+                keybindings: [Monaco.KeyCode.Escape],
+                run: () => {
+                    if (document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur()
+                    }
+                },
+            }),
+        ]
         return () => {
-            addRunBlockActionDisposable.dispose()
-            blurOnEscapeDisposable.dispose()
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
         }
     }, [editor, id, onRunBlock, onMoveBlockSelection])
 
