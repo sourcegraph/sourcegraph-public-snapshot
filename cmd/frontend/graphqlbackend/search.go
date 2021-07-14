@@ -261,19 +261,19 @@ type resolveRepositoriesOpts struct {
 
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where opts.effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, q query.Q, opts resolveRepositoriesOpts) (resolved searchrepos.Resolved, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, options searchrepos.Options) (resolved searchrepos.Resolved, err error) {
 	if mockResolveRepositories != nil {
 		return mockResolveRepositories()
 	}
 
-	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("opts: %+v", opts))
+	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("optionss: %+v", options))
 	defer func() {
 		tr.SetError(err)
 		tr.LazyPrintf("%s", resolved.String())
 		tr.Finish()
 	}()
 
-	if len(opts.effectiveRepoFieldValues) == 0 && opts.limit == 0 {
+	if options.CacheLookup {
 		// Cache if opts are empty, so that multiple calls to resolveRepositories only
 		// hit the database once.
 		r.reposMu.Lock()
@@ -288,75 +288,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, q query.Q, opt
 		}()
 	}
 
-	repoFilters, minusRepoFilters := q.Repositories()
-	if opts.effectiveRepoFieldValues != nil {
-		repoFilters = opts.effectiveRepoFieldValues
-
-	}
-	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
-
-	var settingForks, settingArchived bool
-	if v := r.UserSettings.SearchIncludeForks; v != nil {
-		settingForks = *v
-	}
-	if v := r.UserSettings.SearchIncludeArchived; v != nil {
-		settingArchived = *v
-	}
-
-	fork := query.No
-	if searchrepos.ExactlyOneRepo(repoFilters) || settingForks {
-		// fork defaults to No unless either of:
-		// (1) exactly one repo is being searched, or
-		// (2) user/org/global setting includes forks
-		fork = query.Yes
-	}
-	if setFork := q.Fork(); setFork != nil {
-		fork = *setFork
-	}
-
-	archived := query.No
-	if searchrepos.ExactlyOneRepo(repoFilters) || settingArchived {
-		// archived defaults to No unless either of:
-		// (1) exactly one repo is being searched, or
-		// (2) user/org/global setting includes archives in all searches
-		archived = query.Yes
-	}
-	if setArchived := q.Archived(); setArchived != nil {
-		archived = *setArchived
-	}
-
-	visibilityStr, _ := q.StringValue(query.FieldVisibility)
-	visibility := query.ParseVisibility(visibilityStr)
-
-	commitAfter, _ := q.StringValue(query.FieldRepoHasCommitAfter)
-	searchContextSpec, _ := q.StringValue(query.FieldContext)
-
-	var versionContextName string
-	if r.VersionContext != nil {
-		versionContextName = *r.VersionContext
-	}
-
 	tr.LazyPrintf("resolveRepositories - start")
 	defer tr.LazyPrintf("resolveRepositories - done")
 
-	options := searchrepos.Options{
-		RepoFilters:        repoFilters,
-		MinusRepoFilters:   minusRepoFilters,
-		RepoGroupFilters:   repoGroupFilters,
-		VersionContextName: versionContextName,
-		SearchContextSpec:  searchContextSpec,
-		UserSettings:       r.UserSettings,
-		OnlyForks:          fork == query.Only,
-		NoForks:            fork == query.No,
-		OnlyArchived:       archived == query.Only,
-		NoArchived:         archived == query.No,
-		OnlyPrivate:        visibility == query.Private,
-		OnlyPublic:         visibility == query.Public,
-		CommitAfter:        commitAfter,
-		Query:              r.Query,
-		Ranked:             true,
-		Limit:              opts.limit,
-	}
 	repositoryResolver := &searchrepos.Resolver{
 		DB:                  r.db,
 		Zoekt:               r.zoekt,
@@ -389,7 +323,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, err
 	}
 
-	resolved, err := r.resolveRepositories(ctx, args.Query, resolveRepositoriesOpts{})
+	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {
 		return nil, err
 	}

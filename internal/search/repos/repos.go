@@ -332,6 +332,7 @@ type Options struct {
 	OnlyPublic         bool
 	Ranked             bool // Return results ordered by rank
 	Limit              int
+	CacheLookup        bool
 	Query              query.Q
 }
 
