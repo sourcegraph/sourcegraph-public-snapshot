@@ -30,6 +30,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
+            allRepos: false,
         }),
         [insight]
     )
