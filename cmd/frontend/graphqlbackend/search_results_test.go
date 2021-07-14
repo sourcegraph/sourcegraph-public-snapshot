@@ -530,16 +530,18 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	zoektRepo := &zoekt.RepoListEntry{
 		Repository: zoekt.Repository{
+			ID:       uint32(repoWithIDs.ID),
 			Name:     string(repoWithIDs.Name),
 			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 		},
 	}
 
 	zoektFileMatches := []zoekt.FileMatch{{
-		Score:      5.0,
-		FileName:   fileName,
-		Repository: string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
-		Branches:   []string{"master"},
+		Score:        5.0,
+		FileName:     fileName,
+		RepositoryID: uint32(repoWithIDs.ID),
+		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
+		Branches:     []string{"master"},
 		LineMatches: []zoekt.LineMatch{
 			{
 				Line: nil,

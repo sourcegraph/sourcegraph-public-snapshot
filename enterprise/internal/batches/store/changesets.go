@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -779,7 +778,7 @@ func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
 			return err
 		}
 	default:
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	if *n.Assocs == nil {

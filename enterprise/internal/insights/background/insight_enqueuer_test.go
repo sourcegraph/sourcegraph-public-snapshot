@@ -19,10 +19,10 @@ var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
 	"insights": [
 		{
 		  "title": "fmt usage",
-		  "description": "fmt.Errorf/fmt.Printf usage",
+		  "description": "errors.Errorf/fmt.Printf usage",
 		  "series": [
 			{
-			  "label": "fmt.Errorf",
+			  "label": "errors.Errorf",
 			  "search": "errorf",
 			},
 			{

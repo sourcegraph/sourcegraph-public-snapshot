@@ -696,6 +696,7 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
+				ID:       uint32(i),
 				Name:     name,
 				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 			},
@@ -711,10 +712,11 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 		fileName := fmt.Sprintf("foobar-%d.go", i)
 
 		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
-			Score:      5.0,
-			FileName:   fileName,
-			Repository: repoName, // Important: this needs to match a name in `repos`
-			Branches:   []string{"master"},
+			Score:        5.0,
+			FileName:     fileName,
+			RepositoryID: uint32(i),
+			Repository:   repoName, // Important: this needs to match a name in `repos`
+			Branches:     []string{"master"},
 			LineMatches: []zoekt.LineMatch{
 				{
 					Line: nil,

@@ -66,8 +66,7 @@ func alertForCappedAndExpression() *searchAlert {
 
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
-	switch err.(type) {
-	case *query.UnsupportedError, *query.ExpectedOperand:
+	if errors.HasType(err, &query.UnsupportedError{}) || errors.HasType(err, &query.ExpectedOperand{}) {
 		return &searchAlert{
 			prometheusType: "unsupported_and_or_query",
 			title:          "Unable To Process Query",
@@ -558,23 +557,26 @@ func errorToAlert(err error) (*searchAlert, error) {
 		return nil, nil
 	}
 
-	if me, ok := err.(*multierror.Error); ok {
-		return multierrorToAlert(me)
+	{
+		var e *multierror.Error
+		if errors.As(err, &e) {
+			return multierrorToAlert(e)
+		}
 	}
 
-	if errors.Is(err, authz.ErrStalePermissions{}) {
+	if errors.HasType(err, authz.ErrStalePermissions{}) {
 		return alertForStalePermissions(), nil
 	}
 
 	{
-		e := git.BadCommitError{}
+		var e git.BadCommitError
 		if errors.As(err, &e) {
 			return alertForInvalidRevision(e.Spec), nil
 		}
 	}
 
 	{
-		e := &errOverRepoLimit{}
+		var e *errOverRepoLimit
 		if errors.As(err, &e) {
 			return &searchAlert{
 				prometheusType:  "over_repo_limit",
@@ -586,7 +588,7 @@ func errorToAlert(err error) (*searchAlert, error) {
 	}
 
 	{
-		e := &errNoResolvedRepos{}
+		var e *errNoResolvedRepos
 		if errors.As(err, &e) {
 			return &searchAlert{
 				prometheusType:  e.PrometheusType,

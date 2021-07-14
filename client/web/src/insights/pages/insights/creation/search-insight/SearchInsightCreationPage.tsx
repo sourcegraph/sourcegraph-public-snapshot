@@ -8,12 +8,12 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
     SearchInsightCreationContent,
@@ -27,22 +27,17 @@ import { useSearchInsightInitialValues } from './utils/use-initial-values'
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
         SettingsCascadeProps,
-        TelemetryProps {
-    /**
-     * Authenticated user info, Used to decide where code insight will appears
-     * in personal dashboard (private) or in organisation dashboard (public)
-     * */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'>
-}
+        TelemetryProps {}
 
 /** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
-    const { platformContext, authenticatedUser, settingsCascade, telemetryService } = props
+    const { platformContext, settingsCascade, telemetryService } = props
 
     const history = useHistory()
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
+    const subjects = useInsightSubjects({ settingsCascade })
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
@@ -50,13 +45,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
-            const { id: userID } = authenticatedUser
-
-            const subjectID =
-                values.visibility === 'personal'
-                    ? userID
-                    : // If this is not a 'personal' value than we are dealing with org id
-                      values.visibility
+            const subjectID = values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
@@ -77,7 +66,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             return
         },
         [
-            authenticatedUser,
             getSubjectSettings,
             updateSubjectSettings,
             platformContext,
@@ -96,10 +84,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         setLocalStorageFormValues(undefined)
         history.push('/insights')
     }, [history, setLocalStorageFormValues, telemetryService])
-
-    const {
-        organizations: { nodes: orgs },
-    } = authenticatedUser
 
     return (
         <Page className={classnames('col-10', styles.creationPage)}>
@@ -134,7 +118,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                             dataTestId="search-insight-create-page-content"
                             settings={settingsCascade.final}
                             initialValue={initialValues}
-                            organizations={orgs}
+                            subjects={subjects}
                             onSubmit={handleSubmit}
                             onCancel={handleCancel}
                             onChange={handleChange}

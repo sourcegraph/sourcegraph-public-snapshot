@@ -2887,8 +2887,10 @@ type BatchSpecExecution implements Node {
     """
     failure: String
 
-    ### TODO(eseliger): We want to provide more information here. Take inspiration
-    # steps: IndexSteps!
+    """
+    The configuration and execution summary (if completed or errored) of this execution.
+    """
+    steps: BatchSpecExecutionSteps!
 
     """
     The rank of this execution in the queue. The value of this field is null if the
@@ -2913,6 +2915,27 @@ type BatchSpecExecution implements Node {
     namespace.
     """
     namespace: Namespace!
+}
+
+"""
+Configuration and execution summary of a batch spec execution.
+"""
+type BatchSpecExecutionSteps {
+    """
+    Execution log entries related to setting up the workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Execution log entry related to running src batch preview.
+    This field is null, if the step had not been executed.
+    """
+    srcPreview: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
 }
 
 """

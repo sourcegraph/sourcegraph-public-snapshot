@@ -1,10 +1,11 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -15,16 +16,20 @@ import { InsightsViewGrid } from '../../../../../components'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
-import { useDashboards } from '../../hooks/use-dashboards/use-dashboards'
+import { useDashboards } from '../../../../../hooks/use-dashboards/use-dashboards'
+import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
+import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
 
 import styles from './DashboardsContent.module.scss'
+import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps
     extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'updateSettings'> {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -35,10 +40,14 @@ export interface DashboardsContentProps
 }
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
-    const { extensionsController, settingsCascade, dashboardID, telemetryService } = props
+    const { extensionsController, settingsCascade, dashboardID, telemetryService, platformContext } = props
 
     const history = useHistory()
     const dashboards = useDashboards(settingsCascade)
+
+    // State to open/close add/remove insights modal UI
+    const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
+    const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
     const currentDashboard = dashboards.find(dashboard => {
         if (isVirtualDashboard(dashboard)) {
@@ -74,13 +83,21 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
-                if (
-                    currentDashboard &&
-                    !isVirtualDashboard(currentDashboard) &&
-                    isSettingsBasedInsightsDashboard(currentDashboard)
-                ) {
+                if (!isVirtualDashboard(currentDashboard) && isSettingsBasedInsightsDashboard(currentDashboard)) {
                     history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
                 }
+
+                return
+            }
+
+            case DashboardMenuAction.AddRemoveInsights: {
+                setAddInsightsState(true)
+
+                return
+            }
+
+            case DashboardMenuAction.Delete: {
+                setDeleteDashboardActive(true)
 
                 return
             }
@@ -101,7 +118,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     className={classnames(styles.dashboardSelect, 'mr-2')}
                 />
 
-                <DashboardMenu dashboard={currentDashboard} onSelect={handleSelect} />
+                <DashboardMenu dashboard={currentDashboard} settingsCascade={settingsCascade} onSelect={handleSelect} />
             </section>
 
             <hr className="mt-2 mb-3" />
@@ -114,6 +131,23 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 />
             ) : (
                 <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
+            )}
+
+            {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (
+                <AddInsightModal
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
+                    dashboard={currentDashboard}
+                    onClose={() => setAddInsightsState(false)}
+                />
+            )}
+
+            {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
+                <DeleteDashboardModal
+                    dashboard={currentDashboard}
+                    platformContext={platformContext}
+                    onClose={() => setDeleteDashboardActive(false)}
+                />
             )}
         </div>
     )
