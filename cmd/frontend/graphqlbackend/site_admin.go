@@ -176,7 +176,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	// the lifetime of this function when we have all the details required for eventArgs, especially
 	// eventArgs.By which is used as the UserID in database.SecurityEvent - a required argument to
 	// write an entry into the database.
-	var eventName = database.SecurityEventNameRoleChangeDenied
+	eventName := database.SecurityEventNameRoleChangeDenied
 	defer logRoleChangeAttempt(ctx, r.db, &eventName, &eventArgs, &err)
 
 	if err = backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
