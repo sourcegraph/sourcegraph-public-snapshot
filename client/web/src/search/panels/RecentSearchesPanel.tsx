@@ -190,7 +190,7 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
     for (const node of eventLogResult.nodes) {
         if (node.argument) {
             const parsedArguments = JSON.parse(node.argument)
-            const searchText: string = parsedArguments?.code_search?.query_data?.combined
+            const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
 
             if (searchText) {
                 if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
