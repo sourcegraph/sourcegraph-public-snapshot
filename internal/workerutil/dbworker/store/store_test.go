@@ -146,7 +146,7 @@ func TestStoreDequeueKeepsHeartbeat(t *testing.T) {
 
 		// Give the heartbeat goroutine some time to ensure the database write
 		// is propagated before we read it.
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		times = append(times, getTime())
 	}
 
