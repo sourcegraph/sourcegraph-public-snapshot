@@ -141,8 +141,13 @@ func TestStoreDequeueKeepsHeartbeat(t *testing.T) {
 	var times, expectedTimes []time.Time
 	for i := 0; i < 10; i++ {
 		clock.BlockingAdvance(time.Second)
+
+		expectedTimes = append(expectedTimes, now.Add(time.Second*time.Duration(i+1)))
+
+		// Give the heartbeat goroutine some time to ensure the database write
+		// is propagated before we read it.
+		time.Sleep(5 * time.Millisecond)
 		times = append(times, getTime())
-		expectedTimes = append(expectedTimes, now.Add(time.Second*time.Duration(i)))
 	}
 
 	if diff := cmp.Diff(expectedTimes, times); diff != "" {
