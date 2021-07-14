@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -1163,248 +1164,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 	})
 
-	t.Run("CancelQueuedBatchChangeChangesets", func(t *testing.T) {
-		var batchChangeID int64 = 99999
-
-		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			Repo:               repo.ID,
-			BatchChange:        batchChangeID,
-			OwnedByBatchChange: batchChangeID,
-			ReconcilerState:    btypes.ReconcilerStateQueued,
-		})
-
-		c2 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			Repo:               repo.ID,
-			BatchChange:        batchChangeID,
-			OwnedByBatchChange: batchChangeID,
-			ReconcilerState:    btypes.ReconcilerStateErrored,
-			NumFailures:        1,
-		})
-
-		c3 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			Repo:               repo.ID,
-			BatchChange:        batchChangeID,
-			OwnedByBatchChange: batchChangeID,
-			ReconcilerState:    btypes.ReconcilerStateCompleted,
-		})
-
-		c4 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			Repo:               repo.ID,
-			BatchChange:        batchChangeID,
-			OwnedByBatchChange: 0,
-			PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-			ReconcilerState:    btypes.ReconcilerStateQueued,
-		})
-
-		// TODO: The goroutine runs into `conn busy`.
-		//
-		// // These two changesets will not be canceled in the first iteration of
-		// // the loop in CancelQueuedBatchChangeChangesets, because they're both
-		// // processing.
-		// c5 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-		// 	Repo:               repo.ID,
-		// 	BatchChange:        batchChangeID,
-		// 	OwnedByBatchChange: batchChangeID,
-		// 	ReconcilerState:    btypes.ReconcilerStateProcessing,
-		// })
-
-		// c6 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-		// 	Repo:               repo.ID,
-		// 	BatchChange:        batchChangeID,
-		// 	OwnedByBatchChange: batchChangeID,
-		// 	ReconcilerState:    btypes.ReconcilerStateProcessing,
-		// })
-
-		// // We start this goroutine to simulate the processing of these
-		// // changesets to stop after 50ms
-		// go func(t *testing.T) {
-		// 	time.Sleep(50 * time.Millisecond)
-
-		// 	// c5 ends up errored, which would be retried, so it needs to be
-		// 	// canceled
-		// 	c5.ReconcilerState = btypes.ReconcilerStateErrored
-		// 	if err := s.UpdateChangeset(ctx, c5); err != nil {
-		// 		t.Errorf("update changeset failed: %s", err)
-		// 	}
-
-		// 	time.Sleep(50 * time.Millisecond)
-
-		// 	// c6 ends up completed, so it does not need to be canceled
-		// 	c6.ReconcilerState = btypes.ReconcilerStateCompleted
-		// 	if err := s.UpdateChangeset(ctx, c6); err != nil {
-		// 		t.Errorf("update changeset failed: %s", err)
-		// 	}
-		// }(t)
-
-		if err := s.CancelQueuedBatchChangeChangesets(ctx, batchChangeID); err != nil {
-			t.Fatal(err)
-		}
-
-		ct.ReloadAndAssertChangeset(t, ctx, s, c1, ct.ChangesetAssertions{
-			Repo:               repo.ID,
-			ReconcilerState:    btypes.ReconcilerStateFailed,
-			OwnedByBatchChange: batchChangeID,
-			FailureMessage:     &CanceledChangesetFailureMessage,
-			AttachedTo:         []int64{batchChangeID},
-		})
-
-		ct.ReloadAndAssertChangeset(t, ctx, s, c2, ct.ChangesetAssertions{
-			Repo:               repo.ID,
-			ReconcilerState:    btypes.ReconcilerStateFailed,
-			OwnedByBatchChange: batchChangeID,
-			FailureMessage:     &CanceledChangesetFailureMessage,
-			NumFailures:        1,
-			AttachedTo:         []int64{batchChangeID},
-		})
-
-		ct.ReloadAndAssertChangeset(t, ctx, s, c3, ct.ChangesetAssertions{
-			Repo:               repo.ID,
-			ReconcilerState:    btypes.ReconcilerStateCompleted,
-			OwnedByBatchChange: batchChangeID,
-			AttachedTo:         []int64{batchChangeID},
-		})
-
-		ct.ReloadAndAssertChangeset(t, ctx, s, c4, ct.ChangesetAssertions{
-			Repo:             repo.ID,
-			ReconcilerState:  btypes.ReconcilerStateQueued,
-			PublicationState: btypes.ChangesetPublicationStateUnpublished,
-			AttachedTo:       []int64{batchChangeID},
-		})
-
-		// ct.ReloadAndAssertChangeset(t, ctx, s, c5, ct.ChangesetAssertions{
-		// 	Repo:               repo.ID,
-		// 	ReconcilerState:    btypes.ReconcilerStateFailed,
-		// 	FailureMessage:     &CanceledChangesetFailureMessage,
-		// 	OwnedByBatchChange: batchChangeID,
-		// 	AttachedTo:         []int64{batchChangeID},
-		// })
-
-		// ct.ReloadAndAssertChangeset(t, ctx, s, c6, ct.ChangesetAssertions{
-		// 	Repo:               repo.ID,
-		// 	ReconcilerState:    btypes.ReconcilerStateCompleted,
-		// 	OwnedByBatchChange: batchChangeID,
-		// 	AttachedTo:         []int64{batchChangeID},
-		// })
-	})
-
-	t.Run("EnqueueChangesetsToClose", func(t *testing.T) {
-		var batchChangeID int64 = 99999
-
-		wantEnqueued := ct.ChangesetAssertions{
-			Repo:               repo.ID,
-			OwnedByBatchChange: batchChangeID,
-			ReconcilerState:    btypes.ReconcilerStateQueued,
-			PublicationState:   btypes.ChangesetPublicationStatePublished,
-			NumFailures:        0,
-			FailureMessage:     nil,
-			Closing:            true,
-		}
-
-		tests := []struct {
-			have ct.TestChangesetOpts
-			want ct.ChangesetAssertions
-		}{
-			{
-				have: ct.TestChangesetOpts{
-					ReconcilerState:  btypes.ReconcilerStateQueued,
-					PublicationState: btypes.ChangesetPublicationStatePublished,
-				},
-				want: wantEnqueued,
-			},
-			// TODO: See comment below
-			// {
-			// 	have: ct.TestChangesetOpts{
-			// 		ReconcilerState:  btypes.ReconcilerStateProcessing,
-			// 		PublicationState: btypes.ChangesetPublicationStatePublished,
-			// 	},
-			// 	want: wantEnqueued,
-			// },
-			{
-				have: ct.TestChangesetOpts{
-					ReconcilerState:  btypes.ReconcilerStateErrored,
-					PublicationState: btypes.ChangesetPublicationStatePublished,
-					FailureMessage:   "failed",
-					NumFailures:      1,
-				},
-				want: wantEnqueued,
-			},
-			{
-				have: ct.TestChangesetOpts{
-					ExternalState:    btypes.ChangesetExternalStateOpen,
-					ReconcilerState:  btypes.ReconcilerStateCompleted,
-					PublicationState: btypes.ChangesetPublicationStatePublished,
-				},
-				want: ct.ChangesetAssertions{
-					ReconcilerState:  btypes.ReconcilerStateQueued,
-					PublicationState: btypes.ChangesetPublicationStatePublished,
-					Closing:          true,
-					ExternalState:    btypes.ChangesetExternalStateOpen,
-				},
-			},
-			{
-				have: ct.TestChangesetOpts{
-					ExternalState:    btypes.ChangesetExternalStateClosed,
-					ReconcilerState:  btypes.ReconcilerStateCompleted,
-					PublicationState: btypes.ChangesetPublicationStatePublished,
-				},
-				want: ct.ChangesetAssertions{
-					ReconcilerState:  btypes.ReconcilerStateCompleted,
-					ExternalState:    btypes.ChangesetExternalStateClosed,
-					PublicationState: btypes.ChangesetPublicationStatePublished,
-				},
-			},
-			{
-				have: ct.TestChangesetOpts{
-					ReconcilerState:  btypes.ReconcilerStateCompleted,
-					PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				},
-				want: ct.ChangesetAssertions{
-					ReconcilerState:  btypes.ReconcilerStateCompleted,
-					PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				},
-			},
-		}
-
-		changesets := make(map[*btypes.Changeset]ct.ChangesetAssertions)
-		for _, tc := range tests {
-			opts := tc.have
-			opts.Repo = repo.ID
-			opts.BatchChange = batchChangeID
-			opts.OwnedByBatchChange = batchChangeID
-
-			c := ct.CreateChangeset(t, ctx, s, opts)
-			changesets[c] = tc.want
-
-			// TODO: The goroutine runs into "conn busy" errors when trying to
-			// update
-			//
-			// // If we have a changeset that's still processing we need to make
-			// // sure that we finish it, otherwise the loop in
-			// // EnqueueChangesetsToClose will take 2min and then fail.
-			// if c.ReconcilerState == btypes.ReconcilerStateProcessing {
-			// 	go func(t *testing.T) {
-			// 		time.Sleep(50 * time.Millisecond)
-
-			// 		c.ReconcilerState = btypes.ReconcilerStateCompleted
-			// 		if err := s.UpdateChangeset(ctx, c); err != nil {
-			// 			t.Errorf("update changeset failed: %s", err)
-			// 		}
-			// 	}(t)
-			// }
-		}
-
-		if err := s.EnqueueChangesetsToClose(ctx, batchChangeID); err != nil {
-			t.Fatal(err)
-		}
-
-		for changeset, want := range changesets {
-			want.Repo = repo.ID
-			want.OwnedByBatchChange = batchChangeID
-			want.AttachedTo = []int64{batchChangeID}
-			ct.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
-		}
-	})
-
 	t.Run("GetChangesetsStats", func(t *testing.T) {
 		var batchChangeID int64 = 191918
 		currentBatchChangeStats, err := s.GetChangesetsStats(ctx, batchChangeID)
@@ -2182,5 +1941,275 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 		if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, cs.ID); err != ErrNoResults {
 			t.Errorf("unexpected error: %v", err)
 		}
+	}
+}
+
+func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
+	// We use a separate test for CancelQueuedBatchChangeChangesets because we
+	// want to access the database from different connections and the other
+	// integration/store tests all execute in a single transaction.
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+
+	s := New(db, nil)
+
+	user := ct.CreateTestUser(t, db, true)
+	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
+	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
+	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
+	repo := repos[0]
+
+	c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:               repo.ID,
+		BatchChange:        batchChange.ID,
+		OwnedByBatchChange: batchChange.ID,
+		ReconcilerState:    btypes.ReconcilerStateQueued,
+	})
+
+	c2 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:               repo.ID,
+		BatchChange:        batchChange.ID,
+		OwnedByBatchChange: batchChange.ID,
+		ReconcilerState:    btypes.ReconcilerStateErrored,
+		NumFailures:        1,
+	})
+
+	c3 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:               repo.ID,
+		BatchChange:        batchChange.ID,
+		OwnedByBatchChange: batchChange.ID,
+		ReconcilerState:    btypes.ReconcilerStateCompleted,
+	})
+
+	c4 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:               repo.ID,
+		BatchChange:        batchChange.ID,
+		OwnedByBatchChange: 0,
+		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+		ReconcilerState:    btypes.ReconcilerStateQueued,
+	})
+
+	// These two changesets will not be canceled in the first iteration of
+	// the loop in CancelQueuedBatchChangeChangesets, because they're both
+	// processing.
+	c5 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:               repo.ID,
+		BatchChange:        batchChange.ID,
+		OwnedByBatchChange: batchChange.ID,
+		ReconcilerState:    btypes.ReconcilerStateProcessing,
+	})
+
+	c6 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:               repo.ID,
+		BatchChange:        batchChange.ID,
+		OwnedByBatchChange: batchChange.ID,
+		ReconcilerState:    btypes.ReconcilerStateProcessing,
+	})
+
+	// We start this goroutine to simulate the processing of these
+	// changesets to stop after 50ms
+	go func(t *testing.T) {
+		time.Sleep(50 * time.Millisecond)
+
+		// c5 ends up errored, which would be retried, so it needs to be
+		// canceled
+		c5.ReconcilerState = btypes.ReconcilerStateErrored
+		if err := s.UpdateChangeset(ctx, c5); err != nil {
+			t.Errorf("update changeset failed: %s", err)
+		}
+
+		time.Sleep(50 * time.Millisecond)
+
+		// c6 ends up completed, so it does not need to be canceled
+		c6.ReconcilerState = btypes.ReconcilerStateCompleted
+		if err := s.UpdateChangeset(ctx, c6); err != nil {
+			t.Errorf("update changeset failed: %s", err)
+		}
+	}(t)
+
+	if err := s.CancelQueuedBatchChangeChangesets(ctx, batchChange.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	ct.ReloadAndAssertChangeset(t, ctx, s, c1, ct.ChangesetAssertions{
+		Repo:               repo.ID,
+		ReconcilerState:    btypes.ReconcilerStateFailed,
+		OwnedByBatchChange: batchChange.ID,
+		FailureMessage:     &CanceledChangesetFailureMessage,
+		AttachedTo:         []int64{batchChange.ID},
+	})
+
+	ct.ReloadAndAssertChangeset(t, ctx, s, c2, ct.ChangesetAssertions{
+		Repo:               repo.ID,
+		ReconcilerState:    btypes.ReconcilerStateFailed,
+		OwnedByBatchChange: batchChange.ID,
+		FailureMessage:     &CanceledChangesetFailureMessage,
+		NumFailures:        1,
+		AttachedTo:         []int64{batchChange.ID},
+	})
+
+	ct.ReloadAndAssertChangeset(t, ctx, s, c3, ct.ChangesetAssertions{
+		Repo:               repo.ID,
+		ReconcilerState:    btypes.ReconcilerStateCompleted,
+		OwnedByBatchChange: batchChange.ID,
+		AttachedTo:         []int64{batchChange.ID},
+	})
+
+	ct.ReloadAndAssertChangeset(t, ctx, s, c4, ct.ChangesetAssertions{
+		Repo:             repo.ID,
+		ReconcilerState:  btypes.ReconcilerStateQueued,
+		PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		AttachedTo:       []int64{batchChange.ID},
+	})
+
+	ct.ReloadAndAssertChangeset(t, ctx, s, c5, ct.ChangesetAssertions{
+		Repo:               repo.ID,
+		ReconcilerState:    btypes.ReconcilerStateFailed,
+		FailureMessage:     &CanceledChangesetFailureMessage,
+		OwnedByBatchChange: batchChange.ID,
+		AttachedTo:         []int64{batchChange.ID},
+	})
+
+	ct.ReloadAndAssertChangeset(t, ctx, s, c6, ct.ChangesetAssertions{
+		Repo:               repo.ID,
+		ReconcilerState:    btypes.ReconcilerStateCompleted,
+		OwnedByBatchChange: batchChange.ID,
+		AttachedTo:         []int64{batchChange.ID},
+	})
+}
+
+func TestEnqueueChangesetsToClose(t *testing.T) {
+	// We use a separate test for CancelQueuedBatchChangeChangesets because we
+	// want to access the database from different connections and the other
+	// integration/store tests all execute in a single transaction.
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+
+	s := New(db, nil)
+
+	user := ct.CreateTestUser(t, db, true)
+	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
+	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
+	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
+	repo := repos[0]
+
+	wantEnqueued := ct.ChangesetAssertions{
+		Repo:               repo.ID,
+		OwnedByBatchChange: batchChange.ID,
+		ReconcilerState:    btypes.ReconcilerStateQueued,
+		PublicationState:   btypes.ChangesetPublicationStatePublished,
+		NumFailures:        0,
+		FailureMessage:     nil,
+		Closing:            true,
+	}
+
+	tests := []struct {
+		have ct.TestChangesetOpts
+		want ct.ChangesetAssertions
+	}{
+		{
+			have: ct.TestChangesetOpts{
+				ReconcilerState:  btypes.ReconcilerStateQueued,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+			},
+			want: wantEnqueued,
+		},
+		{
+			have: ct.TestChangesetOpts{
+				ReconcilerState:  btypes.ReconcilerStateProcessing,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+			},
+			want: ct.ChangesetAssertions{
+				Repo:               repo.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ReconcilerState:    btypes.ReconcilerStateQueued,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateOpen,
+				Closing:            true,
+			},
+		},
+		{
+			have: ct.TestChangesetOpts{
+				ReconcilerState:  btypes.ReconcilerStateErrored,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				FailureMessage:   "failed",
+				NumFailures:      1,
+			},
+			want: wantEnqueued,
+		},
+		{
+			have: ct.TestChangesetOpts{
+				ExternalState:    btypes.ChangesetExternalStateOpen,
+				ReconcilerState:  btypes.ReconcilerStateCompleted,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+			},
+			want: ct.ChangesetAssertions{
+				ReconcilerState:  btypes.ReconcilerStateQueued,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				Closing:          true,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
+			},
+		},
+		{
+			have: ct.TestChangesetOpts{
+				ExternalState:    btypes.ChangesetExternalStateClosed,
+				ReconcilerState:  btypes.ReconcilerStateCompleted,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+			},
+			want: ct.ChangesetAssertions{
+				ReconcilerState:  btypes.ReconcilerStateCompleted,
+				ExternalState:    btypes.ChangesetExternalStateClosed,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+			},
+		},
+		{
+			have: ct.TestChangesetOpts{
+				ReconcilerState:  btypes.ReconcilerStateCompleted,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			want: ct.ChangesetAssertions{
+				ReconcilerState:  btypes.ReconcilerStateCompleted,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+		},
+	}
+
+	changesets := make(map[*btypes.Changeset]ct.ChangesetAssertions)
+	for _, tc := range tests {
+		opts := tc.have
+		opts.Repo = repo.ID
+		opts.BatchChange = batchChange.ID
+		opts.OwnedByBatchChange = batchChange.ID
+
+		c := ct.CreateChangeset(t, ctx, s, opts)
+		changesets[c] = tc.want
+
+		// If we have a changeset that's still processing we need to make
+		// sure that we finish it, otherwise the loop in
+		// EnqueueChangesetsToClose will take 2min and then fail.
+		if c.ReconcilerState == btypes.ReconcilerStateProcessing {
+			go func(t *testing.T) {
+				time.Sleep(50 * time.Millisecond)
+
+				c.ReconcilerState = btypes.ReconcilerStateCompleted
+				c.ExternalState = btypes.ChangesetExternalStateOpen
+				if err := s.UpdateChangeset(ctx, c); err != nil {
+					t.Errorf("update changeset failed: %s", err)
+				}
+			}(t)
+		}
+	}
+
+	if err := s.EnqueueChangesetsToClose(ctx, batchChange.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	for changeset, want := range changesets {
+		want.Repo = repo.ID
+		want.OwnedByBatchChange = batchChange.ID
+		want.AttachedTo = []int64{batchChange.ID}
+		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
 	}
 }
