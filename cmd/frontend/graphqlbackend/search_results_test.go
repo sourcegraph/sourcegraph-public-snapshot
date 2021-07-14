@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -46,7 +47,7 @@ func assertEqual(t *testing.T, got, want interface{}) {
 func TestSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	limitOffset := &database.LimitOffset{Limit: search.SearchLimits().MaxRepos + 1}
+	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: query, Version: version})

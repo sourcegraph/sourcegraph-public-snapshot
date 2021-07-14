@@ -70,7 +70,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = search.SearchLimits().MaxRepos
+		limit = search.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// If any repo groups are specified, take the intersection of the repo
