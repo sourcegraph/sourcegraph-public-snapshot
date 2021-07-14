@@ -8,9 +8,15 @@ import { FormRadioInput } from '../../../../../components/form/form-radio-input/
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
-import { isOrganizationSubject, isUserSubject, SupportedInsightSubject } from '../../../../../core/types/subjects'
+import {
+    isGlobalSubject,
+    isOrganizationSubject,
+    isUserSubject,
+    SupportedInsightSubject,
+} from '../../../../../core/types/subjects'
 
 import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
+import { getGlobalSubjectTooltipText } from './utils/get-global-subject-tooltip-text'
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -63,6 +69,10 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     const userSubject = getUserSubject(subjects)
     const organizationSubjects = subjects.filter(isOrganizationSubject)
 
+    // We always have global subject in our settings cascade
+    const globalSubject = subjects.find(isGlobalSubject)
+    const canGlobalSubjectBeEdited = globalSubject?.allowSiteSettingsEdits && globalSubject?.viewerCanAdminister
+
     return (
         // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
@@ -77,7 +87,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 {...name.input}
             />
 
-            <FormGroup name="visibility" title="Visibility" className="mb-0 mt-4">
+            <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">
                 <FormRadioInput
                     name="visibility"
                     value={userSubject.id}
@@ -118,6 +128,19 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                         labelTooltipText="Create or join an organization to share the dashboard with others!"
                     />
                 )}
+
+                <FormRadioInput
+                    name="visibility"
+                    value={globalSubject?.id}
+                    title="Global"
+                    description="visible to everyone on your Sourcegraph instance"
+                    checked={visibility.input.value === globalSubject?.id}
+                    className="mr-3 flex-grow-0"
+                    labelTooltipText={getGlobalSubjectTooltipText(globalSubject)}
+                    labelTooltipPosition="bottom"
+                    disabled={!canGlobalSubjectBeEdited}
+                    onChange={visibility.input.onChange}
+                />
             </FormGroup>
 
             {formAPI.submitErrors?.[FORM_ERROR] && (
