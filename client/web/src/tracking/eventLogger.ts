@@ -115,9 +115,18 @@ export class EventLogger implements TelemetryService {
     }
 
     public getReferrer(): string {
-        const referrer = this.referrer || document.referrer
-        this.referrer = referrer
-        return referrer
+        const referrer = document.referrer
+        try {
+            // 🚨 SECURITY: Return if the referrer is a valid non-Sourcegraph.com URL
+            // to avoid leaking private code URLs.
+            const url = new URL(referrer)
+            if (url.hostname !== 'sourcegraph.com') {
+                return referrer
+            }
+        } catch {
+            return ''
+        }
+        return ''
     }
 
     /**
