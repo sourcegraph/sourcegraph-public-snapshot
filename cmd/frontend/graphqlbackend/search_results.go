@@ -1467,11 +1467,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
-		localErr := r.errorForNoResolvedRepos(ctx, args.Query)
-		if alert, err := errorToAlert(localErr); alert != nil {
-			return alert.wrapResults(), err
-		}
-		return nil, localErr
+		return r.alertForNoResolvedRepos(ctx, args.Query).wrapResults(), nil
 	}
 
 	if len(resolved.MissingRepoRevs) > 0 {
