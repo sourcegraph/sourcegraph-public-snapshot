@@ -135,7 +135,7 @@ export function logEvent(event: string, eventProperties?: unknown): void {
                 $userCookieID: String!
                 $cohortID: String
                 $firstSourceURL: String!
-                $referrer: String!
+                $referrer: String
                 $url: String!
                 $source: EventSource!
                 $argument: String
