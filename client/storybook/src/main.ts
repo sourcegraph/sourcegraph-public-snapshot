@@ -71,10 +71,9 @@ const getDllScriptTag = (): string => {
 
     const dllManifest = readJsonFile(dllBundleManifestPath) as Record<string, string>
 
-    // TODO: fix redundant DLL bundle name `auto` prefix
     return `
         <!-- Load JS bundle created by DLL_PLUGIN  -->
-        <script src="/dll-bundle/${dllManifest['dll.js'].replace('auto', '')}"></script>
+        <script src="/dll-bundle/${dllManifest['dll.js']}"></script>
     `
 }
 
@@ -160,6 +159,7 @@ const config = {
                         path.resolve(storybookWorkspacePath, 'babel.config.js'),
                         path.resolve(rootPath, 'babel.config.js'),
                         path.resolve(rootPath, 'postcss.config.js'),
+                        path.resolve(__dirname, './webpack.config.dll.ts'),
                     ],
                 },
             }

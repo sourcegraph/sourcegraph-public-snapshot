@@ -26,6 +26,7 @@ const config: Configuration = {
         filename: '[name].bundle.[contenthash].js',
         path: dllPluginConfig.context,
         library: dllPluginConfig.name,
+        publicPath: '',
     },
     module: {
         rules: [
