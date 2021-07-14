@@ -183,7 +183,7 @@ func (s dbExtensions) GetByExtensionID(ctx context.Context, extensionID string) 
 
 // Temporary: we manually set these. Featured extensions live on sourcegraph.com, all other instances ask
 // dotcom for these extensions and filter based on site configuration.
-var featuredExtensionIDs = []string{"sourcegraph/codecov", "sourcegraph/sentry", "sourcegraph/vscode-extras"}
+var featuredExtensionIDs = []string{"sourcegraph/codecov", "sourcegraph/sentry", "sourcegraph/open-in-vscode"}
 
 // GetFeaturedExtensions retrieves the set of currently featured extensions.
 // This should only be called on dotcom; all other instances should retrieve these

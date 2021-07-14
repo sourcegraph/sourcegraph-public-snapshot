@@ -7,8 +7,8 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
 import { useInsightTitleValidator } from '../../../../../../components/form/hooks/useInsightTitleValidator'
-import { Organization } from '../../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../../core/types'
+import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
 import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
@@ -29,8 +29,10 @@ export interface SearchInsightCreationContentProps {
     mode?: 'creation' | 'edit'
     /** Final settings cascade. Used for title field validation. */
     settings?: Settings | null
-    /** List of all user organizations */
-    organizations?: Organization[]
+
+    /** List of all supportable insight subjects */
+    subjects?: SupportedInsightSubject[]
+
     /** Initial value for all form fields. */
     initialValue?: CreateInsightFormFields
     /** Custom class name for root form element. */
@@ -48,9 +50,9 @@ export interface SearchInsightCreationContentProps {
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
     const {
         mode = 'creation',
-        organizations = [],
+        subjects = [],
         settings,
-        initialValue = INITIAL_INSIGHT_VALUES,
+        initialValue,
         className,
         dataTestId,
         onSubmit,
@@ -60,8 +62,11 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
 
     const isEditMode = mode === 'edit'
 
+    // Calculate initial value for visibility settings
+    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
+
     const { values, formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
-        initialValues: initialValue,
+        initialValues: initialValue ?? { ...INITIAL_INSIGHT_VALUES, visibility: userSubjectID },
         onSubmit,
         onChange,
         touched: isEditMode,
@@ -126,7 +131,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 title={title}
                 repositories={repositories}
                 visibility={visibility}
-                organizations={organizations}
+                subjects={subjects}
                 series={series}
                 step={step}
                 stepValue={stepValue}

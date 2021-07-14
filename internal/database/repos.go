@@ -38,11 +38,6 @@ type RepoNotFoundErr struct {
 	Name api.RepoName
 }
 
-func IsRepoNotFoundErr(err error) bool {
-	_, ok := err.(*RepoNotFoundErr)
-	return ok
-}
-
 func (e *RepoNotFoundErr) Error() string {
 	if e.Name != "" {
 		return fmt.Sprintf("repo not found: name=%q", e.Name)
@@ -241,8 +236,7 @@ const listReposQueryFmtstr = `
 SELECT %s
 FROM %%s
 WHERE
-	repo.deleted_at IS NULL
-AND %%s   -- Populates "queryConds"
+%%s       -- Populates "queryConds"
 AND (%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
 `
@@ -500,6 +494,9 @@ type ReposListOptions struct {
 	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
 	// automatically or manually for different reasons, like being too big or having copyright issues.
 	IncludeBlocked bool
+
+	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
+	IncludeDeleted bool
 
 	*LimitOffset
 }
@@ -808,8 +805,11 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	fromClause := sqlf.Sprintf("repo %s", sqlf.Join(from, " "))
 
 	baseConds := sqlf.Sprintf("TRUE")
+	if !opt.IncludeDeleted {
+		baseConds = sqlf.Sprintf("deleted_at IS NULL")
+	}
 	if !opt.IncludeBlocked {
-		baseConds = sqlf.Sprintf("blocked IS NULL")
+		baseConds = sqlf.Sprintf("%s AND blocked IS NULL", baseConds)
 	}
 
 	whereConds := sqlf.Sprintf("TRUE")
@@ -1358,7 +1358,7 @@ func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	case "prev":
 		direction = "<="
 	default:
-		return nil, fmt.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
+		return nil, errors.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
 	}
 
 	switch opt.CursorColumn {
@@ -1367,7 +1367,7 @@ func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	case string(RepoListCreatedAt):
 		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", opt.CursorValue))
 	default:
-		return nil, fmt.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
+		return nil, errors.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
 	}
 	return conds, nil
 }

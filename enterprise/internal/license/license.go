@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -96,7 +97,7 @@ func (l *Info) decode(data []byte) error {
 		return err
 	}
 	if e.Version != formatVersion {
-		return fmt.Errorf("license key format is version %d, expected version %d", e.Version, formatVersion)
+		return errors.Errorf("license key format is version %d, expected version %d", e.Version, formatVersion)
 	}
 	*l = e.Info
 	return nil

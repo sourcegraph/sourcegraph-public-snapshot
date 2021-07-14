@@ -1,4 +1,4 @@
-import { InsightsDashboardType } from '../../../../../core/types'
+import { InsightsDashboardType } from '../../core/types'
 
 import { ALL_INSIGHTS_DASHBOARD, getInsightsDashboards } from './use-dashboards'
 

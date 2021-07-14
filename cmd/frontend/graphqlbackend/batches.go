@@ -717,8 +717,15 @@ type BatchSpecExecutionResolver interface {
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	Failure() *string
+	Steps() BatchSpecExecutionStepsResolver
 	PlaceInQueue() *int32
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
 	Initiator(ctx context.Context) (*UserResolver, error)
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
+}
+
+type BatchSpecExecutionStepsResolver interface {
+	Setup() []ExecutionLogEntryResolver
+	SrcPreview() ExecutionLogEntryResolver
+	Teardown() []ExecutionLogEntryResolver
 }
