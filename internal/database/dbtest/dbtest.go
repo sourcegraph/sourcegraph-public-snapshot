@@ -59,7 +59,7 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 	var err error
 	var config *url.URL
 	if dsn == "" {
-		config, err = url.Parse("postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC&statement_timeout=30s")
+		config, err = url.Parse("postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC")
 		if err != nil {
 			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
 		}
