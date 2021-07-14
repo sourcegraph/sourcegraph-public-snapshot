@@ -18,6 +18,7 @@ import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow } from './PreviewFilterRow'
 import styles from './PreviewList.module.scss'
 import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
+import { canSetPublishedState } from './utils'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']
@@ -66,16 +67,8 @@ export const PreviewList: React.FunctionComponent<Props> = ({
 
                     setVisible(
                         connection.nodes
-                            .map(node => {
-                                if (node.__typename === 'HiddenChangesetApplyPreview') {
-                                    return undefined
-                                }
-                                if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-                                    return undefined
-                                }
-                                return node.targets.changesetSpec.id
-                            })
-                            .filter((id): id is string => id !== undefined)
+                            .map(node => canSetPublishedState(node))
+                            .filter((id): id is string => id !== null)
                     )
                 })
             )

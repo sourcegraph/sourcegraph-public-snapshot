@@ -32,6 +32,7 @@ import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './b
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
+import { canSetPublishedState } from './utils'
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
@@ -586,17 +587,4 @@ const SelectCheckbox: React.FunctionComponent<SelectCheckboxProps> = ({
             <input type="checkbox" disabled={disabled} checked={checked} onChange={onChange} />
         </span>
     )
-}
-
-const canSetPublishedState = (node: VisibleChangesetApplyPreviewFields): string | null => {
-    if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-        return null
-    }
-    if (node.targets.changesetSpec.description.__typename !== 'GitBranchChangesetDescription') {
-        return null
-    }
-    if (node.targets.changesetSpec.description.published !== null) {
-        return null
-    }
-    return node.targets.changesetSpec.id
 }
