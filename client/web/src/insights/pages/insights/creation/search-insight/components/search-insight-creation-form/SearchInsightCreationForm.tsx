@@ -30,6 +30,7 @@ interface CreationSearchInsightFormProps {
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
+    allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
 
     visibility: useFieldAPI<CreateInsightFormFields['visibility']>
     subjects: SupportedInsightSubject[]
@@ -72,6 +73,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         submitted,
         title,
         repositories,
+        allReposMode,
         visibility,
         subjects,
         series,
@@ -116,6 +118,17 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     {...repositories.input}
                     className="mb-0 d-flex flex-column"
                 />
+
+                <label className="d-flex align-items-center mb-2 mt-2 font-weight-normal">
+                    <input
+                        type="checkbox"
+                        {...allReposMode.input}
+                        value="all-repos-mode"
+                        checked={allReposMode.input.value}
+                    />
+
+                    <span className="pl-2">Run your insight over all your repositories</span>
+                </label>
             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
@@ -185,6 +198,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         value="hours"
                         checked={step.input.value === 'hours'}
                         onChange={step.input.onChange}
+                        disabled={step.input.disabled}
                         className="mr-3"
                     />
                     <FormRadioInput
@@ -193,6 +207,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         value="days"
                         checked={step.input.value === 'days'}
                         onChange={step.input.onChange}
+                        disabled={step.input.disabled}
                         className="mr-3"
                     />
                     <FormRadioInput
@@ -201,6 +216,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         value="weeks"
                         checked={step.input.value === 'weeks'}
                         onChange={step.input.onChange}
+                        disabled={step.input.disabled}
                         className="mr-3"
                     />
                     <FormRadioInput
@@ -209,6 +225,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         value="months"
                         checked={step.input.value === 'months'}
                         onChange={step.input.onChange}
+                        disabled={step.input.disabled}
                         className="mr-3"
                     />
                     <FormRadioInput
@@ -217,6 +234,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         value="years"
                         checked={step.input.value === 'years'}
                         onChange={step.input.onChange}
+                        disabled={step.input.disabled}
                         className="mr-3"
                     />
                 </FormGroup>
