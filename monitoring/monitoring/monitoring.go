@@ -50,7 +50,7 @@ func (c *Container) validate() error {
 		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
-		return errors.Errorf("Description must be sentence starting with an uppercas eletter and ending with period; found \"%s\"", c.Description)
+		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
