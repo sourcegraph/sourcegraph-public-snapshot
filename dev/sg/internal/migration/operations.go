@@ -107,12 +107,14 @@ func getMigrationOperations(mainMigrations, localMigrations map[int]migration, c
 	}
 
 	// Will have to shift migrations accordingly
-	shiftExtra := len(conflicts)
-	for i := minFixup; i < getMaxMigrationID(localMigrations); i++ {
-		operations = append(operations, OpFileShift{
-			Migration: localMigrations[i+1],
-			Magnitude: shiftExtra,
-		})
+	if len(conflicts) > 0 {
+		shiftExtra := len(conflicts)
+		for i := minFixup; i < getMaxMigrationID(localMigrations); i++ {
+			operations = append(operations, OpFileShift{
+				Migration: localMigrations[i+1],
+				Magnitude: shiftExtra,
+			})
+		}
 	}
 
 	// And then make the database be synced w/ current migrations

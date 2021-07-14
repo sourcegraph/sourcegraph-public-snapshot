@@ -54,7 +54,7 @@ func RunFixup(database db.Database, main string, run bool) error {
 		return err
 	}
 
-	mainMigrations, err := getMigrationsForFiles(mainFiles)
+	mainMigrations, err := getMigrationsForFiles(mainFiles, map[int]migration{})
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func RunFixup(database db.Database, main string, run bool) error {
 		return err
 	}
 
-	localMigrations, err := getMigrationsForFiles(localFiles)
+	localMigrations, err := getMigrationsForFiles(localFiles, mainMigrations)
 	if err != nil {
 		return err
 	}
@@ -451,7 +451,21 @@ func findConflictingMigrations(mainMigrations, localMigrations map[int]migration
 	return conflicts, missing, nil
 }
 
-func getMigrationsForFiles(files []string) (map[int]migration, error) {
+func getMigrationsForFiles(files []string, existing map[int]migration) (map[int]migration, error) {
+	shouldSkip := func(migrations map[int]string, migrationID int, migrationName string) bool {
+		_, ok := migrations[migrationID]
+		if !ok {
+			return false
+		}
+
+		exist, ok := existing[migrationID]
+		if !ok {
+			return false
+		}
+
+		return exist.Name == migrationName
+	}
+
 	upMigrations := make(map[int]string)
 	downMigrations := make(map[int]string)
 
@@ -469,9 +483,22 @@ func getMigrationsForFiles(files []string) (map[int]migration, error) {
 			return nil, errors.Newf("bad migration file format: %s", file)
 		}
 
+		migrationName, ok := ParseMigrationName(file)
+		if !ok {
+			return nil, errors.Newf("bad migration file name: %s", file)
+		}
+
 		if strings.HasSuffix(file, ".down.sql") {
+			if shouldSkip(downMigrations, migrationID, migrationName) {
+				continue
+			}
+
 			downMigrations[migrationID] = file
 		} else if strings.HasSuffix(file, ".up.sql") {
+			if shouldSkip(upMigrations, migrationID, migrationName) {
+				continue
+			}
+
 			upMigrations[migrationID] = file
 		} else if strings.HasSuffix(file, ".sql") {
 			return nil, errors.Newf("sql file that doesn't fit migration file format: %s", file)
