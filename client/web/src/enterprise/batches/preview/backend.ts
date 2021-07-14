@@ -15,7 +15,6 @@ import {
     BatchSpecByIDVariables,
     BatchSpecFields,
     BatchSpecApplyPreviewVariables,
-    BatchSpecApplyPreviewResult,
     AllChangesetSpecIDsVariables,
     AllChangesetSpecIDsResult,
     ChangesetSpecIDConnectionFields,

@@ -587,6 +587,7 @@ describe('Batches', () => {
                                     added: 5,
                                     modified: 10,
                                     removed: 3,
+                                    uiPublished: 0,
                                 },
                                 totalCount: 10,
                             },

@@ -42,9 +42,9 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
 )
 
 const SelectAll: React.FunctionComponent<
-    Pick<MultiSelectContextState, 'selectVisible' | 'selectAll' | 'selected' | 'visible'> &
+    Pick<MultiSelectContextState, 'selectVisible' | 'selectAll' | 'selected'> &
         Pick<BatchChangePreviewContextState, 'hasMorePages' | 'totalCount'>
-> = ({ selectVisible, selectAll, selected, hasMorePages, totalCount, visible }) => {
+> = ({ selectVisible, selectAll, selected, hasMorePages, totalCount }) => {
     const onClick = useCallback(() => {
         if (selected === 'all') {
             selectVisible()

@@ -1,13 +1,12 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
-import React, { useContext } from 'react'
+import React from 'react'
 import { of, Observable } from 'rxjs'
-import { tap } from 'rxjs/operators'
 
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
-import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
-import { BatchChangePreviewContext, BatchChangePreviewContextProvider } from '../BatchChangePreviewContext'
+import { MultiSelectContextProvider } from '../../MultiSelectContext'
+import { BatchChangePreviewContextProvider } from '../BatchChangePreviewContext'
 
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { PreviewList } from './PreviewList'
