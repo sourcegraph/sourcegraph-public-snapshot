@@ -121,11 +121,15 @@ func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 }
 
 type roleChangeEventArgs struct {
-	By     int32  `json:"by"`
-	For    int32  `json:"for"`
-	From   string `json:"from"`
-	To     string `json:"to"`
-	Reason string `json:"reason,omitempty"`
+	By   int32  `json:"by"`
+	For  int32  `json:"for"`
+	From string `json:"from"`
+	To   string `json:"to"`
+
+	// Reason will be present only if the RoleChangeDenied event is logged, but will be set to an
+	// empty string in other cases for a consistent experience of the clients that consume this
+	// data.
+	Reason string `json:"reason"`
 }
 
 func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
