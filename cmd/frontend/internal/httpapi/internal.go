@@ -219,6 +219,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			Public:     !repo.Private,
 			Priority:   priority,
 			Fork:       repo.Fork,
+			Archived:   repo.Archived,
 			GetVersion: getVersion,
 		}, nil
 	}
