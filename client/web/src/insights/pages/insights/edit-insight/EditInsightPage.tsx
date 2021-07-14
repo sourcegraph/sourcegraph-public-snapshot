@@ -1,6 +1,6 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -12,7 +12,7 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
 import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
-import { useInsight } from '../../../hooks/use-insight/use-insight'
+import { findInsightById } from '../../../hooks/use-insight/use-insight'
 
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
@@ -34,7 +34,13 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     const { insightID, settingsCascade, authenticatedUser, platformContext } = props
 
     const subjects = useInsightSubjects({ settingsCascade })
-    const insight = useInsight({ settingsCascade, insightId: insightID })
+
+    // We need to catch the settings only once during the first render otherwise
+    // if we used useMemo then after we update the settings further in the submit
+    // handler we will again try to find an insight that may no longer exist and
+    // (if user changed visibility we remove insight first from previous subject)
+    // show the wrong visual state.
+    const [insight] = useState(() => findInsightById(settingsCascade, insightID))
     const { handleEditInsightSubmit } = useHandleSubmit({
         originalInsight: insight,
         settingsCascade,

@@ -58,14 +58,13 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             return undefined
         }
 
-        const { id: userID } = authenticatedUser
         const dashboardOwnerID = previousDashboard.owner.id
 
         return {
             name: previousDashboard.title,
-            visibility: userID === dashboardOwnerID ? 'personal' : dashboardOwnerID,
+            visibility: dashboardOwnerID,
         }
-    }, [previousDashboard, authenticatedUser])
+    }, [previousDashboard])
 
     const finalDashboardSettings = useDashboardSettings({
         settingsCascade,

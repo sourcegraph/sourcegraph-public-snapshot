@@ -24,6 +24,16 @@ export const SETTINGS_CASCADE: SettingsCascade = {
                 id: 'test_org_2_id',
             },
         },
+        {
+            lastID: 101,
+            settings: {},
+            subject: {
+                __typename: 'Site' as const,
+                viewerCanAdminister: true,
+                allowSiteSettingsEdits: true,
+                id: 'global_id',
+            },
+        },
     ],
     final: {},
 }
