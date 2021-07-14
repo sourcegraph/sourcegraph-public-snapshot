@@ -101,7 +101,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 		return nil, err
 	}
 	if !locked {
-		return nil, errors.New("unable to acquire lock to apply to this batch change")
+		return nil, errors.New("batch change locked by other user applying batch spec")
 	}
 	defer func() {
 		err = unlock(err)
