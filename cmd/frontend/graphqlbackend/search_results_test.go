@@ -1060,9 +1060,9 @@ func TestIsGlobalSearch(t *testing.T) {
 				},
 			}
 
-			gotIsGlobal := resolver.isGlobalSearch()
-			if gotIsGlobal != tt.wantIsGlobal {
-				t.Fatalf("got %+v, want %+v", gotIsGlobal, tt.wantIsGlobal)
+			p, _ := resolver.toTextParameters(resolver.Query)
+			if (p.Mode == search.ZoektGlobalSearch) != tt.wantIsGlobal {
+				t.Fatalf("got %+v, want %+v", p.Mode, tt.wantIsGlobal)
 			}
 		})
 	}
