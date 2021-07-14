@@ -1958,6 +1958,16 @@ extend type Mutation {
         The batch spec that describes the desired state of the batch change.
         """
         batchSpec: ID!
+
+        """
+        If set, these changeset specs will have their UI publication states set
+        to the given values.
+
+        An error will be returned if the same changeset spec ID is included
+        more than once in the array, or if a changeset spec ID is included with
+        a publication state set in its spec.
+        """
+        publicationStates: [ChangesetSpecPublicationStateInput!]
     ): BatchChange!
 
     """
@@ -2014,8 +2024,8 @@ extend type Mutation {
 
         """
         If set, these changeset specs will have their UI publication states set
-        to the given values. When updating an existing batch change, this will
-        overwrite existing publication states on the changesets.
+        to the given values. This will overwrite any existing UI publication
+        states on the changesets.
 
         An error will be returned if the same changeset spec ID is included
         more than once in the array, or if a changeset spec ID is included with
