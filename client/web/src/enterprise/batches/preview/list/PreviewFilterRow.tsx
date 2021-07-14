@@ -19,33 +19,21 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
     const onSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): void => {
             event.preventDefault()
-            setFilters(
-                Object.assign(filters, {
-                    search: searchElement.current?.value,
-                })
-            )
+            setFilters({ ...filters, search: searchElement.current?.value || null })
         },
         [setFilters, filters]
     )
 
     const setAction = useCallback(
         (action: ChangesetSpecOperation | undefined) => {
-            setFilters(
-                Object.assign(filters, {
-                    action: action ?? null,
-                })
-            )
+            setFilters({ ...filters, action: action || null })
         },
         [filters, setFilters]
     )
 
     const setCurrentState = useCallback(
         (currentState: ChangesetState | undefined) => {
-            setFilters(
-                Object.assign(filters, {
-                    currentState: currentState ?? null,
-                })
-            )
+            setFilters({ ...filters, currentState: currentState || null })
         },
         [filters, setFilters]
     )
