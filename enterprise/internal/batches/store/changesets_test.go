@@ -1277,9 +1277,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c1, ct.ChangesetAssertions{
-			ReconcilerState: btypes.ReconcilerStateQueued,
-			Repo:            repo.ID,
-			FailureMessage:  nil,
+			ReconcilerState:  btypes.ReconcilerStateQueued,
+			Repo:             repo.ID,
+			FailureMessage:   nil,
 			NumResets:        0,
 			NumFailures:      0,
 			SyncErrorMessage: nil,
