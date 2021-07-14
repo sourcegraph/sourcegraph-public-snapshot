@@ -473,7 +473,7 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 		return Mocks.SearchContexts.GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB(), "SearchContexts.GetSearchContextRepositoryRevisions")
+	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
