@@ -13,7 +13,7 @@ export const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
 /**
  * Adds code intelligence for the Sourcegraph search syntax to Monaco.
  */
-export function useSourcegraphSearchCodeIntelligence(
+export function useQueryIntelligence(
     fetchSuggestions: (query: string) => Observable<SearchSuggestion[]>,
     options: {
         patternType: SearchPatternType
@@ -46,7 +46,7 @@ export function useSourcegraphSearchCodeIntelligence(
     }, [fetchSuggestions, options])
 }
 
-export function useSourcegraphSearchDiagnostics(
+export function useQueryDiagnostics(
     editor: Monaco.editor.IStandaloneCodeEditor | undefined,
     options: {
         patternType: SearchPatternType

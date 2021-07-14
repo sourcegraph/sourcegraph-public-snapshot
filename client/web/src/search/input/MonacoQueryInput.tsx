@@ -17,11 +17,7 @@ import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keybo
 import { observeResize } from '../../util/dom'
 import { fetchSuggestions } from '../backend'
 import { QueryChangeSource, QueryState } from '../helpers'
-import {
-    SOURCEGRAPH_SEARCH,
-    useSourcegraphSearchCodeIntelligence,
-    useSourcegraphSearchDiagnostics,
-} from '../useSourcegraphCodeIntelligence'
+import { SOURCEGRAPH_SEARCH, useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
 export interface MonacoQueryInputProps
     extends ThemeProps,
@@ -137,13 +133,13 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         [selectedSearchContextSpec, versionContext]
     )
 
-    useSourcegraphSearchCodeIntelligence(fetchSuggestionsWithContext, {
+    useQueryIntelligence(fetchSuggestionsWithContext, {
         patternType,
         globbing,
         interpretComments,
         isSourcegraphDotCom,
     })
-    useSourcegraphSearchDiagnostics(editor, { patternType, interpretComments })
+    useQueryDiagnostics(editor, { patternType, interpretComments })
 
     // Register suggestions handle
     useEffect(() => {

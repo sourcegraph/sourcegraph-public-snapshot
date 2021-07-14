@@ -15,11 +15,7 @@ import { SearchPatternType } from '../graphql-operations'
 import { fetchSuggestions } from './backend'
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
-import {
-    SOURCEGRAPH_SEARCH,
-    useSourcegraphSearchCodeIntelligence,
-    useSourcegraphSearchDiagnostics,
-} from './useSourcegraphCodeIntelligence'
+import { SOURCEGRAPH_SEARCH, useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -86,7 +82,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         }, [patternType, props.location.search, streamSearch])
     )
 
-    useSourcegraphSearchCodeIntelligence(fetchSuggestions, {
+    useQueryIntelligence(fetchSuggestions, {
         patternType,
         globbing,
         interpretComments: true,
@@ -104,7 +100,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         return () => disposable.dispose()
     }, [editorInstance, searchQuery, props.history])
 
-    useSourcegraphSearchDiagnostics(editorInstance, { patternType, interpretComments: true })
+    useQueryDiagnostics(editorInstance, { patternType, interpretComments: true })
 
     useEffect(() => {
         if (!editorInstance) {
