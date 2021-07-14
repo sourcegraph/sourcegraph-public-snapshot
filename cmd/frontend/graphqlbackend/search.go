@@ -26,7 +26,7 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error)
+var mockResolveRepositories func() (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
 	Version        string
@@ -263,7 +263,7 @@ type resolveRepositoriesOpts struct {
 // where opts.effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, q query.Q, opts resolveRepositoriesOpts) (resolved searchrepos.Resolved, err error) {
 	if mockResolveRepositories != nil {
-		return mockResolveRepositories(opts.effectiveRepoFieldValues)
+		return mockResolveRepositories()
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("opts: %+v", opts))
