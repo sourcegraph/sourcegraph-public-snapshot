@@ -133,13 +133,11 @@ function useDashboardPermissions(
             if (isGlobalSubject(dashboardOwner)) {
                 const canBeEdited = dashboardOwner.viewerCanAdminister && dashboardOwner.allowSiteSettingsEdits
 
-                if (canBeEdited) {
-                    return { isConfigurable: true }
-                }
-
-                return {
-                    isConfigurable: false,
-                    reason: DashboardReasonDenied.PermissionDenied,
+                if (!canBeEdited) {
+                    return {
+                        isConfigurable: false,
+                        reason: DashboardReasonDenied.PermissionDenied,
+                    }
                 }
             }
 
