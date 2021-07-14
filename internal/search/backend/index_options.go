@@ -23,6 +23,9 @@ type zoektIndexOptions struct {
 	// filtering.
 	Public bool
 
+	// Fork is true if the repository is a fork.
+	Fork bool
+
 	// LargeFiles is a slice of glob patterns where matching file paths should
 	// be indexed regardless of their size. The pattern syntax can be found
 	// here: https://golang.org/pkg/path/filepath/#Match.
@@ -53,6 +56,9 @@ type RepoIndexOptions struct {
 
 	// Priority indicates ranking in results, higher first.
 	Priority float64
+
+	// Fork is true if the repository is a fork.
+	Fork bool
 
 	// GetVersion is used to resolve revisions for a repo. If it fails, the
 	// error is encoded in the body. If the revision is missing, an empty
@@ -105,6 +111,7 @@ func getIndexOptions(
 		RepoID:     opts.RepoID,
 		Public:     opts.Public,
 		Priority:   opts.Priority,
+		Fork:       opts.Fork,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 	}
