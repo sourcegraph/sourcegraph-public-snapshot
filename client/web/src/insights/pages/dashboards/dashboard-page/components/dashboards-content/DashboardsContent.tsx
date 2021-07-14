@@ -14,14 +14,16 @@ import { HeroPage } from '../../../../../../components/HeroPage'
 import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightsViewGrid } from '../../../../../components'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { InsightDashboard, isRealDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { useDashboards } from '../../../../../hooks/use-dashboards/use-dashboards'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
+import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
 
 import styles from './DashboardsContent.module.scss'
+import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps
     extends SettingsCascadeProps<Settings>,
@@ -45,6 +47,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
+    const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
     const currentDashboard = dashboards.find(dashboard => {
         if (isVirtualDashboard(dashboard)) {
@@ -80,11 +83,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
-                if (
-                    currentDashboard &&
-                    !isVirtualDashboard(currentDashboard) &&
-                    isSettingsBasedInsightsDashboard(currentDashboard)
-                ) {
+                if (!isVirtualDashboard(currentDashboard) && isSettingsBasedInsightsDashboard(currentDashboard)) {
                     history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
                 }
 
@@ -93,6 +92,14 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
             case DashboardMenuAction.AddRemoveInsights: {
                 setAddInsightsState(true)
+
+                return
+            }
+
+            case DashboardMenuAction.Delete: {
+                setDeleteDashboardActive(true)
+
+                return
             }
 
             // Implement other actions
@@ -126,17 +133,22 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
             )}
 
-            {isAddInsightOpen &&
-                currentDashboard &&
-                isRealDashboard(currentDashboard) &&
-                isSettingsBasedInsightsDashboard(currentDashboard) && (
-                    <AddInsightModal
-                        platformContext={platformContext}
-                        settingsCascade={settingsCascade}
-                        dashboard={currentDashboard}
-                        onClose={() => setAddInsightsState(false)}
-                    />
-                )}
+            {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (
+                <AddInsightModal
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
+                    dashboard={currentDashboard}
+                    onClose={() => setAddInsightsState(false)}
+                />
+            )}
+
+            {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
+                <DeleteDashboardModal
+                    dashboard={currentDashboard}
+                    platformContext={platformContext}
+                    onClose={() => setDeleteDashboardActive(false)}
+                />
+            )}
         </div>
     )
 }
