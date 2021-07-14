@@ -200,6 +200,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showMultilineSearchConsole: boolean
 
     /**
+     * Whether we show the search notebook.
+     */
+    showSearchNotebook: boolean
+
+    /**
      * Whether we show the mulitiline editor at /search/query-builder
      */
     showQueryBuilder: boolean
@@ -310,6 +315,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
+            showSearchNotebook: false,
             showQueryBuilder: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
@@ -559,6 +565,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                             showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                             globbing={this.state.globbing}
                                             showMultilineSearchConsole={this.state.showMultilineSearchConsole}
+                                            showSearchNotebook={this.state.showSearchNotebook}
                                             showQueryBuilder={this.state.showQueryBuilder}
                                             enableCodeMonitoring={this.state.enableCodeMonitoring}
                                             fetchSavedSearches={fetchSavedSearches}
