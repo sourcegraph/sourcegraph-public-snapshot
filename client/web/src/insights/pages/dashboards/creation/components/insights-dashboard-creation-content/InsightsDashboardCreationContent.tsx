@@ -16,6 +16,7 @@ import {
 } from '../../../../../core/types/subjects'
 
 import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
+import { getGlobalSubjectTooltipText } from './utils/get-global-subject-tooltip-text'
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -69,14 +70,8 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     const organizationSubjects = subjects.filter(isOrganizationSubject)
 
     // We always have global subject in our settings cascade
-    const globalSubject = subjects.find(isGlobalSubject)!
-    const canGlobalSubjectBeEdited = globalSubject.allowSiteSettingsEdits && globalSubject.viewerCanAdminister
-
-    const globalSubjectTooltipText = !globalSubject.allowSiteSettingsEdits
-        ? 'The global subject can not be edited since it was configured by settings file'
-        : !globalSubject.viewerCanAdminister
-        ? "You don't have a permission to change global scope. Reach out your site admin"
-        : undefined
+    const globalSubject = subjects.find(isGlobalSubject)
+    const canGlobalSubjectBeEdited = globalSubject?.allowSiteSettingsEdits && globalSubject?.viewerCanAdminister
 
     return (
         // eslint-disable-next-line react/forbid-elements
@@ -136,12 +131,12 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
                 <FormRadioInput
                     name="visibility"
-                    value={globalSubject.id}
+                    value={globalSubject?.id}
                     title="Global"
                     description="visible to everyone on your Sourcegraph instance"
-                    checked={visibility.input.value === globalSubject.id}
+                    checked={visibility.input.value === globalSubject?.id}
                     className="mr-3 flex-grow-0"
-                    labelTooltipText={globalSubjectTooltipText}
+                    labelTooltipText={getGlobalSubjectTooltipText(globalSubject)}
                     labelTooltipPosition="bottom"
                     disabled={!canGlobalSubjectBeEdited}
                     onChange={visibility.input.onChange}
