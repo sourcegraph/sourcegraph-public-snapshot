@@ -85,7 +85,8 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
             return
         }
 
-        // TODO: can we do something useful with the onDone/onCancel split?
+        // Right now, we don't handle onDone or onCancel separately, but we may
+        // want to expose this at a later stage.
         setIsDisabled(true)
         const element = await selectedAction.onTrigger(
             () => {
