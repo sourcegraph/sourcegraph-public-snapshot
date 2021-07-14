@@ -1253,6 +1253,38 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			t.Fatalf("wrong stats returned. diff=%s", diff)
 		}
 	})
+
+	t.Run("EnqueueChangeset", func(t *testing.T) {
+		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			ReconcilerState:  btypes.ReconcilerStateCompleted,
+			Repo:             repo.ID,
+			NumResets:        1234,
+			NumFailures:      4567,
+			FailureMessage:   "horse was here",
+			SyncErrorMessage: "horse was here",
+		})
+
+		// Try with wrong `currentState` and expect error
+		err := s.EnqueueChangeset(ctx, c1, btypes.ReconcilerStateQueued, btypes.ReconcilerStateFailed)
+		if err == nil {
+			t.Fatalf("expected error, received none")
+		}
+
+		// Try with correct `currentState` and expected updated changeset
+		err = s.EnqueueChangeset(ctx, c1, btypes.ReconcilerStateQueued, c1.ReconcilerState)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		ct.ReloadAndAssertChangeset(t, ctx, s, c1, ct.ChangesetAssertions{
+			ReconcilerState: btypes.ReconcilerStateQueued,
+			Repo:            repo.ID,
+			FailureMessage:  nil,
+			NumResets:        0,
+			NumFailures:      0,
+			SyncErrorMessage: nil,
+		})
+	})
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {

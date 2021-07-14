@@ -627,6 +627,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	)
 }
 
+// EnqueueChangeset enqueues the given changeset by resetting all
+// worker-related columns and setting its reconciler_state column to the
+// `resetState` argument but *only if* the `currentState` matches its current
+// `reconciler_state`.
 func (s *Store) EnqueueChangeset(ctx context.Context, cs *btypes.Changeset, resetState, currentState btypes.ReconcilerState) error {
 	_, ok, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,

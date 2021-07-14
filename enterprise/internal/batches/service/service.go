@@ -330,7 +330,6 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 	// reconciler.
 	// So enqueue all, except the ones that are completed and closed/merged,
 	// for closing. If after being processed they're not open, it'll be a noop.
-	// TODO: We need to loop in here.
 	if err := tx.EnqueueChangesetsToClose(ctx, batchChange.ID); err != nil {
 		return nil, err
 	}
