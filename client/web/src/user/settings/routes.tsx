@@ -42,9 +42,9 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props =>
             (() => {
                 if (
+                    props.isSourcegraphDotCom &&
                     props.authenticatedUser &&
-                    props.user.id !== props.authenticatedUser.id &&
-                    props.isSourcegraphDotCom
+                    props.user.id !== props.authenticatedUser.id
                 ) {
                     return (
                         <SiteAdminAlert className="sidebar__alert alert-danger">
