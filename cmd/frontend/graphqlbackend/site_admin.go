@@ -135,11 +135,9 @@ type roleChangeEventArgs struct {
 func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
-}) (*EmptyResponse, error) {
+}) (response *EmptyResponse, err error) {
 	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
 	// admin).
-
-	var err error
 
 	// Set default values for event args.
 	eventArgs := roleChangeEventArgs{
@@ -184,10 +182,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	}
 
 	if userResolver.ID() == args.UserID {
-		// err is passed as an argument to logRoleChangeAttempt. Returning errors.New directly will
-		// mean that this error is not logged in the reason for the security event.
-		err = errors.New("refusing to set current user site admin status")
-		return nil, err
+		return nil, errors.New("refusing to set current user site admin status")
 	}
 
 	if err = database.Users(r.db).SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
