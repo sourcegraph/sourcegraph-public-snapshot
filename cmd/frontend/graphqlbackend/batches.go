@@ -122,6 +122,7 @@ type ListBatchChangesArgs struct {
 	ViewerCanAdminister *bool
 
 	Namespace *graphql.ID
+	Repo      *graphql.ID
 }
 
 type CloseBatchChangeArgs struct {
@@ -287,6 +288,8 @@ type BatchChangesResolver interface {
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
+	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
+	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -561,6 +564,7 @@ type ListChangesetsArgs struct {
 	Search                         *string
 
 	OnlyArchived bool
+	Repo         *graphql.ID
 }
 
 type BatchChangeResolver interface {
@@ -596,19 +600,27 @@ type BatchChangesConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ChangesetsStatsResolver interface {
-	Retrying() int32
-	Failed() int32
-	Scheduled() int32
-	Processing() int32
+type CommonChangesetsStatsResolver interface {
 	Unpublished() int32
 	Draft() int32
 	Open() int32
 	Merged() int32
 	Closed() int32
+	Total() int32
+}
+
+type RepoChangesetsStatsResolver interface {
+	CommonChangesetsStatsResolver
+}
+
+type ChangesetsStatsResolver interface {
+	CommonChangesetsStatsResolver
+	Retrying() int32
+	Failed() int32
+	Scheduled() int32
+	Processing() int32
 	Deleted() int32
 	Archived() int32
-	Total() int32
 }
 
 type ChangesetsConnectionResolver interface {
