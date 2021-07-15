@@ -109,15 +109,17 @@ func Main(enterpriseInit EnterpriseInit) {
 	clock := func() time.Time { return time.Now().UTC() }
 
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
+	log15.Info("waiting for frontend")
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
 		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
 	}
-	log15.Debug("detected frontend ready")
+	log15.Info("detected frontend ready")
 
+	log15.Info("waiting for gitservers")
 	if err := gitserver.DefaultClient.WaitForGitServers(ctx); err != nil {
 		log.Fatalf("gitservers not reachable: %v", err)
 	}
-	log15.Debug("detected gitservers ready")
+	log15.Info("detected gitservers ready")
 
 	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
