@@ -25,12 +25,16 @@ interface SearchNotebookProps
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
     globbing: boolean
     isMacPlatform: boolean
-
+    isReadOnly?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
     blocks: BlockInitializer[]
 }
 
-export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ onSerializeBlocks, ...props }) => {
+export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
+    onSerializeBlocks,
+    isReadOnly = false,
+    ...props
+}) => {
     const notebook = useMemo(() => new Notebook(props.blocks), [props.blocks])
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
@@ -188,13 +192,18 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
         <div className={styles.searchNotebook}>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
-                    <SearchNotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
+                    {!isReadOnly ? (
+                        <SearchNotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
+                    ) : (
+                        <div className="mb-2" />
+                    )}
                     <>
                         {block.type === 'md' && (
                             <SearchNotebookMarkdownBlock
                                 {...props}
                                 {...block}
                                 {...blockCallbackProps}
+                                isReadOnly={isReadOnly}
                                 isSelected={selectedBlockId === block.id}
                             />
                         )}
@@ -203,18 +212,21 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 {...props}
                                 {...block}
                                 {...blockCallbackProps}
+                                isReadOnly={isReadOnly}
                                 isSelected={selectedBlockId === block.id}
                             />
                         )}
                     </>
                 </div>
             ))}
-            <SearchNotebookAddBlockButtons
-                onAddBlock={onAddBlock}
-                index={blocks.length}
-                className="mt-2"
-                alwaysVisible={true}
-            />
+            {!isReadOnly && (
+                <SearchNotebookAddBlockButtons
+                    onAddBlock={onAddBlock}
+                    index={blocks.length}
+                    className="mt-2"
+                    alwaysVisible={true}
+                />
+            )}
         </div>
     )
 }

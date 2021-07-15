@@ -30,6 +30,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     isSelected,
     isLightTheme,
     isMacPlatform,
+    isReadOnly,
     onRunBlock,
     onSelectBlock,
     ...props
@@ -49,11 +50,14 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     const { isInputFocused } = useMonacoBlockInput({ editor, id, ...props, onSelectBlock, onRunBlock: runBlock })
 
     const onDoubleClick = useCallback(() => {
+        if (isReadOnly) {
+            return
+        }
         if (!isEditing) {
             setIsEditing(true)
             onSelectBlock(id)
         }
-    }, [id, isEditing, setIsEditing, onSelectBlock])
+    }, [id, isReadOnly, isEditing, setIsEditing, onSelectBlock])
 
     const onEnterBlock = useCallback(() => setIsEditing(true), [setIsEditing])
 
@@ -66,7 +70,14 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         ...props,
     })
 
-    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, ...props, onRunBlock: runBlock })
+    const { onKeyDown } = useBlockShortcuts({
+        id,
+        isMacPlatform,
+        onEnterBlock,
+        isReadOnly,
+        ...props,
+        onRunBlock: runBlock,
+    })
 
     useEffect(() => {
         if (isEditing) {
@@ -77,7 +88,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     }, [isEditing, editor])
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, ...props })
+    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isReadOnly, ...props })
     const menuActions = useMemo(
         () =>
             [
@@ -98,7 +109,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         [isEditing, modifierKeyLabel, runBlock, onEnterBlock, commonMenuActions]
     )
 
-    const blockMenu = isSelected && <SearchNotebookBlockMenu id={id} actions={menuActions} />
+    const blockMenu = isSelected && !isReadOnly && <SearchNotebookBlockMenu id={id} actions={menuActions} />
 
     if (!isEditing) {
         return (

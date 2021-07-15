@@ -5,7 +5,7 @@ import { BlockProps } from '.'
 interface UseBlockShortcutsOptions
     extends Pick<
         BlockProps,
-        'onMoveBlockSelection' | 'onDeleteBlock' | 'onRunBlock' | 'onDuplicateBlock' | 'onMoveBlock'
+        'isReadOnly' | 'onMoveBlockSelection' | 'onDeleteBlock' | 'onRunBlock' | 'onDuplicateBlock' | 'onMoveBlock'
     > {
     id: string
     onEnterBlock: () => void
@@ -15,6 +15,7 @@ interface UseBlockShortcutsOptions
 export const useBlockShortcuts = ({
     id,
     isMacPlatform,
+    isReadOnly,
     onMoveBlockSelection,
     onRunBlock,
     onDeleteBlock,
@@ -24,6 +25,9 @@ export const useBlockShortcuts = ({
 }: UseBlockShortcutsOptions): { onKeyDown: (event: React.KeyboardEvent) => void } => {
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent): void => {
+            if (isReadOnly) {
+                return
+            }
             const isModifierKeyDown = (isMacPlatform && event.metaKey) || (!isMacPlatform && event.ctrlKey)
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 const direction = event.key === 'ArrowUp' ? 'up' : 'down'
@@ -48,6 +52,7 @@ export const useBlockShortcuts = ({
         [
             id,
             isMacPlatform,
+            isReadOnly,
             onMoveBlockSelection,
             onRunBlock,
             onDeleteBlock,
