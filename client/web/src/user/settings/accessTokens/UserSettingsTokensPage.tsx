@@ -2,10 +2,8 @@ import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Observable, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Subject } from 'rxjs'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -17,21 +15,18 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     AccessTokenFields,
-    AccessTokensConnectionFields,
     AccessTokensResult,
     AccessTokensVariables,
     CreateAccessTokenResult,
 } from '../../../graphql-operations'
 import { accessTokenFragment, AccessTokenNode } from '../../../settings/tokens/AccessTokenNode'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
-
-import { usePaginatedConnection } from './usePaginatedConnection'
 
 interface Props
     extends Pick<UserSettingsAreaRouteContext, 'user'>,
@@ -78,7 +73,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
         accessTokenUpdates.next()
     }, [accessTokenUpdates])
 
-    const { connection, errors, loading, fetchMore, hasNextPage } = usePaginatedConnection<
+    const { connection, errors, loading, fetchMore, hasNextPage } = useConnection<
         AccessTokensResult,
         AccessTokensVariables,
         AccessTokenFields
@@ -116,7 +111,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
             />
             <Container>
                 <ConnectionContainer>
-                    {errors.length > 0 && <ConnectionError errors={errors} />}
+                    {errors && <ConnectionError errors={errors} />}
                     <ConnectionList className="list-group list-group-flush">
                         {connection?.nodes?.map((node, index) => (
                             <AccessTokenNode
