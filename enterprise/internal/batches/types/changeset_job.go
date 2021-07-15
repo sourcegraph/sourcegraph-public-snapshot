@@ -46,6 +46,7 @@ var (
 	ChangesetJobTypeReenqueue ChangesetJobType = "reenqueue"
 	ChangesetJobTypeMerge     ChangesetJobType = "merge"
 	ChangesetJobTypeClose     ChangesetJobType = "close"
+	ChangesetJobTypePublish   ChangesetJobType = "publish"
 )
 
 type ChangesetJobCommentPayload struct {
@@ -61,6 +62,11 @@ type ChangesetJobMergePayload struct {
 }
 
 type ChangesetJobClosePayload struct{}
+
+type ChangesetJobPublishPayload struct {
+	IDs   []int64 `json:"ids"`
+	Draft bool    `json:"draft"`
+}
 
 // ChangesetJob describes a one-time action to be taken on a changeset.
 type ChangesetJob struct {

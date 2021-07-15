@@ -635,3 +635,72 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 
 	return bulkGroupID, nil
 }
+
+func (s *Service) PublishChangesets(ctx context.Context, batchChangeID int64, ids []int64, draft bool) (bulkGroupID string, err error) {
+	// We're going to create a fake changeset job that does all the changesets in one.
+	traceTitle := fmt.Sprintf("batchChangeID: %d, len(changesets): %d", batchChangeID, len(ids))
+	tr, ctx := trace.New(ctx, "service.PublishChangesets", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if len(ids) == 0 {
+		return bulkGroupID, errors.New("no changesets given to publish")
+	}
+
+	// Load the BatchChange to check for write permissions.
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "loading batch change")
+	}
+
+	// 🚨 SECURITY: Only the author of the batch change can create jobs.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+		return bulkGroupID, err
+	}
+
+	// Construct list options.
+	opts := store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChangeID,
+		EnforceAuthz:  true,
+	}
+	cs, _, err := s.store.ListChangesets(ctx, opts)
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "listing changesets")
+	}
+
+	if len(cs) != len(ids) {
+		return bulkGroupID, ErrChangesetsForJobNotFound
+	}
+
+	bulkGroupID, err = store.RandomID()
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "creating bulkGroupID failed")
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	job := &btypes.ChangesetJob{
+		BulkGroup:     bulkGroupID,
+		ChangesetID:   ids[0],
+		BatchChangeID: batchChangeID,
+		UserID:        actor.FromContext(ctx).UID,
+		State:         btypes.ChangesetJobStateQueued,
+		JobType:       btypes.ChangesetJobTypePublish,
+		Payload: &btypes.ChangesetJobPublishPayload{
+			IDs:   ids,
+			Draft: draft,
+		},
+	}
+	if err := tx.CreateChangesetJob(ctx, job); err != nil {
+		return bulkGroupID, errors.Wrap(err, "creating changeset job")
+	}
+
+	return bulkGroupID, nil
+}
