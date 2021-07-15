@@ -11,7 +11,6 @@ import { createMockInsightAPI } from '../../../../../../core/backend/insights-ap
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
-import { MemoryRouter } from 'react-router-dom'
 
 const USER_TEST_SUBJECT: SupportedInsightSubject = {
     __typename: 'User' as const,
