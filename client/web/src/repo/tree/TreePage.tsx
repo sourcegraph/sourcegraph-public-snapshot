@@ -428,21 +428,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
                                         </Link>
-                                        {repo.viewerCanAdminister && (
-                                            <Link
-                                                className="btn btn-outline-secondary"
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                                            >
-                                                <SettingsIcon className="icon-inline" /> Settings
-                                            </Link>
-                                        )}
                                         {showBatchChanges && (
                                             <Link
                                                 className="btn btn-outline-secondary"
                                                 to={`/${encodeURIPathComponent(repo.name)}/-/batch-changes`}
                                             >
                                                 <BatchChangesIcon className="icon-inline" /> Batch Changes
-                                                {repo.changesetsStats.open && (
+                                                {repo.changesetsStats.open > 0 && (
                                                     <span
                                                         className="d-inline-block badge badge-success batch-change-badge ml-2"
                                                         data-tooltip={`${repo.changesetsStats.open} open changesets`}
@@ -450,6 +442,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                         {repo.changesetsStats.open}
                                                     </span>
                                                 )}
+                                            </Link>
+                                        )}
+                                        {repo.viewerCanAdminister && (
+                                            <Link
+                                                className="btn btn-outline-secondary"
+                                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                            >
+                                                <SettingsIcon className="icon-inline" /> Settings
                                             </Link>
                                         )}
                                     </div>
