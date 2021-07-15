@@ -531,12 +531,12 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	}
 }
 
-func withMode(args search.TextParameters, st query.SearchType, vc *string) search.TextParameters {
+func withMode(args search.TextParameters, st query.SearchType, versionContext *string) search.TextParameters {
 	isGlobalSearch := func() bool {
 		if st == query.SearchTypeStructural {
 			return false
 		}
-		if vc != nil && *vc != "" {
+		if versionContext != nil && *versionContext != "" {
 			return false
 		}
 		querySearchContextSpec, _ := args.Query.StringValue(query.FieldContext)
