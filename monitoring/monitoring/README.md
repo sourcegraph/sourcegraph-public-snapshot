@@ -41,7 +41,6 @@ To learn more about the generator\, see the top\-level program: https://github.c
   - [func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel](<#func-observablepanel-with>)
 - [type ObservablePanelOption](<#type-observablepaneloption>)
 - [type PanelType](<#type-paneltype>)
-  - [func (pt PanelType) Valid() bool](<#func-paneltype-valid>)
 - [type Row](<#type-row>)
 - [type UnitType](<#type-unittype>)
 
@@ -442,7 +441,7 @@ Before using this\, check if the customization you want is already included in t
 
 Shared customizations are exported by \`PanelOptions\`\, or you can write your option \- see \`ObservablePanelOption\` documentation for more details\.
 
-## type [ObservablePanelOption](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel_options.go#L34>)
+## type [ObservablePanelOption](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel_options.go#L37>)
 
 ObservablePanelOption declares an option for customizing a graph panel\. \`ObservablePanel\` is responsible for collecting and applying options\.
 
@@ -460,6 +459,8 @@ When writing a custom \`ObservablePanelOption\`\, keep in mind that:
 
 \- The observable being graphed is configured in \`Targets\[0\]\`\. Customize it by editing it directly\, e\.g\. \`Targets\[0\]\.Property = Value\`\.
 
+\- For options that will be shared \(i\.e\. added to \`monitoring\.PanelOptions\`\)\, make sure to support all valid \`PanelType\`s defined by this package by checking for \`o\.Panel\.panelType\`\.
+
 If an option could be leveraged by multiple observables\, a shared panel option can be defined in the \`monitoring\` package\.
 
 When creating a shared \`ObservablePanelOption\`\, it should defined as a function on the \`panelOptionsLibrary\` that returns a \`ObservablePanelOption\`\. The function should be It can then be used with the \`ObservablePanel\.With\`:
@@ -474,7 +475,11 @@ Using a shared prefix helps with discoverability of available options\.
 type ObservablePanelOption func(Observable, *sdk.Panel)
 ```
 
-## type [PanelType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L10>)
+## type [PanelType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L16>)
+
+PanelType denotes the type of the panel's visualization\.
+
+Note that this affects \`\*sdk\.Panel\` usage in \`ObservablePanelOption\`s \- the value that must be modified for changes to apply has to be \`p\.GraphPanel\` or \`p\.HeatmapPanel\`\, for example\. When adding new \`PanelType\`s\, ensure all \`ObservablePanelOption\`s in this package are compatible with each supported type\.
 
 ```go
 type PanelType string
@@ -487,12 +492,6 @@ const (
 )
 ```
 
-### func \(PanelType\) [Valid](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L17>)
-
-```go
-func (pt PanelType) Valid() bool
-```
-
 ## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L394>)
 
 Row of observable metrics\.
@@ -503,7 +502,7 @@ These correspond to a row of Grafana graphs\.
 type Row []Observable
 ```
 
-## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L27>)
+## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L33>)
 
 UnitType for controlling the unit type display on graphs\.
 
