@@ -34,7 +34,11 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
         onSubmit,
     })
 
-    const searchInput = useField('searchInput', formAPI)
+    const searchInput = useField({
+        name: 'searchInput',
+        formApi: formAPI,
+    })
+
     const {
         input: { isChecked, onChange, onBlur },
     } = useCheckboxes('insightIds', formAPI)

@@ -2,6 +2,8 @@ import { Duration } from 'date-fns'
 
 import { DataSeries } from '../backend/types'
 
+export const INSIGHTS_ALL_REPOS_SETTINGS_KEY = 'insights.allrepos'
+
 export enum InsightTypePrefix {
     search = 'searchInsights.insight',
     langStats = 'codeStatsInsights.insight',
@@ -31,12 +33,28 @@ export interface SyntheticInsightFields {
     visibility: InsightVisibility
 }
 
+export enum InsightType {
+    Extension = 'extension',
+    Backend = 'backend',
+}
+
+export interface SearchExtensionBasedInsight extends SearchBasedInsightSettings, SyntheticInsightFields {
+    type: InsightType.Extension
+}
+
+export interface SearchBackendBasedInsight extends SearchBasedInsightSettings, SyntheticInsightFields {
+    type: InsightType.Backend
+}
+
 /**
- * Extended Search Insight.
- * Some fields and settings (id, visibility) do not exist implicitly in user/org settings but
- * we have to have these to operate with insight properly.
- * */
-export interface SearchBasedInsight extends SearchBasedInsightSettings, SyntheticInsightFields {}
+ * Search based insight supports type types of configuration
+ *
+ * Extension based works via insight extension and lives in settings file on top level
+ * search "searchInsights.insight.<name>": {...config}
+ *
+ * Backend based works on BE and lives in "insights.allrepos": { "searchInsights.insight.<name>" : { ...config }}
+ */
+export type SearchBasedInsight = SearchExtensionBasedInsight | SearchBackendBasedInsight
 
 /**
  * See public API of search insight extension
@@ -54,7 +72,9 @@ export interface SearchBasedInsightSettings {
  * Some fields and settings (id, visibility) do not exist implicitly in user/org settings but
  * we have to have these to operate with insight properly.
  * */
-export interface LangStatsInsight extends LangStatsInsightSettings, SyntheticInsightFields {}
+export interface LangStatsInsight extends LangStatsInsightSettings, SyntheticInsightFields {
+    type: InsightType.Extension
+}
 
 /**
  * Lang stats insight as it is presented in user/org settings cascade.

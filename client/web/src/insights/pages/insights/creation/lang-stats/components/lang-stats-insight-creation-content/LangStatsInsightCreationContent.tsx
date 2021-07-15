@@ -72,13 +72,29 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
     const titleValidator = useInsightTitleValidator({ settings, insightType: InsightTypePrefix.langStats })
 
-    const repository = useField('repository', formAPI, {
-        sync: repositoriesFieldValidator,
-        async: repositoryFieldAsyncValidator,
+    const repository = useField({
+        name: 'repository',
+        formApi: formAPI,
+        validators: {
+            sync: repositoriesFieldValidator,
+            async: repositoryFieldAsyncValidator,
+        },
     })
-    const title = useField('title', formAPI, { sync: titleValidator })
-    const threshold = useField('threshold', formAPI, { sync: thresholdFieldValidator })
-    const visibility = useField('visibility', formAPI)
+    const title = useField({
+        name: 'title',
+        formApi: formAPI,
+        validators: { sync: titleValidator },
+    })
+
+    const threshold = useField({
+        name: 'threshold',
+        formApi: formAPI,
+        validators: { sync: thresholdFieldValidator },
+    })
+    const visibility = useField({
+        name: 'visibility',
+        formApi: formAPI,
+    })
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
