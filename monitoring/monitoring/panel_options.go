@@ -10,7 +10,7 @@ import (
 // You can make any customization you want to a graph panel by using `ObservablePanel.With`:
 //
 //   Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
-//     // modify 'p.GraphPanel' with desired changes
+//     // modify 'p.GraphPanel' or 'p.HeatmapPanel' etc. with desired changes
 //   }),
 //
 // When writing a custom `ObservablePanelOption`, keep in mind that:
