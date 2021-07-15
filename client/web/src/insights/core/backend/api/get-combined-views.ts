@@ -16,7 +16,8 @@ import { createViewContent } from '../utils/create-view-content'
  * Used for fetching insights in different places (insight, home, directory pages)
  * */
 export const getCombinedViews = (
-    getExtensionsInsights: () => Observable<ViewProviderResult[]>
+    getExtensionsInsights: () => Observable<ViewProviderResult[]>,
+    insightIds?: string[]
 ): Observable<ViewInsightProviderResult[]> =>
     combineLatest([
         getExtensionsInsights().pipe(
@@ -30,7 +31,7 @@ export const getCombinedViews = (
                 }))
             )
         ),
-        fetchBackendInsights().pipe(
+        fetchBackendInsights(insightIds ?? []).pipe(
             startWith(null),
             map(backendInsights =>
                 backendInsights === null
@@ -66,8 +67,10 @@ export const getInsightCombinedViews = (
     extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
     insightIds?: string[]
 ): Observable<ViewInsightProviderResult[]> =>
-    getCombinedViews(() =>
-        from(extensionApi).pipe(
-            switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, insightIds)))
-        )
+    getCombinedViews(
+        () =>
+            from(extensionApi).pipe(
+                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, insightIds)))
+            ),
+        insightIds
     )

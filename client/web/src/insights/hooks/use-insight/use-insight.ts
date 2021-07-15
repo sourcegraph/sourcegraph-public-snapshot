@@ -76,7 +76,7 @@ interface InsightsInputs {
     ownerId: string
 }
 
-export function createInsightFromSettings(input: InsightsInputs): Insight {
+export function createExtensionInsightFromSettings(input: InsightsInputs): Insight {
     const { insightKey, ownerId, insightConfiguration } = input
 
     return {

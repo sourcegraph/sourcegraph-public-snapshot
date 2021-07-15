@@ -24,17 +24,20 @@ const insightFieldsFragment = gql`
         }
     }
 `
-export function fetchBackendInsights(): Observable<InsightFields[]> {
-    return requestGraphQL<InsightsResult>(gql`
-        query Insights {
-            insights {
-                nodes {
-                    ...InsightFields
+export function fetchBackendInsights(insightsIds: string[]): Observable<InsightFields[]> {
+    return requestGraphQL<InsightsResult>(
+        gql`
+            query Insights($ids: [ID!]!) {
+                insights(ids: $ids) {
+                    nodes {
+                        ...InsightFields
+                    }
                 }
             }
-        }
-        ${insightFieldsFragment}
-    `).pipe(
+            ${insightFieldsFragment}
+        `,
+        { ids: insightsIds }
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => data.insights?.nodes ?? [])
     )

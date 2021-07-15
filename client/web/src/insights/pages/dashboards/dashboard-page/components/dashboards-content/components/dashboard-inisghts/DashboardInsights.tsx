@@ -19,7 +19,7 @@ interface DashboardInsightsProps extends ExtensionsControllerProps, TelemetryPro
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, extensionsController, insightIds } = props
+    const { telemetryService, extensionsController, insightIds = [] } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
@@ -57,7 +57,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <div>
-            {views.length > 0 ? (
+            {insightIds.length > 0 && views.length > 0 ? (
                 <InsightsViewGrid views={views} hasContextMenu={true} telemetryService={telemetryService} />
             ) : (
                 <EmptyInsightDashboard />
