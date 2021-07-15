@@ -1212,23 +1212,23 @@ type ChangesetsStats {
     """
     unpublished: Int!
     """
-    The count of externalState: DRAFT changesets.
+    The count of draft changesets.
     """
     draft: Int!
     """
-    The count of externalState: OPEN changesets.
+    The count of open changesets.
     """
     open: Int!
     """
-    The count of externalState: MERGED changesets.
+    The count of merged changesets.
     """
     merged: Int!
     """
-    The count of externalState: CLOSED changesets.
+    The count of closed changesets.
     """
     closed: Int!
     """
-    The count of externalState: DELETED changesets.
+    The count of deleted changesets.
     """
     deleted: Int!
     """
@@ -1266,19 +1266,19 @@ type RepoChangesetsStats {
     """
     unpublished: Int!
     """
-    The count of externalState: DRAFT changesets.
+    The count of draft changesets.
     """
     draft: Int!
     """
-    The count of externalState: OPEN changesets.
+    The count of open changesets.
     """
     open: Int!
     """
-    The count of externalState: MERGED changesets.
+    The count of merged changesets.
     """
     merged: Int!
     """
-    The count of externalState: CLOSED changesets.
+    The count of closed changesets.
     """
     closed: Int!
     """
