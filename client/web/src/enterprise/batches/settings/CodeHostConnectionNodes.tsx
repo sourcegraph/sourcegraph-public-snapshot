@@ -1,11 +1,8 @@
-import { ApolloError } from '@apollo/client'
 import { GraphQLError } from 'graphql'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { Connection } from '@sourcegraph/web/src/components/FilteredConnection'
 import {
     ConnectionContainer,
@@ -16,7 +13,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
-import { hasNextPage } from '@sourcegraph/web/src/components/FilteredConnection/utils'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 
 import {
     BatchChangesCodeHostFields,
@@ -25,7 +22,6 @@ import {
     UserBatchChangesCodeHostsResult,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
-import { usePaginatedConnection } from '../../../user/settings/accessTokens/usePaginatedConnection'
 
 import { GLOBAL_BATCH_CHANGES_CODE_HOSTS, USER_BATCH_CHANGES_CODE_HOSTS } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
@@ -35,7 +31,7 @@ interface CodeHostConnectionNodesProps {
 }
 
 export const CodeHostConnectionNodes: React.FunctionComponent<CodeHostConnectionNodesProps> = ({ userID }) => {
-    const response = usePaginatedConnection<
+    const response = useConnection<
         UserBatchChangesCodeHostsResult,
         UserBatchChangesCodeHostsVariables,
         BatchChangesCodeHostFields
@@ -64,7 +60,7 @@ export const CodeHostConnectionNodes: React.FunctionComponent<CodeHostConnection
 }
 
 export const GlobalCodeHostConnectionNodes: React.FunctionComponent = () => {
-    const response = usePaginatedConnection<
+    const response = useConnection<
         GlobalBatchChangesCodeHostsResult,
         GlobalBatchChangesCodeHostsVariables,
         BatchChangesCodeHostFields
@@ -85,7 +81,7 @@ export const GlobalCodeHostConnectionNodes: React.FunctionComponent = () => {
 
 const CodeHostConnectionNodesUI: React.FunctionComponent<{
     connection?: Connection<BatchChangesCodeHostFields>
-    errors: readonly GraphQLError[]
+    errors?: readonly GraphQLError[]
     loading: boolean
     hasNextPage: boolean
     userID: Scalars['ID'] | null
@@ -97,7 +93,7 @@ const CodeHostConnectionNodesUI: React.FunctionComponent<{
 
     return (
         <ConnectionContainer className="mb-3">
-            {errors.length > 0 && <ConnectionError errors={errors} />}
+            {errors && <ConnectionError errors={errors} />}
             <ConnectionList className="list-group">
                 {connection.nodes.map((node, index) => (
                     <CodeHostConnectionNode key={index} node={node} userID={userID} />
