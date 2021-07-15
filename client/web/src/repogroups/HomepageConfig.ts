@@ -7,6 +7,7 @@ import { reactHooks } from './ReactHooks'
 import { stackStorm } from './StackStorm'
 import { stanford } from './Stanford'
 import { temporal } from './Temporal'
+import { o3de } from './o3de'
 import { RepogroupMetadata } from './types'
 
 export const repogroupList: RepogroupMetadata[] = [
@@ -14,6 +15,7 @@ export const repogroupList: RepogroupMetadata[] = [
     python2To3Metadata,
     android,
     temporal,
+    o3de,
     stackStorm,
     kubernetes,
     golang,

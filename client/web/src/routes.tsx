@@ -16,6 +16,7 @@ import { RepogroupPage } from './repogroups/RepogroupPage'
 import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { temporal } from './repogroups/Temporal'
+import { o3de } from './repogroups/o3de'
 import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
@@ -250,6 +251,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/temporal',
         render: props => <RepogroupPage {...props} repogroupMetadata={temporal} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/o3de',
+        render: props => <RepogroupPage {...props} repogroupMetadata={o3de} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
