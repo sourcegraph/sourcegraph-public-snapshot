@@ -122,11 +122,11 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIn
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	// 🚨 SECURITY: Only site admins may see LSIF upload data
+	// 🚨 SECURITY: Only site admins may see LSIF index data
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
 		return nil, err
 	}
-	
+
 	indexID, err := unmarshalLSIFIndexGQLID(id)
 	if err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	// 🚨 SECURITY: Only site admins may see LSIF upload data
+	// 🚨 SECURITY: Only site admins may see LSIF index data
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
 		return nil, err
 	}
