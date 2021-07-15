@@ -32,9 +32,9 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
         ({ settings }) =>
             settings &&
             !isErrorLike(settings) &&
-            (!!settings[insightId] ||
+            (settings[insightId] ||
                 // Also check insights all repos map as a second place if insights store
-                !!(settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, Insight>)?.[insightId])
+                (settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, Insight>)?.[insightId])
     )
 
     if (!subject?.settings || isErrorLike(subject.settings)) {
@@ -53,11 +53,12 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
         }
     }
 
-    const allReposInsights = (subject.settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, Insight>) ?? {}
+    const allReposInsights =
+        (subject.settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, SearchBasedInsightSettings>) ?? {}
 
     // Match in all repos object means that we are dealing with backend search based insight.
     if (allReposInsights[insightId]) {
-        const insightConfiguration = allReposInsights[insightId] as SearchBasedInsightSettings
+        const insightConfiguration = allReposInsights[insightId]
 
         return {
             id: insightId,
