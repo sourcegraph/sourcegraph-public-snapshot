@@ -8,6 +8,7 @@ require('ts-node').register({
 
 const log = require('fancy-log')
 const gulp = require('gulp')
+const signale = require('signale')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
 // The `DevServerPlugin` should be exposed after the `webpack-dev-server@4` goes out of the beta stage.
@@ -119,6 +120,7 @@ async function webpackDevelopmentServer() {
 
   const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
   await new Promise((resolve, reject) => {
+    signale.await('Waiting for Webpack to compile assets')
     server.listen(3080, '0.0.0.0', error => (error ? reject(error) : resolve()))
   })
 }

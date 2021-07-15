@@ -69,6 +69,7 @@ const config = {
     // Use `normal` output preset in case of running standalone web server.
     preset: shouldServeIndexHTML || isProduction ? 'normal' : 'errors-warnings',
     errorDetails: true,
+    timings: true,
   },
   infrastructureLogging: {
     // Controls webpack-dev-server logging level.
