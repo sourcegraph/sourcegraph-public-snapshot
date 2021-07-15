@@ -22,6 +22,9 @@ const { add } = storiesOf('web/batches/BatchChangeRepoPage', module)
     })
 
 const repoDefaults: RepositoryFields = {
+    changesetsStats: {
+        open: 2,
+    },
     description: 'An awesome repo!',
     defaultBranch: null,
     viewerCanAdminister: false,

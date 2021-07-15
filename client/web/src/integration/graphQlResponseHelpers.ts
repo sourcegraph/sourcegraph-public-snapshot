@@ -65,6 +65,9 @@ export const createRepositoryRedirectResult = (
 ): RepositoryRedirectResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
+        changesetsStats: {
+            open: 2,
+        },
         id: `RepositoryID:${repoName}`,
         name: repoName,
         url: `/${encodeURIPathComponent(repoName)}`,
