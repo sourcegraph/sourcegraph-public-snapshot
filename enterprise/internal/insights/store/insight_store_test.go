@@ -3,8 +3,10 @@ package store
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
@@ -13,16 +15,19 @@ import (
 func TestGet(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
+	now := time.Now()
 
 	_, err := timescale.Exec(`INSERT INTO insight_view (title, description, unique_id)
 									VALUES ('test title', 'test description', 'unique-1'),
-									       ('test title 2', 'description2', 'unique-2');`)
+									       ('test title 2', 'test description 2', 'unique-2');`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, recording_interval_days)
-									VALUES ('series-id-1', 'query-1', 5), ('series-id-2', 'query-2', 6);`)
+	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
+                            next_recording_after, recording_interval_days)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, 5),
+									('series-id-2', 'query-2', $1, $1, $1, $1, 6);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,9 +47,97 @@ func TestGet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		want := []types.InsightViewSeries{
+			{
+				UniqueID:              "unique-1",
+				SeriesID:              "series-id-1",
+				Title:                 "test title",
+				Description:           "test description",
+				Query:                 "query-1",
+				CreatedAt:             now,
+				OldestHistoricalAt:    now,
+				LastRecordedAt:        now,
+				NextRecordingAfter:    now,
+				RecordingIntervalDays: 5,
+				Label:                 "label1",
+				Stroke:                "color1",
+			},
+			{
+				UniqueID:              "unique-1",
+				SeriesID:              "series-id-2",
+				Title:                 "test title",
+				Description:           "test description",
+				Query:                 "query-2",
+				CreatedAt:             now,
+				OldestHistoricalAt:    now,
+				LastRecordedAt:        now,
+				NextRecordingAfter:    now,
+				RecordingIntervalDays: 6,
+				Label:                 "label2",
+				Stroke:                "color2",
+			},
+			{
+				UniqueID:              "unique-2",
+				SeriesID:              "series-id-2",
+				Title:                 "test title 2",
+				Description:           "test description 2",
+				Query:                 "query-2",
+				CreatedAt:             now,
+				OldestHistoricalAt:    now,
+				LastRecordedAt:        now,
+				NextRecordingAfter:    now,
+				RecordingIntervalDays: 6,
+				Label:                 "second-label-2",
+				Stroke:                "second-color-2",
+			},
+		}
 
-		var want []types.InsightViewSeries
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
 
-		autogold.Want("want-all-results", want).Equal(t, got)
+	t.Run("test get by unique id", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueIDs: []string{"unique-1"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(got)
+		want := []types.InsightViewSeries{
+			{
+				UniqueID:              "unique-1",
+				SeriesID:              "series-id-1",
+				Title:                 "test title",
+				Description:           "test description",
+				Query:                 "query-1",
+				CreatedAt:             now,
+				OldestHistoricalAt:    now,
+				LastRecordedAt:        now,
+				NextRecordingAfter:    now,
+				RecordingIntervalDays: 5,
+				Label:                 "label1",
+				Stroke:                "color1",
+			},
+			{
+				UniqueID:              "unique-1",
+				SeriesID:              "series-id-2",
+				Title:                 "test title",
+				Description:           "test description",
+				Query:                 "query-2",
+				CreatedAt:             now,
+				OldestHistoricalAt:    now,
+				LastRecordedAt:        now,
+				NextRecordingAfter:    now,
+				RecordingIntervalDays: 6,
+				Label:                 "label2",
+				Stroke:                "color2",
+			},
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
 	})
 }

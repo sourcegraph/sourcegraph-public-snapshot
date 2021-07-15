@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/keegancsmith/sqlf"
@@ -38,11 +36,20 @@ type InsightQueryArgs struct {
 }
 
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	q := sqlf.Sprintf(getInsightByViewSql)
+	preds := make([]*sqlf.Query, 0)
+
 	if len(args.UniqueIDs) > 0 {
-		q = sqlf.Join([]*sqlf.Query{q, sqlf.Sprintf("AND iv.unique_id = ANY(%s)", args.UniqueIDs)}, " ")
+		elems := make([]*sqlf.Query, 0)
+		for _, id := range args.UniqueIDs {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	log15.Info("querying for insights", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+	}
+
+	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return []types.InsightViewSeries{}, err
@@ -79,6 +86,6 @@ i.next_recording_after, i.recording_interval_days
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
-WHERE i.deleted_at IS NULL
-ORDER BY iv.unique_id
+WHERE %s
+ORDER BY iv.unique_id, i.series_id
 `
