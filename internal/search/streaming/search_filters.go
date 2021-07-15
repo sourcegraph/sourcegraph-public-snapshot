@@ -158,7 +158,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 // events passed to Next.
 func (s *SearchFilters) Compute() []*Filter {
 	return s.filters.Compute(computeOpts{
-		MaxRepos: 12,
-		MaxOther: 12,
+		MaxRepos: 40,
+		MaxOther: 40,
 	})
 }
