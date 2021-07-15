@@ -11,18 +11,21 @@ import (
 )
 
 type documentationChannels struct {
-	pages chan *semantic.DocumentationPageData
+	pages    chan *semantic.DocumentationPageData
 	pathInfo chan *semantic.DocumentationPathInfoData
+	mappings chan *semantic.DocumentationMapping
 }
 
 func collectDocumentation(ctx context.Context, state *State) documentationChannels {
 	channels := documentationChannels{
-		pages: make(chan *semantic.DocumentationPageData, 1024),
+		pages:    make(chan *semantic.DocumentationPageData, 1024),
 		pathInfo: make(chan *semantic.DocumentationPathInfoData, 1024),
+		mappings: make(chan *semantic.DocumentationMapping, 1024),
 	}
 	if state.DocumentationResultRoot == -1 {
 		close(channels.pages)
 		close(channels.pathInfo)
+		close(channels.mappings)
 		return channels
 	}
 
@@ -34,10 +37,11 @@ func collectDocumentation(ctx context.Context, state *State) documentationChanne
 		startingDocumentationResult: state.DocumentationResultRoot,
 		dupChecker:                  &duplicateChecker{pathIDs: make(map[string]struct{}, 16*1024)},
 		walkedPages:                 &duplicateChecker{pathIDs: make(map[string]struct{}, 128)},
+		mappings:                    channels.mappings,
 	}
 
 	tmpPages := make(chan *semantic.DocumentationPageData)
-	go pageCollector.collect(ctx, tmpPages)
+	go pageCollector.collect(ctx, tmpPages, channels.mappings)
 
 	go func() {
 		// Emit path info for each page as a post-processing step once we've collected pages.
@@ -65,6 +69,7 @@ func collectDocumentation(ctx context.Context, state *State) documentationChanne
 		}
 		close(channels.pages)
 		close(channels.pathInfo)
+		close(channels.mappings)
 	}()
 	return channels
 }
@@ -105,7 +110,7 @@ type pageCollector struct {
 	dupChecker, walkedPages     *duplicateChecker
 }
 
-func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
+func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData, mappings chan<- semantic.DocumentationMapping) (remainingPages []*pageCollector) {
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
 		labelID := p.state.DocumentationStringLabel[documentationResult]
@@ -129,6 +134,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				log15.Warn("API docs: duplicate pathID forbidden", "pathID", this.PathID)
 				return
 			}
+		}
+		mappings <- semantic.DocumentationMapping{
+			ResultID: documentationResult,
+			PathID:   this.PathID,
 		}
 		if parent != nil {
 			if this.Documentation.NewPage {
@@ -197,7 +206,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				remainingWorkMu.Unlock()
 
 				// Perform work.
-				newRemainingPages := work.collect(ctx, ch)
+				newRemainingPages := work.collect(ctx, ch, mappings)
 
 				// Add new work, if needed.
 				if len(newRemainingPages) > 0 {

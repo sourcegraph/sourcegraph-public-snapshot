@@ -28,6 +28,7 @@ type operations struct {
 	writeResultChunks          *observation.Operation
 	writeDocumentationPages    *observation.Operation
 	writeDocumentationPathInfo *observation.Operation
+	writeDocumentationMappings *observation.Operation
 
 	locations           *observation.Operation
 	locationsWithinFile *observation.Operation
@@ -79,6 +80,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeResultChunks:          op("WriteResultChunks"),
 		writeDocumentationPages:    op("WriteDocumentationPages"),
 		writeDocumentationPathInfo: op("WriteDocumentationPathInfo"),
+		writeDocumentationMappings: op("WriteDocumentationMappings"),
 
 		locations:           subOp("locations"),
 		locationsWithinFile: subOp("locationsWithinFile"),
