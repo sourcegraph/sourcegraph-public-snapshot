@@ -1315,3 +1315,135 @@ FROM (
 		AND %s
 ) AS fcs;
 `
+
+// EnqueueChangesetsToPublish sets the UI publication state of the given
+// changesets to either draft or published, and sets their reconciler status to
+// 'queued'.
+//
+// Changesets that are ineligible to be published from the UI (because they have
+// an explicit published field in their spec) are ignored.
+//
+// This will loop until there are no processing rows any more, or until two
+// minutes has passed.
+func (s *Store) EnqueueChangesetsToPublish(ctx context.Context, batchChangeID int64, cs btypes.Changesets, draft bool) error {
+	return s.enqueueChangesetsToPublish(ctx, batchChangeID, cs, draft, 100*time.Millisecond, 2*time.Minute)
+}
+
+func (s *Store) enqueueChangesetsToPublish(ctx context.Context, batchChangeID int64, cs btypes.Changesets, draft bool, sleep, deadline time.Duration) error {
+	ctx, cancel := context.WithDeadline(ctx, s.now().Add(deadline))
+	defer cancel()
+
+	ids := make([]*sqlf.Query, len(cs))
+	for i, c := range cs {
+		ids[i] = sqlf.Sprintf("%s", c.ID)
+	}
+
+	var target btypes.ChangesetUiPublicationState
+	if draft {
+		target = btypes.ChangesetUiPublicationStateDraft
+	} else {
+		target = btypes.ChangesetUiPublicationStatePublished
+	}
+
+	for {
+		q := sqlf.Sprintf(
+			enqueueChangesetsToPublishFmtstr,
+			sqlf.Join(ChangesetColumns, ","),
+			strconv.FormatInt(batchChangeID, 10),
+			sqlf.Join(ids, ","),
+			target,
+			target,
+			btypes.ReconcilerStateScheduled.ToDB(),
+			btypes.ReconcilerStateQueued.ToDB(),
+			btypes.ReconcilerStateQueued.ToDB(),
+			target,
+			btypes.ReconcilerStateErrored.ToDB(),
+			btypes.ReconcilerStateFailed.ToDB(),
+			btypes.ReconcilerStateCompleted.ToDB(),
+			btypes.ReconcilerStateProcessing.ToDB(),
+		)
+
+		processing, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+		if err != nil {
+			return err
+		}
+		if !ok || processing == 0 {
+			break
+		}
+		time.Sleep(sleep)
+	}
+	return nil
+}
+
+const enqueueChangesetsToPublishFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:EnqueueChangesetsToPublish
+WITH
+	-- Select all the changesets that we can modify based on the changeset IDs,
+	-- their specs, and any existing UI publication state.
+	ui_publishable_changesets AS (
+		SELECT
+			%s												-- changeset columns
+		FROM
+			changesets
+		INNER JOIN
+			changeset_specs
+		ON
+			changesets.current_spec_id = changeset_specs.id
+		WHERE
+			changesets.batch_change_ids ? %s				-- batch change id
+			AND changesets.id IN (%s)						-- changeset ids
+			AND (
+				changesets.ui_publication_state IS NULL
+				OR changesets.ui_publication_state <> %s	-- target state
+			)
+			AND changesets.current_spec_id IS NOT NULL
+			AND changeset_specs.spec->>'published' IS NULL
+	),
+	-- Update changesets that are scheduled or queued. In this case, we don't
+	-- need to reset the worker state, since they'll get picked up at some
+	-- point regardless.
+	update_pending_changesets AS (
+		UPDATE
+			changesets
+		SET
+			ui_publication_state = %s						-- target state
+		WHERE
+			id IN (
+				SELECT
+					id
+				FROM
+					ui_publishable_changesets
+				WHERE
+					reconciler_state IN (%s, %s)			-- scheduled, queued
+			)
+	),
+	-- Update changesets that are not pending or scheduled. Here we do need to
+	-- reset the worker state.
+	update_terminal_changesets AS (
+		UPDATE
+			changesets
+		SET
+			reconciler_state = %s,							-- queued
+			failure_message = NULL,
+			num_resets = 0,
+			num_failures = 0,
+			ui_publication_state = %s						-- target state
+		WHERE
+			id IN (
+				SELECT
+					id
+				FROM
+					ui_publishable_changesets
+				WHERE
+					reconciler_state IN (%s, %s, %s)		-- errored, failed, completed
+			)
+	)
+-- Finally, we return the number of changesets in scope that are currently
+-- processing.
+SELECT
+	COUNT(id)
+FROM
+	ui_publishable_changesets
+WHERE
+	reconciler_state = %s								-- processing
+`
