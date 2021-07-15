@@ -10,6 +10,7 @@ import { createMockInsightAPI } from '../../../../../../core/backend/insights-ap
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
+import { MemoryRouter } from 'react-router-dom'
 
 const USER_TEST_SUBJECT: SupportedInsightSubject = {
     __typename: 'User' as const,
@@ -33,9 +34,11 @@ describe('CreateInsightContent', () => {
 
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
         render(
-            <InsightsApiContext.Provider value={mockAPI}>
-                <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT, SITE_TEST_SUBJECT]} />
-            </InsightsApiContext.Provider>
+            <MemoryRouter>
+                <InsightsApiContext.Provider value={mockAPI}>
+                    <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT, SITE_TEST_SUBJECT]} />
+                </InsightsApiContext.Provider>
+            </MemoryRouter>
         )
     const onSubmitMock = sinon.spy()
 
@@ -47,7 +50,7 @@ describe('CreateInsightContent', () => {
         const repoGroup = getByRole('group', { name: /list of repositories/i })
         const repositories = within(repoGroup).getByRole('combobox')
 
-        const personalVisibility = getByRole('radio', { name: /personal/i })
+        const personalVisibility = getByRole('radio', { name: /private/i })
         const organisationVisibility = getByRole('radio', { name: /organization/i })
 
         const dataSeriesGroup = getByRole('group', { name: /data series/i })

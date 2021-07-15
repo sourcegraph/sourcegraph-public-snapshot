@@ -60,7 +60,9 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
                 <CloseIcon />
             </button>
 
-            <h2 className="mb-3">Add insight to the ’{dashboard.title}’</h2>
+            <h2 className="mb-3">
+                Add insight to <q>{dashboard.title}</q>
+            </h2>
 
             {!insights.length && <span>There are no insights for this dashboard.</span>}
 

@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Repository syncing can now be done in a streaming mode via the `ENABLE_STREAMING_REPOS_SYNCER` environment variable in `repo-updater`. Customers with many repositories should notice code host updates much faster when this is enabled. It will become default in the next release. [#22756](https://github.com/sourcegraph/sourcegraph/pull/22756)
 - Added "Groovy" to the initial `lang:` filter suggestions in the search bar. [#22755](https://github.com/sourcegraph/sourcegraph/pull/22755)
 - The `lang:` filter suggestions now show all supported, matching languages as the user types a language name. [#22765](https://github.com/sourcegraph/sourcegraph/pull/22765)
-- Added the code insights dashboards functionality. Now you can divide insights into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
+- Code Insights can now be grouped into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
 
 ### Changed
 

@@ -38,7 +38,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     if (!areExtensionsReady) {
         return (
             <div className="d-flex justify-content-center align-items-center pt-5">
-                <LoadingSpinner/>
+                <LoadingSpinner />
                 <span className="mx-2">Loading Sourcegraph extensions</span>
                 <PuzzleIcon className="icon-inline" />
             </div>
@@ -48,8 +48,8 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     if (views === undefined) {
         return (
             <div className="d-flex justify-content-center align-items-center pt-5">
-                <LoadingSpinner/>
-                <span className="mx-2">Loading Code Insights</span>
+                <LoadingSpinner />
+                <span className="mx-2">Loading code insights</span>
                 <CodeInsightsIcon className="icon-inline" />
             </div>
         )

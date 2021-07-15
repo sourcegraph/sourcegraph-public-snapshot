@@ -7,7 +7,7 @@ import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/d
  * @param dashboards - list of all reachable dashboards
  * @param dashboardID - possible dashboard id from the URL query param.
  */
-export function findDashboardByURLId(
+export function findDashboardByUrlId(
     dashboards: InsightDashboard[],
     dashboardID: string
 ): InsightDashboard | undefined {

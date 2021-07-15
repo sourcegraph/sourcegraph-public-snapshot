@@ -52,7 +52,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                         <Link to="/insights/create">create a new insight</Link>
                     </span>
                 }
-                placeholder="Search Insights..."
+                placeholder="Search insights..."
                 {...searchInput.input}
             />
 

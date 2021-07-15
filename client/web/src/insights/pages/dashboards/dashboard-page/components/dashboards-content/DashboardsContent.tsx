@@ -22,7 +22,7 @@ import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsi
 import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
 import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
-import { findDashboardByURLId } from './utils/find-dashboard-by-url-id'
+import { findDashboardByUrlId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps
@@ -49,10 +49,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    const currentDashboard = findDashboardByURLId(dashboards, dashboardID)
+    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
     const handleDashboardSelect = useDashboardSelectHandler()
     const [copyURL, isCopied] = useCopyURLHandler()
-    const menuReference = useRef<HTMLButtonElement|null>(null)
+    const menuReference = useRef<HTMLButtonElement | null>(null)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {

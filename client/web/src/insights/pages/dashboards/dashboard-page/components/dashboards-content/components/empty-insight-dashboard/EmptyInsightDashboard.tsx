@@ -10,11 +10,11 @@ export const EmptyInsightDashboard: React.FunctionComponent = () => (
         <section className={styles.emptySection}>
             <Link to="/insights/create" className={classnames(styles.itemCard, 'card')}>
                 <PlusIcon size="2rem" />
-                <span>Create new Insight</span>
+                <span>Create new insight</span>
             </Link>
             <span className="d-flex justify-content-center mt-3">
                 <span>
-                    ...or add existing Insights from <Link to="/insights/dashboards/all">All Insights</Link>
+                    ...or add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
                 </span>
             </span>
         </section>
