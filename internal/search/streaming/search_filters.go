@@ -157,5 +157,8 @@ func (s *SearchFilters) Update(event SearchEvent) {
 // Compute returns an ordered slice of Filters to present to the user based on
 // events passed to Next.
 func (s *SearchFilters) Compute() []*Filter {
-	return s.filters.Compute()
+	return s.filters.Compute(computeOpts{
+		MaxRepos: 12,
+		MaxOther: 12,
+	})
 }

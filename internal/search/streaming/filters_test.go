@@ -55,7 +55,10 @@ func TestFilters(t *testing.T) {
 		"file-90 90",
 	}
 
-	filters := m.Compute()
+	filters := m.Compute(computeOpts{
+		MaxRepos: 12,
+		MaxOther: 12,
+	})
 	var got []string
 	for _, f := range filters {
 		got = append(got, fmt.Sprintf("%s %d", f.Value, f.Count))

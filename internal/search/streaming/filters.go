@@ -68,10 +68,19 @@ func (m filters) MarkImportant(value string) {
 	m[value].important = true
 }
 
+// computeOpts are the options for calling filters.Compute.
+type computeOpts struct {
+	// MaxRepos is the maximum number of filters to return with kind repo.
+	MaxRepos int
+
+	// MaxOther is the maximum number of filters to return which are not repo.
+	MaxOther int
+}
+
 // Compute returns an ordered slice of Filter to present to the user.
-func (m filters) Compute() []*Filter {
-	repos := filterHeap{max: 12}
-	other := filterHeap{max: 12}
+func (m filters) Compute(opts computeOpts) []*Filter {
+	repos := filterHeap{max: opts.MaxRepos}
+	other := filterHeap{max: opts.MaxOther}
 	for _, f := range m {
 		if f.Kind == "repo" {
 			repos.Add(f)
@@ -112,7 +121,7 @@ func (h *filterHeap) Add(f *Filter) {
 	if len(h.filterSlice) < h.max {
 		// Less than max, we keep the filter.
 		heap.Push(h, f)
-	} else if f.Less(h.filterSlice[0]) {
+	} else if h.max > 0 && f.Less(h.filterSlice[0]) {
 		// f is more important than the least important filter we have
 		// kept. So Pop that filter away and add in f. We should keep the
 		// invariant that len == h.max.
