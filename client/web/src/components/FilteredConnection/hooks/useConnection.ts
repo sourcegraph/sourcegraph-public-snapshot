@@ -10,7 +10,7 @@ import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 import { useConnectionUrl } from './useConnectionUrl'
 import { useSearchParameters } from './useSearchParameters'
 
-interface PaginationConnectionResult<TData> {
+interface UseConnectionResult<TData> {
     connection?: Connection<TData>
     errors?: readonly GraphQLError[]
     fetchMore: () => void
@@ -18,7 +18,7 @@ interface PaginationConnectionResult<TData> {
     hasNextPage: boolean
 }
 
-interface UsePaginationConnectionParameters<TResult, TVariables, TData> {
+interface UseConnectionParameters<TResult, TVariables, TData> {
     query: string
     variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
@@ -35,7 +35,7 @@ export const useConnection = <TResult, TVariables, TData>({
     variables,
     getConnection: getConnectionFromGraphQLResult,
     options,
-}: UsePaginationConnectionParameters<TResult, TVariables, TData>): PaginationConnectionResult<TData> => {
+}: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
     const searchParameters = useSearchParameters()
     const firstRequest = useRef(true)
 
@@ -55,9 +55,10 @@ export const useConnection = <TResult, TVariables, TData>({
         (options?.useURL && parseQueryInt(searchParameters, 'first')) || variables.first || defaultFirst
     )
     const initialFirst = useRef(variables.first || 15)
+
     const after = (options?.useURL && searchParameters.get('after')) || variables.after || defaultAfter
 
-    // Memoize first, to avoid ref changes triggering rerenders
+    // Memoize `first`, to avoid ref changes triggering duplicate queries
     // If this is our first query and we were supplied a value for `visible`,
     // load that many results. If we weren't given such a value or this is a
     // subsequent request, only ask for one page of results.

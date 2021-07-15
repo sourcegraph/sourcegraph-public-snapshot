@@ -1,15 +1,24 @@
-import React, { useEffect, useMemo, useCallback } from 'react'
+import React, { useEffect, useMemo, useCallback, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Subject } from 'rxjs'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionForm,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { useDebounce } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../../../backend/graphql'
-import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import { CustomerFields, CustomersResult, CustomersVariables } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { userURL } from '../../../../user'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
@@ -46,11 +55,6 @@ const SiteAdminCustomerNode: React.FunctionComponent<SiteAdminCustomerNodeProps>
 
 interface Props extends RouteComponentProps<{}> {}
 
-class FilteredSiteAdminCustomerConnection extends FilteredConnection<
-    Pick<GQL.IUser, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>,
-    Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
-> {}
-
 /**
  * Displays a list of customers associated with user accounts on Sourcegraph.com.
  */
@@ -62,6 +66,26 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
     const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {
         onDidUpdate: onUserUpdate,
     }
+    const [query, setQuery] = useState('')
+    const debouncedQuery = useDebounce(query, 200)
+    const { connection, errors, loading, fetchMore, hasNextPage } = useConnection<
+        CustomersResult,
+        CustomersVariables,
+        CustomerFields
+    >({
+        query: CUSTOMERS,
+        variables: {
+            first: 20,
+            query: debouncedQuery,
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+            return data.users
+        },
+        options: {
+            useURL: true,
+        },
+    })
 
     return (
         <div className="site-admin-customers-page">
@@ -70,48 +94,48 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
                 <h2 className="mb-0">Customers</h2>
             </div>
             <p>User accounts may be linked to a customer on the billing system.</p>
-            <FilteredSiteAdminCustomerConnection
-                className="list-group list-group-flush mt-3"
-                noun="customer"
-                pluralNoun="customers"
-                queryConnection={queryCustomers}
-                nodeComponent={SiteAdminCustomerNode}
-                nodeComponentProps={nodeProps}
-                noSummaryIfAllNodesVisible={true}
-                updates={updates}
-                history={props.history}
-                location={props.location}
-            />
+            <ConnectionContainer className="list-group list-group-flush mt-3">
+                <ConnectionForm
+                    query={query}
+                    onChange={event => setQuery(event.target.value)}
+                    inputPlaceholder="Search customers..."
+                />
+                {errors && <ConnectionError errors={errors} />}
+                <ConnectionList>
+                    {connection?.nodes?.map(node => (
+                        <SiteAdminCustomerNode key={node.id} {...nodeProps} node={node} />
+                    ))}
+                </ConnectionList>
+                {loading && <ConnectionLoading />}
+                {connection && (
+                    <SummaryContainer>
+                        <ConnectionSummary
+                            noSummaryIfAllNodesVisible={true}
+                            connection={connection}
+                            noun="customer"
+                            pluralNoun="customers"
+                            totalCount={connection.totalCount ?? null}
+                            hasNextPage={hasNextPage}
+                        />
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
         </div>
     )
 }
 
-function queryCustomers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
-    return queryGraphQL(
-        gql`
-            query Customers($first: Int, $query: String) {
-                users(first: $first, query: $query) {
-                    nodes {
-                        ...CustomerFields
-                    }
-                    totalCount
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
+export const CUSTOMERS = gql`
+    query Customers($first: Int, $query: String) {
+        users(first: $first, query: $query) {
+            nodes {
+                ...CustomerFields
             }
-            ${siteAdminCustomerFragment}
-        `,
-        {
-            first: args.first,
-            query: args.query,
-        } as GQL.IUsersOnQueryArguments
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.users || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
+            totalCount
+            pageInfo {
+                hasNextPage
             }
-            return data.users
-        })
-    )
-}
+        }
+    }
+    ${siteAdminCustomerFragment}
+`

@@ -1,8 +1,9 @@
 import { MockedProvider, MockedResponse } from '@apollo/client/testing'
-import { act, fireEvent } from '@testing-library/react'
+import { fireEvent } from '@testing-library/react'
 import React from 'react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import {
@@ -121,8 +122,9 @@ describe('useConnection', () => {
     const fetchNextPage = async (renderResult: RenderWithRouterResult) => {
         const fetchMoreButton = renderResult.getByText('Fetch more')
         fireEvent.click(fetchMoreButton)
+
         // Skip loading state
-        await act(() => new Promise(resolve => setTimeout(resolve, 0)))
+        await waitForNextApolloResponse()
     }
 
     const mockResultNodes: TestConnectionQueryFields[] = [
@@ -151,17 +153,17 @@ describe('useConnection', () => {
             </MockedProvider>,
             { route }
         )
+
         // Skip loading state
-        await act(() => new Promise(resolve => setTimeout(resolve, 0)))
+        await waitForNextApolloResponse()
+
         return renderResult
     }
 
     describe('Cursor based pagination', () => {
-        const generateMockCursorResponses = ({
-            nodes,
-        }: {
+        const generateMockCursorResponses = (
             nodes: TestConnectionQueryFields[]
-        }): MockedResponse<TestConnectionQueryResult>[] =>
+        ): MockedResponse<TestConnectionQueryResult>[] =>
             nodes.map((node, index) => {
                 const isFirstPage = index === 0
                 const cursor = !isFirstPage ? String(index) : undefined
@@ -176,7 +178,7 @@ describe('useConnection', () => {
                 }
             })
 
-        const cursorMocks = generateMockCursorResponses({ nodes: mockResultNodes })
+        const cursorMocks = generateMockCursorResponses(mockResultNodes)
 
         it('renders correct result', async () => {
             const queries = await renderWithMocks(cursorMocks)
@@ -241,7 +243,7 @@ describe('useConnection', () => {
 
             const queries = await renderWithMocks([...cursorMocks, mockFromVisible], '/?visible=3')
 
-            // // Renders 3 results without having to manually fetch
+            // Renders 3 results without having to manually fetch
             expect(queries.getAllByRole('listitem').length).toBe(3)
             expect(queries.getByText('repo-A')).toBeVisible()
             expect(queries.getByText('repo-B')).toBeVisible()
@@ -260,8 +262,8 @@ describe('useConnection', () => {
         })
     })
 
-    describe('Increment based pagination', () => {
-        const incrementMocks: MockedResponse<TestConnectionQueryResult>[] = [
+    describe('Batch based pagination', () => {
+        const batchedMocks: MockedResponse<TestConnectionQueryResult>[] = [
             {
                 request: generateMockRequest({ first: 1 }),
                 result: generateMockResult({
@@ -292,7 +294,7 @@ describe('useConnection', () => {
         ]
 
         it('renders correct result', async () => {
-            const queries = await renderWithMocks(incrementMocks)
+            const queries = await renderWithMocks(batchedMocks)
             expect(queries.getAllByRole('listitem').length).toBe(1)
             expect(queries.getByText('repo-A')).toBeVisible()
             expect(queries.getByText('Total count: 4')).toBeVisible()
@@ -301,7 +303,7 @@ describe('useConnection', () => {
         })
 
         it('fetches next page of results correctly', async () => {
-            const queries = await renderWithMocks(incrementMocks)
+            const queries = await renderWithMocks(batchedMocks)
 
             // Fetch first page
             await fetchNextPage(queries)
@@ -318,7 +320,7 @@ describe('useConnection', () => {
         })
 
         it('fetches final page of results correctly', async () => {
-            const queries = await renderWithMocks(incrementMocks)
+            const queries = await renderWithMocks(batchedMocks)
 
             // Fetch both pages
             await fetchNextPage(queries)
@@ -340,7 +342,7 @@ describe('useConnection', () => {
         })
 
         it('fetches correct amount of results when navigating directly with a URL', async () => {
-            const queries = await renderWithMocks(incrementMocks, '/?first=2')
+            const queries = await renderWithMocks(batchedMocks, '/?first=2')
 
             // Renders 2 results without having to manually fetch
             expect(queries.getAllByRole('listitem').length).toBe(2)
