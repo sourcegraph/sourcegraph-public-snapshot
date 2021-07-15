@@ -1,4 +1,4 @@
-import { HiddenChangesetApplyPreviewFields, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { HiddenChangesetApplyPreviewFields, VisibleChangesetApplyPreviewFields } from '../../../graphql-operations'
 
 export const canSetPublishedState = (
     node: HiddenChangesetApplyPreviewFields | VisibleChangesetApplyPreviewFields
