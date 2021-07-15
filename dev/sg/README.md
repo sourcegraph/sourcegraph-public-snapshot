@@ -156,13 +156,21 @@ sg live -help
 sg migration up
 
 # Migrate specific database down one migration
-sg migration down -n --db codeintel -n 1
+sg migration down --db codeintel -n 1
 
 # Add new migration for specific database
 sg migration add --db codeintel 'add missing index'
 
 # Squash migrations for default database
 sg migration squash
+
+# Fixup your migrations comapred to main for databases
+sg migration fixup
+
+# To see what operations `sg migration fixup` will run, you can check with
+sg migration fixup -run=false
+
+# Or to run for only one database, you can use the -db flag, as in other operations.
 ```
 
 ## Configuration

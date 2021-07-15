@@ -100,7 +100,8 @@ type CampaignsCredentialResolver interface {
 }
 
 type CreateBatchChangeArgs struct {
-	BatchSpec graphql.ID
+	BatchSpec         graphql.ID
+	PublicationStates *[]ChangesetSpecPublicationStateInput
 }
 
 type ApplyBatchChangeArgs struct {

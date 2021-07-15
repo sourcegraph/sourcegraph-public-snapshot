@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -195,7 +196,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 		hasTimeFilter = true
 	}
 
-	limits := search.SearchLimits()
+	limits := search.SearchLimits(conf.Get())
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}

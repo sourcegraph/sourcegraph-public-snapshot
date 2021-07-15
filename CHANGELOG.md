@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added "Groovy" to the initial `lang:` filter suggestions in the search bar. [#22755](https://github.com/sourcegraph/sourcegraph/pull/22755)
 - The `lang:` filter suggestions now show all supported, matching languages as the user types a language name. [#22765](https://github.com/sourcegraph/sourcegraph/pull/22765)
 - Code Insights can now be grouped into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
+- Added the code insights dashboards functionality. Now you can divide insights into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
 
 ### Changed
 
@@ -33,6 +34,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Backend Code Insights displays data points for a fixed 6 months period in 2 week intervals, and will carry observations forward that are missing. [#22298](https://github.com/sourcegraph/sourcegraph/pull/22298)
 - Backend Code Insights now aggregate over 26 weeks instead of 6 months. [#22527](https://github.com/sourcegraph/sourcegraph/pull/22527)
 - Search queries now disallow specifying `rev:` without `repo:`. Note that to search across potentially multiple revisions, a query like `repo:.* rev:<revision>` remains valid. [#22705](https://github.com/sourcegraph/sourcegraph/pull/22705)
+- The extensions status bar on diff pages has been redesigned and now shows information for both the base and head commits. [#22123](https://github.com/sourcegraph/sourcegraph/pull/22123/files)
+- The `applyBatchChange` and `createBatchChange` mutations now accept an optional `publicationStates` argument to set the publication state of specific changesets within the batch change. [#22485](https://github.com/sourcegraph/sourcegraph/pull/22485) and [#22854](https://github.com/sourcegraph/sourcegraph/pull/22854)
 
 ### Fixed
 
@@ -42,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A bug where the pattern `)` makes the browser unresponsive. [#22738](https://github.com/sourcegraph/sourcegraph/pull/22738)
 - An issue where using `select:repo` in conjunction with `and` patterns did not yield expected repo results. [#22743](https://github.com/sourcegraph/sourcegraph/pull/22743)
 - The `isLocked` and `isDisabled` fields of GitHub repositories are now fetched correctly from the GraphQL API of GitHub Enterprise instances. Users that rely on the `repos` config in GitHub code host connections should update so that locked and disabled repositories defined in that list are actually skipped. [#22788](https://github.com/sourcegraph/sourcegraph/pull/22788)
+- Homepage no longer fails to load if there are invalid entries in user's search history. [#22857](https://github.com/sourcegraph/sourcegraph/pull/22857)
 
 ### Removed
 
