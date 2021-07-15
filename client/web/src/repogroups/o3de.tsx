@@ -2,7 +2,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { RepogroupMetadata } from './types'
 
-export const temporal: RepogroupMetadata = {
+export const o3de: RepogroupMetadata = {
     title: 'O3DE',
     name: 'o3de',
     url: '/o3de',
