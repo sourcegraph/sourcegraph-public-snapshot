@@ -1,4 +1,7 @@
-import { modify } from '@sourcegraph/shared/src/util/jsonc'
+import { get } from 'lodash'
+
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
 import {
     Insight,
@@ -113,14 +116,24 @@ export const removeInsightFromSettings = (props: RemoveInsightFromSettingsInputs
     const allPossibleInsightSettingsKeys = [[insightID], [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insightID]]
 
     let editedSettings = originalSettings
+    const parsedSettings = parseJSONCOrError<object>(originalSettings)
+
+    if (isErrorLike(parsedSettings)) {
+        return originalSettings
+    }
 
     for (const settingsKey of allPossibleInsightSettingsKeys) {
-        editedSettings = modify(
-            originalSettings,
-            // According to our naming convention <type>.insight.<name>
-            settingsKey,
-            undefined
-        )
+        // If settings content jsonc doesn't have a value under the settingsKey
+        // it fails with parsing error. We should check existence of the property that
+        // we're about to remove
+        if (get(parsedSettings, settingsKey)) {
+            editedSettings = modify(
+                originalSettings,
+                // According to our naming convention <type>.insight.<name>
+                settingsKey,
+                undefined
+            )
+        }
     }
 
     return editedSettings
