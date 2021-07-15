@@ -67,7 +67,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             <FormRadioInput
                 name="visibility"
                 value={userSubject.id}
-                title="Personal"
+                title="Private"
                 description="only you"
                 checked={value === userSubject.id}
                 className="mr-3 w-100"
