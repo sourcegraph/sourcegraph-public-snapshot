@@ -1,15 +1,13 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo } from 'react'
-import { RouteComponentProps, useHistory, useLocation } from 'react-router'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import React, { useMemo } from 'react'
+import { RouteComponentProps } from 'react-router'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../../backend/graphql'
 import {
     ConnectionContainer,
     ConnectionSummary,
@@ -21,13 +19,7 @@ import {
 } from '../../../components/FilteredConnection/generic-ui'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
-import {
-    UserEventLogFields,
-    UserEventLogsConnectionFields,
-    UserEventLogsResult,
-    UserEventLogsVariables,
-} from '../../../graphql-operations'
-import { usePaginatedConnection } from '../../../user/settings/accessTokens/usePaginatedConnection'
+import { UserEventLogFields, UserEventLogsResult, UserEventLogsVariables } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
 import styles from './UserEventLogsPage.module.scss'
@@ -103,7 +95,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])
 
-    const { connection, loading, errors, fetchMore, hasNextPage } = usePaginatedConnection<
+    const { connection, loading, errors, fetchMore, hasNextPage } = useConnection<
         UserEventLogsResult,
         UserEventLogsVariables,
         UserEventLogFields
@@ -111,10 +103,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
         query: USER_EVENT_LOGS,
         variables: { first: 50, user: user.id },
         getConnection: result => {
-            console.log('Getting data...')
             const data = dataOrThrowErrors(result)
-            console.log('Got data')
-            console.log(data)
             if (!data.node) {
                 throw new Error('User not found')
             }
@@ -124,7 +113,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
             return data.node.eventLogs
         },
         options: {
-            useURLQuery: true,
+            useURL: true,
         },
     })
 
@@ -135,7 +124,7 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
 
             <Container className="mb-3">
                 <ConnectionContainer className="list-group list-group-flush">
-                    {errors.length > 0 && <ConnectionError errors={errors} />}
+                    {errors && <ConnectionError errors={errors} />}
                     <ConnectionList>
                         {connection?.nodes.map((node, index) => (
                             <UserEventNode key={index} node={node} />
