@@ -19,7 +19,7 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
         <!DOCTYPE html>
         <html lang="en">
             <head>
-                <title>${htmlWebpackPlugin.options.title || 'Sourcegraph'}</title>
+                <title>Sourcegraph</title>
                 ${htmlWebpackPlugin.tags.headTags.filter(tag => tag.tagName !== 'script').toString()}
             </head>
             <body>
