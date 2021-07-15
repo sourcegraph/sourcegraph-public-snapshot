@@ -18,7 +18,7 @@ import { isMonacoEditorDescendant } from './useBlockSelection'
 
 import { Block, BlockDirection, BlockInitializer, BlockType, Notebook } from '.'
 
-interface SearchNotebookProps
+export interface SearchNotebookProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
@@ -51,6 +51,9 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         [notebook, setBlocks, onSerializeBlocks]
     )
 
+    // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
+    useEffect(() => setBlocks(notebook.getBlocks()), [notebook])
+
     const onRunBlock = useCallback(
         (id: string) => {
             notebook.runBlockById(id)
@@ -71,6 +74,10 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
     const onAddBlock = useCallback(
         (index: number, type: BlockType, input: string) => {
+            if (isReadOnly) {
+                return
+            }
+
             const addedBlock = notebook.insertBlockAtIndex(index, type, input)
             if (addedBlock.type === 'md') {
                 notebook.runBlockById(addedBlock.id)
@@ -80,11 +87,15 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
             props.telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type })
         },
-        [notebook, props.telemetryService, updateBlocks, setSelectedBlockId]
+        [notebook, isReadOnly, props.telemetryService, updateBlocks, setSelectedBlockId]
     )
 
     const onDeleteBlock = useCallback(
         (id: string) => {
+            if (isReadOnly) {
+                return
+            }
+
             const block = notebook.getBlockById(id)
             const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
             notebook.deleteBlockById(id)
@@ -93,21 +104,29 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
             props.telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type })
         },
-        [notebook, props.telemetryService, setSelectedBlockId, updateBlocks]
+        [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
 
     const onMoveBlock = useCallback(
         (id: string, direction: BlockDirection) => {
+            if (isReadOnly) {
+                return
+            }
+
             notebook.moveBlockById(id, direction)
             updateBlocks()
 
             props.telemetryService.log('SearchNotebookMoveBlock', { type: notebook.getBlockById(id)?.type, direction })
         },
-        [notebook, props.telemetryService, updateBlocks]
+        [notebook, isReadOnly, props.telemetryService, updateBlocks]
     )
 
     const onDuplicateBlock = useCallback(
         (id: string) => {
+            if (isReadOnly) {
+                return
+            }
+
             const duplicateBlock = notebook.duplicateBlockById(id)
             if (duplicateBlock) {
                 setSelectedBlockId(duplicateBlock.id)
@@ -119,7 +138,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
             props.telemetryService.log('SearchNotebookDuplicateBlock', { type: duplicateBlock?.type })
         },
-        [notebook, props.telemetryService, setSelectedBlockId, updateBlocks]
+        [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
 
     const onSelectBlock = useCallback(

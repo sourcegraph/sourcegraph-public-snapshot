@@ -74,7 +74,6 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         id,
         isMacPlatform,
         onEnterBlock,
-        isReadOnly,
         ...props,
         onRunBlock: runBlock,
     })
