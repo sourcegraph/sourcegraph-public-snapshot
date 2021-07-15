@@ -1068,6 +1068,48 @@ func TestService(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run("PublishChangesets", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		changesets := []*btypes.Changeset{
+			ct.CreateChangeset(t, adminCtx, s, ct.TestChangesetOpts{
+				Repo:            rs[0].ID,
+				ReconcilerState: btypes.ReconcilerStateCompleted,
+				BatchChange:     batchChange.ID,
+			}),
+			ct.CreateChangeset(t, adminCtx, s, ct.TestChangesetOpts{
+				Repo:            rs[0].ID,
+				ReconcilerState: btypes.ReconcilerStateCompleted,
+				BatchChange:     batchChange.ID,
+			}),
+		}
+
+		ids := []int64{}
+		for _, c := range changesets {
+			ids = append(ids, c.ID)
+		}
+
+		bulkOperationID, err := svc.PublishChangesets(adminCtx, batchChange.ID, ids, true)
+		if err != nil {
+			t.Errorf("cannot publish changeset: %v", err)
+		}
+
+		_, err = svc.store.GetBulkOperation(ctx, store.GetBulkOperationOpts{
+			ID: bulkOperationID,
+		})
+		if err != nil {
+			t.Errorf("cannot retrieve bulk operation: %v", err)
+		}
+	})
 }
 
 func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {

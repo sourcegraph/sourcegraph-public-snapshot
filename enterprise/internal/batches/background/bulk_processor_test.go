@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -27,11 +28,18 @@ func TestBulkProcessor(t *testing.T) {
 	ct.CreateTestSiteCredential(t, bstore, repo)
 	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)
+	changesetSpec := ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+		User:      user.ID,
+		Repo:      repo.ID,
+		BatchSpec: batchSpec.ID,
+		HeadRef:   "main",
+	})
 	changeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,
 		BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 		Metadata:            &github.PullRequest{},
 		ExternalServiceType: extsvc.TypeGitHub,
+		CurrentSpec:         changesetSpec.ID,
 	})
 
 	t.Run("Unknown job type", func(t *testing.T) {
@@ -186,6 +194,41 @@ func TestBulkProcessor(t *testing.T) {
 		}
 		if !fake.CloseChangesetCalled {
 			t.Fatal("expected CloseChangeset to be called but wasn't")
+		}
+	})
+
+	t.Run("Publish job", func(t *testing.T) {
+		fake := &sources.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
+		bp := &bulkProcessor{
+			tx:      bstore,
+			sourcer: sources.NewFakeSourcer(nil, fake),
+		}
+		job := &types.ChangesetJob{
+			JobType:       types.ChangesetJobTypePublish,
+			BatchChangeID: batchChange.ID,
+			ChangesetID:   changeset.ID,
+			UserID:        user.ID,
+			Payload: &types.ChangesetJobPublishPayload{
+				IDs:   []int64{changeset.ID},
+				Draft: false,
+			},
+		}
+		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+		err := bp.process(ctx, job)
+		if err != nil {
+			t.Fatal(err)
+		}
+		changeset, err = bstore.GetChangesetByID(ctx, changeset.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := changeset.UiPublicationState, btypes.ChangesetUiPublicationStatePublished; have == nil || *have != want {
+			t.Fatalf("unexpected UI publication state: have=%v want=%q", have, want)
+		}
+		if have, want := changeset.ReconcilerState, global.DefaultReconcilerEnqueueState(); have != want {
+			t.Fatalf("unexpected reconciler state, have=%q want=%q", have, want)
 		}
 	})
 }
