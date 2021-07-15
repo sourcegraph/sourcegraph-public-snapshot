@@ -7,7 +7,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { InsightsViewGrid } from '../../../../../../../components'
+import { CodeInsightsIcon, InsightsViewGrid } from '../../../../../../../components'
 import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
@@ -38,7 +38,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     if (!areExtensionsReady) {
         return (
             <div className="d-flex justify-content-center align-items-center pt-5">
-                <LoadingSpinner />
+                <LoadingSpinner/>
                 <span className="mx-2">Loading Sourcegraph extensions</span>
                 <PuzzleIcon className="icon-inline" />
             </div>
@@ -47,9 +47,10 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     if (views === undefined) {
         return (
-            <div className="d-flex w-100">
-                <LoadingSpinner className="my-4" />
+            <div className="d-flex justify-content-center align-items-center pt-5">
+                <LoadingSpinner/>
                 <span className="mx-2">Loading Code Insights</span>
+                <CodeInsightsIcon className="icon-inline" />
             </div>
         )
     }
