@@ -20,7 +20,6 @@ func TestHandle(t *testing.T) {
 		t.Fatalf("unexpected error creating workspace: %s", err)
 	}
 
-	store := NewMockStore()
 	runner := NewMockRunner()
 
 	job := executor.Job{
@@ -76,7 +75,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	if err := handler.Handle(context.Background(), store, job); err != nil {
+	if err := handler.Handle(context.Background(), job); err != nil {
 		t.Fatalf("unexpected error handling record: %s", err)
 	}
 

@@ -60,20 +60,9 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
                 <CloseIcon />
             </button>
 
-            <h2 className="">
-                Add insight to the <span className="font-italic">"{dashboard.title}"</span> dashboard
+            <h2 className="mb-3">
+                Add insight to <q>{dashboard.title}</q>
             </h2>
-
-            <span className="text-muted d-block mb-4">
-                Dashboards group your insights and let you share them with others.{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
-                    target="_blank"
-                    rel="noopener"
-                >
-                    Learn more.
-                </a>
-            </span>
 
             {!insights.length && <span>There are no insights for this dashboard.</span>}
 

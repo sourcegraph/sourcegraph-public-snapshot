@@ -116,8 +116,16 @@ func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) er
 	}
 
 	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
-	b.ch.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
-	return b.tx.UpdateChangeset(ctx, b.ch)
+
+	// We do two `UPDATE` queries here: first we update all of the changesets
+	// columns to refelct the changes made here in the bulkProcessor. Then,
+	// with `EnqueueChangeset`, we do a second UPDATE that only updates the
+	// worker/reconciler-related columns.
+	if err := b.tx.UpdateChangeset(ctx, b.ch); err != nil {
+		return err
+	}
+
+	return b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), "")
 }
 
 func (b *bulkProcessor) reenqueueChangeset(ctx context.Context, job *btypes.ChangesetJob) error {
@@ -152,7 +160,7 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		return errcode.MakeNonRetryable(err)
 	}
 
-	if err := b.tx.UpdateChangeset(ctx, cs.Changeset); err != nil {
+	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
 		log15.Error("UpdateChangeset", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
@@ -181,7 +189,7 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context, job *btypes.Changese
 		return errcode.MakeNonRetryable(err)
 	}
 
-	if err := b.tx.UpdateChangeset(ctx, cs.Changeset); err != nil {
+	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
 		log15.Error("UpdateChangeset", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}

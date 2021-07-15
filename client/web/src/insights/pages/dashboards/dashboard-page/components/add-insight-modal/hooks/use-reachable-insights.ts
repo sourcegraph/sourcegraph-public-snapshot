@@ -2,14 +2,21 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../../schema/settings.schema'
-import { Insight, InsightConfiguration, isInsightSettingKey } from '../../../../../../core/types'
+import {
+    Insight,
+    InsightConfiguration,
+    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
+    InsightType,
+    isInsightSettingKey,
+    SearchBasedInsightSettings,
+} from '../../../../../../core/types'
 import {
     isSubjectInsightSupported,
     SUBJECT_SHARING_LEVELS,
     SupportedInsightSubject,
 } from '../../../../../../core/types/subjects'
 import { getDashboardOwnerInfo } from '../../../../../../hooks/use-dashboards/utils'
-import { createInsightFromSettings } from '../../../../../../hooks/use-insight/use-insight'
+import { createExtensionInsightFromSettings } from '../../../../../../hooks/use-insight/use-insight'
 
 export interface UseReachableInsightsProps extends SettingsCascadeProps<Settings> {
     /**
@@ -64,10 +71,10 @@ export function useReachableInsights(props: UseReachableInsightsProps): Reachabl
 
             const subjectOwnerInfo = getDashboardOwnerInfo(subject as SupportedInsightSubject)
 
-            return Object.keys(settings)
+            const extensionBasedInsights = Object.keys(settings)
                 .filter(isInsightSettingKey)
                 .map(key => {
-                    const insight = createInsightFromSettings({
+                    const insight = createExtensionInsightFromSettings({
                         insightKey: key,
                         ownerId: subject.id,
                         insightConfiguration: settings[key] as InsightConfiguration,
@@ -79,5 +86,25 @@ export function useReachableInsights(props: UseReachableInsightsProps): Reachabl
                         owner: subjectOwnerInfo,
                     }
                 })
+
+            const backendInsightSettings =
+                (settings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, SearchBasedInsightSettings>) ?? {}
+
+            const backendBasedInsights: ReachableInsight[] = Object.keys(backendInsightSettings)
+                .filter(isInsightSettingKey)
+                .map(key => {
+                    const insightConfiguration = backendInsightSettings[key]
+
+                    return {
+                        type: InsightType.Backend,
+                        id: key,
+                        visibility: ownerId,
+                        // Extend common insight object with an owner info
+                        owner: subjectOwnerInfo,
+                        ...insightConfiguration,
+                    }
+                })
+
+            return [...extensionBasedInsights, ...backendBasedInsights]
         })
 }

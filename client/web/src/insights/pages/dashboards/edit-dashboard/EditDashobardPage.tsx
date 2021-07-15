@@ -58,14 +58,13 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             return undefined
         }
 
-        const { id: userID } = authenticatedUser
         const dashboardOwnerID = previousDashboard.owner.id
 
         return {
             name: previousDashboard.title,
-            visibility: userID === dashboardOwnerID ? 'personal' : dashboardOwnerID,
+            visibility: dashboardOwnerID,
         }
-    }, [previousDashboard, authenticatedUser])
+    }, [previousDashboard])
 
     const finalDashboardSettings = useDashboardSettings({
         settingsCascade,
@@ -103,6 +102,17 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             <PageTitle title="Configure dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
+
+            <span className="text-muted d-block mt-2">
+                Dashboards group your insights and let you share them with others.{' '}
+                <a
+                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
+                    target="_blank"
+                    rel="noopener"
+                >
+                    Learn more.
+                </a>
+            </span>
 
             <Container className="mt-4">
                 <InsightsDashboardCreationContent

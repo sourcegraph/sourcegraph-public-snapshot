@@ -60,7 +60,8 @@ export function useHandleSubmit(props: UseHandleSubmitProps): useHandleSubmitOut
 
             await Promise.all(subjectUpdateRequests)
 
-            history.push('/insights')
+            // Navigate user to the dashboard page with new created dashboard
+            history.push(`/insights/dashboards/${newInsight.visibility}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
