@@ -10,16 +10,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
-// TODO(slimsag): future: today we do not consume state.DocumentationResultsByResultSet which will
-// become important for e.g. letting one documentationResult link to another.
+type documentationChannels struct {
+	pages    chan *semantic.DocumentationPageData
+	pathInfo chan *semantic.DocumentationPathInfoData
+}
 
-func collectDocumentationPages(ctx context.Context, state *State) (chan *semantic.DocumentationPageData, chan *semantic.DocumentationPathInfoData) {
-	pages := make(chan *semantic.DocumentationPageData, 1024)
-	pathInfo := make(chan *semantic.DocumentationPathInfoData, 1024)
+func collectDocumentation(ctx context.Context, state *State) documentationChannels {
+	channels := documentationChannels{
+		pages:    make(chan *semantic.DocumentationPageData, 1024),
+		pathInfo: make(chan *semantic.DocumentationPathInfoData, 1024),
+	}
 	if state.DocumentationResultRoot == -1 {
-		close(pages)
-		close(pathInfo)
-		return pages, pathInfo
+		close(channels.pages)
+		close(channels.pathInfo)
+		return channels
 	}
 
 	pageCollector := &pageCollector{
@@ -52,17 +56,17 @@ func collectDocumentationPages(ctx context.Context, state *State) (chan *semanti
 			}
 			isIndex := page.Tree.Label.Value == "" && page.Tree.Detail.Value == ""
 
-			pages <- page
-			pathInfo <- &semantic.DocumentationPathInfoData{
+			channels.pages <- page
+			channels.pathInfo <- &semantic.DocumentationPathInfoData{
 				PathID:   page.Tree.PathID,
 				IsIndex:  isIndex,
 				Children: collectChildrenPages(page.Tree),
 			}
 		}
-		close(pages)
-		close(pathInfo)
+		close(channels.pages)
+		close(channels.pathInfo)
 	}()
-	return pages, pathInfo
+	return channels
 }
 
 type duplicateChecker struct {
