@@ -113,6 +113,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     insightIds={currentDashboard.insightIds}
                     extensionsController={extensionsController}
                     telemetryService={telemetryService}
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
                 />
             ) : (
                 <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
