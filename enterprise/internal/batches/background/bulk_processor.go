@@ -81,6 +81,8 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 		return b.mergeChangeset(ctx, job)
 	case btypes.ChangesetJobTypeClose:
 		return b.closeChangeset(ctx, job)
+	case btypes.ChangesetJobTypePublish:
+		return b.publishChangeset(ctx, job)
 
 	default:
 		return &unknownJobTypeErr{jobType: string(job.JobType)}
@@ -194,5 +196,18 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context, job *btypes.Changese
 		return errcode.MakeNonRetryable(err)
 	}
 
+	return nil
+}
+
+func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+	typedPayload, ok := job.Payload.(*btypes.ChangesetJobPublishPayload)
+	if !ok {
+		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobPublishPayload{}, job.Payload)
+	}
+
+	if err := b.tx.EnqueueChangesetsToPublish(ctx, job.BatchChangeID, typedPayload.IDs, typedPayload.Draft, global.DefaultReconcilerEnqueueState()); err != nil {
+		log15.Error("EnqueueChangesetsToPublish", err)
+		return errcode.MakeNonRetryable(err)
+	}
 	return nil
 }
