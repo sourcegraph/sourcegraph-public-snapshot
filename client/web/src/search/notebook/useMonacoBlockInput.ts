@@ -100,16 +100,18 @@ export const useMonacoBlockInput = ({
             setIsInputFocused(false)
             return
         }
-        const onDidFocusEditorTextDisposable = editor.onDidFocusEditorText(() => {
-            setIsInputFocused(true)
-            onSelectBlock(id)
-        })
-        const onDidBlurEditorTextDisposable = editor.onDidBlurEditorText(() => setIsInputFocused(false))
-        const onDidEditorDisposeDisposable = editor.onDidDispose(() => setIsInputFocused(false))
+        const disposables = [
+            editor.onDidFocusEditorText(() => {
+                setIsInputFocused(true)
+                onSelectBlock(id)
+            }),
+            editor.onDidBlurEditorText(() => setIsInputFocused(false)),
+            editor.onDidDispose(() => setIsInputFocused(false)),
+        ]
         return () => {
-            onDidFocusEditorTextDisposable.dispose()
-            onDidBlurEditorTextDisposable.dispose()
-            onDidEditorDisposeDisposable.dispose()
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
         }
     }, [editor, id, setIsInputFocused, onSelectBlock])
 

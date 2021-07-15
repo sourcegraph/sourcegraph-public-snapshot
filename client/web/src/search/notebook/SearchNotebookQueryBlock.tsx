@@ -89,6 +89,10 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
+            {/* Notebook blocks are a form of specialized UI for which there are no good accesibility settings (role, aria-*)
+                or semantic elements that would accurately describe its functionality. To provide the necessary functionality we have
+                to rely on plain div elements and custom click/focus/keyDown handlers. We still preserve the ability to navigate through blocks
+                with the keyboard using the up and down arrows, and TAB. */}
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div
                 className={classNames(
