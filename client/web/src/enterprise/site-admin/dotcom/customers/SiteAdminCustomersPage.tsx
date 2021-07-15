@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Subject } from 'rxjs'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -17,15 +14,13 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/generic-ui'
-import { hasNextPage } from '@sourcegraph/web/src/components/FilteredConnection/utils'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { useDebounce } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../../../backend/graphql'
-import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CustomerFields, CustomersResult, CustomersVariables } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { userURL } from '../../../../user'
-import { usePaginatedConnection } from '../../../../user/settings/accessTokens/usePaginatedConnection'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 
 import { SiteAdminCustomerBillingLink } from './SiteAdminCustomerBillingLink'
@@ -72,7 +67,8 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
         onDidUpdate: onUserUpdate,
     }
     const [query, setQuery] = useState('')
-    const { connection, errors, loading, fetchMore, hasNextPage } = usePaginatedConnection<
+    const debouncedQuery = useDebounce(query, 200)
+    const { connection, errors, loading, fetchMore, hasNextPage } = useConnection<
         CustomersResult,
         CustomersVariables,
         CustomerFields
@@ -80,14 +76,14 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
         query: CUSTOMERS,
         variables: {
             first: 20,
-            query,
+            query: debouncedQuery,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
             return data.users
         },
         options: {
-            useURLQuery: true,
+            useURL: true,
         },
     })
 
@@ -104,7 +100,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
                     onChange={event => setQuery(event.target.value)}
                     inputPlaceholder="Search customers..."
                 />
-                {errors.length > 0 && <ConnectionError errors={errors} />}
+                {errors && <ConnectionError errors={errors} />}
                 <ConnectionList>
                     {connection?.nodes?.map(node => (
                         <SiteAdminCustomerNode key={node.id} {...nodeProps} node={node} />
