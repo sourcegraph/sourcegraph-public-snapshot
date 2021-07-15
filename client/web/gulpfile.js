@@ -10,6 +10,7 @@ const log = require('fancy-log')
 const gulp = require('gulp')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
+// The `DevServerPlugin` should be exposed after the `webpack-dev-server@4` goes out of the beta stage.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const DevServerPlugin = require('webpack-dev-server/lib/utils/DevServerPlugin')
 
