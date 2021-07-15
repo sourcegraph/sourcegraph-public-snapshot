@@ -30,7 +30,8 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStreamingProps } from '../search'
+import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyLinkAction } from './actions/CopyLinkAction'
@@ -61,7 +62,9 @@ export interface RepoRevisionContainerContext
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -69,6 +72,8 @@ export interface RepoRevisionContainerContext
     routePrefix: string
 
     globbing: boolean
+
+    isMacPlatform: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -90,7 +95,9 @@ interface RepoRevisionContainerProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -107,6 +114,8 @@ interface RepoRevisionContainerProps
     history: H.History
 
     globbing: boolean
+
+    isMacPlatform: boolean
 }
 
 interface RepoRevisionBreadcrumbProps
