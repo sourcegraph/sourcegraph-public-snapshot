@@ -23,15 +23,15 @@ type Filter struct {
 	// Kind of filter. Should be "repo", "file", or "lang".
 	Kind string
 
-	// Important is used to prioritize the order that filters appear in.
-	Important bool
+	// important is used to prioritize the order that filters appear in.
+	important bool
 }
 
 // Less returns true if f is more important the o.
 func (f *Filter) Less(o *Filter) bool {
-	if f.Important != o.Important {
+	if f.important != o.important {
 		// Prefer more important
-		return f.Important
+		return f.important
 	}
 	if f.Count != o.Count {
 		// Prefer higher count
@@ -65,7 +65,7 @@ func (m filters) Add(value string, label string, count int32, limitHit bool, kin
 // MarkImportant sets the filter with value as important. Can only be called
 // after Add.
 func (m filters) MarkImportant(value string) {
-	m[value].Important = true
+	m[value].important = true
 }
 
 // Compute returns an ordered slice of Filter to present to the user.
