@@ -154,7 +154,7 @@ func TestCreateSeries(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("test get and retrieve", func(t *testing.T) {
+	t.Run("test create series", func(t *testing.T) {
 
 		series := types.InsightSeries{
 			SeriesID:              "unique-1",
@@ -182,7 +182,45 @@ func TestCreateSeries(t *testing.T) {
 		}
 
 		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("unexpected result from create / read insight series (want/got): %s", diff)
+			t.Errorf("unexpected result from create insight series (want/got): %s", diff)
+		}
+	})
+}
+
+func TestCreateView(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	ctx := context.Background()
+
+	t.Run("test create view", func(t *testing.T) {
+
+		view := types.InsightView{
+			Title:       "my view",
+			Description: "my view description",
+			UniqueID:    "1234567",
+		}
+
+		got, err := store.CreateView(ctx, view)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := types.InsightView{
+			ID:          1,
+			Title:       "my view",
+			Description: "my view description",
+			UniqueID:    "1234567",
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected result from create insight view (want/got): %s", diff)
 		}
 	})
 }

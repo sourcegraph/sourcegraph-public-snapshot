@@ -19,6 +19,13 @@ type InsightViewSeries struct {
 	Stroke                string
 }
 
+type InsightView struct {
+	ID          int
+	Title       string
+	Description string
+	UniqueID    string
+}
+
 type InsightSeries struct {
 	ID                    int
 	SeriesID              string

@@ -82,6 +82,24 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	return results, nil
 }
 
+func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (types.InsightView, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightViewSql,
+		view.Title,
+		view.Description,
+		view.UniqueID,
+	))
+	if row.Err() != nil {
+		return types.InsightView{}, row.Err()
+	}
+	var id int
+	err := row.Scan(&id)
+	if err != nil {
+		return types.InsightView{}, err
+	}
+	view.ID = id
+	return view, nil
+}
+
 func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	if series.CreatedAt.IsZero() {
 		series.CreatedAt = s.Now()
@@ -106,6 +124,11 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	series.ID = id
 	return series, nil
 }
+
+const createInsightViewSql = `
+INSERT INTO insight_view (title, description, unique_id)
+VALUES (%s, %s, %s)
+returning id;`
 
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
