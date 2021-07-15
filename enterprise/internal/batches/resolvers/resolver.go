@@ -411,7 +411,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChange.ID}
-	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreatedOrUpdated", arg)
+	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreated", arg)
 	if err != nil {
 		return nil, err
 	}
