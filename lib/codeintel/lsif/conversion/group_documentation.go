@@ -13,22 +13,27 @@ import (
 type documentationChannels struct {
 	pages    chan *semantic.DocumentationPageData
 	pathInfo chan *semantic.DocumentationPathInfoData
+	mappings chan semantic.DocumentationMapping
 
 	enqueuePages    chan *semantic.DocumentationPageData
 	enqueuePathInfo chan *semantic.DocumentationPathInfoData
+	enqueueMappings chan semantic.DocumentationMapping
 }
 
 func (c *documentationChannels) close() {
 	close(c.enqueuePages)
 	close(c.enqueuePathInfo)
+	close(c.enqueueMappings)
 }
 
 func newDocumentationChannels() documentationChannels {
 	channels := documentationChannels{
 		pages:           make(chan *semantic.DocumentationPageData, 128),
 		pathInfo:        make(chan *semantic.DocumentationPathInfoData, 128),
+		mappings:        make(chan semantic.DocumentationMapping, 1024),
 		enqueuePages:    make(chan *semantic.DocumentationPageData, 128),
 		enqueuePathInfo: make(chan *semantic.DocumentationPathInfoData, 128),
+		enqueueMappings: make(chan semantic.DocumentationMapping, 1024),
 	}
 	go func() {
 		dst := channels.pages
@@ -80,6 +85,31 @@ func newDocumentationChannels() documentationChannels {
 			}
 		}
 	}()
+	go func() {
+		dst := channels.mappings
+		src := channels.enqueueMappings
+		var buf []semantic.DocumentationMapping
+		for {
+			if len(buf) == 0 {
+				v, ok := <-src
+				if !ok {
+					close(dst)
+					return
+				}
+				buf = append(buf, v)
+			}
+			select {
+			case dst <- buf[0]:
+				buf = buf[1:]
+			case v, ok := <-src:
+				if !ok {
+					close(dst)
+					return
+				}
+				buf = append(buf, v)
+			}
+		}
+	}()
 	return channels
 }
 
@@ -98,10 +128,11 @@ func collectDocumentation(ctx context.Context, state *State) documentationChanne
 		startingDocumentationResult: state.DocumentationResultRoot,
 		dupChecker:                  &duplicateChecker{pathIDs: make(map[string]struct{}, 16*1024)},
 		walkedPages:                 &duplicateChecker{pathIDs: make(map[string]struct{}, 128)},
+		mappings:                    channels.mappings,
 	}
 
 	tmpPages := make(chan *semantic.DocumentationPageData)
-	go pageCollector.collect(ctx, tmpPages)
+	go pageCollector.collect(ctx, tmpPages, channels.enqueueMappings)
 	go func() {
 		// Emit path info for each page as a post-processing step once we've collected pages.
 		for page := range tmpPages {
@@ -167,7 +198,7 @@ type pageCollector struct {
 	dupChecker, walkedPages     *duplicateChecker
 }
 
-func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
+func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData, mappings chan<- semantic.DocumentationMapping) (remainingPages []*pageCollector) {
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
 		labelID := p.state.DocumentationStringLabel[documentationResult]
@@ -192,6 +223,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				return
 			}
 		}
+		mappings <- semantic.DocumentationMapping{
+			ResultID: documentationResult,
+			PathID:   this.PathID,
+		}
 		if parent != nil {
 			if this.Documentation.NewPage {
 				// This documentationResult is a child of our parent, but it's a brand new page. We
@@ -202,6 +237,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 					PathID: this.PathID,
 				})
 				if p.walkedPages.add(this.PathID) {
+					mappings <- semantic.DocumentationMapping{
+						ResultID: uint64(documentationResult),
+						PathID:   this.PathID,
+					}
 					remainingPages = append(remainingPages, &pageCollector{
 						isChildPage:                 true,
 						parentPathID:                parent.PathID,
@@ -213,6 +252,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				}
 				return
 			} else {
+				mappings <- semantic.DocumentationMapping{
+					ResultID: uint64(documentationResult),
+					PathID:   this.PathID,
+				}
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					Node: this,
 				})
@@ -259,7 +302,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				remainingWorkMu.Unlock()
 
 				// Perform work.
-				newRemainingPages := work.collect(ctx, ch)
+				newRemainingPages := work.collect(ctx, ch, mappings)
 
 				// Add new work, if needed.
 				if len(newRemainingPages) > 0 {
