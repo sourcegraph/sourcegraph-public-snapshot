@@ -50,6 +50,9 @@ export const repositoryFragment = gql`
         defaultBranch {
             displayName
         }
+        changesetsStats {
+            open
+        }
     }
 `
 
