@@ -22,15 +22,15 @@ CREATE TABLE insight_view
     id          SERIAL NOT NULL PRIMARY KEY,
     title       TEXT,
     description TEXT,
-    unique_id   TEXT
+    unique_id   TEXT NOT NULL
 );
 
 CREATE UNIQUE INDEX insight_view_unique_id_unique_idx ON insight_view (unique_id);
 
 CREATE TABLE insight_view_series
 (
-    insight_view_id   INT,
-    insight_series_id INT,
+    insight_view_id   INT NOT NULL,
+    insight_series_id INT NOT NULL,
     label             TEXT,
     stroke            TEXT,
     PRIMARY KEY (insight_view_id, insight_series_id)
