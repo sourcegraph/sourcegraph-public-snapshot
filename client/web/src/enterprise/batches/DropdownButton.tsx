@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import styles from './DropdownButton.module.scss'
 
@@ -108,11 +108,16 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
             ? selectedAction.buttonLabel + (selectedAction.experimental ? ' (Experimental)' : '')
             : undefined
 
-        if (onLabel) {
-            onLabel(label)
-        }
         return label ?? placeholder
-    }, [onLabel, placeholder, selectedAction])
+    }, [placeholder, selectedAction])
+
+    useEffect(() => {
+        if (onLabel) {
+            if (selectedAction?.isAvailable()) {
+                onLabel(selectedAction.buttonLabel + (selectedAction.experimental ? ' (Experimental)' : ''))
+            }
+        }
+    })
 
     return (
         <>
