@@ -1,5 +1,6 @@
 import { render, RenderResult, act, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
 import * as React from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -10,7 +11,6 @@ import { createMockInsightAPI } from '../../../../../../core/backend/insights-ap
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
-import { MemoryRouter } from 'react-router-dom'
 
 const USER_TEST_SUBJECT: SupportedInsightSubject = {
     __typename: 'User' as const,
