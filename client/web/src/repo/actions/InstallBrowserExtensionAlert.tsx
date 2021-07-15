@@ -150,7 +150,7 @@ export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ 
             <p className="mt-1 mb-0">
                 If you already have the local version,{' '}
                 <a
-                    href="https://docs.sourcegraph.com/integration/browser_extension"
+                    href="https://docs.sourcegraph.com/integration/migrating_firefox_extension"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={onInstallLinkClick}
