@@ -1,13 +1,16 @@
-import { ApolloError, QueryLazyOptions } from '@apollo/client'
-import { upperFirst } from 'lodash'
+import { ApolloError, QueryLazyOptions, ReactiveVar } from '@apollo/client'
+import { upperFirst, xor } from 'lodash'
 
 import { useLazyQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { Maybe, Exact, UserRepositoriesVariables } from '../graphql-operations'
 
+import { MinSelectedRepo } from './useSelectedRepos'
+
 interface UseRepoCloningStatusArguments {
     userId: string
     pollInterval: number
+    selectedReposVar: ReactiveVar<MinSelectedRepo[] | undefined>
 }
 
 interface RepoLine {
@@ -81,11 +84,15 @@ const USER_AFFILIATED_REPOS_MIRROR_INFO = gql`
     }
 `
 
+const getRepoNames = (repos: { name: string }[] | undefined): string[] | [] =>
+    repos ? repos.map(({ name }) => name) : []
+
 export const useRepoCloningStatus = ({
     userId,
     pollInterval = 5000,
+    selectedReposVar,
 }: UseRepoCloningStatusArguments): RepoCloningStatus => {
-    let shouldStopPolling = true
+    let areAllRepoCloned = true
 
     const [trigger, { called, data, loading, error, stopPolling }] = useLazyQuery<
         CloneProgressResult,
@@ -105,6 +112,8 @@ export const useRepoCloningStatus = ({
         fetchPolicy: 'no-cache',
     })
 
+    const selectedRepos = selectedReposVar()
+
     const repos = data?.node?.repositories.nodes
 
     if (!Array.isArray(repos)) {
@@ -117,11 +126,14 @@ export const useRepoCloningStatus = ({
         }
     }
 
+    // check if we received cloning status for all selected repos
+    const didReceiveAllRepoStatuses = xor(getRepoNames(selectedRepos), getRepoNames(repos)).length === 0
+
     const repoLines: RepoLine[] = repos.reduce((lines, { id, name, mirrorInfo }) => {
         const { details, progress, cloned } = parseMirrorInfo(id, mirrorInfo)
 
         if (!cloned) {
-            shouldStopPolling = false
+            areAllRepoCloned = false
         }
 
         lines.push({
@@ -136,13 +148,15 @@ export const useRepoCloningStatus = ({
 
     repoLines.sort((lineA, lineB) => lineB.progress - lineA.progress)
 
+    const isDoneCloning = didReceiveAllRepoStatuses && areAllRepoCloned
+
     // stop polling and cleanup memory when all repos are done cloning
-    if (called && stopPolling && shouldStopPolling) {
+    if (called && stopPolling && isDoneCloning) {
         stopPolling()
         previousPercentage = {}
     }
 
-    return { trigger, repos: repoLines, isDoneCloning: shouldStopPolling, loading, error }
+    return { trigger, repos: repoLines, isDoneCloning, loading, error }
 }
 
 const parseMirrorInfo = (

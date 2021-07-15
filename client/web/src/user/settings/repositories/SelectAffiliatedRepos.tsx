@@ -24,7 +24,6 @@ import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
-
 export interface AffiliatedReposReference {
     submit: () => Promise<FetchResult<SetExternalServiceReposResult>[] | void>
 }
@@ -308,9 +307,12 @@ export const SelectAffiliatedRepos = forwardRef<AffiliatedReposReference, Props>
 
                     return Promise.all(codeHostRepoPromises).then(() => {
                         const selection = [...selectionState.repos.values()].reduce((accumulator, repo) => {
+                            const serviceType = repo.codeHost?.kind.toLowerCase()
+                            const serviceName = serviceType ? `${serviceType}.com` : 'unknown'
+
                             accumulator.push({
-                                name: `${repo.codeHost?.kind || 'unknown'}/${repo.name}`,
-                                externalRepository: { serviceType: repo.codeHost?.kind.toLowerCase() || 'unknown' },
+                                name: `${serviceName}/${repo.name}`,
+                                externalRepository: { serviceType: serviceType || 'unknown' },
                             })
                             return accumulator
                         }, [] as MinSelectedRepo[])
