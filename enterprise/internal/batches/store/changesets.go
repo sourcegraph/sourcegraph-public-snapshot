@@ -1445,5 +1445,5 @@ SELECT
 FROM
 	ui_publishable_changesets
 WHERE
-	reconciler_state = %s								-- processing
+	reconciler_state = %s									-- processing
 `
