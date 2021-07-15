@@ -215,6 +215,7 @@ func firecrackerCopyfileFlags(dir string, imageKeys []string, options Options) [
 	return intersperse("--copy-files", copyfiles)
 }
 
+// NOTE: The options.FirecreackerOptions.ImageArchivesPath needs to exist on the host
 func tarfilePathOnHost(key string, options Options) string {
 	return filepath.Join(options.FirecrackerOptions.ImageArchivesPath, fmt.Sprintf("%s.tar", key))
 }
