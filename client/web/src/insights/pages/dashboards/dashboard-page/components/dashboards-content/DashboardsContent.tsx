@@ -1,6 +1,6 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -52,6 +52,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const currentDashboard = findDashboardByURLId(dashboards, dashboardID)
     const handleDashboardSelect = useDashboardSelectHandler()
     const [copyURL, isCopied] = useCopyURLHandler()
+    const menuReference = useRef<HTMLButtonElement|null>(null)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -71,6 +72,14 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             }
             case DashboardMenuAction.CopyLink: {
                 copyURL()
+
+                // Re-trigger trigger tooltip event catching logic to activate
+                // copied tooltip appearance
+                requestAnimationFrame(() => {
+                    menuReference.current?.blur()
+                    menuReference.current?.focus()
+                })
+
                 return
             }
         }
@@ -89,6 +98,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 />
 
                 <DashboardMenu
+                    innerRef={menuReference}
                     tooltipText={isCopied ? 'Copied!' : undefined}
                     dashboard={currentDashboard}
                     settingsCascade={settingsCascade}

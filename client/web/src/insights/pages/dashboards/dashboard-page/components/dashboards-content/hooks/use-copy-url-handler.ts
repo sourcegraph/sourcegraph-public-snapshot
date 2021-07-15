@@ -22,8 +22,6 @@ export function useCopyURLHandler(): useCopiedHandlerReturn {
             (clicks: Observable<void>) =>
                 clicks.pipe(
                     tap(copyDashboardURL),
-                    delay(0),
-                    tap(() => Tooltip.forceUpdate()),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
                     tap(() => Tooltip.forceUpdate()),
                     startWith(false)
