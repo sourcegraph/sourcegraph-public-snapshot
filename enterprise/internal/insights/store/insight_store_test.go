@@ -141,3 +141,48 @@ func TestGet(t *testing.T) {
 		}
 	})
 }
+
+func TestCreateSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	ctx := context.Background()
+
+	t.Run("test get and retrieve", func(t *testing.T) {
+
+		series := types.InsightSeries{
+			SeriesID:              "unique-1",
+			Query:                 "query-1",
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:    now,
+			RecordingIntervalDays: 4,
+		}
+
+		got, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := types.InsightSeries{
+			ID:                    1,
+			SeriesID:              "unique-1",
+			Query:                 "query-1",
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:    now,
+			RecordingIntervalDays: 4,
+			CreatedAt:             now,
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected result from create / read insight series (want/got): %s", diff)
+		}
+	})
+}

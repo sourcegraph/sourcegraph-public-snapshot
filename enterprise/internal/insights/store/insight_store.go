@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
@@ -14,11 +15,14 @@ import (
 
 type InsightStore struct {
 	*basestore.Store
+	Now func() time.Time
 }
 
 // NewInsightStore returns a new InsightStore backed by the given Timescale db.
 func NewInsightStore(db dbutil.DB) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: func() time.Time {
+		return time.Now()
+	}}
 }
 
 // Handle returns the underlying transactable database handle.
@@ -77,6 +81,38 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	}
 	return results, nil
 }
+
+func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	if series.CreatedAt.IsZero() {
+		series.CreatedAt = s.Now()
+	}
+	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightSeriesSql,
+		series.SeriesID,
+		series.Query,
+		series.CreatedAt,
+		series.OldestHistoricalAt,
+		series.LastRecordedAt,
+		series.NextRecordingAfter,
+		series.RecordingIntervalDays,
+	))
+	if row.Err() != nil {
+		return types.InsightSeries{}, row.Err()
+	}
+	var id int
+	err := row.Scan(&id)
+	if err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.ID = id
+	return series, nil
+}
+
+const createInsightSeriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
+INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
+                            next_recording_after, recording_interval_days)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get

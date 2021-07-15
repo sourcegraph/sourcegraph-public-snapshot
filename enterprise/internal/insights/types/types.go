@@ -18,3 +18,14 @@ type InsightViewSeries struct {
 	Label                 string
 	Stroke                string
 }
+
+type InsightSeries struct {
+	ID                    int
+	SeriesID              string
+	Query                 string
+	CreatedAt             time.Time
+	OldestHistoricalAt    time.Time
+	LastRecordedAt        time.Time
+	NextRecordingAfter    time.Time
+	RecordingIntervalDays int
+}
