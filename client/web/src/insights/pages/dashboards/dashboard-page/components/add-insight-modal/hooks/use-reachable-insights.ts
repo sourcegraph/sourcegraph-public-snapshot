@@ -90,22 +90,18 @@ export function useReachableInsights(props: UseReachableInsightsProps): Reachabl
             const backendInsightSettings =
                 (settings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, SearchBasedInsightSettings>) ?? {}
 
-            const backendBasedInsights = Object.keys(backendInsightSettings)
+            const backendBasedInsights: ReachableInsight[] = Object.keys(backendInsightSettings)
                 .filter(isInsightSettingKey)
                 .map(key => {
                     const insightConfiguration = backendInsightSettings[key]
 
-                    const insight: Insight = {
+                    return {
                         type: InsightType.Backend,
                         id: key,
                         visibility: ownerId,
-                        ...insightConfiguration,
-                    }
-
-                    return {
-                        ...insight,
-                        // Extend common insight object with owner info
+                        // Extend common insight object with an owner info
                         owner: subjectOwnerInfo,
+                        ...insightConfiguration,
                     }
                 })
 
