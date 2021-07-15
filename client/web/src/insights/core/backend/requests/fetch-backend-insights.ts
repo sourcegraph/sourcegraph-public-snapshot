@@ -13,6 +13,7 @@ import {
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
+        id
         title
         description
         series {
