@@ -57,6 +57,8 @@ type QueryResolver interface {
 	DocumentationPage(ctx context.Context, pathID string) (*semantic.DocumentationPageData, error)
 	DocumentationPathInfo(ctx context.Context, pathID string) (*semantic.DocumentationPathInfoData, error)
 	Documentation(ctx context.Context, line int, character int) ([]*Documentation, error)
+	DocumentationDefinitions(ctx context.Context, pathID string) ([]AdjustedLocation, error)
+	DocumentationReferences(ctx context.Context, pathID string, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 }
 
 type Documentation struct {
