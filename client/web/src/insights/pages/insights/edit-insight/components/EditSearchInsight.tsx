@@ -43,7 +43,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     }
 
     const handleCancel = (): void => {
-        history.push('/insights')
+        history.push(`/insights/dashboards/${insight.visibility}`)
     }
 
     return (
