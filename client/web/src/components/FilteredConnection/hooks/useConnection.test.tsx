@@ -87,7 +87,7 @@ const generateMockRequest = ({
     query: getDocumentNode(TEST_CONNECTION_QUERY),
     variables: {
         username: 'username',
-        after,
+        after: after || null,
         first,
     },
 })

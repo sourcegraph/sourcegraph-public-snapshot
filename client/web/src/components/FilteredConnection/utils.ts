@@ -5,7 +5,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { Connection, ConnectionQueryArguments } from './ConnectionType'
+import { Connection } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 
@@ -56,7 +56,7 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
 
 export interface GetUrlQueryParameters {
     first?: number
-    defaultFirst?: number
+    initialFirst?: number
     query?: string
     values?: Map<string, FilteredConnectionFilterValue>
     filters?: FilteredConnectionFilter[]
@@ -66,7 +66,7 @@ export interface GetUrlQueryParameters {
 
 export const getUrlQuery = ({
     first,
-    defaultFirst,
+    initialFirst,
     query,
     values,
     visible,
@@ -78,7 +78,7 @@ export const getUrlQuery = ({
         searchParameters.set(QUERY_KEY, query)
     }
 
-    if (first !== defaultFirst) {
+    if (first !== initialFirst) {
         searchParameters.set('first', String(first))
     }
 
@@ -106,38 +106,17 @@ export const getUrlQuery = ({
     return searchParameters.toString()
 }
 
-interface asGraphQLResultParameters<TResult> {
-    data: TResult | null
+interface AsGraphQLResultParameters<TResult> {
+    data?: TResult
     errors: readonly GraphQLError[]
 }
 
-export const asGraphQLResult = <T>({ data, errors }: asGraphQLResultParameters<T>): GraphQLResult<T> => {
+export const asGraphQLResult = <T>({ data, errors }: AsGraphQLResultParameters<T>): GraphQLResult<T> => {
     if (!data) {
         return { data: undefined, errors }
     }
     return {
         data,
         errors: undefined,
-    }
-}
-
-export const getPaginationArguments = (
-    connection: Connection<unknown>,
-    variables: ConnectionQueryArguments
-): ConnectionQueryArguments => {
-    const cursor = connection.pageInfo?.endCursor
-
-    if (cursor) {
-        return {
-            after: cursor,
-        }
-    }
-
-    if (!variables.first) {
-        throw new Error('bleh')
-    }
-
-    return {
-        first: variables.first * 2,
     }
 }
