@@ -1325,17 +1325,38 @@ FROM (
 //
 // This will loop until there are no processing rows any more, or until two
 // minutes has passed.
-func (s *Store) EnqueueChangesetsToPublish(ctx context.Context, batchChangeID int64, cs btypes.Changesets, draft bool) error {
-	return s.enqueueChangesetsToPublish(ctx, batchChangeID, cs, draft, 100*time.Millisecond, 2*time.Minute)
+func (s *Store) EnqueueChangesetsToPublish(
+	ctx context.Context,
+	batchChangeID int64,
+	changesetIDs []int64,
+	draft bool,
+	resetState btypes.ReconcilerState,
+) error {
+	return s.enqueueChangesetsToPublish(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		draft,
+		resetState,
+		100*time.Millisecond,
+		2*time.Minute,
+	)
 }
 
-func (s *Store) enqueueChangesetsToPublish(ctx context.Context, batchChangeID int64, cs btypes.Changesets, draft bool, sleep, deadline time.Duration) error {
+func (s *Store) enqueueChangesetsToPublish(
+	ctx context.Context,
+	batchChangeID int64,
+	changesetIDs []int64,
+	draft bool,
+	resetState btypes.ReconcilerState,
+	sleep, deadline time.Duration,
+) error {
 	ctx, cancel := context.WithDeadline(ctx, s.now().Add(deadline))
 	defer cancel()
 
-	ids := make([]*sqlf.Query, len(cs))
-	for i, c := range cs {
-		ids[i] = sqlf.Sprintf("%s", c.ID)
+	ids := make([]*sqlf.Query, len(changesetIDs))
+	for i, id := range changesetIDs {
+		ids[i] = sqlf.Sprintf("%s", id)
 	}
 
 	var target btypes.ChangesetUiPublicationState
@@ -1355,7 +1376,7 @@ func (s *Store) enqueueChangesetsToPublish(ctx context.Context, batchChangeID in
 			target,
 			btypes.ReconcilerStateScheduled.ToDB(),
 			btypes.ReconcilerStateQueued.ToDB(),
-			btypes.ReconcilerStateQueued.ToDB(),
+			resetState.ToDB(),
 			target,
 			btypes.ReconcilerStateErrored.ToDB(),
 			btypes.ReconcilerStateFailed.ToDB(),
@@ -1423,7 +1444,7 @@ WITH
 		UPDATE
 			changesets
 		SET
-			reconciler_state = %s,							-- queued
+			reconciler_state = %s,							-- queued or scheduled
 			failure_message = NULL,
 			num_resets = 0,
 			num_failures = 0,
