@@ -69,6 +69,7 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 
 	handler := &handler{
 		idSet:         idSet,
+		store:         store,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
