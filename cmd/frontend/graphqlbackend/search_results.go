@@ -798,7 +798,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
 			r.invalidateCache()
-			r.Query = q.ToParseTree()
 			args, err := r.toTextParameters(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
@@ -807,7 +806,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		}
 	case query.Pattern:
 		r.invalidateCache()
-		r.Query = q.ToParseTree()
 		args, err := r.toTextParameters(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
@@ -825,7 +823,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.invalidateCache()
-		r.Query = q.ToParseTree()
 		args, err := r.toTextParameters(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
