@@ -266,7 +266,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		return mockResolveRepositories()
 	}
 
-	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("optionss: %+v", options))
+	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("options: %+v", options))
 	defer func() {
 		tr.SetError(err)
 		tr.LazyPrintf("%s", resolved.String())
