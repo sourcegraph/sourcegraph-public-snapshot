@@ -2372,7 +2372,7 @@ func TestEnqueueChangesetsToPublish(t *testing.T) {
 			ReconcilerState: btypes.ReconcilerStateProcessing,
 		})
 
-		if err := s.enqueueChangesetsToPublish(ctx, batchChange.ID, btypes.Changesets{changeset}, false, 10*time.Millisecond, 50*time.Millisecond); err == nil {
+		if err := s.enqueueChangesetsToPublish(ctx, batchChange.ID, []int64{changeset.ID}, false, btypes.ReconcilerStateQueued, 10*time.Millisecond, 50*time.Millisecond); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -2488,18 +2488,18 @@ func TestEnqueueChangesetsToPublish(t *testing.T) {
 				sameUiPublishedChangeset  = createBranchChangeset(btypes.ReconcilerStateCompleted, nil, &tc.wantState)
 				otherSpecChangeset        = createBranchChangeset(btypes.ReconcilerStateCompleted, nil, nil)
 
-				changesets = btypes.Changesets{
-					importedChangeset,
-					erroredChangeset,
-					failedChangeset,
-					completedChangeset,
-					queuedChangeset,
-					scheduledChangeset,
-					processingChangeset,
-					publishedChangeset,
-					otherUiPublishedChangeset,
-					sameUiPublishedChangeset,
-					otherSpecChangeset,
+				changesets = []int64{
+					importedChangeset.ID,
+					erroredChangeset.ID,
+					failedChangeset.ID,
+					completedChangeset.ID,
+					queuedChangeset.ID,
+					scheduledChangeset.ID,
+					processingChangeset.ID,
+					publishedChangeset.ID,
+					otherUiPublishedChangeset.ID,
+					sameUiPublishedChangeset.ID,
+					otherSpecChangeset.ID,
 				}
 			)
 
@@ -2520,7 +2520,7 @@ func TestEnqueueChangesetsToPublish(t *testing.T) {
 			}()
 
 			// Actually publish.
-			if err := s.enqueueChangesetsToPublish(ctx, batchChange.ID, changesets, tc.draft, 5*time.Millisecond, 500*time.Millisecond); err != nil {
+			if err := s.enqueueChangesetsToPublish(ctx, batchChange.ID, changesets, tc.draft, btypes.ReconcilerStateQueued, 5*time.Millisecond, 500*time.Millisecond); err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
