@@ -47,6 +47,7 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 		References:            referenceRows,
 		DocumentationPages:    documentation.pages,
 		DocumentationPathInfo: documentation.pathInfo,
+		DocumentationMappings: documentation.mappings,
 		Packages:              packages,
 		PackageReferences:     packageReferences,
 	}, nil
