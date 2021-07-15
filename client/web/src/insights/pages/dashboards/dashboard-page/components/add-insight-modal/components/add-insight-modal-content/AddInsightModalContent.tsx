@@ -46,14 +46,13 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
         <form ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 autoFocus={true}
-                title="Filter your insights"
                 description={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
                         <Link to="/insights/create">create a new insight</Link>
                     </span>
                 }
-                placeholder="Example: My GraphQL migration insight"
+                placeholder="Search insights..."
                 {...searchInput.input}
             />
 

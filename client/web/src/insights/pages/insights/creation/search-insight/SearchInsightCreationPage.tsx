@@ -58,7 +58,9 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                 // Clear initial values if user successfully created search insight
                 setLocalStorageFormValues(undefined)
-                history.push('/insights')
+
+                // Navigate user to the dashboard page with new created dashboard
+                history.push(`/insights/dashboards/${insight.visibility}`)
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
@@ -82,7 +84,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     const handleCancel = useCallback(() => {
         telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
         setLocalStorageFormValues(undefined)
-        history.push('/insights')
+        history.push('/insights/dashboards/all')
     }, [history, setLocalStorageFormValues, telemetryService])
 
     return (

@@ -1,4 +1,5 @@
 import React, { ChangeEvent } from 'react'
+import { Link } from 'react-router-dom'
 
 import { SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
@@ -53,7 +54,12 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
         <FormGroup
             name="visibility"
             title="Visibility"
-            description="This insight will be always displayed in the ‘All Insights’ dashboard by default"
+            subtitle={
+                <span>
+                    This insight will be always displayed in the{' '}
+                    <Link to="/insights/dashboards/all">‘All Insights’ dashboard</Link> by default
+                </span>
+            }
             className="mb-0 mt-4"
             labelClassName={labelClassName}
             contentClassName="d-flex flex-wrap mb-n2"
@@ -61,10 +67,10 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             <FormRadioInput
                 name="visibility"
                 value={userSubject.id}
-                title="Personal"
+                title="Private"
                 description="only you"
                 checked={value === userSubject.id}
-                className="mr-3"
+                className="mr-3 w-100"
                 onChange={handleChange}
             />
 
@@ -77,7 +83,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                     description={`all users in ${org.displayName ?? org.name} organization`}
                     checked={value === org.id}
                     onChange={handleChange}
-                    className="mr-3"
+                    className="mr-3 w-100"
                 />
             ))}
 
@@ -88,7 +94,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                     disabled={true}
                     title="Organization"
                     description="all users in your organization"
-                    className="mr-3"
+                    className="mr-3 w-100"
                     labelTooltipText="Create or join the Organization to share code insights with others!"
                 />
             )}
@@ -100,7 +106,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                 description="visible to everyone on your Sourcegraph instance"
                 checked={value === globalSubject.id}
                 disabled={!canGlobalSubjectBeEdited}
-                className="mr-3"
+                className="mr-3 w-100"
                 onChange={handleChange}
             />
         </FormGroup>
