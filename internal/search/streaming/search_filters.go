@@ -24,7 +24,7 @@ type SearchFilters struct {
 	// Globbing is true if the user has enabled globbing support.
 	Globbing bool
 
-	filters Filters
+	filters filters
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -70,7 +70,7 @@ var commonFileFilters = []struct {
 func (s *SearchFilters) Update(event SearchEvent) {
 	// Initialize state on first call.
 	if s.filters == nil {
-		s.filters = make(Filters)
+		s.filters = make(filters)
 	}
 
 	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {

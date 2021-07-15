@@ -42,11 +42,11 @@ func (f *Filter) Less(o *Filter) bool {
 
 }
 
-// Filters is a map of filter values to the Filter.
-type Filters map[string]*Filter
+// filters is a map of filter values to the Filter.
+type filters map[string]*Filter
 
 // Add the count to the filter with value.
-func (m Filters) Add(value string, label string, count int32, limitHit bool, kind string) {
+func (m filters) Add(value string, label string, count int32, limitHit bool, kind string) {
 	sf, ok := m[value]
 	if !ok {
 		sf = &Filter{
@@ -64,12 +64,12 @@ func (m Filters) Add(value string, label string, count int32, limitHit bool, kin
 
 // MarkImportant sets the filter with value as important. Can only be called
 // after Add.
-func (m Filters) MarkImportant(value string) {
+func (m filters) MarkImportant(value string) {
 	m[value].Important = true
 }
 
 // Compute returns an ordered slice of Filter to present to the user.
-func (m Filters) Compute() []*Filter {
+func (m filters) Compute() []*Filter {
 	repos := filterHeap{max: 12}
 	other := filterHeap{max: 12}
 	for _, f := range m {
