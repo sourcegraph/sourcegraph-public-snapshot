@@ -1,6 +1,6 @@
 import { QueryResult } from '@apollo/client'
 import { GraphQLError } from 'graphql'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
@@ -27,8 +27,8 @@ interface UseConnectionParameters<TResult, TVariables, TData> {
     }
 }
 
-const defaultAfter = null
-const defaultFirst = 20
+const DEFAULT_AFTER = null
+const DEFAULT_FIRST = 20
 
 export const useConnection = <TResult, TVariables, TData>({
     query,
@@ -47,27 +47,25 @@ export const useConnection = <TResult, TVariables, TData>({
      */
     const visible = useRef((options?.useURL && parseQueryInt(searchParameters, 'visible')) || 0)
 
+    const defaultFirst = useRef(variables.first || DEFAULT_FIRST)
     /**
      * The number of results that we will typically want to load in the next request (unless `visible` is used).
      * This value will typically be static for cursor-based pagination, but will be dynamic for batch-based pagination.
      */
     const first = useRef(
-        (options?.useURL && parseQueryInt(searchParameters, 'first')) || variables.first || defaultFirst
+        (options?.useURL && parseQueryInt(searchParameters, 'first')) || variables.first || defaultFirst.current
     )
-    const initialFirst = useRef(variables.first || 15)
-
-    const after = (options?.useURL && searchParameters.get('after')) || variables.after || defaultAfter
-
-    // Memoize `first`, to avoid ref changes triggering duplicate queries
     // If this is our first query and we were supplied a value for `visible`,
     // load that many results. If we weren't given such a value or this is a
     // subsequent request, only ask for one page of results.
-    const memoFirst = useMemo(() => (firstRequest.current && visible.current) || first.current, [])
+    const queryFirst = useRef((firstRequest.current && visible.current) || first.current)
+
+    const after = (options?.useURL && searchParameters.get('after')) || variables.after || DEFAULT_AFTER
 
     const { data, error, loading, fetchMore } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
-            first: memoFirst,
+            first: queryFirst.current,
             after,
         },
         onCompleted: () => (firstRequest.current = false),
@@ -90,7 +88,7 @@ export const useConnection = <TResult, TVariables, TData>({
     useConnectionUrl({
         enabled: options?.useURL,
         first: first.current,
-        initialFirst: initialFirst.current,
+        defaultFirst: defaultFirst.current,
         visible: connection?.nodes.length || 0,
     })
 

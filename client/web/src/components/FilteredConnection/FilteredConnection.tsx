@@ -455,7 +455,7 @@ export class FilteredConnection<
             visible,
             location: this.props.location,
             filters: this.props.filters,
-            initialFirst: this.props.defaultFirst,
+            defaultFirst: this.props.defaultFirst,
         })
     }
 

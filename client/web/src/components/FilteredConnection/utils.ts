@@ -56,7 +56,7 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
 
 export interface GetUrlQueryParameters {
     first?: number
-    initialFirst?: number
+    defaultFirst?: number
     query?: string
     values?: Map<string, FilteredConnectionFilterValue>
     filters?: FilteredConnectionFilter[]
@@ -66,7 +66,7 @@ export interface GetUrlQueryParameters {
 
 export const getUrlQuery = ({
     first,
-    initialFirst,
+    defaultFirst,
     query,
     values,
     visible,
@@ -78,7 +78,7 @@ export const getUrlQuery = ({
         searchParameters.set(QUERY_KEY, query)
     }
 
-    if (first !== initialFirst) {
+    if (first !== defaultFirst) {
         searchParameters.set('first', String(first))
     }
 

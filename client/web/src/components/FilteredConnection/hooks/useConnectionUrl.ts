@@ -5,20 +5,20 @@ import { getUrlQuery } from '../utils'
 
 interface UseConnectionURLParameters {
     enabled?: boolean
-    first: number
-    initialFirst: number
-    visible: number
+    first?: number
+    defaultFirst?: number
+    visible?: number
 }
 
 /**
  * This hook replicates how FilteredConnection updates the URL when key variables change.
  */
-export const useConnectionUrl = ({ enabled, first, initialFirst, visible }: UseConnectionURLParameters): void => {
+export const useConnectionUrl = ({ enabled, first, defaultFirst, visible }: UseConnectionURLParameters): void => {
     const location = useLocation()
     const history = useHistory()
     const searchFragment = getUrlQuery({
         first,
-        initialFirst,
+        defaultFirst,
         visible,
         location,
     })
