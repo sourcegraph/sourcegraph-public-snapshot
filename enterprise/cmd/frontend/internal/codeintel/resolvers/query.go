@@ -56,7 +56,7 @@ type QueryResolver interface {
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 	DocumentationPage(ctx context.Context, pathID string) (*semantic.DocumentationPageData, error)
 	DocumentationPathInfo(ctx context.Context, pathID string) (*semantic.DocumentationPathInfoData, error)
-	Documentation(ctx context.Context, line int, character int) (*Documentation, error)
+	Documentation(ctx context.Context, line int, character int) ([]*Documentation, error)
 }
 
 type Documentation struct {
