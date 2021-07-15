@@ -299,7 +299,7 @@ func inferJVMVersionFromByteCode(byteCodeJarPath string) (string, error) {
 	}
 
 	// Java 1.1 (aka "Java 1") has major version 45 and Java 8 has major
-	// version 52.  To go from the major version of Java version we subtract
+	// version 52. To go from the major version of Java version we subtract
 	// 44.
 	jvmVersion := majorVersion - jvmMajorVersion0
 
