@@ -138,20 +138,40 @@ func TestStoreDequeueKeepsHeartbeat(t *testing.T) {
 		return time
 	}
 
-	var times, expectedTimes []time.Time
+	timeout := time.Second * 5
+
 	for i := 0; i < 10; i++ {
+		expectedTime := now.Add(time.Second * time.Duration(i+1))
+
+		// Trigger db write
 		clock.BlockingAdvance(time.Second)
 
-		expectedTimes = append(expectedTimes, now.Add(time.Second*time.Duration(i+1)))
-
-		// Give the heartbeat goroutine some time to ensure the database write
-		// is propagated before we read it.
-		time.Sleep(10 * time.Millisecond)
-		times = append(times, getTime())
+		// Check the last heartbeat timestamp on the target record. We don't know
+		// when the db write ends and since we use multiple connections we need to
+		// poll for a short period.
+		if !assertEventually(timeout, func() bool { return getTime().Equal(expectedTime) }) {
+			t.Fatalf("unexpected last_heartbeat_at after %s. want=%s", timeout, expectedTime)
+		}
 	}
+}
 
-	if diff := cmp.Diff(expectedTimes, times); diff != "" {
-		t.Errorf("unexpected updated times (-want +got):\n%s", diff)
+// assertEventually calls f in a loop until it returns true, or until the given timeout
+// duration elapses. This function returns true if f returns true within the timeout and
+// false otherwise.
+func assertEventually(timeout time.Duration, f func() bool) bool {
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(timeout))
+	defer cancel()
+
+	for {
+		if f() {
+			return true
+		}
+
+		select {
+		case <-ctx.Done():
+			return false
+		default:
+		}
 	}
 }
 
