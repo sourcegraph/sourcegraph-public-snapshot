@@ -80,15 +80,8 @@ type featureNotActivatedError struct{ errcode.PresentationError }
 // failed license verification, or a valid license that does not activate a feature (e.g.,
 // Enterprise Starter not including an Enterprise-only feature).
 func IsFeatureNotActivated(err error) bool {
-	if err == nil {
-		return false
-	}
-	_, ok := err.(featureNotActivatedError)
-	if !ok {
-		// Also check for the pointer type to guard against stupid mistakes.
-		_, ok = err.(*featureNotActivatedError)
-	}
-	return ok
+	// Also check for the pointer type to guard against stupid mistakes.
+	return errors.HasType(err, featureNotActivatedError{}) || errors.HasType(err, &featureNotActivatedError{})
 }
 
 // IsFeatureEnabledLenient reports whether the current license enables the given feature. If there

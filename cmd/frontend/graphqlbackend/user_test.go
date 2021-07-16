@@ -2,13 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -23,7 +22,7 @@ func TestUser(t *testing.T) {
 	t.Run("by username", func(t *testing.T) {
 		checkUserByUsername := func(t *testing.T) {
 			t.Helper()
-			gqltesting.RunTests(t, []*gqltesting.Test{
+			RunTests(t, []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -77,7 +76,7 @@ func TestUser(t *testing.T) {
 		t.Run("disallowed on Sourcegraph.com", func(t *testing.T) {
 			checkUserByEmailError := func(t *testing.T, wantErr string) {
 				t.Helper()
-				gqltesting.RunTests(t, []*gqltesting.Test{
+				RunTests(t, []*Test{
 					{
 						Schema: mustParseGraphQLSchema(t),
 						Query: `
@@ -88,7 +87,13 @@ func TestUser(t *testing.T) {
 				}
 			`,
 						ExpectedResult: `{"user": null}`,
-						ExpectedErrors: []*gqlerrors.QueryError{{Message: wantErr, Path: []interface{}{"user"}, ResolverError: errors.New(wantErr)}},
+						ExpectedErrors: []*gqlerrors.QueryError{
+							{
+								Path:          []interface{}{"user"},
+								Message:       wantErr,
+								ResolverError: errors.New(wantErr),
+							},
+						},
 					},
 				})
 			}
@@ -112,7 +117,7 @@ func TestUser(t *testing.T) {
 		})
 
 		t.Run("allowed on non-Sourcegraph.com", func(t *testing.T) {
-			gqltesting.RunTests(t, []*gqltesting.Test{
+			RunTests(t, []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -139,7 +144,7 @@ func TestNode_User(t *testing.T) {
 	resetMocks()
 	database.Mocks.Users.MockGetByID_Return(t, &types.User{ID: 1, Username: "alice"}, nil)
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `
@@ -265,7 +270,7 @@ func TestUpdateUser(t *testing.T) {
 			database.Mocks.Users = database.MockUsers{}
 		})
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 				Schema:  mustParseGraphQLSchema(t),
@@ -307,7 +312,7 @@ func TestUpdateUser(t *testing.T) {
 			database.Mocks.Users = database.MockUsers{}
 		})
 
-		gqltesting.RunTests(t, []*gqltesting.Test{
+		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
 				Query: `

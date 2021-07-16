@@ -97,8 +97,11 @@ Indexes:
  user_id           | integer                  |           |          | 
  namespace_user_id | integer                  |           |          | 
  namespace_org_id  | integer                  |           |          | 
+ rand_id           | text                     |           | not null | 
+ last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_executions_rand_id" btree (rand_id)
 Check constraints:
     "batch_spec_executions_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
@@ -161,26 +164,27 @@ Foreign-key constraints:
 
 # Table "public.changeset_jobs"
 ```
-     Column      |           Type           | Collation | Nullable |                  Default                   
------------------+--------------------------+-----------+----------+--------------------------------------------
- id              | bigint                   |           | not null | nextval('changeset_jobs_id_seq'::regclass)
- bulk_group      | text                     |           | not null | 
- user_id         | integer                  |           | not null | 
- batch_change_id | integer                  |           | not null | 
- changeset_id    | integer                  |           | not null | 
- job_type        | text                     |           | not null | 
- payload         | jsonb                    |           |          | '{}'::jsonb
- state           | text                     |           |          | 'queued'::text
- failure_message | text                     |           |          | 
- started_at      | timestamp with time zone |           |          | 
- finished_at     | timestamp with time zone |           |          | 
- process_after   | timestamp with time zone |           |          | 
- num_resets      | integer                  |           | not null | 0
- num_failures    | integer                  |           | not null | 0
- execution_logs  | json[]                   |           |          | 
- created_at      | timestamp with time zone |           | not null | now()
- updated_at      | timestamp with time zone |           | not null | now()
- worker_hostname | text                     |           | not null | ''::text
+      Column       |           Type           | Collation | Nullable |                  Default                   
+-------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                | bigint                   |           | not null | nextval('changeset_jobs_id_seq'::regclass)
+ bulk_group        | text                     |           | not null | 
+ user_id           | integer                  |           | not null | 
+ batch_change_id   | integer                  |           | not null | 
+ changeset_id      | integer                  |           | not null | 
+ job_type          | text                     |           | not null | 
+ payload           | jsonb                    |           |          | '{}'::jsonb
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ worker_hostname   | text                     |           | not null | ''::text
+ last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_bulk_group_idx" btree (bulk_group)
@@ -269,6 +273,7 @@ Referenced by:
  external_title           | text                                         |           |          | 
  worker_hostname          | text                                         |           | not null | ''::text
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
+ last_heartbeat_at        | timestamp with time zone                     |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -298,20 +303,21 @@ Referenced by:
 
 # Table "public.cm_action_jobs"
 ```
-     Column      |           Type           | Collation | Nullable |                  Default                   
------------------+--------------------------+-----------+----------+--------------------------------------------
- id              | integer                  |           | not null | nextval('cm_action_jobs_id_seq'::regclass)
- email           | bigint                   |           | not null | 
- state           | text                     |           |          | 'queued'::text
- failure_message | text                     |           |          | 
- started_at      | timestamp with time zone |           |          | 
- finished_at     | timestamp with time zone |           |          | 
- process_after   | timestamp with time zone |           |          | 
- num_resets      | integer                  |           | not null | 0
- num_failures    | integer                  |           | not null | 0
- log_contents    | text                     |           |          | 
- trigger_event   | integer                  |           |          | 
- worker_hostname | text                     |           | not null | ''::text
+      Column       |           Type           | Collation | Nullable |                  Default                   
+-------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                | integer                  |           | not null | nextval('cm_action_jobs_id_seq'::regclass)
+ email             | bigint                   |           | not null | 
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ log_contents      | text                     |           |          | 
+ trigger_event     | integer                  |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -414,22 +420,23 @@ Foreign-key constraints:
 
 # Table "public.cm_trigger_jobs"
 ```
-     Column      |           Type           | Collation | Nullable |                   Default                   
------------------+--------------------------+-----------+----------+---------------------------------------------
- id              | integer                  |           | not null | nextval('cm_trigger_jobs_id_seq'::regclass)
- query           | bigint                   |           | not null | 
- state           | text                     |           |          | 'queued'::text
- failure_message | text                     |           |          | 
- started_at      | timestamp with time zone |           |          | 
- finished_at     | timestamp with time zone |           |          | 
- process_after   | timestamp with time zone |           |          | 
- num_resets      | integer                  |           | not null | 0
- num_failures    | integer                  |           | not null | 0
- log_contents    | text                     |           |          | 
- query_string    | text                     |           |          | 
- results         | boolean                  |           |          | 
- num_results     | integer                  |           |          | 
- worker_hostname | text                     |           | not null | ''::text
+      Column       |           Type           | Collation | Nullable |                   Default                   
+-------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                | integer                  |           | not null | nextval('cm_trigger_jobs_id_seq'::regclass)
+ query             | bigint                   |           | not null | 
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ log_contents      | text                     |           |          | 
+ query_string      | text                     |           |          | 
+ results           | boolean                  |           |          | 
+ num_results       | integer                  |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -451,18 +458,6 @@ Referenced by:
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
-
-```
-
-# Table "public.default_repos"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- repo_id | integer |           | not null | 
-Indexes:
-    "default_repos_pkey" PRIMARY KEY, btree (repo_id)
-Foreign-key constraints:
-    "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -600,7 +595,6 @@ Check constraints:
  user_id             | integer |           |          | 
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
-    "external_service_repos_external_service_id" btree (external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
@@ -626,6 +620,7 @@ Foreign-key constraints:
  log_contents        | text                     |           |          | 
  execution_logs      | json[]                   |           |          | 
  worker_hostname     | text                     |           | not null | ''::text
+ last_heartbeat_at   | timestamp with time zone |           |          | 
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -759,21 +754,22 @@ Indexes:
 
 # Table "public.insights_query_runner_jobs"
 ```
-     Column      |           Type           | Collation | Nullable |                        Default                         
------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id              | integer                  |           | not null | nextval('insights_query_runner_jobs_id_seq'::regclass)
- series_id       | text                     |           | not null | 
- search_query    | text                     |           | not null | 
- state           | text                     |           |          | 'queued'::text
- failure_message | text                     |           |          | 
- started_at      | timestamp with time zone |           |          | 
- finished_at     | timestamp with time zone |           |          | 
- process_after   | timestamp with time zone |           |          | 
- num_resets      | integer                  |           | not null | 0
- num_failures    | integer                  |           | not null | 0
- execution_logs  | json[]                   |           |          | 
- record_time     | timestamp with time zone |           |          | 
- worker_hostname | text                     |           | not null | ''::text
+      Column       |           Type           | Collation | Nullable |                        Default                         
+-------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                | integer                  |           | not null | nextval('insights_query_runner_jobs_id_seq'::regclass)
+ series_id         | text                     |           | not null | 
+ search_query      | text                     |           | not null | 
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ record_time       | timestamp with time zone |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_state_btree" btree (state)
@@ -784,20 +780,21 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
-     Column      |           Type           | Collation | Nullable |                          Default                          
------------------+--------------------------+-----------+----------+-----------------------------------------------------------
- id              | integer                  |           | not null | nextval('lsif_dependency_indexing_jobs_id_seq'::regclass)
- state           | text                     |           | not null | 'queued'::text
- failure_message | text                     |           |          | 
- queued_at       | timestamp with time zone |           | not null | now()
- started_at      | timestamp with time zone |           |          | 
- finished_at     | timestamp with time zone |           |          | 
- process_after   | timestamp with time zone |           |          | 
- num_resets      | integer                  |           | not null | 0
- num_failures    | integer                  |           | not null | 0
- execution_logs  | json[]                   |           |          | 
- upload_id       | integer                  |           |          | 
- worker_hostname | text                     |           | not null | ''::text
+      Column       |           Type           | Collation | Nullable |                          Default                          
+-------------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id                | integer                  |           | not null | nextval('lsif_dependency_indexing_jobs_id_seq'::regclass)
+ state             | text                     |           | not null | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           | not null | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ upload_id         | integer                  |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -906,6 +903,7 @@ Stores the number of code intel events for repositories. Used for auto-index sch
  local_steps            | text[]                   |           | not null | 
  commit_last_checked_at | timestamp with time zone |           |          | 
  worker_hostname        | text                     |           | not null | ''::text
+ last_heartbeat_at      | timestamp with time zone |           |          | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -1076,6 +1074,7 @@ Stores the retention policy of code intellience data for a repository.
  committed_at           | timestamp with time zone |           |          | 
  commit_last_checked_at | timestamp with time zone |           |          | 
  worker_hostname        | text                     |           | not null | ''::text
+ last_heartbeat_at      | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1486,7 +1485,6 @@ Check constraints:
 Referenced by:
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

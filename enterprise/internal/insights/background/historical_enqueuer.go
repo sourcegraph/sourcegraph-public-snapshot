@@ -8,7 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 
 	"golang.org/x/time/rate"
@@ -33,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // The historical enqueuer takes regular search insights like a search for `errorf` and runs them
@@ -115,6 +117,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		now:           time.Now,
 		settingStore:  settingStore,
 		insightsStore: insightsStore,
+		loader:        insights.NewLoader(repoStore.Handle().DB()),
 		repoStore:     database.Repos(workerBaseStore.Handle().DB()),
 		limiter:       limiter,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
@@ -211,6 +214,7 @@ type historicalEnqueuer struct {
 	now                   func() time.Time
 	settingStore          discovery.SettingStore
 	insightsStore         store.Interface
+	loader                insights.Loader
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
@@ -230,7 +234,7 @@ type historicalEnqueuer struct {
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Discover all insights on the instance.
-	insights, err := discovery.Discover(ctx, h.settingStore)
+	foundInsights, err := discovery.Discover(ctx, h.settingStore, h.loader, discovery.InsightFilterArgs{})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
@@ -238,13 +242,13 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (
-		uniqueSeries    = map[string]*schema.InsightSeries{}
+		uniqueSeries    = map[string]insights.TimeSeries{}
 		sortedSeriesIDs []string
 		multi           error
 	)
-	for _, insight := range insights {
+	for _, insight := range foundInsights {
 		for _, series := range insight.Series {
-			seriesID, err := discovery.EncodeSeriesID(series)
+			seriesID := discovery.Encode(series)
 			if err != nil {
 				multi = multierror.Append(multi, err)
 				continue
@@ -269,7 +273,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 // It is only called if there is at least one insights series defined.
 //
 // It will return instantly if there are no unique series.
-func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]*schema.InsightSeries, sortedSeriesIDs []string) error {
+func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]insights.TimeSeries, sortedSeriesIDs []string) error {
 	if len(uniqueSeries) == 0 {
 		return nil // nothing to do.
 	}
@@ -281,14 +285,14 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 	return hardErr
 }
 
-func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]*schema.InsightSeries, sortedSeriesIDs []string, frames []compression.Frame, softErr error) func(repoName string) error {
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]insights.TimeSeries, sortedSeriesIDs []string, frames []compression.Frame, softErr error) func(repoName string) error {
 	return func(repoName string) error {
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
 			// Ignore RepoNotFoundErr because it could just be that the repository was actually
 			// deleted and allReposIterator had it cached.
-			if _, ok := err.(*database.RepoNotFoundErr); !ok {
+			if errors.HasType(err, &database.RepoNotFoundErr{}) {
 				return err // hard DB error
 			} else {
 				return nil
@@ -303,7 +307,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
-			if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
+			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
@@ -377,7 +381,7 @@ type buildSeriesContext struct {
 
 	// The series we're building historical data for.
 	seriesID string
-	series   *schema.InsightSeries
+	series   insights.TimeSeries
 }
 
 func Frames(numFrames int, frameLength time.Duration, current time.Time) []compression.Frame {
@@ -403,11 +407,7 @@ func Frames(numFrames int, frameLength time.Duration, current time.Time) []compr
 // It may return both hard errors (e.g. DB connection failure, future series are unlikely to build)
 // and soft errors (e.g. user's search query is invalid, future series are likely to build.)
 func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesContext) (hardErr, softErr error) {
-	// First, can we actually build historical data for this series?
-	if bctx.series.Webhook != "" {
-		return nil, nil // we cannot build historical data for webhook insights
-	}
-	query := bctx.series.Search
+	query := bctx.series.Query
 	// TODO(slimsag): future: use the search query parser here to avoid any false-positives like a
 	// search query with `content:"repo:"`.
 	if strings.Contains(query, "repo:") {
@@ -464,7 +464,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	// timeframe we're trying to fill in historical data for.
 	nearestCommit, err := h.gitFindNearestCommit(ctx, bctx.repo.Name, "HEAD", frameMidpoint)
 	if err != nil {
-		if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
 		hardErr = errors.Wrap(err, "FindNearestCommit")

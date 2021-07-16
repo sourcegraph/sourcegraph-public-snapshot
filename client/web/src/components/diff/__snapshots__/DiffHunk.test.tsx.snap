@@ -66,7 +66,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const subscriptions = new Subscription()",
@@ -112,7 +112,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
@@ -158,7 +158,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const connection = await createConnection()",
@@ -193,7 +193,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
@@ -228,7 +228,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
@@ -274,7 +274,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        subscriptions.add(",
@@ -320,7 +320,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
@@ -366,7 +366,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
@@ -449,7 +449,7 @@ Array [
       }
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const subscriptions = new Subscription()",
@@ -507,7 +507,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
@@ -553,7 +553,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const connection = await createConnection()",
@@ -593,7 +593,7 @@ Array [
       }
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
@@ -640,7 +640,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
@@ -686,7 +686,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        subscriptions.add(",
@@ -732,7 +732,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
@@ -778,7 +778,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
@@ -860,7 +860,7 @@ Array [
       }
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const subscriptions = new Subscription()",
@@ -918,7 +918,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
@@ -964,7 +964,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const connection = await createConnection()",
@@ -1003,7 +1003,7 @@ Array [
       }
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
@@ -1050,7 +1050,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
@@ -1096,7 +1096,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "        subscriptions.add(",
@@ -1142,7 +1142,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
@@ -1188,7 +1188,7 @@ Array [
       style={Object {}}
     >
       <div
-        className="d-inline-block"
+        className="d-inline"
         dangerouslySetInnerHTML={
           Object {
             "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",

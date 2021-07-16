@@ -271,7 +271,7 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
-		return nil, fmt.Errorf("unknown external service kind %q", kind)
+		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
 	return cfg, jsonc.Unmarshal(config, cfg)
 }
@@ -465,7 +465,7 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return c.P4Port, nil
 
 	default:
-		return "", fmt.Errorf("unknown external service kind: %s", kind)
+		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}
 
 	u, err := url.Parse(rawURL)

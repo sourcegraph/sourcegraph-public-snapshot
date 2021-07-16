@@ -2,6 +2,7 @@ import { Omit } from 'utility-types'
 
 import { SearchSuggestion } from '../suggestions'
 
+import { languageCompletion } from './languageFilter'
 import { predicateCompletion } from './predicates'
 import { selectorCompletion } from './selectFilter'
 import { Filter, Literal } from './token'
@@ -152,45 +153,6 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
 
 export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
-export const LANGUAGES: string[] = [
-    'Assembly',
-    'Bash',
-    'C',
-    'C++',
-    'C#',
-    'CSS',
-    'Dart',
-    'Elixir',
-    'Erlang',
-    'Go',
-    'GraphQL',
-    'Haskell',
-    'HTML',
-    'Java',
-    'JavaScript',
-    'Kotlin',
-    'JSON',
-    'Julia',
-    'Lua',
-    'Markdown',
-    'Objective-C',
-    'OCaml',
-    'PHP',
-    'PowerShell',
-    'Python',
-    'R',
-    'Ruby',
-    'Rust',
-    'Sass',
-    'Scala',
-    'SQL',
-    'Swift',
-    'TypeScript',
-    'VBA',
-    'XML',
-    'Zig',
-]
-
 const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
     {
         label: 'Search a GitHub organization',
@@ -215,6 +177,7 @@ const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
 export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
     [FilterType.after]: {
+        alias: 'since',
         description: 'Commits made after a certain date',
     },
     [FilterType.archived]: {
@@ -226,6 +189,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
     },
     [FilterType.before]: {
+        alias: 'unitl',
         description: 'Commits made before a certain date',
     },
     [FilterType.case]: {
@@ -268,11 +232,13 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.lang]: {
-        discreteValues: () => LANGUAGES.map(value => ({ label: value })),
+        alias: 'l',
+        discreteValues: value => languageCompletion(value).map(toCompletionItem),
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} results from the given language`,
     },
     [FilterType.message]: {
+        alias: 'm',
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
@@ -294,6 +260,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: 'Repository',
     },
     [FilterType.repogroup]: {
+        alias: 'g',
         description: 'group-name (include results from the named group)',
         singular: true,
         suggestions: 'RepoGroup',
@@ -308,6 +275,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
     },
     [FilterType.rev]: {
+        alias: 'rev',
         description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
         singular: true,
     },
@@ -487,4 +455,16 @@ export const escapeSpaces = (value: string): string => {
         }
     }
     return escaped.join('')
+}
+
+/**
+ * Helper function to convert a string to a completion item. It quotes the
+ * string as necessary.
+ */
+function toCompletionItem(value: string): Completion {
+    const item: Completion = { label: value }
+    if (/\s/.test(value)) {
+        item.insertText = `"${value}"`
+    }
+    return item
 }

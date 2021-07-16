@@ -10,6 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PatternTypeProps, CaseSensitivityProps, OnboardingTourProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
@@ -24,7 +25,8 @@ interface Props
         SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps,
-        TelemetryProps {
+        TelemetryProps,
+        FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

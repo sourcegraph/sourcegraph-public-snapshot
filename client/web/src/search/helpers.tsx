@@ -1,4 +1,5 @@
 import * as H from 'history'
+import { IRange } from 'monaco-editor'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -172,19 +173,39 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 export const isSearchResults = (value: any): value is GQL.ISearchResults =>
     value && typeof value === 'object' && value.__typename === 'SearchResults'
 
-/**
- * The search query and cursor position of where the last character was inserted.
- * Cursor position is used to correctly insert the suggestion when it's selected,
- * and set the cursor to the end of where the suggestion was inserted.
- */
-export interface QueryState {
-    query: string
+export enum QueryChangeSource {
     /**
-     * Used to know when the user has typed in the query or selected a suggestion.
+     * When the user has typed in the query or selected a suggestion.
      * Prevents fetching/showing suggestions on every component update.
      */
-    fromUserInput?: true
+    userInput,
+    searchReference,
 }
+
+/**
+ * The search query and additional information depending on how the query was
+ * changed. See MonacoQueryInput for how this data is applied to the editor.
+ */
+export type QueryState =
+    | {
+          /** Used to know how a change comes to be. This needs to be defined as
+           * optional so that unknown sources can make changes. */
+          changeSource?: QueryChangeSource.userInput
+          query: string
+      }
+    | {
+          /** Changes from the search reference side bar */
+          changeSource: QueryChangeSource.searchReference
+          query: string
+          /** The query input will apply this selection */
+          selection: IRange
+          /** Ensure that newly added or updated filters are completely visible in
+           * the query input. */
+          revealRange: IRange
+          /** Whether or not to trigger the completion popover. The popover is
+           * triggered at the end of the selection. */
+          showSuggestions?: boolean
+      }
 
 /**
  * Some filters should use an alias just for search so they receive the expected suggestions.

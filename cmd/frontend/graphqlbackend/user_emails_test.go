@@ -2,12 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/cockroachdb/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -25,12 +24,12 @@ func TestSetUserEmailVerified(t *testing.T) {
 
 	tests := []struct {
 		name                                string
-		gqlTests                            []*gqltesting.Test
+		gqlTests                            []*Test
 		expectCalledGrantPendingPermissions bool
 	}{
 		{
 			name: "set an email to be verified",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -53,7 +52,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 		},
 		{
 			name: "set an email to be unverified",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -83,7 +82,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 				return nil
 			}
 
-			gqltesting.RunTests(t, test.gqlTests)
+			RunTests(t, test.gqlTests)
 
 			if test.expectCalledGrantPendingPermissions != calledGrantPendingPermissions {
 				t.Fatalf("calledGrantPendingPermissions: want %v but got %v", test.expectCalledGrantPendingPermissions, calledGrantPendingPermissions)
@@ -111,13 +110,13 @@ func TestResendUserEmailVerification(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		gqlTests        []*gqltesting.Test
+		gqlTests        []*Test
 		email           *database.UserEmail
 		expectEmailSent bool
 	}{
 		{
 			name: "resend a verification email",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -144,7 +143,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 		},
 		{
 			name: "email already verified",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -172,7 +171,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 		},
 		{
 			name: "invalid email",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -183,11 +182,11 @@ func TestResendUserEmailVerification(t *testing.T) {
 				}
 			`,
 					ExpectedResult: "null",
-					ExpectedErrors: []*errors.QueryError{
+					ExpectedErrors: []*gqlerrors.QueryError{
 						{
-							Message:       "oh no!",
 							Path:          []interface{}{"resendVerificationEmail"},
-							ResolverError: fmt.Errorf("oh no!"),
+							Message:       "oh no!",
+							ResolverError: errors.New("oh no!"),
 						},
 					},
 				},
@@ -201,7 +200,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 		},
 		{
 			name: "resend a verification email, too soon",
-			gqlTests: []*gqltesting.Test{
+			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t),
 					Query: `
@@ -212,11 +211,11 @@ func TestResendUserEmailVerification(t *testing.T) {
 				}
 			`,
 					ExpectedResult: "null",
-					ExpectedErrors: []*errors.QueryError{
+					ExpectedErrors: []*gqlerrors.QueryError{
 						{
 							Message:       "Last verification email sent too recently",
 							Path:          []interface{}{"resendVerificationEmail"},
-							ResolverError: fmt.Errorf("Last verification email sent too recently"),
+							ResolverError: errors.New("Last verification email sent too recently"),
 						},
 					},
 				},
@@ -241,7 +240,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			}
 			database.Mocks.UserEmails.Get = func(id int32, email string) (string, bool, error) {
 				if email != test.email.Email {
-					return "", false, fmt.Errorf("oh no!")
+					return "", false, errors.New("oh no!")
 				}
 				return test.email.Email, test.email.VerifiedAt != nil, nil
 			}
@@ -249,7 +248,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 				return test.email, nil
 			}
 
-			gqltesting.RunTests(t, test.gqlTests)
+			RunTests(t, test.gqlTests)
 
 			if emailSent != test.expectEmailSent {
 				t.Errorf("Expected emailSent == %t, got %t", test.expectEmailSent, emailSent)

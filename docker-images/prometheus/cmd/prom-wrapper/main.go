@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -15,6 +14,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
@@ -146,9 +146,9 @@ func main() {
 		exitCode = 2
 	case err := <-procErrs:
 		if err != nil {
-			var exitErr *exec.ExitError
-			if errors.As(err, &exitErr) {
-				exitCode = exitErr.ProcessState.ExitCode()
+			var e *exec.ExitError
+			if errors.As(err, &e) {
+				exitCode = e.ProcessState.ExitCode()
 			} else {
 				exitCode = 1
 			}

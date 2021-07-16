@@ -1,8 +1,9 @@
 package gitserver
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -36,7 +37,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			MetricLabels: []string{name},
 			Metrics:      metrics,
 			ErrorFilter: func(err error) bool {
-				return errors.Is(err, &gitserver.RevisionNotFoundError{})
+				return errors.HasType(err, &gitserver.RevisionNotFoundError{})
 			},
 		})
 	}

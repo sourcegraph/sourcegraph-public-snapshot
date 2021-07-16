@@ -2,13 +2,13 @@ package oobmigration
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -172,7 +172,7 @@ func wrapMigrationErrors(errs ...error) error {
 	}
 	sort.Strings(descriptions)
 
-	return fmt.Errorf(
+	return errors.Errorf(
 		"Unfinished migrations. Please revert Sourcegraph to the previous version and wait for the following migrations to complete.\n\n%s\n",
 		strings.Join(descriptions, "\n"),
 	)

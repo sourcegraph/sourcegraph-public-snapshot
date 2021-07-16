@@ -3,13 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
@@ -571,8 +571,9 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 
 	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
-		if err, ok := err.(backend.ErrRepoSeeOther); ok {
-			return &repositoryRedirect{redirect: &RedirectResolver{url: err.RedirectURL}}, nil
+		var e backend.ErrRepoSeeOther
+		if errors.As(err, &e) {
+			return &repositoryRedirect{redirect: &RedirectResolver{url: e.RedirectURL}}, nil
 		}
 		if errcode.IsNotFound(err) {
 			return nil, nil

@@ -19,7 +19,8 @@
           "label": "printf",
           "search": "fmt.Printf"
         }
-      ]
+      ],
+      "id": "1"
     }
   ],
   "search.repositoryGroups": {
