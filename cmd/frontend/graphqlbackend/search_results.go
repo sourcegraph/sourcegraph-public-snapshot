@@ -531,6 +531,29 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	}
 }
 
+func withMode(args search.TextParameters, st query.SearchType, versionContext *string) search.TextParameters {
+	isGlobalSearch := func() bool {
+		if st == query.SearchTypeStructural {
+			return false
+		}
+		if versionContext != nil && *versionContext != "" {
+			return false
+		}
+		querySearchContextSpec, _ := args.Query.StringValue(query.FieldContext)
+		if !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
+			return false
+		}
+		return len(args.Query.Values(query.FieldRepo)) == 0 && len(args.Query.Values(query.FieldRepoGroup)) == 0 && len(args.Query.Values(query.FieldRepoHasFile)) == 0
+	}
+
+	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
+	isIndexedSearch := args.PatternInfo.Index != query.No
+	if isGlobalSearch() && isIndexedSearch && isFileOrPath {
+		args.Mode = search.ZoektGlobalSearch
+	}
+	return args
+}
+
 func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, error) {
 	forceResultTypes := result.TypeEmpty
 	if r.PatternType == query.SearchTypeStructural {
@@ -567,6 +590,7 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 		return nil, &badRequestError{err}
 	}
 	args = withResultTypes(args, forceResultTypes)
+	args = withMode(args, r.PatternType, r.VersionContext)
 	return &args, nil
 }
 
@@ -774,7 +798,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
 			r.invalidateCache()
-			r.Query = q.ToParseTree()
 			args, err := r.toTextParameters(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
@@ -783,7 +806,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		}
 	case query.Pattern:
 		r.invalidateCache()
-		r.Query = q.ToParseTree()
 		args, err := r.toTextParameters(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
@@ -801,7 +823,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.invalidateCache()
-		r.Query = q.ToParseTree()
 		args, err := r.toTextParameters(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
@@ -1354,23 +1375,6 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	return args
 }
 
-// isGlobalSearch returns true if the query does not contain repo, repogroup, or
-// repohasfile filters. For structural queries, queries with version context,
-// and queries with non-global search context, isGlobalSearch always return false.
-func (r *searchResolver) isGlobalSearch() bool {
-	if r.PatternType == query.SearchTypeStructural {
-		return false
-	}
-	if r.VersionContext != nil && *r.VersionContext != "" {
-		return false
-	}
-	querySearchContextSpec, _ := r.Query.StringValue(query.FieldContext)
-	if !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
-		return false
-	}
-	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
-}
-
 // doResults is one of the highest level search functions that handles finding results.
 //
 // If forceOnlyResultType is specified, only results of the given type are returned,
@@ -1432,14 +1436,10 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		_, _, _ = agg.Get()
 	}()
 
-	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
-	isIndexedSearch := args.PatternInfo.Index != query.No
-
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
-	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath {
+	if args.Mode == search.ZoektGlobalSearch {
 		argsIndexed := *args
-		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {

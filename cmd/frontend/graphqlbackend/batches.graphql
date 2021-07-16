@@ -1212,23 +1212,23 @@ type ChangesetsStats {
     """
     unpublished: Int!
     """
-    The count of externalState: DRAFT changesets.
+    The count of draft changesets.
     """
     draft: Int!
     """
-    The count of externalState: OPEN changesets.
+    The count of open changesets.
     """
     open: Int!
     """
-    The count of externalState: MERGED changesets.
+    The count of merged changesets.
     """
     merged: Int!
     """
-    The count of externalState: CLOSED changesets.
+    The count of closed changesets.
     """
     closed: Int!
     """
-    The count of externalState: DELETED changesets.
+    The count of deleted changesets.
     """
     deleted: Int!
     """
@@ -1251,6 +1251,36 @@ type ChangesetsStats {
     The count of archived changesets.
     """
     archived: Int!
+    """
+    The count of all changesets.
+    """
+    total: Int!
+}
+
+"""
+Stats on all the changesets that have been applied to this repository by batch changes.
+"""
+type RepoChangesetsStats {
+    """
+    The count of unpublished changesets.
+    """
+    unpublished: Int!
+    """
+    The count of draft changesets.
+    """
+    draft: Int!
+    """
+    The count of open changesets.
+    """
+    open: Int!
+    """
+    The count of merged changesets.
+    """
+    merged: Int!
+    """
+    The count of closed changesets.
+    """
+    closed: Int!
     """
     The count of all changesets.
     """
@@ -2320,9 +2350,13 @@ type BatchChange implements Node {
         """
         search: String
         """
-        Only return changesets that are archived in this campaign.
+        Only return changesets that are archived in this batch change.
         """
         onlyArchived: Boolean = false
+        """
+        Only include changesets belonging to the given repository.
+        """
+        repo: ID
     ): ChangesetConnection!
 
     """
@@ -2721,6 +2755,42 @@ extend type User {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+}
+
+extend type Repository {
+    """
+    Stats on all the changesets that have been created in this repository by batch
+    changes.
+    """
+    changesetsStats: RepoChangesetsStats!
+
+    """
+    A list of batch changes that have applied a changeset to this repository.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+
+    """
+    A diff stat for all the changesets that have been applied to this repository
+    by batch changes.
+    """
+    batchChangesDiffStat: DiffStat!
 }
 
 """

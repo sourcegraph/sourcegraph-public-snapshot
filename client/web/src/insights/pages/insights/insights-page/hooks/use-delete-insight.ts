@@ -20,10 +20,7 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
     const handleDelete = useCallback(
-        async (id: string) => {
-            // According to our naming convention of insight
-            // <type>.<name>.<render view = insight page | directory | home page>
-            const insightID = id.split('.').slice(0, -1).join('.')
+        async (insightID: string) => {
             const subjects = settingsCascade.subjects
 
             // For backward compatibility with old code stats insight api we have to delete

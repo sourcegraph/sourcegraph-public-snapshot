@@ -196,11 +196,7 @@ func Main(enterpriseInit EnterpriseInit) {
 			// cloud_default flag has been set.
 			NoNamespace:      true,
 			OnlyCloudDefault: true,
-			Kinds: []string{
-				extsvc.KindGitHub,
-				extsvc.KindGitLab,
-				extsvc.KindJVMPackages,
-			},
+			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
 		if err != nil {
 			log.Fatalf("failed to list external services: %v", err)
@@ -221,8 +217,6 @@ func Main(enterpriseInit EnterpriseInit) {
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
-			case *schema.JVMPackagesConnection:
-				server.JVMPackagesSource, err = repos.NewJVMPackagesSource(e)
 			}
 
 			if err != nil {

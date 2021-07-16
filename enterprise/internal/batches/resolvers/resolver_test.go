@@ -24,6 +24,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -888,6 +889,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
+	var repoID api.RepoID = 123
+	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -1008,6 +1011,16 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
 				OnlyArchived: true,
+			},
+		},
+		// Setting Repo
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				Repo: &repoGraphQLID,
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				RepoID: repoID,
 			},
 		},
 	}
