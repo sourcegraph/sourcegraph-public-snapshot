@@ -12,6 +12,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
@@ -307,6 +308,10 @@ type queryRepoRevFunc struct {
 	repoRevFunc repoRevFunc
 }
 
+func zoektRawConfigFlagForRepoOptions(opts searchrepos.Options) uint8 {
+	panic("implement me")
+}
+
 // zoektSearchGlobal searches the entire universe of indexed repositories.
 //
 // zoektSearchGlobal only needs to search "HEAD", because global queries, per
@@ -330,19 +335,23 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 		return err
 	}
 
-	finalQuery := zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
-	k := ResultCountFactor(0, args.PatternInfo.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
-
-	// Start event stream.
-	t0 := time.Now()
-	g := errgroup.Group{}
+	var flag uint8
+	if args.RepoOptions.NoArchived {
+		flag = flag | zoektquery.NoArchived
+	} else if args.RepoOptions.OnlyArchived {
+		flag = flag | zoektquery.Archived
+	}
+	if args.RepoOptions.NoForks {
+		flag = flag | zoektquery.NoForks
+	} else if args.RepoOptions.OnlyForks {
+		flag = flag | zoektquery.Forks
+	}
 
 	// We always send a "public" query. In case the user has access to indexed
 	// private repos, we send a second query for those repos, too. For each query, we
 	// also define a specific repoRevFunc.
 	qs := []queryRepoRevFunc{{
-		q: zoektquery.NewAnd(&zoektquery.Visibility{Value: "public"}, &zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos),
+		q: zoektquery.NewAnd(zoektquery.NewRawConfig(flag|zoektquery.Public), &zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos),
 		// For public queries, we don't validate ID or repo name.
 		repoRevFunc: func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
 			repo := types.RepoName{
@@ -374,6 +383,9 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 		})
 	}
 
+	k := ResultCountFactor(0, args.PatternInfo.FileMatchLimit, true)
+	g, ctx := errgroup.WithContext(ctx)
+
 	for _, q := range qs {
 		q2 := q
 		g.Go(func() error {
@@ -400,7 +412,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 				return nil
 			}
 
-			searchOpts := SearchOpts(ctx, 1, args.PatternInfo)
+			searchOpts := SearchOpts(ctx, k, args.PatternInfo)
 			return args.Zoekt.Client.StreamSearch(ctx, q2.q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 				files := event.Files
 				limitHit := event.FilesSkipped+event.ShardsSkipped > 0

@@ -1437,12 +1437,21 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		_, _, _ = agg.Get()
 	}()
 
+	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if args.Mode == search.ZoektGlobalSearch {
 		argsIndexed := *args
 		argsIndexed.Mode = search.ZoektGlobalSearch
-		argsIndexed.UserPrivateRepos = r.getUserAccessiblePrivateRepos(ctx)
+		// shadowing err because this err is handled immediately and should affect the
+		// rest of doResults.
+		res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+			OnlyPrivate: true,
+		})
+		if err == nil {
+			argsIndexed.UserPrivateRepos = res
+		}
 		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1459,8 +1468,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
-	resolved, err := r.resolveRepositories(ctx, repoOptions)
+	resolved, err := r.resolveRepositories(ctx, args.RepoOptions)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return alert.wrapResults(), err
@@ -1591,12 +1599,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 // assume this list is very short on sourcegraph.com. In case of an error we
 // return a nil slice.
 func (r *searchResolver) getUserAccessiblePrivateRepos(ctx context.Context) []types.RepoName {
-	a := actor.FromContext(ctx)
-	if a.UID == 0 {
-		return nil
-	}
 	res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
-		UserID:      a.UID,
 		OnlyPrivate: true,
 	})
 	if err != nil {

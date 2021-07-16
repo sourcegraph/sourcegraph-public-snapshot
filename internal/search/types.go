@@ -10,6 +10,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -135,6 +136,8 @@ type TextParameters struct {
 
 	// deprecated
 	RepoPromise *RepoPromise
+
+	RepoOptions searchrepos.Options
 
 	// perf: For global queries, we only resolve private repos.
 	UserPrivateRepos []types.RepoName
