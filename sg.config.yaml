@@ -484,7 +484,15 @@ commands:
       PORT: 5435
 
   redis-postgres:
-    cmd: docker-compose -f dev/redis-postgres.yml up
+    # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
+    # database:
+    #
+    #   env:
+    #       POSTGRES_HOST: localhost
+    #       PGPASSWORD: sourcegraph
+    #       PGUSER: sourcegraph
+    #
+    cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
 
 checks:
   docker:
