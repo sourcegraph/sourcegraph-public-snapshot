@@ -135,6 +135,7 @@ export const treePageRepositoryFragment = gql`
         viewerCanAdminister
         changesetsStats {
             open
+            merged
         }
     }
 `
@@ -437,9 +438,17 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 {repo.changesetsStats.open > 0 && (
                                                     <span
                                                         className="d-inline-block badge badge-success batch-change-badge ml-2"
-                                                        data-tooltip={`${repo.changesetsStats.open} open changesets`}
+                                                        data-tooltip={`${repo.changesetsStats.open} open batch changesets`}
                                                     >
                                                         {repo.changesetsStats.open}
+                                                    </span>
+                                                )}
+                                                {repo.changesetsStats.merged > 0 && (
+                                                    <span
+                                                        className="d-inline-block badge badge-merged batch-change-badge ml-2"
+                                                        data-tooltip={`${repo.changesetsStats.merged} merged batch changesets`}
+                                                    >
+                                                        {repo.changesetsStats.merged}
                                                     </span>
                                                 )}
                                             </Link>

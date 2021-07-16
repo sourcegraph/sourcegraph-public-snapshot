@@ -52,6 +52,7 @@ export const repositoryFragment = gql`
         }
         changesetsStats {
             open
+            merged
         }
     }
 `
