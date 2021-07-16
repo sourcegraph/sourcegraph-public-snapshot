@@ -90,6 +90,7 @@ var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
 	OrderByExpression: sqlf.Sprintf("j.queued_at, j.upload_id"),
 	StalledMaxAge:     StalledDependencyIndexingJobMaxAge,
 	MaxNumResets:      DependencyIndexingJobMaxNumResets,
+	HeartbeatInterval: 1 * time.Second,
 }
 
 func WorkerutilDependencyIndexingJobStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {

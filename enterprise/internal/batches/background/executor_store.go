@@ -39,6 +39,7 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 	OrderByExpression: sqlf.Sprintf("batch_spec_executions.created_at, batch_spec_executions.id"),
 	StalledMaxAge:     executorStalledJobMaximumAge,
 	MaxNumResets:      executorMaximumNumResets,
+	HeartbeatInterval: 1 * time.Second,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
 }
