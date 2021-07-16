@@ -8,7 +8,8 @@ import (
 )
 
 type Operations struct {
-	repoName *observation.Operation
+	repoName           *observation.Operation
+	getJVMDependencies *observation.Operation
 }
 
 func NewOperationsMetrics(observationContext *observation.Context) *metrics.OperationMetrics {
@@ -30,6 +31,7 @@ func NewOperationsFromMetrics(observationContext *observation.Context, metrics *
 	}
 
 	return &Operations{
-		repoName: op("RepoName"),
+		repoName:           op("RepoName"),
+		getJVMDependencies: op("GetJVMDependencies"),
 	}
 }
