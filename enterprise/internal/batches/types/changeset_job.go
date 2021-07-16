@@ -64,8 +64,7 @@ type ChangesetJobMergePayload struct {
 type ChangesetJobClosePayload struct{}
 
 type ChangesetJobPublishPayload struct {
-	IDs   []int64 `json:"ids"`
-	Draft bool    `json:"draft"`
+	Draft bool `json:"draft"`
 }
 
 // ChangesetJob describes a one-time action to be taken on a changeset.

@@ -1425,14 +1425,22 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 		return nil, err
 	}
 
-	// 🚨 SECURITY: PublishChangesets checks whether current user is authorized.
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
 	svc := service.New(r.store)
-	bulkGroupID, err := svc.PublishChangesets(ctx, batchChangeID, changesetIDs, args.Draft)
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypePublish,
+		&btypes.ChangesetJobPublishPayload{Draft: args.Draft},
+		store.ListChangesetsOpts{},
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
+
 }
 
 func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlbackend.CreateBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
