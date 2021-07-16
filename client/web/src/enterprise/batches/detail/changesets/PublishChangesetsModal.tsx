@@ -51,9 +51,7 @@ export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsMo
             aria-labelledby={MODAL_LABEL_ID}
         >
             <h3 id={MODAL_LABEL_ID}>Publish changesets</h3>
-            <p className="mb-4">
-                Are you sure you want to publish all the selected changesets to the code hosts?
-            </p>
+            <p className="mb-4">Are you sure you want to publish all the selected changesets to the code hosts?</p>
             <Form>
                 <div className="form-group">
                     <div className="form-check">
