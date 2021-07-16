@@ -439,14 +439,20 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}
 	case extsvc.JVMPackages:
 		artifactPath := strings.TrimPrefix(remoteName, "maven/")
-		repo, err = s.JVMPackagesSource.GetRepo(ctx, artifactPath)
-		if err != nil {
-			if errcode.IsNotFound(err) {
-				return &protocol.RepoLookupResult{
-					ErrorNotFound: true,
-				}, nil
+		if s.JVMPackagesSource != nil {
+			repo, err = s.JVMPackagesSource.GetRepo(ctx, artifactPath)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					return &protocol.RepoLookupResult{
+						ErrorNotFound: true,
+					}, nil
+				}
+				return nil, err
 			}
-			return nil, err
+		} else {
+			log15.Error(
+				"JVMPackagesSource is nil: doing nothing. To fix this problem, make sure that cloud_default is true for the JVM Dependencies external service type.",
+				"remoteName", remoteName)
 		}
 	}
 
