@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS lsif_documentation_mappings;
+DROP TABLE IF EXISTS lsif_data_documentation_mappings;

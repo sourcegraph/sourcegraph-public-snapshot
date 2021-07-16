@@ -159,7 +159,7 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Create temporary table symmetric to lsif_documentation_mappings without the dump id
+	// Create temporary table symmetric to lsif_data_documentation_mappings without the dump id
 	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentationMappingsTemporaryTableQuery)); err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 	if err := withBatchInserter(
 		ctx,
 		tx.Handle().DB(),
-		"t_lsif_documentation_mappings",
+		"t_lsif_data_documentation_mappings",
 		[]string{"path_id", "result_id"},
 		inserter,
 	); err != nil {
@@ -194,7 +194,7 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 
 const writeDocumentationMappingsTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationMappings
-CREATE TEMPORARY TABLE t_lsif_documentation_mappings (
+CREATE TEMPORARY TABLE t_lsif_data_documentation_mappings (
 	path_id TEXT NOT NULL,
 	result_id integer NOT NULL
 ) ON COMMIT DROP
@@ -202,7 +202,7 @@ CREATE TEMPORARY TABLE t_lsif_documentation_mappings (
 
 const writeDocumentationMappingsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationMappings
-INSERT INTO lsif_documentation_mappings (dump_id, path_id, result_id)
+INSERT INTO lsif_data_documentation_mappings (dump_id, path_id, result_id)
 SELECT %s, source.path_id, source.result_id
-FROM t_lsif_documentation_mappings source
+FROM t_lsif_data_documentation_mappings source
 `
