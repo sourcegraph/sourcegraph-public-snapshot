@@ -635,4 +635,3 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 
 	return bulkGroupID, nil
 }
-
