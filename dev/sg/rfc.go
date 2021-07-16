@@ -93,7 +93,7 @@ func saveToken(path string, token *oauth2.Token) error {
 	return json.NewEncoder(f).Encode(token)
 }
 
-func queryRFCs(ctx context.Context, query string, pager func(r *drive.FileList) error) error {
+func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *drive.FileList) error) error {
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON([]byte(credentials), drive.DriveMetadataReadonlyScope)
 	if err != nil {
@@ -114,20 +114,28 @@ func queryRFCs(ctx context.Context, query string, pager func(r *drive.FileList) 
 	}
 	q := fmt.Sprintf("%s and parents in '1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa' or %s and parents in '1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv'", query, query)
 
-	return srv.Files.List().
+	list := srv.Files.List().
 		Corpora("drive").SupportsAllDrives(true).
 		DriveId("0AK4DcztHds_pUk9PVA").
 		IncludeItemsFromAllDrives(true).
 		SupportsAllDrives(true).
 		PageSize(100).
 		Q(q).
-		Fields("nextPageToken, files(id, name, parents)").
-		OrderBy("createdTime,name").
-		Pages(ctx, pager)
+		Fields("nextPageToken, files(id, name, parents)")
+
+	if orderBy != "" {
+		list = list.OrderBy(orderBy)
+	}
+
+	return list.Pages(ctx, pager)
 }
 
 func listRFCs(ctx context.Context) error {
-	return queryRFCs(ctx, "", printRFCTitles)
+	return queryRFCs(ctx, "", "createdTime,name", printRFCTitles)
+}
+
+func searchRFCs(ctx context.Context, query string) error {
+	return queryRFCs(ctx, fmt.Sprintf("(name contains '%s' or fullText contains '%s')", query, query), "", printRFCTitles)
 }
 
 var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s(\w+):\s(.*)$`)
@@ -183,7 +191,7 @@ func openURL(url string) error {
 }
 
 func openRFC(ctx context.Context, number string) error {
-	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), func(r *drive.FileList) error {
+	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), "", func(r *drive.FileList) error {
 		for _, f := range r.Files {
 			openURL(fmt.Sprintf("https://docs.google.com/document/d/%s/edit", f.Id))
 		}
@@ -199,6 +207,14 @@ func rfcExec(ctx context.Context, args []string) error {
 	switch args[0] {
 	case "list":
 		return listRFCs(ctx)
+
+	case "search":
+		if len(args) != 2 {
+			return errors.New("no search query given")
+		}
+
+		return searchRFCs(ctx, args[1])
+
 	case "open":
 		if len(args) != 2 {
 			return errors.New("no number given")
@@ -206,5 +222,6 @@ func rfcExec(ctx context.Context, args []string) error {
 
 		return openRFC(ctx, args[1])
 	}
+
 	return nil
 }

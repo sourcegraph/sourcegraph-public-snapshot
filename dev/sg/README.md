@@ -180,6 +180,9 @@ sg migration fixup -run=false
 # List all RFCs
 sg rfc list
 
+# Search for an RFC
+sg rfc search "search terms"
+
 # Open a specific RFC
 sg rfc open 420
 ```
