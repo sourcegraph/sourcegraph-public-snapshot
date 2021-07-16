@@ -49,7 +49,8 @@ export async function onHoverAlertDismissed(alertType: string): Promise<void> {
 }
 
 /**
- * Returns the alert to show when the user is on private code and has sourcegraph.com as the URL.
+ * Returns the alert to show when the user is on private code (that has not
+ * been added to Cloud) and has sourcegraph.com as the URL.
  * The alert informs the user to setup a private Sourcegraph instance.
  */
 export const createPrivateCodeHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverlayClassProps'>): HoverAlert => ({
@@ -60,7 +61,7 @@ export const createPrivateCodeHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverl
             '#### Sourcegraph for private code\n\n' +
             'To get Sourcegraph hovers on your private repositories, you need to set up a private Sourcegraph instance and connect it to the browser extension.' +
             '\n\n' +
-            `<a href="https://docs.sourcegraph.com/integration/browser_extension" class="${
+            `<a href="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud" class="${
                 codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
             }" target="_blank" rel="noopener norefferer">Show more info</a>`,
     },
