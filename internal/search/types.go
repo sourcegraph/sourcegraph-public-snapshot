@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,9 +11,9 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type TypeParameters interface {
@@ -130,7 +131,7 @@ func (m GlobalSearchMode) String() string {
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
-	RepoOptions searchrepos.Options
+	RepoOptions Options
 	ResultTypes result.Types
 	Timeout     time.Duration
 
@@ -247,4 +248,71 @@ func (p *TextPatternInfo) String() string {
 	}
 
 	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
+}
+
+type Options struct {
+	RepoFilters        []string
+	MinusRepoFilters   []string
+	RepoGroupFilters   []string
+	SearchContextSpec  string
+	VersionContextName string
+	UserSettings       *schema.Settings
+	NoForks            bool
+	OnlyForks          bool
+	NoArchived         bool
+	OnlyArchived       bool
+	CommitAfter        string
+	OnlyPrivate        bool
+	OnlyPublic         bool
+	Ranked             bool // Return results ordered by rank
+	Limit              int
+	CacheLookup        bool
+	Query              query.Q
+}
+
+func (op *Options) String() string {
+	var b strings.Builder
+	if len(op.RepoFilters) == 0 {
+		b.WriteString("r=[]")
+	}
+	for i, r := range op.RepoFilters {
+		if i != 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(strconv.Quote(r))
+	}
+
+	if len(op.MinusRepoFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
+	}
+	if len(op.RepoGroupFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " groups=%v", op.RepoGroupFilters)
+	}
+	if op.VersionContextName != "" {
+		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.VersionContextName)
+	}
+	if op.CommitAfter != "" {
+		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
+	}
+
+	if op.NoForks {
+		b.WriteString(" NoForks")
+	}
+	if op.OnlyForks {
+		b.WriteString(" OnlyForks")
+	}
+	if op.NoArchived {
+		b.WriteString(" NoArchived")
+	}
+	if op.OnlyArchived {
+		b.WriteString(" OnlyArchived")
+	}
+	if op.OnlyPrivate {
+		b.WriteString(" OnlyPrivate")
+	}
+	if op.OnlyPublic {
+		b.WriteString(" OnlyPublic")
+	}
+
+	return b.String()
 }

@@ -455,7 +455,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 	}
 }
 
-func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) searchrepos.Options {
+func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) search.Options {
 	repoFilters, minusRepoFilters := q.Repositories()
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
@@ -510,7 +510,7 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 		CacheLookup = true
 	}
 
-	return searchrepos.Options{
+	return search.Options{
 		RepoFilters:        repoFilters,
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
