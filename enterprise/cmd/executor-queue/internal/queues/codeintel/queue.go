@@ -34,6 +34,7 @@ func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.
 	}
 
 	return apiserver.QueueOptions{
+		Name:              "codeintel",
 		Store:             newWorkerStore(db, observationContext),
 		RecordTransformer: recordTransformer,
 	}

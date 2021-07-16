@@ -17,25 +17,17 @@ import (
 )
 
 type handler struct {
-	options          Options
-	clock            glock.Clock
-	executors        map[string]*executorMeta
-	dequeueSemaphore chan struct{} // tracks available dequeue slots
-	m                sync.Mutex    // protects executors
-	queueMetrics     *QueueMetrics
+	options      Options
+	queueOptions QueueOptions
+	clock        glock.Clock
+	executors    map[string]*executorMeta
+	m            sync.Mutex // protects executors
+	queueMetrics *QueueMetrics
 }
 
 type Options struct {
 	// Port is the port on which to listen for HTTP connections.
 	Port int
-
-	// QueueOptions is a map from queue name to options specific to that queue.
-	QueueOptions map[string]QueueOptions
-
-	// MaximumNumTransactions is the maximum number of active records that can be given out
-	// to executors from this machine. The dequeue method will stop returning records while
-	// the number of outstanding transactions is at or above this threshold.
-	MaximumNumTransactions int
 
 	// RequeueDelay controls how far into the future to make a job record visible to the job
 	// queue once the currently processing executor has become unresponsive.
@@ -56,6 +48,8 @@ type Options struct {
 }
 
 type QueueOptions struct {
+	Name string
+
 	// Store is a required dbworker store store for each registered queue.
 	Store store.Store
 
@@ -71,26 +65,20 @@ type executorMeta struct {
 
 type jobMeta struct {
 	queueName string
-	record    workerutil.Record
+	recordID  int
 	started   time.Time
 }
 
-func newHandler(options Options, clock glock.Clock) *handler {
-	return newHandlerWithMetrics(options, clock, &observation.TestContext)
+func newHandler(options Options, queueOptions QueueOptions, clock glock.Clock) *handler {
+	return newHandlerWithMetrics(options, queueOptions, clock, newQueueMetrics(&observation.TestContext))
 }
 
-func newHandlerWithMetrics(options Options, clock glock.Clock, observationContext *observation.Context) *handler {
-	dequeueSemaphore := make(chan struct{}, options.MaximumNumTransactions)
-	for i := 0; i < options.MaximumNumTransactions; i++ {
-		dequeueSemaphore <- struct{}{}
-	}
-
+func newHandlerWithMetrics(options Options, queueOptions QueueOptions, clock glock.Clock, queueMetrics *QueueMetrics) *handler {
 	return &handler{
-		options:          options,
-		clock:            clock,
-		dequeueSemaphore: dequeueSemaphore,
-		executors:        map[string]*executorMeta{},
-		queueMetrics:     newQueueMetrics(observationContext),
+		options:      options,
+		clock:        clock,
+		executors:    map[string]*executorMeta{},
+		queueMetrics: queueMetrics,
 	}
 }
 
@@ -103,26 +91,7 @@ var (
 // the job record and the locking transaction. If no job is available for processing,
 // or the server has hit its maximum transactions, a false-valued flag is returned.
 func (m *handler) dequeue(ctx context.Context, queueName, executorName, executorHostname string) (_ apiclient.Job, dequeued bool, _ error) {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return apiclient.Job{}, false, ErrUnknownQueue
-	}
-
-	select {
-	case <-m.dequeueSemaphore:
-	default:
-		return apiclient.Job{}, false, nil
-	}
-	defer func() {
-		if !dequeued {
-			// Ensure that if we do not dequeue a record successfully we do not
-			// leak from the semaphore. This will happen if the dequeue call fails
-			// or if there are no records to process
-			m.dequeueSemaphore <- struct{}{}
-		}
-	}()
-
-	record, dequeued, err := queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
+	record, dequeued, err := m.queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
 	if err != nil {
 		return apiclient.Job{}, false, err
 	}
@@ -130,9 +99,9 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 		return apiclient.Job{}, false, nil
 	}
 
-	job, err := queueOptions.RecordTransformer(ctx, record)
+	job, err := m.queueOptions.RecordTransformer(ctx, record)
 	if err != nil {
-		if _, err := queueOptions.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err)); err != nil {
+		if _, err := m.queueOptions.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err)); err != nil {
 			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
 		}
 
@@ -140,24 +109,19 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 	}
 
 	now := m.clock.Now()
-	m.addMeta(executorName, jobMeta{queueName: queueName, record: record, started: now})
+	m.addMeta(executorName, jobMeta{queueName: queueName, recordID: record.RecordID(), started: now})
 	return job, true, nil
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job. If the job identifier
 // is not known, a false-valued flag is returned.
 func (m *handler) addExecutionLogEntry(ctx context.Context, queueName, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
 	_, err := m.findMeta(queueName, executorName, jobID, false)
 	if err != nil {
 		return err
 	}
 
-	if err := queueOptions.Store.AddExecutionLogEntry(ctx, jobID, entry); err != nil {
+	if err := m.queueOptions.Store.AddExecutionLogEntry(ctx, jobID, entry); err != nil {
 		return err
 	}
 
@@ -167,54 +131,36 @@ func (m *handler) addExecutionLogEntry(ctx context.Context, queueName, executorN
 // markComplete calls MarkComplete for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (m *handler) markComplete(ctx context.Context, queueName, executorName string, jobID int) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
 	job, err := m.findMeta(queueName, executorName, jobID, true)
 	if err != nil {
 		return err
 	}
 
-	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	_, err = queueOptions.Store.MarkComplete(ctx, job.record.RecordID())
+	_, err = m.queueOptions.Store.MarkComplete(ctx, job.recordID)
 	return err
 }
 
 // markErrored calls MarkErrored for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (m *handler) markErrored(ctx context.Context, queueName, executorName string, jobID int, errorMessage string) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
 	job, err := m.findMeta(queueName, executorName, jobID, true)
 	if err != nil {
 		return err
 	}
 
-	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	_, err = queueOptions.Store.MarkErrored(ctx, job.record.RecordID(), errorMessage)
+	_, err = m.queueOptions.Store.MarkErrored(ctx, job.recordID, errorMessage)
 	return err
 }
 
 // markFailed calls MarkFailed for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (m *handler) markFailed(ctx context.Context, queueName, executorName string, jobID int, errorMessage string) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
 	job, err := m.findMeta(queueName, executorName, jobID, true)
 	if err != nil {
 		return err
 	}
 
-	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	_, err = queueOptions.Store.MarkFailed(ctx, job.record.RecordID(), errorMessage)
+	_, err = m.queueOptions.Store.MarkFailed(ctx, job.recordID, errorMessage)
 	return err
 }
 
@@ -231,7 +177,7 @@ func (m *handler) findMeta(queueName, executorName string, jobID int, remove boo
 	}
 
 	for i, job := range executor.jobs {
-		if job.queueName == queueName && job.record.RecordID() == jobID {
+		if job.queueName == queueName && job.recordID == jobID {
 			if remove {
 				l := len(executor.jobs) - 1
 				executor.jobs[i] = executor.jobs[l]
@@ -279,7 +225,7 @@ func (m *handler) updateMetrics() {
 				}
 			}
 
-			stat.JobIDs = append(stat.JobIDs, job.record.RecordID())
+			stat.JobIDs = append(stat.JobIDs, job.recordID)
 			stat.ExecutorNames[executorName] = struct{}{}
 			queueStats[job.queueName] = stat
 		}

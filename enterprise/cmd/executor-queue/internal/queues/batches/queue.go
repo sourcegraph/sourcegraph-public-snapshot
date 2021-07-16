@@ -20,6 +20,7 @@ func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.
 	}
 
 	return apiserver.QueueOptions{
+		Name:              "batches",
 		Store:             background.NewExecutorStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
 		RecordTransformer: recordTransformer,
 	}

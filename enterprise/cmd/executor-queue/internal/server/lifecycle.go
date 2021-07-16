@@ -53,8 +53,8 @@ func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []
 	executorQueueIDsMap := map[int]struct{}{}
 	var live []jobMeta
 	for _, job := range executor.jobs {
-		executorQueueIDsMap[job.record.RecordID()] = struct{}{}
-		if _, ok := executorIDsMap[job.record.RecordID()]; ok || now.Sub(job.started) < h.options.UnreportedMaxAge {
+		executorQueueIDsMap[job.recordID] = struct{}{}
+		if _, ok := executorIDsMap[job.recordID]; ok || now.Sub(job.started) < h.options.UnreportedMaxAge {
 			live = append(live, job)
 			if err := h.heartbeatJob(ctx, job); err != nil {
 				errs = multierror.Append(errs, err)
@@ -95,12 +95,7 @@ func (h *handler) pruneExecutors() (jobs []jobMeta) {
 }
 
 func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {
-	queueOptions, ok := h.options.QueueOptions[job.queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	return queueOptions.Store.Heartbeat(ctx, job.record.RecordID())
+	return queueOptions.Store.Heartbeat(ctx, job.recordID)
 }
 
 // requeueJobs releases and requeues each of the given jobs.
@@ -116,11 +111,5 @@ func (h *handler) requeueJobs(ctx context.Context, jobs []jobMeta) (errs error) 
 
 // requeueJob requeues the given job and releases the associated transaction.
 func (h *handler) requeueJob(ctx context.Context, job jobMeta) error {
-	queueOptions, ok := h.options.QueueOptions[job.queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	defer func() { h.dequeueSemaphore <- struct{}{} }()
-	return queueOptions.Store.Requeue(ctx, job.record.RecordID(), h.clock.Now().Add(h.options.RequeueDelay))
+	return h.queueOptions.Store.Requeue(ctx, job.recordID, h.clock.Now().Add(h.options.RequeueDelay))
 }
