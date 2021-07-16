@@ -51,7 +51,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
+import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -362,7 +362,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         HAS_DISMISSED_FIREFOX_ALERT_KEY,
         false
     )
-    const showFirefoxAddonAlert = !hasDismissedFirefoxAlert
+    const showFirefoxAddonAlert = !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
 
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()

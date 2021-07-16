@@ -131,8 +131,15 @@ interface FirefoxAlertProps {
     displayName: string
 }
 
+const FIREFOX_ALERT_START_DATE = new Date('July 16, 2021')
+export const FIREFOX_ALERT_FINAL_DATE = new Date('October 18, 2021')
+
+export function isFirefoxCampaignActive(currentMs: number): boolean {
+    return currentMs < FIREFOX_ALERT_FINAL_DATE.getTime() && currentMs > FIREFOX_ALERT_START_DATE.getTime()
+}
+
 export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ onAlertDismissed, displayName }) => (
-    <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert">
+    <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert percy-hide">
         <div>
             <p className="font-weight-medium my-0 mr-3">
                 Sourcegraph is back at{' '}
