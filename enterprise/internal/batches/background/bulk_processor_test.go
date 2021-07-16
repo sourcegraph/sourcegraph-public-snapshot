@@ -281,9 +281,6 @@ func TestBulkProcessor(t *testing.T) {
 							Draft: false,
 						},
 					}
-					if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-						t.Fatal(err)
-					}
 
 					if err := bp.process(ctx, job); err == nil {
 						t.Error("unexpected nil error")
@@ -331,9 +328,6 @@ func TestBulkProcessor(t *testing.T) {
 								Payload: &types.ChangesetJobPublishPayload{
 									Draft: draft,
 								},
-							}
-							if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-								t.Fatal(err)
 							}
 
 							if err := bp.process(ctx, job); err != nil {
