@@ -170,7 +170,7 @@ var (
 		ShortHelp:  "Run the given RFC command to manage RFCs.",
 		FlagSet:    rfcFlagSet,
 		Exec:       rfcExec,
-		UsageFunc:  printRunUsage,
+		UsageFunc:  printRFCUsage,
 	}
 )
 
