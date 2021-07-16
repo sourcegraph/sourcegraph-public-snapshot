@@ -8,18 +8,20 @@ export interface Step {
     isComplete: boolean
 }
 
+export interface Steps {
+    [key: number]: Step
+}
+
 export interface State {
     current: number
     initialStep: number
-    steps: {
-        [key: number]: Step
-    }
+    steps: Steps
 }
 
 export type Action =
     | { type: 'SET_CURRENT_STEP'; payload: { index: number } }
     | { type: 'SET_COMPLETE_STEP'; payload: { index: number; complete: boolean } }
-    | { type: 'SET_STEPS'; payload: { steps: Step } }
+    | { type: 'SET_STEPS'; payload: { steps: Steps } }
 
 export interface StepsContext {
     state: State
@@ -33,7 +35,7 @@ export interface StepListContext {
 
 interface UseSteps {
     setStep: (index: number) => void
-    setComplete: (index: number) => void
+    setComplete: (index: number, complete: boolean) => void
     currentIndex: number
     currentStep: Step
     steps: State['steps']

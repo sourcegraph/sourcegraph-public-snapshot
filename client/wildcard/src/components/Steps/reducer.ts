@@ -35,7 +35,7 @@ export const reducer = (state: State, action: Action): State => {
                     ...state.steps,
                     [state.steps[action.payload.index].index]: {
                         ...state.steps[action.payload.index],
-                        isComplete: true,
+                        isComplete: action.payload.complete,
                     },
                 },
             }

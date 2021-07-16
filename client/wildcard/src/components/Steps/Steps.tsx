@@ -1,8 +1,15 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import React, { useEffect, useMemo, useReducer, useRef } from 'react'
+import React, { useEffect, useMemo, useReducer, useRef, MutableRefObject } from 'react'
 
-import { StepsContext, useStepsContext, StepListContext, useStepListContext, Step as StepInterface } from './context'
+import {
+    StepsContext,
+    useStepsContext,
+    StepListContext,
+    useStepListContext,
+    Step as StepInterface,
+    Steps as StepsInterface,
+} from './context'
 import { initialState, reducer } from './reducer'
 import stepsStyles from './Steps.module.scss'
 
@@ -72,8 +79,8 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
 
     const childrenArray = React.Children.toArray(children)
 
-    const stepsCollection: StepInterface = useRef(() =>
-        childrenArray.reduce((accumulator, _current, index) => {
+    const stepsCollection: MutableRefObject<() => StepsInterface> = useRef(() =>
+        childrenArray.reduce((accumulator: StepsInterface, _current, index) => {
             const value = {
                 index: index + 1,
                 isFirstStep: index === 0,
@@ -84,7 +91,7 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
 
             accumulator[index + 1] = value
             return accumulator
-        }, {} as StepInterface)
+        }, {})
     )
 
     useEffect(() => {
