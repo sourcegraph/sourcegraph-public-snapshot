@@ -224,3 +224,20 @@ func (panelOptionsLibrary) NoLegend() ObservablePanelOption {
 		panel.GraphPanel.Legend.Show = false
 	}
 }
+
+// ZeroIfNoData adjusts this observable's query such that "no data" will render as "0".
+// This is useful if your observable tracks error rates, which might show "no data" if
+// all is well and there are no errors.
+//
+// This is different from Grafana's "null as zero", since "no data" is not "null".
+func (panelOptionsLibrary) ZeroIfNoData() ObservablePanelOption {
+	orZero := " OR on() vector(0)"
+	return func(o Observable, p *sdk.Panel) {
+		switch o.Panel.panelType {
+		case PanelTypeGraph:
+			p.GraphPanel.Targets[0].Expr += orZero
+		case PanelTypeHeatmap:
+			p.HeatmapPanel.Targets[0].Expr += orZero
+		}
+	}
+}

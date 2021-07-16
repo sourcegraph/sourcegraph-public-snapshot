@@ -1,5 +1,6 @@
 import { render, RenderResult, act, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
 import * as React from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -19,6 +20,13 @@ const USER_TEST_SUBJECT: SupportedInsightSubject = {
     viewerCanAdminister: true,
 }
 
+const SITE_TEST_SUBJECT: SupportedInsightSubject = {
+    __typename: 'Site' as const,
+    viewerCanAdminister: true,
+    allowSiteSettingsEdits: true,
+    id: 'global_id',
+}
+
 describe('CreateInsightContent', () => {
     const mockAPI = createMockInsightAPI({
         getRepositorySuggestions: () => Promise.resolve([]),
@@ -26,9 +34,11 @@ describe('CreateInsightContent', () => {
 
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
         render(
-            <InsightsApiContext.Provider value={mockAPI}>
-                <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT]} />
-            </InsightsApiContext.Provider>
+            <MemoryRouter>
+                <InsightsApiContext.Provider value={mockAPI}>
+                    <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT, SITE_TEST_SUBJECT]} />
+                </InsightsApiContext.Provider>
+            </MemoryRouter>
         )
     const onSubmitMock = sinon.spy()
 
@@ -40,7 +50,7 @@ describe('CreateInsightContent', () => {
         const repoGroup = getByRole('group', { name: /list of repositories/i })
         const repositories = within(repoGroup).getByRole('combobox')
 
-        const personalVisibility = getByRole('radio', { name: /personal/i })
+        const personalVisibility = getByRole('radio', { name: /private/i })
         const organisationVisibility = getByRole('radio', { name: /organization/i })
 
         const dataSeriesGroup = getByRole('group', { name: /data series/i })
