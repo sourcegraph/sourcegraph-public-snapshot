@@ -18,7 +18,7 @@ import (
 var CoursierBinary = "coursier"
 
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) ([]string, error) {
-	if dependency.IsJdk() {
+	if dependency.IsJDK() {
 		output, err := runCoursierCommand(
 			ctx,
 			config,
@@ -70,7 +70,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 }
 
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) bool {
-	if dependency.IsJdk() {
+	if dependency.IsJDK() {
 		sources, err := FetchSources(ctx, config, dependency)
 		return err == nil && len(sources) == 1
 	}
@@ -100,6 +100,10 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
+	}
+
+	if stdout.String() == "" {
+		return []string{}, nil
 	}
 
 	return strings.Split(strings.TrimSpace(stdout.String()), "\n"), nil

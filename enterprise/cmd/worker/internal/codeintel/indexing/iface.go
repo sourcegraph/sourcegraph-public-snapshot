@@ -20,6 +20,7 @@ type DBStore interface {
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
+	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 }
 
 type DBStoreShim struct {
@@ -37,6 +38,11 @@ type IndexingRepoStore interface {
 
 func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {
 	return &DBStoreShim{s.Store.With(s)}
+}
+
+type ExternalServiceStore interface {
+	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
 }
 
 type GitserverClient interface {

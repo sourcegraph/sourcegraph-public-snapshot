@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
@@ -107,4 +109,25 @@ const insertDependencyIndexingJobQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencyIndexingJob
 INSERT INTO lsif_dependency_indexing_jobs (upload_id) VALUES (%s)
 RETURNING id
+`
+
+func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
+	ctx, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Bool("new", new),
+			log.Object("dependency", fmt.Sprint(dependency)),
+		}})
+	}()
+
+	_, new, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertCloneableDependencyRepoQuery, dependency.Scheme, dependency.Name, dependency.Version)))
+	return
+}
+
+const insertCloneableDependencyRepoQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertCloneableDependencyRepo
+INSERT INTO lsif_dependency_repos (scheme, name, version)
+VALUES (%s, %s, %s)
+ON CONFLICT DO NOTHING
+RETURNING 1
 `

@@ -149,7 +149,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
+		src = repos.NewSourcer(cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
 	}
 
 	scheduler := repos.NewUpdateScheduler()

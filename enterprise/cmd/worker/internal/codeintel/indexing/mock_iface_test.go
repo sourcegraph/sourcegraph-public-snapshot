@@ -35,6 +35,10 @@ type MockDBStore struct {
 	// GetUploadsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUploads.
 	GetUploadsFunc *DBStoreGetUploadsFunc
+	// InsertCloneableDependencyRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// InsertCloneableDependencyRepo.
+	InsertCloneableDependencyRepoFunc *DBStoreInsertCloneableDependencyRepoFunc
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *DBStoreReferencesForUploadFunc
@@ -67,6 +71,11 @@ func NewMockDBStore() *MockDBStore {
 				return nil, 0, nil
 			},
 		},
+		InsertCloneableDependencyRepoFunc: &DBStoreInsertCloneableDependencyRepoFunc{
+			defaultHook: func(context.Context, precise.Package) (bool, error) {
+				return false, nil
+			},
+		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
 				return nil, nil
@@ -95,6 +104,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		GetUploadsFunc: &DBStoreGetUploadsFunc{
 			defaultHook: i.GetUploads,
+		},
+		InsertCloneableDependencyRepoFunc: &DBStoreInsertCloneableDependencyRepoFunc{
+			defaultHook: i.InsertCloneableDependencyRepo,
 		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
@@ -549,6 +561,119 @@ func (c DBStoreGetUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// DBStoreInsertCloneableDependencyRepoFunc describes the behavior when the
+// InsertCloneableDependencyRepo method of the parent MockDBStore instance
+// is invoked.
+type DBStoreInsertCloneableDependencyRepoFunc struct {
+	defaultHook func(context.Context, precise.Package) (bool, error)
+	hooks       []func(context.Context, precise.Package) (bool, error)
+	history     []DBStoreInsertCloneableDependencyRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertCloneableDependencyRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) InsertCloneableDependencyRepo(v0 context.Context, v1 precise.Package) (bool, error) {
+	r0, r1 := m.InsertCloneableDependencyRepoFunc.nextHook()(v0, v1)
+	m.InsertCloneableDependencyRepoFunc.appendCall(DBStoreInsertCloneableDependencyRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InsertCloneableDependencyRepo method of the parent MockDBStore instance
+// is invoked and the hook queue is empty.
+func (f *DBStoreInsertCloneableDependencyRepoFunc) SetDefaultHook(hook func(context.Context, precise.Package) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertCloneableDependencyRepo method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreInsertCloneableDependencyRepoFunc) PushHook(hook func(context.Context, precise.Package) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreInsertCloneableDependencyRepoFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, precise.Package) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreInsertCloneableDependencyRepoFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, precise.Package) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreInsertCloneableDependencyRepoFunc) nextHook() func(context.Context, precise.Package) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreInsertCloneableDependencyRepoFunc) appendCall(r0 DBStoreInsertCloneableDependencyRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DBStoreInsertCloneableDependencyRepoFuncCall objects describing the
+// invocations of this function.
+func (f *DBStoreInsertCloneableDependencyRepoFunc) History() []DBStoreInsertCloneableDependencyRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreInsertCloneableDependencyRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreInsertCloneableDependencyRepoFuncCall is an object that describes
+// an invocation of method InsertCloneableDependencyRepo on an instance of
+// MockDBStore.
+type DBStoreInsertCloneableDependencyRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 precise.Package
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreInsertCloneableDependencyRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreInsertCloneableDependencyRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBStoreReferencesForUploadFunc describes the behavior when the
 // ReferencesForUpload method of the parent MockDBStore instance is invoked.
 type DBStoreReferencesForUploadFunc struct {
@@ -757,6 +882,273 @@ func (c DBStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockExternalServiceStore is a mock implementation of the
+// ExternalServiceStore interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// used for unit testing.
+type MockExternalServiceStore struct {
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *ExternalServiceStoreListFunc
+	// UpsertFunc is an instance of a mock function object controlling the
+	// behavior of the method Upsert.
+	UpsertFunc *ExternalServiceStoreUpsertFunc
+}
+
+// NewMockExternalServiceStore creates a new mock of the
+// ExternalServiceStore interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockExternalServiceStore() *MockExternalServiceStore {
+	return &MockExternalServiceStore{
+		ListFunc: &ExternalServiceStoreListFunc{
+			defaultHook: func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return nil, nil
+			},
+		},
+		UpsertFunc: &ExternalServiceStoreUpsertFunc{
+			defaultHook: func(context.Context, ...*types.ExternalService) error {
+				return nil
+			},
+		},
+	}
+}
+
+// NewMockExternalServiceStoreFrom creates a new mock of the
+// MockExternalServiceStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServiceStore {
+	return &MockExternalServiceStore{
+		ListFunc: &ExternalServiceStoreListFunc{
+			defaultHook: i.List,
+		},
+		UpsertFunc: &ExternalServiceStoreUpsertFunc{
+			defaultHook: i.Upsert,
+		},
+	}
+}
+
+// ExternalServiceStoreListFunc describes the behavior when the List method
+// of the parent MockExternalServiceStore instance is invoked.
+type ExternalServiceStoreListFunc struct {
+	defaultHook func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	hooks       []func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	history     []ExternalServiceStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExternalServiceStore) List(v0 context.Context, v1 database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(ExternalServiceStoreListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockExternalServiceStore instance is invoked and the hook queue is
+// empty.
+func (f *ExternalServiceStoreListFunc) SetDefaultHook(hook func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockExternalServiceStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ExternalServiceStoreListFunc) PushHook(hook func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ExternalServiceStoreListFunc) SetDefaultReturn(r0 []*types.ExternalService, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ExternalServiceStoreListFunc) PushReturn(r0 []*types.ExternalService, r1 error) {
+	f.PushHook(func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExternalServiceStoreListFunc) nextHook() func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreListFunc) appendCall(r0 ExternalServiceStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreListFuncCall objects
+// describing the invocations of this function.
+func (f *ExternalServiceStoreListFunc) History() []ExternalServiceStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreListFuncCall is an object that describes an
+// invocation of method List on an instance of MockExternalServiceStore.
+type ExternalServiceStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ExternalServicesListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.ExternalService
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExternalServiceStoreUpsertFunc describes the behavior when the Upsert
+// method of the parent MockExternalServiceStore instance is invoked.
+type ExternalServiceStoreUpsertFunc struct {
+	defaultHook func(context.Context, ...*types.ExternalService) error
+	hooks       []func(context.Context, ...*types.ExternalService) error
+	history     []ExternalServiceStoreUpsertFuncCall
+	mutex       sync.Mutex
+}
+
+// Upsert delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExternalServiceStore) Upsert(v0 context.Context, v1 ...*types.ExternalService) error {
+	r0 := m.UpsertFunc.nextHook()(v0, v1...)
+	m.UpsertFunc.appendCall(ExternalServiceStoreUpsertFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Upsert method of the
+// parent MockExternalServiceStore instance is invoked and the hook queue is
+// empty.
+func (f *ExternalServiceStoreUpsertFunc) SetDefaultHook(hook func(context.Context, ...*types.ExternalService) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Upsert method of the parent MockExternalServiceStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ExternalServiceStoreUpsertFunc) PushHook(hook func(context.Context, ...*types.ExternalService) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ExternalServiceStoreUpsertFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...*types.ExternalService) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ExternalServiceStoreUpsertFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...*types.ExternalService) error {
+		return r0
+	})
+}
+
+func (f *ExternalServiceStoreUpsertFunc) nextHook() func(context.Context, ...*types.ExternalService) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreUpsertFunc) appendCall(r0 ExternalServiceStoreUpsertFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreUpsertFuncCall objects
+// describing the invocations of this function.
+func (f *ExternalServiceStoreUpsertFunc) History() []ExternalServiceStoreUpsertFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreUpsertFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreUpsertFuncCall is an object that describes an
+// invocation of method Upsert on an instance of MockExternalServiceStore.
+type ExternalServiceStoreUpsertFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []*types.ExternalService
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c ExternalServiceStoreUpsertFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreUpsertFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -15,11 +15,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -35,7 +38,8 @@ const (
 )
 
 type JVMPackagesSyncer struct {
-	Config *schema.JVMPackagesConnection
+	Config  *schema.JVMPackagesConnection
+	DBStore repos.JVMPackagesRepoStore
 }
 
 var _ VCSSyncer = &JVMPackagesSyncer{}
@@ -174,6 +178,31 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			// Silently ignore non-existent dependencies because
 			// they are already logged out in the `GetRepo` method
 			// in internal/repos/jvm_packages.go.
+		}
+	}
+
+	dbDeps, err := s.DBStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
+		ArtifactName: repoUrlPath,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dep := range dbDeps {
+		parsedModule, err := reposource.ParseMavenModule(dep.Module)
+		if err != nil {
+			log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
+			continue
+		}
+		if module == parsedModule {
+			semVersion, _ := semver.NewVersion(dep.Version)
+			dependency := reposource.MavenDependency{
+				MavenModule:     parsedModule,
+				Version:         dep.Version,
+				SemanticVersion: semVersion,
+			}
+			// we dont call coursier.Exists here, as existance should be verified by repo-updater
+			dependencies = append(dependencies, dependency)
 		}
 	}
 
@@ -365,7 +394,7 @@ func copyZipFileEntry(reader *zip.ReadCloser, entry *zip.File, outputPath string
 // the bytecode in the given jar file.
 func inferJVMVersionFromByteCode(ctx context.Context, connection *schema.JVMPackagesConnection,
 	dependency reposource.MavenDependency) (string, error) {
-	if dependency.IsJdk() {
+	if dependency.IsJDK() {
 		return dependency.Version, nil
 	}
 

@@ -9,17 +9,24 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
+var schemeToExternalService = map[string]string{
+	"semanticdb": extsvc.KindJVMPackages,
+}
+
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
 	dbStore DBStore,
 	workerStore dbworkerstore.Store,
+	externalServiceStore ExternalServiceStore,
 	enqueuer IndexEnqueuer,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
@@ -29,6 +36,7 @@ func NewDependencyIndexingScheduler(
 
 	handler := &dependencyIndexingSchedulerHandler{
 		dbStore:       dbStore,
+		extsvcStore:   externalServiceStore,
 		indexEnqueuer: enqueuer,
 	}
 
@@ -44,6 +52,7 @@ func NewDependencyIndexingScheduler(
 type dependencyIndexingSchedulerHandler struct {
 	dbStore       DBStore
 	indexEnqueuer IndexEnqueuer
+	extsvcStore   ExternalServiceStore
 }
 
 var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
@@ -57,10 +66,13 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 		return nil
 	}
 
+	var errs []error
+
 	job := record.(dbstore.DependencyIndexingJob)
 
-	if ok, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID); err != nil || !ok {
-		return err
+	shouldIndex, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID)
+	if err != nil {
+		errs = append(errs, errors.Wrap(err, "indexing.shouldIndexDependencies"))
 	}
 
 	scanner, err := h.dbStore.ReferencesForUpload(ctx, job.UploadID)
@@ -73,7 +85,8 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 		}
 	}()
 
-	var errs []error
+	var kinds []string
+
 	for {
 		packageReference, exists, err := scanner.Next()
 		if err != nil {
@@ -88,14 +101,53 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			Name:    packageReference.Package.Name,
 			Version: packageReference.Package.Version,
 		}
-		if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg); err != nil {
-			errs = append(errs, errors.Wrap(err, "enqueuer.QueueIndexesForPackage"))
+
+		if shouldIndex {
+			if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg); err != nil {
+				errs = append(errs, errors.Wrap(err, "enqueuer.QueueIndexesForPackage"))
+			}
+		}
+
+		extsvcKind, ok := schemeToExternalService[packageReference.Scheme]
+		if !ok {
+			continue
+		}
+
+		if _, err := h.dbStore.InsertCloneableDependencyRepo(ctx, pkg); err != nil {
+			errs = append(errs, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos"))
+		}
+
+		if !kindExists(kinds, extsvcKind) {
+			kinds = append(kinds, extsvcKind)
+		}
+	}
+
+	// If len == 0, it will return all external services, which we definitely don't want.
+	if len(kinds) > 0 {
+		externalServices, err := h.extsvcStore.List(ctx, database.ExternalServicesListOptions{
+			Kinds: kinds,
+		})
+		if err != nil {
+			if len(errs) == 0 {
+				return errors.Wrap(err, "dbstore.List")
+			} else {
+				return multierror.Append(err, errs...)
+			}
+		}
+
+		for _, externalService := range externalServices {
+			externalService.NextSyncAt = time.Now()
+			err := h.extsvcStore.Upsert(ctx, externalService)
+			if err != nil {
+				errs = append(errs, errors.Wrapf(err, "dbstore.Upsert: error setting next_sync_at for external service %d - %s", externalService.ID, externalService.DisplayName))
+			}
 		}
 	}
 
 	if len(errs) == 0 {
 		return nil
 	}
+
 	if len(errs) == 1 {
 		return errs[0]
 	}
@@ -105,12 +157,21 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
-// were indexed via lsif-go.
+// were indexed via lsif-go and lsif-java.
 func (h *dependencyIndexingSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")
 	}
 
-	return upload.Indexer == "lsif-go", nil
+	return upload.Indexer == "lsif-go" || upload.Indexer == "lsif-java", nil
+}
+
+func kindExists(kinds []string, kind string) bool {
+	for _, k := range kinds {
+		if k == kind {
+			return true
+		}
+	}
+	return false
 }
