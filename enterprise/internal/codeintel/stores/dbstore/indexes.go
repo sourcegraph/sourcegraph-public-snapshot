@@ -360,7 +360,7 @@ func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 const isQueuedQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:IsQueued
 SELECT COUNT(*) WHERE EXISTS (
-	SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
+	SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s AND state NOT IN ('deleted', 'deleting')
 	UNION
 	SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
 )

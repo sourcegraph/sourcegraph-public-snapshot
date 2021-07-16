@@ -55,7 +55,7 @@ func (s *Store) HasRepository(ctx context.Context, repositoryID int) (_ bool, er
 
 const hasRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:HasRepository
-SELECT COUNT(*) FROM lsif_uploads WHERE state != 'deleted' AND repository_id = %s LIMIT 1
+SELECT COUNT(*) FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `
 
 // HasCommit determines if the given commit is known for the given repository.
@@ -279,7 +279,7 @@ func (s *Store) CalculateVisibleUploads(
 	// All completed uploads are now visible. Mark any uploads queued for deletion as deleted as
 	// they are no longer reachable from the commit graph and cannot be used to fulfill any API
 	// requests.
-	if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeletedUploadsQuery, repositoryID)); err != nil {
+	if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery, repositoryID)); err != nil {
 		return err
 	}
 
@@ -296,7 +296,7 @@ const calculateVisibleUploadsDirtyRepositoryQuery = `
 UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
 `
 
-const calculateVisibleUploadsDeletedUploadsQuery = `
+const calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
 WITH
 candidates AS (
