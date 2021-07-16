@@ -513,6 +513,8 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                                     | <span className="test-code search-filter-keyword">-{searchReference.alias}:</span>
                                 </>
                             )}
+                            <br />
+                            <span className={styles.placeholder}>(opt + click filter in reference list)</span>
                         </p>
                     )}
                     {searchReference.examples && (
