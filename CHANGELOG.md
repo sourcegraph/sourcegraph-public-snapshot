@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `lang:` filter suggestions now show all supported, matching languages as the user types a language name. [#22765](https://github.com/sourcegraph/sourcegraph/pull/22765)
 - Code Insights can now be grouped into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
 - Added the code insights dashboards functionality. Now you can divide insights into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
+- Batch Changes changesets can now be published from Sourcegraph by omitting the `published` field in the batch spec and publishing changesets from the batch change page. (TODO: insert doc link; reword after writing that) [#18277](https://github.com/sourcegraph/sourcegraph/issues/18277)
 
 ### Changed
 
