@@ -1,4 +1,3 @@
-import { useContext } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -7,10 +6,10 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { Insight } from '../../../../core/types'
+import { usePersistEditOperations } from '../../../../hooks/use-persist-edit-operations'
 
-import { applyEditOperations, getUpdatedSubjectSettings } from './utils'
+import { getUpdatedSubjectSettings } from './utils'
 
 export interface UseHandleSubmitProps extends PlatformContextProps<'updateSettings'>, SettingsCascadeProps<Settings> {
     originalInsight: Insight | null
@@ -26,8 +25,8 @@ export interface useHandleSubmitOutput {
  */
 export function useHandleSubmit(props: UseHandleSubmitProps): useHandleSubmitOutput {
     const { originalInsight, platformContext, settingsCascade } = props
-    const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
     const history = useHistory()
+    const { persist } = usePersistEditOperations({ platformContext })
 
     const handleEditInsightSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
         if (!originalInsight) {
@@ -35,30 +34,13 @@ export function useHandleSubmit(props: UseHandleSubmitProps): useHandleSubmitOut
         }
 
         try {
-            const subjectsToUpdate = getUpdatedSubjectSettings({
+            const editOperations = getUpdatedSubjectSettings({
                 oldInsight: originalInsight,
                 newInsight,
                 settingsCascade,
             })
 
-            const subjectUpdateRequests = Object.keys(subjectsToUpdate).map(subjectId => {
-                async function updateSettings(): Promise<void> {
-                    const editOperations = subjectsToUpdate[subjectId]
-
-                    // Get jsonc subject settings file.
-                    const settings = await getSubjectSettings(subjectId).toPromise()
-
-                    // Modify this jsonc file according to this subject's operations
-                    const nextSubjectSettings = applyEditOperations(settings.contents, editOperations)
-
-                    // Call the async update mutation for the new subject's settings file
-                    await updateSubjectSettings(platformContext, subjectId, nextSubjectSettings).toPromise()
-                }
-
-                return updateSettings()
-            })
-
-            await Promise.all(subjectUpdateRequests)
+            await persist(editOperations)
 
             // Navigate user to the dashboard page with new created dashboard
             history.push(`/insights/dashboards/${newInsight.visibility}`)
