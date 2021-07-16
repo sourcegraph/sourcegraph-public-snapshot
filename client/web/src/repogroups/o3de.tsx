@@ -20,5 +20,6 @@ export const o3de: RepogroupMetadata = {
         },
     ],
     homepageDescription: 'Search within the O3DE organization.',
-    homepageIcon: 'https://raw.githubusercontent.com/o3de/artwork/19b89e72e15824f20204a8977a007f53d5fcd5b8/o3de/03_O3DE%20Application%20Icon/SVG/O3DE-Circle-Icon.svg',
+    homepageIcon:
+        'https://raw.githubusercontent.com/o3de/artwork/19b89e72e15824f20204a8977a007f53d5fcd5b8/o3de/03_O3DE%20Application%20Icon/SVG/O3DE-Circle-Icon.svg',
 }
