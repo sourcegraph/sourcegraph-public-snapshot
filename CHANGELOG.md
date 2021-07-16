@@ -29,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights can now be grouped into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
 - Added the code insights dashboards functionality. Now you can divide insights into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
 - Batch Changes changesets can now be [published from the Sourcegraph UI](https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#within-the-ui). [#18277](https://github.com/sourcegraph/sourcegraph/issues/18277)
+- The repository page now has a new button to view batch change changesets created in that specific repository, with a badge indicating how many changesets are currently open. [#22804](https://github.com/sourcegraph/sourcegraph/pull/22804)
 
 ### Changed
 
