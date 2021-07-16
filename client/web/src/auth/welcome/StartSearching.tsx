@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { useStepsContext } from '@sourcegraph/wildcard/src/components/Steps'
+import { useSteps } from '@sourcegraph/wildcard/src/components/Steps/context'
 import {
     Terminal,
     TerminalTitle,
@@ -45,9 +45,13 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     isDoneCloning,
 }) => {
     const { showAlert } = useShowAlert(isDoneCloning)
-    const toLog = useStepsContext()
+    const { currentIndex, currentStep, setComplete } = useSteps()
 
-    console.log('129380193812038120391831089', toLog)
+    useEffect(() => {
+        if (!currentStep.isComplete && showAlert) {
+            setComplete(currentIndex)
+        }
+    }, [currentIndex, currentStep.isComplete, setComplete, showAlert])
 
     return (
         <>

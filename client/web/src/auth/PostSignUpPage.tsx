@@ -35,16 +35,16 @@ interface Step {
     onNextButtonClick?: () => Promise<void>
 }
 
-const delay = (milliseconds: number): Promise<void> => new Promise(resolve => setTimeout(resolve, milliseconds))
+// const delay = (milliseconds: number): Promise<void> => new Promise(resolve => setTimeout(resolve, milliseconds))
 
 export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     authenticatedUser: user,
     context,
-    telemetryService,
+    // telemetryService,
 }) => {
-    const [currentStepNumber, setCurrentStepNumber] = useState(1)
+    // const [currentStepNumber, setCurrentStepNumber] = useState(1)
     const location = useLocation()
-    const history = useHistory()
+    // const history = useHistory()
 
     const {
         trigger: fetchCloningStatus,
@@ -54,8 +54,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     } = useRepoCloningStatus({ userId: user.id, pollInterval: 2000 })
 
     const { externalServices, loadingServices, errorServices, refetchExternalServices } = useExternalServices(user.id)
-    const { fetchAffiliatedRepos, affiliatedRepos } = useAffiliatedRepos(user.id)
-    const { fetchSelectedRepos, selectedRepos } = useSelectedRepos(user.id)
+    // const { fetchAffiliatedRepos, affiliatedRepos } = useAffiliatedRepos(user.id)
+    // const { fetchSelectedRepos, selectedRepos } = useSelectedRepos(user.id)
 
     /**
      * post sign-up flow is available only for .com and only in two cases, user:
@@ -73,138 +73,138 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     //     history.push(getReturnTo(location))
     // }
 
-    const firstStep = {
-        content: (
-            <>
-                {currentStepNumber === 1 && externalServices && (
-                    <CodeHostsConnection
-                        loading={loadingServices}
-                        user={user}
-                        error={errorServices}
-                        externalServices={externalServices}
-                        context={context}
-                        refetch={refetchExternalServices}
-                    />
-                )}
-            </>
-        ),
-        // step is considered complete when user has at least one external service connected.
-        isComplete: (): boolean => !!externalServices && externalServices?.length > 0,
-    }
+    // const firstStep = {
+    //     content: (
+    //         <>
+    //             {currentStepNumber === 1 && externalServices && (
+    //                 <CodeHostsConnection
+    //                     loading={loadingServices}
+    //                     user={user}
+    //                     error={errorServices}
+    //                     externalServices={externalServices}
+    //                     context={context}
+    //                     refetch={refetchExternalServices}
+    //                 />
+    //             )}
+    //         </>
+    //     ),
+    //     // step is considered complete when user has at least one external service connected.
+    //     isComplete: (): boolean => !!externalServices && externalServices?.length > 0,
+    // }
 
-    const secondStep = {
-        content: (
-            <>
-                {currentStepNumber === 2 && (
-                    <>
-                        <h3>Add repositories</h3>
-                        <p className="text-muted">
-                            Choose repositories you own or collaborate on from your code hosts to search with
-                            Sourcegraph. We’ll sync and index these repositories so you can search your code all in one
-                            place.
-                        </p>
-                        <SelectAffiliatedRepos
-                            ref={AffiliatedReposReference}
-                            onSelection={setDidSelectAffiliatedRepos}
-                            repos={affiliatedRepos}
-                            externalServices={externalServices}
-                            selectedRepos={selectedRepos}
-                            authenticatedUser={user}
-                            telemetryService={telemetryService}
-                        />
-                    </>
-                )}
-            </>
-        ),
-        isComplete: () => true /* didSelectAffiliatedRepos */,
-        onNextButtonClick: async () => {
-            await AffiliatedReposReference.current?.submit()
-        },
-        prefetch: () => {
-            fetchSelectedRepos()
-            fetchAffiliatedRepos()
-        },
-    }
+    // const secondStep = {
+    //     content: (
+    //         <>
+    //             {currentStepNumber === 2 && (
+    //                 <>
+    //                     <h3>Add repositories</h3>
+    //                     <p className="text-muted">
+    //                         Choose repositories you own or collaborate on from your code hosts to search with
+    //                         Sourcegraph. We’ll sync and index these repositories so you can search your code all in one
+    //                         place.
+    //                     </p>
+    //                     <SelectAffiliatedRepos
+    //                         ref={AffiliatedReposReference}
+    //                         onSelection={setDidSelectAffiliatedRepos}
+    //                         repos={affiliatedRepos}
+    //                         externalServices={externalServices}
+    //                         selectedRepos={selectedRepos}
+    //                         authenticatedUser={user}
+    //                         telemetryService={telemetryService}
+    //                     />
+    //                 </>
+    //             )}
+    //         </>
+    //     ),
+    //     isComplete: () => true /* didSelectAffiliatedRepos */,
+    //     onNextButtonClick: async () => {
+    //         await AffiliatedReposReference.current?.submit()
+    //     },
+    //     prefetch: () => {
+    //         fetchSelectedRepos()
+    //         fetchAffiliatedRepos()
+    //     },
+    // }
 
-    const thirdStep = {
-        content: (
-            <>
-                {currentStepNumber === 3 && (
-                    <StartSearching
-                        isDoneCloning={isDoneCloning}
-                        cloningStatusLines={cloningStatusLines}
-                        cloningStatusLoading={cloningStatusLoading}
-                    />
-                )}
-            </>
-        ),
-        isComplete: () => isDoneCloning,
-        prefetch: () => fetchCloningStatus(),
-    }
+    // const thirdStep = {
+    //     content: (
+    //         <>
+    //             {currentStepNumber === 3 && (
+    //                 <StartSearching
+    //                     isDoneCloning={isDoneCloning}
+    //                     cloningStatusLines={cloningStatusLines}
+    //                     cloningStatusLoading={cloningStatusLoading}
+    //                 />
+    //             )}
+    //         </>
+    //     ),
+    //     isComplete: () => isDoneCloning,
+    //     prefetch: () => fetchCloningStatus(),
+    // }
 
-    const steps: Step[] = [firstStep, secondStep, thirdStep]
+    // const steps: Step[] = [firstStep, secondStep, thirdStep]
 
-    // Steps helpers
-    const isLastStep = currentStepNumber === steps.length
-    const currentStep = steps[currentStepNumber - 1]
+    // // Steps helpers
+    // const isLastStep = currentStepNumber === steps.length
+    // const currentStep = steps[currentStepNumber - 1]
 
-    const goToNextTab = async (): Promise<void> => {
-        if (currentStep.onNextButtonClick) {
-            setIsNextStepLoading(true)
-            await currentStep.onNextButtonClick()
-            // TODO: remove this
-            await delay(3000)
-            setIsNextStepLoading(false)
-        }
+    // const goToNextTab = async (): Promise<void> => {
+    //     if (currentStep.onNextButtonClick) {
+    //         setIsNextStepLoading(true)
+    //         await currentStep.onNextButtonClick()
+    //         // TODO: remove this
+    //         await delay(3000)
+    //         setIsNextStepLoading(false)
+    //     }
 
-        // currentStepNumber is not zero based, it'll get the next step
-        const nextStep = steps[currentStepNumber]
-        if (nextStep.prefetch) {
-            nextStep.prefetch()
-        }
+    //     // currentStepNumber is not zero based, it'll get the next step
+    //     const nextStep = steps[currentStepNumber]
+    //     if (nextStep.prefetch) {
+    //         nextStep.prefetch()
+    //     }
 
-        setCurrentStepNumber(currentStepNumber + 1)
-    }
-    const goToSearch = (): void => history.push(getReturnTo(location))
-    const isCurrentStepComplete = (): boolean => currentStep?.isComplete()
-    const skipPostSignup = (): void => history.push(getReturnTo(location))
+    //     setCurrentStepNumber(currentStepNumber + 1)
+    // }
+    // const goToSearch = (): void => history.push(getReturnTo(location))
+    // const isCurrentStepComplete = (): boolean => currentStep?.isComplete()
+    // const skipPostSignup = (): void => history.push(getReturnTo(location))
 
-    const onStepTabClick = (clickedStepTabNumber: number): void => {
-        /**
-         * User can navigate through the steps by clicking the step's tab when:
-         * 1. navigating back
-         * 2. navigating one step forward when the current step is complete
-         * 3. navigating many steps forward when all of the steps, from the
-         * current one to the clickedStepTabNumber step but not including are
-         * complete.
-         */
+    // const onStepTabClick = (clickedStepTabNumber: number): void => {
+    //     /**
+    //      * User can navigate through the steps by clicking the step's tab when:
+    //      * 1. navigating back
+    //      * 2. navigating one step forward when the current step is complete
+    //      * 3. navigating many steps forward when all of the steps, from the
+    //      * current one to the clickedStepTabNumber step but not including are
+    //      * complete.
+    //      */
 
-        // do nothing for the current tab
-        if (clickedStepTabNumber === currentStepNumber) {
-            return
-        }
+    //     // do nothing for the current tab
+    //     if (clickedStepTabNumber === currentStepNumber) {
+    //         return
+    //     }
 
-        if (clickedStepTabNumber < currentStepNumber) {
-            // allow to navigate back since all of the previous steps had to be completed
-            setCurrentStepNumber(clickedStepTabNumber)
-        } else if (currentStepNumber - 1 === clickedStepTabNumber) {
-            // forward navigation
+    //     if (clickedStepTabNumber < currentStepNumber) {
+    //         // allow to navigate back since all of the previous steps had to be completed
+    //         setCurrentStepNumber(clickedStepTabNumber)
+    //     } else if (currentStepNumber - 1 === clickedStepTabNumber) {
+    //         // forward navigation
 
-            // if navigating to the next tab, check if the current step is completed
-            if (isCurrentStepComplete()) {
-                setCurrentStepNumber(clickedStepTabNumber)
-            }
-        } else {
-            // if navigating further away check [current, ..., clicked)
-            const areInBetweenStepsComplete = steps
-                .slice(currentStepNumber - 1, clickedStepTabNumber - 1)
-                .every(step => step.isComplete())
+    //         // if navigating to the next tab, check if the current step is completed
+    //         if (isCurrentStepComplete()) {
+    //             setCurrentStepNumber(clickedStepTabNumber)
+    //         }
+    //     } else {
+    //         // if navigating further away check [current, ..., clicked)
+    //         const areInBetweenStepsComplete = steps
+    //             .slice(currentStepNumber - 1, clickedStepTabNumber - 1)
+    //             .every(step => step.isComplete())
 
-            if (areInBetweenStepsComplete) {
-                setCurrentStepNumber(clickedStepTabNumber)
-            }
-        }
-    }
+    //         if (areInBetweenStepsComplete) {
+    //             setCurrentStepNumber(clickedStepTabNumber)
+    //         }
+    //     }
+    // }
 
     return (
         <>
@@ -213,7 +213,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="position-absolute ml-3 mt-3 post-signup-page__logo"
                     isLightTheme={true}
                     variant="symbol"
-                    onClick={skipPostSignup}
+                    // onClick={skipPostSignup}
                 />
             </LinkOrSpan>
 
@@ -231,11 +231,6 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             </p>
                             <div className="mt-4 pb-3">
                                 <Steps initialStep={1}>
-                                    <StepList numeric={true}>
-                                        <Step borderColor="purple">Connect with code hosts</Step>
-                                        <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Start searching</Step>
-                                    </StepList>
                                     <StepPanels>
                                         <StepPanel>
                                             {externalServices && (
@@ -267,13 +262,18 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             />
                                         </StepPanel>
                                     </StepPanels>
+                                    <StepList numeric={true}>
+                                        <Step borderColor="purple">Connect with code hosts</Step>
+                                        <Step borderColor="blue">Add repositories</Step>
+                                        <Step borderColor="orange">Start searching</Step>
+                                    </StepList>
                                     <StepActions>
                                         <Footer />
                                     </StepActions>
                                 </Steps>
                             </div>
                             {/* This should be part of step panel */}
-                            <div className="mt-4 pb-3">{currentStep.content}</div>
+                            {/* <div className="mt-4 pb-3">{currentStep.content}</div>
                             <div className="mt-4">
                                 <LoaderButton
                                     type="button"
@@ -294,7 +294,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         Not right now
                                     </button>
                                 )}
-                            </div>
+                            </div> */}
                         </div>
                     }
                 />
@@ -302,3 +302,5 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
         </>
     )
 }
+
+PostSignUpPage.whyDidYouRender = true
