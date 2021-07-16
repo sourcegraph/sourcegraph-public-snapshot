@@ -221,7 +221,7 @@ func TestBulkProcessor(t *testing.T) {
 					},
 					wantRetryable: false,
 				},
-				"bogus changeset ID, dude": {
+				"bogus changeset spec ID, dude": {
 					spec: nil,
 					changeset: ct.TestChangesetOpts{
 						Repo:            repo.ID,
