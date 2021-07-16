@@ -128,7 +128,6 @@ func collectDocumentation(ctx context.Context, state *State) documentationChanne
 		startingDocumentationResult: state.DocumentationResultRoot,
 		dupChecker:                  &duplicateChecker{pathIDs: make(map[string]struct{}, 16*1024)},
 		walkedPages:                 &duplicateChecker{pathIDs: make(map[string]struct{}, 128)},
-		mappings:                    channels.mappings,
 	}
 
 	tmpPages := make(chan *semantic.DocumentationPageData)
@@ -222,10 +221,6 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				log15.Warn("API docs: duplicate pathID forbidden", "pathID", this.PathID)
 				return
 			}
-		}
-		mappings <- semantic.DocumentationMapping{
-			ResultID: documentationResult,
-			PathID:   this.PathID,
 		}
 		if parent != nil {
 			if this.Documentation.NewPage {
