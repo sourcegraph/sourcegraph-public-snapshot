@@ -10,16 +10,84 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
-// TODO(slimsag): future: today we do not consume state.DocumentationResultsByResultSet which will
-// become important for e.g. letting one documentationResult link to another.
+type documentationChannels struct {
+	pages    chan *semantic.DocumentationPageData
+	pathInfo chan *semantic.DocumentationPathInfoData
 
-func collectDocumentationPages(ctx context.Context, state *State) (chan *semantic.DocumentationPageData, chan *semantic.DocumentationPathInfoData) {
-	pages := make(chan *semantic.DocumentationPageData, 1024)
-	pathInfo := make(chan *semantic.DocumentationPathInfoData, 1024)
+	enqueuePages    chan *semantic.DocumentationPageData
+	enqueuePathInfo chan *semantic.DocumentationPathInfoData
+}
+
+func (c *documentationChannels) close() {
+	close(c.enqueuePages)
+	close(c.enqueuePathInfo)
+}
+
+func newDocumentationChannels() documentationChannels {
+	channels := documentationChannels{
+		pages:           make(chan *semantic.DocumentationPageData, 128),
+		pathInfo:        make(chan *semantic.DocumentationPathInfoData, 128),
+		enqueuePages:    make(chan *semantic.DocumentationPageData, 128),
+		enqueuePathInfo: make(chan *semantic.DocumentationPathInfoData, 128),
+	}
+	go func() {
+		dst := channels.pages
+		src := channels.enqueuePages
+		var buf []*semantic.DocumentationPageData
+		for {
+			if len(buf) == 0 {
+				v, ok := <-src
+				if !ok {
+					close(dst)
+					return
+				}
+				buf = append(buf, v)
+			}
+			select {
+			case dst <- buf[0]:
+				buf = buf[1:]
+			case v, ok := <-src:
+				if !ok {
+					close(dst)
+					return
+				}
+				buf = append(buf, v)
+			}
+		}
+	}()
+	go func() {
+		dst := channels.pathInfo
+		src := channels.enqueuePathInfo
+		var buf []*semantic.DocumentationPathInfoData
+		for {
+			if len(buf) == 0 {
+				v, ok := <-src
+				if !ok {
+					close(dst)
+					return
+				}
+				buf = append(buf, v)
+			}
+			select {
+			case dst <- buf[0]:
+				buf = buf[1:]
+			case v, ok := <-src:
+				if !ok {
+					close(dst)
+					return
+				}
+				buf = append(buf, v)
+			}
+		}
+	}()
+	return channels
+}
+
+func collectDocumentation(ctx context.Context, state *State) documentationChannels {
+	channels := newDocumentationChannels()
 	if state.DocumentationResultRoot == -1 {
-		close(pages)
-		close(pathInfo)
-		return pages, pathInfo
+		channels.close()
+		return channels
 	}
 
 	pageCollector := &pageCollector{
@@ -34,7 +102,6 @@ func collectDocumentationPages(ctx context.Context, state *State) (chan *semanti
 
 	tmpPages := make(chan *semantic.DocumentationPageData)
 	go pageCollector.collect(ctx, tmpPages)
-
 	go func() {
 		// Emit path info for each page as a post-processing step once we've collected pages.
 		for page := range tmpPages {
@@ -52,17 +119,16 @@ func collectDocumentationPages(ctx context.Context, state *State) (chan *semanti
 			}
 			isIndex := page.Tree.Label.Value == "" && page.Tree.Detail.Value == ""
 
-			pages <- page
-			pathInfo <- &semantic.DocumentationPathInfoData{
+			channels.enqueuePages <- page
+			channels.enqueuePathInfo <- &semantic.DocumentationPathInfoData{
 				PathID:   page.Tree.PathID,
 				IsIndex:  isIndex,
 				Children: collectChildrenPages(page.Tree),
 			}
 		}
-		close(pages)
-		close(pathInfo)
+		channels.close()
 	}()
-	return pages, pathInfo
+	return channels
 }
 
 type duplicateChecker struct {

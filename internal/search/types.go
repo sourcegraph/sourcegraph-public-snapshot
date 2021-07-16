@@ -3,6 +3,7 @@ package search
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -89,13 +90,15 @@ type SymbolsParameters struct {
 type GlobalSearchMode int
 
 const (
+	DefaultMode GlobalSearchMode = iota
+
 	// ZoektGlobalSearch designates a performance optimised code path for indexed
 	// searches. For a global search we don't need to resolve repos before searching
 	// shards on Zoekt, instead we can resolve repos and call Zoekt concurrently.
 	//
 	// Note: Even for a global search we have to resolve repos to filter search results
 	// returned by Zoekt.
-	ZoektGlobalSearch GlobalSearchMode = iota + 1
+	ZoektGlobalSearch
 
 	// SearcherOnly designated a code path on which we skip indexed search, even if
 	// the user specified index:yes. SearcherOnly is used in conjunction with
@@ -127,6 +130,7 @@ func (m GlobalSearchMode) String() string {
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
 	ResultTypes result.Types
+	Timeout     time.Duration
 
 	// Performance optimization: For global queries, resolving repositories and
 	// querying zoekt happens concurrently.
