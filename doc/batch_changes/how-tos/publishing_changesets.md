@@ -177,7 +177,10 @@ To publish from the Sourcegraph UI, you'll need to remove (or omit) the `publish
 
 Once applied, you can select the changesets you want to publish from the batch change page and publish them using the [publish bulk operation](bulk_operations_on_changesets.md), as demonstrated in this video:
 
-> TODO: VIDEO
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/publish-ui-docs.webm" type="video/webm">
+  <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/publish-ui-docs.mp4" type="video/mp4">
+</video>
 
 ## Specifying Git commit details
 
