@@ -244,6 +244,11 @@ type CloseChangesetsArgs struct {
 	BulkOperationBaseArgs
 }
 
+type PublishChangesetsArgs struct {
+	BulkOperationBaseArgs
+	Draft bool
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -276,6 +281,7 @@ type BatchChangesResolver interface {
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
 	CreateBatchSpecExecution(ctx context.Context, args *CreateBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
+	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 
 	// Queries
 
