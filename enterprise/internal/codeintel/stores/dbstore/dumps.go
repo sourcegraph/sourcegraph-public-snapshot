@@ -397,8 +397,8 @@ candidates AS (
 	ORDER BY u.id FOR UPDATE
 ),
 updated AS (
-	UPDATE lsif_uploads u
-	SET state = 'deleted'
+	UPDATE lsif_uploads
+	SET state = 'deleting'
 	WHERE id IN (SELECT id FROM candidates)
 	RETURNING 1
 )
