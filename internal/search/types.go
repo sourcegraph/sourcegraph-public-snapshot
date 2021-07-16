@@ -131,7 +131,7 @@ func (m GlobalSearchMode) String() string {
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
-	RepoOptions Options
+	RepoOptions RepoOptions
 	ResultTypes result.Types
 	Timeout     time.Duration
 
@@ -250,7 +250,7 @@ func (p *TextPatternInfo) String() string {
 	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
 }
 
-type Options struct {
+type RepoOptions struct {
 	RepoFilters        []string
 	MinusRepoFilters   []string
 	RepoGroupFilters   []string
@@ -270,7 +270,7 @@ type Options struct {
 	Query              query.Q
 }
 
-func (op *Options) String() string {
+func (op *RepoOptions) String() string {
 	var b strings.Builder
 	if len(op.RepoFilters) == 0 {
 		b.WriteString("r=[]")

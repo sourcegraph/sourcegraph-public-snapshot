@@ -51,7 +51,7 @@ type Resolver struct {
 	SearchableReposFunc searchableReposFunc
 }
 
-func (r *Resolver) Resolve(ctx context.Context, op search.Options) (Resolved, error) {
+func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
