@@ -48,11 +48,16 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 
 	codeintelRanges := make([]CodeIntelligenceRange, 0, len(ranges))
 	for _, r := range ranges {
+		documentationPathID, err := s.documentationIDToPathID(ctx, bundleID, r.DocumentationResultID)
+		if err != nil {
+			return nil, err
+		}
 		codeintelRanges = append(codeintelRanges, CodeIntelligenceRange{
-			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
-			Definitions: definitionLocations[r.DefinitionResultID],
-			References:  referenceLocations[r.ReferenceResultID],
-			HoverText:   documentData.Document.HoverResults[r.HoverResultID],
+			Range:               newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+			Definitions:         definitionLocations[r.DefinitionResultID],
+			References:          referenceLocations[r.ReferenceResultID],
+			HoverText:           documentData.Document.HoverResults[r.HoverResultID],
+			DocumentationPathID: documentationPathID,
 		})
 	}
 	sort.Slice(codeintelRanges, func(i, j int) bool {

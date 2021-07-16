@@ -24,6 +24,7 @@ type operations struct {
 	documentationPage       *observation.Operation
 	documentationPathInfo   *observation.Operation
 	documentationIDToPathID *observation.Operation
+	documentation           *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
@@ -63,6 +64,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		documentationPage:       op("DocumentationPage"),
 		documentationPathInfo:   op("DocumentationPathInfo"),
 		documentationIDToPathID: op("DocumentationIDToPathID"),
+		documentation:           op("Documentation"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}

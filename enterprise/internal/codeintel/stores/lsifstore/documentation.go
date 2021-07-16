@@ -131,7 +131,6 @@ func (s *Store) scanFirstDocumentationPathInfoData(rows *sql.Rows, queryErr erro
 	return record, nil
 }
 
-//nolint:unused
 func (s *Store) documentationIDToPathID(ctx context.Context, bundleID int, id semantic.ID) (_ string, err error) {
 	if id == "" {
 		return "", nil
@@ -162,7 +161,6 @@ LIMIT 1
 `
 
 // scanFirstDocumentationPathID reads the first path_id row. If no rows match the query, an empty string is returned.
-//nolint:unused
 func (s *Store) scanFirstDocumentationPathID(rows *sql.Rows, queryErr error) (_ string, err error) {
 	if queryErr != nil {
 		return "", queryErr

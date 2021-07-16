@@ -336,6 +336,21 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): Hover
 
     """
+    The documentation of the symbol under the given document position, if any.
+    """
+    documentation(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): Documentation
+
+    """
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
