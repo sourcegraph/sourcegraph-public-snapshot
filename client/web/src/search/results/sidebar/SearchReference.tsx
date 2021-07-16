@@ -356,14 +356,15 @@ const classNameTokenMap = {
 
 interface SearchReferenceExampleProps {
     example: string
+    onClick: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example }) => {
+const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
     const parseResult = parseSearchQuery(example)
     // We only use valid queries as examples, so this will always be true
     if (parseResult.type === 'success') {
         return (
-            <>
+            <button className="btn p-0 flex-1" type="button" onClick={() => onClick(example)}>
                 {interleave(
                     parseResult.nodes
                         .map(node => {
@@ -388,7 +389,7 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
                         .filter(Boolean),
                     ' '
                 )}
-            </>
+            </button>
         )
     }
     return null
@@ -397,9 +398,14 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
 interface SearchReferenceEntryProps {
     searchReference: SearchReferenceInfo
     onClick: (searchReference: SearchReferenceInfo, negate: boolean) => void
+    onExampleClick: (example: string) => void
 }
 
-const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> = ({ searchReference, onClick }) => {
+const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> = ({
+    searchReference,
+    onClick,
+    onExampleClick,
+}) => {
     const [collapsed, setCollapsed] = useState(true)
     const CollapseIcon = collapsed ? ChevronLeftIcon : ChevronDownIcon
 
@@ -426,13 +432,14 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                 </button>
                 <button
                     type="button"
-                    className={classNames('btn btn-icon mr-1', styles.collapseButton)}
+                    className={classNames('btn btn-icon', styles.collapseButton)}
                     onClick={event => {
                         event.stopPropagation()
                         setCollapsed(collapsed => !collapsed)
                     }}
                     aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                 >
+                    <small className="text-monospace">i</small>
                     <CollapseIcon className="icon-inline" />
                 </button>
             </span>
@@ -463,7 +470,7 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                             <div className={classNames('text-code', styles.examples)}>
                                 {searchReference.examples.map(example => (
                                     <p key={example}>
-                                        <SearchReferenceExample example={example} />
+                                        <SearchReferenceExample example={example} onClick={onExampleClick} />
                                     </p>
                                 ))}
                             </div>
@@ -478,15 +485,17 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
 interface SearchReferenceListProps {
     filters: SearchReferenceInfo[]
     onClick: (info: SearchReferenceInfo, negate: boolean) => void
+    onExampleClick: (example: string) => void
 }
 
-const SearchReferenceList = ({ filters, onClick }: SearchReferenceListProps): ReactElement => (
+const SearchReferenceList = ({ filters, onClick, onExampleClick }: SearchReferenceListProps): ReactElement => (
     <ul className={styles.list}>
         {filters.map(filterInfo => (
             <SearchReferenceEntry
                 searchReference={filterInfo}
                 key={filterInfo.type + filterInfo.placeholder.text}
                 onClick={onClick}
+                onExampleClick={onExampleClick}
             />
         ))}
     </ul>
@@ -522,8 +531,16 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
         },
         [onNavbarQueryChange, navbarSearchQueryState]
     )
+    const updateQueryWithExample = useCallback(
+        (example: string) => {
+            onNavbarQueryChange({ query: navbarSearchQueryState.query.trimRight() + ' ' + example })
+        },
+        [onNavbarQueryChange, navbarSearchQueryState]
+    )
 
-    const filterList = <SearchReferenceList filters={selectedFilters} onClick={updateQuery} />
+    const filterList = (
+        <SearchReferenceList filters={selectedFilters} onClick={updateQuery} onExampleClick={updateQueryWithExample} />
+    )
 
     return (
         <div>
@@ -537,7 +554,11 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
                     </TabList>
                     <TabPanels>
                         <TabPanel>
-                            <SearchReferenceList filters={commonFilters} onClick={updateQuery} />
+                            <SearchReferenceList
+                                filters={commonFilters}
+                                onClick={updateQuery}
+                                onExampleClick={updateQueryWithExample}
+                            />
                         </TabPanel>
                         <TabPanel>{filterList}</TabPanel>
                     </TabPanels>

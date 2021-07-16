@@ -50,14 +50,19 @@
     border-bottom: 1px solid #dbe2f0;
     margin-top: 0.25rem;
     padding: 0.5rem 0.75rem;
-}
 
-.description > * {
-    margin-bottom: 0.5rem;
-}
+    button {
+        font-size: inherit;
+        text-align: left;
+    }
 
-.description > :last-child {
-    margin-bottom: 0;
+    > * {
+        margin-bottom: 0.5rem;
+    }
+
+    > :last-child {
+        margin-bottom: 0;
+    }
 }
 
 .placeholder {
@@ -70,10 +75,10 @@
     margin: 0;
     padding: 0;
     display: none;
-}
 
-.collapse-button:focus {
-    display: inline-block;
+    &:focus {
+        display: inline-block;
+    }
 }
 
 .examples {
