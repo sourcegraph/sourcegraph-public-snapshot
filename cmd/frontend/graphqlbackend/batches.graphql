@@ -2460,6 +2460,10 @@ enum BulkOperationType {
     Bulk close changesets.
     """
     CLOSE
+    """
+    Bulk publish changesets.
+    """
+    PUBLISH
 }
 
 """
