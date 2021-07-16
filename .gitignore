@@ -141,3 +141,5 @@ storybook-static/
 
 # sg command specific things, see ./dev/sg
 sg.config.overwrite.yaml
+
+install-nvm.sh
