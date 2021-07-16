@@ -4,6 +4,7 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
+import UploadIcon from 'mdi-react/UploadIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -46,7 +47,7 @@ const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     ),
     PUBLISH: (
         <>
-            <SourceBranchIcon className="icon-inline text-danger" /> Publish changesets
+            <UploadIcon className="icon-inline text-muted" /> Publish changesets
         </>
     ),
 }
