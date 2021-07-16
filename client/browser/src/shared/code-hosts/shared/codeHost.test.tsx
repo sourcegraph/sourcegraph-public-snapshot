@@ -102,7 +102,7 @@ const commonArguments = () =>
         userSignedIn: true,
         minimalUI: false,
         background: {
-            notifyPrivateRepository: () => Promise.resolve(),
+            notifyPrivateCloudError: () => Promise.resolve(),
             openOptionsPage: () => Promise.resolve(),
         },
     })

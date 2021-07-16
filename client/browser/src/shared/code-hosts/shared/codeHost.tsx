@@ -607,7 +607,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     render: typeof reactDOMRender
     minimalUI: boolean
     hideActions?: boolean
-    background: Pick<BackgroundPageApi, 'notifyPrivateRepository' | 'openOptionsPage'>
+    background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
 }
 
 export function handleCodeHost({
@@ -626,16 +626,6 @@ export function handleCodeHost({
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
-
-    if (isExtension) {
-        // Notify the background page that we are on a private repository
-        // This information will be used to alert the user when using Sourcegraph Cloud
-        // while on a private repository.
-        const isPrivateRepo = !codeHost.getContext || codeHost.getContext().privateRepository
-        background.notifyPrivateRepository(isPrivateRepo).catch(error => {
-            console.error('Error notifying background page of private repository:', error)
-        })
-    }
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -777,6 +767,14 @@ export function handleCodeHost({
                 await background.openOptionsPage()
             }
         }
+        const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
+            setPrivateCloudError(hasPrivateCloudError)
+            if (isExtension) {
+                background.notifyPrivateCloudError(hasPrivateCloudError).catch(error => {
+                    console.error('Error notifying background page of private cloud error:', error)
+                })
+            }
+        }
 
         subscriptions.add(
             combineLatest([
@@ -800,7 +798,7 @@ export function handleCodeHost({
                         // The bound function is constant
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
-                        setPrivateCloudError={setPrivateCloudError}
+                        onPrivateCloudError={onPrivateCloudError}
                     />,
                     mount
                 )
