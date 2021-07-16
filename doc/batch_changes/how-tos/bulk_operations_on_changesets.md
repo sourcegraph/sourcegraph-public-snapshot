@@ -27,8 +27,6 @@ Bulk operations allow a single action to be performed across many changesets in 
 - Close: Only available if filtering by state `open` or `draft`. Tries to close the selected changesets on the code hosts.
 - Publish: Publishes the selected changesets, provided they don't have a [`published` field](../references/batch_spec_yaml_reference.md#changesettemplate-published) in the batch spec. You can choose between draft and normal changesets in the confirmation modal.
 
-_More types coming soon._
-
 ## Monitoring bulk operations
 
 On the **Bulk operations** tab, you can view all bulk operations that have been run over the batch change. Since bulk operations can involve quite some operations to perform, you can track the progress, and see what operations have been performed in the past.
