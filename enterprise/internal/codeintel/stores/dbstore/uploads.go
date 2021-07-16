@@ -660,7 +660,7 @@ func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, 
 	defer func() { err = tx.Done(err) }()
 
 	seconds := strconv.Itoa(int(maxAge / time.Second))
-	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds, now, seconds)))
+	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds)))
 	if err != nil {
 		return 0, err
 	}
@@ -684,19 +684,47 @@ func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, 
 
 const softDeleteOldUploadsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:SoftDeleteOldUploads
-WITH u AS (
+WITH RECURSIVE
+protected_uploads AS (
+	(
+		-- Base case: select all upload records that are yonger than the configured
+		-- retention age, as well as all upload records visible from a non-stale
+		-- branch or tag. These form the roots of our dependency graph traversal.
+
+		SELECT u.id FROM lsif_uploads u
+		WHERE %s - COALESCE(u.finished_at, u.uploaded_at) <= (%s || ' second')::interval
+		UNION
+		SELECT upload_id as id FROM lsif_uploads_visible_at_tip
+	) UNION (
+		-- Iterative case: expand the working set of protected uploads by traversing
+		-- the dependency graph: select all upload records that define an LSIF package
+		-- that is referenced by an upload already in the working set. We skip any
+		-- self-imports here, which may occur on some older Sourcegraph instances.
+
+		SELECT p.dump_id as id
+		FROM protected_uploads pu
+		JOIN lsif_references r ON r.dump_id = pu.id
+		JOIN lsif_packages p ON p.scheme = r.scheme AND p.name = r.name AND p.version = r.version AND p.dump_id != r.dump_id
+	)
+),
+candidates AS (
+	-- Find the inverse of protected_uploads, which contains each upload record
+	-- that is older than the configured retention age and is not reachable via
+	-- the dependencies of any upload in protected_uploads. We also order the
+	-- candidates here to try to acquire the locks in the following update in
+	-- a determinstic order so that we do not deadlock with another query updating
+	-- overlapping records.
+
+	(SELECT id FROM lsif_uploads EXCEPT SELECT id FROM protected_uploads) ORDER BY id
+),
+updated AS (
 	UPDATE lsif_uploads u
 		SET state = 'deleted'
 		WHERE
-			(
-				%s - u.finished_at > (%s || ' second')::interval OR
-				(u.finished_at IS NULL AND %s - u.uploaded_at > (%s || ' second')::interval)
-			) AND
-				-- Anything visible from a non-stale branch or tag is protected from expiration
-				u.id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id)
+			u.id IN (SELECT id FROM candidates)
 		RETURNING id, repository_id
 )
-SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
+SELECT u.repository_id, count(*) FROM updated u GROUP BY u.repository_id
 `
 
 // GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
