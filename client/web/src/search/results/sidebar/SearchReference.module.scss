@@ -73,11 +73,24 @@
 .collapse-button {
     border: none;
     margin: 0;
-    padding: 0;
-    display: none;
+    padding: 0 5px;
+    width: 0;
+    overflow: hidden;
+    transition: width 0.1s ease-in-out;
+    white-space: nowrap;
+
+    * {
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+    }
 
     &:focus {
         display: inline-block;
+        width: 31px;
+
+        * {
+            opacity: 1;
+        }
     }
 }
 
