@@ -569,7 +569,7 @@ func (o Observable) validate() error {
 	if o.Owner == "" && !o.NoAlert {
 		return errors.New("Owner must be defined for observables with alerts")
 	}
-	if !o.Panel.panelType.Valid() {
+	if !o.Panel.panelType.validate() {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}
 
