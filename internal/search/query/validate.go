@@ -501,16 +501,13 @@ func validateParameters(nodes []Node) error {
 func validatePattern(nodes []Node) error {
 	var err error
 	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
+		if err != nil {
+			return
+		}
 		if annotation.Labels.IsSet(Regexp) {
-			if err != nil {
-				return
-			}
 			_, err = regexp.Compile(value)
 		}
 		if annotation.Labels.IsSet(Structural) && negated {
-			if err != nil {
-				return
-			}
 			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
