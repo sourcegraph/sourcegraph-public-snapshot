@@ -58,7 +58,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         type: FilterType.after,
         placeholder: parsePlaceholder('"{last week}"'),
         description:
-            'Only include results from diffs or commits which have a commit date after the specified time frame.',
+            'Only include results from diffs or commits which have a commit date after the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
         commonRank: 100,
         examples: ['after:"6 weeks ago"', 'after:"november 1 2019"'],
     },
@@ -70,6 +70,24 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         examples: ['repo:sourcegraph/ archived:only'],
     },
     {
+        type: FilterType.author,
+        placeholder: parsePlaceholder('{name}'),
+        description: `Only include results from diffs or commits authored by the user. Regexps are supported. Note that they match the whole author string of the form \`Full Name <user@example.com>\`, so to include only authors from a specific domain, use \`author:example.com>$\`.
+
+You can also search by \`committer:git-email\`. *Note: there is a committer only when they are a different user than the author.*
+
+To use this filter, the search query must contain \`type:diff\` or \`type:commit\`.`,
+        examples: ['type:diff author:nick'],
+    },
+    {
+        type: FilterType.before,
+        placeholder: parsePlaceholder('"{last thursday}"'),
+        description:
+            'Only include results from diffs or commits which have a commit date before the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
+        commonRank: 100,
+        examples: ['before:"last thursday"', 'before:"november 1 2019"'],
+    },
+    {
         type: FilterType.case,
         placeholder: parsePlaceholder('{yes}'),
         description: 'Perform a case sensitive query. Without this, everything is matched case insensitively.',
@@ -79,7 +97,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         type: FilterType.content,
         placeholder: parsePlaceholder('"{pattern}"'),
         description:
-            'Set the search pattern with a dedicated parameter. Useful when searching literally for a string that may conflict with the [search pattern syntax](https://docs.sourcegraph.com/code_search/reference/queries#search-pattern-syntax). In between the quotes, the `\\` character will need to be escaped (`\\\\` to evaluate for `\\`).',
+            'Set the search pattern with a dedicated parameter. Useful when searching literally for a string that may conflict with the search pattern syntax. In between the quotes, the `\\` character will need to be escaped (`\\\\` to evaluate for `\\`).',
         commonRank: 70,
         examples: ['repo:sourcegraph content:"repo:sourcegraph"', 'file:Dockerfile alpine -content:alpine:latest'],
     },
@@ -99,6 +117,12 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         examples: ['file:.js$ httptest', 'file:internal/ httptest', 'file:.js$ -file:test http'],
     },
     {
+        type: FilterType.file,
+        placeholder: parsePlaceholder('contains.content({regexp-pattern})'),
+        description: 'Search only inside files that contain content matching the provided regexp pattern.',
+        examples: ['file:contains.content(github.com/sourcegraph/sourcegraph)'],
+    },
+    {
         type: FilterType.fork,
         placeholder: parsePlaceholder('{yes/only}'),
         description:
@@ -114,10 +138,18 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
         examples: ['lang:typescript encoding', '-lang:typescript encoding'],
     },
     {
+        type: FilterType.message,
+        placeholder: parsePlaceholder('"{any string}"'),
+        description: `Only include results from diffs or commits which have commit messages containing the string.
+
+To use this filter, the search query must contain \`type:diff\` or \`type:commit\`.`,
+        examples: ['type:commit message:"testing"', 'type:diff message:"testing"'],
+    },
+    {
         type: FilterType.repo,
         placeholder: parsePlaceholder('{regexp-pattern}'),
         description:
-            'Only include results from repositories whose path matches the regexp-pattern. A repository’s path is a string such as *github.com/myteam/abc* or *code.example.com/xyz* that depends on your organization’s repository host. If the regexp ends in [`@rev`](https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions), that revision is searched instead of the default branch (usually `master`). `repo:regexp-pattern@rev` is equivalent to `repo:regexp-pattern rev:rev`.',
+            'Only include results from repositories whose path matches the regexp-pattern. A repository’s path is a string such as *github.com/myteam/abc* or *code.example.com/xyz* that depends on your organization’s repository host. If the regexp ends in `@rev`, that revision is searched instead of the default branch (usually `master`). `repo:regexp-pattern@rev` is equivalent to `repo:regexp-pattern rev:rev`.',
         commonRank: 10,
         examples: [
             'repo:gorilla/mux testroute',
@@ -134,14 +166,33 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.repo,
-        placeholder: parsePlaceholder('contains.{file/content/commit}'),
+        placeholder: parsePlaceholder('contains.file({path})'),
+        description: 'Search only inside repositories that contain a file path matching the regular expression.',
+        examples: ['repo:contains.file(README)'],
+        showSuggestions: false,
+    },
+    {
+        type: FilterType.repo,
+        placeholder: parsePlaceholder('contains.content({content})'),
+        description: 'Search only inside repositories that contain file content matching the regular expression.',
+        examples: ['repo:contains.content(TODO)'],
+        showSuggestions: false,
+    },
+    {
+        type: FilterType.repo,
+        placeholder: parsePlaceholder('contains({file:path content:content})'),
         description:
-            'Conditionally search inside repositories only if contain certain files or commits after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats.',
-        examples: [
-            'repo:contains.commit.after(yesterday)',
-            'repo:contains.commit.after(june 25 2017)',
-            'repo:contains.file(.py) file:Dockerfile pip',
-        ],
+            'Search only inside repositories that contain a file matching the `file:` with `content:` filters.',
+        examples: ['repo:contains(file:CHANGELOG content:fix)'],
+        showSuggestions: false,
+    },
+    {
+        type: FilterType.repo,
+        placeholder: parsePlaceholder('contains.commit.after({date})'),
+        description:
+            'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
+        examples: ['repo:contains.commit.after(1 month ago)', 'repo:contains.commit.after(june 25 2017)'],
+        showSuggestions: false,
     },
     {
         type: FilterType.rev,
@@ -175,7 +226,7 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     },
     {
         type: FilterType.visibility,
-        placeholder: parsePlaceholder('{any}'),
+        placeholder: parsePlaceholder('{any/private/public}'),
         description:
             'Filter results to only public or private repositories. The default is to include both private and public repositories.',
         examples: ['type:repo visibility:public'],
@@ -373,7 +424,7 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
                                     return (
                                         <>
                                             <span className="search-filter-keyword">{node.field}:</span>
-                                            {node.value}
+                                            {/\s/.test(node.value) ? `"${node.value}"` : node.value}
                                         </>
                                     )
                                 case 'pattern':
