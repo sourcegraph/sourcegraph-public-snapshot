@@ -1,6 +1,6 @@
 # Row-level security
 
-Newer versions of Postgres provide a [row-level security](https://www.postgresql.org/docs/13/ddl-rowsecurity.html) mechanism (often abbreviated as "RLS") that can restrict table access in a granular, per-user fashion. Sourcegraph uses this mechanism in its [Cloud](https://sourcegraph.com/search) product to provide data isolation and protection guarantees beyond those supplied by application-level techniques. This document serves as a brief overview of the concept, its application at Sourcegraph and administrative implications.
+Starting with version 9.5, Postgres provides a [row-level security](https://www.postgresql.org/docs/13/ddl-rowsecurity.html) mechanism (abbreviated as "RLS") that can restrict table access in a granular, per-user fashion. Sourcegraph uses this mechanism to provide data isolation and protection guarantees beyond those supplied by application-level techniques. This document serves as a brief overview of the concept, its application at Sourcegraph and administrative implications.
 
 ## Basics of RLS
 
