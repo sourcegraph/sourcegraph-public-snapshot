@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 
 	"github.com/inconshreveable/log15"
@@ -82,6 +84,8 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 	if !disableHistorical {
 		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, settingStore, insightsStore, observationContext))
 	}
+
+	routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, timescale))
 
 	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }

@@ -97,10 +97,53 @@ func TestGet(t *testing.T) {
 		}
 	})
 
-	t.Run("test get by unique id", func(t *testing.T) {
+	t.Run("test get by unique ids", func(t *testing.T) {
 		store := NewInsightStore(timescale)
 
 		got, err := store.Get(ctx, InsightQueryArgs{UniqueIDs: []string{"unique-1"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(got)
+		want := []types.InsightViewSeries{
+			{
+				UniqueID:              "unique-1",
+				SeriesID:              "series-id-1",
+				Title:                 "test title",
+				Description:           "test description",
+				Query:                 "query-1",
+				CreatedAt:             now,
+				OldestHistoricalAt:    now,
+				LastRecordedAt:        now,
+				NextRecordingAfter:    now,
+				RecordingIntervalDays: 5,
+				Label:                 "label1",
+				Stroke:                "color1",
+			},
+			{
+				UniqueID:              "unique-1",
+				SeriesID:              "series-id-2",
+				Title:                 "test title",
+				Description:           "test description",
+				Query:                 "query-2",
+				CreatedAt:             now,
+				OldestHistoricalAt:    now,
+				LastRecordedAt:        now,
+				NextRecordingAfter:    now,
+				RecordingIntervalDays: 6,
+				Label:                 "label2",
+				Stroke:                "color2",
+			},
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("test get by unique ids", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: "unique-1"})
 		if err != nil {
 			t.Fatal(err)
 		}

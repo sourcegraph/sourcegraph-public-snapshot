@@ -37,10 +37,16 @@ func (s *InsightStore) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other)}
 }
 
+func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &InsightStore{Store: txBase, Now: s.Now}, err
+}
+
 // InsightQueryArgs contains query predicates for fetching viewable insight series. Any provided values will be
 // included as query arguments.
 type InsightQueryArgs struct {
 	UniqueIDs []string
+	UniqueID  string
 }
 
 // Get returns all matching viewable insight series.
@@ -54,6 +60,10 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 		}
 		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
+	if len(args.UniqueID) > 0 {
+		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
@@ -126,6 +136,13 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (
 func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	if series.CreatedAt.IsZero() {
 		series.CreatedAt = s.Now()
+	}
+	if series.NextRecordingAfter.IsZero() {
+		series.NextRecordingAfter = s.Now()
+	}
+	if series.OldestHistoricalAt.IsZero() {
+		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
+		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 365)
 	}
 	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightSeriesSql,
 		series.SeriesID,
