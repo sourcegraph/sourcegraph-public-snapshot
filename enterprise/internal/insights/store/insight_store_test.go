@@ -191,13 +191,12 @@ func TestCreateView(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 	now := time.Now()
+	ctx := context.Background()
 
 	store := NewInsightStore(timescale)
 	store.Now = func() time.Time {
 		return now
 	}
-
-	ctx := context.Background()
 
 	t.Run("test create view", func(t *testing.T) {
 
@@ -221,6 +220,73 @@ func TestCreateView(t *testing.T) {
 
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight view (want/got): %s", diff)
+		}
+	})
+}
+
+func TestAttachSeriesView(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now()
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test attach and fetch", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID:              "unique-1",
+			Query:                 "query-1",
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:    now,
+			RecordingIntervalDays: 4,
+		}
+		series, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+		view := types.InsightView{
+			Title:       "my view",
+			Description: "my view description",
+			UniqueID:    "1234567",
+		}
+		view, err = store.CreateView(ctx, view)
+		if err != nil {
+			t.Fatal(err)
+		}
+		metadata := types.InsightViewSeriesMetadata{
+			Label:  "my label",
+			Stroke: "my stroke",
+		}
+		err = store.AttachSeriesToView(ctx, series, view, metadata)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := store.Get(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := []types.InsightViewSeries{{
+			UniqueID:              view.UniqueID,
+			SeriesID:              series.SeriesID,
+			Title:                 view.Title,
+			Description:           view.Description,
+			Query:                 series.Query,
+			CreatedAt:             series.CreatedAt,
+			OldestHistoricalAt:    series.OldestHistoricalAt,
+			LastRecordedAt:        series.LastRecordedAt,
+			NextRecordingAfter:    series.NextRecordingAfter,
+			RecordingIntervalDays: series.RecordingIntervalDays,
+			Label:                 "my label",
+			Stroke:                "my stroke",
+		}}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
 		}
 	})
 }

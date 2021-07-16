@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/keegancsmith/sqlf"
@@ -35,10 +37,13 @@ func (s *InsightStore) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other)}
 }
 
+// InsightQueryArgs contains query predicates for fetching viewable insight series. Any provided values will be
+// included as query arguments.
 type InsightQueryArgs struct {
 	UniqueIDs []string
 }
 
+// Get returns all matching viewable insight series.
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
 	preds := make([]*sqlf.Query, 0)
 
@@ -82,6 +87,23 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	return results, nil
 }
 
+// AttachSeriesToView will associate a given insight data series with a given insight view.
+func (s *InsightStore) AttachSeriesToView(ctx context.Context,
+	series types.InsightSeries,
+	view types.InsightView,
+	metadata types.InsightViewSeriesMetadata) error {
+	if series.ID == 0 || view.ID == 0 {
+		return errors.New("input series or view not found")
+	}
+	err := s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
 func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (types.InsightView, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightViewSql,
 		view.Title,
@@ -100,6 +122,7 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (
 	return view, nil
 }
 
+// CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
 func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	if series.CreatedAt.IsZero() {
 		series.CreatedAt = s.Now()
@@ -125,7 +148,14 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	return series, nil
 }
 
+const attachSeriesToViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:AttachSeriesToView
+INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
+VALUES (%s, %s, %s, %s);
+`
+
 const createInsightViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:CreateView
 INSERT INTO insight_view (title, description, unique_id)
 VALUES (%s, %s, %s)
 returning id;`
