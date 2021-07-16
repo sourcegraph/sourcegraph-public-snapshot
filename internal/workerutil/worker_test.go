@@ -34,9 +34,8 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
-	var cancel int
-	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, func() { cancel++ }, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
 	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
 
 	worker := newWorker(context.Background(), store, handler, options, clock)
@@ -55,10 +54,6 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 	} else if id := store.MarkCompleteFunc.History()[0].Arg1; id != 42 {
 		t.Errorf("unexpected id argument to mark complete. want=%v have=%v", 42, id)
 	}
-
-	if cancel != 1 {
-		t.Errorf("unexpected cancel call count. want=%d have=%d", 1, cancel)
-	}
 }
 
 func TestWorkerHandlerFailure(t *testing.T) {
@@ -73,9 +68,8 @@ func TestWorkerHandlerFailure(t *testing.T) {
 		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
-	var cancel int
-	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, func() { cancel++ }, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
 	store.MarkErroredFunc.SetDefaultReturn(true, nil)
 	handler.HandleFunc.SetDefaultReturn(errors.Errorf("oops"))
 
@@ -97,10 +91,6 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	} else if failureMessage := store.MarkErroredFunc.History()[0].Arg2; failureMessage != "oops" {
 		t.Errorf("unexpected failure message argument to mark errored. want=%q have=%q", "oops", failureMessage)
 	}
-
-	if cancel != 1 {
-		t.Errorf("unexpected cancel call count. want=%d have=%d", 1, cancel)
-	}
 }
 
 type nonRetryableTestErr struct{}
@@ -120,9 +110,8 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
-	var cancel int
-	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, func() { cancel++ }, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
 	store.MarkFailedFunc.SetDefaultReturn(true, nil)
 
 	testErr := nonRetryableTestErr{}
@@ -146,10 +135,6 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 	} else if failureMessage := store.MarkFailedFunc.History()[0].Arg2; failureMessage != testErr.Error() {
 		t.Errorf("unexpected failure message argument to mark failed. want=%q have=%q", testErr.Error(), failureMessage)
 	}
-
-	if cancel != 1 {
-		t.Errorf("unexpected cancel call count. want=%d have=%d", 1, cancel)
-	}
 }
 
 func TestWorkerConcurrent(t *testing.T) {
@@ -172,12 +157,11 @@ func TestWorkerConcurrent(t *testing.T) {
 				Metrics:        NewMetrics(&observation.TestContext, "", nil),
 			}
 
-			cancelCalls := make([]int, NumTestRecords)
 			for i := 0; i < NumTestRecords; i++ {
 				index := i
-				store.DequeueFunc.PushReturn(TestRecord{ID: i}, func() { cancelCalls[index]++ }, true, nil)
+				store.DequeueFunc.PushReturn(TestRecord{ID: index}, true, nil)
 			}
-			store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+			store.DequeueFunc.SetDefaultReturn(nil, false, nil)
 
 			var m sync.Mutex
 			times := map[int][2]time.Time{}
@@ -244,12 +228,6 @@ func TestWorkerConcurrent(t *testing.T) {
 			if numHandlers > 1 && intersecting == 0 {
 				t.Errorf("no handler routines were concurrent")
 			}
-
-			for i := 0; i < NumTestRecords; i++ {
-				if cancelCalls[i] != 1 {
-					t.Errorf("unexpected cancel call count (record #%d). want=%d have=%d", i, 1, cancelCalls[i])
-				}
-			}
 		})
 	}
 }
@@ -266,8 +244,8 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
-	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, func() {}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
 
 	// Block all dequeues
 	handler.PreDequeueFunc.SetDefaultReturn(false, nil, nil)
@@ -294,11 +272,10 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 		Metrics:        NewMetrics(&observation.TestContext, "", nil),
 	}
 
-	var cancel1, cancel2, cancel3 int
-	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, func() { cancel1++ }, true, nil)
-	store.DequeueFunc.PushReturn(TestRecord{ID: 43}, func() { cancel2++ }, true, nil)
-	store.DequeueFunc.PushReturn(TestRecord{ID: 44}, func() { cancel3++ }, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
+	store.DequeueFunc.PushReturn(TestRecord{ID: 43}, true, nil)
+	store.DequeueFunc.PushReturn(TestRecord{ID: 44}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
 
 	// Return additional arguments
 	handler.PreDequeueFunc.PushReturn(true, "A", nil)
@@ -324,16 +301,6 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 				t.Errorf("unexpected extra argument for dequeue call %d. want=%q have=%q", i, expected, extra)
 			}
 		}
-	}
-
-	if cancel1 != 1 {
-		t.Errorf("unexpected cancel call count (record 1). want=%d have=%d", 1, cancel1)
-	}
-	if cancel2 != 1 {
-		t.Errorf("unexpected cancel call count (record 2). want=%d have=%d", 1, cancel2)
-	}
-	if cancel3 != 1 {
-		t.Errorf("unexpected cancel call count (record 3). want=%d have=%d", 1, cancel3)
 	}
 }
 

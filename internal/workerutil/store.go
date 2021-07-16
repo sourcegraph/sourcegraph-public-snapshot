@@ -22,7 +22,9 @@ type Store interface {
 	// flag indicating the existence of a processable record along with a cancel function that should be called once
 	// the record is finished being processed. This will release any resources used to lock the record from selection
 	// by another concurrent worker process.
-	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, context.CancelFunc, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, bool, error)
+
+	Heartbeat(ctx context.Context, id int) error
 
 	// AddExecutionLogEntry adds an executor log entry to the record.
 	AddExecutionLogEntry(ctx context.Context, id int, entry ExecutionLogEntry) error

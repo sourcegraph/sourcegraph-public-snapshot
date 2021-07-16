@@ -24,7 +24,7 @@ import (
 // job as "processing" and locking the record during processing. An unlocked row that is
 // marked as processing likely indicates that the executor that dequeued the job has died.
 // There should be a nearly-zero delay between these states during normal operation.
-const executorStalledJobMaximumAge = time.Second * 5
+const executorStalledJobMaximumAge = time.Second * 25
 
 // executorMaximumNumResets is the maximum number of times a job can be reset. If a job's failed
 // attempts counter reaches this threshold, it will be moved into "errored" rather than
@@ -39,7 +39,6 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 	OrderByExpression: sqlf.Sprintf("batch_spec_executions.created_at, batch_spec_executions.id"),
 	StalledMaxAge:     executorStalledJobMaximumAge,
 	MaxNumResets:      executorMaximumNumResets,
-	HeartbeatInterval: 1 * time.Second,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
 }

@@ -12,8 +12,15 @@ import (
 // executor erroneously claims to hold (and are sent back as a hint to stop processing).
 func (h *handler) heartbeat(ctx context.Context, executorName string, jobIDs []int) ([]int, error) {
 	unknownIDs := h.unknownJobs(executorName, jobIDs)
-	deadJobs := h.pruneJobs(executorName, jobIDs)
+	executor, deadJobs := h.pruneJobs(executorName, jobIDs)
 	err := h.requeueJobs(ctx, deadJobs)
+	err2 := h.heartbeatJobs(ctx, executor)
+	if err != nil && err2 != nil {
+		err = multierror.Append(err, err2)
+	}
+	if err2 != nil {
+		err = err2
+	}
 	return unknownIDs, err
 }
 
@@ -21,18 +28,6 @@ func (h *handler) heartbeat(ctx context.Context, executorName string, jobIDs []i
 // in a while. This method is called periodically in the background.
 func (h *handler) cleanup(ctx context.Context) error {
 	return h.requeueJobs(ctx, h.pruneExecutors())
-}
-
-// shutdown releases all transactions. This method is called on process shutdown.
-func (h *handler) shutdown() {
-	h.m.Lock()
-	defer h.m.Unlock()
-
-	for _, executor := range h.executors {
-		for _, job := range executor.jobs {
-			job.cancel()
-		}
-	}
 }
 
 // unknownJobs returns the set of job identifiers reported by the executor which do not
@@ -66,7 +61,7 @@ func (h *handler) unknownJobs(executorName string, ids []int) []int {
 
 // pruneJobs updates the set of job identifiers assigned to the given executor and returns
 // any job that was known to us but not reported by the executor.
-func (h *handler) pruneJobs(executorName string, ids []int) (dead []jobMeta) {
+func (h *handler) pruneJobs(executorName string, ids []int) (executor *executorMeta, dead []jobMeta) {
 	now := h.clock.Now()
 
 	idMap := map[int]struct{}{}
@@ -94,7 +89,7 @@ func (h *handler) pruneJobs(executorName string, ids []int) (dead []jobMeta) {
 
 	executor.jobs = live
 	executor.lastUpdate = now
-	return dead
+	return executor, dead
 }
 
 // pruneExecutors will release the transactions held by any executor that has not sent a
@@ -113,6 +108,28 @@ func (h *handler) pruneExecutors() (jobs []jobMeta) {
 	}
 
 	return jobs
+}
+
+func (h *handler) heartbeatJobs(ctx context.Context, executor *executorMeta) (errs error) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
+	for _, job := range executor.jobs {
+		if err := h.heartbeatJob(ctx, job); err != nil {
+			errs = multierror.Append(errs, err)
+		}
+	}
+
+	return errs
+}
+
+func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {
+	queueOptions, ok := h.options.QueueOptions[job.queueName]
+	if !ok {
+		return ErrUnknownQueue
+	}
+
+	return queueOptions.Store.Heartbeat(ctx, job.record.RecordID())
 }
 
 // requeueJobs releases and requeues each of the given jobs.
@@ -134,6 +151,5 @@ func (h *handler) requeueJob(ctx context.Context, job jobMeta) error {
 	}
 
 	defer func() { h.dequeueSemaphore <- struct{}{} }()
-	defer job.cancel()
 	return queueOptions.Store.Requeue(ctx, job.record.RecordID(), h.clock.Now().Add(h.options.RequeueDelay))
 }
