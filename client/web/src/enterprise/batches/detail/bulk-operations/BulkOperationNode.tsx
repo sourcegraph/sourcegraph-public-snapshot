@@ -44,6 +44,11 @@ const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
             <SourceBranchIcon className="icon-inline text-danger" /> Close changesets
         </>
     ),
+    PUBLISH: (
+        <>
+            <SourceBranchIcon className="icon-inline text-danger" /> Publish changesets
+        </>
+    ),
 }
 
 export interface BulkOperationNodeProps {
