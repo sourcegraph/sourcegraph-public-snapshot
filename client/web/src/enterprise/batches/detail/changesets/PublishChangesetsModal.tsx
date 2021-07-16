@@ -52,7 +52,7 @@ export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsMo
         >
             <h3 id={MODAL_LABEL_ID}>Publish changesets</h3>
             <p className="mb-4">
-                Are you sure you want to attempt to publish all the selected changesets to the code hosts?
+                Are you sure you want to publish all the selected changesets to the code hosts?
             </p>
             <Form>
                 <div className="form-group">
