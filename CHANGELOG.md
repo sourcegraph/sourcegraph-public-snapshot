@@ -1262,7 +1262,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 
 ## 3.11.0
 
-**Important:** If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps in: [migration notes for Sourcegraph v3.11+](doc/admin/migration/3_11.md) after upgrading.
+**Important:** If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps in: [migration notes for Sourcegraph v3.11+](https://docs.sourcegraph.com/admin/migration/3_11.md) after upgrading.
 
 ### Added
 
@@ -1298,7 +1298,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 
 ### Removed
 
-- The management console has been removed. All critical configuration previously stored in the management console will be automatically migrated to your site configuration. For more information about this change, or if you use `SITE_CONFIG_FILE` / `CRITICAL_CONFIG_FILE`, please see the [migration notes for Sourcegraph v3.11+](doc/admin/migration/3_11.md).
+- The management console has been removed. All critical configuration previously stored in the management console will be automatically migrated to your site configuration. For more information about this change, or if you use `SITE_CONFIG_FILE` / `CRITICAL_CONFIG_FILE`, please see the [migration notes for Sourcegraph v3.11+](https://docs.sourcegraph.com/admin/migration/3_11.md).
 
 ## 3.10.4
 
@@ -1471,12 +1471,12 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 
 ### Added
 
-- A [migration guide for Sourcegraph v3.7+](doc/admin/migration/3_7.md).
+- A [migration guide for Sourcegraph v3.7+](https://docs.sourcegraph.com/admin/migration/3_7.md).
 
 ### Fixed
 
 - Fixed an issue where some repositories with very long symbol names would fail to index after v3.7.
-- We now retain one prior search index version after an upgrade, meaning upgrading AND downgrading from v3.6.2 <-> v3.7.2 is now 100% seamless and involves no downtime or negated search performance while repositories reindex. Please refer to the [v3.7+ migration guide](doc/admin/migration/3_7.md) for details.
+- We now retain one prior search index version after an upgrade, meaning upgrading AND downgrading from v3.6.2 <-> v3.7.2 is now 100% seamless and involves no downtime or negated search performance while repositories reindex. Please refer to the [v3.7+ migration guide](https://docs.sourcegraph.com/admin/migration/3_7.md) for details.
 
 ## 3.7.1
 
@@ -1908,7 +1908,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 
 - Added Docker-specific help text when running the Sourcegraph docker image in an environment with an sufficient open file descriptor limit.
 - Added syntax highlighting for Kotlin and Dart.
-- Added a management console environment variable to disable HTTPS, see [the docs](doc/admin/management_console.md#can-i-disable-https-on-the-management-console) for more information.
+- Added a management console environment variable to disable HTTPS, see [the docs](https://docs.sourcegraph.com/admin/management_console.md#can-i-disable-https-on-the-management-console) for more information.
 - Added `auth.disableUsernameChanges` to critical configuration to prevent users from changing their usernames.
 - Site admins can query a user by email address or username from the GraphQL API.
 - Added a search query builder to the main search page. Click "Use search query builder" to open the query builder, which is a form with separate inputs for commonly used search keywords.
@@ -1920,7 +1920,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 
 ### Fixed
 
-- Fixed an issue where the management console would improperly regenerate the TLS cert/key unless `CUSTOM_TLS=true` was set. See the documentation for [how to use your own TLS certificate with the management console](doc/admin/management_console.md#how-can-i-use-my-own-tls-certificates-with-the-management-console).
+- Fixed an issue where the management console would improperly regenerate the TLS cert/key unless `CUSTOM_TLS=true` was set. See the documentation for [how to use your own TLS certificate with the management console](https://docs.sourcegraph.com/admin/management_console.md#how-can-i-use-my-own-tls-certificates-with-the-management-console).
 
 ## 3.0.1
 
@@ -1940,7 +1940,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 
 ## 3.0.0
 
-See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migration/3_0.md) upgrade guide if you are upgrading from 2.x.
+See the changelog entries for 3.0.0 beta releases and our [3.0](https://docs.sourcegraph.com/admin/migration/3_0.md) upgrade guide if you are upgrading from 2.x.
 
 ## 3.0.0-beta.4
 
