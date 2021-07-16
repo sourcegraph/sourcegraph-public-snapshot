@@ -1,8 +1,35 @@
-import { ApolloError, ApolloQueryResult, QueryLazyOptions } from '@apollo/client'
+import {
+    ApolloError,
+    ApolloQueryResult,
+    QueryLazyOptions,
+    gql,
+    MutationFunctionOptions,
+    FetchResult,
+    makeVar,
+} from '@apollo/client'
 
-import { useLazyQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { useLazyQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { Maybe, Exact, UserRepositoriesResult, UserRepositoriesVariables } from '../graphql-operations'
+import {
+    Maybe,
+    Exact,
+    UserRepositoriesResult,
+    UserRepositoriesVariables,
+    SetExternalServiceReposResult,
+    SetExternalServiceReposVariables,
+} from '../graphql-operations'
+
+export interface MinSelectedRepo {
+    name: string
+    externalRepository: {
+        serviceType: string
+    }
+}
+
+type SelectedRepos = MinSelectedRepo[] | undefined
+const SelectedReposInitialValue: SelectedRepos = undefined
+
+export const selectedReposVar = makeVar<SelectedRepos>(SelectedReposInitialValue)
 
 interface UseSelectedReposResult {
     selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | undefined
@@ -39,7 +66,36 @@ interface UseSelectedReposResult {
     ) => void
 }
 
-const SELECTED_REPOS = gql`
+const SAVE_SELECTED_REPOS = gql`
+    mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
+        setExternalServiceRepos(id: $id, allRepos: $allRepos, repos: $repos) {
+            alwaysNil
+        }
+    }
+`
+
+type UseSaveSelectedReposResult = (
+    options?:
+        | MutationFunctionOptions<
+              SetExternalServiceReposResult,
+              Exact<{
+                  id: string
+                  allRepos: boolean
+                  repos: Maybe<string[]>
+              }>
+          >
+        | undefined
+) => Promise<FetchResult<SetExternalServiceReposResult>>
+
+export const useSaveSelectedRepos = (): UseSaveSelectedReposResult => {
+    const [saveSelectedRepos] = useMutation<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
+        SAVE_SELECTED_REPOS
+    )
+
+    return saveSelectedRepos
+}
+
+export const SELECTED_REPOS = gql`
     query UserSelectedRepositories(
         $id: ID!
         $first: Int

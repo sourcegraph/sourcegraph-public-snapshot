@@ -17,7 +17,7 @@ import { getReturnTo } from './SignInSignUpCommon'
 import { useAffiliatedRepos } from './useAffiliatedRepos'
 import { useExternalServices } from './useExternalServices'
 import { useRepoCloningStatus } from './useRepoCloningStatus'
-import { useSelectedRepos } from './useSelectedRepos'
+import { useSelectedRepos, selectedReposVar } from './useSelectedRepos'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
@@ -51,7 +51,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
         repos: cloningStatusLines,
         loading: cloningStatusLoading,
         isDoneCloning,
-    } = useRepoCloningStatus({ userId: user.id, pollInterval: 2000 })
+    } = useRepoCloningStatus({ userId: user.id, pollInterval: 2000, selectedReposVar })
 
     const { externalServices, loadingServices, errorServices, refetchExternalServices } = useExternalServices(user.id)
     // const { fetchAffiliatedRepos, affiliatedRepos } = useAffiliatedRepos(user.id)
@@ -302,5 +302,3 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
         </>
     )
 }
-
-PostSignUpPage.whyDidYouRender = true
