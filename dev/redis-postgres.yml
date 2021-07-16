@@ -2,6 +2,9 @@
 # development, via docker-compose.
 # See doc/dev/getting-started/quickstart_6_start_server.md for how to
 # use it.
+# For convenience, you can use source `.redis-postgres.env` for relevant configuration.
+#
+# You can also use `sg run redis-postgres`.
 services:
   redis:
     image: redis

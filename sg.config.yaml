@@ -483,6 +483,9 @@ commands:
       CONTAINER: codeinsights-db
       PORT: 5435
 
+  redis-postgres:
+    cmd: docker-compose -f dev/redis-postgres.yml up
+
 checks:
   docker:
     cmd: docker version
