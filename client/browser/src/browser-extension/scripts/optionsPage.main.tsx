@@ -193,8 +193,7 @@ const Options: React.FunctionComponent = () => {
                 optionFlags={optionFlagsWithValues}
                 onChangeOptionFlag={handleChangeOptionFlag}
                 showPrivateRepositoryAlert={
-                    // TODO(tj): change this to only render when "privateCloudError" is  true
-                    currentTabStatus?.status.hasPrivateCloudError && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL // redundant check
+                    currentTabStatus?.status.hasPrivateCloudError && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
                 }
                 showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                 permissionAlert={permissionAlert}
