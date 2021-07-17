@@ -133,50 +133,6 @@ func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context
 	return tr, ctx
 }
 
-// SetClonedRepos updates cloned status for all repositories.
-// All repositories whose name is in repoNames will have their cloned column set to true
-// and every other repository will have it set to false.
-func (s *Store) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
-	tr, ctx := s.trace(ctx, "Store.SetClonedRepos")
-	tr.LogFields(otlog.Int("count", len(repoNames)))
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(repoNames))
-
-		s.Metrics.SetClonedRepos.Observe(secs, count, &err)
-		logging.Log(s.Log, "store.set-cloned-repos", &err, "count", len(repoNames))
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	if len(repoNames) == 0 {
-		return nil
-	}
-
-	q := sqlf.Sprintf(setClonedReposQueryFmtstr, pq.StringArray(repoNames))
-
-	return s.Exec(ctx, q)
-}
-
-const setClonedReposQueryFmtstr = `
--- source: internal/repos/store.go:DBStore.SetClonedRepos
-WITH repo_names AS (
-  SELECT unnest(%s::citext[])::citext AS name
-),
-cloned_repos AS (
-  SELECT repo.id AS id FROM repo_names JOIN repo ON repo.name = repo_names.name
-),
-not_cloned AS (
-  UPDATE repo SET cloned = false
-  WHERE NOT EXISTS (SELECT FROM cloned_repos WHERE repo.id = id) AND cloned
-)
-UPDATE repo
-SET cloned = true
-WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT cloned
-`
-
 // CountUserAddedRepos counts the total number of repos that have been added
 // by user owned external services. If userIDs are specified, only repos owned by the given
 // users are counted.
