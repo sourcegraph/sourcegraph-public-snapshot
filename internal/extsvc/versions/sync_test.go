@@ -93,7 +93,7 @@ func (f *fakeVersionSource) Version(context.Context) (string, error) {
 }
 
 func newFakeSourcer(fakeSource *fakeVersionSource) repos.Sourcer {
-	return func(es ...*types.ExternalService) (repos.Sources, error) {
-		return repos.Sources([]repos.Source{fakeSource}), nil
+	return func(e *types.ExternalService) (repos.Source, error) {
+		return fakeSource, nil
 	}
 }

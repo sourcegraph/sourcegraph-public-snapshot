@@ -218,7 +218,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					ExternalServiceSyncError: &ExternalServiceSyncError{
-						Message:           "1 error occurred:\n\t* github is down\n\n",
+						Message:           "github is down",
 						ExternalServiceId: siteLevelService.ID,
 					},
 				},
