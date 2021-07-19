@@ -1,4 +1,5 @@
 import React from 'react'
+import { Redirect } from 'react-router'
 
 import { RepoContainerRoute } from '../../repo/RepoContainer'
 import { RepoRevisionContainerRoute } from '../../repo/RepoRevisionContainer'
@@ -20,11 +21,14 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
 
     {
         path: '/-/batch-changes',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryBatchChangesArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context =>
+            !context.showBatchChanges ? (
+                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                    <RepositoryBatchChangesArea {...context} />
+                </RepositoryGitDataContainer>
+            ) : (
+                <Redirect to="https://about.sourcegraph.com/batch-changes" />
+            ),
     },
 ]
 
