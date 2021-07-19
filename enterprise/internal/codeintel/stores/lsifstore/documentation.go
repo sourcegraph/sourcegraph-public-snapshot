@@ -231,7 +231,7 @@ func (s *Store) scanFirstDocumentationResultID(rows *sql.Rows, queryErr error) (
 // DocumentationDefinitions returns the set of locations defining the symbol found at the given path ID, if any.
 func (s *Store) DocumentationDefinitions(ctx context.Context, bundleID int, path, pathID string, limit, offset int) (_ []Location, _ int, err error) {
 	resultID, err := s.documentationPathIDToID(ctx, bundleID, pathID)
-	if resultID == "" || err != nil {
+	if  err != nil || resultID == "" {
 		return nil, 0, err
 	}
 	extractor := func(r semantic.RangeData) semantic.ID { return r.DefinitionResultID }
