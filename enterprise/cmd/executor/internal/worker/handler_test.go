@@ -110,7 +110,11 @@ func TestHandle(t *testing.T) {
 }
 
 func TestHandleSrcCliStepsWithoutFirecracker(t *testing.T) {
-	makeTempDir = func() (string, error) { return os.TempDir(), nil }
+	testDir := "/tmp/src-executor-without-firecracker"
+	makeTempDir = func() (string, error) { return testDir, nil }
+	if err := os.MkdirAll(filepath.Join(testDir, command.ScriptsPath), os.ModePerm); err != nil {
+		t.Fatalf("unexpected error creating workspace: %s", err)
+	}
 
 	overwriteEnv := func(k, v string) {
 		old := os.Getenv(k)
