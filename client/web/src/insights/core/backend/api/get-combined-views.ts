@@ -41,7 +41,11 @@ export const getCombinedViews = (
                   startWith(null),
                   map(backendInsights =>
                       backendInsights === null
-                          ? [{ id: 'Backend insights', view: undefined, source: ViewInsightProviderSourceType.Backend }]
+                          ? insightIds.map(id => ({
+                                id,
+                                view: undefined,
+                                source: ViewInsightProviderSourceType.Backend,
+                            }))
                           : backendInsights?.map(
                                 (insight): ViewInsightProviderResult => ({
                                     id: insight.id,
