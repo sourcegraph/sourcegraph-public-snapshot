@@ -14,7 +14,7 @@ var ErrSomethingWentWrong = errors.New("something went wrong")
 
 Idiomatic error messages in Go should start with a lowercase letter and should contain no trailing punctuation.
 
-Generally, errors of this class should be created as a constant at the highest level possible (e.g., a unexported package constant). Such errors should be exported if direct comparison of error values should be allowed by a user.
+Generally, errors of this class should be created as a constant at the highest level possible (e.g., an unexported package constant). Such errors should be exported if direct comparison of error values should be allowed by a user.
 
 Idiomatically, error constant _values_ should always have a name of the format `ErrX` (or `errX` if package-private) and types that can be used as `error` should have a name of the format `XError`.
 
@@ -26,7 +26,7 @@ Use this function to create an error value with non-static message.
 return errors.Errorf("user %d does not exist", userID)
 ```
 
-The formatting directives are the same as `fmt.Sprintf`. The [`'%w` formatting directive](https://blog.golang.org/go1.13-errors#TOC_3.3.) special cases error values. Prefer to use `errors.Wrap` over this directive.
+The formatting directives are the same as `fmt.Sprintf`. The [`%w` formatting directive](https://blog.golang.org/go1.13-errors#TOC_3.3.) special cases error values. Prefer to use `errors.Wrap` over this directive.
 
 #### Use of `errors.Wrap`
 

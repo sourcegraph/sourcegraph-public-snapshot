@@ -1254,6 +1254,104 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 	})
 
+	t.Run("GetRepoChangesetsStats", func(t *testing.T) {
+		r := ct.TestRepo(t, es, extsvc.KindGitHub)
+
+		if err := rs.Create(ctx, r); err != nil {
+			t.Fatal(err)
+		}
+
+		baseOpts := ct.TestChangesetOpts{Repo: r.ID, BatchChange: 4747, OwnedByBatchChange: 4747}
+
+		wantStats := btypes.RepoChangesetsStats{}
+
+		// Closed changeset
+		opts1 := baseOpts
+		opts1.ExternalState = btypes.ChangesetExternalStateClosed
+		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts1)
+		wantStats.Closed += 1
+
+		// Open changeset
+		opts2 := baseOpts
+		opts2.ExternalState = btypes.ChangesetExternalStateOpen
+		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts2)
+		wantStats.Open += 1
+
+		// Archived & closed changeset
+		opts3 := baseOpts
+		opts3.IsArchived = true
+		opts3.ExternalState = btypes.ChangesetExternalStateClosed
+		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts3)
+
+		// Marked as to-be-archived
+		opts4 := baseOpts
+		opts4.Archive = true
+		opts4.ExternalState = btypes.ChangesetExternalStateOpen
+		opts4.ReconcilerState = btypes.ReconcilerStateProcessing
+		opts4.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts4)
+
+		// Open changeset belonging to a different batch change
+		opts5 := baseOpts
+		opts5.BatchChange = 999
+		opts5.ExternalState = btypes.ChangesetExternalStateOpen
+		opts5.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts5.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts5)
+		wantStats.Open += 1
+
+		// Open changeset belonging to multiple batch changes
+		opts6 := ct.TestChangesetOpts{Repo: r.ID}
+		opts6.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747}, {BatchChangeID: 4748}, {BatchChangeID: 4749}}
+		opts6.ExternalState = btypes.ChangesetExternalStateOpen
+		opts6.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts6.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts6)
+		wantStats.Open += 1
+
+		// Open changeset archived on one batch change but not on another
+		opts7 := ct.TestChangesetOpts{Repo: r.ID}
+		opts7.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747, IsArchived: true}, {BatchChangeID: 4748, IsArchived: false}}
+		opts7.ExternalState = btypes.ChangesetExternalStateOpen
+		opts7.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts7.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts7)
+		wantStats.Open += 1
+
+		// Open changeset archived on multiple batch changes
+		opts8 := ct.TestChangesetOpts{Repo: r.ID}
+		opts8.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747, IsArchived: true}, {BatchChangeID: 4748, IsArchived: true}}
+		opts8.ExternalState = btypes.ChangesetExternalStateOpen
+		opts8.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts8.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts8)
+
+		// Draft changeset
+		opts9 := baseOpts
+		opts9.ExternalState = btypes.ChangesetExternalStateDraft
+		opts9.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts9.PublicationState = btypes.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts9)
+		wantStats.Draft += 1
+
+		haveStats, err := s.GetRepoChangesetsStats(ctx, r.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantStats.Total = wantStats.Open + wantStats.Closed + wantStats.Draft
+
+		if diff := cmp.Diff(wantStats, *haveStats); diff != "" {
+			t.Fatalf("wrong stats returned. diff=%s", diff)
+		}
+	})
+
 	t.Run("EnqueueChangeset", func(t *testing.T) {
 		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 			ReconcilerState:  btypes.ReconcilerStateCompleted,

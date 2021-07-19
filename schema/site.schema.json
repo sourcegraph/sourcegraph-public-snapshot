@@ -102,12 +102,6 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "jvmPackages": {
-          "description": "Allow adding JVM packages code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",

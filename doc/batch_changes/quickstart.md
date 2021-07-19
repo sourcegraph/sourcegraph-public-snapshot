@@ -132,6 +132,8 @@ Now that you have credentials set up, you can publish the changesets in the batc
 
     > NOTE: You can also create or update a batch change by running `src batch apply`. This skips the preview stage, and is especially useful when updating an existing batch change.
 
+> NOTE: You can also publish directly from Sourcegraph by omitting the `published` field from your batch spec. This is described in more detail in "[Publishing changesets to the code host](how-tos/publishing_changesets.md#publishing-changesets)".
+
 ## Congratulations!
 
 You've created your first batch change! 🎉🎉

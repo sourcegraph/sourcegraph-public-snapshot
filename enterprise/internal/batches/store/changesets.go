@@ -253,6 +253,7 @@ type CountChangesetsOpts struct {
 	PublicationState     *btypes.ChangesetPublicationState
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
+	RepoID               api.RepoID
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -314,6 +315,9 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	}
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
+	}
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
 	}
 
 	join := sqlf.Sprintf("")
@@ -508,6 +512,7 @@ type ListChangesetsOpts struct {
 	OwnedByBatchChangeID int64
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
+	RepoID               api.RepoID
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -600,6 +605,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
+	}
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
 	}
 
 	join := sqlf.Sprintf("")
@@ -1134,6 +1142,34 @@ WHERE
 	%s
 `
 
+// GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
+func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (*btypes.RepoChangesetsStats, error) {
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
+	}
+	q := getRepoChangesetsStatsQuery(int64(repoID), authzConds)
+
+	var stats btypes.RepoChangesetsStats
+	err = s.query(ctx, q, func(sc scanner) error {
+		if err := sc.Scan(
+			&stats.Total,
+			&stats.Unpublished,
+			&stats.Draft,
+			&stats.Closed,
+			&stats.Merged,
+			&stats.Open,
+		); err != nil {
+			return err
+		}
+		return err
+	})
+	if err != nil {
+		return &stats, err
+	}
+	return &stats, nil
+}
+
 func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
 	q := sqlf.Sprintf(
 		enqueueNextScheduledChangesetFmtstr,
@@ -1240,3 +1276,42 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		sqlf.Join(preds, " AND "),
 	)
 }
+
+func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
+	publishedAndCompleted := sqlf.Sprintf("publication_state = 'PUBLISHED' AND reconciler_state = 'completed'")
+
+	return sqlf.Sprintf(
+		getRepoChangesetsStatsFmtstr,
+		publishedAndCompleted, publishedAndCompleted, publishedAndCompleted, publishedAndCompleted,
+		strconv.Itoa(int(repoID)),
+		authzConds,
+	)
+}
+
+const getRepoChangesetsStatsFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:GetRepoChangesetsStats
+SELECT
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE publication_state = 'UNPUBLISHED'
+		AND reconciler_state = 'completed') AS unpublished,
+	COUNT(*) FILTER (WHERE %s AND external_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE %s AND external_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE %s AND external_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE %s AND external_state = 'OPEN') AS open
+FROM (
+	SELECT
+		changesets.id,
+		changesets.publication_state,
+		changesets.reconciler_state,
+		changesets.external_state
+	FROM
+		changesets
+		INNER JOIN repo ON changesets.repo_id = repo.id
+	WHERE
+		repo.id = %s
+		-- where the changeset is not archived on at least one batch change
+		AND jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
+		-- authz conditions:
+		AND %s
+) AS fcs;
+`

@@ -50,7 +50,7 @@ func (c *Container) validate() error {
 		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
-		return errors.Errorf("Description must be sentence starting with an uppercas eletter and ending with period; found \"%s\"", c.Description)
+		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
@@ -569,7 +569,7 @@ func (o Observable) validate() error {
 	if o.Owner == "" && !o.NoAlert {
 		return errors.New("Owner must be defined for observables with alerts")
 	}
-	if !o.Panel.panelType.Valid() {
+	if !o.Panel.panelType.validate() {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}
 

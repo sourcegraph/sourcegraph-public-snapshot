@@ -266,7 +266,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		return mockResolveRepositories()
 	}
 
-	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("optionss: %+v", options))
+	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("options: %+v", options))
 	defer func() {
 		tr.SetError(err)
 		tr.LazyPrintf("%s", resolved.String())
@@ -319,10 +319,6 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.PatternInfo.Validate(); err != nil {
-		return nil, err
-	}
-
 	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {
@@ -356,20 +352,4 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		})
 	}
 	return suggestions, nil
-}
-
-type badRequestError struct {
-	err error
-}
-
-func (e *badRequestError) BadRequest() bool {
-	return true
-}
-
-func (e *badRequestError) Error() string {
-	return "bad request: " + e.err.Error()
-}
-
-func (e *badRequestError) Cause() error {
-	return e.err
 }

@@ -9,8 +9,23 @@ import {
     isInsightSettingKey,
     SettingsBasedInsightDashboard,
     InsightDashboardOwner,
+    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
 } from '../../core/types'
 import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects'
+
+/**
+ * Returns all insights (extension based and be based) ids.
+ */
+export function getInsightIdsFromSettings(settings: Settings): string[] {
+    // On top level of settings we store extension based insights only
+    const extensionBasedInsightIds = Object.keys(settings).filter(isInsightSettingKey)
+    // BE insights live in the 'insights.allrepos' map
+    const backendBasedInsightIds = Object.keys((settings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as object) ?? {}).filter(
+        isInsightSettingKey
+    )
+
+    return [...extensionBasedInsightIds, ...backendBasedInsightIds]
+}
 
 /**
  * Returns all subject dashboards and one special (built-in) dashboard that includes
@@ -25,7 +40,7 @@ export function getSubjectDashboards(subject: SupportedInsightSubject, settings:
         builtIn: true,
         title: owner.name,
         type: dashboardType,
-        insightIds: Object.keys(settings).filter(isInsightSettingKey),
+        insightIds: getInsightIdsFromSettings(settings),
     }
 
     // Find all subject insights dashboards

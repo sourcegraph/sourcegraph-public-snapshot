@@ -361,7 +361,7 @@ describe('Code insight edit insight page', () => {
 
         // Click on edit button of insight context menu (three dots-menu)
         await driver.page.click(
-            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
+            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuButton"]'
         )
         await driver.page.click(
             '[data-testid="context-menu.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuEditLink"]'
