@@ -14,6 +14,7 @@ import {
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 
+import { isHotReloadEnabled } from './environment'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext } from './jscontext'
 
@@ -68,7 +69,7 @@ export const createWebIntegrationTestContext = async ({
     // On CI, we don't use `react-fast-refresh`, so we don't need the runtime bundle.
     // This branching will be redundant after switching to production bundles for integration tests:
     // https://github.com/sourcegraph/sourcegraph/issues/22831
-    const runtimeChunkScriptTag = process.env.CI === 'true' ? '' : `<script src=${getRuntimeAppBundle()}></script>`
+    const runtimeChunkScriptTag = isHotReloadEnabled ? `<script src=${getRuntimeAppBundle()}></script>` : ''
 
     // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
     let jsContext = createJsContext({ sourcegraphBaseUrl: sharedTestContext.driver.sourcegraphBaseUrl })
