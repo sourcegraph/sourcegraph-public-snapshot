@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
@@ -119,18 +119,22 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	store := s.store
+	tx := s.store
 	if !s.syncer.Streaming {
-		store = s.store.With(tx)
+		tx, err = s.store.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = tx.Done(err) }()
 	}
 
-	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
+	return s.syncer.SyncExternalService(ctx, tx, sj.ExternalServiceID, s.minSyncInterval())
 }
 
 // sleep is a context aware time.Sleep
@@ -1007,8 +1011,6 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 			if errcode.IsUnauthorized(errs) || errcode.IsForbidden(errs) || errcode.IsAccountSuspended(errs) {
 				// Delete all external service repos of this external service
 				seen = map[api.RepoID]struct{}{}
-				// Eagerly stop sourcing, instead of waiting for all the follow up deletions to finish.
-				cancel()
 				break
 			}
 			continue

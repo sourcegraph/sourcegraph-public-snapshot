@@ -61,7 +61,9 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 // Clear initial values if user successfully created search insight
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
-                history.push('/insights')
+
+                // Navigate user to the dashboard page with new created dashboard
+                history.push(`/insights/dashboards/${insight.visibility}`)
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
@@ -75,7 +77,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
         // Clear initial values if user successfully created search insight
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
-        history.push('/insights')
+        history.push('/insights/dashboards/all')
     }, [history, setInitialFormValues, telemetryService])
 
     const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {

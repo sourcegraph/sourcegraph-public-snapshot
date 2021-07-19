@@ -34,7 +34,11 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
         onSubmit,
     })
 
-    const searchInput = useField('searchInput', formAPI)
+    const searchInput = useField({
+        name: 'searchInput',
+        formApi: formAPI,
+    })
+
     const {
         input: { isChecked, onChange, onBlur },
     } = useCheckboxes('insightIds', formAPI)
@@ -46,14 +50,13 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
         <form ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 autoFocus={true}
-                title="Filter your insights"
                 description={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
                         <Link to="/insights/create">create a new insight</Link>
                     </span>
                 }
-                placeholder="Example: My GraphQL migration insight"
+                placeholder="Search insights..."
                 {...searchInput.input}
             />
 

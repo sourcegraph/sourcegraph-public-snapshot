@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"golang.org/x/mod/semver"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/command"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -75,14 +76,14 @@ func printDeployedVersion(e environment) error {
 	buildSha := elems[2]
 
 	pending = out.Pending(output.Line("", output.StylePending, "Running 'git fetch' to update list of commits..."))
-	_, err = runGitCmd("fetch", "-q")
+	_, err = command.RunGit("fetch", "-q")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done updating list of commits"))
 
-	log, err := runGitCmd("log", "--oneline", "-n", "20", `--pretty=format:%h|%ar|%an|%s`, "origin/main")
+	log, err := command.RunGit("log", "--oneline", "-n", "20", `--pretty=format:%h|%ar|%an|%s`, "origin/main")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err

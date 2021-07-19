@@ -171,6 +171,10 @@ While it is technically possible to consume all of Sourcegraph's metrics in an e
 
 Other monitoring systems that support Prometheus scraping (for example, Datadog and New Relic) or [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) can be configured to federate Sourcegraph's [high-level alerting metrics](./observability/metrics.md#high-level-alerting-metrics). For information on how to configure those systems, please check your provider's documentation.
 
+### I am getting "Error: Cluster information not available" in the Instrumentation page, what should I do?
+
+This error is expected if your instance was not deployed with Kubernetes. The Instrumentation page is currently only available for Kubernetes instances.
+
 ## Troubleshooting
 
 Please refer to our [dedicated troubleshooting page](troubleshooting.md).

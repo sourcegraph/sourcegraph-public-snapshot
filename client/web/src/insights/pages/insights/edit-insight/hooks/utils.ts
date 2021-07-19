@@ -1,92 +1,21 @@
-import { groupBy } from 'lodash'
-
 import { ConfiguredSubjectOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../schema/settings.schema'
-import { addInsightToDashboard, removeInsightFromDashboard } from '../../../../core/settings-action/dashboards'
-import { addInsightToSettings, removeInsightFromSettings } from '../../../../core/settings-action/insights'
+import {
+    AddInsight,
+    AddInsightToDashboard,
+    RemoveInsight,
+    RemoveInsightFromDashboard,
+    SettingsOperation,
+    SettingsOperationType,
+} from '../../../../core/settings-action/edits'
 import { Insight, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../../../core/types'
 import { SUBJECT_SHARING_LEVELS } from '../../../../core/types/subjects'
 
 interface EditInsightProps extends SettingsCascadeProps<Settings> {
     oldInsight: Insight
     newInsight: Insight
-}
-
-enum SettingsOperationType {
-    addInsight,
-    removeInsight,
-    removeInsightFromDashboard,
-    addInsightToDashboard,
-}
-
-interface RemoveInsight {
-    type: SettingsOperationType.removeInsight
-    subjectId: string
-    insightID: string
-}
-
-interface AddInsight {
-    type: SettingsOperationType.addInsight
-    subjectId: string
-    insight: Insight
-}
-
-interface RemoveInsightFromDashboard {
-    type: SettingsOperationType.removeInsightFromDashboard
-    subjectId: string
-    insightId: string
-    dashboardSettingKey: string
-}
-
-interface AddInsightToDashboard {
-    type: SettingsOperationType.addInsightToDashboard
-    subjectId: string
-    insightId: string
-    dashboardSettingKey: string
-}
-
-type SettingsOperation = AddInsight | RemoveInsight | AddInsightToDashboard | RemoveInsightFromDashboard
-
-/**
- * Apply edit operation over jsonc settings string and return serialized final string
- * with all applied edit operations.
- *
- * @param settings - original jsonc setting content
- * @param operations - list of edit operations
- */
-export function applyEditOperations(settings: string, operations: SettingsOperation[]): string {
-    let settingsContent: string = settings
-
-    for (const operation of operations) {
-        switch (operation.type) {
-            case SettingsOperationType.addInsight:
-                settingsContent = addInsightToSettings(settingsContent, operation.insight)
-                continue
-            case SettingsOperationType.removeInsight:
-                settingsContent = removeInsightFromSettings({
-                    originalSettings: settingsContent,
-                    insightID: operation.insightID,
-                })
-                continue
-            case SettingsOperationType.addInsightToDashboard:
-                settingsContent = addInsightToDashboard(
-                    settingsContent,
-                    operation.dashboardSettingKey,
-                    operation.insightId
-                )
-                continue
-            case SettingsOperationType.removeInsightFromDashboard:
-                settingsContent = removeInsightFromDashboard(
-                    settingsContent,
-                    operation.dashboardSettingKey,
-                    operation.insightId
-                )
-        }
-    }
-
-    return settingsContent
 }
 
 /**
@@ -103,11 +32,11 @@ export function applyEditOperations(settings: string, operations: SettingsOperat
  * To achieve that we have to have low-level API for setting editing. This function absorbs
  * complexity and logic over insight/dashboard management.
  */
-export function getUpdatedSubjectSettings(props: EditInsightProps): Record<string, SettingsOperation[]> {
+export function getUpdatedSubjectSettings(props: EditInsightProps): SettingsOperation[] {
     const { oldInsight, newInsight, settingsCascade } = props
 
     if (!settingsCascade.subjects) {
-        return {}
+        return []
     }
 
     const oldInsightSubject = settingsCascade.subjects.find(
@@ -119,23 +48,18 @@ export function getUpdatedSubjectSettings(props: EditInsightProps): Record<strin
     )
 
     if (!oldInsightSubject || !newInsightSubject) {
-        return {}
+        return []
     }
 
-    const editOperations = [
-        updateInsightSettings,
-        updateDashboardInsightOwnership,
-        updateInsightIdInDashboardIds,
-    ].reduce<SettingsOperation[]>(
+    return [updateInsightSettings, updateDashboardInsightOwnership, updateInsightIdInDashboardIds].reduce<
+        SettingsOperation[]
+    >(
         (operations, transformer: SettingsTransformer) => [
             ...operations,
             ...transformer({ oldInsight, newInsight, settingsCascade }, operations),
         ],
         []
     )
-
-    // Group all operations by subject id to calculate list of subject for updates
-    return groupBy(editOperations, operation => operation.subjectId)
 }
 
 export type SettingsTransformer = (props: EditInsightProps, operations: SettingsOperation[]) => SettingsOperation[]
