@@ -243,7 +243,6 @@ async function main(): Promise<void> {
             if (tabId !== undefined) {
                 tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, hasPrivateCloudError)
             }
-            console.log({ hasPrivateCloudError, sender })
             return Promise.resolve()
         },
 
