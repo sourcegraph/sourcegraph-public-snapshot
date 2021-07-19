@@ -9,7 +9,7 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 <div class="cta-group">
 <a class="btn btn-primary" href="#self-hosted">★ Self-hosted instance</a>
 <a class="btn" href="managed">Managed instance</a>
-<a class="btn" href="../#get-help">Get help</a>
+<a class="btn" href="../../#get-help">Get help</a>
 </div>
 
 ## Self-hosted
