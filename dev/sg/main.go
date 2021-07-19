@@ -232,10 +232,12 @@ func main() {
 	}
 }
 
+// conf is the global config. If a command needs to access it, it *must* call
+// `parseConf` before.
 var conf *Config
 
 // parseConf parses the config file and the optional overwrite file.
-// If the conf has already been parsed it's a noop.
+// Iear the conf has already been parsed it's a noop.
 func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 	if conf != nil {
 		return true, output.FancyLine{}
