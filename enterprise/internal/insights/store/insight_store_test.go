@@ -270,7 +270,7 @@ func TestCreateView(t *testing.T) {
 func TestAttachSeriesView(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	now := time.Now()
+	now := time.Now().Round(0)
 	ctx := context.Background()
 
 	store := NewInsightStore(timescale)
@@ -282,8 +282,8 @@ func TestAttachSeriesView(t *testing.T) {
 		series := types.InsightSeries{
 			SeriesID:              "unique-1",
 			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365).Round(0),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365).Round(0),
 			NextRecordingAfter:    now,
 			RecordingIntervalDays: 4,
 		}
@@ -319,7 +319,7 @@ func TestAttachSeriesView(t *testing.T) {
 			Title:                 view.Title,
 			Description:           view.Description,
 			Query:                 series.Query,
-			CreatedAt:             series.CreatedAt,
+			CreatedAt:             series.CreatedAt.Round(0),
 			OldestHistoricalAt:    series.OldestHistoricalAt,
 			LastRecordedAt:        series.LastRecordedAt,
 			NextRecordingAfter:    series.NextRecordingAfter,
@@ -327,11 +327,8 @@ func TestAttachSeriesView(t *testing.T) {
 			Label:                 "my label",
 			Stroke:                "my stroke",
 		}}
-		opt := cmp.Comparer(func(x, y time.Time) bool {
-			return x.Equal(y)
-		})
 
-		if diff := cmp.Diff(want, got, opt); diff != "" {
+		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
 		}
 	})
