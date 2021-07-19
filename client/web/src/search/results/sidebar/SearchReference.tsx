@@ -411,7 +411,7 @@ function addQuotesIfNeeded(filter: FilterType, value: string): string {
         case FilterType.file:
             // All predicates so far start with `contains`. We should probably
             // find a more reliable way to identify them eventually.
-            if (/^contains[.(]/.test(value)) {
+            if (/^contains[(.]/.test(value)) {
                 return value
             }
     }
