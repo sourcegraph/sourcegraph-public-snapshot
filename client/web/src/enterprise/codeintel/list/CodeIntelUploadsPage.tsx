@@ -77,6 +77,12 @@ const filters: FilteredConnectionFilter[] = [
                 tooltip: 'Show uploading uploads only',
                 args: { state: LSIFUploadState.UPLOADING },
             },
+            {
+                label: 'Deleting',
+                value: 'deleting',
+                tooltip: 'Show uploads queued for deletion',
+                args: { state: LSIFUploadState.DELETING },
+            },
         ],
     },
 ]

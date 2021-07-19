@@ -237,7 +237,7 @@ FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.state != 'deleted' AND u.id  IN (%s) AND %s
+WHERE u.state != 'deleted' AND u.id IN (%s) AND %s
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
@@ -579,7 +579,7 @@ func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 
 const deleteUploadByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
-UPDATE lsif_uploads SET state = 'deleted' WHERE id = %s RETURNING repository_id
+UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
 `
 
 // DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
@@ -627,6 +627,10 @@ candidates AS (
 	ORDER BY u.id FOR UPDATE
 ),
 deleted AS (
+	-- Note: we can go straight from completed -> deleted here as we
+	-- do not need to preserve the deleted repository's current commit
+	-- graph (the API cannot resolve any queries for this repository).
+
 	UPDATE lsif_uploads u
 	SET state = 'deleted'
 	WHERE u.id IN (SELECT id FROM candidates)
@@ -742,7 +746,7 @@ candidates AS (
 ),
 updated AS (
 	UPDATE lsif_uploads u
-	SET state = 'deleted'
+	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
 	WHERE u.id IN (SELECT id FROM candidates)
 	RETURNING u.id, u.repository_id
 )
