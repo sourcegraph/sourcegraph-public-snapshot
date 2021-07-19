@@ -2,13 +2,15 @@
 title: 'Sourcegraph docs'
 ---
 
-<picture><source srcset="https://raw.githubusercontent.com/sourcegraph/sourcegraph/ea4f259229d24ec60b628ee96cdd45b943f7449d/ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="https://raw.githubusercontent.com/sourcegraph/sourcegraph/ea4f259229d24ec60b628ee96cdd45b943f7449d/ui/assets/img/sourcegraph-light-head-logo.svg" height="48px" /></picture>
+<a href="https://sourcegraph.com"><picture><source srcset="assets/logo-theme-dark.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="assets/logo-theme-light.svg" height="48px" /></picture></a>
 
 <p class="subtitle">Universal Code Search: Move fast, even in big codebases.</p>
 
 <p class="lead">
 Find and fix things across all of your code faster with Sourcegraph. Onboard to a new codebase, make large-scale refactors, increase efficiency, address security risks, root-cause incidents, and more.
 </p>
+
+This website is home to Sourcegraph's feature, installation, administration, and development documentation.
 
 <div class="cta-group">
 <a class="btn btn-primary" href="#getting-started">★ Try Sourcegraph now</a>
