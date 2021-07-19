@@ -183,5 +183,5 @@ The browser extension also does not store sensitive data locally. The informatio
 -  Feature flags
   - Hover alerts
 - Client settings
-- Enable/disable status
-- Sourcegraph url
+  - Enable/disable status
+  - Sourcegraph URL
