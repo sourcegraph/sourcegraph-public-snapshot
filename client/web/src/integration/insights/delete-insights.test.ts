@@ -30,7 +30,7 @@ describe('Code insights page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it.only('should update user/org settings if insight delete happened', async () => {
+    it('should update user/org settings if insight delete happened', async () => {
         const settings = {
             'searchInsights.insight.graphQLTypesMigration': {},
             'searchInsights.insight.teamSize': {},
