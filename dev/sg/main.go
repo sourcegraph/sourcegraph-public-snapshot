@@ -226,12 +226,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		out.WriteLine(errLine)
-		os.Exit(1)
-	}
-
 	if err := rootCommand.Run(context.Background()); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
@@ -280,6 +274,12 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 }
 
 func runSetExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No commandset specified\n"))
 		return flag.ErrHelp
@@ -310,6 +310,12 @@ func runSetExec(ctx context.Context, args []string) error {
 }
 
 func testExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified\n"))
 		return flag.ErrHelp
@@ -325,6 +331,12 @@ func testExec(ctx context.Context, args []string) error {
 }
 
 func startExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) != 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
@@ -334,6 +346,12 @@ func startExec(ctx context.Context, args []string) error {
 }
 
 func runExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No command specified\n"))
 		return flag.ErrHelp
@@ -354,6 +372,12 @@ func runExec(ctx context.Context, args []string) error {
 }
 
 func doctorExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	return runChecks(ctx, conf.Checks)
 }
 
