@@ -90,10 +90,10 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Query syntax reference](code_search/reference/queries.md)
 - [GraphQL API](api/graphql/index.md)
 - [Sourcegraph changelog](./CHANGELOG.md)
-- [Contributing to Sourcegraph](dev/index.md)
 
 ## Other links
 
+- [Contributing to Sourcegraph](dev/index.md)
 - [Sourcegraph handbook](https://about.sourcegraph.com/handbook)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
