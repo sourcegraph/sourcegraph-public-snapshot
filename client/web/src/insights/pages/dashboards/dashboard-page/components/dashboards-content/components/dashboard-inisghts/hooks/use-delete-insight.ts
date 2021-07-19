@@ -3,8 +3,8 @@ import { useCallback } from 'react'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { InsightTypePrefix } from '../../../../core/types'
-import { usePersistEditOperations } from '../../../../hooks/use-persist-edit-operations'
+import { InsightTypePrefix } from '../../../../../../../../core/types'
+import { usePersistEditOperations } from '../../../../../../../../hooks/use-persist-edit-operations'
 
 import { getDeleteInsightEditOperations } from './delete-helpers'
 

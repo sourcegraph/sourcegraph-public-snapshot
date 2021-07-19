@@ -30,7 +30,7 @@ describe('Code insights page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it('should update user/org settings if insight delete happened', async () => {
+    it.only('should update user/org settings if insight delete happened', async () => {
         const settings = {
             'searchInsights.insight.graphQLTypesMigration': {},
             'searchInsights.insight.teamSize': {},
@@ -76,7 +76,7 @@ describe('Code insights page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {

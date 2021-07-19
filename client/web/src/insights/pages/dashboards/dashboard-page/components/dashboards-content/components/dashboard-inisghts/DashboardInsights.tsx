@@ -13,9 +13,9 @@ import { Settings } from '../../../../../../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGrid } from '../../../../../../../components'
 import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
 import { InsightDashboard } from '../../../../../../../core/types'
-import { useDeleteInsight } from '../../../../../../insights/insights-page/hooks/use-delete-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
+import { useDeleteInsight } from './hooks/use-delete-insight'
 import { getBackendInsightIds } from './utils/get-backend-insight-ids'
 
 const DEFAULT_INSIGHT_IDS: string[] = []
