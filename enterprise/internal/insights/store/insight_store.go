@@ -69,10 +69,14 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	}
 
 	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return []types.InsightViewSeries{}, err
+	return scanInsightViewSeries(s.Query(ctx, q))
+}
+
+func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightViewSeries, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	results := make([]types.InsightViewSeries, 0)
 	for rows.Next() {
@@ -89,7 +93,8 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 			&temp.OldestHistoricalAt,
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
-			&temp.RecordingIntervalDays); err != nil {
+			&temp.RecordingIntervalDays,
+		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
 		results = append(results, temp)
