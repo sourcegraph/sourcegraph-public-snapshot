@@ -114,7 +114,6 @@ require (
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
-	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/microcosm-cc/bluemonday v1.0.4
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
@@ -126,7 +125,6 @@ require (
 	github.com/peterbourgon/ff v1.7.0
 	github.com/peterhellberg/link v1.1.0
 	github.com/pquerna/cachecontrol v0.0.0-20200819021114-67c6ae64274f // indirect
-	github.com/princjef/gomarkdoc v0.1.3
 	github.com/prometheus/alertmanager v0.21.0
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/common v0.15.0

@@ -107,7 +107,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
-func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
+func (r *searchResolver) reposExist(ctx context.Context, options search.RepoOptions) bool {
 	options.UserSettings = r.UserSettings
 	repositoryResolver := &searchrepos.Resolver{
 		DB:                  r.db,
@@ -198,7 +198,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 
 	proposedQueries := []*searchQueryDescription{}
 	if forksNotSet {
-		tryIncludeForks := searchrepos.Options{
+		tryIncludeForks := search.RepoOptions{
 			RepoFilters:      repoFilters,
 			MinusRepoFilters: minusRepoFilters,
 			NoForks:          false,
@@ -213,7 +213,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 	}
 
 	if archivedNotSet {
-		tryIncludeArchived := searchrepos.Options{
+		tryIncludeArchived := search.RepoOptions{
 			RepoFilters:      repoFilters,
 			MinusRepoFilters: minusRepoFilters,
 			OnlyForks:        onlyForks,

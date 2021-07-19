@@ -2157,6 +2157,14 @@ extend type Mutation {
     closeChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
 
     """
+    Set the UI publication state for multiple changesets. If draft is true, the
+    changesets are published as drafts, provided the code host supports it.
+
+    Experimental: This API is likely to change in the future.
+    """
+    publishChangesets(batchChange: ID!, changesets: [ID!]!, draft: Boolean = false): BulkOperation!
+
+    """
     Creates a new batch spec execution from a given batch spec yaml file input.
     The execution will be queued for processing by an executor. If some are available
     for work, they will pick this up eventually.
@@ -2452,6 +2460,10 @@ enum BulkOperationType {
     Bulk close changesets.
     """
     CLOSE
+    """
+    Bulk publish changesets.
+    """
+    PUBLISH
 }
 
 """

@@ -1410,6 +1410,39 @@ func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.Clo
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
+func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.PublishChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.PublishChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypePublish,
+		&btypes.ChangesetJobPublishPayload{Draft: args.Draft},
+		store.ListChangesetsOpts{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
+
+}
+
 func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlbackend.CreateBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateBatchSpecExecution", "")
 	defer func() {

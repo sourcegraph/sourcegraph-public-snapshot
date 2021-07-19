@@ -14,5 +14,5 @@ export function getGlobalSubjectTooltipText(globalSubject: SettingsSiteSubject |
 
     return globalSubject.allowSiteSettingsEdits
         ? globalSubjectAdminCheckMessage
-        : 'The global subject can not be edited since it was configured by settings file'
+        : 'The global subject cannot be edited since your Sourcegraph instance is using a separate settings file'
 }
