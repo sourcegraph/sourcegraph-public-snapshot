@@ -22,9 +22,7 @@ type InsightStore struct {
 
 // NewInsightStore returns a new InsightStore backed by the given Timescale db.
 func NewInsightStore(db dbutil.DB) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: func() time.Time {
-		return time.Now()
-	}}
+	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
 }
 
 // Handle returns the underlying transactable database handle.

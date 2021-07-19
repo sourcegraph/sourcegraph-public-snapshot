@@ -143,9 +143,7 @@ func NewMigrateSettingInsightsJob(ctx context.Context, base dbutil.DB, insights 
 	}
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insight_setting_migrator", func(ctx context.Context) error {
-			return m.migrate(ctx)
-		}))
+		goroutine.NewHandlerWithErrorMessage("insight_setting_migrator", m.migrate))
 }
 
 func (m *settingMigrator) migrate(ctx context.Context) error {
