@@ -106,7 +106,7 @@ type DocumentationPathInfoResult struct {
 	Children []DocumentationPathInfoResult `json:"children"`
 }
 
-func (r *QueryResolver) DocumentationDefinitions(ctx context.Context, args *gql.LSIFDocumentationQueryArgs) (gql.LocationConnectionResolver, error) {
+func (r *QueryResolver) DocumentationDefinitions(ctx context.Context, args *gql.LSIFQueryDocumentationArgs) (gql.LocationConnectionResolver, error) {
 	locations, err := r.resolver.DocumentationDefinitions(ctx, args.PathID)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (r *QueryResolver) DocumentationDefinitions(ctx context.Context, args *gql.
 	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
 }
 
-func (r *QueryResolver) DocumentationReferences(ctx context.Context, args *gql.LSIFDocumentationPagedQueryArgs) (gql.LocationConnectionResolver, error) {
+func (r *QueryResolver) DocumentationReferences(ctx context.Context, args *gql.LSIFPagedQueryDocumentationArgs) (gql.LocationConnectionResolver, error) {
 	limit := derefInt32(args.First, DefaultReferencesPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
