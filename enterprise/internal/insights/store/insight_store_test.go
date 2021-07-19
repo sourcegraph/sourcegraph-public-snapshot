@@ -327,8 +327,11 @@ func TestAttachSeriesView(t *testing.T) {
 			Label:                 "my label",
 			Stroke:                "my stroke",
 		}}
+		opt := cmp.Comparer(func(x, y time.Time) bool {
+			return x.Equal(y)
+		})
 
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(want, got, opt); diff != "" {
 			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
 		}
 	})
