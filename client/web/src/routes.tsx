@@ -27,6 +27,7 @@ const StreamingSearchResults = lazyComponent(
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
+const SearchNotebookPage = lazyComponent(() => import('./search/notebook/SearchNotebookPage'), 'SearchNotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
@@ -99,6 +100,16 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: props =>
             props.showMultilineSearchConsole ? (
                 <SearchConsolePage {...props} isMacPlatform={isMacPlatform} />
+            ) : (
+                <Redirect to="/search" />
+            ),
+        exact: true,
+    },
+    {
+        path: '/search/notebook',
+        render: props =>
+            props.showSearchNotebook ? (
+                <SearchNotebookPage {...props} isMacPlatform={isMacPlatform} />
             ) : (
                 <Redirect to="/search" />
             ),
