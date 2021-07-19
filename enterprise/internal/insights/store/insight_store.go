@@ -151,9 +151,6 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.NextRecordingAfter,
 		series.RecordingIntervalDays,
 	))
-	if row.Err() != nil {
-		return types.InsightSeries{}, row.Err()
-	}
 	var id int
 	err := row.Scan(&id)
 	if err != nil {
