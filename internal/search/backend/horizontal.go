@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 var reorderQueueSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -43,6 +45,12 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	clients, err := s.searchers()
 	if err != nil {
 		return err
+	}
+
+	siteConfig := conf.Get().SiteConfiguration
+	maxQueueDepth := 0
+	if siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.Ranking != nil {
+		maxQueueDepth = siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
 	}
 
 	// During rebalancing a repository can appear on more than one replica.
@@ -95,7 +103,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				if resultQueue.Len() > resultQueueMaxLength {
 					resultQueueMaxLength = resultQueue.Len()
 				}
-				for resultQueue.isTopAbove(maxPending) {
+				for (maxQueueDepth >= 0 && len(resultQueue) > maxQueueDepth) || resultQueue.isTopAbove(maxPending) {
 					streamer.Send(heap.Pop(&resultQueue).(*zoekt.SearchResult))
 				}
 

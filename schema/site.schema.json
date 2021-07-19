@@ -265,6 +265,12 @@
               "additionalProperties": {
                 "type": "number"
               }
+            },
+            "maxReorderQueueSize": {
+              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.",
+              "default": 0,
+              "type": "integer",
+              "group": "Search"
             }
           }
         }
