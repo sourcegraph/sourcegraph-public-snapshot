@@ -21,7 +21,7 @@
           }
         },
         "codeInsightsAllRepos": {
-          "description": "Enables experimental ability to run insight on all repositories in the instance.",
+          "description": "Enables the experimental ability to run an insight over all repositories on the instance.",
           "type": "boolean",
           "default": false,
           "!go": {
