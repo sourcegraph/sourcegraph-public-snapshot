@@ -44,23 +44,6 @@ func (s SearchType) String() string {
 	}
 }
 
-// QueryInfo is an interface for accessing query values that drive our search logic.
-// It will be removed in favor of a cleaner query API to access values.
-type QueryInfo interface {
-	Count() *int
-	Archived() *YesNoOnly
-	Fork() *YesNoOnly
-	Timeout() *time.Duration
-	Repositories() (repos []string, negated []string)
-	RegexpPatterns(field string) (values, negatedValues []string)
-	StringValues(field string) (values, negatedValues []string)
-	StringValue(field string) (value, negatedValue string)
-	Values(field string) []*Value
-	Fields() map[string][]*Value
-	BoolValue(field string) bool
-	IsCaseSensitive() bool
-}
-
 // A query plan represents a set of disjoint queries for the search engine to
 // execute. The result of executing a plan is the union of individual query results.
 type Plan []Basic
