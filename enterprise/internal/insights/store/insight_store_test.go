@@ -282,8 +282,8 @@ func TestAttachSeriesView(t *testing.T) {
 		series := types.InsightSeries{
 			SeriesID:              "unique-1",
 			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365).Round(0),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365).Round(0),
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365).Truncate(time.Microsecond).Round(0),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365).Truncate(time.Microsecond).Round(0),
 			NextRecordingAfter:    now,
 			RecordingIntervalDays: 4,
 		}
@@ -319,7 +319,7 @@ func TestAttachSeriesView(t *testing.T) {
 			Title:                 view.Title,
 			Description:           view.Description,
 			Query:                 series.Query,
-			CreatedAt:             series.CreatedAt.Round(0),
+			CreatedAt:             series.CreatedAt.Truncate(time.Microsecond).Round(0),
 			OldestHistoricalAt:    series.OldestHistoricalAt,
 			LastRecordedAt:        series.LastRecordedAt,
 			NextRecordingAfter:    series.NextRecordingAfter,
