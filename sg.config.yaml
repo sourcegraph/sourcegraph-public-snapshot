@@ -492,6 +492,7 @@ commands:
     #       PGPASSWORD: sourcegraph
     #       PGUSER: sourcegraph
     #
+    # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
     cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
 
 checks:
