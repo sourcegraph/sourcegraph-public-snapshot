@@ -46,18 +46,20 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 		return nil, err
 	}
 
+	documentationResultIDs := extractResultIDs(ranges, func(r semantic.RangeData) semantic.ID { return r.DocumentationResultID })
+	documentationPathIDs, err := s.documentationIDsToPathIDs(ctx, bundleID, documentationResultIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	codeintelRanges := make([]CodeIntelligenceRange, 0, len(ranges))
 	for _, r := range ranges {
-		documentationPathID, err := s.documentationIDToPathID(ctx, bundleID, r.DocumentationResultID)
-		if err != nil {
-			return nil, err
-		}
 		codeintelRanges = append(codeintelRanges, CodeIntelligenceRange{
 			Range:               newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			Definitions:         definitionLocations[r.DefinitionResultID],
 			References:          referenceLocations[r.ReferenceResultID],
 			HoverText:           documentData.Document.HoverResults[r.HoverResultID],
-			DocumentationPathID: documentationPathID,
+			DocumentationPathID: documentationPathIDs[r.DocumentationResultID],
 		})
 	}
 	sort.Slice(codeintelRanges, func(i, j int) bool {
