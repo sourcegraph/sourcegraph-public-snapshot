@@ -3,6 +3,7 @@ package licensing
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 
@@ -41,8 +42,13 @@ func checkFeature(info *Info, feature Feature) error {
 
 	// Check if the feature is explicitly allowed via license tag.
 	hasFeature := func(want Feature) bool {
+		wantTrimmed := strings.TrimSpace(string(want))
 		for _, t := range info.Tags {
-			if Feature(t) == want {
+			// We have been issuing licenses with trailing spaces in the tags for a while.
+			// Eventually we should be able to remove these `TrimSpace` calls again,
+			// as we now guard against that while generating licenses, but there
+			// are quite a few "wrong" licenses out there as of today (2021-07-19).
+			if strings.TrimSpace(t) == wantTrimmed {
 				return true
 			}
 		}
