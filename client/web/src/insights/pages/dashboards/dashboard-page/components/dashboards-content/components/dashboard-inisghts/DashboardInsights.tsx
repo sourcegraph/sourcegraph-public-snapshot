@@ -49,7 +49,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
         return (
             <div className="d-flex justify-content-center align-items-center pt-5">
                 <LoadingSpinner />
-                <span className="mx-2">Loading Sourcegraph extensions</span>
+                <span className="mx-2">Loading code insights</span>
                 <PuzzleIcon className="icon-inline" />
             </div>
         )
