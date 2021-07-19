@@ -212,7 +212,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
     {
         type: FilterType.type,
         placeholder: parsePlaceholder('{diff/commit/...}'),
-        commonRank: 90,
+        commonRank: 1,
         description:
             'Specifies the type of search. By default, searches are executed on all code at a given point in time (a branch or a commit). Specify the `type:` if you want to search over changes to code or commit messages instead (diffs or commits).',
         examples: ['type:symbol path', 'type:diff func', 'type:commit test'],
