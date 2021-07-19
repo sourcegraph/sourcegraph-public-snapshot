@@ -51,10 +51,10 @@ type InsightQueryArgs struct {
 
 // Get returns all matching viewable insight series.
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	preds := make([]*sqlf.Query, 0)
+	preds := make([]*sqlf.Query, 0, 2)
 
 	if len(args.UniqueIDs) > 0 {
-		elems := make([]*sqlf.Query, 0)
+		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
 		for _, id := range args.UniqueIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
@@ -105,12 +105,7 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}
-	err := s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
 }
 
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
