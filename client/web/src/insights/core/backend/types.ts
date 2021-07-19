@@ -50,9 +50,11 @@ export interface ApiService {
      * homepage, directory pages.
      *
      * @param getExtensionsInsights - extensions based insights getter via extension API.
+     * @param backendInsightsIds - specific dashboard subset of BE-like insight ids.
      */
     getCombinedViews: (
-        getExtensionsInsights: () => Observable<ViewProviderResult[]>
+        getExtensionsInsights: () => Observable<ViewProviderResult[]>,
+        backendInsightsIds?: string[]
     ) => Observable<ViewInsightProviderResult[]>
 
     /**
