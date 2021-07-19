@@ -31,7 +31,6 @@ interface BatchChangeRepoPageProps extends ThemeProps {
     history: H.History
     location: H.Location
     repo: RepositoryFields
-    isSourcegraphDotCom: boolean
     /** For testing only. */
     queryRepoBatchChangeStats?: typeof _queryRepoBatchChangeStats
     /** For testing only. */
@@ -42,7 +41,6 @@ interface BatchChangeRepoPageProps extends ThemeProps {
 
 export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPageProps> = ({
     repo,
-    isSourcegraphDotCom,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
     ...context
 }) => {
@@ -53,19 +51,13 @@ export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPagePro
     )
     const hasChangesets = stats?.changesetsStats.total
 
-    const createButton = (
-        <NewBatchChangeButton
-            to={`${isSourcegraphDotCom ? 'https://about.sourcegraph.com' : ''}/batch-changes/create`}
-        />
-    )
-
     return (
         <Page>
             <PageTitle title="Batch Changes" />
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 headingElement="h1"
-                actions={hasChangesets ? undefined : createButton}
+                actions={hasChangesets ? undefined : <NewBatchChangeButton to="/batch-changes/create" />}
                 description={
                     hasChangesets
                         ? undefined
