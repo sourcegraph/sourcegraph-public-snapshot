@@ -55,7 +55,10 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         }
     }, [id, isEditing, setIsEditing, onSelectBlock])
 
-    const onEnterBlock = useCallback(() => setIsEditing(true), [setIsEditing])
+    // setTimeout turns on editing mode in a separate run-loop which prevents adding a newline at the start of the input
+    const onEnterBlock = useCallback(() => {
+        setTimeout(() => setIsEditing(true), 0)
+    }, [setIsEditing])
 
     const { onSelect } = useBlockSelection({
         id,
