@@ -400,17 +400,40 @@ function interleave<T>(values: T[], filler: T): T[] {
     return result
 }
 
+/**
+ * Helper function to add quotation marks to filter values if needed. It's not
+ * as simple as adding quotes if the value contains spaces due to the existence
+ * of predicates.
+ */
+function addQuotesIfNeeded(filter: FilterType, value: string): string {
+    switch (filter) {
+        case FilterType.repo:
+        case FilterType.file:
+            // All predicates so far start with `contains`. We should probably
+            // find a more reliable way to identify them eventually.
+            if (/^contains[.(]/.test(value)) {
+                return value
+            }
+    }
+
+    if (/\s/.test(value)) {
+        return `"${value}"`
+    }
+    return value
+}
+
 const classNameTokenMap = {
     text: 'search-filter-keyword',
     value: styles.placeholder,
 }
 
 interface SearchReferenceExampleProps {
+    filter: FilterType
     example: string
     onClick: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
+const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ filter, example, onClick }) => {
     const parseResult = parseSearchQuery(example)
     // We only use valid queries as examples, so this will always be true
     if (parseResult.type === 'success') {
@@ -424,7 +447,7 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
                                     return (
                                         <>
                                             <span className="search-filter-keyword">{node.field}:</span>
-                                            {/\s/.test(node.value) ? `"${node.value}"` : node.value}
+                                            {addQuotesIfNeeded(filter, node.value)}
                                         </>
                                     )
                                 case 'pattern':
@@ -523,7 +546,11 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                             <div className={classNames('text-code', styles.examples)}>
                                 {searchReference.examples.map(example => (
                                     <p key={example}>
-                                        <SearchReferenceExample example={example} onClick={onExampleClick} />
+                                        <SearchReferenceExample
+                                            filter={searchReference.type}
+                                            example={example}
+                                            onClick={onExampleClick}
+                                        />
                                     </p>
                                 ))}
                             </div>
