@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, S
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
-import { useSteps } from '@sourcegraph/wildcard/src/components/Steps/context'
+import { useSteps } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useAffiliatedRepos } from '../../../auth/useAffiliatedRepos'

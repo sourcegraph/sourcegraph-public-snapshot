@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { useSteps } from '@sourcegraph/wildcard/src/components/Steps/context'
+import { useSteps } from '@sourcegraph/wildcard/src/components/Steps'
 import {
     Terminal,
     TerminalTitle,

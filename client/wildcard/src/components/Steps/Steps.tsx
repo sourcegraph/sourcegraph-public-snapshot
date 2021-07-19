@@ -115,12 +115,19 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
     const { current } = state
 
     const childrenArray = React.Children.toArray(children)
+    const indexArray = current - 1
 
     if (!children) {
         throw new Error('You need to add the same number of <StepPanels> and <Step> Components')
     }
 
-    return <div className="mt-4 pb-3">{childrenArray[current - 1]}</div>
+    if (indexArray < 0 || current > childrenArray.length) {
+        throw new Error(
+            'The step-index is out of the boundaries. Check if the number of steps and your initialStep or setStep assignation are in concordance.'
+        )
+    }
+
+    return <div className="mt-4 pb-3">{childrenArray[indexArray]}</div>
 }
 
 export const StepPanel: React.FunctionComponent = ({ children }) => <>{children}</>

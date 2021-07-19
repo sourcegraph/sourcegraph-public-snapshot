@@ -2,7 +2,7 @@ import React from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
-import { useStepListContext, useStepsContext, useSteps } from '@sourcegraph/wildcard/src/components/Steps/context'
+import { useSteps } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { getReturnTo } from '../SignInSignUpCommon'
 

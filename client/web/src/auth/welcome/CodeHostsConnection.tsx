@@ -2,7 +2,7 @@ import { ApolloError } from '@apollo/client'
 import React, { useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useSteps } from '@sourcegraph/wildcard/src/components/Steps/context'
+import { useSteps } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { UserCodeHosts } from '../../user/settings/codeHosts/UserCodeHosts'
 
@@ -20,7 +20,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
     loading,
     error,
 }) => {
-    const { setComplete, currentIndex, currentStep } = useSteps()
+    const { setComplete, currentIndex } = useSteps()
 
     useEffect(() => {
         if (Array.isArray(externalServices) && externalServices.length > 0) {
