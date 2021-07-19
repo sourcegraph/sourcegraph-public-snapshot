@@ -139,6 +139,11 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextPara
 		return a.DoStructuralSearch(ctx, args)
 	}
 
+	if args.PatternInfo.IsEmpty() {
+		// Empty query isn't an error, but it has no results.
+		return nil
+	}
+
 	return unindexed.SearchFilesInRepos(ctx, args, a)
 }
 
