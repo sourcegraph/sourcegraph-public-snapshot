@@ -43,7 +43,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const {
         mode = 'creation',
         subjects = [],
-        settings = {},
+        settings,
         initialValue,
         className,
         dataTestId,
