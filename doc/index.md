@@ -48,7 +48,7 @@ Find and fix things across all of your code faster with Sourcegraph. Onboard to 
 
 <span class="virtual-br"></span>
 
-> NOTE: Looking for *how* to use Sourcegraph? Refer to our [Using Sourcegraph guide](./getting-started/index.md)!
+> NOTE: Looking for how to *use* Sourcegraph? Refer to our [Using Sourcegraph guide](./getting-started/index.md)!
 
 <span class="virtual-br"></span>
 
