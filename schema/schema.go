@@ -1360,8 +1360,8 @@ type SettingsExperimentalFeatures struct {
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
-	// CodeInsightsDashboards description: Enables code insights dashboards separation for the code insight page.
-	CodeInsightsDashboards *bool `json:"codeInsightsDashboards,omitempty"`
+	// CodeInsightsAllRepos description: Enables the experimental ability to run an insight over all repositories on the instance.
+	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.

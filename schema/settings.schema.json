@@ -20,8 +20,8 @@
             "pointer": true
           }
         },
-        "codeInsightsDashboards": {
-          "description": "Enables code insights dashboards separation for the code insight page.",
+        "codeInsightsAllRepos": {
+          "description": "Enables the experimental ability to run an insight over all repositories on the instance.",
           "type": "boolean",
           "default": false,
           "!go": {
