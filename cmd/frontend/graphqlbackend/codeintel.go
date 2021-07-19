@@ -152,6 +152,8 @@ type GitBlobLSIFDataResolver interface {
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 	Documentation(ctx context.Context, args *LSIFQueryPositionArgs) (DocumentationResolver, error)
+	DocumentationDefinitions(ctx context.Context, args *LSIFQueryDocumentationArgs) (LocationConnectionResolver, error)
+	DocumentationReferences(ctx context.Context, args *LSIFPagedQueryDocumentationArgs) (LocationConnectionResolver, error)
 }
 
 type GitBlobLSIFDataArgs struct {
@@ -174,6 +176,16 @@ type LSIFQueryPositionArgs struct {
 
 type LSIFPagedQueryPositionArgs struct {
 	LSIFQueryPositionArgs
+	graphqlutil.ConnectionArgs
+	After *string
+}
+
+type LSIFQueryDocumentationArgs struct {
+	PathID string
+}
+
+type LSIFPagedQueryDocumentationArgs struct {
+	PathID string
 	graphqlutil.ConnectionArgs
 	After *string
 }

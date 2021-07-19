@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -178,7 +179,6 @@ func (s *Store) scanFirstDocumentationPathID(rows *sql.Rows, queryErr error) (_ 
 	return pathID, nil
 }
 
-//nolint:unused
 func (s *Store) documentationPathIDToID(ctx context.Context, bundleID int, pathID string) (_ semantic.ID, err error) {
 	ctx, _, endObservation := s.operations.documentationPathIDToID.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -209,7 +209,6 @@ LIMIT 1
 `
 
 // scanFirstDocumentationResultID reads the first result_id row. If no rows match the query, an empty string is returned.
-//nolint:unused
 func (s *Store) scanFirstDocumentationResultID(rows *sql.Rows, queryErr error) (_ int64, err error) {
 	if queryErr != nil {
 		return -1, queryErr
@@ -225,4 +224,76 @@ func (s *Store) scanFirstDocumentationResultID(rows *sql.Rows, queryErr error) (
 		return -1, err
 	}
 	return resultID, nil
+}
+
+// DocumentationDefinitions returns the set of locations defining the symbol found at the given path ID, if any.
+func (s *Store) DocumentationDefinitions(ctx context.Context, bundleID int, path, pathID string, limit, offset int) (_ []Location, _ int, err error) {
+	resultID, err := s.documentationPathIDToID(ctx, bundleID, pathID)
+	if err != nil || resultID == "" {
+		return nil, 0, err
+	}
+	extractor := func(r semantic.RangeData) semantic.ID { return r.DefinitionResultID }
+	operation := s.operations.documentationDefinitions
+	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, path, resultID, limit, offset)
+}
+
+// DocumentationReferences returns the set of locations referencing the symbol found at the given path ID, if any.
+func (s *Store) DocumentationReferences(ctx context.Context, bundleID int, path string, pathID string, limit, offset int) (_ []Location, _ int, err error) {
+	resultID, err := s.documentationPathIDToID(ctx, bundleID, pathID)
+	if resultID == "" || err != nil {
+		return nil, 0, err
+	}
+	extractor := func(r semantic.RangeData) semantic.ID { return r.ReferenceResultID }
+	operation := s.operations.documentationReferences
+	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, path, resultID, limit, offset)
+}
+
+func (s *Store) documentationDefinitionsReferences(
+	ctx context.Context,
+	extractor func(r semantic.RangeData) semantic.ID,
+	operation *observation.Operation,
+	bundleID int,
+	path string,
+	resultID semantic.ID,
+	limit,
+	offset int,
+) (_ []Location, _ int, err error) {
+	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.String("resultID", string(resultID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, 0, err
+	}
+
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	var found *semantic.RangeData
+	for _, rn := range documentData.Document.Ranges {
+		if rn.DocumentationResultID == resultID {
+			found = &rn
+			break
+		}
+	}
+	traceLog(log.Bool("found", found == nil))
+	if found == nil {
+		return nil, 0, errors.New("not found")
+	}
+
+	orderedResultIDs := extractResultIDs([]semantic.RangeData{*found}, extractor)
+	locationsMap, totalCount, err := s.locations(ctx, bundleID, orderedResultIDs, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	traceLog(log.Int("totalCount", totalCount))
+
+	locations := make([]Location, 0, limit)
+	for _, resultID := range orderedResultIDs {
+		locations = append(locations, locationsMap[resultID]...)
+	}
+
+	return locations, totalCount, nil
 }
