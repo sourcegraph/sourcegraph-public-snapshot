@@ -124,7 +124,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         target="_blank"
                         rel="noopener noreferrer"
                         data-tooltip={badge.hoverMessage}
-                        className="badge badge-secondary text-muted text-uppercase file-match__badge badge-sm"
+                        className="badge badge-secondary badge-sm text-muted text-uppercase file-match__badge"
                     >
                         {badge.text}
                     </LinkOrSpan>
