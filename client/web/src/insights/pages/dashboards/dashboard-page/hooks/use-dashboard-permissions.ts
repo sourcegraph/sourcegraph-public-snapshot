@@ -83,7 +83,7 @@ export function getTooltipMessage(permissions: DashboardPermissions): string | u
 
     switch (permissions.reason) {
         case DashboardReasonDenied.UnknownDashboard:
-            return "Dashboard not found"
+            return 'Dashboard not found'
         case DashboardReasonDenied.PermissionDenied:
             return "You don't a permission to edit this dashboard"
         case DashboardReasonDenied.BuiltInCantBeEdited:
