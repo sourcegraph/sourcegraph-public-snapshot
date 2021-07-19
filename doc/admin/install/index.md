@@ -9,7 +9,7 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 <div class="cta-group">
 <a class="btn btn-primary" href="#self-hosted">★ Self-hosted instance</a>
 <a class="btn" href="managed">Managed instance</a>
-<a class="btn" href="#get-help">Get help</a>
+<a class="btn" href="../#get-help">Get help</a>
 </div>
 
 ## Self-hosted
@@ -33,10 +33,3 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 ### Resource estimator
 
 Use the [resource estimator](resource_estimator.md) to find a good starting point for your deployment.
-
-## Get help
-
-* [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide)
-* [Tweet (@sourcegraph)](https://twitter.com/sourcegraph)
-* [Talk to an engineer](https://info.sourcegraph.com/talk-to-a-developer)
-* [Talk to a product specialist](https://about.sourcegraph.com/contact/request-info/)

@@ -52,7 +52,7 @@ Find and fix things across all of your code faster with Sourcegraph. Onboard to 
 
 <span class="virtual-br"></span>
 
-> NOTE: Need help? [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@sourcegraph)](https://twitter.com/sourcegraph), or [email us](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+> NOTE: Unsure where to start, or need help? [Reach out to us](#get-help)!
 
 ### Quick install
 
@@ -89,7 +89,7 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 
 - [Query syntax reference](code_search/reference/queries.md)
 - [GraphQL API](api/graphql/index.md)
-- [Sourcegraph Changelog](./CHANGELOG.md)
+- [Sourcegraph changelog](./CHANGELOG.md)
 - [Contributing to Sourcegraph](dev/index.md)
 
 ## Other links
@@ -98,3 +98,10 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
 - [Product Roadmap](https://about.sourcegraph.com/direction)
+
+## Get help
+
+- [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide)
+- [Tweet (@sourcegraph)](https://twitter.com/sourcegraph)
+- [Talk to an engineer](https://info.sourcegraph.com/talk-to-a-developer)
+- [Talk to a product specialist](https://about.sourcegraph.com/contact/request-info/)
