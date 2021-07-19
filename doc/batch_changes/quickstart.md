@@ -9,7 +9,8 @@ In this guide, you'll create a Sourcegraph batch change that appends text to all
 For more information about Batch Changes see the ["Batch Changes"](index.md) documentation and watch the [Batch Changes demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
 ## Requirements
-- A Sourcegraph instance with some repositories in it. See "[Quickstart](../../index.md#quickstart)" on how to setup a Sourcegraph instance.
+
+- A Sourcegraph instance with some repositories in it. See "[Quick install](../index.md#quick-install)" on how to set up a Sourcegraph instance.
 - A local environment matching "[Requirements](./references/requirements.md)" to create batch changes with the Sourcegraph CLI.
 
 ## Install the Sourcegraph CLI
