@@ -61,10 +61,12 @@ export interface ApiService {
      * @param extensionApi - extension API for getting extension insights.
      * @param insightsIds - specific insight ids for loading. Used by dashboard
      * pages that have only sub-set of all insights.
+     * @param backendInsightsIds - specific dashboard subset of BE-like insight ids.
      */
     getInsightCombinedViews: (
         extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
-        insightsIds?: string[]
+        allInsightsIds?: string[],
+        backendInsightsIds?: string[]
     ) => Observable<ViewInsightProviderResult[]>
 
     /**

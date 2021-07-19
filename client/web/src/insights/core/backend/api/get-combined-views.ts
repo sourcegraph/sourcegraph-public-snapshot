@@ -36,33 +36,35 @@ export const getCombinedViews = (
                 }))
             )
         ),
-        fetchBackendInsights(insightIds ?? []).pipe(
-            startWith(null),
-            map(backendInsights =>
-                backendInsights === null
-                    ? [{ id: 'Backend insights', view: undefined, source: ViewInsightProviderSourceType.Backend }]
-                    : backendInsights?.map(
-                          (insight): ViewInsightProviderResult => ({
-                              id: insight.id,
-                              view: {
-                                  title: insight.title,
-                                  subtitle: insight.description,
-                                  content: [createViewContent(insight)],
-                              },
+        insightIds?.length
+            ? fetchBackendInsights(insightIds).pipe(
+                  startWith(null),
+                  map(backendInsights =>
+                      backendInsights === null
+                          ? [{ id: 'Backend insights', view: undefined, source: ViewInsightProviderSourceType.Backend }]
+                          : backendInsights?.map(
+                                (insight): ViewInsightProviderResult => ({
+                                    id: insight.id,
+                                    view: {
+                                        title: insight.title,
+                                        subtitle: insight.description,
+                                        content: [createViewContent(insight)],
+                                    },
+                                    source: ViewInsightProviderSourceType.Backend,
+                                })
+                            )
+                  ),
+                  catchError(error =>
+                      of<ViewInsightProviderResult[]>([
+                          {
+                              id: 'Backend insight',
+                              view: asError(error),
                               source: ViewInsightProviderSourceType.Backend,
-                          })
-                      )
-            ),
-            catchError(error =>
-                of<ViewInsightProviderResult[]>([
-                    {
-                        id: 'Backend insight',
-                        view: asError(error),
-                        source: ViewInsightProviderSourceType.Backend,
-                    },
-                ])
-            )
-        ),
+                          },
+                      ])
+                  )
+              )
+            : of([]),
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 
 /**
@@ -70,12 +72,15 @@ export const getCombinedViews = (
  */
 export const getInsightCombinedViews = (
     extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
-    insightIds?: string[]
+    allInsightIds?: string[],
+    backendInsightIds?: string[]
 ): Observable<ViewInsightProviderResult[]> =>
     getCombinedViews(
         () =>
             from(extensionApi).pipe(
-                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, insightIds)))
+                switchMap(extensionHostAPI =>
+                    wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, allInsightIds))
+                )
             ),
-        insightIds
+        backendInsightIds
     )
