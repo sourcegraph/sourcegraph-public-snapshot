@@ -242,11 +242,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
-		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") == "true",
+		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") != "false",
 	}
 
 	if syncer.Streaming {
-		log15.Info("Running syncer in streaming mode because ENABLE_STREAMING_REPOS_SYNCER is set to true ")
+		log15.Info("Running syncer in streaming mode because ENABLE_STREAMING_REPOS_SYNCER != false")
 	}
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
