@@ -186,12 +186,18 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	for i, cliStep := range job.CliSteps {
 		log15.Info(fmt.Sprintf("Running src-cli step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
+		env := cliStep.Env
+		if !options.FirecrackerOptions.Enabled {
+			for _, k := range srcCliHostEnvVars {
+				env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
+			}
+		}
+
 		cliStepCommand := command.CommandSpec{
-			Key:     fmt.Sprintf("step.src.%d", i),
-			Command: append([]string{"src"}, cliStep.Commands...),
-			Dir:     cliStep.Dir,
-			// TODO: We need $HOME/$PATH from the machine on which this is executed
-			Env:       cliStep.Env,
+			Key:       fmt.Sprintf("step.src.%d", i),
+			Command:   append([]string{"src"}, cliStep.Commands...),
+			Dir:       cliStep.Dir,
+			Env:       env,
 			Operation: h.operations.Exec,
 		}
 
@@ -202,6 +208,13 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 
 	return nil
 }
+
+// srcCliHostEnvVars is a list of environment variable names that Job.CliSteps
+// inherit when executing directly on the host.
+//
+// That only happens if Firecracker is disabled (which is only on
+// developer macOS machines).
+var srcCliHostEnvVars = []string{"HOME", "PATH"}
 
 var scriptPreamble = `
 set -x
