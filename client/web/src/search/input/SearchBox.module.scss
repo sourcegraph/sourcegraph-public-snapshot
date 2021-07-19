@@ -8,8 +8,7 @@
     min-width: 12rem;
 
     :global(.theme-redesign) & {
-        // TODO #21592: Re-enable shadow once help button is removed
-        // box-shadow: var(--search-input-shadow);
+        box-shadow: var(--search-input-shadow);
 
         @media (--xs-breakpoint-down) {
             background-color: var(--color-bg-1);
