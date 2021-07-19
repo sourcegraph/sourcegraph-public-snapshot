@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -15,7 +17,7 @@ import (
 func TestGet(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	now := time.Now()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	_, err := timescale.Exec(`INSERT INTO insight_view (title, description, unique_id)
 									VALUES ('test title', 'test description', 'unique-1'),
@@ -188,7 +190,7 @@ func TestGet(t *testing.T) {
 func TestCreateSeries(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	now := time.Now()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(timescale)
 	store.Now = func() time.Time {
@@ -224,6 +226,8 @@ func TestCreateSeries(t *testing.T) {
 			CreatedAt:             now,
 		}
 
+		log15.Info("values", "want", want, "got", got)
+
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight series (want/got): %s", diff)
 		}
@@ -233,7 +237,7 @@ func TestCreateSeries(t *testing.T) {
 func TestCreateView(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	now := time.Now()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
 	store := NewInsightStore(timescale)
@@ -270,7 +274,7 @@ func TestCreateView(t *testing.T) {
 func TestAttachSeriesView(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	now := time.Now().Round(0)
+	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
 	store := NewInsightStore(timescale)
@@ -282,9 +286,9 @@ func TestAttachSeriesView(t *testing.T) {
 		series := types.InsightSeries{
 			SeriesID:              "unique-1",
 			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365).Truncate(time.Microsecond).Round(0),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365).Truncate(time.Microsecond).Round(0),
-			NextRecordingAfter:    now.Truncate(time.Microsecond),
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:    now,
 			RecordingIntervalDays: 4,
 		}
 		series, err := store.CreateSeries(ctx, series)
@@ -319,7 +323,7 @@ func TestAttachSeriesView(t *testing.T) {
 			Title:                 view.Title,
 			Description:           view.Description,
 			Query:                 series.Query,
-			CreatedAt:             series.CreatedAt.Truncate(time.Microsecond).Round(0),
+			CreatedAt:             series.CreatedAt,
 			OldestHistoricalAt:    series.OldestHistoricalAt,
 			LastRecordedAt:        series.LastRecordedAt,
 			NextRecordingAfter:    series.NextRecordingAfter,
