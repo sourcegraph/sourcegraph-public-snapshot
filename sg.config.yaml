@@ -483,6 +483,18 @@ commands:
       CONTAINER: codeinsights-db
       PORT: 5435
 
+  redis-postgres:
+    # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
+    # database:
+    #
+    #   env:
+    #       POSTGRES_HOST: localhost
+    #       PGPASSWORD: sourcegraph
+    #       PGUSER: sourcegraph
+    #
+    # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
+    cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
+
 checks:
   docker:
     cmd: docker version
