@@ -2,14 +2,7 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React, { useEffect, useMemo, useReducer, useRef, MutableRefObject } from 'react'
 
-import {
-    StepsContext,
-    useStepsContext,
-    StepListContext,
-    useStepListContext,
-    Step as StepInterface,
-    Steps as StepsInterface,
-} from './context'
+import { StepsContext, useStepsContext, StepListContext, useStepListContext, Steps as StepsInterface } from './context'
 import { initialState, reducer } from './reducer'
 import stepsStyles from './Steps.module.scss'
 
@@ -95,7 +88,6 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
     )
 
     useEffect(() => {
-        console.log('joining to StepList')
         dispatch({ type: 'SET_STEPS', payload: { steps: stepsCollection.current() } })
     }, [dispatch, stepsCollection])
 
@@ -120,18 +112,13 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
 
 export const StepPanels: React.FunctionComponent = ({ children }) => {
     const { state } = useStepsContext()
-    const { current, steps } = state
+    const { current } = state
 
     const childrenArray = React.Children.toArray(children)
-    // const stepsLength = Object.keys(steps).length
 
-    // TODO: HOW TO TELL EXPLICIT CHECK AFTER THE FIRST RENDER
-    // || childrenArray.length !== stepsLength
     if (!children) {
         throw new Error('You need to add the same number of <StepPanels> and <Step> Components')
     }
-
-    console.log('step panels - StepPanels', current)
 
     return <div className="mt-4 pb-3">{childrenArray[current - 1]}</div>
 }

@@ -266,10 +266,8 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         const didChange = !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
 
         if (didChange) {
-            if (!currentStep.isComplete) {
-                setComplete(currentIndex, true)
-            }
-        } else if (currentStep.isComplete) {
+            setComplete(currentIndex, true)
+        } else {
             setComplete(currentIndex, false)
         }
 
@@ -290,7 +288,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         selectedReposVar(selection)
 
         setDidSelectionChange(didChange)
-    }, [onloadSelectedRepos, selectionState.repos, setComplete, currentIndex, currentStep])
+    }, [currentIndex, onloadSelectedRepos, selectionState.repos, setComplete])
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
         setSelectionState({

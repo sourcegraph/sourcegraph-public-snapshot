@@ -83,13 +83,13 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
     }, [externalServices, saveSelectedRepos, repoSelectionMode])
 
     const { showAlert } = useShowAlert(isDoneCloning)
-    const { currentIndex, currentStep, setComplete } = useSteps()
+    const { currentIndex, setComplete } = useSteps()
 
     useEffect(() => {
-        if (!currentStep.isComplete && showAlert) {
-            setComplete(currentIndex)
+        if (showAlert) {
+            setComplete(currentIndex, true)
         }
-    }, [currentIndex, currentStep.isComplete, setComplete, showAlert])
+    }, [currentIndex, setComplete, showAlert])
 
     return (
         <>

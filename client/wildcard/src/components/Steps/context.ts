@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 export interface Step {
     index: number
@@ -67,12 +67,18 @@ export const useSteps = (): UseSteps => {
     const context = useStepsContext()
     const { state, dispatch } = context
 
-    const setStep = (index: number): void => dispatch({ type: 'SET_CURRENT_STEP', payload: { index } })
-    const setComplete = (index: number, complete = true): void =>
-        dispatch({ type: 'SET_COMPLETE_STEP', payload: { index, complete } })
     const currentIndex = state.current
     const currentStep = state.steps[currentIndex]
     const steps = state.steps
 
-    return { setStep, currentIndex, currentStep, steps, setComplete }
+    const setters = useMemo(
+        () => ({
+            setStep: (index: number): void => dispatch({ type: 'SET_CURRENT_STEP', payload: { index } }),
+            setComplete: (index: number, complete = true): void =>
+                dispatch({ type: 'SET_COMPLETE_STEP', payload: { index, complete } }),
+        }),
+        [dispatch]
+    )
+
+    return { currentIndex, currentStep, steps, ...setters }
 }

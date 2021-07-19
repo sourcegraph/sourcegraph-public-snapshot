@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useState } from 'react'
-import { useLocation } from 'react-router'
+import { useHistory, useLocation } from 'react-router'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -39,6 +39,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     telemetryService,
 }) => {
     const location = useLocation()
+    const history = useHistory()
+
     const skipPostSignup = (): void => history.push(getReturnTo(location))
 
     const [repoSelectionMode, setRepoSelectionMode] = useState<RepoSelectionMode>()

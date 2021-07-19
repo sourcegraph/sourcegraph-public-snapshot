@@ -24,13 +24,11 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
 
     useEffect(() => {
         if (Array.isArray(externalServices) && externalServices.length > 0) {
-            if (!currentStep.isComplete) {
-                setComplete(currentIndex, true)
-            }
-        } else if (currentStep.isComplete) {
+            setComplete(currentIndex, true)
+        } else {
             setComplete(currentIndex, false)
         }
-    }, [currentIndex, setComplete, externalServices, currentStep])
+    }, [currentIndex, externalServices, setComplete])
 
     if (loading) {
         return (
