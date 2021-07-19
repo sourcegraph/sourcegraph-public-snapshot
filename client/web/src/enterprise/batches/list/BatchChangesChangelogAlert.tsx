@@ -24,7 +24,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                             Learn more.
                         </a>
                     </li>
-                    <li>You can now view open changesets per repository from the repository landing page.</li>
+                    <li>You can now view changesets created in a specific repository from that repository's landing page.</li>
                 </ul>
             </div>
         </div>
