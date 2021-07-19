@@ -10,7 +10,7 @@ export function getGlobalSubjectTooltipText(globalSubject: SettingsSiteSubject |
 
     const globalSubjectAdminCheckMessage = globalSubject.viewerCanAdminister
         ? undefined
-        : "You don't have a permission to change global scope. Reach out your site admin"
+        : "You don't have permission to change the global scope. Reach out to your site admin"
 
     return globalSubject.allowSiteSettingsEdits
         ? globalSubjectAdminCheckMessage

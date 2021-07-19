@@ -11,6 +11,7 @@ import {
 } from '../../core/types/subjects'
 import { FormGroup } from '../form/form-group/FormGroup'
 import { FormRadioInput } from '../form/form-radio-input/FormRadioInput'
+import { getGlobalSubjectTooltipText } from '../../pages/dashboards/creation/components/insights-dashboard-creation-content/utils/get-global-subject-tooltip-text';
 
 export interface VisibilityPickerProps {
     /**
@@ -106,6 +107,8 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                 description="visible to everyone on your Sourcegraph instance"
                 checked={value === globalSubject.id}
                 disabled={!canGlobalSubjectBeEdited}
+                labelTooltipText={getGlobalSubjectTooltipText(globalSubject)}
+                labelTooltipPosition='bottom'
                 className="mr-3 w-100"
                 onChange={handleChange}
             />
