@@ -10,7 +10,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
-import { Maybe, RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'
+import { RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { BatchChangeStatsTotalAction } from '../detail/BatchChangeStatsCard'
 import {
@@ -48,7 +48,7 @@ export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPagePro
 }) => {
     const repoDisplayName = displayRepoName(repo.name)
 
-    const stats: Maybe<RepoBatchChangeStats> | undefined = useObservable(
+    const stats: RepoBatchChangeStats | undefined = useObservable(
         useMemo(() => queryRepoBatchChangeStats({ name: repo.name }), [queryRepoBatchChangeStats, repo.name])
     )
     const hasChangesets = stats?.changesetsStats.total

@@ -32,7 +32,7 @@ const repoBatchChangeStatsFragment = gql`
 
 export const queryRepoBatchChangeStats = ({
     name,
-}: RepoBatchChangeStatsVariables): Observable<RepoBatchChangeStatsResult['repository']> =>
+}: RepoBatchChangeStatsVariables): Observable<NonNullable<RepoBatchChangeStatsResult['repository']>> =>
     requestGraphQL<RepoBatchChangeStatsResult, RepoBatchChangeStatsVariables>(
         gql`
             query RepoBatchChangeStats($name: String!) {
@@ -47,7 +47,9 @@ export const queryRepoBatchChangeStats = ({
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            console.log(data)
+            if (!data.repository) {
+                throw new Error(`Repository "${name}" not found`)
+            }
             return data.repository
         })
     )
@@ -92,7 +94,7 @@ export const queryRepoBatchChanges = ({
     state = null,
     viewerCanAdminister = null,
 }: Partial<RepoBatchChangesVariables> & Pick<RepoBatchChangesVariables, 'name' | 'repoID'>): Observable<
-    RepoBatchChangesResult['repository']
+    NonNullable<RepoBatchChangesResult['repository']>
 > =>
     requestGraphQL<RepoBatchChangesResult, RepoBatchChangesVariables>(
         gql`
@@ -129,7 +131,9 @@ export const queryRepoBatchChanges = ({
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            console.log(data)
+            if (!data.repository) {
+                throw new Error(`Repository "${name}" not found`)
+            }
             return data.repository
         })
     )

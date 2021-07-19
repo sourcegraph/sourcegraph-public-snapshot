@@ -47,21 +47,7 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                 first: args.first ?? null,
                 after: args.after ?? null,
             }
-            return queryRepoBatchChanges(passedArguments).pipe(
-                map(data => {
-                    if (!data) {
-                        return {
-                            totalCount: 0,
-                            nodes: [],
-                            pageInfo: {
-                                endCursor: null,
-                                hasNextPage: false,
-                            },
-                        }
-                    }
-                    return data.batchChanges
-                })
-            )
+            return queryRepoBatchChanges(passedArguments).pipe(map(data => data.batchChanges))
         },
         [queryRepoBatchChanges, repo.id, repo.name]
     )
