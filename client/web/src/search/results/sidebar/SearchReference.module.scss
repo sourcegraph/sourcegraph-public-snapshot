@@ -35,6 +35,7 @@
     &:hover {
         .collapse-button {
             @extend .collapse-button, :focus;
+            transition: width 0.2s ease-in-out, opacity 0.2s ease-in-out;
         }
     }
 
@@ -76,21 +77,13 @@
     padding: 0 0.5rem;
     width: 0;
     overflow: hidden;
-    transition: width 0.1s ease-in-out;
     white-space: nowrap;
-
-    * {
-        opacity: 0;
-        transition: opacity 0.1s ease-in-out;
-    }
+    opacity: 0;
 
     &:focus {
         display: inline-block;
         width: 2rem;
-
-        * {
-            opacity: 1;
-        }
+        opacity: 1;
     }
 }
 
