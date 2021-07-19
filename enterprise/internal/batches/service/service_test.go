@@ -1067,6 +1067,37 @@ func TestService(t *testing.T) {
 				}
 			})
 		})
+
+		t.Run("PublishChangesets", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(admin.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			changeset := ct.CreateChangeset(t, adminCtx, s, ct.TestChangesetOpts{
+				Repo:            rs[0].ID,
+				ReconcilerState: btypes.ReconcilerStateCompleted,
+				BatchChange:     batchChange.ID,
+			})
+
+			_, err := svc.CreateChangesetJobs(
+				adminCtx,
+				batchChange.ID,
+				[]int64{changeset.ID},
+				btypes.ChangesetJobTypePublish,
+				btypes.ChangesetJobPublishPayload{Draft: true},
+				store.ListChangesetsOpts{},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+		})
 	})
 }
 

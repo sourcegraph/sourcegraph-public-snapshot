@@ -119,6 +119,8 @@ func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, err
 		return "MERGE", nil
 	case btypes.ChangesetJobTypeClose:
 		return "CLOSE", nil
+	case btypes.ChangesetJobTypePublish:
+		return "PUBLISH", nil
 	default:
 		return "", errors.Errorf("invalid job type %q", t)
 	}

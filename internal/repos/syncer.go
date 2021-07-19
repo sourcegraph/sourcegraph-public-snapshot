@@ -1011,8 +1011,6 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 			if errcode.IsUnauthorized(errs) || errcode.IsForbidden(errs) || errcode.IsAccountSuspended(errs) {
 				// Delete all external service repos of this external service
 				seen = map[api.RepoID]struct{}{}
-				// Eagerly stop sourcing, instead of waiting for all the follow up deletions to finish.
-				cancel()
 				break
 			}
 			continue

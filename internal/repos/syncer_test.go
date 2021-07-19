@@ -198,9 +198,11 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 				testCase{
 					// If the source is unauthorized we should treat this as if zero repos were
 					// returned as it indicates that the source no longer has access to its repos
-					name:    string(tc.repo.Name) + "/unauthorized",
-					sourcer: repos.NewFakeSourcer(&repos.ErrUnauthorized{}),
-					store:   s,
+					name: string(tc.repo.Name) + "/unauthorized",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), &repos.ErrUnauthorized{}),
+					),
+					store: s,
 					stored: types.Repos{tc.repo.With(
 						types.Opt.RepoSources(tc.svc.URN()),
 					)},
@@ -214,9 +216,11 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 				testCase{
 					// If the source is forbidden we should treat this as if zero repos were returned
 					// as it indicates that the source no longer has access to its repos
-					name:    string(tc.repo.Name) + "/forbidden",
-					sourcer: repos.NewFakeSourcer(&repos.ErrForbidden{}),
-					store:   s,
+					name: string(tc.repo.Name) + "/forbidden",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), &repos.ErrForbidden{}),
+					),
+					store: s,
 					stored: types.Repos{tc.repo.With(
 						types.Opt.RepoSources(tc.svc.URN()),
 					)},
@@ -230,9 +234,11 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 				testCase{
 					// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
 					// that the source no longer has access to its repos
-					name:    string(tc.repo.Name) + "/accountsuspended",
-					sourcer: repos.NewFakeSourcer(&repos.ErrAccountSuspended{}),
-					store:   s,
+					name: string(tc.repo.Name) + "/accountsuspended",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), &repos.ErrAccountSuspended{}),
+					),
+					store: s,
 					stored: types.Repos{tc.repo.With(
 						types.Opt.RepoSources(tc.svc.URN()),
 					)},
@@ -528,10 +534,6 @@ func testSyncerSync(s *repos.Store, streaming bool) func(*testing.T) {
 
 					if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 						t.Errorf("error %q doesn't contain %q", have, want)
-					}
-
-					if err != nil {
-						return
 					}
 				}
 
