@@ -179,7 +179,6 @@ func (s *Store) scanFirstDocumentationPathID(rows *sql.Rows, queryErr error) (_ 
 	return pathID, nil
 }
 
-//nolint:unused
 func (s *Store) documentationPathIDToID(ctx context.Context, bundleID int, pathID string) (_ semantic.ID, err error) {
 	ctx, _, endObservation := s.operations.documentationPathIDToID.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -210,7 +209,6 @@ LIMIT 1
 `
 
 // scanFirstDocumentationResultID reads the first result_id row. If no rows match the query, an empty string is returned.
-//nolint:unused
 func (s *Store) scanFirstDocumentationResultID(rows *sql.Rows, queryErr error) (_ int64, err error) {
 	if queryErr != nil {
 		return -1, queryErr
