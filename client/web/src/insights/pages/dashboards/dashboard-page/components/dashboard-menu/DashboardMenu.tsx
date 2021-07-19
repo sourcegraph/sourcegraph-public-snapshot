@@ -21,19 +21,26 @@ export enum DashboardMenuAction {
 }
 
 export interface DashboardMenuProps extends SettingsCascadeProps<Settings> {
+    innerRef: React.Ref<HTMLButtonElement>
     dashboard?: InsightDashboard
     onSelect?: (action: DashboardMenuAction) => void
+    tooltipText?: string
 }
 
 export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
-    const { dashboard, settingsCascade, onSelect = () => {} } = props
+    const { innerRef, dashboard, settingsCascade, onSelect = () => {}, tooltipText } = props
 
     const hasDashboard = dashboard !== undefined
     const permissions = useDashboardPermissions(dashboard, settingsCascade)
 
     return (
         <Menu>
-            <MenuButton className={classnames(styles.triggerButton, 'btn btn-icon')}>
+            <MenuButton
+                ref={innerRef}
+                data-tooltip={tooltipText}
+                data-placement="right"
+                className={classnames(styles.triggerButton, 'btn btn-icon')}
+            >
                 <DotsVerticalIcon size={16} />
             </MenuButton>
 

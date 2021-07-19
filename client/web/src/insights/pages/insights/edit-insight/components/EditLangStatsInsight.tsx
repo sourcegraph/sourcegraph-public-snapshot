@@ -39,7 +39,7 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
     }
 
     const handleCancel = (): void => {
-        history.push('/insights')
+        history.push(`/insights/dashboards/${insight.visibility}`)
     }
 
     return (

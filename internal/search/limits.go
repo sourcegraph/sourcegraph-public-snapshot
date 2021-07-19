@@ -16,7 +16,7 @@ const (
 	DefaultTimeout = 20 * time.Second
 )
 
-func SearchLimits() schema.SearchLimits {
+func SearchLimits(c *conf.Unified) schema.SearchLimits {
 	// Our configuration reader does not set defaults from schema. So we rely
 	// on Go default values to mean defaults.
 	withDefault := func(x *int, def int) {
@@ -24,8 +24,6 @@ func SearchLimits() schema.SearchLimits {
 			*x = def
 		}
 	}
-
-	c := conf.Get()
 
 	var limits schema.SearchLimits
 	if c.SearchLimits != nil {

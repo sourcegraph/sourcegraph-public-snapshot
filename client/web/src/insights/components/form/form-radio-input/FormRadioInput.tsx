@@ -22,7 +22,7 @@ export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props =>
         <label
             data-placement={labelTooltipPosition}
             data-tooltip={labelTooltipText}
-            className={classnames('d-flex flex-wrap align-items-center w-100', className, {
+            className={classnames('d-flex flex-wrap align-items-center', className, {
                 'text-muted': otherProps.disabled,
             })}
         >

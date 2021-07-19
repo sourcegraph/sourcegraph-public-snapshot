@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -46,7 +47,7 @@ func assertEqual(t *testing.T, got, want interface{}) {
 func TestSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	limitOffset := &database.LimitOffset{Limit: search.SearchLimits().MaxRepos + 1}
+	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -1031,16 +1032,16 @@ func TestIsGlobalSearch(t *testing.T) {
 		searchQuery    string
 		versionContext *string
 		patternType    query.SearchType
-		wantIsGlobal   bool
+		mode           search.GlobalSearchMode
 	}{
-		{name: "user search context", searchQuery: "foo context:@userA", wantIsGlobal: false},
-		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, wantIsGlobal: false},
-		{name: "version context", searchQuery: "foo", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "global search context", searchQuery: "foo context:global", wantIsGlobal: true},
-		{name: "global search", searchQuery: "foo", wantIsGlobal: true},
+		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
+		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
+		{name: "version context", searchQuery: "foo", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
+		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
 	}
 
 	for _, tt := range tts {
@@ -1059,9 +1060,9 @@ func TestIsGlobalSearch(t *testing.T) {
 				},
 			}
 
-			gotIsGlobal := resolver.isGlobalSearch()
-			if gotIsGlobal != tt.wantIsGlobal {
-				t.Fatalf("got %+v, want %+v", gotIsGlobal, tt.wantIsGlobal)
+			p, _ := resolver.toTextParameters(resolver.Query)
+			if p.Mode != tt.mode {
+				t.Fatalf("got %+v, want %+v", p.Mode, tt.mode)
 			}
 		})
 	}

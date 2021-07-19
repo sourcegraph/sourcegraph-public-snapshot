@@ -1,4 +1,4 @@
-package main
+package stdout
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var out = output.NewOutput(os.Stdout, output.OutputOpts{
+var Out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceColor: true,
 	ForceTTY:   true,
 })

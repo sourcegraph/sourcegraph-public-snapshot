@@ -62,8 +62,17 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     const nameValidator = useDashboardNameValidator({ settings: dashboardsSettings })
-    const name = useField('name', formAPI, { sync: nameValidator })
-    const visibility = useField('visibility', formAPI)
+
+    const name = useField({
+        name: 'name',
+        formApi: formAPI,
+        validators: { sync: nameValidator },
+    })
+
+    const visibility = useField({
+        name: 'visibility',
+        formApi: formAPI,
+    })
 
     // We always have user subject in our settings cascade
     const userSubject = getUserSubject(subjects)
