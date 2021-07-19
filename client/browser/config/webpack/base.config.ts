@@ -98,9 +98,17 @@ export const config = subtypeOf<webpack.Configuration>()({
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),
         // Code splitting doesn't make sense/work in the browser extension, but we still want to use dynamic import()
         new optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
+        new webpack.ProvidePlugin({
+            process: 'process/browser',
+            // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
+            Buffer: ['buffer', 'Buffer'],
+        }),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
+        alias: {
+            path: require.resolve('path-browserify'),
+        },
     },
     module: {
         rules: [
