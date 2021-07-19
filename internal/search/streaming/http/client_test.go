@@ -32,6 +32,10 @@ func TestDecoder(t *testing.T) {
 				Type: FileMatchType,
 				Path: "test",
 			},
+			&EventPathMatch{
+				Type: PathMatchType,
+				Path: "test",
+			},
 			&EventRepoMatch{
 				Type:       RepoMatchType,
 				Repository: "test",

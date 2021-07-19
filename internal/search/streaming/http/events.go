@@ -29,6 +29,23 @@ type EventFileMatch struct {
 
 func (e *EventFileMatch) eventMatch() {}
 
+// EventPathMatch is a subset of zoekt.FileMatch for our Event API.
+// It is used for result.FileMatch results with no line matches and
+// no symbol matches, indicating it represents a match of the file itself
+// and not its content.
+type EventPathMatch struct {
+	// Type is always PathMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Path       string   `json:"name"`
+	Repository string   `json:"repository"`
+	RepoStars  int      `json:"repoStars,omitempty"`
+	Branches   []string `json:"branches,omitempty"`
+	Version    string   `json:"version,omitempty"`
+}
+
+func (e *EventPathMatch) eventMatch() {}
+
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
 	Line             string     `json:"line"`
@@ -131,6 +148,7 @@ const (
 	RepoMatchType
 	SymbolMatchType
 	CommitMatchType
+	PathMatchType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
@@ -143,6 +161,8 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"symbol"`), nil
 	case CommitMatchType:
 		return []byte(`"commit"`), nil
+	case PathMatchType:
+		return []byte(`"path"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
@@ -158,6 +178,8 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 		*t = SymbolMatchType
 	} else if bytes.Equal(b, []byte(`"commit"`)) {
 		*t = CommitMatchType
+	} else if bytes.Equal(b, []byte(`"path"`)) {
+		*t = PathMatchType
 	} else {
 		return errors.Errorf("unknown MatchType: %s", b)
 	}
