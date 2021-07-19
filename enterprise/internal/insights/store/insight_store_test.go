@@ -284,7 +284,7 @@ func TestAttachSeriesView(t *testing.T) {
 			Query:                 "query-1",
 			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365).Truncate(time.Microsecond).Round(0),
 			LastRecordedAt:        now.Add(-time.Hour * 24 * 365).Truncate(time.Microsecond).Round(0),
-			NextRecordingAfter:    now,
+			NextRecordingAfter:    now.Truncate(time.Microsecond),
 			RecordingIntervalDays: 4,
 		}
 		series, err := store.CreateSeries(ctx, series)
