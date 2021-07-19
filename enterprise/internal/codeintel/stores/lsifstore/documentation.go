@@ -235,7 +235,7 @@ func (s *Store) DocumentationDefinitions(ctx context.Context, bundleID int, path
 		return nil, 0, err
 	}
 	extractor := func(r semantic.RangeData) semantic.ID { return r.DefinitionResultID }
-	operation := s.operations.definitions
+	operation := s.operations.documentationDefinitions
 	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, path, resultID, limit, offset)
 }
 
@@ -246,7 +246,7 @@ func (s *Store) DocumentationReferences(ctx context.Context, bundleID int, path 
 		return nil, 0, err
 	}
 	extractor := func(r semantic.RangeData) semantic.ID { return r.ReferenceResultID }
-	operation := s.operations.references
+	operation := s.operations.documentationReferences
 	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, path, resultID, limit, offset)
 }
 
