@@ -37,7 +37,7 @@ interface TabStatus {
     host: string
     protocol: string
     hasPermissions: boolean
-    isPrivateRepository: boolean
+    hasPrivateCloudError: boolean
 }
 
 assertEnvironment('OPTIONS')
@@ -68,12 +68,12 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (!id) {
         throw new Error('Currently active tab has no ID')
     }
-    const isPrivateRepository = await background.checkPrivateRepository(id)
+    const hasPrivateCloudError = await background.checkPrivateCloudError(id)
     const { host, protocol } = new URL(url)
     const hasPermissions = await browser.permissions.contains({
         origins: [`${protocol}//${host}/*`],
     })
-    return { isPrivateRepository, host, protocol, hasPermissions }
+    return { hasPrivateCloudError, host, protocol, hasPermissions }
 }
 
 // Make GraphQL requests from background page
@@ -193,7 +193,7 @@ const Options: React.FunctionComponent = () => {
                 optionFlags={optionFlagsWithValues}
                 onChangeOptionFlag={handleChangeOptionFlag}
                 showPrivateRepositoryAlert={
-                    currentTabStatus?.status.isPrivateRepository && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
+                    currentTabStatus?.status.hasPrivateCloudError && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
                 }
                 showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                 permissionAlert={permissionAlert}
