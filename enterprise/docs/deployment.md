@@ -6,7 +6,7 @@ This document describes how Sourcegraph is deployed and released.
 
 There are two ways customers deploy Sourcegraph:
 
-- **Single Docker container (from the `sourcegraph/server` Docker image)** ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/server) | [docs](https://docs.sourcegraph.com/#quickstart)): A Docker image that can be
+- **Single Docker container (from the `sourcegraph/server` Docker image)** ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/server) | [docs](https://docs.sourcegraph.com/#quick-install)): A Docker image that can be
   run on a single node with a simple command that is documented on our home page. It is the free and
   easy way for a customer to start using Sourcegraph.
 
@@ -19,7 +19,7 @@ There are two ways customers deploy Sourcegraph:
 
 Sourcegraph is deployed to multiple locations:
 
-1.  **Customers**: When customers want Sourcegraph to work on their private code, they deploy it to their own infrastructure using our [public documentation](https://docs.sourcegraph.com/#quickstart).
+1.  **Customers**: When customers want Sourcegraph to work on their private code, they deploy it to their own infrastructure using our [public documentation](https://docs.sourcegraph.com/#quick-install).
 1.  **Dogfood** ([sourcegraph.sgdev.org](https://sourcegraph.sgdev.org)): A Kubernetes cluster that
     runs an instance of Sourcegraph for all of our private code. It is identical to what
     customers run, except that it includes a few extra services, like a Phabricator instance for

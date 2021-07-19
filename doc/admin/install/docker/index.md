@@ -1,6 +1,6 @@
 # Install Sourcegraph with Docker
 
-> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
+> WARNING: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
 
 ---
 
@@ -28,6 +28,17 @@ TODO(ryan): Replace with updated screencast
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@sourcegraph)](https://twitter.com/sourcegraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+
+<span class="virtual-br"></span>
+
+> NOTE: If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled, sVirt doesn't allow the Docker process
+> to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message:
+
+> `Failed to setup nginx:failed to generate nginx configuration to /etc/sourcegraph: open /etc/sourcegraph/nginx.conf: permission denied`.
+
+> To fix this, run:
+
+> `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chown -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
 ## Cloud installation guides
 
