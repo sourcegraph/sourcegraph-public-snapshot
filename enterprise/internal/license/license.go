@@ -69,10 +69,19 @@ func ParseTagsInput(tagsStr string) []string {
 		return nil
 	}
 	tags := strings.Split(tagsStr, ",")
-	for i, tag := range tags {
-		tags[i] = strings.TrimSpace(tag)
+	return SanitizeTagsList(tags)
+}
+
+// SanitizeTagsList removes whitespace around tags and removes empty tags before
+// returning the list of tags.
+func SanitizeTagsList(tags []string) []string {
+	sTags := make([]string, 0)
+	for _, tag := range tags {
+		if tag := strings.TrimSpace(tag); tag != "" {
+			sTags = append(sTags, tag)
+		}
 	}
-	return tags
+	return sTags
 }
 
 type encodedInfo struct {
