@@ -67,6 +67,7 @@ export const createRepositoryRedirectResult = (
         __typename: 'Repository',
         changesetsStats: {
             open: 2,
+            merged: 4,
         },
         id: `RepositoryID:${repoName}`,
         name: repoName,

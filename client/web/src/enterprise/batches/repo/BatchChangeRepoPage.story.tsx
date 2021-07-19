@@ -24,6 +24,7 @@ const { add } = storiesOf('web/batches/BatchChangeRepoPage', module)
 const repoDefaults: RepositoryFields = {
     changesetsStats: {
         open: 2,
+        merged: 4,
     },
     description: 'An awesome repo!',
     defaultBranch: null,
@@ -100,7 +101,6 @@ add('List of batch changes', () => (
         {props => (
             <BatchChangeRepoPage
                 {...props}
-                isSourcegraphDotCom={false}
                 repo={repoDefaults}
                 queryRepoBatchChangeStats={queryRepoBatchChangeStats}
                 queryRepoBatchChanges={queryList}
@@ -115,7 +115,6 @@ add('No batch changes', () => (
         {props => (
             <BatchChangeRepoPage
                 {...props}
-                isSourcegraphDotCom={false}
                 repo={repoDefaults}
                 queryRepoBatchChangeStats={queryEmptyRepoBatchChangeStats}
                 queryRepoBatchChanges={queryNone}
