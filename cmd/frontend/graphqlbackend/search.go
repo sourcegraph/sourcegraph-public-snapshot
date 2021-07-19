@@ -261,7 +261,7 @@ type resolveRepositoriesOpts struct {
 
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where opts.effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, options searchrepos.Options) (resolved searchrepos.Resolved, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, options search.RepoOptions) (resolved searchrepos.Resolved, err error) {
 	if mockResolveRepositories != nil {
 		return mockResolveRepositories()
 	}

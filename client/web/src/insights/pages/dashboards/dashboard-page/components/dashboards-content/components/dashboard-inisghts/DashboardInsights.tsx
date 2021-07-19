@@ -12,23 +12,33 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGrid } from '../../../../../../../components'
 import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
+import { InsightDashboard } from '../../../../../../../core/types'
 import { useDeleteInsight } from '../../../../../../insights/insights-page/hooks/use-delete-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
+
+const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps
     extends ExtensionsControllerProps,
         TelemetryProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps<'updateSettings'> {
-    /**
-     * Dashboard specific insight ids.
-     */
-    insightIds?: string[]
+    dashboard: InsightDashboard
+    onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, extensionsController, insightIds = [], settingsCascade, platformContext } = props
+    const {
+        telemetryService,
+        extensionsController,
+        dashboard,
+        settingsCascade,
+        platformContext,
+        onAddInsightRequest,
+    } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
+
+    const insightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
 
     const views = useObservable(
         useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, insightIds), [
@@ -49,7 +59,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
         return (
             <div className="d-flex justify-content-center align-items-center pt-5">
                 <LoadingSpinner />
-                <span className="mx-2">Loading Sourcegraph extensions</span>
+                <span className="mx-2">Loading code insights</span>
                 <PuzzleIcon className="icon-inline" />
             </div>
         )
@@ -75,7 +85,11 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                     onDelete={handleDelete}
                 />
             ) : (
-                <EmptyInsightDashboard />
+                <EmptyInsightDashboard
+                    dashboard={dashboard}
+                    settingsCascade={settingsCascade}
+                    onAddInsight={onAddInsightRequest}
+                />
             )}
         </div>
     )

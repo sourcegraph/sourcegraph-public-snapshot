@@ -455,7 +455,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 	}
 }
 
-func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) searchrepos.Options {
+func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) search.RepoOptions {
 	repoFilters, minusRepoFilters := q.Repositories()
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
@@ -510,7 +510,7 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 		CacheLookup = true
 	}
 
-	return searchrepos.Options{
+	return search.RepoOptions{
 		RepoFilters:        repoFilters,
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
@@ -1433,6 +1433,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		_, _, _ = agg.Get()
 	}()
 
+	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if args.Mode == search.ZoektGlobalSearch {
@@ -1453,8 +1455,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
-	resolved, err := r.resolveRepositories(ctx, repoOptions)
+	resolved, err := r.resolveRepositories(ctx, args.RepoOptions)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return alert.wrapResults(), err
