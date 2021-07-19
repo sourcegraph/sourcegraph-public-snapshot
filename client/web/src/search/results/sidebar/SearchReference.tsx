@@ -586,7 +586,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     )
     const updateQueryWithExample = useCallback(
         (example: string) => {
-            onNavbarQueryChange({ query: navbarSearchQueryState.query.trimRight() + ' ' + example })
+            onNavbarQueryChange({ query: navbarSearchQueryState.query.trimEnd() + ' ' + example })
         },
         [onNavbarQueryChange, navbarSearchQueryState]
     )
