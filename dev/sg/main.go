@@ -730,12 +730,10 @@ func printRFCUsage(c *ffcli.Command) string {
 	fmt.Fprintf(&out, "USAGE\n")
 	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
 	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "  COMMANDS:\n")
+	fmt.Fprintf(&out, "COMMANDS:\n")
 	fmt.Fprintf(&out, "    list - list all RFCs\n")
 	fmt.Fprintf(&out, "    search <query> - search for RFCs matching the query\n")
 	fmt.Fprintf(&out, "    open <number> - Open the specified RFC\n")
-
-	// TODO: Add usage
 
 	return out.String()
 }

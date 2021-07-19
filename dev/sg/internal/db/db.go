@@ -9,13 +9,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
-func getFSForPath(path string) fs.FS {
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		panic("Could not get migration filepath")
-	}
+func getFSForPath(path string) func() (fs.FS, error) {
+	return func() (fs.FS, error) {
+		repoRoot, err := root.RepositoryRoot()
+		if err != nil {
+			return nil, err
+		}
 
-	return os.DirFS(filepath.Join(repoRoot, "migrations", path))
+		return os.DirFS(filepath.Join(repoRoot, "migrations", path)), nil
+	}
 }
 
 type Database struct {
@@ -29,7 +31,7 @@ type Database struct {
 	DataTables []string
 
 	// Used for retrieving the directory where migrations live
-	FS fs.FS
+	FS func() (fs.FS, error)
 }
 
 var (

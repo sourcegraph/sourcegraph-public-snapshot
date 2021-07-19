@@ -603,7 +603,12 @@ func getMigrate(database db.Database, logger mLogger) (*migrate.Migrate, error) 
 		return nil, errors.Wrap(err, "postgres.WithInstance")
 	}
 
-	d, err := httpfs.New(http.FS(database.FS), ".")
+	fs, err := database.FS()
+	if err != nil {
+		return nil, errors.Wrap(err, "database.FS")
+	}
+
+	d, err := httpfs.New(http.FS(fs), ".")
 	if err != nil {
 		return nil, errors.Wrap(err, "httpfs.New")
 	}

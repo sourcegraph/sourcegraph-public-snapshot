@@ -34,7 +34,7 @@
   - [`sg doctor` - Check health of dev environment](#sg-doctor---check-health-of-dev-environment)
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
   - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
-  - [`sg rfc` - List or open Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
+  - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
 - [Configuration](#configuration)
 - [TODOs](#todos)
 - [Hacking](#hacking)

@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -26,16 +25,30 @@ const (
 	credentials   = `{"installed":{"client_id":"1043390970557-1okrt0mo0qt2ogn2mkp217cfrirr1rfd.apps.googleusercontent.com","project_id":"sg-cli","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_secret":"gkQ2alKQZr2088IFGr55ET_I","redirect_uris":["urn:ietf:wg:oauth:2.0:oob","http://localhost"]}}`
 )
 
+func tokenFilePath() (string, error) {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	tokenFilePath := filepath.Join(homedir, ".sourcegraph", tokenFileName)
+
+	if err := os.MkdirAll(filepath.Dir(tokenFilePath), os.ModePerm); err != nil {
+		return "", err
+	}
+
+	return tokenFilePath, nil
+}
+
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(ctx context.Context, config *oauth2.Config) (*http.Client, error) {
-	root, err := root.RepositoryRoot()
+	fp, err := tokenFilePath()
 	if err != nil {
 		return nil, err
 	}
 
-	tokFile := filepath.Join(root, tokenFileName)
 	// Try to read token from file...
-	tok, err := readTokenFromFile(tokFile)
+	tok, err := readTokenFromFile(fp)
 	if err != nil {
 		// ...if it doesn't exist, open browser and ask user to give us
 		// permissions
@@ -43,7 +56,7 @@ func getClient(ctx context.Context, config *oauth2.Config) (*http.Client, error)
 		if err != nil {
 			return nil, err
 		}
-		if err := saveToken(tokFile, tok); err != nil {
+		if err := saveToken(fp, tok); err != nil {
 			return nil, err
 		}
 	}
