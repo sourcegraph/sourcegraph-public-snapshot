@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { Range, Selection, SelectionDirection } from 'monaco-editor'
+import { Range, Selection } from 'monaco-editor'
 
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 

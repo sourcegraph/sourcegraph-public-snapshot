@@ -4,7 +4,7 @@ import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import { Range, Selection, SelectionDirection } from 'monaco-editor'
+import { Range, Selection } from 'monaco-editor'
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
