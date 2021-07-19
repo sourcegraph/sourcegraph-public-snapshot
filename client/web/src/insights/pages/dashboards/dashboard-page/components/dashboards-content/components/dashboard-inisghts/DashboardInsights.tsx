@@ -16,6 +16,8 @@ import { InsightDashboard } from '../../../../../../../core/types'
 import { useDeleteInsight } from '../../../../../../insights/insights-page/hooks/use-delete-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
+import { getBackendInsightIds } from './utils/get-backend-insight-ids'
+
 const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps
@@ -38,11 +40,16 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
-    const insightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
+    const allInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
+    const backendInsightIds = useMemo(() => getBackendInsightIds({ insightIds: allInsightIds, settingsCascade }), [
+        allInsightIds,
+        settingsCascade,
+    ])
 
     const views = useObservable(
-        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, insightIds), [
-            insightIds,
+        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, allInsightIds, backendInsightIds), [
+            allInsightIds,
+            backendInsightIds,
             extensionsController,
             getInsightCombinedViews,
         ])
@@ -77,7 +84,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <div>
-            {insightIds.length > 0 && views.length > 0 ? (
+            {allInsightIds.length > 0 && views.length > 0 ? (
                 <InsightsViewGrid
                     views={views}
                     hasContextMenu={true}
