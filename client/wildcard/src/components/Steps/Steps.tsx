@@ -49,18 +49,23 @@ export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor
 
     return (
         <li
-            role="presentation"
             className={classNames(
-                stepsStyles.cursorPointer,
                 disabled && stepsStyles.disabled,
                 stepsStyles.listItem,
                 stepsStyles.active,
                 borderColor && stepsStyles[`color${upperFirst(borderColor)}` as keyof typeof stepsStyles]
             )}
             aria-current={active}
-            onClick={() => !disabled && setCurrent()}
         >
-            {children}
+            <button
+                type="button"
+                tabIndex={active ? 0 : -1}
+                disabled={disabled}
+                className={stepsStyles.button}
+                onClick={() => !disabled && setCurrent()}
+            >
+                {children}
+            </button>
         </li>
     )
 }
@@ -104,8 +109,12 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
     })
 
     return (
-        <nav className={stepsStyles.stepsWrapper} aria-label="progress">
-            {numeric ? <ol>{element}</ol> : <ul>{element}</ul>}
+        <nav>
+            {numeric ? (
+                <ol className={stepsStyles.listNumeric}>{element}</ol>
+            ) : (
+                <ul className={stepsStyles.list}>{element}</ul>
+            )}
         </nav>
     )
 }
