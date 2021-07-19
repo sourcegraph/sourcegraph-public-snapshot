@@ -87,6 +87,6 @@ export function getTooltipMessage(permissions: DashboardPermissions): string | u
         case DashboardReasonDenied.PermissionDenied:
             return "You don't a permission to edit this dashboard"
         case DashboardReasonDenied.BuiltInCantBeEdited:
-            return "This dashboard is built-in. You can't edit built-in dashboards"
+            return "Built-in dashboards can't be edited"
     }
 }
