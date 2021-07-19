@@ -34,6 +34,7 @@
   - [`sg doctor` - Check health of dev environment](#sg-doctor---check-health-of-dev-environment)
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
   - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
+  - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
 - [Configuration](#configuration)
 - [TODOs](#todos)
 - [Hacking](#hacking)
@@ -173,6 +174,19 @@ sg migration fixup -run=false
 # Or to run for only one database, you can use the -db flag, as in other operations.
 ```
 
+### `sg rfc` - List or open Sourcegraph RFCs
+
+```bash
+# List all RFCs
+sg rfc list
+
+# Search for an RFC
+sg rfc search "search terms"
+
+# Open a specific RFC
+sg rfc open 420
+```
+
 ## Configuration
 
 `sg` is configured through the `sg.yaml` file in the root of the `sourcegraph/sourcegraph` repository:
@@ -281,6 +295,7 @@ tests:
   - [ ] Implement `sg edit site-config` and `sg edit external-services`
   - [ ] Implement `sg tail-log`
 - [ ] Add built-in support for "download binary" so that the `caddy` command, for example, would be 3 lines instead of 20. That would allow us to get rid of the bash code.
+- [ ] Add a `sg rfc create` command
 
 ## Hacking
 

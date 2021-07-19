@@ -162,6 +162,16 @@ var (
 			migrationFixupCommand,
 		},
 	}
+
+	rfcFlagSet = flag.NewFlagSet("sg rfc", flag.ExitOnError)
+	rfcCommand = &ffcli.Command{
+		Name:       "rfc",
+		ShortUsage: "sg rfc [list|search|open]",
+		ShortHelp:  "Run the given RFC command to manage RFCs.",
+		FlagSet:    rfcFlagSet,
+		Exec:       rfcExec,
+		UsageFunc:  printRFCUsage,
+	}
 )
 
 const (
@@ -206,6 +216,7 @@ var (
 			doctorCommand,
 			liveCommand,
 			migrationCommand,
+			rfcCommand,
 		},
 	}
 )
@@ -215,22 +226,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		out.WriteLine(errLine)
-		os.Exit(1)
-	}
-
 	if err := rootCommand.Run(context.Background()); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
 }
 
+// conf is the global config. If a command needs to access it, it *must* call
+// `parseConf` before.
 var conf *Config
 
 // parseConf parses the config file and the optional overwrite file.
-// If the conf has already been parsed it's a noop.
+// Iear the conf has already been parsed it's a noop.
 func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 	if conf != nil {
 		return true, output.FancyLine{}
@@ -269,6 +276,12 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 }
 
 func runSetExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No commandset specified\n"))
 		return flag.ErrHelp
@@ -299,6 +312,12 @@ func runSetExec(ctx context.Context, args []string) error {
 }
 
 func testExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified\n"))
 		return flag.ErrHelp
@@ -314,6 +333,12 @@ func testExec(ctx context.Context, args []string) error {
 }
 
 func startExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) != 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
@@ -323,6 +348,12 @@ func startExec(ctx context.Context, args []string) error {
 }
 
 func runExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No command specified\n"))
 		return flag.ErrHelp
@@ -343,6 +374,12 @@ func runExec(ctx context.Context, args []string) error {
 }
 
 func doctorExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	return runChecks(ctx, conf.Checks)
 }
 
@@ -709,6 +746,20 @@ func printMigrationFixupUsage(c *ffcli.Command) string {
 	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
+
+	return out.String()
+}
+
+func printRFCUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "COMMANDS:\n")
+	fmt.Fprintf(&out, "    list - list all RFCs\n")
+	fmt.Fprintf(&out, "    search <query> - search for RFCs matching the query\n")
+	fmt.Fprintf(&out, "    open <number> - Open the specified RFC\n")
 
 	return out.String()
 }
