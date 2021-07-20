@@ -13,9 +13,9 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import {
     AggregateStreamingSearchResults,
-    FileLineMatch,
-    FileSymbolMatch,
-    FilePathMatch,
+    ContentMatch,
+    SymbolMatch,
+    PathMatch,
     SearchMatch,
     getMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
@@ -62,7 +62,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     }, [location.search])
 
     const itemKey = useCallback((item: SearchMatch): string => {
-        if (item.type === 'file' || item.type === 'symbol') {
+        if (item.type === 'content' || item.type === 'symbol') {
             return `file:${getMatchUrl(item)}`
         }
         return getMatchUrl(item)
@@ -73,7 +73,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     const renderResult = useCallback(
         (result: SearchMatch): JSX.Element => {
             switch (result.type) {
-                case 'file':
+                case 'content':
                 case 'path':
                 case 'symbol':
                     return (
@@ -132,14 +132,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     )
 }
 
-function getFileMatchIcon(
-    result: FileLineMatch | FileSymbolMatch | FilePathMatch
-): React.ComponentType<{ className?: string }> {
-    if (result.type === 'file' && result.lineMatches && result.lineMatches.length > 0) {
-        return FileDocumentIcon
+function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
+    switch (result.type) {
+        case 'content':
+            return FileDocumentIcon
+        case 'symbol':
+            return AlphaSBoxIcon
+        case 'path':
+            return FileIcon
     }
-    if (result.type === 'symbol' && result.symbols && result.symbols.length > 0) {
-        return AlphaSBoxIcon
-    }
-    return FileIcon
 }

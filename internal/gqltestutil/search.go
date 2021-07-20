@@ -555,7 +555,7 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 				case *streamhttp.EventRepoMatch:
 					results.Results = append(results.Results, &SearchFileResult{})
 
-				case *streamhttp.EventFileMatch:
+				case *streamhttp.EventContentMatch:
 					var r SearchFileResult
 					r.File.Name = v.Path
 					r.Repository.Name = v.Repository
@@ -616,7 +616,7 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 						Name: v.Repository,
 					})
 
-				case *streamhttp.EventFileMatch:
+				case *streamhttp.EventContentMatch:
 					lms := make([]struct {
 						OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
 					}, len(v.LineMatches))

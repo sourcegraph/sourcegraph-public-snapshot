@@ -449,7 +449,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *
 	}
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventFileMatch {
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventContentMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -469,8 +469,8 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo
 		stars = r.Stars
 	}
 
-	return &streamhttp.EventFileMatch{
-		Type:        streamhttp.FileMatchType,
+	return &streamhttp.EventContentMatch{
+		Type:        streamhttp.ContentMatchType,
 		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
 		RepoStars:   stars,
