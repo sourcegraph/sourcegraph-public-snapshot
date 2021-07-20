@@ -67,12 +67,12 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 className="btn btn-secondary p-0 w-100 border-0"
             >
                 <div
-                    data-tooltip={!permissions.isConfigurable ? getTooltipMessage(permissions) : undefined}
+                    data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
                     data-placement="right"
                     className={classnames(styles.itemCard, 'card')}
                 >
                     <PlusIcon size="2rem" />
-                    <span>Add insight</span>
+                    <span>Assign insights</span>
                 </div>
             </button>
             <span className="d-flex justify-content-center mt-3">
