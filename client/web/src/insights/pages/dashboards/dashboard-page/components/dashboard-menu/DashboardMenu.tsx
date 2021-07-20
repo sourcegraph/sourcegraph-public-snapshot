@@ -51,7 +51,7 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                     className={classnames(styles.menuItem, 'btn btn-outline')}
                     onSelect={() => onSelect(DashboardMenuAction.AddRemoveInsights)}
                 >
-                    Add insights
+                    Add/remove insights
                 </MenuItem>
 
                 <MenuItem
