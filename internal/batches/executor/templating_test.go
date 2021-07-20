@@ -23,7 +23,7 @@ func TestEvalStepCondition(t *testing.T) {
 			Description: "This batch change is just an experiment",
 		},
 		PreviousStep: StepResult{
-			files:  testChanges,
+			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
 		},
@@ -88,7 +88,7 @@ func TestRenderStepTemplate(t *testing.T) {
 			Description: "This batch change is just an experiment",
 		},
 		PreviousStep: StepResult{
-			files:  testChanges,
+			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
 		},
@@ -97,7 +97,7 @@ func TestRenderStepTemplate(t *testing.T) {
 			"project":  parsedYaml,
 		},
 		Step: StepResult{
-			files:  testChanges,
+			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is current step's stdout"),
 			Stderr: bytes.NewBufferString("this is current step's stderr"),
 		},
@@ -232,7 +232,7 @@ ${{ steps.path }}
 func TestRenderStepMap(t *testing.T) {
 	stepCtx := &StepContext{
 		PreviousStep: StepResult{
-			files:  testChanges,
+			Files:  testChanges,
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
 		},

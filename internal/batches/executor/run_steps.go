@@ -78,18 +78,37 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 	}
 	defer workspace.Close(ctx)
 
-	execResult := executionResult{
-		Outputs: make(map[string]interface{}),
-		Path:    opts.task.Path,
-	}
-	results := make([]StepResult, len(opts.task.Steps))
+	var (
+		execResult = executionResult{
+			Diff:         "",
+			ChangedFiles: &git.Changes{},
+			Outputs:      make(map[string]interface{}),
+			Path:         opts.task.Path,
+		}
+		previousStepResult StepResult
+		startStep          int
+	)
 
-	var startStep int
 	if opts.task.CachedResultFound {
 		// Set the Outputs to the cached outputs
 		execResult.Outputs = opts.task.CachedResult.Outputs
 
 		startStep = opts.task.CachedResult.StepIndex + 1
+
+		// If we have cached results and don't need to execute any more steps,
+		// we can quit
+		if startStep == len(opts.task.Steps) {
+			changes, err := git.ChangesInDiff(opts.task.CachedResult.Diff)
+			if err != nil {
+				return execResult, nil, errors.Wrap(err, "parsing cached step diff")
+			}
+
+			execResult.Diff = string(opts.task.CachedResult.Diff)
+			execResult.ChangedFiles = &changes
+			stepResults = append(stepResults, opts.task.CachedResult)
+
+			return execResult, stepResults, nil
+		}
 
 		switch startStep {
 		case 1:
@@ -97,8 +116,6 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 		default:
 			opts.reportProgress(fmt.Sprintf("Skipping steps 1 to %d. Found cached results.", startStep))
 		}
-	} else {
-		startStep = 0
 	}
 
 	for i := startStep; i < len(opts.task.Steps); i++ {
@@ -109,22 +126,22 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			Repository:  *opts.task.Repository,
 			Outputs:     execResult.Outputs,
 			Steps: StepsContext{
-				Path: execResult.Path,
+				Path:    execResult.Path,
+				Changes: previousStepResult.Files,
 			},
+			PreviousStep: previousStepResult,
 		}
 
 		if opts.task.CachedResultFound && i == startStep {
+			previousStepResult = opts.task.CachedResult.PreviousStepResult
+
+			stepContext.PreviousStep = previousStepResult
+			stepContext.Steps.Changes = previousStepResult.Files
+			stepContext.Outputs = opts.task.CachedResult.Outputs
+
 			if err := workspace.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
 				return execResult, nil, errors.Wrap(err, "getting changed files in step")
 			}
-
-			results[i-1] = opts.task.CachedResult.PreviousStepResult
-			stepContext.Outputs = opts.task.CachedResult.Outputs
-		}
-
-		if i > 0 {
-			stepContext.PreviousStep = results[i-1]
-			stepContext.Steps.Changes = results[i-1].files
 		}
 
 		cond, err := evalStepCondition(step.IfCondition(), &stepContext)
@@ -136,190 +153,17 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			continue
 		}
 
-		opts.reportProgress(fmt.Sprintf("Preparing step %d", i+1))
-
-		// Find a location that we can use for a cidfile, which will contain the
-		// container ID that is used below. We can then use this to remove the
-		// container on a successful run, rather than leaving it dangling.
-		cidFile, err := ioutil.TempFile(opts.tempDir, opts.task.Repository.Slug()+"-container-id")
+		stdoutBuffer, stderrBuffer, err := executeSingleStep(ctx, opts, workspace, i, step, &stepContext)
 		if err != nil {
-			return execResult, nil, errors.Wrap(err, "Creating a CID file failed")
+			return execResult, nil, err
 		}
-
-		// However, Docker will fail if the cidfile actually exists, so we need
-		// to remove it. Because Windows can't remove open files, we'll first
-		// close it, even though that's unnecessary elsewhere.
-		cidFile.Close()
-		if err = os.Remove(cidFile.Name()); err != nil {
-			return execResult, nil, errors.Wrap(err, "removing cidfile")
-		}
-
-		// Since we went to all that effort, we can now defer a function that
-		// uses the cidfile to clean up after this function is done.
-		defer func() {
-			cid, err := ioutil.ReadFile(cidFile.Name())
-			_ = os.Remove(cidFile.Name())
-			if err == nil {
-				ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-				defer cancel()
-				_ = exec.CommandContext(ctx, "docker", "rm", "-f", "--", string(cid)).Run()
-			}
-		}()
-
-		// We need to grab the digest for the exact image we're using.
-		digest, err := step.ImageDigest(ctx)
-		if err != nil {
-			return execResult, nil, errors.Wrapf(err, "getting digest for %v", step.DockerImage())
-		}
-
-		// For now, we only support shell scripts provided via the Run field.
-		shell, containerTemp, err := probeImageForShell(ctx, digest)
-		if err != nil {
-			return execResult, nil, errors.Wrapf(err, "probing image %q for shell", step.DockerImage())
-		}
-
-		// Set up a temporary file on the host filesystem to contain the
-		// script.
-		runScriptFile, err := ioutil.TempFile(opts.tempDir, "")
-		if err != nil {
-			return execResult, nil, errors.Wrap(err, "creating temporary file")
-		}
-		defer os.Remove(runScriptFile.Name())
-
-		// Parse step.Run as a template and render it into a buffer and the
-		// temp file we just created.
-		var runScript bytes.Buffer
-		out := io.MultiWriter(&runScript, runScriptFile)
-		if err := renderStepTemplate("step-run", step.Run, out, &stepContext); err != nil {
-			return execResult, nil, errors.Wrap(err, "parsing step run")
-		}
-
-		if err := runScriptFile.Close(); err != nil {
-			return execResult, nil, errors.Wrap(err, "closing temporary file")
-		}
-
-		// This file needs to be readable within the container regardless of the
-		// user the container is running as, so we'll set the appropriate group
-		// and other bits to make it so.
-		//
-		// A fun note: although os.File exposes a Chmod() method, we can't
-		// unconditionally use it because Windows cannot change the attributes
-		// of an open file. Rather than going to the trouble of having
-		// conditionally compiled files here, instead we'll just wait until the
-		// file is closed to twiddle the permission bits. Which is now!
-		if err := os.Chmod(runScriptFile.Name(), 0644); err != nil {
-			return execResult, nil, errors.Wrap(err, "setting permissions on the temporary file")
-		}
-
-		// Parse and render the step.Files.
-		files, err := renderStepMap(step.Files, &stepContext)
-		if err != nil {
-			return execResult, nil, errors.Wrap(err, "parsing step files")
-		}
-
-		// Create temp files with the rendered content of step.Files so that we
-		// can mount them into the container.
-		filesToMount := make(map[string]*os.File, len(files))
-		for name, content := range files {
-			fp, err := ioutil.TempFile(opts.tempDir, "")
-			if err != nil {
-				return execResult, nil, errors.Wrap(err, "creating temporary file")
-			}
-			defer os.Remove(fp.Name())
-
-			if _, err := fp.WriteString(content); err != nil {
-				return execResult, nil, errors.Wrap(err, "writing to temporary file")
-			}
-
-			if err := fp.Close(); err != nil {
-				return execResult, nil, errors.Wrap(err, "closing temporary file")
-			}
-
-			filesToMount[name] = fp
-		}
-
-		// Resolve step.Env given the current environment.
-		stepEnv, err := step.Env.Resolve(os.Environ())
-		if err != nil {
-			return execResult, nil, errors.Wrap(err, "resolving step environment")
-		}
-
-		// Render the step.Env variables as templates.
-		env, err := renderStepMap(stepEnv, &stepContext)
-		if err != nil {
-			return execResult, nil, errors.Wrap(err, "parsing step environment")
-		}
-
-		opts.reportProgress(runScript.String())
-		const workDir = "/work"
-		workspaceOpts, err := workspace.DockerRunOpts(ctx, workDir)
-		if err != nil {
-			return execResult, nil, errors.Wrap(err, "getting Docker options for workspace")
-		}
-
-		// Where should we execute the steps.run script?
-		scriptWorkDir := workDir
-		if opts.task.Path != "" {
-			scriptWorkDir = workDir + "/" + opts.task.Path
-		}
-
-		args := append([]string{
-			"run",
-			"--rm",
-			"--init",
-			"--cidfile", cidFile.Name(),
-			"--workdir", scriptWorkDir,
-			"--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", runScriptFile.Name(), containerTemp),
-		}, workspaceOpts...)
-		for target, source := range filesToMount {
-			args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", source.Name(), target))
-		}
-
-		for k, v := range env {
-			args = append(args, "-e", k+"="+v)
-		}
-
-		args = append(args, "--entrypoint", shell)
-
-		cmd := exec.CommandContext(ctx, "docker", args...)
-		cmd.Args = append(cmd.Args, "--", digest, containerTemp)
-		if dir := workspace.WorkDir(); dir != nil {
-			cmd.Dir = *dir
-		}
-
-		var stdoutBuffer, stderrBuffer bytes.Buffer
-		cmd.Stdout = io.MultiWriter(&stdoutBuffer, opts.logger.PrefixWriter("stdout"))
-		cmd.Stderr = io.MultiWriter(&stderrBuffer, opts.logger.PrefixWriter("stderr"))
-
-		opts.logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
-		opts.logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
-
-		t0 := time.Now()
-		err = cmd.Run()
-		elapsed := time.Since(t0).Round(time.Millisecond)
-		if err != nil {
-			opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
-
-			return execResult, nil, stepFailedErr{
-				Err:         err,
-				Args:        cmd.Args,
-				Run:         runScript.String(),
-				Container:   step.Container,
-				TmpFilename: containerTemp,
-				Stdout:      strings.TrimSpace(stdoutBuffer.String()),
-				Stderr:      strings.TrimSpace(stderrBuffer.String()),
-			}
-		}
-
-		opts.logger.Logf("[Step %d] complete in %s", i+1, elapsed)
 
 		changes, err := workspace.Changes(ctx)
 		if err != nil {
 			return execResult, nil, errors.Wrap(err, "getting changed files in step")
 		}
 
-		result := StepResult{files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
-		results[i] = result
+		result := StepResult{Files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
 
 		// Set stepContext.Step to current step's results before rendering outputs
 		stepContext.Step = result
@@ -343,6 +187,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			stepResult.Outputs[k] = v
 		}
 		stepResults = append(stepResults, stepResult)
+		previousStepResult = result
 	}
 
 	opts.reportProgress("Calculating diff")
@@ -352,11 +197,136 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 	}
 
 	execResult.Diff = string(diffOut)
-	if len(results) > 0 && results[len(results)-1].files != nil {
-		execResult.ChangedFiles = results[len(results)-1].files
-	}
+	execResult.ChangedFiles = previousStepResult.Files
 
 	return execResult, stepResults, err
+}
+
+const workDir = "/work"
+
+func executeSingleStep(
+	ctx context.Context,
+	opts *executionOpts,
+	workspace workspace.Workspace,
+	i int,
+	step batches.Step,
+	stepContext *StepContext,
+) (bytes.Buffer, bytes.Buffer, error) {
+	// ----------
+	// PREPARATION
+	// ----------
+	opts.reportProgress(fmt.Sprintf("Preparing step %d", i+1))
+
+	cidFile, cleanup, err := createCidFile(ctx, opts.tempDir, opts.task.Repository.Slug())
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
+	}
+	defer cleanup()
+
+	// We need to grab the digest for the exact image we're using.
+	digest, err := step.ImageDigest(ctx)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrapf(err, "getting digest for %v", step.DockerImage())
+	}
+
+	// For now, we only support shell scripts provided via the Run field.
+	shell, containerTemp, err := probeImageForShell(ctx, digest)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrapf(err, "probing image %q for shell", step.DockerImage())
+	}
+
+	runScriptFile, runScript, cleanup, err := createRunScriptFile(ctx, opts.tempDir, step.Run, stepContext)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
+	}
+
+	// Parse and render the step.Files.
+	filesToMount, cleanup, err := createFilesToMount(opts.tempDir, step, stepContext)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
+	}
+	defer cleanup()
+
+	// Resolve step.Env given the current environment.
+	stepEnv, err := step.Env.Resolve(os.Environ())
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "resolving step environment")
+	}
+
+	// Render the step.Env variables as templates.
+	env, err := renderStepMap(stepEnv, stepContext)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "parsing step environment")
+	}
+
+	// ----------
+	// EXECUTION
+	// ----------
+	opts.reportProgress(runScript)
+
+	workspaceOpts, err := workspace.DockerRunOpts(ctx, workDir)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "getting Docker options for workspace")
+	}
+
+	// Where should we execute the steps.run script?
+	scriptWorkDir := workDir
+	if opts.task.Path != "" {
+		scriptWorkDir = workDir + "/" + opts.task.Path
+	}
+
+	args := append([]string{
+		"run",
+		"--rm",
+		"--init",
+		"--cidfile", cidFile,
+		"--workdir", scriptWorkDir,
+		"--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", runScriptFile, containerTemp),
+	}, workspaceOpts...)
+
+	for target, source := range filesToMount {
+		args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", source.Name(), target))
+	}
+
+	for k, v := range env {
+		args = append(args, "-e", k+"="+v)
+	}
+
+	args = append(args, "--entrypoint", shell)
+
+	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd.Args = append(cmd.Args, "--", digest, containerTemp)
+	if dir := workspace.WorkDir(); dir != nil {
+		cmd.Dir = *dir
+	}
+
+	var stdoutBuffer, stderrBuffer bytes.Buffer
+
+	cmd.Stdout = io.MultiWriter(&stdoutBuffer, opts.logger.PrefixWriter("stdout"))
+	cmd.Stderr = io.MultiWriter(&stderrBuffer, opts.logger.PrefixWriter("stderr"))
+
+	opts.logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
+	opts.logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
+
+	t0 := time.Now()
+	err = cmd.Run()
+	elapsed := time.Since(t0).Round(time.Millisecond)
+	if err != nil {
+		opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
+
+		return stdoutBuffer, stderrBuffer, stepFailedErr{
+			Err:         err,
+			Args:        cmd.Args,
+			Run:         runScript,
+			Container:   step.Container,
+			TmpFilename: containerTemp,
+			Stdout:      strings.TrimSpace(stdoutBuffer.String()),
+			Stderr:      strings.TrimSpace(stderrBuffer.String()),
+		}
+	}
+
+	opts.logger.Logf("[Step %d] complete in %s", i+1, elapsed)
+	return stdoutBuffer, stderrBuffer, nil
 }
 
 func setOutputs(stepOutputs batches.Outputs, global map[string]interface{}, stepCtx *StepContext) error {
@@ -435,6 +405,122 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 	// If we got here, then all the attempts to probe the shell failed. Let's
 	// admit defeat and return. At least err is already in place.
 	return
+}
+
+// createFilesToMount creates temporary files with the contents of Step.Files
+// that are to be mounted into the container that executes the step.
+func createFilesToMount(tempDir string, step batches.Step, stepContext *StepContext) (map[string]*os.File, func(), error) {
+	// Parse and render the step.Files.
+	files, err := renderStepMap(step.Files, stepContext)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "parsing step files")
+	}
+
+	var toCleanup []string
+	cleanup := func() {
+		for _, fname := range toCleanup {
+			os.Remove(fname)
+		}
+	}
+
+	// Create temp files with the rendered content of step.Files so that we
+	// can mount them into the container.
+	filesToMount := make(map[string]*os.File, len(files))
+	for name, content := range files {
+		fp, err := ioutil.TempFile(tempDir, "")
+		if err != nil {
+			return nil, cleanup, errors.Wrap(err, "creating temporary file")
+		}
+		toCleanup = append(toCleanup, fp.Name())
+
+		if _, err := fp.WriteString(content); err != nil {
+			return nil, cleanup, errors.Wrap(err, "writing to temporary file")
+		}
+
+		if err := fp.Close(); err != nil {
+			return nil, cleanup, errors.Wrap(err, "closing temporary file")
+		}
+
+		filesToMount[name] = fp
+	}
+
+	return filesToMount, cleanup, nil
+}
+
+// createRunScriptFile creates a temporary file and renders stepRun into it.
+//
+// It returns the location of the file, its content, a function to cleanup the file and possible errors.
+func createRunScriptFile(ctx context.Context, tempDir string, stepRun string, stepCtx *StepContext) (string, string, func(), error) {
+	// Set up a temporary file on the host filesystem to contain the
+	// script.
+	runScriptFile, err := ioutil.TempFile(tempDir, "")
+	if err != nil {
+		return "", "", nil, errors.Wrap(err, "creating temporary file")
+	}
+	cleanup := func() { os.Remove(runScriptFile.Name()) }
+
+	// Parse step.Run as a template and render it into a buffer and the
+	// temp file we just created.
+	var runScript bytes.Buffer
+	out := io.MultiWriter(&runScript, runScriptFile)
+	if err := renderStepTemplate("step-run", stepRun, out, stepCtx); err != nil {
+		return "", "", nil, errors.Wrap(err, "parsing step run")
+	}
+
+	if err := runScriptFile.Close(); err != nil {
+		return "", "", nil, errors.Wrap(err, "closing temporary file")
+	}
+
+	// This file needs to be readable within the container regardless of the
+	// user the container is running as, so we'll set the appropriate group
+	// and other bits to make it so.
+	//
+	// A fun note: although os.File exposes a Chmod() method, we can't
+	// unconditionally use it because Windows cannot change the attributes
+	// of an open file. Rather than going to the trouble of having
+	// conditionally compiled files here, instead we'll just wait until the
+	// file is closed to twiddle the permission bits. Which is now!
+	if err := os.Chmod(runScriptFile.Name(), 0644); err != nil {
+		return "", "", nil, errors.Wrap(err, "setting permissions on the temporary file")
+	}
+
+	return runScriptFile.Name(), runScript.String(), cleanup, nil
+}
+
+// createCidFile creates a temporary file that will contain the container ID
+// when executing steps.
+// It returns the location of the file and a function that cleans up the
+// file.
+func createCidFile(ctx context.Context, tempDir string, repoSlug string) (string, func(), error) {
+	// Find a location that we can use for a cidfile, which will contain the
+	// container ID that is used below. We can then use this to remove the
+	// container on a successful run, rather than leaving it dangling.
+	cidFile, err := ioutil.TempFile(tempDir, repoSlug+"-container-id")
+	if err != nil {
+		return "", nil, errors.Wrap(err, "Creating a CID file failed")
+	}
+
+	// However, Docker will fail if the cidfile actually exists, so we need
+	// to remove it. Because Windows can't remove open files, we'll first
+	// close it, even though that's unnecessary elsewhere.
+	cidFile.Close()
+	if err = os.Remove(cidFile.Name()); err != nil {
+		return "", nil, errors.Wrap(err, "removing cidfile")
+	}
+
+	// Since we went to all that effort, we can now defer a function that
+	// uses the cidfile to clean up after this function is done.
+	cleanup := func() {
+		cid, err := ioutil.ReadFile(cidFile.Name())
+		_ = os.Remove(cidFile.Name())
+		if err == nil {
+			ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			defer cancel()
+			_ = exec.CommandContext(ctx, "docker", "rm", "-f", "--", string(cid)).Run()
+		}
+	}
+
+	return cidFile.Name(), cleanup, nil
 }
 
 type stepFailedErr struct {

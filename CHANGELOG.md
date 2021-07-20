@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- The per-step caching of batch spec execution results was broken when re-execution could use the cached results of a step and that step was the only one left to execute. That resulted in empty diffs being uploaded. This is now fixed. [#567](https://github.com/sourcegraph/src-cli/pull/567)
+
 ### Removed
 
 ## 3.30.0

@@ -145,7 +145,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return newStepResult(&stepCtx.Step)
 		},
 		"steps": func() map[string]interface{} {
-			res := newStepResult(&StepResult{files: stepCtx.Steps.Changes})
+			res := newStepResult(&StepResult{Files: stepCtx.Steps.Changes})
 			res["path"] = stepCtx.Steps.Path
 			return res
 		},
@@ -169,8 +169,8 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 
 // StepResult represents the result of a previously executed step.
 type StepResult struct {
-	// files are the changes made to files by the step.
-	files *git.Changes
+	// Files are the changes made to Files by the step.
+	Files *git.Changes
 
 	// Stdout is the output produced by the step on standard out.
 	Stdout *bytes.Buffer
@@ -180,32 +180,32 @@ type StepResult struct {
 
 // ModifiedFiles returns the files modified by a step.
 func (r StepResult) ModifiedFiles() []string {
-	if r.files != nil {
-		return r.files.Modified
+	if r.Files != nil {
+		return r.Files.Modified
 	}
 	return []string{}
 }
 
 // AddedFiles returns the files added by a step.
 func (r StepResult) AddedFiles() []string {
-	if r.files != nil {
-		return r.files.Added
+	if r.Files != nil {
+		return r.Files.Added
 	}
 	return []string{}
 }
 
 // DeletedFiles returns the files deleted by a step.
 func (r StepResult) DeletedFiles() []string {
-	if r.files != nil {
-		return r.files.Deleted
+	if r.Files != nil {
+		return r.Files.Deleted
 	}
 	return []string{}
 }
 
 // RenamedFiles returns the new name of files that have been renamed by a step.
 func (r StepResult) RenamedFiles() []string {
-	if r.files != nil {
-		return r.files.Renamed
+	if r.Files != nil {
+		return r.Files.Renamed
 	}
 	return []string{}
 }
@@ -257,7 +257,7 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 		"steps": func() map[string]interface{} {
 			// Wrap the *StepChanges in a StepResult so we can use nil-safe
 			// methods.
-			res := StepResult{files: tmplCtx.Steps.Changes}
+			res := StepResult{Files: tmplCtx.Steps.Changes}
 
 			return map[string]interface{}{
 				"modified_files": res.ModifiedFiles(),
