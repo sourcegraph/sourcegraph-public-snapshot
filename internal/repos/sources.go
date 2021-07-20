@@ -77,7 +77,7 @@ func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) 
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
-		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
+		return nil, fmt.Errorf("cannot create source for kind %q", svc.Kind)
 	}
 }
 
