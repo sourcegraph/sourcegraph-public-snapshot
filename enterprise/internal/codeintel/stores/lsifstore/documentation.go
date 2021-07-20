@@ -197,24 +197,6 @@ WHERE
 	result_id = ANY (%s)
 `
 
-// scanFirstDocumentationPathID reads the first path_id row. If no rows match the query, an empty string is returned.
-func (s *Store) scanFirstDocumentationPathID(rows *sql.Rows, queryErr error) (_ string, err error) {
-	if queryErr != nil {
-		return "", queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if !rows.Next() {
-		return "", nil
-	}
-
-	var pathID string
-	if err := rows.Scan(&pathID); err != nil {
-		return "", err
-	}
-	return pathID, nil
-}
-
 func (s *Store) documentationPathIDToID(ctx context.Context, bundleID int, pathID string) (_ semantic.ID, err error) {
 	ctx, _, endObservation := s.operations.documentationPathIDToID.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
