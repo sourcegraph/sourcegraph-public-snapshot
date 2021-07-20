@@ -22,12 +22,12 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/batch-changes',
         render: context =>
-            !context.showBatchChanges ? (
+            context.showBatchChanges ? (
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryBatchChangesArea {...context} />
                 </RepositoryGitDataContainer>
             ) : (
-                <Redirect to="https://about.sourcegraph.com/batch-changes" />
+                <Redirect to="/" />
             ),
     },
 ]
