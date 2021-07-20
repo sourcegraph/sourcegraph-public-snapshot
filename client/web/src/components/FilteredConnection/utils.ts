@@ -49,6 +49,10 @@ export const parseQueryInt = (searchParameters: URLSearchParams, name: string): 
     return null
 }
 
+/**
+ * Determine if a connection has a next page.
+ * Provides fallback logic to support queries where `hasNextPage` is undefined.
+ */
 export const hasNextPage = (connection: Connection<unknown>): boolean =>
     connection.pageInfo
         ? connection.pageInfo.hasNextPage
@@ -64,6 +68,9 @@ export interface GetUrlQueryParameters {
     location: Location
 }
 
+/**
+ * Determines the URL search parameters for a connection.
+ */
 export const getUrlQuery = ({
     first,
     defaultFirst,
@@ -111,6 +118,9 @@ interface AsGraphQLResultParameters<TResult> {
     errors: readonly GraphQLError[]
 }
 
+/**
+ * Map non-conforming GraphQL responses to a GraphQLResult.
+ */
 export const asGraphQLResult = <T>({ data, errors }: AsGraphQLResultParameters<T>): GraphQLResult<T> => {
     if (!data) {
         return { data: undefined, errors }

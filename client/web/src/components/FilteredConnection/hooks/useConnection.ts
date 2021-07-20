@@ -4,11 +4,11 @@ import { useCallback, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
+import { useSearchParameters } from '@sourcegraph/wildcard'
 
 import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 
 import { useConnectionUrl } from './useConnectionUrl'
-import { useSearchParameters } from './useSearchParameters'
 
 interface UseConnectionResult<TData> {
     connection?: Connection<TData>
@@ -27,9 +27,18 @@ interface UseConnectionParameters<TResult, TVariables, TData> {
     }
 }
 
-const DEFAULT_AFTER = null
-const DEFAULT_FIRST = 20
+const DEFAULT_AFTER: ConnectionQueryArguments['after'] = undefined
+const DEFAULT_FIRST: ConnectionQueryArguments['first'] = 20
 
+/**
+ * Request a GraphQL connection query and handle pagination options.
+ * Valid queries should follow the connection specification at https://relay.dev/graphql/connections.htm
+ *
+ * @param query The GraphQL connection query
+ * @param variables The GraphQL connection variables
+ * @param getConnection A function that filters and returns the relevant data from the connection response.
+ * @param options Additional configuration options
+ */
 export const useConnection = <TResult, TVariables, TData>({
     query,
     variables,
@@ -72,8 +81,8 @@ export const useConnection = <TResult, TVariables, TData>({
     })
 
     /**
-     * Map over Apollo results to provide type-compatible GraphQLResults for consumers.
-     * This ensures good interopability between FilteredConnection and useConnection.
+     * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
+     * This ensures good interoperability between `FilteredConnection` and `useConnection`.
      */
     const getConnection = useCallback(
         ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
