@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
@@ -796,4 +797,62 @@ func TestStoreResetStalled(t *testing.T) {
 	if state != "errored" {
 		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
 	}
+}
+
+func TestStoreHeartbeat(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'queued')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	clock := glock.NewMockClock()
+	store := testStore(db, defaultTestStoreOptions(clock))
+
+	if err := store.Heartbeat(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error updating heartbeat: %s", err)
+	}
+
+	readAndCompareTime := func(wantTime *time.Time) {
+		rows, err := db.QueryContext(context.Background(), `SELECT last_heartbeat_at FROM workerutil_test WHERE id = 1`)
+		if err != nil {
+			t.Fatalf("unexpected error querying record: %s", err)
+		}
+		defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+		if !rows.Next() {
+			t.Fatal("expected record to exist")
+		}
+
+		var lastHeartbeatAt *time.Time
+		if err := rows.Scan(&lastHeartbeatAt); err != nil {
+			t.Fatalf("unexpected error scanning record: %s", err)
+		}
+
+		want, have := wantTime, lastHeartbeatAt
+		if (want == nil && want != have) || (want != nil && (have == nil || !want.Equal(*have))) {
+			t.Errorf("invalid heartbeat stored, want=%q have=%q", want, have)
+		}
+	}
+
+	// Expect null time to be stored.
+	readAndCompareTime(nil)
+
+	// Now update state to processing and expect it to update properly.
+	if _, err := db.ExecContext(context.Background(), `
+	UPDATE workerutil_test SET state = 'processing' WHERE id = 1
+	`); err != nil {
+		t.Fatalf("unexpected error updating records: %s", err)
+	}
+	if err := store.Heartbeat(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error updating heartbeat: %s", err)
+	}
+
+	// Expect null time to be stored.
+	now := clock.Now().UTC()
+	readAndCompareTime(&now)
 }

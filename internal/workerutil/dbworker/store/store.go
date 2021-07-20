@@ -31,14 +31,10 @@ type Store interface {
 	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
 	//
-	// A background goroutine that continuously updates the record's last modified time will be started. The returned cancel
-	// function should be called once the record no longer needs to be locked from selection or reset by another process.
-	// Most often, this will be when the handler moves the record into a terminal state.
-	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
 
-	// Record a heartbeat, flagging that the record is still being worked on.
+	// Heartbeat marks the given record as currently being processed.
 	Heartbeat(ctx context.Context, id int) error
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
