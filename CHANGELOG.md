@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The repository page now has a new button to view batch change changesets created in that specific repository, with a badge indicating how many changesets are currently open. [#22804](https://github.com/sourcegraph/sourcegraph/pull/22804)
 - Experimental: Search-based code insights can run over all repositories on the instance. To enable, use the feature flag `"experimentalFeatures": { "codeInsightsAllRepos": true }`. [#22759](https://github.com/sourcegraph/sourcegraph/issues/22759)
 - Experimental: Search-based code insights can run over all repositories on the instance. To enable, use the feature flag `"experimentalFeatures": { "codeInsightsAllRepos": true }` and tick the checkbox in the insight creation/edit UI. [#22759](https://github.com/sourcegraph/sourcegraph/issues/22759)
+- Search References is a new search sidebar section to simplify learning about the available search filters directly where they are used. [#21539](https://github.com/sourcegraph/sourcegraph/issues/21539)
 
 ### Changed
 
