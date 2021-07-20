@@ -17,6 +17,12 @@ func RepoUpdater() *monitoring.Container {
 		syncDurationThreshold = 9 * time.Hour
 	)
 
+	var containerMonitoringOptions = &shared.ContainerMonitoringGroupOptions{
+		MemoryUsage: func(observable shared.Observable) shared.Observable {
+			return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
+		},
+	}
+
 	return &monitoring.Container{
 		Name:        "repo-updater",
 		Title:       "Repo Updater",
@@ -426,16 +432,10 @@ func RepoUpdater() *monitoring.Container {
 
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, repoUpdaterContainerMonitoringOptions),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, containerMonitoringOptions),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
-}
-
-var repoUpdaterContainerMonitoringOptions = &shared.ContainerMonitoringGroupOptions{
-	MemoryUsage: func(observable shared.Observable) shared.Observable {
-		return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
-	},
 }
