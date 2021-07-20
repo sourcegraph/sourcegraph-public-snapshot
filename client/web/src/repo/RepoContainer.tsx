@@ -85,7 +85,6 @@ export interface RepoContainerContext
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    isSourcegraphDotCom: boolean
 
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
@@ -128,7 +127,6 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
-    isSourcegraphDotCom: boolean
     showBatchChanges: boolean
 }
 
