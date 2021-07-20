@@ -274,7 +274,7 @@ function selectionForPlaceholder(
         throw new Error('Search reference does not contain placeholder.')
     }
     const selectionStart = offset + token.start + 1
-    // For filters with suggestions we create an "empty" selection to positions
+    // For filters with suggestions we create an "empty" selection to position
     // the cursor right after the colon.
     const selectionEnd = forSuggestions ? selectionStart : offset + token.end
     return new Selection(1, selectionStart, 1, selectionEnd)
@@ -323,7 +323,7 @@ export function updateQueryWithFilter(
         // position the cursor after the colon
         const selectionEnd = showSuggestions ? selectionStart : existingFilter.range.end + 1
         selection = new Selection(1, selectionStart, 1, selectionEnd)
-        // A separate range is need to make sure that the full filter, including
+        // A separate range is needed to make sure that the full filter, including
         // the field name, is scrolled into view.
         revealRange = new Range(1, existingFilter.range.start + 1, 1, selectionEnd)
     } else {
@@ -343,7 +343,7 @@ export function updateQueryWithFilter(
             // selection (it usually is at the end)
             showSuggestions
         )
-        // A separate range is need to make sure that the full filter, including
+        // A separate range is needed to make sure that the full filter, including
         // the field name, is scrolled into view.
         revealRange = new Range(1, rangeStart + 1, 1, selection.endColumn)
     }
