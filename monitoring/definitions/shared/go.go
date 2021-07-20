@@ -42,10 +42,10 @@ var (
 
 type GolangMonitoringOptions struct {
 	// Goroutines transforms the default observable used to construct the Go goroutines count panel.
-	Goroutines func(observable Observable) Observable
+	Goroutines ObservableOption
 
 	// GCDuration transforms the default observable used to construct the Go GC duration panel.
-	GCDuration func(observable Observable) Observable
+	GCDuration ObservableOption
 }
 
 // NewGolangMonitoringGroup creates a group containing panels displaying Go monitoring
@@ -54,20 +54,14 @@ func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableO
 	if options == nil {
 		options = &GolangMonitoringOptions{}
 	}
-	if options.Goroutines == nil {
-		options.Goroutines = NoopObservableTransformer
-	}
-	if options.GCDuration == nil {
-		options.GCDuration = NoopObservableTransformer
-	}
 
 	return monitoring.Group{
 		Title:  TitleGolangMonitoring,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.Goroutines(GoGoroutines(containerName, owner)).Observable(),
-				options.GCDuration(GoGcDuration(containerName, owner)).Observable(),
+				options.Goroutines.SafeApply(GoGoroutines(containerName, owner)).Observable(),
+				options.GCDuration.SafeApply(GoGcDuration(containerName, owner)).Observable(),
 			},
 		},
 	}

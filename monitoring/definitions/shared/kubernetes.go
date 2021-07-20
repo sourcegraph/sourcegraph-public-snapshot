@@ -30,7 +30,7 @@ var (
 
 type KubernetesMonitoringOptions struct {
 	// PodsAvailable transforms the default observable used to construct the pods available panel.
-	PodsAvailable func(observable Observable) Observable
+	PodsAvailable ObservableOption
 }
 
 // NewProvisioningIndicatorsGroup creates a group containing panels displaying
@@ -40,16 +40,13 @@ func NewKubernetesMonitoringGroup(containerName string, owner monitoring.Observa
 	if options == nil {
 		options = &KubernetesMonitoringOptions{}
 	}
-	if options.PodsAvailable == nil {
-		options.PodsAvailable = NoopObservableTransformer
-	}
 
 	return monitoring.Group{
 		Title:  TitleKubernetesMonitoring,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.PodsAvailable(KubernetesPodsAvailable(containerName, owner)).Observable(),
+				options.PodsAvailable.SafeApply(KubernetesPodsAvailable(containerName, owner)).Observable(),
 			},
 		},
 	}

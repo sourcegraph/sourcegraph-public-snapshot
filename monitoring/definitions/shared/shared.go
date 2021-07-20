@@ -32,10 +32,6 @@ import (
 // customizing shared observables.
 type Observable monitoring.Observable
 
-func NoopObservableTransformer(observable Observable) Observable {
-	return observable
-}
-
 // Observable is a convenience adapter that casts this SharedObservable as an normal Observable.
 func (o Observable) Observable() monitoring.Observable { return monitoring.Observable(o) }
 
@@ -65,6 +61,18 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 	o.PossibleSolutions = ""
 	o.Interpretation = interpretation
 	return o
+}
+
+// ObservableOption is a function that transforms an observable.
+type ObservableOption func(observable Observable) Observable
+
+// SafeApply applies f(observable), returning the parameter when f is nil.
+func (f ObservableOption) SafeApply(observable Observable) Observable {
+	if f == nil {
+		return observable
+	}
+
+	return f(observable)
 }
 
 // sharedObservable defines the type all shared observable variables should have in this package.

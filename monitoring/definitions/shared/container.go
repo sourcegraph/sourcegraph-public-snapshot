@@ -89,14 +89,17 @@ var (
 )
 
 type ContainerMonitoringGroupOptions struct {
+	// ContainerMissing transforms the default observable used to construct the container missing panel.
+	ContainerMissing ObservableOption
+
 	// CPUUsage transforms the default observable used to construct the CPU usage panel.
-	CPUUsage func(observable Observable) Observable
+	CPUUsage ObservableOption
 
 	// MemoryUsage transforms the default observable used to construct the memory usage panel.
-	MemoryUsage func(observable Observable) Observable
+	MemoryUsage ObservableOption
 
 	// IOUsage transforms the default observable used to construct the IO usage panel.
-	IOUsage func(observable Observable) Observable
+	IOUsage ObservableOption
 }
 
 // NewContainerMonitoringGroup creates a group containing panels displaying
@@ -106,25 +109,16 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 	if options == nil {
 		options = &ContainerMonitoringGroupOptions{}
 	}
-	if options.CPUUsage == nil {
-		options.CPUUsage = NoopObservableTransformer
-	}
-	if options.MemoryUsage == nil {
-		options.MemoryUsage = NoopObservableTransformer
-	}
-	if options.IOUsage == nil {
-		options.IOUsage = NoopObservableTransformer
-	}
 
 	return monitoring.Group{
 		Title:  TitleContainerMonitoring,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				ContainerMissing(containerName, owner).Observable(),
-				options.CPUUsage(ContainerCPUUsage(containerName, owner)).Observable(),
-				options.MemoryUsage(ContainerMemoryUsage(containerName, owner)).Observable(),
-				options.IOUsage(ContainerIOUsage(containerName, owner)).Observable(),
+				options.ContainerMissing.SafeApply(ContainerMissing(containerName, owner)).Observable(),
+				options.CPUUsage.SafeApply(ContainerCPUUsage(containerName, owner)).Observable(),
+				options.MemoryUsage.SafeApply(ContainerMemoryUsage(containerName, owner)).Observable(),
+				options.IOUsage.SafeApply(ContainerIOUsage(containerName, owner)).Observable(),
 			},
 		},
 	}

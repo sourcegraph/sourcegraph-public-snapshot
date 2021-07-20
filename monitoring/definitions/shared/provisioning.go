@@ -80,16 +80,16 @@ var (
 
 type ContainerProvisioningIndicatorsGroupOptions struct {
 	// LongTermCPUUsage transforms the default observable used to construct the long-term CPU usage panel.
-	LongTermCPUUsage func(observable Observable) Observable
+	LongTermCPUUsage ObservableOption
 
 	// LongTermMemoryUsage transforms the default observable used to construct the long-term memory usage panel.
-	LongTermMemoryUsage func(observable Observable) Observable
+	LongTermMemoryUsage ObservableOption
 
 	// ShortTermCPUUsage transforms the default observable used to construct the short-term CPU usage panel.
-	ShortTermCPUUsage func(observable Observable) Observable
+	ShortTermCPUUsage ObservableOption
 
 	// ShortTermMemoryUsage transforms the default observable used to construct the short-term memory usage panel.
-	ShortTermMemoryUsage func(observable Observable) Observable
+	ShortTermMemoryUsage ObservableOption
 }
 
 // NewProvisioningIndicatorsGroup creates a group containing panels displaying
@@ -99,30 +99,18 @@ func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.Obser
 	if options == nil {
 		options = &ContainerProvisioningIndicatorsGroupOptions{}
 	}
-	if options.LongTermCPUUsage == nil {
-		options.LongTermCPUUsage = NoopObservableTransformer
-	}
-	if options.LongTermMemoryUsage == nil {
-		options.LongTermMemoryUsage = NoopObservableTransformer
-	}
-	if options.ShortTermCPUUsage == nil {
-		options.ShortTermCPUUsage = NoopObservableTransformer
-	}
-	if options.ShortTermMemoryUsage == nil {
-		options.ShortTermMemoryUsage = NoopObservableTransformer
-	}
 
 	return monitoring.Group{
 		Title:  TitleProvisioningIndicators,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.LongTermCPUUsage(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
-				options.LongTermMemoryUsage(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
+				options.LongTermCPUUsage.SafeApply(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
+				options.LongTermMemoryUsage.SafeApply(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
 			},
 			{
-				options.ShortTermCPUUsage(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
-				options.ShortTermMemoryUsage(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
+				options.ShortTermCPUUsage.SafeApply(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
+				options.ShortTermMemoryUsage.SafeApply(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
 			},
 		},
 	}

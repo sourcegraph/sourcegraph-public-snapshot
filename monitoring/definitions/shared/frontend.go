@@ -30,7 +30,7 @@ var FrontendInternalAPIErrorResponses sharedObservable = func(containerName stri
 
 type FrontendInternalAPIERrorResponseMonitoringOptions struct {
 	// ErrorResponses transforms the default observable used to construct the error responses panel.
-	ErrorResponses func(observable Observable) Observable
+	ErrorResponses ObservableOption
 }
 
 // NewProvisioningIndicatorsGroup creates a group containing panels displaying
@@ -39,16 +39,13 @@ func NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName string, ow
 	if options == nil {
 		options = &FrontendInternalAPIERrorResponseMonitoringOptions{}
 	}
-	if options.ErrorResponses == nil {
-		options.ErrorResponses = NoopObservableTransformer
-	}
 
 	return monitoring.Group{
 		Title:  "Internal service requests",
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.ErrorResponses(FrontendInternalAPIErrorResponses(containerName, owner)).Observable(),
+				options.ErrorResponses.SafeApply(FrontendInternalAPIErrorResponses(containerName, owner)).Observable(),
 			},
 		},
 	}
