@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useEffect } from 'react'
 
@@ -9,6 +10,7 @@ import { RepoBatchChange } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { ChangesetNode } from '../detail/changesets/ChangesetNode'
 
+import { MAX_CHANGESETS_COUNT } from './backend'
 import styles from './BatchChangeNode.module.scss'
 
 export interface BatchChangeNodeProps extends ThemeProps {
@@ -34,6 +36,20 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
         setNode(initialNode)
     }, [initialNode])
 
+    const moreChangesetsIndicator =
+        node.changesets.totalCount > MAX_CHANGESETS_COUNT ? (
+            <div className={classNames(styles.nodeFullWidth, 'text-center mt-2')}>
+                <small>
+                    <span>
+                        {node.changesets.totalCount} changesets total (showing first {MAX_CHANGESETS_COUNT})
+                    </span>
+                </small>
+                <Link className="d-block btn btn-sm btn-link" to={node.url} target="_blank" rel="noopener noreferrer">
+                    See all
+                </Link>
+            </div>
+        ) : null
+
     return (
         <>
             <span className={styles.nodeSeparator} />
@@ -44,12 +60,19 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                             <Link
                                 className="text-muted test-batches-namespace-link"
                                 to={`${node.namespace.url}/batch-changes`}
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 {node.namespace.namespaceName}
                             </Link>
                             <span className="text-muted d-inline-block mx-1">/</span>
                         </div>
-                        <Link className="test-batches-link mr-2" to={node.url}>
+                        <Link
+                            className="test-batches-link mr-2"
+                            to={node.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
                             {node.name}
                         </Link>
                     </h2>
@@ -61,6 +84,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
             {node.changesets.nodes.map(changeset => (
                 <ChangesetNode {...props} key={changeset.id} node={changeset} separator={null} />
             ))}
+            {moreChangesetsIndicator}
             <div className={styles.nodeBottomSpacer} />
         </>
     )

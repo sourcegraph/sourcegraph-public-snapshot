@@ -54,6 +54,8 @@ export const queryRepoBatchChangeStats = ({
         })
     )
 
+export const MAX_CHANGESETS_COUNT = 10
+
 const repoBatchChangeFragment = gql`
     fragment RepoBatchChange on BatchChange {
         id

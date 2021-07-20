@@ -85,80 +85,58 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     },
 }
 
-export const NODES: RepoBatchChange[] = [
-    {
-        id: 'test',
-        url: '/users/alice/batch-change/test',
-        name: 'Awesome batch',
-        description: `# What this does
-
-This is my thorough explanation. And it can also get very long, in that case the UI doesn't break though, which is good. And one more line to finally be longer than the viewport.`,
-        createdAt: subDays(now, 1).toISOString(),
-        closedAt: null,
-        changesetsStats: {
-            open: 10,
-            closed: 0,
-            merged: 5,
-        },
-        changesets: {
-            totalCount: 2,
-            pageInfo: { endCursor: null, hasNextPage: false },
-            nodes: [
-                READY_EXTERNAL_CHANGESET,
-                READY_EXTERNAL_CHANGESET,
-                READY_EXTERNAL_CHANGESET,
-                READY_EXTERNAL_CHANGESET,
-            ],
-        },
-        namespace: {
-            namespaceName: 'alice',
-            url: '/users/alice',
-        },
-    },
-    {
-        id: 'test2',
-        url: '/users/alice/batch-changes/test2',
-        name: 'Awesome batch',
-        description: null,
-        createdAt: subDays(now, 5).toISOString(),
-        closedAt: null,
-        changesetsStats: {
-            open: 10,
-            closed: 0,
-            merged: 5,
-        },
-        changesets: {
-            totalCount: 1,
-            pageInfo: { endCursor: null, hasNextPage: false },
-            nodes: [READY_EXTERNAL_CHANGESET],
-        },
-        namespace: {
-            namespaceName: 'alice',
-            url: '/users/alice',
-        },
-    },
-    {
-        id: 'test3',
-        url: '/users/alice/batch-changes/test3',
-        name: 'Awesome batch',
+const commonFields = (id: number) =>
+    ({
+        id: `test${id}`,
+        url: `/users/alice/batch-change/test${id}`,
+        name: `Awesome batch ${id}`,
         description: `# My batch
 
-        This is my thorough explanation.`,
-        createdAt: subDays(now, 30).toISOString(),
-        closedAt: subDays(now, 3).toISOString(),
+    This is my thorough explanation.`,
         changesetsStats: {
             open: 0,
             closed: 10,
             merged: 5,
         },
-        changesets: {
-            totalCount: 2,
-            pageInfo: { endCursor: null, hasNextPage: false },
-            nodes: [FAILED_EXTERNAL_CHANGESET],
-        },
         namespace: {
             namespaceName: 'alice',
             url: '/users/alice',
+        },
+    } as const)
+
+export const NODES: RepoBatchChange[] = [
+    {
+        ...commonFields(1),
+        description: `# What this does
+
+This is my thorough explanation. And it can also get very long, in that case the UI doesn't break though, which is good. And one more line to finally be longer than the viewport.`,
+        createdAt: subDays(now, 1).toISOString(),
+        closedAt: null,
+        changesets: {
+            totalCount: 25,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: (new Array(10) as typeof READY_EXTERNAL_CHANGESET[]).fill(READY_EXTERNAL_CHANGESET),
+        },
+    },
+    {
+        ...commonFields(2),
+        description: null,
+        createdAt: subDays(now, 5).toISOString(),
+        closedAt: null,
+        changesets: {
+            totalCount: 1,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [READY_EXTERNAL_CHANGESET],
+        },
+    },
+    {
+        ...commonFields(3),
+        createdAt: subDays(now, 30).toISOString(),
+        closedAt: subDays(now, 3).toISOString(),
+        changesets: {
+            totalCount: 2,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [FAILED_EXTERNAL_CHANGESET, READY_EXTERNAL_CHANGESET],
         },
     },
 ]
