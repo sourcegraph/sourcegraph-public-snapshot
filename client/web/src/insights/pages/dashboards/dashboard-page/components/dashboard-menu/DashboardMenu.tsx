@@ -46,18 +46,18 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 <MenuItem
                     as="button"
                     disabled={!permissions.isConfigurable}
-                    data-tooltip={getTooltipMessage(permissions)}
+                    data-tooltip={getTooltipMessage(dashboard, permissions)}
                     data-placement="right"
                     className={classnames(styles.menuItem, 'btn btn-outline')}
                     onSelect={() => onSelect(DashboardMenuAction.AddRemoveInsights)}
                 >
-                    Add/remove insights
+                    Assign or Remove insights
                 </MenuItem>
 
                 <MenuItem
                     as="button"
                     disabled={!permissions.isConfigurable}
-                    data-tooltip={getTooltipMessage(permissions)}
+                    data-tooltip={getTooltipMessage(dashboard, permissions)}
                     data-placement="right"
                     className={classnames(styles.menuItem, 'btn btn-outline')}
                     onSelect={() => onSelect(DashboardMenuAction.Configure)}
@@ -79,7 +79,7 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 <MenuItem
                     as="button"
                     disabled={!permissions.isConfigurable}
-                    data-tooltip={getTooltipMessage(permissions)}
+                    data-tooltip={getTooltipMessage(dashboard, permissions)}
                     data-placement="right"
                     className={classnames(styles.menuItem, 'btn btn-outline', styles.menuItemDanger)}
                     onSelect={() => onSelect(DashboardMenuAction.Delete)}
