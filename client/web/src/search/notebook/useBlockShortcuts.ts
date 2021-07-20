@@ -38,7 +38,7 @@ export const useBlockShortcuts = ({
                 } else {
                     onEnterBlock()
                 }
-            } else if (event.key === 'Backspace' && isModifierKeyDown) {
+            } else if (event.key === 'Delete' || (event.key === 'Backspace' && isModifierKeyDown)) {
                 onDeleteBlock(id)
             } else if (event.key === 'd' && isModifierKeyDown) {
                 event.preventDefault()

@@ -83,7 +83,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         }
     }, [onRunBlock, modifierKeyLabel, searchResults])
 
-    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, ...props })
+    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isMacPlatform, ...props })
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 

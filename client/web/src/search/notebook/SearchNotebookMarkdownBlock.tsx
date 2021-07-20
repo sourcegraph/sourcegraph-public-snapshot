@@ -80,7 +80,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     }, [isEditing, editor])
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, ...props })
+    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isMacPlatform, ...props })
     const menuActions = useMemo(
         () =>
             [
