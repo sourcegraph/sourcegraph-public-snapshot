@@ -19,7 +19,6 @@ import { getQuickLinks } from './QuickLink'
 import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
-import { getSearchTypeLinks } from './SearchTypeLink'
 
 const SEARCH_SIDEBAR_VISIBILITY_KEY = 'SearchProduct.SearchSidebar.Visibility'
 
@@ -106,27 +105,15 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
-                {props.featureFlags.get('search-reference') && (
-                    <SearchSidebarSection
-                        className={styles.searchSidebarItem}
-                        header="Search reference"
-                        showSearch={true}
-                        open={openSections[SectionID.SEARCH_REFERENCE] ?? true}
-                        onToggle={onSearchReferenceToggle}
-                    >
-                        {getSearchReferenceFactory(props)}
-                    </SearchSidebarSection>
-                )}
-                {!props.featureFlags.get('search-reference') && (
-                    <SearchSidebarSection
-                        className={styles.searchSidebarItem}
-                        header="Search types"
-                        open={openSections[SectionID.SEARCH_TYPES] ?? true}
-                        onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
-                    >
-                        {getSearchTypeLinks(props)}
-                    </SearchSidebarSection>
-                )}
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Search reference"
+                    showSearch={true}
+                    open={openSections[SectionID.SEARCH_REFERENCE] ?? true}
+                    onToggle={onSearchReferenceToggle}
+                >
+                    {getSearchReferenceFactory(props)}
+                </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
                     header="Dynamic filters"

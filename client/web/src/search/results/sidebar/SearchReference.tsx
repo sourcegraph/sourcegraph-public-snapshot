@@ -611,7 +611,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     const hasFilter = filter.length === 0
 
     const selectedFilters = useMemo(() => {
-        if (hasFilter) {
+        if (!hasFilter) {
             return searchReferenceInfo
         }
         const searchTerms = parseSearchInput(filter)
