@@ -6,10 +6,7 @@ import (
 )
 
 func SyntectServer() *monitoring.Container {
-	const (
-		containerName = "syntect-server"
-		primaryOwner  = monitoring.ObservableOwnerCoreApplication
-	)
+	const containerName = "syntect-server"
 
 	return &monitoring.Container{
 		Name:                     "syntect-server",
@@ -63,9 +60,9 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
 }

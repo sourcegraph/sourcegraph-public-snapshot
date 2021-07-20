@@ -11,7 +11,6 @@ import (
 func RepoUpdater() *monitoring.Container {
 	const (
 		containerName = "repo-updater"
-		primaryOwner  = monitoring.ObservableOwnerCoreApplication
 
 		// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
 		syncDurationThreshold = 9 * time.Hour
@@ -430,12 +429,12 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, containerMonitoringOptions),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, containerMonitoringOptions),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
 }

@@ -11,7 +11,6 @@ func ZoektIndexServer() *monitoring.Container {
 	const (
 		containerName        = "zoekt-indexserver"
 		bundledContainerName = "indexed-search"
-		primaryOwner         = monitoring.ObservableOwnerSearch
 	)
 
 	return &monitoring.Container{
@@ -109,9 +108,9 @@ func ZoektIndexServer() *monitoring.Container {
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service
 			// We show pod availability here for both the webserver and indexserver as they are bundled together.
 
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(bundledContainerName, primaryOwner, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearch, nil),
 		},
 	}
 }

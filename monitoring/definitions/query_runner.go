@@ -6,21 +6,18 @@ import (
 )
 
 func QueryRunner() *monitoring.Container {
-	const (
-		containerName = "query-runner"
-		primaryOwner  = monitoring.ObservableOwnerSearch
-	)
+	const containerName = "query-runner"
 
 	return &monitoring.Container{
 		Name:        "query-runner",
 		Title:       "Query Runner",
 		Description: "Periodically runs saved searches and instructs the frontend to send out notifications.",
 		Groups: []monitoring.Group{
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
 		},
 	}
 }

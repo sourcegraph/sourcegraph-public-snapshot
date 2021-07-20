@@ -6,10 +6,7 @@ import (
 )
 
 func PreciseCodeIntelIndexer() *monitoring.Container {
-	const (
-		containerName = "precise-code-intel-indexer"
-		primaryOwner  = monitoring.ObservableOwnerCodeIntel
-	)
+	const containerName = "precise-code-intel-indexer"
 
 	return &monitoring.Container{
 		Name:        "precise-code-intel-indexer",
@@ -141,10 +138,10 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 		},
 	}
 }

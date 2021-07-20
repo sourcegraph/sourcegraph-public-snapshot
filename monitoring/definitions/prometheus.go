@@ -10,7 +10,6 @@ import (
 func Prometheus() *monitoring.Container {
 	const (
 		containerName = "prometheus"
-		primaryOwner  = monitoring.ObservableOwnerDistribution
 
 		// ruleGroupInterpretation provides interpretation documentation for observables that are per prometheus rule_group.
 		ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
@@ -155,9 +154,9 @@ func Prometheus() *monitoring.Container {
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
 		},
 	}
 }

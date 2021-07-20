@@ -8,10 +8,7 @@ import (
 )
 
 func GitHubProxy() *monitoring.Container {
-	const (
-		containerName = "github-proxy"
-		primaryOwner  = monitoring.ObservableOwnerCoreApplication
-	)
+	const containerName = "github-proxy"
 
 	return &monitoring.Container{
 		Name:        "github-proxy",
@@ -37,10 +34,10 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
 }

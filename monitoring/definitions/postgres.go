@@ -14,11 +14,9 @@ func Postgres() *monitoring.Container {
 		// all database cAdvisor metrics in a single panel using this container
 		// name regex to ensure we have observability on all platforms.
 		containerName = "(pgsql|codeintel-db)"
-
-		primaryOwner = monitoring.ObservableOwnerCoreApplication
 	)
 
-	sumAggregator := "sum"
+	var sumAggregator = "sum"
 
 	return &monitoring.Container{
 		Name:                     "postgres",
@@ -166,8 +164,8 @@ func Postgres() *monitoring.Container {
 				},
 			},
 
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
 }

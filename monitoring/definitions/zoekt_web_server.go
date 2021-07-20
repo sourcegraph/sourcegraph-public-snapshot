@@ -8,10 +8,7 @@ import (
 )
 
 func ZoektWebServer() *monitoring.Container {
-	const (
-		containerName = "zoekt-webserver"
-		primaryOwner  = monitoring.ObservableOwnerSearch
-	)
+	const containerName = "zoekt-webserver"
 
 	return &monitoring.Container{
 		Name:                     "zoekt-webserver",
@@ -29,7 +26,7 @@ func ZoektWebServer() *monitoring.Container {
 							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
 							Warning:           monitoring.Alert().GreaterOrEqual(5, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:             primaryOwner,
+							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
@@ -44,8 +41,8 @@ func ZoektWebServer() *monitoring.Container {
 			// Note 2:
 			// Kubernetes monitoring for zoekt-webserver is provided by zoekt-indexserver as they are bundled together.
 
-			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearch, nil),
 		},
 	}
 }
