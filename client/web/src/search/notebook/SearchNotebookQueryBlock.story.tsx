@@ -47,6 +47,7 @@ add('default', () => (
                 input="query"
                 output={of(streamingSearchResult)}
                 isSelected={false}
+                isOtherBlockSelected={false}
                 isMacPlatform={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
@@ -66,6 +67,7 @@ add('selected', () => (
                 input="query"
                 output={of(streamingSearchResult)}
                 isSelected={true}
+                isOtherBlockSelected={false}
                 isMacPlatform={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}

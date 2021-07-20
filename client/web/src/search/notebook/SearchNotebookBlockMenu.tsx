@@ -24,7 +24,7 @@ export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBloc
 }) => (
     <div className={styles.blockMenu} role="menu">
         {mainAction && (
-            <div className={styles.mainActionButtonWrapper}>
+            <div className={classNames(actions.length > 0 && styles.mainActionButtonWrapper)}>
                 <button
                     className="btn btn-sm btn-primary d-flex align-items-center w-100"
                     type="button"
