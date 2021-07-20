@@ -41,7 +41,7 @@ var (
 )
 
 type GolangMonitoringOptions struct {
-	// Goroutines transforms the default observable used to construct the Go goroutines duration panel.
+	// Goroutines transforms the default observable used to construct the Go goroutines count panel.
 	Goroutines func(observable Observable) Observable
 
 	// GCDuration transforms the default observable used to construct the Go GC duration panel.
