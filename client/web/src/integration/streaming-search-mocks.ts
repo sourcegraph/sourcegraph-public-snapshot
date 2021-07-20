@@ -86,7 +86,7 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
                 version: '206c057cc03eea48300a4bd33f4dc4222d242114',
             },
             {
-                type: 'file',
+                type: 'content',
                 name: 'src/main.test.ts',
                 repository: 'gitlab.sgdev.org/sourcegraph/lsif-cpp',
                 branches: [''],

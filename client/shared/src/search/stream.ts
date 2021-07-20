@@ -52,10 +52,10 @@ export interface SymbolMatch {
     repoStars?: number
     branches?: string[]
     version?: string
-    symbols: Symbol[]
+    symbols: MatchedSymbol[]
 }
 
-interface Symbol {
+interface MatchedSymbol {
     url: string
     name: string
     containerName: string
