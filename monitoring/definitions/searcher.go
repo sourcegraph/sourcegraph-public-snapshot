@@ -39,19 +39,7 @@ func Searcher() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerMemoryUsage("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ContainerMissing("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("searcher", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

@@ -31,19 +31,7 @@ func GitHubProxy() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ContainerMissing("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

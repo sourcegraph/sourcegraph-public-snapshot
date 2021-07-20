@@ -56,19 +56,7 @@ func SyntectServer() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ContainerMissing("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("syntect-server", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

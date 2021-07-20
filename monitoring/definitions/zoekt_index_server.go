@@ -96,20 +96,7 @@ func ZoektIndexServer() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ContainerMissing("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerIOUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("zoekt-indexserver", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

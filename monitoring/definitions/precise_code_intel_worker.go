@@ -200,19 +200,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ContainerMissing("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

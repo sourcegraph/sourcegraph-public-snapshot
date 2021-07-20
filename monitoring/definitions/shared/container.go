@@ -87,3 +87,49 @@ var (
 		}
 	}
 )
+
+type ContainerMonitoringGroupOptions struct {
+	// CPUUsage transforms the default observable used to construct the CPU usage panel.
+	CPUUsage func(observable Observable) Observable
+
+	// MemoryUsage transforms the default observable used to construct the memory usage panel.
+	MemoryUsage func(observable Observable) Observable
+
+	// IOUsage transforms the default observable used to construct the IO usage panel.
+	IOUsage func(observable Observable) Observable
+}
+
+// NewContainerMonitoringGroup creates a group containing panels displaying
+// container monitoring metrics - cpu, memory, io resource usage as well as
+// a container missing alert - for the given container.
+func NewContainerMonitoringGroup(containerName string, owner monitoring.ObservableOwner, alerts *ContainerMonitoringGroupOptions) monitoring.Group {
+	if alerts == nil {
+		alerts = &ContainerMonitoringGroupOptions{}
+	}
+	if alerts.CPUUsage == nil {
+		alerts.CPUUsage = NoopObservableTransformer
+	}
+	if alerts.MemoryUsage == nil {
+		alerts.MemoryUsage = NoopObservableTransformer
+	}
+	if alerts.IOUsage == nil {
+		alerts.IOUsage = NoopObservableTransformer
+	}
+
+	return monitoring.Group{
+		Title:  TitleContainerMonitoring,
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				ContainerMissing(containerName, owner).Observable(),
+				alerts.CPUUsage(ContainerCPUUsage(containerName, owner)).Observable(),
+				alerts.MemoryUsage(ContainerMemoryUsage(containerName, owner)).Observable(),
+				alerts.IOUsage(ContainerIOUsage(containerName, owner)).Observable(),
+			},
+		},
+	}
+}
+
+func NoopObservableTransformer(observable Observable) Observable {
+	return observable
+}

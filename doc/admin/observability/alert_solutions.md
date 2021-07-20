@@ -2744,30 +2744,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## query-runner: container_memory_usage
-
-<p class="subtitle">container memory usage by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 99%+ container memory usage by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_container_memory_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
-
-<br />
-
 ## query-runner: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
@@ -2785,6 +2761,30 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```json
 "observability.silenceAlerts": [
   "warning_query-runner_container_cpu_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+## query-runner: container_memory_usage
+
+<p class="subtitle">container memory usage by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> query-runner: 99%+ container memory usage by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_query-runner_container_memory_usage"
 ]
 ```
 
@@ -6494,7 +6494,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -6518,7 +6518,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

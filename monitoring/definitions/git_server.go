@@ -304,20 +304,7 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows:   shared.DatabaseConnectionsMonitoring("gitserver"),
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ContainerMissing("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerIOUsage("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

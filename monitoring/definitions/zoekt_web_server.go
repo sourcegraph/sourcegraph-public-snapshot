@@ -29,24 +29,11 @@ func ZoektWebServer() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						// indexed-search does not have 0-downtime deploy, so deploys can
-						// cause extended container restarts. still seta warning alert for
-						// extended periods of container restarts, since this might still
-						// indicate a problem.
-						shared.ContainerMissing("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerIOUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			// indexed-search does not have 0-downtime deploy, so deploys can
+			// cause extended container restarts. still seta warning alert for
+			// extended periods of container restarts, since this might still
+			// indicate a problem.
+			shared.NewContainerMonitoringGroup("zoekt-webserver", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

@@ -39,19 +39,7 @@ func Symbols() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerMemoryUsage("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ContainerMissing("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

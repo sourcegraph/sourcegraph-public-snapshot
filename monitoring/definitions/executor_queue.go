@@ -104,19 +104,7 @@ func ExecutorQueue() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerMemoryUsage("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ContainerMissing("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

@@ -216,19 +216,7 @@ func Worker() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerMemoryUsage("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ContainerMissing("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

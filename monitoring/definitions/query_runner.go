@@ -19,19 +19,7 @@ func QueryRunner() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerMemoryUsage("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerCPUUsage("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ContainerMissing("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

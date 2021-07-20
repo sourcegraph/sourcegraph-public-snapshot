@@ -576,19 +576,7 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ContainerMissing(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,

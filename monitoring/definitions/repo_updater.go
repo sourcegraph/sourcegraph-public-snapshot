@@ -431,22 +431,13 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows:   shared.DatabaseConnectionsMonitoring("repo-updater"),
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).
-							WithWarning(nil).
-							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute)).
-							Observable(),
-					},
-					{
-						shared.ContainerMissing("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
+
+			shared.NewContainerMonitoringGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, &shared.ContainerMonitoringGroupOptions{
+				MemoryUsage: func(observable shared.Observable) shared.Observable {
+					return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
 				},
-			},
+			}),
+
 			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
