@@ -191,11 +191,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("precise-code-intel-worker"),
-			},
+			shared.NewDatabaseConnectionsMonitoringGroup("precise-code-intel-worker"),
 			{
 				Title:  "Internal service requests",
 				Hidden: true,

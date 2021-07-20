@@ -207,11 +207,7 @@ func Worker() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("worker"),
-			},
+			shared.NewDatabaseConnectionsMonitoringGroup("worker"),
 			{
 				Title:  "Internal service requests",
 				Hidden: true,

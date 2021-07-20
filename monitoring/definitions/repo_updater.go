@@ -431,12 +431,7 @@ func RepoUpdater() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("repo-updater"),
-			},
-
+			shared.NewDatabaseConnectionsMonitoringGroup("repo-updater"),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, repoUpdaterContainerMonitoringOptions),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),

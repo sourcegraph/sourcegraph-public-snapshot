@@ -494,11 +494,7 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("frontend"),
-			},
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
 			{
 				Title:  "Internal service requests",
 				Hidden: true,

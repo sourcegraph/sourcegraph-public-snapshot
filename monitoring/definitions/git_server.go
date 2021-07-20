@@ -304,11 +304,7 @@ func GitServer() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("gitserver"),
-			},
+			shared.NewDatabaseConnectionsMonitoringGroup("gitserver"),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, gitserverProvisioningIndicatorsOptions),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
