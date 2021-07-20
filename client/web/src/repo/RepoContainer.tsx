@@ -27,6 +27,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -365,7 +366,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         HAS_DISMISSED_FIREFOX_ALERT_KEY,
         false
     )
-    const showFirefoxAddonAlert = !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
+    const showFirefoxAddonAlert = isFirefox() && !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
 
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()
