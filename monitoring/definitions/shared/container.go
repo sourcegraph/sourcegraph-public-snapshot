@@ -129,7 +129,3 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 		},
 	}
 }
-
-func NoopObservableTransformer(observable Observable) Observable {
-	return observable
-}

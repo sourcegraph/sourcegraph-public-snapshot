@@ -32,6 +32,10 @@ import (
 // customizing shared observables.
 type Observable monitoring.Observable
 
+func NoopObservableTransformer(observable Observable) Observable {
+	return observable
+}
+
 // Observable is a convenience adapter that casts this SharedObservable as an normal Observable.
 func (o Observable) Observable() monitoring.Observable { return monitoring.Observable(o) }
 
