@@ -34,15 +34,7 @@ func GitHubProxy() *monitoring.Container {
 			shared.NewContainerMonitoringGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewProvisioningIndicatorsGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewGolangMonitoringGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
 }

@@ -161,15 +161,7 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			shared.NewProvisioningIndicatorsGroup(databaseContainerNames, monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup(databaseContainerNames, monitoring.ObservableOwnerCoreApplication, nil),
 		},
 
 		// This is third-party service

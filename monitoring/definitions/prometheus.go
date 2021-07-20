@@ -150,15 +150,7 @@ func Prometheus() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
 			shared.NewProvisioningIndicatorsGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
 		},
 
 		// This is third-party service

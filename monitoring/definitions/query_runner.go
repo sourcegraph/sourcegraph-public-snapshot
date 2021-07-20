@@ -22,15 +22,7 @@ func QueryRunner() *monitoring.Container {
 			shared.NewContainerMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
 			shared.NewProvisioningIndicatorsGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
 			shared.NewGolangMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
 		},
 	}
 }

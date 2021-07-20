@@ -305,22 +305,16 @@ func GitServer() *monitoring.Container {
 				Rows:   shared.DatabaseConnectionsMonitoring("gitserver"),
 			},
 			shared.NewContainerMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup("gitserver", monitoring.ObservableOwnerCoreApplication, &shared.ContainerProvisioningIndicatorsGroupOptions{
-				LongTermMemoryUsage:  gitserverHighMemoryNoAlertTransformer,
-				ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
-			}),
+			shared.NewProvisioningIndicatorsGroup("gitserver", monitoring.ObservableOwnerCoreApplication, provisioningIndicatorsOptions),
 			shared.NewGolangMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
+}
+
+var provisioningIndicatorsOptions = &shared.ContainerProvisioningIndicatorsGroupOptions{
+	LongTermMemoryUsage:  gitserverHighMemoryNoAlertTransformer,
+	ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 }
 
 func gitserverHighMemoryNoAlertTransformer(observable shared.Observable) shared.Observable {

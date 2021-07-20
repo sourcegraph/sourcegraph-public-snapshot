@@ -1138,7 +1138,7 @@ This panel indicates maximum go garbage collection duration.
 
 <br />
 
-### Git Server: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Git Server: Kubernetes monitoring (only available on Kubernetes)
 
 #### gitserver: pods_available_percentage
 

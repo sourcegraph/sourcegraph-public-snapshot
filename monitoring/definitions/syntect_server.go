@@ -58,15 +58,7 @@ func SyntectServer() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("syntect-server", monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewProvisioningIndicatorsGroup("syntect-server", monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup("syntect-server", monitoring.ObservableOwnerCoreApplication, nil),
 		},
 		NoSourcegraphDebugServer: true,
 	}

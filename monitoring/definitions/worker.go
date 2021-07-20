@@ -219,15 +219,7 @@ func Worker() *monitoring.Container {
 			shared.NewContainerMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewGolangMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
 		},
 	}
 }

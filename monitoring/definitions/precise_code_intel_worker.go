@@ -203,15 +203,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 			shared.NewContainerMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewGolangMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewKubernetesMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
 		},
 	}
 }

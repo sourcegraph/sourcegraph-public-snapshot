@@ -98,18 +98,10 @@ func ZoektIndexServer() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("zoekt-indexserver", monitoring.ObservableOwnerSearch, nil),
 			shared.NewProvisioningIndicatorsGroup("zoekt-indexserver", monitoring.ObservableOwnerSearch, nil),
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						// zoekt_index_server, zoekt_web_server are deployed together
-						// as part of the indexed-search service, so only show pod
-						// availability here.
-						shared.KubernetesPodsAvailable("indexed-search", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+
+			// zoekt_index_server, zoekt_web_server are deployed together as part of
+			// the indexed-search service, so only show pod availability here.
+			shared.NewKubernetesMonitoringGroup("indexed-search", monitoring.ObservableOwnerSearch, nil),
 		},
 
 		NoSourcegraphDebugServer: true,
