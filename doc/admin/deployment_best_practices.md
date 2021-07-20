@@ -31,7 +31,6 @@ Docker Compose Sourcegraph may be customized by forking our [repo](https://githu
 Kubernetes deployments may be customized in a variety of ways, we consider the following best practice:
 
 - Users should use our [standard deployment](https://github.com/sourcegraph/deploy-sourcegraph) as a base, users may customize deployments via:
-  - vanilla Kubernetes .yaml files deployed with few modifications
   - Kustomize [overlays](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays)
 - The suggested Kubernetes version is the current [GKE Stable release version](https://cloud.google.com/kubernetes-engine/docs/release-notes-stable)
 - We attempt to support new versions of Kubernetes 2-3 months after their release.
