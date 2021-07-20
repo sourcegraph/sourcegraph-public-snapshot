@@ -74,7 +74,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
         return (
             <HeroPage
                 icon={MapSearchIcon}
-                title="Oops, we couldn't find insight"
+                title="Oops, we couldn't find that insight"
                 subtitle={
                     <span>
                         We couldn't find that insight. Try to find the insight with ID:{' '}
