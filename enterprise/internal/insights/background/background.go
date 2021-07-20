@@ -26,7 +26,7 @@ import (
 )
 
 // GetBackgroundJobs is the main entrypoint which starts background jobs for code insights. It is
-// called from the repo-updater service, currently.
+// called from the worker service.
 func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)

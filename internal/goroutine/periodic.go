@@ -82,7 +82,7 @@ func NewPeriodicGoroutine(ctx context.Context, interval time.Duration, handler H
 }
 
 // NewPeriodicGoroutineWithMetrics creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
-// // the executing goroutine and will terminate the goroutine if cancelled.
+// the executing goroutine and will terminate the goroutine if cancelled.
 func NewPeriodicGoroutineWithMetrics(ctx context.Context, interval time.Duration, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
 	return newPeriodicGoroutine(ctx, interval, handler, operation, glock.NewRealClock())
 }

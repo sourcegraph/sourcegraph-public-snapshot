@@ -18,9 +18,7 @@ type insightsBaseConfig struct {
 }
 
 func (i *insightsBaseConfig) Load() {
-	log15.Info("loading config")
 	i.enabled = insights.IsEnabled()
-	log15.Info("enabled value", "value", i.enabled)
 }
 
 type insightsJob struct {
