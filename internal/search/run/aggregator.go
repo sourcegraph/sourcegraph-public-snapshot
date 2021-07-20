@@ -126,6 +126,11 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 }
 
 func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextParameters) (err error) {
+	if args.PatternInfo.IsEmpty() {
+		// Empty query isn't an error, but it has no results.
+		return nil
+	}
+
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -137,11 +142,6 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == search.DefaultMaxSearchResults
 	if isDefaultStructuralSearch {
 		return a.DoStructuralSearch(ctx, args)
-	}
-
-	if args.PatternInfo.IsEmpty() {
-		// Empty query isn't an error, but it has no results.
-		return nil
 	}
 
 	return unindexed.SearchFilesInRepos(ctx, args, a)
