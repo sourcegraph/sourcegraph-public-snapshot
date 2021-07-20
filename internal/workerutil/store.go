@@ -24,6 +24,7 @@ type Store interface {
 	// by another concurrent worker process.
 	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, bool, error)
 
+	// Record a heartbeat, flagging that the record is still being worked on.
 	Heartbeat(ctx context.Context, id int) error
 
 	// AddExecutionLogEntry adds an executor log entry to the record.

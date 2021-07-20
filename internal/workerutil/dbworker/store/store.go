@@ -38,6 +38,7 @@ type Store interface {
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
 
+	// Record a heartbeat, flagging that the record is still being worked on.
 	Heartbeat(ctx context.Context, id int) error
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
