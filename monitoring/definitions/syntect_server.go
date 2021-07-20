@@ -6,10 +6,16 @@ import (
 )
 
 func SyntectServer() *monitoring.Container {
+	const (
+		containerName = "syntect-server"
+		primaryOwner  = monitoring.ObservableOwnerCoreApplication
+	)
+
 	return &monitoring.Container{
-		Name:        "syntect-server",
-		Title:       "Syntect Server",
-		Description: "Handles syntax highlighting for code files.",
+		Name:                     "syntect-server",
+		Title:                    "Syntect Server",
+		Description:              "Handles syntax highlighting for code files.",
+		NoSourcegraphDebugServer: true, // This is third-party service
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -56,10 +62,9 @@ func SyntectServer() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("syntect-server", monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup("syntect-server", monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup("syntect-server", monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
-		NoSourcegraphDebugServer: true,
 	}
 }

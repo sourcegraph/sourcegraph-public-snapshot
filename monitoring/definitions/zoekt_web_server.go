@@ -8,10 +8,16 @@ import (
 )
 
 func ZoektWebServer() *monitoring.Container {
+	const (
+		containerName = "zoekt-webserver"
+		primaryOwner  = monitoring.ObservableOwnerSearch
+	)
+
 	return &monitoring.Container{
-		Name:        "zoekt-webserver",
-		Title:       "Zoekt Web Server",
-		Description: "Serves indexed search requests using the search index.",
+		Name:                     "zoekt-webserver",
+		Title:                    "Zoekt Web Server",
+		Description:              "Serves indexed search requests using the search index.",
+		NoSourcegraphDebugServer: true,
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -23,23 +29,23 @@ func ZoektWebServer() *monitoring.Container {
 							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
 							Warning:           monitoring.Alert().GreaterOrEqual(5, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerSearch,
+							Owner:             primaryOwner,
 							PossibleSolutions: "none",
 						},
 					},
 				},
 			},
 
-			// indexed-search does not have 0-downtime deploy, so deploys can
-			// cause extended container restarts. still seta warning alert for
-			// extended periods of container restarts, since this might still
-			// indicate a problem.
-			shared.NewContainerMonitoringGroup("zoekt-webserver", monitoring.ObservableOwnerSearch, nil),
-			shared.NewProvisioningIndicatorsGroup("zoekt-webserver", monitoring.ObservableOwnerSearch, nil),
-			// kubernetes monitoring for zoekt-web-server is provided by zoekt-index-server,
-			// since both services are deployed together
-		},
+			// Note 1:
+			// indexed-search does not have zero-downtime deploy, so deploys can cause extended container restarts.
+			// We set the default warning alert for extended periods of container restarts as it may still indicate
+			// a real problem.
+			//
+			// Note 2:
+			// Kubernetes monitoring for zoekt-webserver is provided by zoekt-indexserver as they are bundled together.
 
-		NoSourcegraphDebugServer: true,
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+		},
 	}
 }

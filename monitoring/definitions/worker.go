@@ -9,6 +9,11 @@ import (
 )
 
 func Worker() *monitoring.Container {
+	const (
+		containerName = "worker"
+		primaryOwner  = monitoring.ObservableOwnerCodeIntel
+	)
+
 	return &monitoring.Container{
 		Name:        "worker",
 		Title:       "Worker",
@@ -216,10 +221,10 @@ func Worker() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
 }

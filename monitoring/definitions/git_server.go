@@ -10,6 +10,11 @@ import (
 )
 
 func GitServer() *monitoring.Container {
+	const (
+		containerName = "gitserver"
+		primaryOwner  = monitoring.ObservableOwnerCoreApplication
+	)
+
 	return &monitoring.Container{
 		Name:        "gitserver",
 		Title:       "Git Server",
@@ -304,15 +309,15 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows:   shared.DatabaseConnectionsMonitoring("gitserver"),
 			},
-			shared.NewContainerMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup("gitserver", monitoring.ObservableOwnerCoreApplication, provisioningIndicatorsOptions),
-			shared.NewGolangMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, gitserverProvisioningIndicatorsOptions),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
 }
 
-var provisioningIndicatorsOptions = &shared.ContainerProvisioningIndicatorsGroupOptions{
+var gitserverProvisioningIndicatorsOptions = &shared.ContainerProvisioningIndicatorsGroupOptions{
 	LongTermMemoryUsage:  gitserverHighMemoryNoAlertTransformer,
 	ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 }

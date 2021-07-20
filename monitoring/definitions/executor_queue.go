@@ -6,6 +6,11 @@ import (
 )
 
 func ExecutorQueue() *monitoring.Container {
+	const (
+		containerName = "executor-queue"
+		primaryOwner  = monitoring.ObservableOwnerCodeIntel
+	)
+
 	return &monitoring.Container{
 		Name:        "executor-queue",
 		Title:       "Executor Queue",
@@ -104,10 +109,11 @@ func ExecutorQueue() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
+
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
 }

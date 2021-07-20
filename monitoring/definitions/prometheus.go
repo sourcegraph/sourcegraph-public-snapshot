@@ -8,13 +8,19 @@ import (
 )
 
 func Prometheus() *monitoring.Container {
-	// ruleGroupInterpretation provides interpretation documentation for observables that are per prometheus rule_group.
-	const ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
+	const (
+		containerName = "prometheus"
+		primaryOwner  = monitoring.ObservableOwnerDistribution
+
+		// ruleGroupInterpretation provides interpretation documentation for observables that are per prometheus rule_group.
+		ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
+	)
 
 	return &monitoring.Container{
-		Name:        "prometheus",
-		Title:       "Prometheus",
-		Description: "Sourcegraph's all-in-one Prometheus and Alertmanager service.",
+		Name:                     "prometheus",
+		Title:                    "Prometheus",
+		Description:              "Sourcegraph's all-in-one Prometheus and Alertmanager service.",
+		NoSourcegraphDebugServer: true, // This is third-party service
 		Groups: []monitoring.Group{
 			{
 				Title: "Metrics",
@@ -148,12 +154,9 @@ func Prometheus() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
-			shared.NewProvisioningIndicatorsGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
-			shared.NewKubernetesMonitoringGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
-
-		// This is third-party service
-		NoSourcegraphDebugServer: true,
 	}
 }

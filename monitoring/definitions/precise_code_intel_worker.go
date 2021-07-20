@@ -6,6 +6,11 @@ import (
 )
 
 func PreciseCodeIntelWorker() *monitoring.Container {
+	const (
+		containerName = "precise-code-intel-worker"
+		primaryOwner  = monitoring.ObservableOwnerCodeIntel
+	)
+
 	return &monitoring.Container{
 		Name:        "precise-code-intel-worker",
 		Title:       "Precise Code Intel Worker",
@@ -200,10 +205,10 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
 }

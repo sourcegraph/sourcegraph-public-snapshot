@@ -8,18 +8,23 @@ import (
 )
 
 func Postgres() *monitoring.Container {
-	sum := "sum"
+	const (
+		// In docker-compose, codeintel-db container is called pgsql. In Kubernetes,
+		// codeintel-db container is called codeintel-db Because of this, we track
+		// all database cAdvisor metrics in a single panel using this container
+		// name regex to ensure we have observability on all platforms.
+		containerName = "(pgsql|codeintel-db)"
 
-	// In docker-compose, codeintel-db container is called pgsql
-	// In Kubernetes, codeintel-db container is called codeintel-db
-	// Because of this, we track all database cAdvisor metrics in a single panel using this
-	// container name regex to ensure we have observability on all platforms.
-	const databaseContainerNames = "(pgsql|codeintel-db)"
+		primaryOwner = monitoring.ObservableOwnerCoreApplication
+	)
+
+	sumAggregator := "sum"
 
 	return &monitoring.Container{
-		Name:        "postgres",
-		Title:       "Postgres",
-		Description: "Postgres metrics, exported from postgres_exporter (only available on Kubernetes).",
+		Name:                     "postgres",
+		Title:                    "Postgres",
+		Description:              "Postgres metrics, exported from postgres_exporter (only available on Kubernetes).",
+		NoSourcegraphDebugServer: true, // This is third-party service
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -67,7 +72,7 @@ func Postgres() *monitoring.Container {
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Query:       "max by (relname)(pg_invalid_index_count)",
 							Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
-							Critical:    monitoring.Alert().GreaterOrEqual(1, &sum).For(0),
+							Critical:    monitoring.Alert().GreaterOrEqual(1, &sumAggregator).For(0),
 							PossibleSolutions: `
 								- Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
 							`,
@@ -160,11 +165,8 @@ func Postgres() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewProvisioningIndicatorsGroup(databaseContainerNames, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup(databaseContainerNames, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
-
-		// This is third-party service
-		NoSourcegraphDebugServer: true,
 	}
 }

@@ -6,6 +6,11 @@ import (
 )
 
 func Symbols() *monitoring.Container {
+	const (
+		containerName = "symbols"
+		primaryOwner  = monitoring.ObservableOwnerCodeIntel
+	)
+
 	return &monitoring.Container{
 		Name:        "symbols",
 		Title:       "Symbols",
@@ -39,10 +44,10 @@ func Symbols() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
 }

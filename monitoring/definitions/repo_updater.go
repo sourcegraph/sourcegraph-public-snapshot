@@ -9,8 +9,13 @@ import (
 )
 
 func RepoUpdater() *monitoring.Container {
-	// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
-	const syncDurationThreshold = 9 * time.Hour
+	const (
+		containerName = "repo-updater"
+		primaryOwner  = monitoring.ObservableOwnerCoreApplication
+
+		// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
+		syncDurationThreshold = 9 * time.Hour
+	)
 
 	return &monitoring.Container{
 		Name:        "repo-updater",
@@ -432,14 +437,16 @@ func RepoUpdater() *monitoring.Container {
 				Rows:   shared.DatabaseConnectionsMonitoring("repo-updater"),
 			},
 
-			shared.NewContainerMonitoringGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, &shared.ContainerMonitoringGroupOptions{
-				MemoryUsage: func(observable shared.Observable) shared.Observable {
-					return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
-				},
-			}),
-			shared.NewProvisioningIndicatorsGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewGolangMonitoringGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, repoUpdaterContainerMonitoringOptions),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
+}
+
+var repoUpdaterContainerMonitoringOptions = &shared.ContainerMonitoringGroupOptions{
+	MemoryUsage: func(observable shared.Observable) shared.Observable {
+		return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
+	},
 }

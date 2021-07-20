@@ -8,8 +8,12 @@ import (
 )
 
 func Frontend() *monitoring.Container {
-	// frontend is sometimes called sourcegraph-frontend in various contexts
-	const containerName = "(frontend|sourcegraph-frontend)"
+	const (
+		// frontend is sometimes called sourcegraph-frontend in various contexts
+		containerName = "(frontend|sourcegraph-frontend)"
+
+		primaryOwner = monitoring.ObservableOwnerCoreApplication
+	)
 
 	return &monitoring.Container{
 		Name:        "frontend",
@@ -576,10 +580,10 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",
 				Hidden: true,

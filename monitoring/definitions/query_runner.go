@@ -6,6 +6,11 @@ import (
 )
 
 func QueryRunner() *monitoring.Container {
+	const (
+		containerName = "query-runner"
+		primaryOwner  = monitoring.ObservableOwnerSearch
+	)
+
 	return &monitoring.Container{
 		Name:        "query-runner",
 		Title:       "Query Runner",
@@ -19,10 +24,10 @@ func QueryRunner() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
-			shared.NewProvisioningIndicatorsGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
-			shared.NewGolangMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
-			shared.NewKubernetesMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
 }

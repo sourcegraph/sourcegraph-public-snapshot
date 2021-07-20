@@ -8,10 +8,18 @@ import (
 )
 
 func ZoektIndexServer() *monitoring.Container {
+	const (
+		containerName        = "zoekt-indexserver"
+		bundledContainerName = "indexed-search"
+		primaryOwner         = monitoring.ObservableOwnerSearch
+	)
+
 	return &monitoring.Container{
-		Name:        "zoekt-indexserver",
-		Title:       "Zoekt Index Server",
-		Description: "Indexes repositories and populates the search index.",
+		Name: "zoekt-indexserver",
+
+		Title:                    "Zoekt Index Server",
+		Description:              "Indexes repositories and populates the search index.",
+		NoSourcegraphDebugServer: true,
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -96,14 +104,14 @@ func ZoektIndexServer() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("zoekt-indexserver", monitoring.ObservableOwnerSearch, nil),
-			shared.NewProvisioningIndicatorsGroup("zoekt-indexserver", monitoring.ObservableOwnerSearch, nil),
 
-			// zoekt_index_server, zoekt_web_server are deployed together as part of
-			// the indexed-search service, so only show pod availability here.
-			shared.NewKubernetesMonitoringGroup("indexed-search", monitoring.ObservableOwnerSearch, nil),
+			// Note:
+			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service
+			// We show pod availability here for both the webserver and indexserver as they are bundled together.
+
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(bundledContainerName, primaryOwner, nil),
 		},
-
-		NoSourcegraphDebugServer: true,
 	}
 }

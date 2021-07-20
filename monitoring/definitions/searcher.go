@@ -8,6 +8,11 @@ import (
 )
 
 func Searcher() *monitoring.Container {
+	const (
+		containerName = "searcher"
+		primaryOwner  = monitoring.ObservableOwnerSearch
+	)
+
 	return &monitoring.Container{
 		Name:        "searcher",
 		Title:       "Searcher",
@@ -39,10 +44,10 @@ func Searcher() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewContainerMonitoringGroup("searcher", monitoring.ObservableOwnerSearch, nil),
-			shared.NewProvisioningIndicatorsGroup("searcher", monitoring.ObservableOwnerSearch, nil),
-			shared.NewGolangMonitoringGroup("searcher", monitoring.ObservableOwnerSearch, nil),
-			shared.NewKubernetesMonitoringGroup("searcher", monitoring.ObservableOwnerSearch, nil),
+			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
+			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},
 	}
 }
