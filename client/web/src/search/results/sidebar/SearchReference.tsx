@@ -10,8 +10,9 @@ import { Collapse } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
@@ -24,8 +25,6 @@ import { QueryChangeSource, QueryState } from '../../helpers'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
@@ -397,28 +396,6 @@ export function parsePlaceholder(placeholder: string): Placeholder {
     }
     parsedPlaceholder.text = parsedPlaceholder.tokens.map(token => token.content).join('')
     return parsedPlaceholder
-}
-
-/**
- * Helper function to add quotation marks to filter values if needed. It's not
- * as simple as adding quotes if the value contains spaces due to the existence
- * of predicates.
- */
-function addQuotesIfNeeded(filter: FilterType, value: string): string {
-    switch (filter) {
-        case FilterType.repo:
-        case FilterType.file:
-            // All predicates so far start with `contains`. We should probably
-            // find a more reliable way to identify them eventually.
-            if (/^contains[(.]/.test(value)) {
-                return value
-            }
-    }
-
-    if (/\s/.test(value)) {
-        return `"${value}"`
-    }
-    return value
 }
 
 const classNameTokenMap = {
