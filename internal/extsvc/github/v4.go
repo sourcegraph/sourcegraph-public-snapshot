@@ -337,7 +337,7 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) *semver.Version {
 		return allMatchingSemver
 	}
 	if _, err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "doRequest", "apiURL", c.apiURL, "err", err)
+		log15.Warn("Failed to fetch GitHub enterprise version: doRequest", "apiURL", c.apiURL, "err", err)
 		return allMatchingSemver
 	}
 	version, err := semver.NewVersion(resp.InstalledVersion)
