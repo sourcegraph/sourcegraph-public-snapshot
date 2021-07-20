@@ -72,7 +72,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                     className={classnames(styles.itemCard, 'card')}
                 >
                     <PlusIcon size="2rem" />
-                    <span>Assign insights</span>
+                    <span>Add insights</span>
                 </div>
             </button>
             <span className="d-flex justify-content-center mt-3">
