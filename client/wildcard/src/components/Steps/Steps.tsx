@@ -31,7 +31,7 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, ch
     }
 
     if (initialStep < 1 || initialStep > React.Children.count(children)) {
-        console.warn('current step is out of limits')
+        throw new Error('Current step is out of limits')
     }
 
     const contextValue = useMemo(() => ({ state, dispatch }), [state, dispatch])
@@ -97,10 +97,6 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
     }, [dispatch, stepsCollection])
 
     const element = React.Children.map(children, (child: React.ReactElement<StepProps>, index) => {
-        if (child.type !== Step) {
-            throw new Error(`${child.type.toString()} element is not <Step> component`)
-        }
-
         const setCurrent = (): void => {
             dispatch({ type: 'SET_CURRENT_STEP', payload: { index: index + 1 } })
         }
@@ -127,7 +123,7 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
     const indexArray = current - 1
 
     if (!children) {
-        throw new Error('You need to add the same number of <StepPanels> and <Step> Components')
+        throw new Error('StepPanels must include at least one child')
     }
 
     if (indexArray < 0 || current > childrenArray.length) {
