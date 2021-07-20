@@ -48,7 +48,6 @@ import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphq
 import { InsightsApiContext, InsightsViewGrid } from '../../insights'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
-import { lazyComponent } from '../../util/lazyComponent'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
