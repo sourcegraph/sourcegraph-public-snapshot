@@ -149,20 +149,7 @@ func Prometheus() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("prometheus", monitoring.ObservableOwnerDistribution, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

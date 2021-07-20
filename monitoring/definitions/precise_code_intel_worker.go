@@ -201,20 +201,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,

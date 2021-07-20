@@ -160,21 +160,7 @@ func Postgres() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				// See docstring for databaseContainerNames
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup(databaseContainerNames, monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

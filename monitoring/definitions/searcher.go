@@ -40,20 +40,7 @@ func Searcher() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("searcher", monitoring.ObservableOwnerSearch, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("searcher", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,

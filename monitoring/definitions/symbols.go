@@ -40,20 +40,7 @@ func Symbols() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,

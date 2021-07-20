@@ -217,20 +217,7 @@ func Worker() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,

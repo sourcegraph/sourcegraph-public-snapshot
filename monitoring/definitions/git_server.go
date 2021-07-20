@@ -305,24 +305,10 @@ func GitServer() *monitoring.Container {
 				Rows:   shared.DatabaseConnectionsMonitoring("gitserver"),
 			},
 			shared.NewContainerMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("gitserver", monitoring.ObservableOwnerCoreApplication).
-							WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`).
-							Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("gitserver", monitoring.ObservableOwnerCoreApplication).
-							WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`).
-							Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("gitserver", monitoring.ObservableOwnerCoreApplication, &shared.ContainerProvisioningIndicatorsGroupOptions{
+				LongTermMemoryUsage:  gitserverHighMemoryNoAlertTransformer,
+				ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
+			}),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
@@ -344,4 +330,8 @@ func GitServer() *monitoring.Container {
 			},
 		},
 	}
+}
+
+func gitserverHighMemoryNoAlertTransformer(observable shared.Observable) shared.Observable {
+	return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
 }

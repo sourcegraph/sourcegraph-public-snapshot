@@ -77,3 +77,53 @@ var (
 		}
 	}
 )
+
+type ContainerProvisioningIndicatorsGroupOptions struct {
+	// LongTermCPUUsage transforms the default observable used to construct the long-term CPU usage panel.
+	LongTermCPUUsage func(observable Observable) Observable
+
+	// LongTermMemoryUsage transforms the default observable used to construct the long-term memory usage panel.
+	LongTermMemoryUsage func(observable Observable) Observable
+
+	// ShortTermCPUUsage transforms the default observable used to construct the short-term CPU usage panel.
+	ShortTermCPUUsage func(observable Observable) Observable
+
+	// ShortTermMemoryUsage transforms the default observable used to construct the short-term memory usage panel.
+	ShortTermMemoryUsage func(observable Observable) Observable
+}
+
+// NewProvisioningIndicatorsGroup creates a group containing panels displaying
+// provisioning indication metrics - long and short term usage for both CPU and
+// memory usage - for the given container.
+func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.ObservableOwner, alerts *ContainerProvisioningIndicatorsGroupOptions) monitoring.Group {
+	if alerts == nil {
+		alerts = &ContainerProvisioningIndicatorsGroupOptions{}
+	}
+	if alerts.LongTermCPUUsage == nil {
+		alerts.LongTermCPUUsage = NoopObservableTransformer
+	}
+	if alerts.LongTermMemoryUsage == nil {
+		alerts.LongTermMemoryUsage = NoopObservableTransformer
+	}
+	if alerts.ShortTermCPUUsage == nil {
+		alerts.ShortTermCPUUsage = NoopObservableTransformer
+	}
+	if alerts.ShortTermMemoryUsage == nil {
+		alerts.ShortTermMemoryUsage = NoopObservableTransformer
+	}
+
+	return monitoring.Group{
+		Title:  TitleProvisioningIndicators,
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				alerts.LongTermCPUUsage(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
+				alerts.LongTermMemoryUsage(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
+			},
+			{
+				alerts.ShortTermCPUUsage(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
+				alerts.ShortTermMemoryUsage(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
+			},
+		},
+	}
+}

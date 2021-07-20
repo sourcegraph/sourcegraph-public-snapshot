@@ -32,20 +32,7 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,

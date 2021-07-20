@@ -20,20 +20,7 @@ func QueryRunner() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,

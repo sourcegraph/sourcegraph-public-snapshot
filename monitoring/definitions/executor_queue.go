@@ -105,20 +105,7 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			shared.NewContainerMonitoringGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,

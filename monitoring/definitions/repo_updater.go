@@ -437,21 +437,7 @@ func RepoUpdater() *monitoring.Container {
 					return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
 				},
 			}),
-
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewProvisioningIndicatorsGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
