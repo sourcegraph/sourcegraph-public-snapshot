@@ -33,16 +33,7 @@ func GitHubProxy() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewProvisioningIndicatorsGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.GoGcDuration("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("github-proxy", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

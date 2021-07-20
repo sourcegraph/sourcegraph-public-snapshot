@@ -218,16 +218,7 @@ func Worker() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.GoGcDuration("worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("worker", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

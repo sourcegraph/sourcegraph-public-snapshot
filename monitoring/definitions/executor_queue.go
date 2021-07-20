@@ -106,16 +106,7 @@ func ExecutorQueue() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.GoGcDuration("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("executor-queue", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

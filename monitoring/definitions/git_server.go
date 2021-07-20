@@ -309,16 +309,7 @@ func GitServer() *monitoring.Container {
 				LongTermMemoryUsage:  gitserverHighMemoryNoAlertTransformer,
 				ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 			}),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.GoGcDuration("gitserver", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("gitserver", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
 				Hidden: true,

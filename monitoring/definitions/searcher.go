@@ -41,16 +41,7 @@ func Searcher() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("searcher", monitoring.ObservableOwnerSearch, nil),
 			shared.NewProvisioningIndicatorsGroup("searcher", monitoring.ObservableOwnerSearch, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.GoGcDuration("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("searcher", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

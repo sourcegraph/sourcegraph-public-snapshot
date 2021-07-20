@@ -21,16 +21,7 @@ func QueryRunner() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
 			shared.NewProvisioningIndicatorsGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-						shared.GoGcDuration("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("query-runner", monitoring.ObservableOwnerSearch, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

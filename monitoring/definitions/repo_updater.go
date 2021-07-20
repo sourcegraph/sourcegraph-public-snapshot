@@ -438,16 +438,7 @@ func RepoUpdater() *monitoring.Container {
 				},
 			}),
 			shared.NewProvisioningIndicatorsGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.GoGcDuration("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("repo-updater", monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

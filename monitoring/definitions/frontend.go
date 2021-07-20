@@ -578,16 +578,7 @@ func Frontend() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.GoGcDuration(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

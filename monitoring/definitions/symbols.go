@@ -41,16 +41,7 @@ func Symbols() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.GoGcDuration("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("symbols", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,

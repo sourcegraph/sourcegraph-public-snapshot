@@ -137,16 +137,7 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 			},
 			shared.NewContainerMonitoringGroup("precise-code-intel-indexer", monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup("precise-code-intel-indexer", monitoring.ObservableOwnerCodeIntel, nil),
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.GoGcDuration("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+			shared.NewGolangMonitoringGroup("precise-code-intel-indexer", monitoring.ObservableOwnerCodeIntel, nil),
 			{
 				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
