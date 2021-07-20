@@ -1,5 +1,6 @@
+import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators'
 
 import { ContributableViewContainer } from '../../protocol'
 import { RegisteredViewProvider, ViewContexts, ViewProviderResult } from '../extensionHostApi'
@@ -40,7 +41,10 @@ export function getInsightsViews(
                 // all insights that we have.
                 return true
             })
-        )
+        ),
+        distinctUntilChanged(isEqual),
+        // batch all extension providers to avoid unnecessary network requests
+        debounceTime(0)
     )
 
     return proxySubscribable(callViewProvidersInParallel(context, dashboardInsights))
