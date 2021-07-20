@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
@@ -88,89 +87,6 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	}
 	if count != 2 {
 		t.Errorf("unexpected count. want=%d have=%d", 2, count)
-	}
-}
-
-func TestStoreDequeueKeepsHeartbeat(t *testing.T) {
-	db := setupStoreTest(t)
-
-	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
-		VALUES
-			(1, 'queued', NOW() - '1 minute'::interval),
-			(2, 'queued', NOW() - '2 minute'::interval),
-			(3, 'state2', NOW() - '3 minute'::interval),
-			(4, 'queued', NOW() - '4 minute'::interval),
-			(5, 'state2', NOW() - '5 minute'::interval)
-	`); err != nil {
-		t.Fatalf("unexpected error inserting records: %s", err)
-	}
-
-	now := time.Unix(1587396557, 0).UTC()
-	clock := glock.NewMockClock()
-	clock.SetCurrent(now)
-
-	record, ok, err := testStore(db, defaultTestStoreOptions(clock)).Dequeue(context.Background(), "test", nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected a dequeueable record")
-	}
-
-	if val := record.(TestRecord).ID; val != 4 {
-		t.Errorf("unexpected id. want=%d have=%d", 4, val)
-	}
-	if val := record.(TestRecord).State; val != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
-	}
-
-	getTime := func() time.Time {
-		time, ok, err := basestore.ScanFirstTime(db.QueryContext(context.Background(), "SELECT last_heartbeat_at FROM workerutil_test WHERE id = 4"))
-		if err != nil {
-			t.Fatalf("unexpected error scanning last updated at: %s", err)
-		}
-		if !ok {
-			t.Fatalf("expected record to exist")
-		}
-
-		return time
-	}
-
-	timeout := time.Second * 5
-
-	for i := 0; i < 10; i++ {
-		expectedTime := now.Add(time.Second * time.Duration(i+1))
-
-		// Trigger db write
-		clock.BlockingAdvance(time.Second)
-
-		// Check the last heartbeat timestamp on the target record. We don't know
-		// when the db write ends and since we use multiple connections we need to
-		// poll for a short period.
-		if !assertEventually(timeout, func() bool { return getTime().Equal(expectedTime) }) {
-			t.Fatalf("unexpected last_heartbeat_at after %s. want=%s", timeout, expectedTime)
-		}
-	}
-}
-
-// assertEventually calls f in a loop until it returns true, or until the given timeout
-// duration elapses. This function returns true if f returns true within the timeout and
-// false otherwise.
-func assertEventually(timeout time.Duration, f func() bool) bool {
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(timeout))
-	defer cancel()
-
-	for {
-		if f() {
-			return true
-		}
-
-		select {
-		case <-ctx.Done():
-			return false
-		default:
-		}
 	}
 }
 

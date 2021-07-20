@@ -327,3 +327,53 @@ func NewMockHandlerWithHooks() *MockHandlerWithHooks {
 		MockWithHooks: NewMockWithHooks(),
 	}
 }
+
+func TestWorkerDequeueHeartbeat(t *testing.T) {
+	store := NewMockStore()
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
+
+	handler := NewMockHandler()
+	clock := glock.NewMockClock()
+	heartbeatInterval := time.Second
+	options := WorkerOptions{
+		Name:              "test",
+		WorkerHostname:    "test",
+		NumHandlers:       1,
+		HeartbeatInterval: heartbeatInterval,
+		Interval:          time.Second,
+		Metrics:           NewMetrics(&observation.TestContext, "", nil),
+	}
+
+	dequeued := make(chan struct{})
+	doneHandling := make(chan struct{})
+	handler.HandleFunc.defaultHook = func(c context.Context, r Record) error {
+		close(dequeued)
+		<-doneHandling
+		return nil
+	}
+
+	heartbeats := make(chan struct{})
+	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i int) error {
+		heartbeats <- struct{}{}
+		return nil
+	})
+
+	worker := newWorker(context.Background(), store, handler, options, clock)
+	go func() { worker.Start() }()
+	t.Cleanup(func() {
+		close(doneHandling)
+		worker.Stop()
+	})
+	<-dequeued
+
+	for range []int{1, 2, 3, 4, 5} {
+		clock.BlockingAdvance(heartbeatInterval)
+		select {
+		case <-heartbeats:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timeout waiting for heartbeat")
+		}
+	}
+}
