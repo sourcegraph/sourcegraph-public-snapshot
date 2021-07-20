@@ -4,7 +4,7 @@ import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import { Range, Selection, SelectionDirection } from 'monaco-editor'
+import { Range, Selection } from 'monaco-editor'
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
@@ -12,7 +12,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
-import { appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -267,13 +267,17 @@ function parseSearchInput(searchInput: string): RegExp[] {
 function selectionForPlaceholder(
     placeholder: Placeholder,
     offset: number = 0,
-    direction: SelectionDirection = SelectionDirection.LTR
+    forSuggestions: boolean = false
 ): Selection {
     const token = placeholder.tokens.find(token => token.type === 'value')
     if (!token) {
         throw new Error('Search reference does not contain placeholder.')
     }
-    return Selection.createWithDirection(1, offset + token.start + 1, 1, offset + token.end, direction)
+    const selectionStart = offset + token.start + 1
+    // For filters with suggestions we create an "empty" selection to position
+    // the cursor right after the colon.
+    const selectionEnd = forSuggestions ? selectionStart : offset + token.end
+    return new Selection(1, selectionStart, 1, selectionEnd)
 }
 
 /**
@@ -310,16 +314,18 @@ export function updateQueryWithFilter(
 
     if (existingFilter && singular) {
         // Filter can only appear once
-        // Select the existing filter value or append the filter and select the
-        // placeholder
-        selection = Selection.createWithDirection(
-            1,
-            (existingFilter.value?.range.start || existingFilter.field.range.end) + 1,
-            1,
-            existingFilter.range.end + 1,
-            showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
-        )
-        revealRange = new Range(1, existingFilter.range.start + 1, 1, existingFilter.range.end + 1)
+        // Select or remove the existing filter value
+        if (showSuggestions) {
+            query = updateFilter(query, field, '')
+        }
+        const selectionStart = (existingFilter.value?.range.start || existingFilter.field.range.end) + 1
+        // For filters with suggestions, we create an "empty" selection to
+        // position the cursor after the colon
+        const selectionEnd = showSuggestions ? selectionStart : existingFilter.range.end + 1
+        selection = new Selection(1, selectionStart, 1, selectionEnd)
+        // A separate range is needed to make sure that the full filter, including
+        // the field name, is scrolled into view.
+        revealRange = new Range(1, existingFilter.range.start + 1, 1, selectionEnd)
     } else {
         // Filter can appear multiple times or doesn't exist yet. Always
         // append.
@@ -327,16 +333,19 @@ export function updateQueryWithFilter(
         // +1 because appendFilter inserts a whitespace character at the end of
         // the query
         const rangeStart = query.length + 1
-        query = appendFilter(query, field, searchReference.placeholder.text)
+        query = appendFilter(query, field, showSuggestions ? '' : searchReference.placeholder.text)
+        const offset = query.length - (showSuggestions ? 0 : searchReference.placeholder.text.length)
         selection = selectionForPlaceholder(
             searchReference.placeholder,
-            query.length - searchReference.placeholder.text.length,
+            offset,
             // If we need to trigger the suggestion popover we have to make
             // sure the input cursor is positioned at the beginning of the
             // selection (it usually is at the end)
-            showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
+            showSuggestions
         )
-        revealRange = new Range(1, rangeStart + 1, 1, query.length + 1)
+        // A separate range is needed to make sure that the full filter, including
+        // the field name, is scrolled into view.
+        revealRange = new Range(1, rangeStart + 1, 1, selection.endColumn)
     }
 
     return {
