@@ -3,6 +3,7 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -286,6 +287,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				// We have no authz provider configured for this external account or service
 				continue
 			}
+
+			if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+				return errors.Wrap(err, "wait for rate limiter")
+			}
 			extIDs, err = provider.FetchUserPerms(ctx, v)
 
 			if err != nil {
@@ -328,11 +333,12 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				// We have no authz provider configured for this external service or service
 				continue
 			}
-			config, err := v.Configuration()
-			if err != nil {
-				log15.Error("extracting external service config", "error", err)
+			config, configErr := v.Configuration()
+			if configErr != nil {
+				log15.Error("extracting external service config", "error", configErr)
 				continue
 			}
+			// TODO: Move token extraction into extsvc package
 			var token string
 			switch c := config.(type) {
 			case *schema.GitHubConnection:
@@ -342,13 +348,18 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			default:
 				log15.Warn("External service kind %q not supported", "kind", v.Kind)
 			}
+			if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+				return errors.Wrap(err, "wait for rate limiter")
+			}
 			extIDs, err = provider.FetchUserPermsByToken(ctx, token)
-		default:
-			continue
-		}
+			if err != nil {
+				log15.Warn("Fetching user permissions by token", "error", err)
+				continue
+			}
 
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
-			return errors.Wrap(err, "wait for rate limiter")
+		default:
+			log15.Error("Expected account or external service", "got", fmt.Sprintf("%T", accountOrService))
+			continue
 		}
 
 		if extIDs == nil {
