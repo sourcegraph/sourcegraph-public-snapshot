@@ -148,7 +148,7 @@ func (s *Store) documentationIDsToPathIDs(ctx context.Context, bundleID int, ids
 		if id != "" {
 			idInt, err := strconv.ParseUint(string(id), 10, 64)
 			if err != nil {
-				return nil, errors.Wrap(err, "Atoi")
+				return nil, err
 			}
 			wantIDs = append(wantIDs, idInt)
 		}
