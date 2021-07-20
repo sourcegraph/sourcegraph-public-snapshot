@@ -86,10 +86,10 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
     const { currentIndex, setComplete } = useSteps()
 
     useEffect(() => {
-        if (showAlert) {
+        if (showAlert || isDoneCloning) {
             setComplete(currentIndex, true)
         }
-    }, [currentIndex, setComplete, showAlert])
+    }, [currentIndex, setComplete, showAlert, isDoneCloning])
 
     return (
         <>

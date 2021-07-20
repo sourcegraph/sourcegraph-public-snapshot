@@ -1,8 +1,9 @@
-import React, { FunctionComponent, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
+import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
+import { useLocation, useHistory } from 'react-router'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from '@sourcegraph/wildcard/src/components/Steps'
@@ -31,21 +32,62 @@ interface Step {
     onNextButtonClick?: () => Promise<void>
 }
 
+// type PerformanceNavigationTimingType = 'navigate' | 'reload' | 'back_forward' | 'prerender'
+
 export type RepoSelectionMode = 'all' | 'selected' | undefined
+
+const USER_FINISHED_WELCOME_FLOW = 'finished-welcome-flow'
 
 export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     authenticatedUser: user,
     context,
     telemetryService,
 }) => {
+    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useLocalStorage(USER_FINISHED_WELCOME_FLOW, false)
+    const isOAuthCall = useRef(false)
     const location = useLocation()
     const history = useHistory()
 
-    const skipPostSignup = (): void => history.push(getReturnTo(location))
+    const goToSearch = (): void => history.push(getReturnTo(location))
+
+    // if the welcome flow was already finished - navigate to search
+    if (didUserFinishWelcomeFlow) {
+        goToSearch()
+    }
+
+    const finishWelcomeFlow = (): void => {
+        setUserFinishedWelcomeFlow(true)
+        goToSearch()
+    }
 
     const [repoSelectionMode, setRepoSelectionMode] = useState<RepoSelectionMode>()
-
     const { externalServices, loadingServices, errorServices, refetchExternalServices } = useExternalServices(user.id)
+
+    const beforeUnload = useCallback((): void => {
+        // user is not leaving the flow, it's an OAuth page refresh
+        if (isOAuthCall.current) {
+            return
+        }
+
+        // TODO: discuss
+        // allow user to manually refresh the page
+        // if (window.performance?.getEntriesByType) {
+        //     const entries = window.performance?.getEntriesByType('navigation')
+        //     // let TS know that we may expect PerformanceNavigationTiming.type
+        //     const lastEntry = entries.pop() as PerformanceEntry & { type?: PerformanceNavigationTimingType }
+        //     if (lastEntry?.type === 'reload') {
+        //         return
+        //     }
+        // }
+
+        setUserFinishedWelcomeFlow(true)
+    }, [setUserFinishedWelcomeFlow])
+
+    useEffect(() => {
+        window.addEventListener('beforeunload', beforeUnload)
+
+        return () => window.removeEventListener('beforeunload', beforeUnload)
+    }, [beforeUnload])
 
     return (
         <>
@@ -54,7 +96,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="position-absolute ml-3 mt-3 post-signup-page__logo"
                     isLightTheme={true}
                     variant="symbol"
-                    onClick={skipPostSignup}
+                    onClick={finishWelcomeFlow}
                 />
             </LinkOrSpan>
 
@@ -81,8 +123,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         <StepPanel>
                                             {externalServices && (
                                                 <CodeHostsConnection
-                                                    loading={loadingServices}
                                                     user={user}
+                                                    onNavigation={(called: boolean) => {
+                                                        isOAuthCall.current = called
+                                                    }}
+                                                    loading={loadingServices}
                                                     error={errorServices}
                                                     externalServices={externalServices}
                                                     context={context}
@@ -110,7 +155,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         </StepPanel>
                                     </StepPanels>
                                     <StepActions>
-                                        <Footer />
+                                        <Footer onFinish={finishWelcomeFlow} />
                                     </StepActions>
                                 </Steps>
                             </div>

@@ -10,6 +10,7 @@ interface CodeHostsConnection extends Omit<UserCodeHosts, 'onDidRemove' | 'onDid
     refetch: UserCodeHosts['onDidRemove']
     loading: boolean
     error: ApolloError | undefined
+    onNavigation?: (called: boolean) => void
 }
 
 export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> = ({
@@ -18,7 +19,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
     refetch,
     externalServices,
     loading,
-    error,
+    onNavigation,
 }) => {
     const { setComplete, currentIndex } = useSteps()
 
@@ -38,10 +39,6 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
         )
     }
 
-    if (error) {
-        console.log(error)
-    }
-
     return (
         <>
             <div className="mb-4">
@@ -55,8 +52,9 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
                 user={user}
                 externalServices={externalServices}
                 context={context}
+                onNavigation={onNavigation}
                 onDidError={error => console.warn('<UserCodeHosts .../>', error)}
-                onDidRemove={() => refetch()}
+                onDidRemove={refetch}
             />
         </>
     )

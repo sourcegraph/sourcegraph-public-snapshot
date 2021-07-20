@@ -48,6 +48,7 @@
 
 .button {
     background: none;
+    padding: 0;
     border: none;
     &:disabled {
         cursor: not-allowed;

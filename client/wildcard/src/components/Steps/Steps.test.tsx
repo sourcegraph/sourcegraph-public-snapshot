@@ -1,4 +1,4 @@
-import { render, RenderResult, cleanup /* fireEvent */, fireEvent } from '@testing-library/react'
+import { render, RenderResult, cleanup } from '@testing-library/react'
 import React from 'react'
 import sinon from 'sinon'
 

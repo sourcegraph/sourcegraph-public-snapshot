@@ -90,7 +90,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    const { setComplete, currentIndex, currentStep } = useSteps()
+    const { setComplete, currentIndex } = useSteps()
     const { externalServices } = useExternalServices(authenticatedUser.id)
     const { affiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
     const { selectedRepos } = useSelectedRepos(authenticatedUser.id)
@@ -155,7 +155,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             const selectedAffiliatedRepos = new Map<string, Repo>()
 
             const cachedSelectedRepos = selectedReposVar()
-            const userSelectedRepos = cachedSelectedRepos || selectedRepos
+            const userSelectedRepos = cachedSelectedRepos || selectedRepos || []
 
             const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
                 const foundInSelected = userSelectedRepos.find(
@@ -265,7 +265,8 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
         const didChange = !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
 
-        if (didChange) {
+        // set current step as complete if user had already selected repos or made changes
+        if (didChange || onloadSelectedRepos.length !== 0) {
             setComplete(currentIndex, true)
         } else {
             setComplete(currentIndex, false)
