@@ -61,7 +61,7 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
 export interface GetUrlQueryParameters {
     first: {
         actual: number
-        default?: number
+        default: number
     }
     query?: string
     values?: Map<string, FilteredConnectionFilterValue>

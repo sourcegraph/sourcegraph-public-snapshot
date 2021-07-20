@@ -450,7 +450,11 @@ export class FilteredConnection<
 
         return getUrlQuery({
             query,
-            first: { actual: first, default: this.props.defaultFirst },
+            first: {
+                actual: first,
+                // Always set through `defaultProps`
+                default: this.props.defaultFirst!,
+            },
             values,
             visible,
             location: this.props.location,
