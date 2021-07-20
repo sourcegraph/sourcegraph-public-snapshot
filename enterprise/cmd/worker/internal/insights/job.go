@@ -49,7 +49,7 @@ func (s *insightsJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		return nil, err
 	}
 
-	return background.GetBackgroundJobs(ctx, mainAppDb, insightsDB), nil
+	return background.GetBackgroundJobs(context.Background(), mainAppDb, insightsDB), nil
 }
 
 func NewInsightsJob() shared.Job {
