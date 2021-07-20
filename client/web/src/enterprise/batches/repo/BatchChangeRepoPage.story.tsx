@@ -13,7 +13,7 @@ import {
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 import { NODES } from './testData'
 
-const { add } = storiesOf('web/batches/BatchChangeRepoPage', module)
+const { add } = storiesOf('web/batches/repo/BatchChangeRepoPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {

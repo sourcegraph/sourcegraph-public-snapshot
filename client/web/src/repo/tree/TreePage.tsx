@@ -39,7 +39,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
-import { BatchChangesIcon } from '../../batches/icons'
+import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -48,6 +48,7 @@ import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphq
 import { InsightsApiContext, InsightsViewGrid } from '../../insights'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
+import { lazyComponent } from '../../util/lazyComponent'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -133,10 +134,6 @@ export const treePageRepositoryFragment = gql`
         name
         description
         viewerCanAdminister
-        changesetsStats {
-            open
-            merged
-        }
     }
 `
 
@@ -430,28 +427,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             <UserIcon className="icon-inline" /> Contributors
                                         </Link>
                                         {showBatchChanges && (
-                                            <Link
+                                            <RepoBatchChangesButton
                                                 className="btn btn-outline-secondary"
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/batch-changes`}
-                                            >
-                                                <BatchChangesIcon className="icon-inline" /> Batch Changes
-                                                {repo.changesetsStats.open > 0 && (
-                                                    <span
-                                                        className="d-inline-block badge badge-success batch-change-badge ml-2"
-                                                        data-tooltip={`${repo.changesetsStats.open} open batch changesets`}
-                                                    >
-                                                        {repo.changesetsStats.open}
-                                                    </span>
-                                                )}
-                                                {repo.changesetsStats.merged > 0 && (
-                                                    <span
-                                                        className="d-inline-block badge badge-merged batch-change-badge ml-2"
-                                                        data-tooltip={`${repo.changesetsStats.merged} merged batch changesets`}
-                                                    >
-                                                        {repo.changesetsStats.merged}
-                                                    </span>
-                                                )}
-                                            </Link>
+                                                repoName={repo.name}
+                                            />
                                         )}
                                         {repo.viewerCanAdminister && (
                                             <Link
