@@ -1,4 +1,11 @@
 env:
+  PGPORT: 5432
+  PGHOST: localhost
+  PGUSER: sourcegraph
+  PGPASSWORD: sourcegraph
+  PGDATABASE: sourcegraph
+  PGSSLMODE: disable
+
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
