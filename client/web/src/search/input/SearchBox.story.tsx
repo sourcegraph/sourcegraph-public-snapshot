@@ -52,7 +52,6 @@ const defaultProps: SearchBoxProps = {
     authenticatedUser: null,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
 }
 
 add(

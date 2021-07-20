@@ -18,43 +18,31 @@
 
 - Try out the public instance on any open-source repository at [sourcegraph.com](https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/httptest/httptest.go#L41:6&tab=references).
 - Install the free and open-source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en).
-- Spin up your own instance with the [quickstart installation guide](https://docs.sourcegraph.com/#quickstart-guide).
+- Spin up your own instance with the [quickstart installation guide](https://docs.sourcegraph.com/#getting-started)
 - File feature requests and bug reports in [our issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 - Visit [about.sourcegraph.com](https://about.sourcegraph.com) for more information about product features.
 
-## Development
+## Installation
 
-### Prerequisites
-
-- Git
-- Go (1.15 or later)
-- Docker
-- PostgreSQL (v11 or higher)
-- Node.js (version 8 or 10)
-- Redis
-- Yarn
-
-For a detailed guide to installing prerequisites, see [these
-instructions](doc/dev/getting-started/quickstart_1_install_dependencies.md).
-
-### Installation
-
-> Prebuilt Docker images are the fastest way to use Sourcegraph Enterprise. See the [quickstart installation guide](https://docs.sourcegraph.com/#quickstart-guide).
+> **Prebuilt Docker images are the fastest way to use Sourcegraph Enterprise. See the [quickstart installation guide](https://docs.sourcegraph.com/#getting-started).**
 
 To use Sourcegraph OSS:
 
-1.  [Initialize the PostgreSQL database](doc/dev/getting-started/quickstart_2_initialize_database.md)
-1.  [Ensure Docker is running](doc/dev/getting-started/quickstart_3_start_docker.md)
-1.  [Configure the HTTPS reverse proxy](doc/dev/getting-started/quickstart_5_configure_https_reverse_proxy.md)
-1.  [Start the development server](doc/dev/getting-started/quickstart_6_start_server.md)
-
-    ```
-    ./dev/start.sh
-    ```
+1. [Initialize the PostgreSQL database](doc/dev/getting-started/quickstart_2_initialize_database.md)
+1. [Ensure Docker is running](doc/dev/getting-started/quickstart_3_start_docker.md)
+1. [Configure the HTTPS reverse proxy](doc/dev/getting-started/quickstart_5_configure_https_reverse_proxy.md)
+1. [Start the development server](doc/dev/getting-started/quickstart_6_start_server.md)
+   ```sh
+   ./dev/start.sh
+   ```
 
 Sourcegraph should now be running at https://sourcegraph.test:3443.
 
 For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/index.md).
+
+## Development
+
+Refer to the [Developing Sourcegraph guide](doc/dev/index.md) to get started.
 
 ### Documentation
 
@@ -69,7 +57,7 @@ The `doc` directory has additional documentation for developing and understandin
 - [GraphQL API](./doc/api/graphql/index.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 
-### License
+## License
 
 Sourcegraph OSS is available freely under the [Apache 2 license](LICENSE.apache). Sourcegraph OSS comprises all files in this repository except those in the `enterprise/` and `client/web/src/enterprise` directories.
 

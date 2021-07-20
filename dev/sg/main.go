@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
@@ -221,8 +222,32 @@ var (
 	}
 )
 
+func setMaxOpenFiles() error {
+	const maxOpenFiles = 10000
+
+	var rLimit syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
+		return err
+	}
+
+	if rLimit.Cur < maxOpenFiles {
+		rLimit.Cur = maxOpenFiles
+
+		// This may not succeed, see https://github.com/golang/go/issues/30401
+		return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	}
+
+	return nil
+}
+
 func main() {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
+		os.Exit(1)
+	}
+
+	// We always try to set this, since we often want to watch files, start commands, etc.
+	if err := setMaxOpenFiles(); err != nil {
+		fmt.Printf("failed to set max open files: %s\n", err)
 		os.Exit(1)
 	}
 

@@ -79,7 +79,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const showCodeInsights =
         !isErrorLike(props.settingsCascade.final) &&
         !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-        props.settingsCascade.final['insights.displayLocation.homepage'] !== false
+        props.settingsCascade.final['insights.displayLocation.homepage'] === true
 
     const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(

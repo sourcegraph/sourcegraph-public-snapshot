@@ -100,3 +100,13 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 		},
 	}
 }
+
+// NewDatabaseConnectionsMonitoringGroup creates a group containing panels displaying
+// database monitoring metrics for the given container.
+func NewDatabaseConnectionsMonitoringGroup(containerName string) monitoring.Group {
+	return monitoring.Group{
+		Title:  TitleDatabaseConnectionsMonitoring,
+		Hidden: true,
+		Rows:   DatabaseConnectionsMonitoring(containerName),
+	}
+}
