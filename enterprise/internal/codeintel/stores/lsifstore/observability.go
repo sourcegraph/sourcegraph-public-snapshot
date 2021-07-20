@@ -25,6 +25,7 @@ type operations struct {
 	documentationPathIDToID    *observation.Operation
 	documentationDefinitions   *observation.Operation
 	documentationReferences    *observation.Operation
+	documentationAtPosition    *observation.Operation
 	writeDefinitions           *observation.Operation
 	writeDocuments             *observation.Operation
 	writeMeta                  *observation.Operation
@@ -81,6 +82,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		documentationPathIDToID:    op("DocumentationPathIDToID"),
 		documentationDefinitions:   op("DocumentationDefinitions"),
 		documentationReferences:    op("DocumentationReferences"),
+		documentationAtPosition:    op("DocumentationAtPosition"),
 		writeDefinitions:           op("WriteDefinitions"),
 		writeDocuments:             op("WriteDocuments"),
 		writeMeta:                  op("WriteMeta"),

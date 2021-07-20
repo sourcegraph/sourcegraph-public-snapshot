@@ -106,27 +106,21 @@ func (r *queryResolver) Documentation(ctx context.Context, line, character int) 
 	documentation := make([]*Documentation, 0, len(adjustedLocations))
 	for _, location := range adjustedLocations {
 		target := location.AdjustedRange
-		ranges, err := r.lsifStore.Ranges(
+		pathIDs, err := r.lsifStore.DocumentationAtPosition(
 			ctx,
 			location.Dump.ID,
 			location.Path,
 			target.Start.Line,
-			target.End.Line+1,
+			target.Start.Character,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "lsifStore.Ranges")
+			return nil, errors.Wrap(err, "lsifStore.DocumentationAtPosition")
 		}
-		if len(ranges) == 0 {
+		if len(pathIDs) == 0 {
 			continue
 		}
-
-		for _, rn := range ranges {
-			if rn.Range.Start.Character < target.Start.Character || rn.Range.End.Character > target.End.Character {
-				continue // out of our desired character range
-			}
-			if rn.DocumentationPathID != "" {
-				documentation = append(documentation, &Documentation{PathID: rn.DocumentationPathID})
-			}
+		for _, pathID := range pathIDs {
+			documentation = append(documentation, &Documentation{PathID: pathID})
 		}
 	}
 	return documentation, nil
