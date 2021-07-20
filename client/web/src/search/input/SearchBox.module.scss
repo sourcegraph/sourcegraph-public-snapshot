@@ -17,7 +17,7 @@
         }
     }
 
-    :global(.theme-redesign) &__shadow {
+    &__shadow {
         box-shadow: var(--search-input-shadow);
     }
 
