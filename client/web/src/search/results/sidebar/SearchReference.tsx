@@ -617,7 +617,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     )
     const updateQueryWithExample = useCallback(
         (example: string) => {
-            telemetryService.log(hasFilter ? 'SearchReferenceClickedWithSearch' : 'SearchReferenceClickedWithoutSearch')
+            telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
             onNavbarQueryChange({ query: navbarSearchQueryState.query.trimEnd() + ' ' + example })
         },
         [onNavbarQueryChange, navbarSearchQueryState, hasFilter, telemetryService]
