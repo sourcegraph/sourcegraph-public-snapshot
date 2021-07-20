@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -229,7 +230,8 @@ func BatchChangesEnabled() bool {
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
-	return true
+
+	return !envvar.SourcegraphDotComMode()
 }
 
 func BatchChangesRestrictedToAdmins() bool {
