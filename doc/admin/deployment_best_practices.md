@@ -33,8 +33,8 @@ Kubernetes deployments may be customized in a variety of ways, we consider the f
 - Users should use our [standard deployment](https://github.com/sourcegraph/deploy-sourcegraph) as a base, users may customize deployments via:
   - vanilla Kubernetes .yaml files deployed with few modifications
   - Kustomize [overlays](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays)
-- The minimum Kubernetes version should be the [GKE Stable release version](https://cloud.google.com/kubernetes-engine/docs/release-notes-stable) or the [latest AWS EKS version](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html)
-- The Sourcegraph host&#39;s Kubernetes version should be 1.17, 1.18, or 1.19
+- The suggested Kubernetes version is the current [GKE Stable release version](https://cloud.google.com/kubernetes-engine/docs/release-notes-stable)
+- We attempt to support new versions of Kubernetes 2-3 months after their release.
 - Users are expected to run a compliant Kubernetes version ([a CNCF certified Kubernetes distribution](https://github.com/cncf/k8s-conformance))
 - The cluster must have access to persistent SSD storage
 - We test against Google Kubernetes Engine
