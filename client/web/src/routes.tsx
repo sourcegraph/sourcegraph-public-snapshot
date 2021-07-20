@@ -127,7 +127,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/post-sign-up',
+        path: '/welcome',
         render: props => <PostSignUpPage {...props} context={window.context} />,
         exact: true,
     },

@@ -2,6 +2,7 @@ import {
     gql as apolloGql,
     useQuery as useApolloQuery,
     useMutation as useApolloMutation,
+    useLazyQuery as useApolloLazyQuery,
     DocumentNode,
     ApolloClient,
     InMemoryCache,
@@ -12,6 +13,7 @@ import {
     QueryResult,
     MutationHookOptions,
     MutationTuple,
+    QueryTuple,
 } from '@apollo/client'
 import { useMemo } from 'react'
 import { Observable } from 'rxjs'
@@ -138,6 +140,14 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 ): QueryResult<TData, TVariables> {
     const documentNode = useDocumentNode(query)
     return useApolloQuery(documentNode, options)
+}
+
+export function useLazyQuery<TData = any, TVariables = OperationVariables>(
+    query: RequestDocument,
+    options: QueryHookOptions<TData, TVariables>
+): QueryTuple<TData, TVariables> {
+    const documentNode = useDocumentNode(query)
+    return useApolloLazyQuery(documentNode, options)
 }
 
 /**
