@@ -57,7 +57,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "repo_index_state",
 							Description: "indexing results over 5m (noop=no changes, empty=no branches to index)",
-							Query:       `sum by (state) (increase(index_repo_seconds_bucket[5m]))`,
+							Query:       `sum by (state) (increase(index_repo_seconds_count[5m]))`,
 							NoAlert:     true,
 							Owner:       monitoring.ObservableOwnerSearch,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
