@@ -602,12 +602,12 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     const hasFilter = filter.length === 0
 
     const selectedFilters = useMemo(() => {
-        if (filter.length === 0) {
+        if (hasFilter) {
             return searchReferenceInfo
         }
         const searchTerms = parseSearchInput(filter)
         return searchReferenceInfo.filter(info => matches(searchTerms, info))
-    }, [filter])
+    }, [filter, hasFilter])
 
     const updateQuery = useCallback(
         (searchReference: SearchReferenceInfo, negate: boolean) => {
@@ -617,7 +617,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     )
     const updateQueryWithExample = useCallback(
         (example: string) => {
-            telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
+            telemetryService.log(hasFilter ? 'SearchReferenceClickedWithSearch' : 'SearchReferenceClickedWithoutSearch')
             onNavbarQueryChange({ query: navbarSearchQueryState.query.trimEnd() + ' ' + example })
         },
         [onNavbarQueryChange, navbarSearchQueryState, hasFilter, telemetryService]
