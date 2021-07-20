@@ -6,6 +6,8 @@ import (
 )
 
 func ExecutorQueue() *monitoring.Container {
+	const containerName = "executor-queue"
+
 	return &monitoring.Container{
 		Name:        "executor-queue",
 		Title:       "Executor Queue",
@@ -90,66 +92,13 @@ func ExecutorQueue() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("executor-queue"),
-			},
-			{
-				Title:  "Internal service requests",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.FrontendInternalAPIErrorResponses("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerMemoryUsage("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ContainerMissing("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.GoGcDuration("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 		},
 	}
 }

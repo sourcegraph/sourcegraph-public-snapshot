@@ -6,6 +6,8 @@ import (
 )
 
 func Symbols() *monitoring.Container {
+	const containerName = "symbols"
+
 	return &monitoring.Container{
 		Name:        "symbols",
 		Title:       "Symbols",
@@ -34,57 +36,14 @@ func Symbols() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 					},
-					{
-						shared.FrontendInternalAPIErrorResponses("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerMemoryUsage("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ContainerMissing("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.GoGcDuration("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 		},
 	}
 }

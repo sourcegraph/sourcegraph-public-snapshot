@@ -63,6 +63,17 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 	return o
 }
 
+// ObservableOption is a function that transforms an observable.
+type ObservableOption func(observable Observable) Observable
+
+func (f ObservableOption) safeApply(observable Observable) Observable {
+	if f == nil {
+		return observable
+	}
+
+	return f(observable)
+}
+
 // sharedObservable defines the type all shared observable variables should have in this package.
 type sharedObservable func(containerName string, owner monitoring.ObservableOwner) Observable
 
