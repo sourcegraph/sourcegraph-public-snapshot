@@ -432,6 +432,15 @@ enum LSIFUploadState {
     This upload is currently being transferred to Sourcegraph.
     """
     UPLOADING
+
+    """
+    This upload is queued for deletion. This upload was previously in the
+    COMPLETED state and evicted, replaced by a newer upload, or deleted by
+    a user. This upload is able to answer code intelligence queries until
+    the commit graph of the upload's repository is next calculated, at which
+    point the upload will become unreachable.
+    """
+    DELETING
 }
 
 """

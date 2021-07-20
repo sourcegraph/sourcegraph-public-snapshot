@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search queries now disallow specifying `rev:` without `repo:`. Note that to search across potentially multiple revisions, a query like `repo:.* rev:<revision>` remains valid. [#22705](https://github.com/sourcegraph/sourcegraph/pull/22705)
 - The extensions status bar on diff pages has been redesigned and now shows information for both the base and head commits. [#22123](https://github.com/sourcegraph/sourcegraph/pull/22123/files)
 - The `applyBatchChange` and `createBatchChange` mutations now accept an optional `publicationStates` argument to set the publication state of specific changesets within the batch change. [#22485](https://github.com/sourcegraph/sourcegraph/pull/22485) and [#22854](https://github.com/sourcegraph/sourcegraph/pull/22854)
+- Search queries now return up to 80 suggested filters. Previously we returned up to 24. [#22863](https://github.com/sourcegraph/sourcegraph/pull/22863)
 
 ### Fixed
 
@@ -2529,7 +2530,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](https://docs.sou
 - Code intelligence indexes are now built for all repositories in the background, regardless of whether or not they are visited directly by a user.
 - Language servers are now automatically enabled when visiting a repository. For example, visiting a Go repository will now automatically download and run the relevant Docker container for Go code intelligence.
   - This change only affects when Sourcegraph is deployed using the `sourcegraph/server` Docker image (not using Kubernetes).
-  - You will need to use the new `docker run` command at https://docs.sourcegraph.com/#quickstart in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://docs.sourcegraph.com/extensions/language_servers for more information.
+  - You will need to use the new `docker run` command at https://docs.sourcegraph.com/#quick-install in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://docs.sourcegraph.com/extensions/language_servers for more information.
 - The site admin Analytics page will now display the number of "Code Intelligence" actions each user has made, including hovers, jump to definitions, and find references, on the Sourcegraph webapp or in a code host integration or extension.
 - An experimental cross repository jump to definition which consults the OSS index on Sourcegraph.com. This is disabled by default; use `"experimentalFeatures": { "jumpToDefOSSIndex": "enabled" }` in your site configuration to enable it.
 - Users can now view Git branches, tags, and commits, and compare Git branches and revisions on Sourcegraph. (The code host icon in the header takes you to the commit on the code host.)

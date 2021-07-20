@@ -999,6 +999,13 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
 
+            // TEMPORARY: Mock `Date.now` to prevent temporary Firefox from rendering.
+            await driver.page.evaluateOnNewDocument(() => {
+                // Number of ms between Unix epoch and July 1, 2020 (outside of Firefox campaign range)
+                const mockMs = new Date('July 1, 2020 00:00:00 UTC').getTime()
+                Date.now = () => mockMs
+            })
+
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/test.ts`)
 
             // Click on "log" in "console.log()" in line 2

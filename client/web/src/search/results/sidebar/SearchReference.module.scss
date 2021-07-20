@@ -35,6 +35,7 @@
     &:hover {
         .collapse-button {
             @extend .collapse-button, :focus;
+            transition: width 0.2s ease-in-out, opacity 0.2s ease-in-out;
         }
     }
 
@@ -50,14 +51,19 @@
     border-bottom: 1px solid #dbe2f0;
     margin-top: 0.25rem;
     padding: 0.5rem 0.75rem;
-}
 
-.description > * {
-    margin-bottom: 0.5rem;
-}
+    button {
+        font-size: inherit;
+        text-align: left;
+    }
 
-.description > :last-child {
-    margin-bottom: 0;
+    > * {
+        margin-bottom: 0.5rem;
+    }
+
+    > :last-child {
+        margin-bottom: 0;
+    }
 }
 
 .placeholder {
@@ -68,12 +74,17 @@
 .collapse-button {
     border: none;
     margin: 0;
-    padding: 0;
-    display: none;
-}
+    padding: 0 0.5rem;
+    width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    opacity: 0;
 
-.collapse-button:focus {
-    display: inline-block;
+    &:focus {
+        display: inline-block;
+        width: 2rem;
+        opacity: 1;
+    }
 }
 
 .examples {

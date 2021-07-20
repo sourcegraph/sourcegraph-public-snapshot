@@ -1,15 +1,15 @@
 import { Remote } from 'comlink'
-import { combineLatest, from, Observable, of } from 'rxjs'
-import { catchError, map, startWith, switchMap } from 'rxjs/operators'
+import { combineLatest, from, Observable } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { fetchBackendInsights } from '../requests/fetch-backend-insights'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../types'
-import { createViewContent } from '../utils/create-view-content'
+
+import { getBackendInsights } from './get-backend-insights'
 
 /**
  * Get combined (backend and extensions) code insights unified method.
@@ -36,33 +36,7 @@ export const getCombinedViews = (
                 }))
             )
         ),
-        fetchBackendInsights(insightIds ?? []).pipe(
-            startWith(null),
-            map(backendInsights =>
-                backendInsights === null
-                    ? [{ id: 'Backend insights', view: undefined, source: ViewInsightProviderSourceType.Backend }]
-                    : backendInsights?.map(
-                          (insight): ViewInsightProviderResult => ({
-                              id: insight.id,
-                              view: {
-                                  title: insight.title,
-                                  subtitle: insight.description,
-                                  content: [createViewContent(insight)],
-                              },
-                              source: ViewInsightProviderSourceType.Backend,
-                          })
-                      )
-            ),
-            catchError(error =>
-                of<ViewInsightProviderResult[]>([
-                    {
-                        id: 'Backend insight',
-                        view: asError(error),
-                        source: ViewInsightProviderSourceType.Backend,
-                    },
-                ])
-            )
-        ),
+        getBackendInsights(insightIds),
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 
 /**
@@ -70,12 +44,15 @@ export const getCombinedViews = (
  */
 export const getInsightCombinedViews = (
     extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
-    insightIds?: string[]
+    allInsightIds?: string[],
+    backendInsightIds?: string[]
 ): Observable<ViewInsightProviderResult[]> =>
     getCombinedViews(
         () =>
             from(extensionApi).pipe(
-                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, insightIds)))
+                switchMap(extensionHostAPI =>
+                    wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, allInsightIds))
+                )
             ),
-        insightIds
+        backendInsightIds
     )

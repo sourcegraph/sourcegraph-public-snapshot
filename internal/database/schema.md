@@ -2045,7 +2045,7 @@ Triggers:
     u.associated_index_id,
     u.finished_at AS processed_at
    FROM lsif_uploads u
-  WHERE (u.state = 'completed'::text);
+  WHERE ((u.state = 'completed'::text) OR (u.state = 'deleting'::text));
 ```
 
 # View "public.lsif_dumps_with_repository_name"

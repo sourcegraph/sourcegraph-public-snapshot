@@ -4,7 +4,7 @@ import { promisify } from 'util'
 import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
+import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
@@ -18,7 +18,6 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
-import { PrivateRepoPublicSourcegraphComError } from '@sourcegraph/shared/src/backend/errors'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { IQuery } from '@sourcegraph/shared/src/graphql/schema'
@@ -103,7 +102,7 @@ const commonArguments = () =>
         userSignedIn: true,
         minimalUI: false,
         background: {
-            notifyPrivateRepository: () => Promise.resolve(),
+            notifyPrivateCloudError: () => Promise.resolve(),
             openOptionsPage: () => Promise.resolve(),
         },
     })
@@ -841,67 +840,6 @@ describe('codeHost', () => {
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip).toHaveClass('native-tooltip--hidden')
-        })
-
-        test('gracefully handles viewing private repos on a public Sourcegraph instance', async () => {
-            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
-                roots: [],
-                viewers: [],
-            })
-            const codeView = createTestElement()
-            codeView.id = 'code'
-            const blobInfo: DiffOrBlobInfo = {
-                blob: {
-                    rawRepoName: 'github.com/foo',
-                    filePath: '/bar.ts',
-                    commitID: '1',
-                },
-            }
-            subscriptions.add(
-                handleCodeHost({
-                    ...commonArguments(),
-                    codeHost: {
-                        type: 'github',
-                        name: 'GitHub',
-                        check: () => true,
-                        notificationClassNames,
-                        codeViewResolvers: [
-                            toCodeViewResolver('#code', {
-                                dom: {
-                                    getCodeElementFromTarget: sinon.spy(),
-                                    getCodeElementFromLineNumber: sinon.spy(),
-                                    getLineElementFromLineNumber: sinon.spy(),
-                                    getLineNumberFromCodeElement: sinon.spy(),
-                                },
-                                resolveFileInfo: () => of(blobInfo),
-                            }),
-                        ],
-                    },
-                    extensionsController: createMockController(extensionHostAPI),
-                    showGlobalDebug: true,
-                    platformContext: createMockPlatformContext({
-                        // Simulate an instance where all repo-specific graphQL requests error with
-                        // PrivateRepoPublicSourcegraph
-                        requestGraphQL: mockRequestGraphQL({
-                            ...DEFAULT_GRAPHQL_RESPONSES,
-                            BlobContent: () => throwError(new PrivateRepoPublicSourcegraphComError('BlobContent')),
-                            ResolveRepo: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRepo')),
-                            ResolveRev: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRev')),
-                        }),
-                    }),
-                })
-            )
-            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
-            expect(getEditors(extensionAPI)).toEqual([
-                {
-                    viewerId: 'viewer#0',
-                    isActive: true,
-                    // Repo name exposed in URIs is the raw repo name
-                    resource: 'git://github.com/foo?1#/bar.ts',
-                    selections: [],
-                    type: 'CodeEditor',
-                },
-            ])
         })
     })
 

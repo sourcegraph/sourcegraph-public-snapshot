@@ -10,6 +10,7 @@ import { android } from './repogroups/Android'
 import { cncf } from './repogroups/cncf'
 import { golang } from './repogroups/Golang'
 import { kubernetes } from './repogroups/Kubernetes'
+import { o3de } from './repogroups/o3de'
 import { python2To3Metadata } from './repogroups/Python2To3'
 import { reactHooks } from './repogroups/ReactHooks'
 import { RepogroupPage } from './repogroups/RepogroupPage'
@@ -261,6 +262,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/temporal',
         render: props => <RepogroupPage {...props} repogroupMetadata={temporal} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/o3de',
+        render: props => <RepogroupPage {...props} repogroupMetadata={o3de} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
