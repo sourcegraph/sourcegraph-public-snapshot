@@ -45,7 +45,7 @@ func NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName string, ow
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.ErrorResponses.SafeApply(FrontendInternalAPIErrorResponses(containerName, owner)).Observable(),
+				options.ErrorResponses.safeApply(FrontendInternalAPIErrorResponses(containerName, owner)).Observable(),
 			},
 		},
 	}

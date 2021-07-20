@@ -115,10 +115,10 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.ContainerMissing.SafeApply(ContainerMissing(containerName, owner)).Observable(),
-				options.CPUUsage.SafeApply(ContainerCPUUsage(containerName, owner)).Observable(),
-				options.MemoryUsage.SafeApply(ContainerMemoryUsage(containerName, owner)).Observable(),
-				options.IOUsage.SafeApply(ContainerIOUsage(containerName, owner)).Observable(),
+				options.ContainerMissing.safeApply(ContainerMissing(containerName, owner)).Observable(),
+				options.CPUUsage.safeApply(ContainerCPUUsage(containerName, owner)).Observable(),
+				options.MemoryUsage.safeApply(ContainerMemoryUsage(containerName, owner)).Observable(),
+				options.IOUsage.safeApply(ContainerIOUsage(containerName, owner)).Observable(),
 			},
 		},
 	}

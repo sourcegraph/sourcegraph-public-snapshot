@@ -60,8 +60,8 @@ func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableO
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.Goroutines.SafeApply(GoGoroutines(containerName, owner)).Observable(),
-				options.GCDuration.SafeApply(GoGcDuration(containerName, owner)).Observable(),
+				options.Goroutines.safeApply(GoGoroutines(containerName, owner)).Observable(),
+				options.GCDuration.safeApply(GoGcDuration(containerName, owner)).Observable(),
 			},
 		},
 	}

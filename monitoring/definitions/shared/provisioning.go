@@ -105,12 +105,12 @@ func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.Obser
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.LongTermCPUUsage.SafeApply(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
-				options.LongTermMemoryUsage.SafeApply(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
+				options.LongTermCPUUsage.safeApply(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
+				options.LongTermMemoryUsage.safeApply(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
 			},
 			{
-				options.ShortTermCPUUsage.SafeApply(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
-				options.ShortTermMemoryUsage.SafeApply(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
+				options.ShortTermCPUUsage.safeApply(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
+				options.ShortTermMemoryUsage.safeApply(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
 			},
 		},
 	}

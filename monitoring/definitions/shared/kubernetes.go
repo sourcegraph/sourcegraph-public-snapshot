@@ -46,7 +46,7 @@ func NewKubernetesMonitoringGroup(containerName string, owner monitoring.Observa
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.PodsAvailable.SafeApply(KubernetesPodsAvailable(containerName, owner)).Observable(),
+				options.PodsAvailable.safeApply(KubernetesPodsAvailable(containerName, owner)).Observable(),
 			},
 		},
 	}
