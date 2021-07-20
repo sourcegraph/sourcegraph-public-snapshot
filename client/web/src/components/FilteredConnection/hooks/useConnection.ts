@@ -1,6 +1,6 @@
 import { QueryResult } from '@apollo/client'
 import { GraphQLError } from 'graphql'
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
@@ -48,34 +48,53 @@ export const useConnection = <TResult, TVariables, TData>({
     const searchParameters = useSearchParameters()
     const firstRequest = useRef(true)
 
+    const first = useRef({
+        /**
+         * The number of results that we will typically want to load in the next request (unless `visible` is used).
+         * This value will typically be static for cursor-based pagination, but will be dynamic for batch-based pagination.
+         */
+        actual: (options?.useURL && parseQueryInt(searchParameters, 'first')) || variables.first || DEFAULT_FIRST,
+        /**
+         * Primarily used to determine original request state for URL search parameter logic.
+         */
+        default: variables.first || DEFAULT_FIRST,
+    })
+
     /**
      * The number of results that were visible from previous requests. The initial request of
      * a result set will load `visible` items, then will request `first` items on each subsequent
      * request. This has the effect of loading the correct number of visible results when a URL
-     * is copied during pagination. This value is only useful with cursor-based paging.
+     * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
      */
-    const visible = useRef((options?.useURL && parseQueryInt(searchParameters, 'visible')) || 0)
+    const visible = useRef(options?.useURL && parseQueryInt(searchParameters, 'visible'))
 
-    const defaultFirst = useRef(variables.first || DEFAULT_FIRST)
     /**
-     * The number of results that we will typically want to load in the next request (unless `visible` is used).
-     * This value will typically be static for cursor-based pagination, but will be dynamic for batch-based pagination.
+     * The `after` variable for our **initial** query.
+     * Subsequent requests through `fetchMore` will use a valid `cursor` value here, where possible.
      */
-    const first = useRef(
-        (options?.useURL && parseQueryInt(searchParameters, 'first')) || variables.first || defaultFirst.current
+    const after = useRef((options?.useURL && searchParameters.get('after')) || variables.after || DEFAULT_AFTER)
+
+    const initialControls = useMemo(
+        () => ({
+            /**
+             * The `first` variable for our **initial** query.
+             * If this is our first query and we were supplied a value for `visible` load that many results.
+             * If we weren't given such a value or this is a subsequent request, only ask for one page of results.
+             */
+            first: (firstRequest.current && visible.current) || first.current.actual,
+            after: after.current,
+        }),
+        []
     )
-    // If this is our first query and we were supplied a value for `visible`,
-    // load that many results. If we weren't given such a value or this is a
-    // subsequent request, only ask for one page of results.
-    const queryFirst = useRef((firstRequest.current && visible.current) || first.current)
 
-    const after = (options?.useURL && searchParameters.get('after')) || variables.after || DEFAULT_AFTER
-
+    /**
+     * Initial query of the hook.
+     * Subsequent requests (such as further pagination) will be handled through `fetchMore`
+     */
     const { data, error, loading, fetchMore } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
-            first: queryFirst.current,
-            after,
+            ...initialControls,
         },
         onCompleted: () => (firstRequest.current = false),
     })
@@ -97,7 +116,6 @@ export const useConnection = <TResult, TVariables, TData>({
     useConnectionUrl({
         enabled: options?.useURL,
         first: first.current,
-        defaultFirst: defaultFirst.current,
         visible: connection?.nodes.length || 0,
     })
 
@@ -108,7 +126,7 @@ export const useConnection = <TResult, TVariables, TData>({
             variables: {
                 ...variables,
                 // Use cursor paging if possible, otherwise fallback to multiplying `first`
-                ...(cursor ? { after: cursor } : { first: first.current * 2 }),
+                ...(cursor ? { after: cursor } : { first: first.current.actual * 2 }),
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
                 if (!fetchMoreResult) {
@@ -116,12 +134,15 @@ export const useConnection = <TResult, TVariables, TData>({
                 }
 
                 if (cursor) {
-                    // Cursor paging so append to results, update `after` for next fetch
+                    // Cursor paging so append to results
                     const previousNodes = getConnection({ data: previousResult }).nodes
                     getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
                 } else {
                     // Batch-based pagination, update `first` to fetch more results next time
-                    first.current = first.current * 2
+                    first.current = {
+                        ...first.current,
+                        actual: first.current.actual * 2,
+                    }
                 }
 
                 return fetchMoreResult

@@ -59,8 +59,10 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
         : typeof connection.totalCount === 'number' && connection.nodes.length < connection.totalCount
 
 export interface GetUrlQueryParameters {
-    first?: number
-    defaultFirst?: number
+    first: {
+        actual: number
+        default?: number
+    }
     query?: string
     values?: Map<string, FilteredConnectionFilterValue>
     filters?: FilteredConnectionFilter[]
@@ -71,22 +73,15 @@ export interface GetUrlQueryParameters {
 /**
  * Determines the URL search parameters for a connection.
  */
-export const getUrlQuery = ({
-    first,
-    defaultFirst,
-    query,
-    values,
-    visible,
-    filters,
-    location,
-}: GetUrlQueryParameters): string => {
+export const getUrlQuery = ({ first, query, values, visible, filters, location }: GetUrlQueryParameters): string => {
     const searchParameters = new URLSearchParams(location.search)
+
     if (query) {
         searchParameters.set(QUERY_KEY, query)
     }
 
-    if (first !== defaultFirst) {
-        searchParameters.set('first', String(first))
+    if (first.actual !== first.default) {
+        searchParameters.set('first', String(first.actual))
     }
 
     if (values && filters) {
@@ -106,7 +101,7 @@ export const getUrlQuery = ({
         }
     }
 
-    if (visible !== 0 && visible !== first) {
+    if (visible !== 0 && visible !== first.actual) {
         searchParameters.set('visible', String(visible))
     }
 
