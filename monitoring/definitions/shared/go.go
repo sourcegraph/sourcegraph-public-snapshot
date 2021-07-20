@@ -50,15 +50,15 @@ type GolangMonitoringOptions struct {
 
 // NewGolangMonitoringGroup creates a group containing panels displaying Go monitoring
 // metrics for the given container.
-func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableOwner, alerts *GolangMonitoringOptions) monitoring.Group {
-	if alerts == nil {
-		alerts = &GolangMonitoringOptions{}
+func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *GolangMonitoringOptions) monitoring.Group {
+	if options == nil {
+		options = &GolangMonitoringOptions{}
 	}
-	if alerts.Goroutines == nil {
-		alerts.Goroutines = NoopObservableTransformer
+	if options.Goroutines == nil {
+		options.Goroutines = NoopObservableTransformer
 	}
-	if alerts.GCDuration == nil {
-		alerts.GCDuration = NoopObservableTransformer
+	if options.GCDuration == nil {
+		options.GCDuration = NoopObservableTransformer
 	}
 
 	return monitoring.Group{
@@ -66,8 +66,8 @@ func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableO
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				alerts.Goroutines(GoGoroutines(containerName, owner)).Observable(),
-				alerts.GCDuration(GoGcDuration(containerName, owner)).Observable(),
+				options.Goroutines(GoGoroutines(containerName, owner)).Observable(),
+				options.GCDuration(GoGcDuration(containerName, owner)).Observable(),
 			},
 		},
 	}

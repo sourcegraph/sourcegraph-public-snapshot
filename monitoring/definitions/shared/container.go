@@ -102,18 +102,18 @@ type ContainerMonitoringGroupOptions struct {
 // NewContainerMonitoringGroup creates a group containing panels displaying
 // container monitoring metrics - cpu, memory, io resource usage as well as
 // a container missing alert - for the given container.
-func NewContainerMonitoringGroup(containerName string, owner monitoring.ObservableOwner, alerts *ContainerMonitoringGroupOptions) monitoring.Group {
-	if alerts == nil {
-		alerts = &ContainerMonitoringGroupOptions{}
+func NewContainerMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *ContainerMonitoringGroupOptions) monitoring.Group {
+	if options == nil {
+		options = &ContainerMonitoringGroupOptions{}
 	}
-	if alerts.CPUUsage == nil {
-		alerts.CPUUsage = NoopObservableTransformer
+	if options.CPUUsage == nil {
+		options.CPUUsage = NoopObservableTransformer
 	}
-	if alerts.MemoryUsage == nil {
-		alerts.MemoryUsage = NoopObservableTransformer
+	if options.MemoryUsage == nil {
+		options.MemoryUsage = NoopObservableTransformer
 	}
-	if alerts.IOUsage == nil {
-		alerts.IOUsage = NoopObservableTransformer
+	if options.IOUsage == nil {
+		options.IOUsage = NoopObservableTransformer
 	}
 
 	return monitoring.Group{
@@ -122,9 +122,9 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 		Rows: []monitoring.Row{
 			{
 				ContainerMissing(containerName, owner).Observable(),
-				alerts.CPUUsage(ContainerCPUUsage(containerName, owner)).Observable(),
-				alerts.MemoryUsage(ContainerMemoryUsage(containerName, owner)).Observable(),
-				alerts.IOUsage(ContainerIOUsage(containerName, owner)).Observable(),
+				options.CPUUsage(ContainerCPUUsage(containerName, owner)).Observable(),
+				options.MemoryUsage(ContainerMemoryUsage(containerName, owner)).Observable(),
+				options.IOUsage(ContainerIOUsage(containerName, owner)).Observable(),
 			},
 		},
 	}
