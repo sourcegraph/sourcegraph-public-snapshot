@@ -45,14 +45,13 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     const finalSettings = useDistinctValue(settingsCascade.final)
     const backendInsightIds = useBackendInsightIds({ insightIds: allInsightIds, finalSettings })
 
-    console.log({ allInsightIds, backendInsightIds })
-
     const views = useObservable(
-        useMemo(() => {
-            console.log('START RE_FETCHING')
-            // debugger;
-            return getInsightCombinedViews(extensionsController?.extHostAPI, allInsightIds, backendInsightIds)
-        }, [allInsightIds, backendInsightIds, extensionsController, getInsightCombinedViews])
+        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, allInsightIds, backendInsightIds), [
+            allInsightIds,
+            backendInsightIds,
+            extensionsController,
+            getInsightCombinedViews,
+        ])
     )
 
     const { handleDelete } = useDeleteInsight({ settingsCascade, platformContext })
