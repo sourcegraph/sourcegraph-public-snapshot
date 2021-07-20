@@ -15,6 +15,7 @@ import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
 import { appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
@@ -585,6 +586,7 @@ export interface SearchReferenceProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         VersionContextProps,
+        TelemetryProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     filter: string
@@ -596,15 +598,17 @@ export interface SearchReferenceProps
 const SearchReference = (props: SearchReferenceProps): ReactElement => {
     const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
+    const { onNavbarQueryChange, navbarSearchQueryState, filter, telemetryService } = props
+    const hasFilter = filter.length === 0
+
     const selectedFilters = useMemo(() => {
-        if (props.filter === '') {
+        if (hasFilter) {
             return searchReferenceInfo
         }
-        const searchTerms = parseSearchInput(props.filter)
+        const searchTerms = parseSearchInput(filter)
         return searchReferenceInfo.filter(info => matches(searchTerms, info))
-    }, [props.filter])
+    }, [filter, hasFilter])
 
-    const { onNavbarQueryChange, navbarSearchQueryState } = props
     const updateQuery = useCallback(
         (searchReference: SearchReferenceInfo, negate: boolean) => {
             onNavbarQueryChange(updateQueryWithFilter(navbarSearchQueryState, searchReference, negate, FILTERS))
@@ -613,9 +617,10 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     )
     const updateQueryWithExample = useCallback(
         (example: string) => {
+            telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
             onNavbarQueryChange({ query: navbarSearchQueryState.query.trimEnd() + ' ' + example })
         },
-        [onNavbarQueryChange, navbarSearchQueryState]
+        [onNavbarQueryChange, navbarSearchQueryState, hasFilter, telemetryService]
     )
 
     const filterList = (

@@ -95,6 +95,13 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         },
         [setOpenSections]
     )
+    const onSearchReferenceToggle = useCallback(
+        open => {
+            persistToggleState(SectionID.SEARCH_REFERENCE, open)
+            props.telemetryService.log(open ? 'SearchReferenceOpened' : 'SearchReferenceClosed')
+        },
+        [persistToggleState, props.telemetryService]
+    )
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
@@ -105,7 +112,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         header="Search reference"
                         showSearch={true}
                         open={openSections[SectionID.SEARCH_REFERENCE] ?? true}
-                        onToggle={open => persistToggleState(SectionID.SEARCH_REFERENCE, open)}
+                        onToggle={onSearchReferenceToggle}
                     >
                         {getSearchReferenceFactory(props)}
                     </SearchSidebarSection>
