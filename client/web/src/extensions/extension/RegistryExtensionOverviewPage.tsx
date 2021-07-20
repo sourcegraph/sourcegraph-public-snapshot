@@ -106,12 +106,13 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 <RegistryExtensionOverviewIcon extension={extension} isLightTheme={isLightTheme} />
                 {/* Publisher */}
                 {publisher && (
-                    <div
-                        className="pt-2 pb-3"
-                        data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
-                    >
+                    <div className="pt-2 pb-3">
                         <h3>Publisher</h3>
-                        <small>{publisher}</small>
+                        <small
+                            data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
+                        >
+                            {publisher}
+                        </small>
                         {isSourcegraphExtension && (
                             <SourcegraphExtensionIcon className="registry-extension-overview-page__sourcegraph-icon" />
                         )}
