@@ -4,8 +4,6 @@ import sinon from 'sinon'
 
 import { Steps, Step, StepsProps, StepList, StepPanel, StepPanels } from '.'
 
-const mockSetStep = sinon.spy(() => undefined)
-
 describe('Steps', () => {
     let queries: RenderResult
 
