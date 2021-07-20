@@ -403,8 +403,8 @@ commands:
       - enterprise/internal
       - enterprise/cmd/executor-queue
 
-  executor-template: &executor_template
-    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+  executor-template:
+    &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
@@ -424,8 +424,8 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      EXECUTOR_HEALTH_SERVER_PORT: "3192"
-      SRC_PROF_HTTP: ":6092"
+      EXECUTOR_HEALTH_SERVER_PORT: '3192'
+      SRC_PROF_HTTP: ':6092'
 
   batches-executor:
     <<: *executor_template
@@ -433,8 +433,8 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: batches
-      EXECUTOR_HEALTH_SERVER_PORT: "3193"
-      SRC_PROF_HTTP: ":6093"
+      EXECUTOR_HEALTH_SERVER_PORT: '3193'
+      SRC_PROF_HTTP: ':6093'
 
   minio:
     cmd: |
