@@ -46,9 +46,11 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     telemetryService,
     settingsCascade,
     isSelected,
+    isOtherBlockSelected,
     isMacPlatform,
     fetchHighlightedFileLineRanges,
     onRunBlock,
+    onSelectBlock,
     ...props
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
@@ -56,7 +58,17 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     const searchResults = useObservable(output ?? of(undefined))
     const location = useLocation()
 
-    const { isInputFocused } = useMonacoBlockInput({ editor, id, onRunBlock, ...props })
+    const runBlock = useCallback(
+        (id: string) => {
+            if (!isSelected) {
+                onSelectBlock(id)
+            }
+            onRunBlock(id)
+        },
+        [isSelected, onRunBlock, onSelectBlock]
+    )
+
+    const { isInputFocused } = useMonacoBlockInput({ editor, id, onRunBlock: runBlock, onSelectBlock, ...props })
 
     // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => {
@@ -67,9 +79,10 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         blockElement: blockElement.current,
         isSelected,
         isInputFocused,
+        onSelectBlock,
         ...props,
     })
-    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, onRunBlock, ...props })
+    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, onRunBlock: runBlock, ...props })
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const mainMenuAction = useMemo(() => {
@@ -78,10 +91,10 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
             label: isLoading ? 'Searching...' : 'Run search',
             isDisabled: isLoading ?? false,
             icon: <PlayCircleOutlineIcon className="icon-inline" />,
-            onClick: onRunBlock,
-            keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
+            onClick: runBlock,
+            keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
         }
-    }, [onRunBlock, modifierKeyLabel, searchResults])
+    }, [runBlock, isSelected, modifierKeyLabel, searchResults])
 
     const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isMacPlatform, ...props })
 
@@ -110,6 +123,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 aria-label="Notebook query block"
                 ref={blockElement}
             >
+                <div className="mb-1 text-muted">Search query</div>
                 <div
                     className={classNames(
                         blockStyles.monacoWrapper,
@@ -148,7 +162,13 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                     </div>
                 )}
             </div>
-            {isSelected && <SearchNotebookBlockMenu id={id} mainAction={mainMenuAction} actions={commonMenuActions} />}
+            {(isSelected || !isOtherBlockSelected) && (
+                <SearchNotebookBlockMenu
+                    id={id}
+                    mainAction={mainMenuAction}
+                    actions={isSelected ? commonMenuActions : []}
+                />
+            )}
         </div>
     )
 }

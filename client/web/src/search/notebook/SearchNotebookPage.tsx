@@ -46,7 +46,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
         const serializedBlocks = location.hash.slice(1)
         if (serializedBlocks.length === 0) {
             return [
-                { type: 'md', input: '# Welcome to Sourcegraph Search Notebooks!\nDo something awesome.' },
+                { type: 'md', input: '## Welcome to Sourcegraph Search Notebooks!\nDo something awesome.' },
                 { type: 'query', input: '// Enter a search query' },
             ]
         }
