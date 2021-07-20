@@ -456,7 +456,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}
 	}
 
-	if repo.Private {
+	if repo == nil || repo.Private {
 		return &protocol.RepoLookupResult{
 			ErrorNotFound: true,
 		}, nil
