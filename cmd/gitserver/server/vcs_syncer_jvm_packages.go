@@ -178,34 +178,34 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	// Always clean up created temporary directories.
 	defer os.RemoveAll(tmpDirectory)
 
-	sourceCodes, err := coursier.FetchSources(ctx, s.Config, dependency)
+	sourceCodePaths, err := coursier.FetchSources(ctx, s.Config, dependency)
 	if err != nil {
 		return err
 	}
 
-	if len(sourceCodes) == 0 {
+	if len(sourceCodePaths) == 0 {
 		return errors.Errorf("no sources.jar for dependency %s", dependency)
 	}
 
-	sourceCode := sourceCodes[0]
+	sourceCodePath := sourceCodePaths[0]
 
-	byteCodes, err := coursier.FetchByteCode(ctx, s.Config, dependency)
+	byteCodePaths, err := coursier.FetchByteCode(ctx, s.Config, dependency)
 	if err != nil {
 		return err
 	}
 
-	if len(byteCodes) == 0 {
+	if len(byteCodePaths) == 0 {
 		return errors.Errorf("no bytecode jar for dependency %s", dependency)
 	}
 
-	byteCode := byteCodes[0]
+	byteCodePath := byteCodePaths[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
 
-	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCode, byteCode)
+	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodePath, byteCodePath)
 	if err != nil {
 		return err
 	}
@@ -370,42 +370,54 @@ func classFileMajorVersion(byteCodeJarPath string) (string, error) {
 	}
 
 	for _, zipEntry := range zipReader.File {
-		if strings.HasSuffix(zipEntry.Name, ".class") {
-			classFileReader, err := zipEntry.Open()
-			if err != nil {
-				return "", err
-			}
-			defer classFileReader.Close()
-
-			magicBytes := make([]byte, 8)
-			read, err := classFileReader.Read(magicBytes)
-			if err != nil {
-				return "", err
-			}
-			if read != len(magicBytes) {
-				return "", errors.Errorf("failed to read 8 bytes from file %s", byteCodeJarPath)
-			}
-
-			// The structure of `*.class` files is documented here
-			// https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html#jvms-4.1 and also
-			// https://en.wikipedia.org/wiki/Java_class_file#General_layout
-			// - Bytes 0-4 must match 0xcafebabe.
-			// - Bytes 4-5 represent the uint16 formatted "minor" version.
-			// - Bytes 5-6 represent the uint16 formatted "major" version.
-			// We're only interested in the major version.
-			var cafebabe uint32
-			var minor uint16
-			var major uint16
-			buf := bytes.NewReader(magicBytes)
-			binary.Read(buf, binary.BigEndian, &cafebabe)
-			if cafebabe != 0xcafebabe {
-				continue // Not a classfile
-			}
-			binary.Read(buf, binary.BigEndian, &minor)
-			binary.Read(buf, binary.BigEndian, &major)
-			return strconv.Itoa(int(major)), nil
+		if !strings.HasSuffix(zipEntry.Name, ".class") {
+			continue
 		}
+		version, err := classFileEntryMajorVersion(byteCodeJarPath, zipEntry)
+		if err != nil {
+			return "", nil
+		}
+		if version == "" {
+			continue // Not a classfile
+		}
+		return version, nil
 	}
 
 	return "", errors.Errorf("failed to infer JVM version for jar %s because it doesn't contain any classfiles", byteCodeJarPath)
+}
+
+func classFileEntryMajorVersion(byteCodeJarPath string, zipEntry *zip.File) (string, error) {
+	classFileReader, err := zipEntry.Open()
+	if err != nil {
+		return "", err
+	}
+
+	magicBytes := make([]byte, 8)
+	read, err := classFileReader.Read(magicBytes)
+	defer classFileReader.Close()
+	if err != nil {
+		return "", err
+	}
+	if read != len(magicBytes) {
+		return "", errors.Errorf("failed to read 8 bytes from file %s", byteCodeJarPath)
+	}
+
+	// The structure of `*.class` files is documented here
+	// https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html#jvms-4.1 and also
+	// https://en.wikipedia.org/wiki/Java_class_file#General_layout
+	// - Bytes 0-4 must match 0xcafebabe.
+	// - Bytes 4-5 represent the uint16 formatted "minor" version.
+	// - Bytes 5-6 represent the uint16 formatted "major" version.
+	// We're only interested in the major version.
+	var cafebabe uint32
+	var minor uint16
+	var major uint16
+	buf := bytes.NewReader(magicBytes)
+	binary.Read(buf, binary.BigEndian, &cafebabe)
+	if cafebabe != 0xcafebabe {
+		return "", nil // Not a classfile
+	}
+	binary.Read(buf, binary.BigEndian, &minor)
+	binary.Read(buf, binary.BigEndian, &major)
+	return strconv.Itoa(int(major)), nil
 }
