@@ -158,17 +158,22 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             const userSelectedRepos = cachedSelectedRepos || selectedRepos || []
 
             const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
-                const foundInSelected = userSelectedRepos.find(
-                    ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
-                        // selected repo names formatted: code-host/owner/repository
-                        const selectedRepoName = name.slice(name.indexOf('/') + 1)
+                let foundInSelected: SiteAdminRepositoryFields | MinSelectedRepo | null = null
+                for (const selectedRepo of userSelectedRepos) {
+                    const {
+                        name,
+                        externalRepository: { serviceType: selectedRepoServiceType },
+                    } = selectedRepo
+                    const selectedRepoName = name.slice(name.indexOf('/') + 1)
 
-                        return (
-                            selectedRepoName === affiliatedRepo.name &&
-                            selectedRepoServiceType === affiliatedRepo.codeHost?.kind.toLocaleLowerCase()
-                        )
+                    if (
+                        selectedRepoName === affiliatedRepo.name &&
+                        selectedRepoServiceType === affiliatedRepo.codeHost?.kind.toLocaleLowerCase()
+                    ) {
+                        foundInSelected = selectedRepo
+                        break
                     }
-                )
+                }
 
                 if (foundInSelected) {
                     // save off only selected repos
@@ -273,7 +278,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         }
 
         // save off last selected repos
-
         const selection = [...selectionState.repos.values()].reduce((accumulator, repo) => {
             const serviceType = repo.codeHost?.kind.toLowerCase()
             const serviceName = serviceType ? `${serviceType}.com` : 'unknown'

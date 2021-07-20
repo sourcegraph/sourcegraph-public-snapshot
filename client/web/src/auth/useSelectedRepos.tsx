@@ -15,7 +15,7 @@ export interface MinSelectedRepo {
     name: string
     externalRepository: {
         serviceType: string
-        id: string
+        id?: string
     }
 }
 

@@ -3,6 +3,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { AuthenticatedUser } from './auth'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
@@ -124,8 +125,16 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/welcome',
-        render: props => <PostSignUpPage {...props} context={window.context} />,
+        render: props => (
+            <PostSignUpPage
+                // because of condition authenticatedUser can't be null
+                authenticatedUser={props.authenticatedUser as AuthenticatedUser}
+                telemetryService={props.telemetryService}
+                context={window.context}
+            />
+        ),
         exact: true,
+        condition: props => !!props.authenticatedUser,
     },
     {
         path: '/settings',

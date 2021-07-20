@@ -8,8 +8,8 @@ import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from '@sourcegraph/wildcard/src/components/Steps'
 
+import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { UserAreaUserFields } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 
@@ -20,7 +20,7 @@ import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
 
 interface PostSignUpPage {
-    authenticatedUser: UserAreaUserFields
+    authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
     telemetryService: TelemetryService
 }
@@ -102,7 +102,6 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
             <div className="signin-signup-page post-signup-page">
                 <PageTitle title="Welcome" />
-
                 <HeroPage
                     lessPadding={true}
                     className="text-left"

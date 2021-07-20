@@ -3,8 +3,9 @@ import React, { useCallback } from 'react'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { codeHostExternalServices } from '../../../components/externalServices/externalServices'
-import { ExternalServiceKind, ListExternalServiceFields, UserAreaUserFields } from '../../../graphql-operations'
+import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -13,7 +14,7 @@ import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
 import { CodeHostItem } from './CodeHostItem'
 
 export interface UserCodeHosts {
-    user: UserAreaUserFields
+    user: AuthenticatedUser
     externalServices: ListExternalServiceFields[]
     onDidError: (error: ErrorLike) => void
     onDidRemove: () => void

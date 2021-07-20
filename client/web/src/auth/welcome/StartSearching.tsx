@@ -10,7 +10,7 @@ import {
     TerminalProgress,
 } from '@sourcegraph/wildcard/src/components/Terminal'
 
-import { UserAreaUserFields } from '../../graphql-operations'
+import { AuthenticatedUser } from '../../auth'
 import { LogoAscii } from '../LogoAscii'
 import { RepoSelectionMode } from '../PostSignUpPage'
 import { useExternalServices } from '../useExternalServices'
@@ -18,7 +18,7 @@ import { useRepoCloningStatus } from '../useRepoCloningStatus'
 import { selectedReposVar, useSaveSelectedRepos } from '../useSelectedRepos'
 
 interface StartSearching {
-    user: UserAreaUserFields
+    user: AuthenticatedUser
     repoSelectionMode: RepoSelectionMode
 }
 
