@@ -810,7 +810,8 @@ func TestStoreHeartbeat(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	clock := glock.NewMockClock()
+	now := time.Unix(1587396557, 0).UTC()
+	clock := glock.NewMockClockAt(now)
 	store := testStore(db, defaultTestStoreOptions(clock))
 
 	if err := store.Heartbeat(context.Background(), 1); err != nil {
@@ -852,7 +853,6 @@ func TestStoreHeartbeat(t *testing.T) {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 
-	// Expect null time to be stored.
-	now := clock.Now().UTC()
+	// Now expect time to be stored properly.
 	readAndCompareTime(&now)
 }
