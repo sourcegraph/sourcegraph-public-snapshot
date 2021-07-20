@@ -23,14 +23,6 @@ func RepoUpdater() *monitoring.Container {
 		Description: "Manages interaction with code hosts, instructs Gitserver to update repositories.",
 		Groups: []monitoring.Group{
 			{
-				Title: "General",
-				Rows: []monitoring.Row{
-					{
-						shared.FrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
 				Title: "Repositories",
 				Rows: []monitoring.Row{
 					{
@@ -431,7 +423,9 @@ func RepoUpdater() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewDatabaseConnectionsMonitoringGroup("repo-updater"),
+
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, repoUpdaterContainerMonitoringOptions),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),

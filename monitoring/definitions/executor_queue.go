@@ -95,17 +95,9 @@ func ExecutorQueue() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewDatabaseConnectionsMonitoringGroup("executor-queue"),
-			{
-				Title:  "Internal service requests",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.FrontendInternalAPIErrorResponses("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
 
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),

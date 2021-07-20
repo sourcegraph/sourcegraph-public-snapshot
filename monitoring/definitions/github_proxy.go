@@ -36,6 +36,7 @@ func GitHubProxy() *monitoring.Container {
 					},
 				},
 			},
+
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),

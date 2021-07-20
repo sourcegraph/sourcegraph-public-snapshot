@@ -27,3 +27,29 @@ var FrontendInternalAPIErrorResponses sharedObservable = func(containerName stri
 		`, "{{CONTAINER_NAME}}", containerName),
 	}
 }
+
+type FrontendInternalAPIERrorResponseMonitoringOptions struct {
+	// ErrorResponses transforms the default observable used to construct the error responses panel.
+	ErrorResponses func(observable Observable) Observable
+}
+
+// NewProvisioningIndicatorsGroup creates a group containing panels displaying
+// internal API error response metrics for the given container.
+func NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *FrontendInternalAPIERrorResponseMonitoringOptions) monitoring.Group {
+	if options == nil {
+		options = &FrontendInternalAPIERrorResponseMonitoringOptions{}
+	}
+	if options.ErrorResponses == nil {
+		options.ErrorResponses = NoopObservableTransformer
+	}
+
+	return monitoring.Group{
+		Title:  "Internal service requests",
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				options.ErrorResponses(FrontendInternalAPIErrorResponses(containerName, owner)).Observable(),
+			},
+		},
+	}
+}

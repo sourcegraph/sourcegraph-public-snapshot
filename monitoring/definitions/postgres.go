@@ -165,6 +165,7 @@ func Postgres() *monitoring.Container {
 					},
 				},
 			},
+
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
 		},

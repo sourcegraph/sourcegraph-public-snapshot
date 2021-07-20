@@ -39,11 +39,10 @@ func Symbols() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 					},
-					{
-						shared.FrontendInternalAPIErrorResponses("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
 				},
 			},
+
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),

@@ -154,6 +154,7 @@ func Prometheus() *monitoring.Container {
 					},
 				},
 			},
+
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),

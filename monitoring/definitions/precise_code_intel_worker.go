@@ -191,16 +191,9 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewDatabaseConnectionsMonitoringGroup("precise-code-intel-worker"),
-			{
-				Title:  "Internal service requests",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.FrontendInternalAPIErrorResponses("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-					},
-				},
-			},
+
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),

@@ -398,74 +398,6 @@ This panel indicates out-of-band down migration errors every 5m.
 
 <br />
 
-### Frontend: Database connections
-
-#### frontend: max_open_conns
-
-This panel indicates maximum open.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: open_conns
-
-This panel indicates established.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: in_use
-
-This panel indicates used.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: idle
-
-This panel indicates idle.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: mean_blocked_seconds_per_conn_request
-
-This panel indicates mean blocked seconds per conn request.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-blocked-seconds-per-conn-request).
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: closed_max_idle
-
-This panel indicates closed by SetMaxIdleConns.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: closed_max_lifetime
-
-This panel indicates closed by SetConnMaxLifetime.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### frontend: closed_max_idle_time
-
-This panel indicates closed by SetConnMaxIdleTime.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
 ### Frontend: Internal service requests
 
 #### frontend: internal_indexed_search_error_responses
@@ -535,6 +467,74 @@ This panel indicates critical test alert metric.
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-observability-test-alert-critical).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+### Frontend: Database connections
+
+#### frontend: max_open_conns
+
+This panel indicates maximum open.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: open_conns
+
+This panel indicates established.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: in_use
+
+This panel indicates used.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: idle
+
+This panel indicates idle.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: mean_blocked_seconds_per_conn_request
+
+This panel indicates mean blocked seconds per conn request.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-blocked-seconds-per-conn-request).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: closed_max_idle
+
+This panel indicates closed by SetMaxIdleConns.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: closed_max_lifetime
+
+This panel indicates closed by SetConnMaxLifetime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: closed_max_idle_time
+
+This panel indicates closed by SetConnMaxIdleTime.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1629,6 +1629,18 @@ This panel indicates gitserver client errors every 5m.
 
 <br />
 
+### Precise Code Intel Worker: Internal service requests
+
+#### precise-code-intel-worker: frontend_internal_api_error_responses
+
+This panel indicates frontend-internal API error responses every 5m by route.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-frontend-internal-api-error-responses).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Precise Code Intel Worker: Database connections
 
 #### precise-code-intel-worker: max_open_conns
@@ -1694,18 +1706,6 @@ This panel indicates closed by SetConnMaxLifetime.
 This panel indicates closed by SetConnMaxIdleTime.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Precise Code Intel Worker: Internal service requests
-
-#### precise-code-intel-worker: frontend_internal_api_error_responses
-
-This panel indicates frontend-internal API error responses every 5m by route.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-frontend-internal-api-error-responses).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1841,6 +1841,8 @@ This panel indicates percentage pods available.
 ## Query Runner
 
 <p class="subtitle">Periodically runs saved searches and instructs the frontend to send out notifications.</p>
+
+### Query Runner: Internal service requests
 
 #### query-runner: frontend_internal_api_error_responses
 
@@ -2183,6 +2185,18 @@ This panel indicates index enqueuer errors every 5m.
 
 <br />
 
+### Worker: Internal service requests
+
+#### worker: frontend_internal_api_error_responses
+
+This panel indicates frontend-internal API error responses every 5m by route.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-frontend-internal-api-error-responses).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Worker: Database connections
 
 #### worker: max_open_conns
@@ -2248,18 +2262,6 @@ This panel indicates closed by SetConnMaxLifetime.
 This panel indicates closed by SetConnMaxIdleTime.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Worker: Internal service requests
-
-#### worker: frontend_internal_api_error_responses
-
-This panel indicates frontend-internal API error responses every 5m by route.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-frontend-internal-api-error-responses).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2395,16 +2397,6 @@ This panel indicates percentage pods available.
 ## Repo Updater
 
 <p class="subtitle">Manages interaction with code hosts, instructs Gitserver to update repositories.</p>
-
-#### repo-updater: frontend_internal_api_error_responses
-
-This panel indicates frontend-internal API error responses every 5m by route.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-frontend-internal-api-error-responses).
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
 
 ### Repo Updater: Repositories
 
@@ -2764,6 +2756,18 @@ Indicates how long we`re waiting on the rate limit once it has been exceeded
 
 <br />
 
+### Repo Updater: Internal service requests
+
+#### repo-updater: frontend_internal_api_error_responses
+
+This panel indicates frontend-internal API error responses every 5m by route.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-frontend-internal-api-error-responses).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Repo Updater: Database connections
 
 #### repo-updater: max_open_conns
@@ -2985,6 +2989,8 @@ This panel indicates requests per second over 10m.
 
 <br />
 
+### Searcher: Internal service requests
+
 #### searcher: frontend_internal_api_error_responses
 
 This panel indicates frontend-internal API error responses every 5m by route.
@@ -3147,6 +3153,8 @@ This panel indicates current fetch queue size.
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
+
+### Symbols: Internal service requests
 
 #### symbols: frontend_internal_api_error_responses
 
@@ -3994,6 +4002,18 @@ This panel indicates worker store errors every 5m.
 
 <br />
 
+### Executor Queue: Internal service requests
+
+#### executor-queue: frontend_internal_api_error_responses
+
+This panel indicates frontend-internal API error responses every 5m by route.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-frontend-internal-api-error-responses).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Executor Queue: Database connections
 
 #### executor-queue: max_open_conns
@@ -4059,18 +4079,6 @@ This panel indicates closed by SetConnMaxLifetime.
 This panel indicates closed by SetConnMaxIdleTime.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Executor Queue: Internal service requests
-
-#### executor-queue: frontend_internal_api_error_responses
-
-This panel indicates frontend-internal API error responses every 5m by route.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-frontend-internal-api-error-responses).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 

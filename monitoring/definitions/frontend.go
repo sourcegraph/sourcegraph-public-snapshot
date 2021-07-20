@@ -494,7 +494,7 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
+
 			{
 				Title:  "Internal service requests",
 				Hidden: true,
@@ -576,10 +576,13 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
+
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, primaryOwner, nil),
+
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",
 				Hidden: true,

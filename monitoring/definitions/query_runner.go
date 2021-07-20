@@ -16,14 +16,7 @@ func QueryRunner() *monitoring.Container {
 		Title:       "Query Runner",
 		Description: "Periodically runs saved searches and instructs the frontend to send out notifications.",
 		Groups: []monitoring.Group{
-			{
-				Title: "General",
-				Rows: []monitoring.Row{
-					{
-						shared.FrontendInternalAPIErrorResponses("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewContainerMonitoringGroup(containerName, primaryOwner, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, primaryOwner, nil),
 			shared.NewGolangMonitoringGroup(containerName, primaryOwner, nil),
