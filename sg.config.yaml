@@ -501,11 +501,11 @@ checks:
     failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
 
   redis:
-    cmd: redis-cli -p 6379 PING
+    cmd: redis-cli -p 6379 PING || docker-compose -f dev/redis-postgres.yml exec redis redis-cli PING
     failMessage: 'Failed to connect to Redis on port 6379. Please make sure Redis is running.'
 
   postgres:
-    cmd: psql -c 'SELECT 1;'
+    cmd: psql -c 'SELECT 1;' || docker-compose -f dev/redis-postgres.yml exec postgresql psql -U ${PGUSER} -c 'select 1;'
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
 
 commandsets:
@@ -530,23 +530,28 @@ commandsets:
     - zoekt-webserver-1
 
   enterprise: &enterprise_set
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - executor-queue
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - executor-queue
 
   default: *enterprise_set
 
