@@ -13,12 +13,14 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gchaincl/sqlhooks/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,7 +33,8 @@ import (
 var (
 	// Global is the global DB connection.
 	// Only use this after a call to SetupGlobalConnection.
-	Global *sql.DB
+	Global     *sql.DB
+	Restricted *pgxpool.Pool
 
 	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://pkg.go.dev/github.com/jackc/pgx for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
@@ -68,6 +71,35 @@ type Opts struct {
 // string.
 func SetupGlobalConnection(opts Opts) (err error) {
 	Global, err = New(opts)
+	return err
+}
+
+var nsuccess uint64
+var nerror uint64
+
+func SetupRestrictedConnection(opts Opts) (err error) {
+	opts.AppName = "-restricted"
+
+	cfg, err := pgxpool.ParseConfig(opts.DSN)
+	cfg.BeforeAcquire = func(ctx context.Context, c *pgx.Conn) bool {
+		_, err := c.Exec(ctx, "SET SESSION AUTHORIZATION 'sg_service';")
+		if err != nil {
+			log.Printf("err: %v", err)
+			atomic.AddUint64(&nerror, 1)
+			return false
+		}
+		atomic.AddUint64(&nsuccess, 1)
+		return true
+	}
+
+	go func() {
+		for {
+			log.Printf("nsuccess=%d nerror=%d", atomic.LoadUint64(&nsuccess), atomic.LoadUint64(&nerror))
+			time.Sleep(time.Second)
+		}
+	}()
+
+	Restricted, err = pgxpool.ConnectConfig(context.Background(), cfg)
 	return err
 }
 

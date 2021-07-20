@@ -97,7 +97,30 @@ func InitDB() (*sql.DB, error) {
 	if err := dbconn.SetupGlobalConnection(opts); err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
+	if err := dbconn.SetupRestrictedConnection(opts); err != nil {
+		return nil, errors.Errorf("failed to connect to frontend database in restricted role: %s", err)
+	}
 
+	for i := 0; i < 4; i++ {
+		go func() {
+			for {
+				rows, err := dbconn.Restricted.Query(context.Background(), "SELECT current_user;")
+				if err != nil {
+					log.Fatal(err)
+				}
+				for rows.Next() {
+					var s string
+					err = rows.Scan(&s)
+					if err != nil {
+						log.Fatal(err)
+					}
+					log.Printf("current user %q", s)
+				}
+				rows.Close()
+				time.Sleep(1 * time.Second)
+			}
+		}()
+	}
 	ctx := context.Background()
 	migrate := true
 
