@@ -103,7 +103,7 @@ env:
 
 commands:
   frontend:
-    cmd: ulimit -n 10000 && .bin/frontend
+    cmd: .bin/frontend
     install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
@@ -118,7 +118,6 @@ commands:
 
   enterprise-frontend:
     cmd: |
-      ulimit -n 10000
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/enterprise-frontend
@@ -162,7 +161,7 @@ commands:
       - cmd/github-proxy
 
   worker:
-    cmd: ulimit -n 10000 && .bin/worker
+    cmd: .bin/worker
     install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
@@ -170,7 +169,7 @@ commands:
       - cmd/worker
 
   enterprise-worker:
-    cmd: ulimit -n 10000 && .bin/worker
+    cmd: .bin/worker
     install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
     watch:
       - lib
