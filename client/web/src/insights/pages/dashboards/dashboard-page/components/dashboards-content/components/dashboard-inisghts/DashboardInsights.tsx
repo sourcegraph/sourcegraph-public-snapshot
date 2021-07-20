@@ -13,10 +13,11 @@ import { Settings } from '../../../../../../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGrid } from '../../../../../../../components'
 import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
 import { InsightDashboard } from '../../../../../../../core/types'
+import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
+import { useBackendInsightIds } from './hooks/use-backend-insight-ids'
 import { useDeleteInsight } from './hooks/use-delete-insight'
-import { getBackendInsightIds } from './utils/get-backend-insight-ids'
 
 const DEFAULT_INSIGHT_IDS: string[] = []
 
@@ -40,11 +41,9 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
-    const allInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
-    const backendInsightIds = useMemo(() => getBackendInsightIds({ insightIds: allInsightIds, settingsCascade }), [
-        allInsightIds,
-        settingsCascade,
-    ])
+    const allInsightIds = useDistinctValue(dashboard.insightIds) ?? DEFAULT_INSIGHT_IDS
+    const finalSettings = useDistinctValue(settingsCascade.final)
+    const backendInsightIds = useBackendInsightIds({ insightIds: allInsightIds, finalSettings })
 
     const views = useObservable(
         useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, allInsightIds, backendInsightIds), [
