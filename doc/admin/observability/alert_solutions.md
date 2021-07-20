@@ -6541,8 +6541,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -6565,8 +6565,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
-- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
+- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -6590,7 +6590,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -6614,7 +6614,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
