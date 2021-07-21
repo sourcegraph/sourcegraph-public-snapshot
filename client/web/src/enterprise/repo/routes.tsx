@@ -25,6 +25,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
 
     {
         path: '/-/code-intelligence',
+        exact: false,
         render: context => (
             <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryCodeIntelArea {...context} />

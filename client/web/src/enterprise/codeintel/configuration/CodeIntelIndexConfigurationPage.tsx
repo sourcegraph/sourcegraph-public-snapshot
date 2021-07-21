@@ -9,14 +9,13 @@ import { ErrorAlert } from '../../../components/alerts'
 import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
 import { PageTitle } from '../../../components/PageTitle'
 import { SaveToolbarPropsGenerator, SaveToolbarProps } from '../../../components/SaveToolbar'
-import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import { getConfiguration as defaultGetConfiguration, updateConfiguration, enqueueIndexJob } from './backend'
 import allConfigSchema from './schema.json'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    repo: Pick<SettingsAreaRepositoryFields, 'id'>
+    repo: { id: string }
     history: H.History
     getConfiguration?: typeof defaultGetConfiguration
 }
