@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
@@ -108,30 +109,43 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     ) : (
         <div className="code-intel-index-configuration">
             <PageTitle title="Precise code intelligence index configuration" />
-            <h2>Precise code intelligence index configuration</h2>
-            <p>
-                Override the inferred configuration when automatically indexing repositories on{' '}
-                <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
-                    Sourcegraph.com
-                </a>
-                .
-            </p>
 
-            {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} />}
-
-            <DynamicallyImportedMonacoSettingsEditor
-                value={configuration || ''}
-                jsonSchema={allConfigSchema}
-                canEdit={true}
-                onSave={save}
-                saving={saving}
-                height={600}
-                isLightTheme={isLightTheme}
-                history={history}
-                telemetryService={telemetryService}
-                customSaveToolbar={customToolbar}
-                onDirtyChange={onDirtyChange}
+            <PageHeader
+                headingElement="h2"
+                path={[
+                    {
+                        text: <>Precise code intelligence index configuration</>,
+                    },
+                ]}
+                description={
+                    <>
+                        Override the inferred configuration when automatically indexing repositories on{' '}
+                        <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
+                            Sourcegraph.com
+                        </a>
+                        .
+                    </>
+                }
+                className="mb-3"
             />
+
+            <Container>
+                {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} />}
+
+                <DynamicallyImportedMonacoSettingsEditor
+                    value={configuration || ''}
+                    jsonSchema={allConfigSchema}
+                    canEdit={true}
+                    onSave={save}
+                    saving={saving}
+                    height={600}
+                    isLightTheme={isLightTheme}
+                    history={history}
+                    telemetryService={telemetryService}
+                    customSaveToolbar={customToolbar}
+                    onDirtyChange={onDirtyChange}
+                />
+            </Container>
         </div>
     )
 }
