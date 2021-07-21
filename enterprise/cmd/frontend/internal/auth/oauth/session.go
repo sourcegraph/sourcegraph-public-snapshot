@@ -67,7 +67,7 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			return
 		}
 
-		// Delete state cookie (no longer needed, while be stale if user logs out and logs back in within 120s)
+		// Delete state cookie (no longer needed, will be stale if user logs out and logs back in within 120s)
 		defer s.DeleteStateCookie(w)
 
 		if state.Op == LoginStateOpCreateCodeHostConnection {
