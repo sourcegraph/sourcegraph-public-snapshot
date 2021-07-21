@@ -9,8 +9,8 @@ import (
 )
 
 // NewUploadResetter returns a background routine that periodically resets upload
-// records that are marked as being processed but are no longer held by any Postgres
-// transaction.
+// records that are marked as being processed but are no longer being processed
+// by a worker.
 func NewUploadResetter(s dbworkerstore.Store, interval time.Duration, metrics *metrics, observationContext *observation.Context) *dbworker.Resetter {
 	return dbworker.NewResetter(s, dbworker.ResetterOptions{
 		Name:     "precise_code_intel_upload_worker_resetter",
@@ -18,14 +18,14 @@ func NewUploadResetter(s dbworkerstore.Store, interval time.Duration, metrics *m
 		Metrics: dbworker.ResetterMetrics{
 			RecordResets:        metrics.numUploadResets,
 			RecordResetFailures: metrics.numUploadResetFailures,
-			Errors:              metrics.numErrors,
+			Errors:              metrics.numUploadResetErrors,
 		},
 	})
 }
 
 // NewIndexResetter returns a background routine that periodically resets index
-// records that are marked as being processed but are no longer held by any Postgres
-// transaction.
+// records that are marked as being processed but are no longer being processed
+// by a worker.
 func NewIndexResetter(s dbworkerstore.Store, interval time.Duration, metrics *metrics, observationContext *observation.Context) *dbworker.Resetter {
 	return dbworker.NewResetter(s, dbworker.ResetterOptions{
 		Name:     "precise_code_intel_index_worker_resetter",
