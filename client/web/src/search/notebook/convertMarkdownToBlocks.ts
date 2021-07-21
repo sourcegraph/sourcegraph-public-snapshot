@@ -3,8 +3,6 @@ import { markdownLexer } from '@sourcegraph/shared/src/util/markdown'
 import { BlockInitializer } from '.'
 
 export function convertMarkdownToBlocks(markdown: string): BlockInitializer[] {
-    const tokens = markdownLexer(markdown)
-
     const blocks: BlockInitializer[] = []
 
     let markdownRawTokens: string[] = []
@@ -16,7 +14,7 @@ export function convertMarkdownToBlocks(markdown: string): BlockInitializer[] {
         markdownRawTokens = []
     }
 
-    for (const token of tokens) {
+    for (const token of markdownLexer(markdown)) {
         if (token.type === 'code' && token.lang === 'sourcegraph') {
             addMarkdownBlock()
             blocks.push({ type: 'query', input: token.text })
