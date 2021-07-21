@@ -144,7 +144,13 @@ export const useRepoCloningStatus = ({
         return lines
     }, [] as RepoLine[])
 
-    repoLines.sort((lineA, lineB) => lineB.progress - lineA.progress)
+    // sort alphabetically
+    repoLines.sort((lineA, lineB) => {
+        const nameA = lineA.title.toUpperCase()
+        const nameB = lineB.title.toUpperCase()
+
+        return nameA < nameB ? -1 : nameA > nameB ? 1 : 0
+    })
 
     const isDoneCloning = didReceiveAllRepoStatuses && areAllRepoCloned
 
