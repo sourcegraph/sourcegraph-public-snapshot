@@ -66,7 +66,7 @@ export const useConnection = <TResult, TVariables, TData>({
      * request. This has the effect of loading the correct number of visible results when a URL
      * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
      */
-    const visibleReference = useRef(options?.useURL && parseQueryInt(searchParameters, 'visible'))
+    const previousVisibleResultCountReference = useRef(options?.useURL && parseQueryInt(searchParameters, 'visible'))
 
     /**
      * The `after` variable for our **initial** query.
@@ -81,7 +81,7 @@ export const useConnection = <TResult, TVariables, TData>({
              * If this is our first query and we were supplied a value for `visible` load that many results.
              * If we weren't given such a value or this is a subsequent request, only ask for one page of results.
              */
-            first: visibleReference.current || firstReference.current.actual,
+            first: previousVisibleResultCountReference.current || firstReference.current.actual,
             after: afterReference.current,
         }),
         []
