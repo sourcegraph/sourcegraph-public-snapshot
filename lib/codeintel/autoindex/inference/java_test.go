@@ -7,20 +7,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-func TestLSIFJavaJobRecognizerCanIndex(t *testing.T) {
-	recognizer := lsifJavaJobRecognizer{}
+func TestCanIndexJavaRepo(t *testing.T) {
 	testCases := []struct {
 		paths    []string
 		expected bool
 	}{
-		{paths: []string{"pom.xml"}, expected: true},
+		{paths: []string{"pom.xml"}, expected: false},
 		{paths: []string{"nested/pom.xml"}, expected: false},
-		{paths: []string{"build.gradle"}, expected: true},
+		{paths: []string{"build.gradle"}, expected: false},
 		{paths: []string{"nested/build.gradle"}, expected: false},
-		{paths: []string{"settings.gradle"}, expected: true},
+		{paths: []string{"settings.gradle"}, expected: false},
 		{paths: []string{"nested/settings.gradle"}, expected: false},
 		{paths: []string{"lsif-java.json"}, expected: true},
 		{paths: []string{"nested/lsif-java.json"}, expected: false},
@@ -35,53 +34,45 @@ func TestLSIFJavaJobRecognizerCanIndex(t *testing.T) {
 		name := strings.Join(testCase.paths, ", ")
 
 		t.Run(name, func(t *testing.T) {
-			if value := recognizer.CanIndex(testCase.paths, NewMockGitserverClientWrapper()); value != testCase.expected {
+			if value := CanIndexJavaRepo(NewMockGitClient(), testCase.paths); value != testCase.expected {
 				t.Errorf("unexpected result from CanIndex. want=%v have=%v", testCase.expected, value)
 			}
 		})
 	}
 }
 
-func TestLsifJavaJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
-	recognizer := lsifJavaJobRecognizer{}
+func TestInferJavaIndexJobs(t *testing.T) {
 	paths := []string{
-		"pom.xml",
+		"lsif-java.json",
 	}
 
 	expectedIndexJobs := []config.IndexJob{
 		{
-			Indexer: "gradle:7.0.0-jdk8",
-			LocalSteps: []string{
-				"apt-get update",
-				"apt-get install --yes maven",
-				"curl -fLo coursier https://git.io/coursier-cli",
-				"chmod +x coursier",
-			},
+			Indexer: "sourcegraph/lsif-java",
 			IndexerArgs: []string{
-				"./coursier launch --contrib lsif-java -- --packagehub=https://packagehub-ohcltxh6aq-uc.a.run.app index",
+				"/coursier launch --contrib --ttl 0 lsif-java -- index",
 			},
 			Outfile: "dump.lsif",
 			Root:    "",
 			Steps:   []config.DockerStep{},
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, InferJavaIndexJobs(NewMockGitClient(), paths)); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
 
-func TestLSIFJavaJobRecognizerPatterns(t *testing.T) {
-	recognizer := lsifJavaJobRecognizer{}
+func TestJavaPatterns(t *testing.T) {
 	paths := []string{
 		"lsif-java.json",
-		"settings.gradle",
-		"build.gradle",
-		"pom.xml",
+		// "settings.gradle",
+		// "build.gradle",
+		// "pom.xml",
 	}
 
 	for _, path := range paths {
 		match := false
-		for _, pattern := range recognizer.Patterns() {
+		for _, pattern := range JavaPatterns() {
 			if pattern.MatchString(path) {
 				match = true
 				break

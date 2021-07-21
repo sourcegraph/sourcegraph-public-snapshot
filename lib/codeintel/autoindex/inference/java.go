@@ -21,7 +21,7 @@ func InferJavaIndexJobs(gitserver GitClient, paths []string) (indexes []config.I
 			continue
 		}
 		indexes = append(indexes, config.IndexJob{
-			Indexer: "sourcegraph:lsif-java",
+			Indexer: "sourcegraph/lsif-java",
 			IndexerArgs: []string{
 				"/coursier launch --contrib --ttl 0 lsif-java -- index",
 			},
