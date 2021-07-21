@@ -1096,12 +1096,10 @@ func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
 		// name when we source it from the same code host, and it will be re-created.
 		var conflicting, existing *types.Repo
-		for _, r := range stored {
-			if r.ExternalRepo.Equal(&sourced.ExternalRepo) {
-				existing = r
-			} else {
-				conflicting = r
-			}
+		if stored[0].ExternalRepo.Equal(&sourced.ExternalRepo) {
+			existing, conflicting = stored[0], stored[1]
+		} else {
+			existing, conflicting = stored[1], stored[0]
 		}
 
 		// invariant: conflicting can't be nil due to our database constraints
