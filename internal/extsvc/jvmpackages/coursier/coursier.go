@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -24,6 +26,29 @@ func ListVersions(ctx context.Context, config *schema.JVMPackagesConnection, gro
 }
 
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) ([]string, error) {
+	if dependency.IsJdk() {
+		output, err := runCoursierCommand(
+			ctx,
+			config,
+			"java-home", "--jvm",
+			dependency.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		for _, outputPath := range output {
+			for _, srcPath := range []string{
+				path.Join(outputPath, "src.zip"),
+				path.Join(outputPath, "lib", "src.zip"),
+			} {
+				stat, err := os.Stat(srcPath)
+				if !os.IsNotExist(err) && stat.Mode().IsRegular() {
+					return []string{srcPath}, nil
+				}
+			}
+		}
+		return nil, errors.Errorf("failed to find src.zip for JVM dependency %s", dependency)
+	}
 	return runCoursierCommand(
 		ctx,
 		config,
@@ -43,6 +68,16 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 }
 
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (bool, error) {
+	if dependency.IsJdk() {
+		lines, err := runCoursierCommand(
+			ctx,
+			config,
+			"java-home",
+			"--jvm",
+			dependency.Version,
+		)
+		return len(lines) > 0, err
+	}
 	versions, err := runCoursierCommand(
 		ctx,
 		config,

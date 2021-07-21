@@ -438,9 +438,8 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 			return nil, err
 		}
 	case extsvc.JVMPackages:
-		artifactPath := strings.TrimPrefix(remoteName, "maven/")
 		if s.JVMPackagesSource != nil {
-			repo, err = s.JVMPackagesSource.GetRepo(ctx, artifactPath)
+			repo, err = s.JVMPackagesSource.GetRepo(ctx, remoteName)
 			if err != nil {
 				if errcode.IsNotFound(err) {
 					return &protocol.RepoLookupResult{

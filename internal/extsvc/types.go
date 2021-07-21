@@ -485,7 +485,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 	case *schema.PerforceConnection:
 		// Perforce uses the P4PORT to specify the instance, so we use that
 		return c.P4Port, nil
-
+	case *schema.JVMPackagesConnection:
+		return KindJVMPackages, nil
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}
