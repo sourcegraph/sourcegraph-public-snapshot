@@ -26,9 +26,9 @@ Then click "Create dashboard."
 
 ## 4. Add insights to your new, empty dashboard 
 
-Click the "Add insight" box on the empty dashboard view to pull up the add insights modal. You can also always pull this modal up with the contextual three-dots click to the right of the dashboard dropdown, via the "add insights" option. 
+Click the "Add insight" box on the empty dashboard view to pull up the add insights modal. You can also always pull this modal up with the contextual three-dots click to the right of the dashboard dropdown picker, via the "Add or remove insights" option. 
 
-Select which insights you want to add. Insights won't be added until you click save. 
+Select which insights you want to add. Insights won't be added until you click save. Un-checking an insight will remove that insight after you click save. 
 
 ## 5. Share your dashboard
 

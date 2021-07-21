@@ -30,11 +30,11 @@ The following dashboards exist on every instance:
 
 If the instance has organizations, there will also be an "[Organization name] insights" dashboard for each organization, visible to members of the organization, that contains all insights set to that organization's visibility level. 
 
-To add insights to your own custom dashboard, see [Creating a custom dashboard of code insights](../how-tos/creating_a_custom_dashboard_of_code_insights.md)
+To add insights to your own custom dashboard, see [Creating a custom dashboard of code insights](../how-tos/creating_a_custom_dashboard_of_code_insights.md).
 
 ### Dashboard visibility respects insights' visibility 
 
-A Dashboard's set visibility level respects the visibility levels you [set when you created the insight](../quickstart.md#7-set-the-visibility-of-your-insight). You can't add an insight with "Private" visibility to an organization dashboard, but you can add an insight with organization visibility to your private dashboard (assuming you're in the organization). 
+A Dashboard's visibility level respects the visibility levels you [set when you created the insight](../quickstart.md#7-set-the-visibility-of-your-insight). You can't add an insight with "Private" visibility to an organization dashboard, but you can add an insight with organization visibility to your private dashboard (assuming you're in the organization). 
 
 ### Insights still enforce individual permissions regardless of dashboard visibility
 
@@ -42,7 +42,7 @@ The dashboard visibility levels have no impact on the data in the insight itself
 
 This means that two organization users with different repo read permission sets might see different values for the same insights on the same dashboards, if it contains results from a repository only one user can view. 
 
-(This also means that if you change a private-visible dashboard with both organization-visible and private-visible insights so that the dashboard is now visible to an organization, then the organization can only see the organization-visible insights on that dashboard. This is non-optimal, and we are actively improving this UX. If you have thoughts, please do [leave them on the issue](https://github.com/sourcegraph/sourcegraph/issues/23003).) 
+(This also means that if you change a private-visible dashboard with both organization-visible and private-visible insights so that the dashboard is now visible to an organization, then the organization can only see the organization-visible insights on that dashboard. This is non-optimal and a bit awkward to convey, and we are actively improving this UX. If you have strong thoughts, please do [leave them on the issue](https://github.com/sourcegraph/sourcegraph/issues/23003).) 
 
 ### Insights can be on multiple dashboards
 
