@@ -1,7 +1,5 @@
 # Sourcegraph Deployment Best Practices
 
-![](RackMultipart20210716-4-1fufq8b_html_237499165a11f2b9.gif)
-
 ## What does &quot;best practice&quot; mean to us?
 
 Sourcegraph is a highly scalable and configurable application. As an open source company we hope our customers will feel empowered to customize Sourcegraph to meet their unique needs, but we cannot guarantee whether deviations from the below guidelines will work or be supportable by Sourcegraph. If in doubt, please contact your Customer Engineer or reach out to support.
