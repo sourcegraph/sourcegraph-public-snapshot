@@ -93,6 +93,7 @@ func SetupRestrictedConnection(opts Opts) (err error) {
 		return true
 	}
 
+	// TODO: Test code. This is useful for quick iteration until I add a test case.
 	go func() {
 		for {
 			log.Printf("nsuccess=%d nerror=%d", atomic.LoadUint64(&nsuccess), atomic.LoadUint64(&nerror))
@@ -100,11 +101,24 @@ func SetupRestrictedConnection(opts Opts) (err error) {
 		}
 	}()
 
+	maxOpen, err := getMaxOpenConnections()
+	if err != nil {
+		return err
+	}
+
+	cfg.MaxConns = int32(maxOpen)
+	// TODO: No MaxIdleConnections attribute is available
+	// TODO: Do we want to set MinConns ?
+	// TODO: Do we want to set MaxConnLifetime? Perhaps, Security would have an opinion?
+	cfg.MaxConnIdleTime = time.Minute
+
 	Restricted, err = pgxpool.ConnectConfig(context.Background(), cfg)
+	if err != nil {
+		return err
+	}
 
 	prometheus.MustRegister(newMetricsCollector(nil, Restricted, opts.DBName, opts.AppName))
-
-	return err
+	return nil
 }
 
 // New connects to the given data source and returns the handle.
@@ -129,9 +143,7 @@ func New(opts Opts) (*sql.DB, error) {
 	}
 
 	prometheus.MustRegister(newMetricsCollector(db, nil, opts.DBName, opts.AppName))
-	configureConnectionPool(db)
-
-	return db, nil
+	return db, configureConnectionPool(db)
 }
 
 // NewRaw connects to the given data source and returns the handle.
@@ -416,16 +428,30 @@ func (h *hook) OnError(ctx context.Context, err error, query string, args ...int
 // configureConnectionPool sets reasonable sizes on the built in DB queue. By
 // default the connection pool is unbounded, which leads to the error `pq:
 // sorry too many clients already`.
-func configureConnectionPool(db *sql.DB) {
-	var err error
-	maxOpen := 30
-	if e := os.Getenv("SRC_PGSQL_MAX_OPEN"); e != "" {
-		maxOpen, err = strconv.Atoi(e)
-		if err != nil {
-			log.Fatalf("SRC_PGSQL_MAX_OPEN is not an int: %s", e)
-		}
+func configureConnectionPool(db *sql.DB) error {
+
+	// TODO: Do we want the same maxOpen for both the global and the restricted connections?
+
+	maxOpen, err := getMaxOpenConnections()
+	if err != nil {
+		return err
 	}
+
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
 	db.SetConnMaxIdleTime(time.Minute)
+
+	return nil
+}
+
+func getMaxOpenConnections() (maxOpen int, err error) {
+	maxOpen = 30
+	if e := os.Getenv("SRC_PGSQL_MAX_OPEN"); e != "" {
+		maxOpen, err = strconv.Atoi(e)
+		if err != nil {
+			return -1, errors.Wrap(err, "SRC_PGSQL_MAX_OPEN is not an int")
+		}
+	}
+
+	return
 }

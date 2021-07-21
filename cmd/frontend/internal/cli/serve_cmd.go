@@ -101,6 +101,7 @@ func InitDB() (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database in restricted role: %s", err)
 	}
 
+	// TODO: Test code. This is useful for quick iteration unitl I add a test case.
 	for i := 0; i < 4; i++ {
 		go func() {
 			for {
@@ -121,6 +122,7 @@ func InitDB() (*sql.DB, error) {
 			}
 		}()
 	}
+
 	ctx := context.Background()
 	migrate := true
 
