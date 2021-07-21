@@ -4,19 +4,8 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import { LayoutProps } from './Layout'
-import { ExtensionAlertProps } from './repo/RepoContainer'
-import { android } from './repogroups/Android'
-import { cncf } from './repogroups/cncf'
-import { golang } from './repogroups/Golang'
-import { kubernetes } from './repogroups/Kubernetes'
-import { o3de } from './repogroups/o3de'
-import { python2To3Metadata } from './repogroups/Python2To3'
-import { reactHooks } from './repogroups/ReactHooks'
-import { RepogroupPage } from './repogroups/RepogroupPage'
-import { stackStorm } from './repogroups/StackStorm'
-import { stanford } from './repogroups/Stanford'
-import { temporal } from './repogroups/Temporal'
+import type { LayoutProps } from './Layout'
+import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
@@ -33,6 +22,17 @@ const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
+
+const Python2To3RepogroupPage = lazyComponent(() => import('./repogroups/Python2To3'), 'Python2To3RepogroupPage')
+const KubernetesRepogroupPage = lazyComponent(() => import('./repogroups/Kubernetes'), 'KubernetesRepogroupPage')
+const StackstormRepogroupPage = lazyComponent(() => import('./repogroups/StackStorm'), 'StackStormRepogroupPage')
+const TemporalRepogroupPage = lazyComponent(() => import('./repogroups/Temporal'), 'TemporalRepogroupPage')
+const O3deRepogroupPage = lazyComponent(() => import('./repogroups/o3de'), 'O3deRepogroupPage')
+const GolangRepogroupPage = lazyComponent(() => import('./repogroups/Golang'), 'GolangRepogroupPage')
+const ReactHooksRepogroupPage = lazyComponent(() => import('./repogroups/ReactHooks'), 'ReactHooksRepogroupPage')
+const AndroidRepogroupPage = lazyComponent(() => import('./repogroups/Android'), 'AndroidRepogroupPage')
+const StanfordRepogroupPage = lazyComponent(() => import('./repogroups/Stanford'), 'StanfordRepogroupPage')
+const CncfRepogroupPage = lazyComponent(() => import('./repogroups/cncf'), 'CncfRepogroupPage')
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -246,52 +246,52 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/refactor-python2-to-3',
-        render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
+        render: props => <Python2To3RepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/kubernetes',
-        render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+        render: props => <KubernetesRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/stackstorm',
-        render: props => <RepogroupPage {...props} repogroupMetadata={stackStorm} />,
+        render: props => <StackstormRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/temporal',
-        render: props => <RepogroupPage {...props} repogroupMetadata={temporal} />,
+        render: props => <TemporalRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/o3de',
-        render: props => <RepogroupPage {...props} repogroupMetadata={o3de} />,
+        render: props => <O3deRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/golang',
-        render: props => <RepogroupPage {...props} repogroupMetadata={golang} />,
+        render: props => <GolangRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/react-hooks',
-        render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
+        render: props => <ReactHooksRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/android',
-        render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
+        render: props => <AndroidRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/stanford',
-        render: props => <RepogroupPage {...props} repogroupMetadata={stanford} />,
+        render: props => <StanfordRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/cncf',
-        render: props => <RepogroupPage {...props} repogroupMetadata={cncf} />,
+        render: props => <CncfRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
