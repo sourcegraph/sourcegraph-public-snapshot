@@ -42,10 +42,11 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 	}
 
 	options := workerutil.WorkerOptions{
-		Name:        "insights_query_runner_worker",
-		NumHandlers: numHandlers,
-		Interval:    5 * time.Second,
-		Metrics:     metrics,
+		Name:              "insights_query_runner_worker",
+		NumHandlers:       numHandlers,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           metrics,
 	}
 
 	defaultRateLimit := rate.Limit(2.0)
@@ -108,7 +109,6 @@ func createDBWorkerStore(s *basestore.Store) dbworkerstore.Store {
 		//
 		// If you change this, be sure to adjust the interval that work is enqueued in
 		// enterprise/internal/insights/background:newInsightEnqueuer.
-		HeartbeatInterval: 15 * time.Second,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,

@@ -19,10 +19,11 @@ type Store interface {
 
 	// Dequeue selects a record for processing. Any extra arguments supplied will be used in accordance with the
 	// concrete persistence layer (e.g. additional SQL conditions for a database layer). This method returns a boolean
-	// flag indicating the existence of a processable record along with a cancel function that should be called once
-	// the record is finished being processed. This will release any resources used to lock the record from selection
-	// by another concurrent worker process.
-	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, context.CancelFunc, bool, error)
+	// flag indicating the existence of a processable record.
+	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, bool, error)
+
+	// Heartbeat marks the given record as currently being processed.:2
+	Heartbeat(ctx context.Context, id int) error
 
 	// AddExecutionLogEntry adds an executor log entry to the record.
 	AddExecutionLogEntry(ctx context.Context, id int, entry ExecutionLogEntry) error

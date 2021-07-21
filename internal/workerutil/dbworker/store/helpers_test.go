@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 	"time"
@@ -148,22 +147,20 @@ func defaultTestStoreOptions(clock glock.Clock) Options {
 			sqlf.Sprintf("w.id"),
 			sqlf.Sprintf("w.state"),
 		},
-		HeartbeatInterval: time.Second,
-		StalledMaxAge:     time.Second * 5,
-		MaxNumResets:      5,
-		MaxNumRetries:     3,
-		clock:             clock,
+		StalledMaxAge: time.Second * 5,
+		MaxNumResets:  5,
+		MaxNumRetries: 3,
+		clock:         clock,
 	}
 }
 
-func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, cancel context.CancelFunc, ok bool, err error) {
+func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a dequeueable record")
 	}
-	defer cancel()
 
 	if val := record.(TestRecord).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
@@ -173,14 +170,13 @@ func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{},
 	}
 }
 
-func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, cancel context.CancelFunc, ok bool, err error) {
+func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a dequeueable record")
 	}
-	defer cancel()
 
 	if val := record.(TestRecordView).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
@@ -193,14 +189,13 @@ func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField in
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, cancel context.CancelFunc, ok bool, err error) {
+func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a dequeueable record")
 	}
-	defer cancel()
 
 	if val := record.(TestRecordRetry).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)

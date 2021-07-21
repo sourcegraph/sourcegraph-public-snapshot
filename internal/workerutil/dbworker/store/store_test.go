@@ -91,90 +91,6 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	}
 }
 
-func TestStoreDequeueKeepsHeartbeat(t *testing.T) {
-	db := setupStoreTest(t)
-
-	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
-		VALUES
-			(1, 'queued', NOW() - '1 minute'::interval),
-			(2, 'queued', NOW() - '2 minute'::interval),
-			(3, 'state2', NOW() - '3 minute'::interval),
-			(4, 'queued', NOW() - '4 minute'::interval),
-			(5, 'state2', NOW() - '5 minute'::interval)
-	`); err != nil {
-		t.Fatalf("unexpected error inserting records: %s", err)
-	}
-
-	now := time.Unix(1587396557, 0).UTC()
-	clock := glock.NewMockClock()
-	clock.SetCurrent(now)
-
-	record, cancel, ok, err := testStore(db, defaultTestStoreOptions(clock)).Dequeue(context.Background(), "test", nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected a dequeueable record")
-	}
-	defer cancel()
-
-	if val := record.(TestRecord).ID; val != 4 {
-		t.Errorf("unexpected id. want=%d have=%d", 4, val)
-	}
-	if val := record.(TestRecord).State; val != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
-	}
-
-	getTime := func() time.Time {
-		time, ok, err := basestore.ScanFirstTime(db.QueryContext(context.Background(), "SELECT last_heartbeat_at FROM workerutil_test WHERE id = 4"))
-		if err != nil {
-			t.Fatalf("unexpected error scanning last updated at: %s", err)
-		}
-		if !ok {
-			t.Fatalf("expected record to exist")
-		}
-
-		return time
-	}
-
-	timeout := time.Second * 5
-
-	for i := 0; i < 10; i++ {
-		expectedTime := now.Add(time.Second * time.Duration(i+1))
-
-		// Trigger db write
-		clock.BlockingAdvance(time.Second)
-
-		// Check the last heartbeat timestamp on the target record. We don't know
-		// when the db write ends and since we use multiple connections we need to
-		// poll for a short period.
-		if !assertEventually(timeout, func() bool { return getTime().Equal(expectedTime) }) {
-			t.Fatalf("unexpected last_heartbeat_at after %s. want=%s", timeout, expectedTime)
-		}
-	}
-}
-
-// assertEventually calls f in a loop until it returns true, or until the given timeout
-// duration elapses. This function returns true if f returns true within the timeout and
-// false otherwise.
-func assertEventually(timeout time.Duration, f func() bool) bool {
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(timeout))
-	defer cancel()
-
-	for {
-		if f() {
-			return true
-		}
-
-		select {
-		case <-ctx.Done():
-			return false
-		default:
-		}
-	}
-}
-
 func TestStoreDequeueState(t *testing.T) {
 	db := setupStoreTest(t)
 
@@ -190,8 +106,8 @@ func TestStoreDequeueState(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, cancel, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
-	assertDequeueRecordResult(t, 4, record, cancel, ok, err)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordResult(t, 4, record, ok, err)
 }
 
 func TestStoreDequeueOrder(t *testing.T) {
@@ -209,8 +125,8 @@ func TestStoreDequeueOrder(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, cancel, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
-	assertDequeueRecordResult(t, 2, record, cancel, ok, err)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordResult(t, 2, record, ok, err)
 }
 
 func TestStoreDequeueConditions(t *testing.T) {
@@ -229,8 +145,8 @@ func TestStoreDequeueConditions(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
-	record, cancel, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", conditions)
-	assertDequeueRecordResult(t, 3, record, cancel, ok, err)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", conditions)
+	assertDequeueRecordResult(t, 3, record, ok, err)
 }
 
 func TestStoreDequeueDelay(t *testing.T) {
@@ -248,8 +164,8 @@ func TestStoreDequeueDelay(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, cancel, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
-	assertDequeueRecordResult(t, 4, record, cancel, ok, err)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordResult(t, 4, record, ok, err)
 }
 
 func TestStoreDequeueView(t *testing.T) {
@@ -278,8 +194,8 @@ func TestStoreDequeueView(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("v.new_field < 15")}
-	record, cancel, ok, err := testStore(db, options).Dequeue(context.Background(), "test", conditions)
-	assertDequeueRecordViewResult(t, 2, 14, record, cancel, ok, err)
+	record, ok, err := testStore(db, options).Dequeue(context.Background(), "test", conditions)
+	assertDequeueRecordViewResult(t, 2, 14, record, ok, err)
 }
 
 func TestStoreDequeueConcurrent(t *testing.T) {
@@ -297,24 +213,22 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	store := testStore(db, defaultTestStoreOptions(nil))
 
 	// Worker A
-	record1, cancel1, ok, err := store.Dequeue(context.Background(), "test", nil)
+	record1, ok, err := store.Dequeue(context.Background(), "test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a dequeueable record")
 	}
-	defer func() { cancel1() }()
 
 	// Worker B
-	record2, cancel2, ok, err := store.Dequeue(context.Background(), "test", nil)
+	record2, ok, err := store.Dequeue(context.Background(), "test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a second dequeueable record")
 	}
-	defer func() { cancel2() }()
 
 	if val := record1.(TestRecord).ID; val != 1 {
 		t.Errorf("unexpected id. want=%d have=%d", 1, val)
@@ -324,7 +238,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	}
 
 	// Worker C
-	_, _, ok, err = store.Dequeue(context.Background(), "test", nil)
+	_, ok, err = store.Dequeue(context.Background(), "test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -359,15 +273,15 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	store := testStore(db, options)
 
 	// Dequeue errored record
-	record1, cancel, ok, err := store.Dequeue(context.Background(), "test", nil)
-	assertDequeueRecordRetryResult(t, 1, record1, cancel, ok, err)
+	record1, ok, err := store.Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordRetryResult(t, 1, record1, ok, err)
 
 	// Dequeue non-errored record
-	record2, cancel, ok, err := store.Dequeue(context.Background(), "test", nil)
-	assertDequeueRecordRetryResult(t, 4, record2, cancel, ok, err)
+	record2, ok, err := store.Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordRetryResult(t, 4, record2, ok, err)
 
 	// Does not dequeue old or max retried errored
-	if _, _, ok, _ := store.Dequeue(context.Background(), "test", nil); ok {
+	if _, ok, _ := store.Dequeue(context.Background(), "test", nil); ok {
 		t.Fatalf("did not expect a third dequeueable record")
 	}
 }
@@ -399,11 +313,11 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	store := testStore(db, options)
 
 	// Dequeue non-errored record only
-	record2, cancel, ok, err := store.Dequeue(context.Background(), "test", nil)
-	assertDequeueRecordRetryResult(t, 4, record2, cancel, ok, err)
+	record2, ok, err := store.Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordRetryResult(t, 4, record2, ok, err)
 
 	// Does not dequeue errored
-	if _, _, ok, _ := store.Dequeue(context.Background(), "test", nil); ok {
+	if _, ok, _ := store.Dequeue(context.Background(), "test", nil); ok {
 		t.Fatalf("did not expect a second dequeueable record")
 	}
 }
@@ -883,4 +797,62 @@ func TestStoreResetStalled(t *testing.T) {
 	if state != "errored" {
 		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
 	}
+}
+
+func TestStoreHeartbeat(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'queued')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	now := time.Unix(1587396557, 0).UTC()
+	clock := glock.NewMockClockAt(now)
+	store := testStore(db, defaultTestStoreOptions(clock))
+
+	if err := store.Heartbeat(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error updating heartbeat: %s", err)
+	}
+
+	readAndCompareTime := func(wantTime *time.Time) {
+		rows, err := db.QueryContext(context.Background(), `SELECT last_heartbeat_at FROM workerutil_test WHERE id = 1`)
+		if err != nil {
+			t.Fatalf("unexpected error querying record: %s", err)
+		}
+		defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+		if !rows.Next() {
+			t.Fatal("expected record to exist")
+		}
+
+		var lastHeartbeatAt *time.Time
+		if err := rows.Scan(&lastHeartbeatAt); err != nil {
+			t.Fatalf("unexpected error scanning record: %s", err)
+		}
+
+		want, have := wantTime, lastHeartbeatAt
+		if (want == nil && want != have) || (want != nil && (have == nil || !want.Equal(*have))) {
+			t.Errorf("invalid heartbeat stored, want=%q have=%q", want, have)
+		}
+	}
+
+	// Expect null time to be stored.
+	readAndCompareTime(nil)
+
+	// Now update state to processing and expect it to update properly.
+	if _, err := db.ExecContext(context.Background(), `
+	UPDATE workerutil_test SET state = 'processing' WHERE id = 1
+	`); err != nil {
+		t.Fatalf("unexpected error updating records: %s", err)
+	}
+	if err := store.Heartbeat(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error updating heartbeat: %s", err)
+	}
+
+	// Now expect time to be stored properly.
+	readAndCompareTime(&now)
 }

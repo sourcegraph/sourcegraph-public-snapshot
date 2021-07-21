@@ -3,6 +3,7 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -214,11 +215,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		emails[i] = userEmails[i].Email
 	}
 
-	providers := s.providersByServiceID()
+	byServiceID := s.providersByServiceID()
 
 	// Check if the user has an external account for every authz provider respectively,
 	// and try to fetch the account when not.
-	for _, provider := range providers {
+	for _, provider := range byServiceID {
 		_, ok := serviceToAccounts[provider.ServiceType()+":"+provider.ServiceID()]
 		if ok {
 			continue
@@ -251,51 +252,108 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		accts = append(accts, acct)
 	}
 
+	// Fetch all the users external services
+	externalServices := database.ExternalServicesWith(s.reposStore)
+	svcs, err := externalServices.List(ctx, database.ExternalServicesListOptions{
+		NamespaceUserID: userID,
+		Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
+	})
+	if err != nil {
+		return errors.Wrap(err, "fetching external services")
+	}
+
+	byURN := s.providersByURNs()
+
+	var accountsOrServices []interface{}
+	for i := range accts {
+		accountsOrServices = append(accountsOrServices, accts[i])
+	}
+	for i := range svcs {
+		accountsOrServices = append(accountsOrServices, svcs[i])
+	}
+
 	var repoSpecs, includePrefixSpecs, excludePrefixSpecs []api.ExternalRepoSpec
-	for _, acct := range accts {
-		provider := providers[acct.ServiceID]
-		if provider == nil {
-			// We have no authz provider configured for this external account.
-			continue
-		}
 
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
-			return errors.Wrap(err, "wait for rate limiter")
-		}
+	for _, accountOrService := range accountsOrServices {
+		var extIDs *authz.ExternalUserPermissions
+		var provider authz.Provider
 
-		extIDs, err := provider.FetchUserPerms(ctx, acct)
-		if err != nil {
-			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
-			unauthorized := errcode.IsUnauthorized(err)
-
-			forbidden := errcode.IsForbidden(err)
-
-			// Detect GitHub account suspension error
-			accountSuspended := errcode.IsAccountSuspended(err)
-
-			if unauthorized || accountSuspended || forbidden {
-				err = accounts.TouchExpired(ctx, acct.ID)
-				if err != nil {
-					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
-				}
-				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
-					"userID", user.ID, "id", acct.ID,
-					"unauthorized", unauthorized, "accountSuspended", accountSuspended, "forbidden", forbidden)
-
-				// We still want to continue processing other external accounts
+		switch v := accountOrService.(type) {
+		case *extsvc.Account:
+			provider = byServiceID[v.ServiceID]
+			if provider == nil {
+				// We have no authz provider configured for this external account or service
 				continue
 			}
 
-			// Process partial results if this is an initial fetch.
-			if !noPerms {
-				return errors.Wrap(err, "fetch user permissions")
+			if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+				return errors.Wrap(err, "wait for rate limiter")
 			}
-			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
-		} else {
-			err = accounts.TouchLastValid(ctx, acct.ID)
+			extIDs, err = provider.FetchUserPerms(ctx, v)
+
 			if err != nil {
-				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
+				// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
+				unauthorized := errcode.IsUnauthorized(err)
+
+				forbidden := errcode.IsForbidden(err)
+
+				// Detect GitHub account suspension error
+				accountSuspended := errcode.IsAccountSuspended(err)
+
+				if unauthorized || accountSuspended || forbidden {
+					err = accounts.TouchExpired(ctx, v.ID)
+					if err != nil {
+						return errors.Wrapf(err, "set expired for external account %d", v.ID)
+					}
+					log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
+						"userID", user.ID, "id", v.ID,
+						"unauthorized", unauthorized, "accountSuspended", accountSuspended, "forbidden", forbidden)
+
+					// We still want to continue processing other external accounts
+					continue
+				}
+
+				// Process partial results if this is an initial fetch.
+				if !noPerms {
+					return errors.Wrap(err, "fetch user permissions")
+				}
+				log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
+			} else {
+				err = accounts.TouchLastValid(ctx, v.ID)
+				if err != nil {
+					return errors.Wrapf(err, "set last valid for external account %d", v.ID)
+				}
 			}
+
+		case *types.ExternalService:
+			provider = byURN[v.URN()]
+			if provider == nil {
+				// We have no authz provider configured for this external service or service
+				continue
+			}
+			token, err := extsvc.ExtractToken(v.Config, v.Kind)
+			if err != nil {
+				log15.Warn("Extracting token from external service config", "error", err, "id", v.ID)
+				continue
+			}
+			if token == "" {
+				log15.Warn("Empty token for external service", "id", v.ID)
+				continue
+			}
+
+			if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+				return errors.Wrap(err, "wait for rate limiter")
+			}
+
+			extIDs, err = provider.FetchUserPermsByToken(ctx, token)
+			if err != nil {
+				log15.Warn("Fetching user permissions by token", "error", err)
+				continue
+			}
+
+		default:
+			log15.Error("Expected account or external service", "got", fmt.Sprintf("%T", accountOrService))
+			continue
 		}
 
 		if extIDs == nil {

@@ -11,7 +11,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -32,12 +31,11 @@ type Store interface {
 	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
 	//
-	// A background goroutine that continuously updates the record's last modified time will be started. The returned cancel
-	// function should be called once the record no longer needs to be locked from selection or reset by another process.
-	// Most often, this will be when the handler moves the record into a terminal state.
-	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
+
+	// Heartbeat marks the given record as currently being processed.
+	Heartbeat(ctx context.Context, id int) error
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -160,11 +158,6 @@ type Options struct {
 	// ColumnExpressions are the target columns provided to the query when selecting a job record. These
 	// expressions may use the alias provided in `ViewName`, if one was supplied.
 	ColumnExpressions []*sqlf.Query
-
-	// HeartbeatInterval is the interval between heartbeat updates to a job's last_heartbeat_at field. This
-	// field is periodically updated while being actively processed to signal to other workers that the
-	// record is neither pending nor abandoned.
-	HeartbeatInterval time.Duration
 
 	// StalledMaxAge is the maximum allowed duration between heartbeat updates of a job's last_heartbeat_at
 	// field. An unmodified row that is marked as processing likely indicates that the worker that dequeued
@@ -307,12 +300,12 @@ SELECT COUNT(*) FROM %s WHERE (
 // Most often, this will be when the handler moves the record into a terminal state.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ context.CancelFunc, _ bool, err error) {
+func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ bool, err error) {
 	ctx, traceLog, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if s.InTransaction() {
-		return nil, nil, false, ErrDequeueTransaction
+		return nil, false, ErrDequeueTransaction
 	}
 
 	now := s.now()
@@ -334,10 +327,10 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		workerHostname,
 	)))
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 	if !exists {
-		return nil, nil, false, nil
+		return nil, false, nil
 	}
 	traceLog(log.Int("id", id))
 
@@ -349,34 +342,13 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		id,
 	)))
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 	if !exists {
-		return nil, nil, false, nil
+		return nil, false, nil
 	}
 
-	// Create a background routine that periodically writes the current time to the record.
-	// This will keep a record claimed by an active worker for a small amount of time so that
-	// it will not be processed by a second worker concurrently.
-
-	heartbeatCtx, cancel := context.WithCancel(ctx)
-	go func() {
-		for {
-			select {
-			case <-heartbeatCtx.Done():
-				return
-			case <-s.options.clock.After(s.options.HeartbeatInterval):
-			}
-
-			if err = s.Exec(heartbeatCtx, s.formatQuery(updateCandidateQuery, quote(s.options.TableName), s.now(), record.RecordID())); err != nil {
-				if err != heartbeatCtx.Err() {
-					log15.Error("Failed to refresh last_heartbeat_at", "name", s.options.Name, "id", id, "error", err)
-				}
-			}
-		}
-	}()
-
-	return record, cancel, true, nil
+	return record, true, nil
 }
 
 const selectCandidateQuery = `
@@ -417,8 +389,18 @@ const selectRecordQuery = `
 SELECT %s FROM %s WHERE {id} = %s
 `
 
+func (s *store) Heartbeat(ctx context.Context, id int) error {
+	err := s.Exec(ctx, s.formatQuery(updateCandidateQuery, quote(s.options.TableName), s.now(), id))
+	if err != nil {
+		if err != ctx.Err() {
+			return err
+		}
+	}
+	return nil
+}
+
 const updateCandidateQuery = `
--- source: internal/workerutil/store.go:Dequeue
+-- source: internal/workerutil/store.go:Heartbeat
 UPDATE %s
 SET {last_heartbeat_at} = %s
 WHERE {id} = %s AND {state} = 'processing'

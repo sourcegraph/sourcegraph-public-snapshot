@@ -72,7 +72,6 @@ type executorMeta struct {
 type jobMeta struct {
 	queueName string
 	record    workerutil.Record
-	cancel    context.CancelFunc
 	started   time.Time
 }
 
@@ -123,7 +122,7 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 		}
 	}()
 
-	record, cancel, dequeued, err := queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
+	record, dequeued, err := queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
 	if err != nil {
 		return apiclient.Job{}, false, err
 	}
@@ -137,12 +136,11 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
 		}
 
-		cancel()
 		return apiclient.Job{}, false, err
 	}
 
 	now := m.clock.Now()
-	m.addMeta(executorName, jobMeta{queueName: queueName, record: record, cancel: cancel, started: now})
+	m.addMeta(executorName, jobMeta{queueName: queueName, record: record, started: now})
 	return job, true, nil
 }
 
@@ -180,7 +178,6 @@ func (m *handler) markComplete(ctx context.Context, queueName, executorName stri
 	}
 
 	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	defer job.cancel()
 	_, err = queueOptions.Store.MarkComplete(ctx, job.record.RecordID())
 	return err
 }
@@ -199,7 +196,6 @@ func (m *handler) markErrored(ctx context.Context, queueName, executorName strin
 	}
 
 	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	defer job.cancel()
 	_, err = queueOptions.Store.MarkErrored(ctx, job.record.RecordID(), errorMessage)
 	return err
 }
@@ -218,7 +214,6 @@ func (m *handler) markFailed(ctx context.Context, queueName, executorName string
 	}
 
 	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	defer job.cancel()
 	_, err = queueOptions.Store.MarkFailed(ctx, job.record.RecordID(), errorMessage)
 	return err
 }

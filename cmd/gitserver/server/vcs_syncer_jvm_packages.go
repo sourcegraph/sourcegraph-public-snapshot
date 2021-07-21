@@ -56,7 +56,7 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 			return err
 		}
 		if len(sources) == 0 {
-			return errors.Errorf("no sources.jar for dependency %s", dependency)
+			return errors.Errorf("no sources for dependency %s", dependency)
 		}
 	}
 	return nil
@@ -184,28 +184,17 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 
 	if len(sourceCodePaths) == 0 {
-		return errors.Errorf("no sources.jar for dependency %s", dependency)
+		return errors.Errorf("no sources for dependency %s", dependency)
 	}
 
 	sourceCodePath := sourceCodePaths[0]
-
-	byteCodePaths, err := coursier.FetchByteCode(ctx, s.Config, dependency)
-	if err != nil {
-		return err
-	}
-
-	if len(byteCodePaths) == 0 {
-		return errors.Errorf("no bytecode jar for dependency %s", dependency)
-	}
-
-	byteCodePath := byteCodePaths[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
 
-	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodePath, byteCodePath)
+	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodePath, s.Config)
 	if err != nil {
 		return err
 	}
@@ -237,7 +226,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
 func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
-	workingDirectory, sourceCodeJarPath, byteCodeJarPath string) error {
+	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
 	cmd := exec.CommandContext(ctx, "unzip", sourceCodeJarPath)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
@@ -249,15 +238,15 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 	defer file.Close()
 
-	jvmVersion, err := inferJVMVersionFromByteCode(byteCodeJarPath)
+	jvmVersion, err := inferJVMVersionFromByteCode(ctx, connection, dependency)
 	if err != nil {
 		return err
 	}
 
 	jsonContents, err := json.Marshal(&lsifJavaJSON{
-		Kind:         "maven",
+		Kind:         dependency.MavenModule.LsifJavaKind(),
 		JVM:          jvmVersion,
-		Dependencies: []string{dependency.CoursierSyntax()},
+		Dependencies: dependency.LsifJavaDependencies(),
 	})
 	if err != nil {
 		return err
@@ -288,8 +277,23 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
 // the bytecode in the given jar file.
-func inferJVMVersionFromByteCode(byteCodeJarPath string) (string, error) {
-	majorVersionString, err := classFileMajorVersion(byteCodeJarPath)
+func inferJVMVersionFromByteCode(ctx context.Context, connection *schema.JVMPackagesConnection,
+	dependency reposource.MavenDependency) (string, error) {
+	if dependency.IsJdk() {
+		return dependency.Version, nil
+	}
+
+	byteCodePaths, err := coursier.FetchByteCode(ctx, connection, dependency)
+	if err != nil {
+		return "", err
+	}
+
+	if len(byteCodePaths) == 0 {
+		return "", errors.Errorf("no bytecode jar for dependency %s", dependency)
+	}
+
+	byteCodePath := byteCodePaths[0]
+	majorVersionString, err := classFileMajorVersion(byteCodePath)
 	if err != nil {
 		return "", err
 	}

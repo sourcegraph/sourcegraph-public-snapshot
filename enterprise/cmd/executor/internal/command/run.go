@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -121,7 +122,13 @@ func validateCommand(command []string) error {
 func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {
 	cmd = exec.CommandContext(ctx, command.Command[0], command.Command[1:]...)
 	cmd.Dir = command.Dir
-	cmd.Env = command.Env
+
+	env := command.Env
+	for _, k := range forwardedHostEnvVars {
+		env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
+	}
+
+	cmd.Env = env
 
 	stdout, err = cmd.StdoutPipe()
 	if err != nil {
@@ -135,6 +142,11 @@ func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, s
 
 	return cmd, stdout, stderr, nil
 }
+
+// forwardedHostEnvVars is a list of environment variable names that are inherited
+// when executing a command on the host. These are commonly required by programs
+// we shell out to, such a docker.
+var forwardedHostEnvVars = []string{"HOME", "PATH"}
 
 func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup) {
 	var m sync.Mutex
