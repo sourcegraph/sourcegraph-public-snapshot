@@ -114,6 +114,7 @@ interface Props
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     isMacPlatform: boolean
+    showSearchNotebook: boolean
 }
 
 export const BlobPage: React.FunctionComponent<Props> = props => {
@@ -219,7 +220,8 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     const isSearchNotebook =
         blobInfoOrError &&
         !isErrorLike(blobInfoOrError) &&
-        blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION)
+        blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
+        props.showSearchNotebook
 
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.

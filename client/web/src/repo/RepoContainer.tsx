@@ -103,6 +103,8 @@ export interface RepoContainerContext
 
     globbing: boolean
 
+    showSearchNotebook: boolean
+
     isMacPlatform: boolean
 
     showBatchChanges: boolean
@@ -141,6 +143,7 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+    showSearchNotebook: boolean
     isMacPlatform: boolean
     showBatchChanges: boolean
 }

@@ -73,6 +73,8 @@ export interface RepoRevisionContainerContext
 
     globbing: boolean
 
+    showSearchNotebook: boolean
+
     isMacPlatform: boolean
 
     showBatchChanges: boolean
@@ -116,6 +118,8 @@ interface RepoRevisionContainerProps
     history: H.History
 
     globbing: boolean
+
+    showSearchNotebook: boolean
 
     isMacPlatform: boolean
 
