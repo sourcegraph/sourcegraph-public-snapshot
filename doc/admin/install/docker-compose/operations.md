@@ -2,6 +2,8 @@
 
 Operations guides specific to managing [Sourcegraph with Docker Compose](./index.md) installations.
 
+Trying to deploy Sourcegraph? Refer to our [installation guide](./index.md#installation).
+
 ## Featured guides
 
 <div class="getting-started">
@@ -26,28 +28,32 @@ Operations guides specific to managing [Sourcegraph with Docker Compose](./index
 
 ## Configure
 
-We **strongly** recommend that you create and run Sourcegraph from your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make upgrades far easier.**
+We **strongly** recommend that you create and run Sourcegraph from your own fork of the [reference repository](./index.md#reference-repository), [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/), to track customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make [upgrades](#upgrade) far easier.**
 
-- Fork the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) repository and clone your fork
-    - [How to fork a repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository)
-    - Clone the fork using `git clone <repo-fork-url>`
-  
-  > WARNING: Set it to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
+- [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) repository.
 
-- Add the upstream remote so that you can [get updates](#upgrade).
+    > WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
 
-```bash
-git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
-```
+- Clone your fork using the repository's URL.
 
-- Create a `release` branch to track all of your customizations to Sourcegraph. When you [upgrade Sourcegraph](#upgrade), you will merge upstream into this branch.
+  ```bash
+  git clone $FORK_URL
+  ```
 
-```bash
-export SOURCEGRAPH_VERSION="v3.26.3"
-git checkout $SOURCEGRAPH_VERSION -b release
-```
+- Add the reference repository as an `upstream` remote so that you can [get updates](#upgrade).
 
-- Commit customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to your `release` branch
+  ```bash
+  git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
+  ```
+
+- Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](#upgrade) and [install your Sourcegraph instance](./index.md#installation).
+
+  ```bash
+  export SOURCEGRAPH_VERSION="v3.29.1"
+  git checkout $SOURCEGRAPH_VERSION -b release
+  ```
+
+- Make and [commit](https://git-scm.com/docs/git-commit) customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to your `release` branch.
 
 ## Upgrade
 
@@ -58,7 +64,7 @@ When you upgrade, merge the corresponding upstream release tag into your `releas
 ```bash
 # fetch updates
 git fetch upstream
-# to merge the upstream release tag into your release branch.
+# merge the upstream release tag into your release branch
 git checkout release
 git merge upstream v$SOURCEGRAPH_VERSION
 ```
@@ -68,9 +74,13 @@ Address any merge conflicts you might have.
 If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**. Then run:
 
 ```bash
-docker-compose down --remove-orphans # Fully stop the Docker Compose instance of Sourcegraph currently running
-docker-compose up -d # Start Docker Compose again, now using the latest contents of the branch you're in
+# Fully stop the Docker Compose instance of Sourcegraph currently running
+docker-compose down --remove-orphans
+# Start Docker Compose again, now using the latest contents of the Sourcegraph configuration
+docker-compose up -d
 ```
+
+You can see what's changed in the [Sourcegraph changelog](../../../CHANGELOG.md).
 
 ## Use an external database
 

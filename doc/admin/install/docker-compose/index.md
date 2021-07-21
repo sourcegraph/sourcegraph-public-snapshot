@@ -23,7 +23,7 @@ Deploy Sourcegraph with Docker Compose to a cloud of your choice.
 You will need:
 
 - A dedicated host for use with Sourcegraph.
-  - Use the resource estimator to ensure you provision [enough capacity](../resource_estimator.md)
+  - Use the [resource estimator](../resource_estimator.md) to ensure you provision enough capacity.
   - Sourcegraph requires SSD backed storage.
   - The configured host must have [Docker Compose](https://docs.docker.com/compose/).
 - [Sourcegraph license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
@@ -43,23 +43,17 @@ Deploy Sourcegraph with Docker Compose to your machine.
 You will need:
 
 - [Docker Compose](https://docs.docker.com/compose/) installed.
+- Use the [resource estimator](../resource_estimator.md) to ensure your machine has sufficient capacity.
 - [Sourcegraph license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
-To get started:
+To get started, [configure Sourcegraph with Docker Compose](./operations.md#configure). Then run:
 
 ```bash
-git clone https://github.com/sourcegraph/deploy-sourcegraph-docker
+# Move into configuration directory
 cd deploy-sourcegraph-docker/docker-compose
-export SOURCEGRAPH_VERSION="v3.29.1"
-git checkout $SOURCEGRAPH_VERSION
+# Spin up Sourcegraph!
 docker-compose up -d
 ```
-
-> WARNING: Make sure to use the branch or tag of the deployment reference repository corresponding to the version of Sourcegraph you wish to deploy, e.g. `git checkout $SOURCEGRAPH_VERSION`, as indicated above.
-
-<span class="virtual-br"></span>
-
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to [Configuring Sourcegraph with Docker Compose](./operations.md#configure) for more details.
 
 Once the server is ready (the `sourcegraph-frontend-0` service is healthy when running `docker ps`), navigate to the hostname or IP address on port `80`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -77,7 +71,7 @@ Learn more about it [here](https://docs.docker.com/compose/).
 
 ### Reference repository
 
-Sourcegraph for Docker Compose is configured using our [`sourcegraph/deploy-sourcegraph-docker` repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/). This repository contains everything you need to spin up a Docker Compose Sourcegraph instance.
+Sourcegraph for Docker Compose is configured using our [`sourcegraph/deploy-sourcegraph-docker` reference repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/). This repository contains everything you need to [spin up](#installation) and [configure](./operations.md#configure) a Docker Compose Sourcegraph instance.
 
 ### Windows support
 
