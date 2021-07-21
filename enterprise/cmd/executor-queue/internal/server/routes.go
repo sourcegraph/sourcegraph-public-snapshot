@@ -20,12 +20,11 @@ func (h *handler) setupRoutes(router *mux.Router) {
 		"markComplete":         h.handleMarkComplete,
 		"markErrored":          h.handleMarkErrored,
 		"markFailed":           h.handleMarkFailed,
+		"heartbeat":            h.handleHeartbeat,
 	}
 	for path, handler := range routes {
 		router.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
 	}
-
-	router.Path("/heartbeat").Methods("POST").HandlerFunc(h.handleHeartbeat)
 }
 
 // POST /{queueName}/dequeue
@@ -94,7 +93,7 @@ func (h *handler) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /heartbeat
+// POST /{queueName}/heartbeat
 func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.HeartbeatRequest
 

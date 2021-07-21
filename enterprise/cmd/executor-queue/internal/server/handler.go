@@ -75,6 +75,7 @@ func newHandler(options Options, queueOptions QueueOptions, clock glock.Clock) *
 
 func newHandlerWithMetrics(options Options, queueOptions QueueOptions, clock glock.Clock, queueMetrics *QueueMetrics) *handler {
 	return &handler{
+		queueOptions: queueOptions,
 		options:      options,
 		clock:        clock,
 		executors:    map[string]*executorMeta{},

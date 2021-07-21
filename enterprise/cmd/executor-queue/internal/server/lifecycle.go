@@ -95,7 +95,7 @@ func (h *handler) pruneExecutors() (jobs []jobMeta) {
 }
 
 func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {
-	return queueOptions.Store.Heartbeat(ctx, job.recordID)
+	return h.queueOptions.Store.Heartbeat(ctx, job.recordID)
 }
 
 // requeueJobs releases and requeues each of the given jobs.

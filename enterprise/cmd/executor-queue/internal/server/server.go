@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/derision-test/glock"
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // NewServer returns an HTTP job queue server.
@@ -17,17 +20,17 @@ func NewServer(options Options, queueOptions []QueueOptions, observationContext 
 	addr := fmt.Sprintf(":%d", options.Port)
 
 	routines := goroutine.CombinedRoutine{}
-	// queueMetrics := newQueueMetrics(observationContext)
-	serverHandler := httpserver.NewHandler(nil) //func(router *mux.Router) {
-	// 	for _, queueOption := range queueOptions {
-	// 		handler := newHandlerWithMetrics(options, queueOption, glock.NewRealClock(), queueMetrics)
-	// 		httpHandler := ot.Middleware(httpserver.NewHandler(handler.setupRoutes))
-	// 		router.PathPrefix(fmt.Sprintf("/%s", queueOption.Name)).Handler(httpHandler)
+	queueMetrics := newQueueMetrics(observationContext)
+	serverHandler := ot.Middleware(httpserver.NewHandler(func(router *mux.Router) {
+		for _, queueOption := range queueOptions {
+			handler := newHandlerWithMetrics(options, queueOption, glock.NewRealClock(), queueMetrics)
+			subRouter := router.PathPrefix(fmt.Sprintf("/%s/", queueOption.Name)).Subrouter()
+			handler.setupRoutes(subRouter)
 
-	// 		janitor := goroutine.NewPeriodicGoroutine(context.Background(), options.CleanupInterval, &handlerWrapper{handler})
-	// 		routines = append(routines, janitor)
-	// 	}
-	// })
+			janitor := goroutine.NewPeriodicGoroutine(context.Background(), options.CleanupInterval, &handlerWrapper{handler})
+			routines = append(routines, janitor)
+		}
+	}))
 
 	server := httpserver.NewFromAddr(addr, &http.Server{Handler: serverHandler})
 	routines = append(routines, server)
