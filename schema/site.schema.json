@@ -102,6 +102,12 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "jvmPackages": {
+          "description": "Allow adding JVM packages code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",
@@ -259,6 +265,12 @@
               "additionalProperties": {
                 "type": "number"
               }
+            },
+            "maxReorderQueueSize": {
+              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.",
+              "default": 0,
+              "type": "integer",
+              "group": "Search"
             }
           }
         }
@@ -1441,9 +1453,11 @@
         "apiKey": { "type": "string" },
         "apiUrl": { "type": "string" },
         "tags": {
+          "description": "Comma separated list of tags attached to the notifications - or a Go template that produces such a list. Sourcegraph provides some default ones if this value isn't specified.",
           "type": "string"
         },
         "priority": {
+          "description": "Defines the importance of an alert. Allowed values are P1, P2, P3, P4, P5 - or a Go template that resolves to one of those values. By default, Sourcegraph will fill this in for you if a value isn't specified here.",
           "type": "string"
         },
         "responders": {

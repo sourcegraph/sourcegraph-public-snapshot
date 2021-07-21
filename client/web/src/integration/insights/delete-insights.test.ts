@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import delay from 'delay'
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -76,12 +78,15 @@ describe('Code insights page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+
+        // Wait until insight grid animation will be finished
+        await delay(1000)
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click(
-                '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
+                '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuButton"]'
             )
             await driver.page.click('[data-testid="insight-context-menu-delete-button"]')
         }, 'OverwriteSettings')

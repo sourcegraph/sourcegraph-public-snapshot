@@ -74,11 +74,6 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		}
 	}
 
-	if args.PatternInfo.IsEmpty() {
-		// Empty query isn't an error, but it has no results.
-		return nil
-	}
-
 	g, ctx := errgroup.WithContext(ctx)
 
 	if args.Mode != search.SearcherOnly {
@@ -237,7 +232,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 	for _, match := range matches {
 		fm, ok := match.(*result.FileMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected only file match results")
+			return nil, errors.Errorf("expected only file match results")
 		}
 		fms = append(fms, fm)
 	}

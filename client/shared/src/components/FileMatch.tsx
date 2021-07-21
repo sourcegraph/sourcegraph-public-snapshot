@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import React, { useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
@@ -7,7 +6,6 @@ import { AggregableBadge, Badge } from 'sourcegraph'
 import { FileLineMatch, FileSymbolMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { pluralize } from '../util/strings'
-import { useRedesignToggle } from '../util/useRedesignToggle'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
@@ -81,8 +79,6 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         }
     }, [])
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
     const result = props.result
     const items: MatchItem[] =
         result.type === 'file'
@@ -102,7 +98,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
     const renderTitle = (): JSX.Element => (
         <>
-            {isRedesignEnabled && <RepoIcon repoName={result.repository} className="icon-inline text-muted" />}
+            <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
@@ -113,7 +109,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={isRedesignEnabled ? 'ml-1' : undefined}
+                className="ml-1"
             />
         </>
     )
@@ -128,10 +124,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         target="_blank"
                         rel="noopener noreferrer"
                         data-tooltip={badge.hoverMessage}
-                        className={classNames(
-                            'badge badge-secondary text-muted text-uppercase file-match__badge',
-                            isRedesignEnabled && 'badge-sm'
-                        )}
+                        className="badge badge-secondary badge-sm text-muted text-uppercase file-match__badge"
                     >
                         {badge.text}
                     </LinkOrSpan>
@@ -150,7 +143,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
     if (props.showAllMatches) {
         containerProps = {
-            collapsible: !isRedesignEnabled,
+            collapsible: false,
             defaultExpanded: props.expanded,
             icon: props.icon,
             title: renderTitle(),
@@ -178,12 +171,8 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 />
             ),
             expandedChildren,
-            collapseLabel: isRedesignEnabled
-                ? `Hide ${length}`
-                : `Hide ${length} ${pluralize('match', length, 'matches')}`,
-            expandLabel: isRedesignEnabled
-                ? `${length} more`
-                : `Show ${length} more ${pluralize('match', length, 'matches')}`,
+            collapseLabel: `Hide ${length}`,
+            expandLabel: `${length} more`,
             allExpanded: props.allExpanded,
             matchCountLabel,
             repoStars: result.repoStars,

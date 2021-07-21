@@ -11,6 +11,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 const SOURCEGRAPH_DARK = 'sourcegraph-dark'
 
+const MAX_AUTO_HEIGHT = 1024
+
 // 🚨 WARNING!!!
 // Monaco does not support CSS variables/custom properties, all colors must be in hex codes.
 // See https://github.com/microsoft/monaco-editor/issues/2427
@@ -162,8 +164,8 @@ interface Props extends ThemeProps {
     /** The DOM element ID to use when rendering the component. Use for a11y, not DOM manipulation. */
     id?: string
 
-    /** The height (in px) of the Monaco editor. */
-    height: number
+    /** The height (in px) of the Monaco editor or 'auto' for automatic resizing to fit the content height. */
+    height: number | 'auto'
 
     /** Called when the editor has mounted. */
     editorWillMount: (editor: typeof monaco) => void
@@ -184,7 +186,9 @@ interface Props extends ThemeProps {
     keyboardShortcutForFocus?: KeyboardShortcut
 }
 
-interface State {}
+interface State {
+    computedHeight: number
+}
 
 export class MonacoEditor extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
@@ -193,21 +197,37 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     private editor: monaco.editor.ICodeEditor | undefined
 
+    constructor(props: Props) {
+        super(props)
+        this.state = { computedHeight: props.height !== 'auto' ? props.height : 0 }
+    }
+
     private setRef = (element: HTMLElement | null): void => {
         if (!element) {
             return
         }
         this.props.editorWillMount(monaco)
+        const autoHeightOptions =
+            this.props.height === 'auto' ? { automaticLayout: true, scrollBeyondLastLine: false } : {}
         const editor = monaco.editor.create(element, {
             value: this.props.value,
             language: this.props.language,
             theme: this.getTheme(this.props.isLightTheme),
+            ...autoHeightOptions,
             ...this.props.options,
         })
         if (this.props.onEditorCreated) {
             this.props.onEditorCreated(editor)
         }
         this.editor = editor
+
+        if (this.props.height === 'auto') {
+            this.setState({ computedHeight: Math.min(MAX_AUTO_HEIGHT, editor.getContentHeight()) })
+            const disposable = editor.onDidContentSizeChange(({ contentHeight }) => {
+                this.setState({ computedHeight: Math.min(MAX_AUTO_HEIGHT, contentHeight) })
+            })
+            this.subscriptions.add({ unsubscribe: () => disposable.dispose() })
+        }
     }
 
     public componentDidUpdate(previousProps: Props): void {
@@ -246,7 +266,10 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
             <>
                 <div
                     // eslint-disable-next-line react/forbid-dom-props
-                    style={{ height: `${this.props.height}px`, position: 'relative' }}
+                    style={{
+                        height: `${this.state.computedHeight}px`,
+                        position: 'relative',
+                    }}
                     ref={this.setRef}
                     id={this.props.id}
                     className={classNames(this.props.className, this.props.border !== false && 'border')}

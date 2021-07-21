@@ -27,6 +27,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -51,7 +52,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
+import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -92,6 +93,8 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
+
+    showBatchChanges: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -125,10 +128,12 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+    showBatchChanges: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
 const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+const HAS_DISMISSED_FIREFOX_ALERT_KEY = 'has-dismissed-firefox-addon-alert'
 
 export const HOVER_THRESHOLD = 5
 
@@ -357,10 +362,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         setHasDismissedPopover(true)
     }, [])
 
+    const [hasDismissedFirefoxAlert, setHasDismissedFirefoxAlert] = useLocalStorage(
+        HAS_DISMISSED_FIREFOX_ALERT_KEY,
+        false
+    )
+    const showFirefoxAddonAlert = isFirefox() && !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
+
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()
         setHasDismissedExtensionAlert(true)
-    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
+        // TEMPORARY
+        setHasDismissedFirefoxAlert(true)
+    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert, setHasDismissedFirefoxAlert])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -405,12 +418,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         }
                     />
                 )}
-            {showExtensionAlert && (
+            {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}
                     onAlertDismissed={onAlertDismissed}
                     externalURLs={repoOrError.externalURLs}
                     codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                    showFirefoxAddonAlert={showFirefoxAddonAlert}
                 />
             )}
             <RepoHeader

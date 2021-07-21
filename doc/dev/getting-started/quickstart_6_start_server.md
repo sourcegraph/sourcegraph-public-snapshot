@@ -9,21 +9,21 @@
 2. (with docker) Start the Redis and PostgreSQL containers in the background with:
 
     ```
-    docker-compose -f dev/compose.yml up -d
+    docker-compose -f dev/redis-postgres.yml up -d
     ```
 
     You can also start either Redis or PostgreSQL, if you are running the other one directly on your system:
 
     ```
-    docker-compose -f dev/compose.yml up -d redis
+    docker-compose -f dev/redis-postgres.yml up -d redis
     # or
-    docker-compose -f dev/compose.yml up -d postgresql
+    docker-compose -f dev/redis-postgres.yml up -d postgresql
     ```
 
     When you want to stop the containers, run:
 
     ```
-    docker-compose -f dev/compose.yml down
+    docker-compose -f dev/redis-postgres.yml down
     ```
 
 3. Start the server with
@@ -65,4 +65,4 @@ After the initial setup you can `cd` into `sourcegraph` and run `enterprise/dev/
 
 The environment variables `SITE_CONFIG_FILE`, `EXTSVC_CONFIG_FILE` and `GLOBAL_SETTINGS_FILE` are paths that are read at startup. The content of the files will overwrite the respective setting. `start.sh` will set these files to point into `dev-private`. To avoid overwriting configuration changes done in Sourcegraph, you can set the environment variable `DEV_NO_CONFIG=1`.
 
-[< Previous](quickstart_5_configure_https_reverse_proxy.md) | [Next >](../how-to/troubleshooting_local_development.md)
+[< Previous](quickstart_5_configure_https_reverse_proxy.md) | [Next >](quickstart_7_additional_resources.md)

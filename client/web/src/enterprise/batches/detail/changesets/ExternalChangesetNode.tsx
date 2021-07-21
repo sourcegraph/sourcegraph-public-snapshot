@@ -15,7 +15,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
-import { DiffStat } from '../../../../components/diff/DiffStat'
+import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -33,8 +33,10 @@ import styles from './ExternalChangesetNode.module.scss'
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
-    onSelect?: (id: string, selected: boolean) => void
-    isSelected?: (id: string) => boolean
+    selectable?: {
+        onSelect: (id: string, selected: boolean) => void
+        isSelected: (id: string) => boolean
+    }
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -49,8 +51,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
     node: initialNode,
     viewerCanAdminister,
-    onSelect,
-    isSelected,
+    selectable,
     isLightTheme,
     history,
     location,
@@ -71,12 +72,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         [isExpanded]
     )
 
-    const selected = isSelected?.(node.id)
+    const selected = selectable?.isSelected(node.id)
     const toggleSelected = useCallback((): void => {
-        if (onSelect !== undefined) {
-            onSelect(node.id, !selected)
-        }
-    }, [onSelect, selected, node.id])
+        selectable?.onSelect(node.id, !selected)
+    }, [selectable, selected, node.id])
 
     return (
         <>
@@ -92,17 +91,23 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            <div className="p-2">
-                <input
-                    id={`select-changeset-${node.id}`}
-                    type="checkbox"
-                    className="btn"
-                    checked={selected}
-                    onChange={toggleSelected}
-                    disabled={!viewerCanAdminister}
-                    data-tooltip="Click to select changeset for bulk operation"
-                />
-            </div>
+            {selectable ? (
+                <div className="p-2">
+                    <input
+                        id={`select-changeset-${node.id}`}
+                        type="checkbox"
+                        className="btn"
+                        checked={selected}
+                        onChange={toggleSelected}
+                        disabled={!viewerCanAdminister}
+                        data-tooltip="Click to select changeset for bulk operation"
+                    />
+                </div>
+            ) : (
+                // 0-width empty element to allow us to keep the identical grid template of the parent
+                // list, regardless of whether or not the nodes have the checkbox selector
+                <span />
+            )}
             <ChangesetStatusCell
                 id={node.id}
                 state={node.state}
@@ -125,7 +130,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             >
                 {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />}
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
-                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
+                {node.diffStat && <DiffStatStack {...node.diffStat} />}
             </div>
             <span
                 className={classNames(
@@ -149,7 +154,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     node.diffStat && 'p-2'
                 )}
             >
-                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
+                {node.diffStat && <DiffStatStack {...node.diffStat} />}
             </div>
             {/* The button for expanding the information used on xs devices. */}
             <button

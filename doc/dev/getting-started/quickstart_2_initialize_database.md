@@ -65,7 +65,7 @@ export PGPASSWORD=sourcegraph
 export PGDATABASE=sourcegraph
 ```
 
-You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/compose.yml` file for more details.
+You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
 
 ## More info
 
