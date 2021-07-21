@@ -26,9 +26,11 @@ Operations guides specific to managing [Sourcegraph with Docker Compose](./index
 
 ## Configure
 
-We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make upgrades far easier.**
+We **strongly** recommend that you create and run Sourcegraph from your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make upgrades far easier.**
 
 - Fork the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) repository and clone your fork
+    - [How to fork a repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository)
+    - Clone the fork using `git clone <repo-fork-url>`
   
   > WARNING: Set it to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
 
@@ -63,11 +65,11 @@ git merge upstream v$SOURCEGRAPH_VERSION
 
 Address any merge conflicts you might have.
 
-If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take. Then run:
+If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**. Then run:
 
 ```bash
-docker-compose down --remove-orphans
-docker-compose up -d
+docker-compose down --remove-orphans # Fully stop the Docker Compose instance of Sourcegraph currently running
+docker-compose up -d # Start Docker Compose again, now using the latest contents of the branch you're in
 ```
 
 ## Use an external database
@@ -87,7 +89,6 @@ Guides for managing cloud storage and backups are available in our [cloud-specif
 ## Backup and restore
 
 The following instructions are specific to backing up and restoring the sourcegraph databases in a Docker Compose deployment. These do not apply to other deployment types.
-If you are not currently running sourcegraph via Docker Compose and would like to migrate, please see the [migration](./migrate.md).
 
 ### Only core data will be backed up
 
@@ -96,7 +97,7 @@ These instructions will only back up core data including user accounts, configur
 * Repositories will be re-cloned
 * Search indexes will be rebuilt from scratch
 
-The above may take awhile if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. Usually this process will not take longer than 6 hours.
+The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
 
 ### Back up sourcegraph databases
 

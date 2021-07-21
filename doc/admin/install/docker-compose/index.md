@@ -1,7 +1,7 @@
 # Sourcegraph with Docker Compose
 
 <p class="lead">
-Sourcegraph with Docker Compose is an ideal choice for small to medium sized deployments.
+Sourcegraph with Docker Compose is an ideal choice for many Sourcegraph customers who want a simplified single-machine deployment of Sourcegraph with simplified configuration and low cost of effort to maintain.
 </p>
 
 Not sure if Docker Compose is the right choice for you? Learn more about the various [Sourcegraph installation options](../index.md).
@@ -22,7 +22,7 @@ Deploy Sourcegraph with Docker Compose to a cloud of your choice.
 
 You will need:
 
-- A dedicated host with for your deployment.
+- A dedicated host for use with Sourcegraph.
   - Use the resource estimator to ensure you provision [enough capacity](../resource_estimator.md)
   - Sourcegraph requires SSD backed storage.
   - The configured host must have [Docker Compose](https://docs.docker.com/compose/).
