@@ -1437,7 +1437,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
-	if args.Mode == search.ZoektGlobalSearch {
+	if args.Mode == search.ZoektGlobalSearch && !args.PatternInfo.IsEmpty() {
 		argsIndexed := *args
 		wg := waitGroup(true)
 		wg.Add(1)
@@ -1513,7 +1513,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-		if args.Mode != search.NoFilePath {
+		if args.Mode != search.NoFilePath && !args.PatternInfo.IsEmpty() {
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
