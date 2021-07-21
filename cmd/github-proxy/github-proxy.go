@@ -103,7 +103,7 @@ func main() {
 		metricWaitingRequestsGauge.Inc()
 		requestMu.Lock()
 		metricWaitingRequestsGauge.Dec()
-		resp, err := client.Do(req2)
+		resp, err := client.Do(req2.WithContext(r.Context()))
 		requestMu.Unlock()
 		if err != nil {
 			log15.Warn("proxy error", "err", err)

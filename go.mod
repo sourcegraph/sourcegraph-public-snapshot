@@ -110,8 +110,6 @@ require (
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.8.0
-	github.com/machinebox/graphql v0.2.2
-	github.com/matryer/is v1.4.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.4
