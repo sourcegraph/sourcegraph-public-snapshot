@@ -109,11 +109,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/search/notebook',
-        render: props => (props.showSearchNotebook ? <SearchNotebookPage {...props} /> : <Redirect to="/search" />),
-        exact: true,
-    },
-    {
         path: '/sign-in',
         render: props => <SignInPage {...props} context={window.context} />,
         exact: true,
