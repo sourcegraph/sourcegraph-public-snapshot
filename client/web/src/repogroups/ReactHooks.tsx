@@ -1,6 +1,10 @@
+import React from 'react'
+
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
+import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import { RepogroupMetadata } from './types'
+
 export const reactHooks: RepogroupMetadata = {
     title: 'React Hooks',
     name: 'react-hooks',
@@ -34,3 +38,7 @@ export const reactHooks: RepogroupMetadata = {
     homepageDescription: 'Learn how to use React Hooks with search examples.',
     homepageIcon: 'https://cdn4.iconfinder.com/data/icons/logos-3/600/React.js_logo-512.png',
 }
+
+export const ReactHooksRepogroupPage: React.FunctionComponent<
+    Omit<RepogroupPageProps, 'repogroupMetadata'>
+> = props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />
