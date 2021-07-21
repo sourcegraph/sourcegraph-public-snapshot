@@ -3,7 +3,6 @@ import { Redirect, RouteComponentProps } from 'react-router'
 
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { AuthenticatedUser } from './auth'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { LayoutProps } from './Layout'
 import { ExtensionAlertProps } from './repo/RepoContainer'
