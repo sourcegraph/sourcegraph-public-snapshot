@@ -415,14 +415,14 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
     if (scanResult.type === 'success') {
         return (
             <button className="btn p-0 flex-1" type="button" onClick={() => onClick(example)}>
-                {scanResult.term.map(term => {
+                {scanResult.term.map((term, index) => {
                     switch (term.type) {
                         case 'filter':
                             return (
-                                <>
+                                <React.Fragment key={index}>
                                     <span className="search-filter-keyword">{term.field.value}:</span>
                                     {term.value?.quoted ? `"${term.value.value}"` : term.value?.value}
-                                </>
+                                </React.Fragment>
                             )
                         default:
                             return example.slice(term.range.start, term.range.end)
