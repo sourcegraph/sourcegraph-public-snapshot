@@ -30,9 +30,9 @@ func (h *handler) cleanup(ctx context.Context) error {
 
 // heartbeatJobs updates the set of job identifiers assigned to the given executor and returns
 // any job that was known to us but not reported by the executor, plus the set of job identifiers
-// reported by the executor which do not have an associated transaction held by this instance of
-// the executor queue. This can occur when the executor-queue restarts and loses its transaction
-// state. We send these identifiers back to the executor as a hint to stop processing.
+// reported by the executor which do not have an associated record held by this instance of the
+// executor queue. This can occur when the executor-queue restarts and loses its in-memory state.
+// We send these identifiers back to the executor as a hint to stop processing.
 func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []int) (dead []jobMeta, unknownIDs []int, errs error) {
 	now := h.clock.Now()
 
