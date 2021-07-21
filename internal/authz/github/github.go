@@ -59,7 +59,7 @@ func (p *Provider) Validate() (problems []string) {
 	return nil
 }
 
-// FetchUserPermsByToken fetches all the privare repo ids that the token can
+// FetchUserPermsByToken fetches all the private repo ids that the token can
 // access.
 func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
