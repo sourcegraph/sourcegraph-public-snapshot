@@ -84,6 +84,6 @@ var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumResets:      DependencyIndexingJobMaxNumResets,
 }
 
-func WorkerutilDependencyIndexingJobStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+func WorkerutilDependencyIndexStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
 	return dbworkerstore.NewWithMetrics(s.Handle(), dependencyIndexingJobWorkerStoreOptions, observationContext)
 }
