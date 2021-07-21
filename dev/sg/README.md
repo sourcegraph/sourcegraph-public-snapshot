@@ -34,6 +34,7 @@
   - [`sg doctor` - Check health of dev environment](#sg-doctor---check-health-of-dev-environment)
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
   - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
+  - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
 - [Configuration](#configuration)
 - [TODOs](#todos)
 - [Hacking](#hacking)
@@ -138,9 +139,12 @@ sg doctor
 ### `sg live` - See currently deployed version
 
 ```bash
-# See which version is deployed on an environment
+# See which version is deployed on a preset environment
 sg live dot-com
 sg live k8s
+
+# See which version is deployed on a custom environment
+sg live https://demo.sourcegraph.com
 
 # List environments:
 sg live -help
@@ -153,13 +157,34 @@ sg live -help
 sg migration up
 
 # Migrate specific database down one migration
-sg migration down -n --db codeintel -n 1
+sg migration down --db codeintel -n 1
 
 # Add new migration for specific database
 sg migration add --db codeintel 'add missing index'
 
 # Squash migrations for default database
 sg migration squash
+
+# Fixup your migrations comapred to main for databases
+sg migration fixup
+
+# To see what operations `sg migration fixup` will run, you can check with
+sg migration fixup -run=false
+
+# Or to run for only one database, you can use the -db flag, as in other operations.
+```
+
+### `sg rfc` - List or open Sourcegraph RFCs
+
+```bash
+# List all RFCs
+sg rfc list
+
+# Search for an RFC
+sg rfc search "search terms"
+
+# Open a specific RFC
+sg rfc open 420
 ```
 
 ## Configuration
@@ -270,6 +295,7 @@ tests:
   - [ ] Implement `sg edit site-config` and `sg edit external-services`
   - [ ] Implement `sg tail-log`
 - [ ] Add built-in support for "download binary" so that the `caddy` command, for example, would be 3 lines instead of 20. That would allow us to get rid of the bash code.
+- [ ] Add a `sg rfc create` command
 
 ## Hacking
 

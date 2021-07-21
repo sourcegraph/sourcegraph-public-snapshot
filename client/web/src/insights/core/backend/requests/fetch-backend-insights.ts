@@ -1,3 +1,4 @@
+import { uniqBy } from 'lodash'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -13,6 +14,7 @@ import {
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
+        id
         title
         description
         series {
@@ -24,19 +26,23 @@ const insightFieldsFragment = gql`
         }
     }
 `
-export function fetchBackendInsights(): Observable<InsightFields[]> {
-    return requestGraphQL<InsightsResult>(gql`
-        query Insights {
-            insights {
-                nodes {
-                    ...InsightFields
+export function fetchBackendInsights(insightsIds: string[]): Observable<InsightFields[]> {
+    return requestGraphQL<InsightsResult>(
+        gql`
+            query Insights($ids: [ID!]!) {
+                insights(ids: $ids) {
+                    nodes {
+                        ...InsightFields
+                    }
                 }
             }
-        }
-        ${insightFieldsFragment}
-    `).pipe(
+            ${insightFieldsFragment}
+        `,
+        { ids: insightsIds }
+    ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.insights?.nodes ?? [])
+        map(data => data.insights?.nodes ?? []),
+        map(data => uniqBy(data, 'id'))
     )
 }
 

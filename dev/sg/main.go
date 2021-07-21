@@ -5,16 +5,25 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+var out *output.Output = stdout.Out
 
 var (
 	runFlagSet = flag.NewFlagSet("sg run", flag.ExitOnError)
@@ -78,10 +87,10 @@ var (
 	}
 
 	migrationAddFlagSet          = flag.NewFlagSet("sg migration add", flag.ExitOnError)
-	migrationAddDatabaseNameFlag = migrationAddFlagSet.String("db", defaultDatabase.Name, "The target database instance.")
+	migrationAddDatabaseNameFlag = migrationAddFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
 	migrationAddCommand          = &ffcli.Command{
 		Name:       "add",
-		ShortUsage: fmt.Sprintf("sg migration add [-db=%s] <name>", defaultDatabase.Name),
+		ShortUsage: fmt.Sprintf("sg migration add [-db=%s] <name>", db.DefaultDatabase.Name),
 		ShortHelp:  "Add a new migration file",
 		FlagSet:    migrationAddFlagSet,
 		Exec:       migrationAddExec,
@@ -89,11 +98,11 @@ var (
 	}
 
 	migrationUpFlagSet          = flag.NewFlagSet("sg migration up", flag.ExitOnError)
-	migrationUpDatabaseNameFlag = migrationUpFlagSet.String("db", defaultDatabase.Name, "The target database instance.")
+	migrationUpDatabaseNameFlag = migrationUpFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
 	migrationUpNFlag            = migrationUpFlagSet.Int("n", 1, "How many migrations to apply.")
 	migrationUpCommand          = &ffcli.Command{
 		Name:       "up",
-		ShortUsage: fmt.Sprintf("sg migration up [-db=%s] [-n]", defaultDatabase.Name),
+		ShortUsage: fmt.Sprintf("sg migration up [-db=%s] [-n]", db.DefaultDatabase.Name),
 		ShortHelp:  "Run up migration files",
 		FlagSet:    migrationUpFlagSet,
 		Exec:       migrationUpExec,
@@ -101,11 +110,11 @@ var (
 	}
 
 	migrationDownFlagSet          = flag.NewFlagSet("sg migration down", flag.ExitOnError)
-	migrationDownDatabaseNameFlag = migrationDownFlagSet.String("db", defaultDatabase.Name, "The target database instance.")
+	migrationDownDatabaseNameFlag = migrationDownFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
 	migrationDownNFlag            = migrationDownFlagSet.Int("n", 1, "How many migrations to apply.")
 	migrationDownCommand          = &ffcli.Command{
 		Name:       "down",
-		ShortUsage: fmt.Sprintf("sg migration down [-db=%s] [-n=1]", defaultDatabase.Name),
+		ShortUsage: fmt.Sprintf("sg migration down [-db=%s] [-n=1]", db.DefaultDatabase.Name),
 		ShortHelp:  "Run down migration files",
 		FlagSet:    migrationDownFlagSet,
 		Exec:       migrationDownExec,
@@ -113,10 +122,10 @@ var (
 	}
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
-	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", defaultDatabase.Name, "The target database instance")
+	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance")
 	migrationSquashCommand          = &ffcli.Command{
 		Name:       "squash",
-		ShortUsage: fmt.Sprintf("sg migration squash [-db=%s] <current-release>", defaultDatabase.Name),
+		ShortUsage: fmt.Sprintf("sg migration squash [-db=%s] <current-release>", db.DefaultDatabase.Name),
 		ShortHelp:  "Collapse migration files from historic releases together",
 		FlagSet:    migrationSquashFlagSet,
 		Exec:       migrationSquashExec,
@@ -124,12 +133,13 @@ var (
 	}
 
 	migrationFixupFlagSet          = flag.NewFlagSet("sg migration fixup", flag.ExitOnError)
-	migrationFixupDatabaseNameFlag = migrationFixupFlagSet.String("db", defaultDatabase.Name, "The target database instance")
+	migrationFixupDatabaseNameFlag = migrationFixupFlagSet.String("db", "all", "The target database instance (or 'all' for all databases)")
 	migrationFixupMainNameFlag     = migrationFixupFlagSet.String("main", "main", "The branch/revision to compare with")
+	migrationFixupRunFlag          = migrationFixupFlagSet.Bool("run", true, "Run the migrations in your local database")
 	migrationFixupCommand          = &ffcli.Command{
 		Name:       "fixup",
-		ShortUsage: fmt.Sprintf("sg migration fixup [-db=%s] [-main=%s]", defaultDatabase.Name, "main"),
-		ShortHelp:  "Find and fix any conflicting migration names from rebasing on main",
+		ShortUsage: fmt.Sprintf("sg migration fixup [-db=%s] [-main=%s] [-run=true]", "all", "main"),
+		ShortHelp:  "Find and fix any conflicting migration names from rebasing on main. Also properly migrates your local database",
 		FlagSet:    migrationFixupFlagSet,
 		Exec:       migrationFixupExec,
 		UsageFunc:  printMigrationFixupUsage,
@@ -152,6 +162,16 @@ var (
 			migrationSquashCommand,
 			migrationFixupCommand,
 		},
+	}
+
+	rfcFlagSet = flag.NewFlagSet("sg rfc", flag.ExitOnError)
+	rfcCommand = &ffcli.Command{
+		Name:       "rfc",
+		ShortUsage: "sg rfc [list|search|open]",
+		ShortHelp:  "Run the given RFC command to manage RFCs.",
+		FlagSet:    rfcFlagSet,
+		Exec:       rfcExec,
+		UsageFunc:  printRFCUsage,
 	}
 )
 
@@ -197,18 +217,37 @@ var (
 			doctorCommand,
 			liveCommand,
 			migrationCommand,
+			rfcCommand,
 		},
 	}
 )
+
+func setMaxOpenFiles() error {
+	const maxOpenFiles = 10000
+
+	var rLimit syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
+		return err
+	}
+
+	if rLimit.Cur < maxOpenFiles {
+		rLimit.Cur = maxOpenFiles
+
+		// This may not succeed, see https://github.com/golang/go/issues/30401
+		return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	}
+
+	return nil
+}
 
 func main() {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
 	}
 
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		out.WriteLine(errLine)
+	// We always try to set this, since we often want to watch files, start commands, etc.
+	if err := setMaxOpenFiles(); err != nil {
+		fmt.Printf("failed to set max open files: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -218,11 +257,12 @@ func main() {
 	}
 }
 
+// conf is the global config. If a command needs to access it, it *must* call
+// `parseConf` before.
 var conf *Config
 
 // parseConf parses the config file and the optional overwrite file.
-// If the conf
-// has already been parsed it's a noop.
+// Iear the conf has already been parsed it's a noop.
 func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 	if conf != nil {
 		return true, output.FancyLine{}
@@ -261,6 +301,12 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 }
 
 func runSetExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No commandset specified\n"))
 		return flag.ErrHelp
@@ -281,7 +327,7 @@ func runSetExec(ctx context.Context, args []string) error {
 	for _, name := range names {
 		cmd, ok := conf.Commands[name]
 		if !ok {
-			return fmt.Errorf("command %q not found in commandset %q", name, args[0])
+			return errors.Errorf("command %q not found in commandset %q", name, args[0])
 		}
 
 		cmds = append(cmds, cmd)
@@ -291,6 +337,12 @@ func runSetExec(ctx context.Context, args []string) error {
 }
 
 func testExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified\n"))
 		return flag.ErrHelp
@@ -306,6 +358,12 @@ func testExec(ctx context.Context, args []string) error {
 }
 
 func startExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) != 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
@@ -315,6 +373,12 @@ func startExec(ctx context.Context, args []string) error {
 }
 
 func runExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No command specified\n"))
 		return flag.ErrHelp
@@ -335,6 +399,12 @@ func runExec(ctx context.Context, args []string) error {
 }
 
 func doctorExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	return runChecks(ctx, conf.Checks)
 }
 
@@ -351,8 +421,12 @@ func liveExec(ctx context.Context, args []string) error {
 
 	e, ok := getEnvironment(args[0])
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: environment %q not found :(\n", args[0]))
-		return flag.ErrHelp
+		if customURL, err := url.Parse(args[0]); err == nil {
+			e = environment{Name: customURL.Host, URL: customURL.String()}
+		} else {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: environment %q not found, or is not a valid URL :(\n", args[0]))
+			return flag.ErrHelp
+		}
 	}
 
 	return printDeployedVersion(e)
@@ -371,14 +445,14 @@ func migrationAddExec(ctx context.Context, args []string) error {
 	var (
 		databaseName  = *migrationAddDatabaseNameFlag
 		migrationName = args[0]
-		database, ok  = databaseByName(databaseName)
+		database, ok  = db.DatabaseByName(databaseName)
 	)
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
 		return flag.ErrHelp
 	}
 
-	upFile, downFile, err := createNewMigration(database, migrationName)
+	upFile, downFile, err := migration.RunAdd(database, migrationName)
 	if err != nil {
 		return err
 	}
@@ -399,7 +473,7 @@ func migrationUpExec(ctx context.Context, args []string) error {
 
 	var (
 		databaseName = *migrationUpDatabaseNameFlag
-		database, ok = databaseByName(databaseName)
+		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
@@ -416,9 +490,7 @@ func migrationUpExec(ctx context.Context, args []string) error {
 	// Only pass the value of n here if the user actually set it
 	// We have to do the dance above because the flags package
 	// requires you to define a default value for each flag.
-	out, err := runMigrationsUp(database, n)
-	fmt.Printf("%s\n", out)
-	return err
+	return migration.RunUp(database, n)
 }
 
 func migrationDownExec(ctx context.Context, args []string) error {
@@ -429,16 +501,14 @@ func migrationDownExec(ctx context.Context, args []string) error {
 
 	var (
 		databaseName = *migrationDownDatabaseNameFlag
-		database, ok = databaseByName(databaseName)
+		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
 		return flag.ErrHelp
 	}
 
-	out, err := runMigrationsDown(database, *migrationDownNFlag)
-	fmt.Printf("%s\n", out)
-	return err
+	return migration.RunDown(database, migrationDownNFlag)
 }
 
 // minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
@@ -462,7 +532,7 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	var (
 		databaseName  = *migrationSquashDatabaseNameFlag
 		migrationName = args[0]
-		database, ok  = databaseByName(databaseName)
+		database, ok  = db.DatabaseByName(databaseName)
 	)
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
@@ -478,49 +548,7 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
 	out.Writef("Squashing migration files defined up through %s", commit)
 
-	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(database, commit)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return fmt.Errorf("no migrations exist at commit %s", commit)
-	}
-
-	// Run migrations up to last migration index and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, lastMigrationIndex)
-	if err != nil {
-		return err
-	}
-
-	// Remove the migration file pairs that were just squashed
-	filenames, err := removeMigrationFilesUpToIndex(database, lastMigrationIndex)
-	if err != nil {
-		return err
-	}
-
-	out.Write("")
-	block := out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
-	defer block.Close()
-
-	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
-	}
-
-	// Write the replacement migration pair
-	upPath, downPath, err := makeMigrationFilenames(database, lastMigrationIndex, "squashed_migrations")
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(downPath, []byte(squashedDownMigration), os.ModePerm); err != nil {
-		return err
-	}
-
-	block.Writef("Created: %s", upPath)
-	block.Writef("Created: %s", downPath)
-	return nil
+	return squash.Run(database, commit)
 }
 
 func printRunUsage(c *ffcli.Command) string {
@@ -551,19 +579,30 @@ func migrationFixupExec(ctx context.Context, args []string) (err error) {
 		return flag.ErrHelp
 	}
 
-	databaseName := *migrationFixupDatabaseNameFlag
-	database, ok := databaseByName(databaseName)
-	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
-		return flag.ErrHelp
-	}
-
 	branchName := *migrationFixupMainNameFlag
 	if branchName == "" {
 		branchName = "main"
 	}
 
-	return fixupMigrations(database, branchName)
+	databaseName := *migrationFixupDatabaseNameFlag
+	if databaseName == "all" {
+		for _, databaseName := range db.DatabaseNames() {
+			database, _ := db.DatabaseByName(databaseName)
+			if err := migration.RunFixup(database, branchName, *migrationFixupRunFlag); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	} else {
+		database, ok := db.DatabaseByName(databaseName)
+		if !ok {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+			return flag.ErrHelp
+		}
+
+		return migration.RunFixup(database, branchName, *migrationFixupRunFlag)
+	}
 }
 
 func printTestUsage(c *ffcli.Command) string {
@@ -631,9 +670,9 @@ func printLiveUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg live <environment>\n")
+	fmt.Fprintf(&out, "  sg live <environment|url>\n")
 	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE ENVIRONMENTS\n")
+	fmt.Fprintf(&out, "AVAILABLE PRESET ENVIRONMENTS\n")
 
 	for _, name := range environmentNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
@@ -665,11 +704,11 @@ func printMigrationAddUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration add [-db=%s] <name>\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "  %s", c.ShortUsage)
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
 
-	for _, name := range databaseNames() {
+	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
 
@@ -680,11 +719,11 @@ func printMigrationUpUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration up [-db=%s] [-n]\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "  sg migration up [-db=%s] [-n]\n", db.DefaultDatabase.Name)
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
 
-	for _, name := range databaseNames() {
+	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
 
@@ -695,11 +734,11 @@ func printMigrationDownUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration down [-db=%s] [-n=1]\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "  sg migration down [-db=%s] [-n=1]\n", db.DefaultDatabase.Name)
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
 
-	for _, name := range databaseNames() {
+	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
 
@@ -710,11 +749,11 @@ func printMigrationSquashUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration squash [-db=%s] <current-release>\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "  sg migration squash [-db=%s] <current-release>\n", db.DefaultDatabase.Name)
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
 
-	for _, name := range databaseNames() {
+	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
 
@@ -725,13 +764,27 @@ func printMigrationFixupUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration fixup [-db=%s] [-main=%s]\n", defaultDatabase.Name, "main")
+	fmt.Fprintf(&out, "  sg migration fixup [-db=%s] [-main=%s] [-run=true]\n", db.DefaultDatabase.Name, "main")
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
 
-	for _, name := range databaseNames() {
+	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
+
+	return out.String()
+}
+
+func printRFCUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "COMMANDS:\n")
+	fmt.Fprintf(&out, "    list - list all RFCs\n")
+	fmt.Fprintf(&out, "    search <query> - search for RFCs matching the query\n")
+	fmt.Fprintf(&out, "    open <number> - Open the specified RFC\n")
 
 	return out.String()
 }

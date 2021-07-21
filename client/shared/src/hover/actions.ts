@@ -26,7 +26,6 @@ import { Context } from '../api/extension/api/context/context'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { syncRemoteSubscription } from '../api/util'
-import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
@@ -269,15 +268,6 @@ export const getDefinitionURL = (
                     // (merged in the scan() below)
                     [{ isLoading: true }],
                     resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
-                        // When encountering an ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, we can assume that
-                        // we're executing in a browser extension pointed to the public sourcegraph.com,
-                        // in which case repoName === rawRepoName.
-                        catchError(error => {
-                            if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
-                                return [uri.repoName]
-                            }
-                            throw error
-                        }),
                         map(rawRepoName => ({
                             url: urlToFile(
                                 { ...uri, revision: uri.revision || '', filePath: uri.filePath || '', rawRepoName },

@@ -8,10 +8,17 @@ import (
 )
 
 func ZoektIndexServer() *monitoring.Container {
+	const (
+		containerName        = "zoekt-indexserver"
+		bundledContainerName = "indexed-search"
+	)
+
 	return &monitoring.Container{
-		Name:        "zoekt-indexserver",
-		Title:       "Zoekt Index Server",
-		Description: "Indexes repositories and populates the search index.",
+		Name: "zoekt-indexserver",
+
+		Title:                    "Zoekt Index Server",
+		Description:              "Indexes repositories and populates the search index.",
+		NoSourcegraphDebugServer: true,
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -50,7 +57,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "repo_index_state",
 							Description: "indexing results over 5m (noop=no changes, empty=no branches to index)",
-							Query:       `sum by (state) (increase(index_repo_seconds_bucket[5m]))`,
+							Query:       `sum by (state) (increase(index_repo_seconds_count[5m]))`,
 							NoAlert:     true,
 							Owner:       monitoring.ObservableOwnerSearch,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
@@ -96,48 +103,14 @@ func ZoektIndexServer() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ContainerMissing("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerIOUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						// zoekt_index_server, zoekt_web_server are deployed together
-						// as part of the indexed-search service, so only show pod
-						// availability here.
-						shared.KubernetesPodsAvailable("indexed-search", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
-		},
 
-		NoSourcegraphDebugServer: true,
+			// Note:
+			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service
+			// We show pod availability here for both the webserver and indexserver as they are bundled together.
+
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearch, nil),
+		},
 	}
 }

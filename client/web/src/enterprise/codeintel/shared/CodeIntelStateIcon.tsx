@@ -17,6 +17,8 @@ export interface CodeIntelStateIconProps {
 export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({ state, className }) =>
     state === LSIFUploadState.UPLOADING ? (
         <FileUploadIcon className={className} />
+    ) : state === LSIFUploadState.DELETING ? (
+        <CheckCircleIcon className={classNames('text-muted', className)} />
     ) : state === LSIFUploadState.QUEUED || state === LSIFIndexState.QUEUED ? (
         <TimerSandIcon className={className} />
     ) : state === LSIFUploadState.PROCESSING || state === LSIFIndexState.PROCESSING ? (

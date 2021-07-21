@@ -64,28 +64,3 @@ export const isRepoSeeOtherErrorLike = (value: unknown): string | false => {
     }
     return false
 }
-
-const PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME = 'PrivateRepoPublicSourcegraphError' as const
-/**
- * An Error that means that the current repository is private and the current
- * Sourcegraph URL is Sourcegraph.com. Requests made from a private repository
- * to Sourcegraph.com are blocked unless the `requestMightContainPrivateInfo`
- * argument to `requestGraphQL` is explicitly set to false (defaults to true to
- * be conservative).
- */
-export class PrivateRepoPublicSourcegraphComError extends Error {
-    public readonly name = PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME
-    constructor(graphQLName: string) {
-        super(
-            `A ${graphQLName} GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.`
-        )
-    }
-}
-// Will work even for errors that came from GraphQL, background pages, comlink webworkers, etc.
-// TODO remove error message assertion after https://github.com/sourcegraph/sourcegraph/issues/9697 and https://github.com/sourcegraph/sourcegraph/issues/9693 are fixed
-export const isPrivateRepoPublicSourcegraphComErrorLike = (value: unknown): boolean =>
-    isErrorLike(value) &&
-    (value.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME ||
-        /graphql request to the public sourcegraph.com was blocked because the current repository is private/i.test(
-            value.message
-        ))

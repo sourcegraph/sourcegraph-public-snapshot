@@ -23,6 +23,8 @@ export const CodeIntelStateDescription: FunctionComponent<CodeIntelStateDescript
 }) =>
     state === LSIFUploadState.UPLOADING ? (
         <span className={className}>Still uploading...</span>
+    ) : state === LSIFUploadState.DELETING ? (
+        <span className={className}>Upload is queued for deletion.</span>
     ) : state === LSIFUploadState.QUEUED || state === LSIFIndexState.QUEUED ? (
         <span className={className}>
             {upperFirst(typeName)} is queued.{' '}

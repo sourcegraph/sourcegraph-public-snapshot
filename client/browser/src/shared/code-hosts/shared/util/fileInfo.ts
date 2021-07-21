@@ -1,7 +1,6 @@
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { isPrivateRepoPublicSourcegraphComErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../../../repo/backend'
@@ -22,16 +21,19 @@ const useRawRepoNameAsFallback = (fileInfo: FileInfo): FileInfoWithRepoName => (
  */
 const resolveRepoNameForFileInfo = (
     fileInfo: FileInfo,
+    checkPrivateCloudError: (error: any) => boolean,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithRepoName> =>
     resolveRepo({ rawRepoName: fileInfo.rawRepoName, requestGraphQL }).pipe(
         map(repoName => ({ ...fileInfo, repoName })),
         catchError(error => {
-            // ERPRIVATEREPOPUBLICSOURCEGRAPHCOM likely means that the user is viewing private code
-            // without having pointed his browser extension to a self-hosted Sourcegraph instance that
-            // has access to that code. In that case, it's impossible to resolve the repo names,
+            // Check if the repository is a private repository
+            // that has not been found. (if the browser extension is pointed towards
+            // Sourcegraph cloud). In that case, it's impossible to resolve the repo names,
             // so we keep the repo names inferred from the code host's DOM.
-            if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
+            // Note: we recover/fallback in this case so that we can show informative
+            // alerts to the user.
+            if (checkPrivateCloudError(error)) {
                 return of(useRawRepoNameAsFallback(fileInfo))
             }
             throw error
@@ -64,21 +66,34 @@ export const ensureRevisionIsClonedForFileInfo = (
 
 export const resolveRepoNamesForDiffOrFileInfo = (
     diffOrFileInfo: DiffOrBlobInfo,
+    checkPrivateCloudError: (error: any) => boolean,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<DiffOrBlobInfo<FileInfoWithRepoName>> => {
     if ('blob' in diffOrFileInfo) {
-        return resolveRepoNameForFileInfo(diffOrFileInfo.blob, requestGraphQL).pipe(
+        return resolveRepoNameForFileInfo(diffOrFileInfo.blob, checkPrivateCloudError, requestGraphQL).pipe(
             map(fileInfo => ({ blob: { ...diffOrFileInfo.blob, ...fileInfo } }))
         )
     }
     if (diffOrFileInfo.head && diffOrFileInfo.base) {
-        const resolvingHeadWithRepoName = resolveRepoNameForFileInfo(diffOrFileInfo.head, requestGraphQL)
-        const resolvingBaseWithRepoName = resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL)
+        const resolvingHeadWithRepoName = resolveRepoNameForFileInfo(
+            diffOrFileInfo.head,
+            checkPrivateCloudError,
+            requestGraphQL
+        )
+        const resolvingBaseWithRepoName = resolveRepoNameForFileInfo(
+            diffOrFileInfo.base,
+            checkPrivateCloudError,
+            requestGraphQL
+        )
 
         return zip(resolvingHeadWithRepoName, resolvingBaseWithRepoName).pipe(map(([head, base]) => ({ head, base })))
     }
     if (diffOrFileInfo.head) {
-        return resolveRepoNameForFileInfo(diffOrFileInfo.head, requestGraphQL).pipe(map(head => ({ head })))
+        return resolveRepoNameForFileInfo(diffOrFileInfo.head, checkPrivateCloudError, requestGraphQL).pipe(
+            map(head => ({ head }))
+        )
     }
-    return resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL).pipe(map(base => ({ base })))
+    return resolveRepoNameForFileInfo(diffOrFileInfo.base, checkPrivateCloudError, requestGraphQL).pipe(
+        map(base => ({ base }))
+    )
 }
