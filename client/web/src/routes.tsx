@@ -125,16 +125,31 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/welcome',
-        render: props => (
-            <PostSignUpPage
-                // because of condition authenticatedUser can't be null
-                authenticatedUser={props.authenticatedUser as AuthenticatedUser}
-                telemetryService={props.telemetryService}
-                context={window.context}
-            />
-        ),
+        render: props =>
+            /**
+             * Welcome flow is allowed when:
+             * 1. user is authenticated
+             * 2. it's a DotComMode instance
+             * AND
+             * instance has enabled enablePostSignupFlow experimental feature
+             * OR
+             * user authenticated has a AllowUserViewPostSignup tag
+             */
+
+            !!props.authenticatedUser &&
+            window.context.sourcegraphDotComMode &&
+            ((props.authenticatedUser && window.context.experimentalFeatures.enablePostSignupFlow) ||
+                props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
+                <PostSignUpPage
+                    authenticatedUser={props.authenticatedUser}
+                    telemetryService={props.telemetryService}
+                    context={window.context}
+                />
+            ) : (
+                <Redirect to="/search" />
+            ),
+
         exact: true,
-        condition: props => !!props.authenticatedUser,
     },
     {
         path: '/settings',

@@ -71,8 +71,6 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 window.location.replace(getReturnTo(location))
             }
 
-            // TODO: check this section ^^^
-
             return Promise.resolve()
         })
 
