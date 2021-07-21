@@ -49,6 +49,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](#upgrade) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
+  # Specify the version you want to install
   export SOURCEGRAPH_VERSION="v3.29.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
