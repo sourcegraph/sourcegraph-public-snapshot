@@ -1,6 +1,6 @@
 import { QueryResult } from '@apollo/client'
 import { GraphQLError } from 'graphql'
-import { useCallback, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
@@ -46,18 +46,18 @@ export const useConnection = <TResult, TVariables, TData>({
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
     const searchParameters = useSearchParameters()
-    const firstRequest = useRef(true)
 
-    const first = useRef({
+    const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
+    const firstReference = useRef({
         /**
          * The number of results that we will typically want to load in the next request (unless `visible` is used).
          * This value will typically be static for cursor-based pagination, but will be dynamic for batch-based pagination.
          */
-        actual: (options?.useURL && parseQueryInt(searchParameters, 'first')) || variables.first || DEFAULT_FIRST,
+        actual: (options?.useURL && parseQueryInt(searchParameters, 'first')) || first,
         /**
          * Primarily used to determine original request state for URL search parameter logic.
          */
-        default: variables.first || DEFAULT_FIRST,
+        default: first,
     })
 
     /**
@@ -66,13 +66,13 @@ export const useConnection = <TResult, TVariables, TData>({
      * request. This has the effect of loading the correct number of visible results when a URL
      * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
      */
-    const visible = useRef(options?.useURL && parseQueryInt(searchParameters, 'visible'))
+    const visibleReference = useRef(options?.useURL && parseQueryInt(searchParameters, 'visible'))
 
     /**
      * The `after` variable for our **initial** query.
      * Subsequent requests through `fetchMore` will use a valid `cursor` value here, where possible.
      */
-    const after = useRef((options?.useURL && searchParameters.get('after')) || variables.after || DEFAULT_AFTER)
+    const afterReference = useRef((options?.useURL && searchParameters.get('after')) || after)
 
     const initialControls = useMemo(
         () => ({
@@ -81,8 +81,8 @@ export const useConnection = <TResult, TVariables, TData>({
              * If this is our first query and we were supplied a value for `visible` load that many results.
              * If we weren't given such a value or this is a subsequent request, only ask for one page of results.
              */
-            first: (firstRequest.current && visible.current) || first.current.actual,
-            after: after.current,
+            first: visibleReference.current || firstReference.current.actual,
+            after: afterReference.current,
         }),
         []
     )
@@ -96,37 +96,33 @@ export const useConnection = <TResult, TVariables, TData>({
             ...variables,
             ...initialControls,
         },
-        onCompleted: () => (firstRequest.current = false),
     })
 
     /**
      * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
      * This ensures good interoperability between `FilteredConnection` and `useConnection`.
      */
-    const getConnection = useCallback(
-        ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
-            const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
-            return getConnectionFromGraphQLResult(result)
-        },
-        [getConnectionFromGraphQLResult]
-    )
+    const getConnection = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
+        const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
+        return getConnectionFromGraphQLResult(result)
+    }
 
     const connection = data ? getConnection({ data, error }) : undefined
 
     useConnectionUrl({
         enabled: options?.useURL,
-        first: first.current,
-        visible: connection?.nodes.length || 0,
+        first: firstReference.current,
+        visibleResultCount: connection?.nodes.length || 0,
     })
 
-    const fetchMoreData = useCallback(() => {
+    const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
 
-        return fetchMore({
+        await fetchMore({
             variables: {
                 ...variables,
                 // Use cursor paging if possible, otherwise fallback to multiplying `first`
-                ...(cursor ? { after: cursor } : { first: first.current.actual * 2 }),
+                ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
                 if (!fetchMoreResult) {
@@ -139,16 +135,13 @@ export const useConnection = <TResult, TVariables, TData>({
                     getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
                 } else {
                     // Batch-based pagination, update `first` to fetch more results next time
-                    first.current = {
-                        ...first.current,
-                        actual: first.current.actual * 2,
-                    }
+                    firstReference.current.actual *= 2
                 }
 
                 return fetchMoreResult
             },
         })
-    }, [connection?.pageInfo?.endCursor, fetchMore, variables, getConnection])
+    }
 
     return {
         connection,

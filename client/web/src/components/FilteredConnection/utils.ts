@@ -66,15 +66,22 @@ export interface GetUrlQueryParameters {
     query?: string
     values?: Map<string, FilteredConnectionFilterValue>
     filters?: FilteredConnectionFilter[]
-    visible?: number
-    location: Location
+    visibleResultCount?: number
+    search: Location['search']
 }
 
 /**
  * Determines the URL search parameters for a connection.
  */
-export const getUrlQuery = ({ first, query, values, visible, filters, location }: GetUrlQueryParameters): string => {
-    const searchParameters = new URLSearchParams(location.search)
+export const getUrlQuery = ({
+    first,
+    query,
+    values,
+    visibleResultCount,
+    filters,
+    search,
+}: GetUrlQueryParameters): string => {
+    const searchParameters = new URLSearchParams(search)
 
     if (query) {
         searchParameters.set(QUERY_KEY, query)
@@ -86,9 +93,6 @@ export const getUrlQuery = ({ first, query, values, visible, filters, location }
 
     if (values && filters) {
         for (const filter of filters) {
-            if (values === undefined) {
-                continue
-            }
             const value = values.get(filter.id)
             if (value === undefined) {
                 continue
@@ -101,8 +105,8 @@ export const getUrlQuery = ({ first, query, values, visible, filters, location }
         }
     }
 
-    if (visible !== 0 && visible !== first.actual) {
-        searchParameters.set('visible', String(visible))
+    if (visibleResultCount !== 0 && visibleResultCount !== first.actual) {
+        searchParameters.set('visible', String(visibleResultCount))
     }
 
     return searchParameters.toString()

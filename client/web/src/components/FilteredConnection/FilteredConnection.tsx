@@ -348,7 +348,7 @@ export class FilteredConnection<
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
-                            const searchFragment = this.urlQuery({ visible: previousPage.length })
+                            const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
                             if (this.props.location.search !== searchFragment) {
                                 this.props.history.replace({
                                     search: searchFragment,
@@ -431,12 +431,12 @@ export class FilteredConnection<
         first,
         query,
         values,
-        visible,
+        visibleResultCount,
     }: {
         first?: number
         query?: string
         values?: Map<string, FilteredConnectionFilterValue>
-        visible?: number
+        visibleResultCount?: number
     }): string {
         if (!first) {
             first = this.state.first
@@ -456,8 +456,8 @@ export class FilteredConnection<
                 default: this.props.defaultFirst!,
             },
             values,
-            visible,
-            location: this.props.location,
+            visibleResultCount,
+            search: this.props.location.search,
             filters: this.props.filters,
         })
     }
