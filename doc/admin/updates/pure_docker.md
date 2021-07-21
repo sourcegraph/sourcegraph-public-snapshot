@@ -16,6 +16,13 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.29 -> 3.30.0
+
+To upgrade, please perform the changes in the following diff:
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
+
 
 ## 3.28 -> 3.29.1
 
