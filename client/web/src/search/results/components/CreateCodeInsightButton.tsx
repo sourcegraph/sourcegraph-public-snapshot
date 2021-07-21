@@ -35,7 +35,7 @@ export const CreateCodeInsightButton: React.FunctionComponent<CreateCodeInsightB
 
     return (
         <li data-tooltip="Create Insight based on this search query" data-delay={10000} className="nav-item mr-2">
-            <ButtonLink to={toURL} className="btn btn-sm btn-outline-secondary nav-link text-decoration-none">
+            <ButtonLink to={toURL} className="btn btn-sm btn-outline-secondary text-decoration-none">
                 <CodeInsightsIcon className="icon-inline mr-1" />
                 Create Insight
             </ButtonLink>
