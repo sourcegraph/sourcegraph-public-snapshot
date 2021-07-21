@@ -18,6 +18,7 @@ import (
 	"github.com/rjeczalik/notify"
 
 	// TODO - deduplicate me
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/command"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -182,7 +183,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 
 			c := exec.CommandContext(ctx, "bash", "-c", cmd.Install)
 			c.Dir = root
-			c.Env = makeEnv(conf.Env, cmd.Env)
+			c.Env = makeEnv(globalConf.Env, cmd.Env)
 
 			cmdOut, err := c.CombinedOutput()
 			if err != nil {
@@ -314,7 +315,7 @@ func startCmd(ctx context.Context, dir string, cmd Command) (*startedCmd, error)
 
 	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
 	sc.Cmd.Dir = dir
-	sc.Cmd.Env = makeEnv(conf.Env, cmd.Env)
+	sc.Cmd.Env = makeEnv(globalConf.Env, cmd.Env)
 
 	logger := newCmdLogger(cmd.Name, out)
 	if cmd.IgnoreStdout {
@@ -491,7 +492,7 @@ func runTest(ctx context.Context, cmd Command, args []string) error {
 
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(conf.Env, cmd.Env)
+	c.Env = makeEnv(globalConf.Env, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
@@ -500,23 +501,21 @@ func runTest(ctx context.Context, cmd Command, args []string) error {
 	return c.Run()
 }
 
-func runChecks(ctx context.Context, checks map[string]Check) error {
-	root, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
+func runChecks(ctx context.Context, checks ...Check) (bool, error) {
+	success := true
 
 	for _, check := range checks {
 		commandCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		c := exec.CommandContext(commandCtx, "bash", "-c", check.Cmd)
-		c.Dir = root
-		c.Env = makeEnv(conf.Env)
+		c.Env = makeEnv(globalConf.Env)
 
 		p := out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
 
-		if cmdOut, err := c.CombinedOutput(); err != nil {
+		if cmdOut, err := command.RunInRoot(c); err != nil {
+			success = false
+
 			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
 
 			out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
@@ -535,7 +534,7 @@ func runChecks(ctx context.Context, checks map[string]Check) error {
 		}
 	}
 
-	return nil
+	return success, nil
 }
 
 // prefixSuffixSaver is an io.Writer which retains the first N bytes

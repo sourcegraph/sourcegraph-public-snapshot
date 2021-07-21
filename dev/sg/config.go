@@ -20,6 +20,10 @@ func ParseConfigFile(name string) (*Config, error) {
 		return nil, errors.Wrap(err, "reading configuration file")
 	}
 
+	return ParseConfig(data)
+}
+
+func ParseConfig(data []byte) (*Config, error) {
 	var conf Config
 	if err := yaml.Unmarshal(data, &conf); err != nil {
 		return nil, err
@@ -28,6 +32,11 @@ func ParseConfigFile(name string) (*Config, error) {
 	for name, cmd := range conf.Commands {
 		cmd.Name = name
 		conf.Commands[name] = cmd
+	}
+
+	for name, cmd := range conf.Commandsets {
+		cmd.Name = name
+		conf.Commandsets[name] = cmd
 	}
 
 	for name, cmd := range conf.Tests {
@@ -119,12 +128,38 @@ type Check struct {
 	FailMessage string `yaml:"failMessage"`
 }
 
+type Commandset struct {
+	Name     string   `yaml:"-"`
+	Commands []string `yaml:"commands"`
+	Checks   []string `yaml:"checks"`
+}
+
+// UnmarshalYAML implements the Unmarshaler interface.
+func (c *Commandset) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// To be backwards compatible we first try to unmarshal as a simple list.
+	var list []string
+	if err := unmarshal(&list); err == nil {
+		c.Commands = list
+		return nil
+	}
+
+	// If it's not a list we try to unmarshal it as a Commandset. In order to
+	// not recurse infinitely (calling UnmarshalYAML over and over) we create a
+	// temporary type alias.
+	type rawCommandset Commandset
+	if err := unmarshal((*rawCommandset)(c)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type Config struct {
-	Env         map[string]string   `yaml:"env"`
-	Commands    map[string]Command  `yaml:"commands"`
-	Commandsets map[string][]string `yaml:"commandsets"`
-	Tests       map[string]Command  `yaml:"tests"`
-	Checks      map[string]Check    `yaml:"checks"`
+	Env         map[string]string      `yaml:"env"`
+	Commands    map[string]Command     `yaml:"commands"`
+	Commandsets map[string]*Commandset `yaml:"commandsets"`
+	Tests       map[string]Command     `yaml:"tests"`
+	Checks      map[string]Check       `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver

@@ -257,14 +257,14 @@ func main() {
 	}
 }
 
-// conf is the global config. If a command needs to access it, it *must* call
+// globalConf is the global config. If a command needs to access it, it *must* call
 // `parseConf` before.
-var conf *Config
+var globalConf *Config
 
 // parseConf parses the config file and the optional overwrite file.
 // Iear the conf has already been parsed it's a noop.
 func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
-	if conf != nil {
+	if globalConf != nil {
 		return true, output.FancyLine{}
 	}
 
@@ -284,7 +284,7 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 		overwriteFile = filepath.Join(repoRoot, overwriteFile)
 	}
 
-	conf, err = ParseConfigFile(confFile)
+	globalConf, err = ParseConfigFile(confFile)
 	if err != nil {
 		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
 	}
@@ -294,7 +294,7 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 		if err != nil {
 			return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s\n", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
 		}
-		conf.Merge(overwriteConf)
+		globalConf.Merge(overwriteConf)
 	}
 
 	return true, output.FancyLine{}
@@ -317,15 +317,35 @@ func runSetExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	names, ok := conf.Commandsets[args[0]]
+	set, ok := globalConf.Commandsets[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(\n", args[0]))
 		return flag.ErrHelp
 	}
 
-	cmds := make([]Command, 0, len(names))
-	for _, name := range names {
-		cmd, ok := conf.Commands[name]
+	var checks []Check
+	for _, name := range set.Checks {
+		check, ok := globalConf.Checks[name]
+		if !ok {
+			out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config\n", name))
+			continue
+		}
+		checks = append(checks, check)
+	}
+
+	ok, err := runChecks(ctx, checks...)
+	if err != nil {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s\n", err))
+	}
+
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks did not pass, aborting start of commandset %s\n", set.Name))
+		return nil
+	}
+
+	cmds := make([]Command, 0, len(set.Commands))
+	for _, name := range set.Commands {
+		cmd, ok := globalConf.Commands[name]
 		if !ok {
 			return errors.Errorf("command %q not found in commandset %q", name, args[0])
 		}
@@ -348,7 +368,7 @@ func testExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	cmd, ok := conf.Tests[args[0]]
+	cmd, ok := globalConf.Tests[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(\n", args[0]))
 		return flag.ErrHelp
@@ -389,7 +409,7 @@ func runExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	cmd, ok := conf.Commands[args[0]]
+	cmd, ok := globalConf.Commands[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", args[0]))
 		return flag.ErrHelp
@@ -405,7 +425,12 @@ func doctorExec(ctx context.Context, args []string) error {
 		os.Exit(1)
 	}
 
-	return runChecks(ctx, conf.Checks)
+	var checks []Check
+	for _, c := range globalConf.Checks {
+		checks = append(checks, c)
+	}
+	_, err := runChecks(ctx, checks...)
+	return err
 }
 
 func liveExec(ctx context.Context, args []string) error {
@@ -561,11 +586,11 @@ func printRunUsage(c *ffcli.Command) string {
 	// error, because we should never error when the user wants --help output.
 	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
 
-	if conf != nil {
+	if globalConf != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-		for name := range conf.Commands {
+		for name := range globalConf.Commands {
 			fmt.Fprintf(&out, "  %s\n", name)
 		}
 	}
@@ -615,11 +640,11 @@ func printTestUsage(c *ffcli.Command) string {
 	// error, because we should never error when the user wants --help output.
 	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
 
-	if conf != nil {
+	if globalConf != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-		for name := range conf.Tests {
+		for name := range globalConf.Tests {
 			fmt.Fprintf(&out, "  %s\n", name)
 		}
 	}
@@ -636,11 +661,11 @@ func printRunSetUsage(c *ffcli.Command) string {
 	// Attempt to parse config so we can list available sets, but don't fail on
 	// error, because we should never error when the user wants --help output.
 	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
-	if conf != nil {
+	if globalConf != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-		for name := range conf.Commandsets {
+		for name := range globalConf.Commandsets {
 			fmt.Fprintf(&out, "  %s\n", name)
 		}
 	}
