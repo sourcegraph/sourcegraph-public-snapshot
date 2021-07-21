@@ -59,10 +59,22 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoupdater.DefaultClient, observationContext)
-	metrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_indexing_processor", nil)
+	metrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor", nil)
 
 	settingStore := database.Settings(db)
 	repoStore := database.Repos(db)
+
+	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_codeintel_dependency_index_total",
+		Help: "Total number of jobs in the queued state.",
+	}, func() float64 {
+		count, err := dependencyIndexStore.QueuedCount(context.Background(), nil)
+		if err != nil {
+			log15.Error("Failed to get queued job count", "error", err)
+		}
+
+		return float64(count)
+	}))
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(dbStoreShim, settingStore, repoStore, indexEnqueuer, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
