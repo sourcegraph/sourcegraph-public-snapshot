@@ -347,9 +347,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			default:
 				log15.Warn("External service kind %q not supported", "kind", v.Kind)
 			}
+
 			if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
 				return errors.Wrap(err, "wait for rate limiter")
 			}
+
 			extIDs, err = provider.FetchUserPermsByToken(ctx, token)
 			if err != nil {
 				log15.Warn("Fetching user permissions by token", "error", err)
