@@ -21,7 +21,7 @@ import { StartSearching } from './welcome/StartSearching'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'sourcegraphDotComMode'>
+    context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
 }
 
