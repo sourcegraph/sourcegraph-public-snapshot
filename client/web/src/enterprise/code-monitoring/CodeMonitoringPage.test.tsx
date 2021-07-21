@@ -104,4 +104,15 @@ describe('CodeMonitoringListPage', () => {
         const history: H.History = component.find('Router').prop('history')
         expect(history.location.pathname).toBe('/code-monitoring')
     })
+
+    test('Redirect to getting started if not logged in', () => {
+        const component = mount(
+            <MemoryRouter initialEntries={['/code-monitoring']}>
+                <CodeMonitoringPage {...additionalProps} authenticatedUser={null} />
+            </MemoryRouter>
+        )
+
+        const history: H.History = component.find('Router').prop('history')
+        expect(history.location.pathname).toBe('/code-monitoring/getting-started')
+    })
 })
