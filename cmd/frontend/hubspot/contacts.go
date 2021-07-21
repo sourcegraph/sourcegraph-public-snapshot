@@ -43,7 +43,7 @@ type ContactProperties struct {
 	LatestPing      int64  `json:"latest_ping"`
 	AnonymousUserID string `json:"anonymous_user_id"`
 	FirstSourceURL  string `json:"first_source_url"`
-	DatabaseID      int32  `json:"database_user_id"`
+	DatabaseID      int32  `json:"database_id"`
 }
 
 // ContactResponse represents HubSpot user properties returned
