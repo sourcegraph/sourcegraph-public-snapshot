@@ -126,11 +126,6 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 }
 
 func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextParameters) (err error) {
-	if args.PatternInfo.IsEmpty() {
-		// Empty query isn't an error, but it has no results.
-		return nil
-	}
-
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
