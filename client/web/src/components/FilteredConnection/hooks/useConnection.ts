@@ -60,30 +60,27 @@ export const useConnection = <TResult, TVariables, TData>({
         default: first,
     })
 
-    /**
-     * The number of results that were visible from previous requests. The initial request of
-     * a result set will load `visible` items, then will request `first` items on each subsequent
-     * request. This has the effect of loading the correct number of visible results when a URL
-     * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
-     */
-    const previousVisibleResultCountReference = useRef(options?.useURL && parseQueryInt(searchParameters, 'visible'))
-
-    /**
-     * The `after` variable for our **initial** query.
-     * Subsequent requests through `fetchMore` will use a valid `cursor` value here, where possible.
-     */
-    const afterReference = useRef((options?.useURL && searchParameters.get('after')) || after)
-
     const initialControls = useMemo(
         () => ({
             /**
              * The `first` variable for our **initial** query.
              * If this is our first query and we were supplied a value for `visible` load that many results.
              * If we weren't given such a value or this is a subsequent request, only ask for one page of results.
+             *
+             * 'visible' is the number of results that were visible from previous requests. The initial request of
+             * a result set will load `visible` items, then will request `first` items on each subsequent
+             * request. This has the effect of loading the correct number of visible results when a URL
+             * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
              */
-            first: previousVisibleResultCountReference.current || firstReference.current.actual,
-            after: afterReference.current,
+            first: (options?.useURL && parseQueryInt(searchParameters, 'visible')) || firstReference.current.actual,
+            /**
+             * The `after` variable for our **initial** query.
+             * Subsequent requests through `fetchMore` will use a valid `cursor` value here, where possible.
+             */
+            after: (options?.useURL && searchParameters.get('after')) || after,
         }),
+        // We only need these controls for the inital request. We do not care about dependency updates.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
 
