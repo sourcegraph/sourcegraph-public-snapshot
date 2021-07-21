@@ -27,6 +27,9 @@ type MockWorkerStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *WorkerStoreHandleFunc
+	// HeartbeatFunc is an instance of a mock function object controlling
+	// the behavior of the method Heartbeat.
+	HeartbeatFunc *WorkerStoreHeartbeatFunc
 	// MarkCompleteFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkComplete.
 	MarkCompleteFunc *WorkerStoreMarkCompleteFunc
@@ -57,12 +60,17 @@ func NewMockWorkerStore() *MockWorkerStore {
 			},
 		},
 		DequeueFunc: &WorkerStoreDequeueFunc{
-			defaultHook: func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error) {
-				return nil, nil, false, nil
+			defaultHook: func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error) {
+				return nil, false, nil
 			},
 		},
 		HandleFunc: &WorkerStoreHandleFunc{
 			defaultHook: func() *basestore.TransactableHandle {
+				return nil
+			},
+		},
+		HeartbeatFunc: &WorkerStoreHeartbeatFunc{
+			defaultHook: func(context.Context, int) error {
 				return nil
 			},
 		},
@@ -112,6 +120,9 @@ func NewMockWorkerStoreFrom(i store.Store) *MockWorkerStore {
 		},
 		HandleFunc: &WorkerStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		HeartbeatFunc: &WorkerStoreHeartbeatFunc{
+			defaultHook: i.Heartbeat,
 		},
 		MarkCompleteFunc: &WorkerStoreMarkCompleteFunc{
 			defaultHook: i.MarkComplete,
@@ -249,24 +260,24 @@ func (c WorkerStoreAddExecutionLogEntryFuncCall) Results() []interface{} {
 // WorkerStoreDequeueFunc describes the behavior when the Dequeue method of
 // the parent MockWorkerStore instance is invoked.
 type WorkerStoreDequeueFunc struct {
-	defaultHook func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error)
-	hooks       []func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error)
+	defaultHook func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error)
+	hooks       []func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error)
 	history     []WorkerStoreDequeueFuncCall
 	mutex       sync.Mutex
 }
 
 // Dequeue delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWorkerStore) Dequeue(v0 context.Context, v1 string, v2 []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error) {
-	r0, r1, r2, r3 := m.DequeueFunc.nextHook()(v0, v1, v2)
-	m.DequeueFunc.appendCall(WorkerStoreDequeueFuncCall{v0, v1, v2, r0, r1, r2, r3})
-	return r0, r1, r2, r3
+func (m *MockWorkerStore) Dequeue(v0 context.Context, v1 string, v2 []*sqlf.Query) (workerutil.Record, bool, error) {
+	r0, r1, r2 := m.DequeueFunc.nextHook()(v0, v1, v2)
+	m.DequeueFunc.appendCall(WorkerStoreDequeueFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Dequeue method of
 // the parent MockWorkerStore instance is invoked and the hook queue is
 // empty.
-func (f *WorkerStoreDequeueFunc) SetDefaultHook(hook func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error)) {
+func (f *WorkerStoreDequeueFunc) SetDefaultHook(hook func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -274,7 +285,7 @@ func (f *WorkerStoreDequeueFunc) SetDefaultHook(hook func(context.Context, strin
 // Dequeue method of the parent MockWorkerStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WorkerStoreDequeueFunc) PushHook(hook func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error)) {
+func (f *WorkerStoreDequeueFunc) PushHook(hook func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -282,21 +293,21 @@ func (f *WorkerStoreDequeueFunc) PushHook(hook func(context.Context, string, []*
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *WorkerStoreDequeueFunc) SetDefaultReturn(r0 workerutil.Record, r1 context.CancelFunc, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error) {
-		return r0, r1, r2, r3
+func (f *WorkerStoreDequeueFunc) SetDefaultReturn(r0 workerutil.Record, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *WorkerStoreDequeueFunc) PushReturn(r0 workerutil.Record, r1 context.CancelFunc, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error) {
-		return r0, r1, r2, r3
+func (f *WorkerStoreDequeueFunc) PushReturn(r0 workerutil.Record, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *WorkerStoreDequeueFunc) nextHook() func(context.Context, string, []*sqlf.Query) (workerutil.Record, context.CancelFunc, bool, error) {
+func (f *WorkerStoreDequeueFunc) nextHook() func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -343,13 +354,10 @@ type WorkerStoreDequeueFuncCall struct {
 	Result0 workerutil.Record
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 context.CancelFunc
+	Result1 bool
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -361,7 +369,7 @@ func (c WorkerStoreDequeueFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c WorkerStoreDequeueFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // WorkerStoreHandleFunc describes the behavior when the Handle method of
@@ -460,6 +468,112 @@ func (c WorkerStoreHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c WorkerStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WorkerStoreHeartbeatFunc describes the behavior when the Heartbeat method
+// of the parent MockWorkerStore instance is invoked.
+type WorkerStoreHeartbeatFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []WorkerStoreHeartbeatFuncCall
+	mutex       sync.Mutex
+}
+
+// Heartbeat delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWorkerStore) Heartbeat(v0 context.Context, v1 int) error {
+	r0 := m.HeartbeatFunc.nextHook()(v0, v1)
+	m.HeartbeatFunc.appendCall(WorkerStoreHeartbeatFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Heartbeat method of
+// the parent MockWorkerStore instance is invoked and the hook queue is
+// empty.
+func (f *WorkerStoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Heartbeat method of the parent MockWorkerStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WorkerStoreHeartbeatFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *WorkerStoreHeartbeatFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *WorkerStoreHeartbeatFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *WorkerStoreHeartbeatFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkerStoreHeartbeatFunc) appendCall(r0 WorkerStoreHeartbeatFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkerStoreHeartbeatFuncCall objects
+// describing the invocations of this function.
+func (f *WorkerStoreHeartbeatFunc) History() []WorkerStoreHeartbeatFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkerStoreHeartbeatFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkerStoreHeartbeatFuncCall is an object that describes an invocation of
+// method Heartbeat on an instance of MockWorkerStore.
+type WorkerStoreHeartbeatFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkerStoreHeartbeatFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkerStoreHeartbeatFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

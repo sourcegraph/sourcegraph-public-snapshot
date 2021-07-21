@@ -20,11 +20,10 @@ func TestHeartbeat(t *testing.T) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
-	var cancel1, cancel2 int
-	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, func() { cancel1++ } /* store1 */, true, nil)
-	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel1++ } /* store1 */, true, nil)
-	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, func() { cancel2++ } /* store2 */, true, nil)
-	store2.DequeueFunc.PushReturn(testRecord{ID: 44}, func() { cancel2++ } /* store2 */, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 44}, true, nil)
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -45,15 +44,6 @@ func TestHeartbeat(t *testing.T) {
 		t.Fatalf("failed to dequeue records")
 	}
 
-	assertDoneCounts := func(c1, c2 int) {
-		if cancel1 != c1 {
-			t.Fatalf("unexpected number of calls to cancel (store 1). want=%d have=%d", c1, cancel1)
-		}
-		if cancel2 != c2 {
-			t.Fatalf("unexpected number of calls to cancel (store 2). want=%d have=%d", c2, cancel2)
-		}
-	}
-
 	// missing all jobs, but they're less than UnreportedMaxAge
 	clock.Advance(time.Second / 2)
 	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{}); err != nil {
@@ -62,7 +52,6 @@ func TestHeartbeat(t *testing.T) {
 	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	assertDoneCounts(0, 0)
 
 	// missing no jobs
 	clock.Advance(time.Minute * 2)
@@ -72,7 +61,6 @@ func TestHeartbeat(t *testing.T) {
 	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	assertDoneCounts(0, 0)
 
 	// missing one deadbeef jobs
 	clock.Advance(time.Minute * 2)
@@ -82,7 +70,6 @@ func TestHeartbeat(t *testing.T) {
 	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	assertDoneCounts(0, 1)
 
 	// missing two deadveal jobs
 	clock.Advance(time.Minute * 2)
@@ -92,7 +79,6 @@ func TestHeartbeat(t *testing.T) {
 	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
-	assertDoneCounts(1, 2)
 
 	// unknown jobs
 	clock.Advance(time.Minute * 2)
@@ -115,11 +101,10 @@ func TestCleanup(t *testing.T) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
-	var cancel1, cancel2 int
-	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, func() { cancel1++ } /* store1 */, true, nil)
-	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel1++ } /* store1 */, true, nil)
-	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, func() { cancel2++ } /* store2 */, true, nil)
-	store2.DequeueFunc.PushReturn(testRecord{ID: 44}, func() { cancel2++ } /* store2 */, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 44}, true, nil)
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -150,12 +135,5 @@ func TestCleanup(t *testing.T) {
 
 	if err := handler.cleanup(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing cleanup: %s", err)
-	}
-
-	if cancel1 != 1 {
-		t.Fatalf("unexpected number of calls to cancel (store 1). want=%d have=%d", 1, cancel1)
-	}
-	if cancel2 != 1 {
-		t.Fatalf("unexpected number of calls to cancel (store 2). want=%d have=%d", 1, cancel2)
 	}
 }

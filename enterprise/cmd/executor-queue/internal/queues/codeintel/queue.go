@@ -17,9 +17,6 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// HeartbeatInterval is the duration between heartbeat updates to the job records.
-const HeartbeatInterval = time.Second
-
 // StalledJobMaximumAge is the maximum allowable duration between updating the state of a
 // job as "processing" and locking the record during processing. An unlocked row that is
 // marked as processing likely indicates that the executor that dequeued the job has died.
@@ -52,7 +49,6 @@ func newWorkerStore(db dbutil.DB, observationContext *observation.Context) dbwor
 		ColumnExpressions: store.IndexColumnsWithNullRank,
 		Scan:              store.ScanFirstIndexRecord,
 		OrderByExpression: sqlf.Sprintf("u.queued_at, u.id"),
-		HeartbeatInterval: HeartbeatInterval,
 		StalledMaxAge:     StalledJobMaximumAge,
 		MaxNumResets:      MaximumNumResets,
 	}
