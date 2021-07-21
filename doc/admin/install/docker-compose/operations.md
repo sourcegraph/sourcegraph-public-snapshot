@@ -50,6 +50,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   export SOURCEGRAPH_VERSION="v3.29.1"
+  # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
