@@ -70,6 +70,56 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
+type GetDataSeriesArgs struct {
+	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
+	NextRecordingBefore time.Time
+	Deleted             bool
+}
+
+func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
+	preds := make([]*sqlf.Query, 0, 1)
+
+	if !args.NextRecordingBefore.IsZero() {
+		preds = append(preds, sqlf.Sprintf("next_recording_after < %s", args.NextRecordingBefore))
+	}
+	if args.Deleted {
+		preds = append(preds, sqlf.Sprintf("deleted_at IS NOT NULL"))
+	} else {
+		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+	}
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
+	return scanDataSeries(s.Query(ctx, q))
+}
+
+func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]types.InsightSeries, 0)
+	for rows.Next() {
+		var temp types.InsightSeries
+		if err := rows.Scan(
+			&temp.ID,
+			&temp.SeriesID,
+			&temp.Query,
+			&temp.CreatedAt,
+			&temp.OldestHistoricalAt,
+			&temp.LastRecordedAt,
+			&temp.NextRecordingAfter,
+			&temp.RecordingIntervalDays,
+		); err != nil {
+			results = append(results, temp)
+		}
+	}
+	return results, nil
+}
+
 func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightViewSeries, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -189,4 +239,10 @@ FROM insight_view iv
          JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE %s
 ORDER BY iv.unique_id, i.series_id
+`
+
+const getInsightDataSeriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, deleted_at from insight_series
+WHERE %s
 `

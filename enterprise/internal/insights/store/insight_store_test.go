@@ -337,3 +337,16 @@ func TestAttachSeriesView(t *testing.T) {
 		}
 	})
 }
+
+func TestGetDataSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+}
