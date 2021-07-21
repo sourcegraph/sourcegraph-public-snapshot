@@ -105,7 +105,7 @@ export const getUrlQuery = ({
         }
     }
 
-    if (visibleResultCount !== 0 && visibleResultCount !== first.actual) {
+    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== first.actual) {
         searchParameters.set('visible', String(visibleResultCount))
     }
 

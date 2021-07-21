@@ -112,7 +112,7 @@ export const useConnection = <TResult, TVariables, TData>({
     useConnectionUrl({
         enabled: options?.useURL,
         first: firstReference.current,
-        visibleResultCount: connection?.nodes.length || 0,
+        visibleResultCount: connection?.nodes.length,
     })
 
     const fetchMoreData = async (): Promise<void> => {
