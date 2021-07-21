@@ -3,7 +3,6 @@ package dbconn
 import (
 	"database/sql"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -11,8 +10,7 @@ import (
 // It reports all metrics returned by sql.DB.Stats().
 // Adapted from github.com/dlmiddlecote/sqlstats
 type metricsCollector struct {
-	db     *sql.DB
-	pgPool *pgxpool.Pool
+	db *sql.DB
 
 	// descriptions of exported metrics
 	maxOpenDesc           *prometheus.Desc
@@ -26,17 +24,7 @@ type metricsCollector struct {
 	closedMaxIdleTimeDesc *prometheus.Desc
 }
 
-func newDBMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
-	return newMetricsCollector(db, nil, dbname, app)
-}
-
-func newPGPoolMetrics(pool *pgxpool.Pool, dbname, app string) *metricsCollector {
-	return newMetricsCollector(nil, pool, dbname, app)
-}
-
-// newMetricsCollector creates a new metricsCollector for either a *sql.DB connection or a
-// *pgxpol.Pool connection.
-func newMetricsCollector(db *sql.DB, pgPool *pgxpool.Pool, dbname, app string) *metricsCollector {
+func newMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
 	const (
 		namespace = "src"
 		subsystem = "pgsql_conns"
@@ -48,8 +36,7 @@ func newMetricsCollector(db *sql.DB, pgPool *pgxpool.Pool, dbname, app string) *
 	}
 
 	return &metricsCollector{
-		db:     db,
-		pgPool: pgPool,
+		db: db,
 		maxOpenDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, subsystem, "max_open"),
 			"Maximum number of open connections to the database.",

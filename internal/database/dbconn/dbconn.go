@@ -13,14 +13,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gchaincl/sqlhooks/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -33,8 +31,7 @@ import (
 var (
 	// Global is the global DB connection.
 	// Only use this after a call to SetupGlobalConnection.
-	Global     *sql.DB
-	Restricted *pgxpool.Pool
+	Global *sql.DB
 
 	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://pkg.go.dev/github.com/jackc/pgx for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
@@ -74,53 +71,6 @@ func SetupGlobalConnection(opts Opts) (err error) {
 	return err
 }
 
-var nsuccess uint64
-var nerror uint64
-
-func SetupRestrictedConnection(opts Opts) (err error) {
-	opts.AppName = opts.AppName + "-restricted"
-
-	cfg, err := pgxpool.ParseConfig(opts.DSN)
-	cfg.BeforeAcquire = func(ctx context.Context, c *pgx.Conn) bool {
-		// https://www.postgresql.org/docs/current/sql-set-session-authorization.html
-		_, err := c.Exec(ctx, "SET SESSION AUTHORIZATION 'sg_service';")
-		if err != nil {
-			log.Printf("err: %v", err)
-			atomic.AddUint64(&nerror, 1)
-			return false
-		}
-		atomic.AddUint64(&nsuccess, 1)
-		return true
-	}
-
-	// TODO: Test code. This is useful for quick iteration until I add a test case.
-	go func() {
-		for {
-			log.Printf("nsuccess=%d nerror=%d", atomic.LoadUint64(&nsuccess), atomic.LoadUint64(&nerror))
-			time.Sleep(time.Second)
-		}
-	}()
-
-	maxOpen, err := getMaxOpenConnections()
-	if err != nil {
-		return err
-	}
-
-	cfg.MaxConns = int32(maxOpen)
-	// TODO: No MaxIdleConnections attribute is available
-	// TODO: Do we want to set MinConns ?
-	// TODO: Do we want to set MaxConnLifetime? Perhaps, Security would have an opinion?
-	cfg.MaxConnIdleTime = time.Minute
-
-	Restricted, err = pgxpool.ConnectConfig(context.Background(), cfg)
-	if err != nil {
-		return err
-	}
-
-	prometheus.MustRegister(newMetricsCollector(nil, Restricted, opts.DBName, opts.AppName))
-	return nil
-}
-
 // New connects to the given data source and returns the handle.
 //
 // dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
@@ -142,8 +92,10 @@ func New(opts Opts) (*sql.DB, error) {
 		return nil, err
 	}
 
-	prometheus.MustRegister(newMetricsCollector(db, nil, opts.DBName, opts.AppName))
-	return db, configureConnectionPool(db)
+	prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
+	configureConnectionPool(db)
+
+	return db, nil
 }
 
 // NewRaw connects to the given data source and returns the handle.
@@ -428,30 +380,16 @@ func (h *hook) OnError(ctx context.Context, err error, query string, args ...int
 // configureConnectionPool sets reasonable sizes on the built in DB queue. By
 // default the connection pool is unbounded, which leads to the error `pq:
 // sorry too many clients already`.
-func configureConnectionPool(db *sql.DB) error {
-
-	// TODO: Do we want the same maxOpen for both the global and the restricted connections?
-
-	maxOpen, err := getMaxOpenConnections()
-	if err != nil {
-		return err
-	}
-
-	db.SetMaxOpenConns(maxOpen)
-	db.SetMaxIdleConns(maxOpen)
-	db.SetConnMaxIdleTime(time.Minute)
-
-	return nil
-}
-
-func getMaxOpenConnections() (maxOpen int, err error) {
-	maxOpen = 30
+func configureConnectionPool(db *sql.DB) {
+	var err error
+	maxOpen := 30
 	if e := os.Getenv("SRC_PGSQL_MAX_OPEN"); e != "" {
 		maxOpen, err = strconv.Atoi(e)
 		if err != nil {
-			return -1, errors.Wrap(err, "SRC_PGSQL_MAX_OPEN is not an int")
+			log.Fatalf("SRC_PGSQL_MAX_OPEN is not an int: %s", e)
 		}
 	}
-
-	return
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxOpen)
+	db.SetConnMaxIdleTime(time.Minute)
 }
