@@ -78,10 +78,11 @@ var nsuccess uint64
 var nerror uint64
 
 func SetupRestrictedConnection(opts Opts) (err error) {
-	opts.AppName = "-restricted"
+	opts.AppName = opts.AppName + "-restricted"
 
 	cfg, err := pgxpool.ParseConfig(opts.DSN)
 	cfg.BeforeAcquire = func(ctx context.Context, c *pgx.Conn) bool {
+		// https://www.postgresql.org/docs/current/sql-set-session-authorization.html
 		_, err := c.Exec(ctx, "SET SESSION AUTHORIZATION 'sg_service';")
 		if err != nil {
 			log.Printf("err: %v", err)
@@ -100,6 +101,9 @@ func SetupRestrictedConnection(opts Opts) (err error) {
 	}()
 
 	Restricted, err = pgxpool.ConnectConfig(context.Background(), cfg)
+
+	prometheus.MustRegister(newMetricsCollector(nil, Restricted, opts.DBName, opts.AppName))
+
 	return err
 }
 
@@ -124,7 +128,7 @@ func New(opts Opts) (*sql.DB, error) {
 		return nil, err
 	}
 
-	prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
+	prometheus.MustRegister(newMetricsCollector(db, nil, opts.DBName, opts.AppName))
 	configureConnectionPool(db)
 
 	return db, nil
