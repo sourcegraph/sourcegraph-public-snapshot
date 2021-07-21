@@ -74,6 +74,7 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue where regexp query highlighting in the search bar would render incorrectly on Firefox. [#23043](https://github.com/sourcegraph/sourcegraph/pull/23043)
 - Code intelligence uploads and indexes are restricted to only site-admins. It was read-only for any user. [#22890](https://github.com/sourcegraph/sourcegraph/pull/22890)
 - Daily usage statistics are restricted to only site-admins. It was read-only for any user. [#23026](https://github.com/sourcegraph/sourcegraph/pull/23026)
+- Ephemeral storage requests now match their cache size requests for Kubernetes deployments. [#2953](https://github.com/sourcegraph/deploy-sourcegraph/pull/2953)
 
 ### Removed
 
@@ -182,7 +183,6 @@ API docs is a new experimental feature of Sourcegraph ([learn more](https://docs
 - Site admins cannot add access tokens for any user by default. [#20988](https://github.com/sourcegraph/sourcegraph/pull/20988)
 - Our namespaced overlays now only scrape container metrics within that namespace. [#2969](https://github.com/sourcegraph/deploy-sourcegraph/pull/2969)
 - The extension registry main page has a new visual design that better conveys the most useful information about extensions, and individual extension pages have better information architecture. [#20822](https://github.com/sourcegraph/sourcegraph/pull/20822)
-- Ephemeral storage requests now match their cache size requests for Kubernetes deployments. [#2953](https://github.com/sourcegraph/deploy-sourcegraph/pull/2953)
 
 ### Fixed
 
