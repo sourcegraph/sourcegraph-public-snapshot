@@ -1,7 +1,6 @@
 import { combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { map, switchMap, take } from 'rxjs/operators'
 
-import { PrivateRepoPublicSourcegraphComError } from '@sourcegraph/shared/src/backend/errors'
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -17,7 +16,7 @@ import { background } from '../../browser-extension/web-extension-api/runtime'
 import { requestGraphQlHelper } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
 import { isInPage } from '../context'
-import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../util/context'
+import { observeSourcegraphURL } from '../util/context'
 
 import { createExtensionHost } from './extensionHost'
 import { getInlineExtensions, shouldUseInlineExtensions } from './inlineExtensionsService'
@@ -53,7 +52,7 @@ export interface BrowserPlatformContext extends PlatformContext {
  * Creates the {@link PlatformContext} for the browser (for browser extensions and native integrations)
  */
 export function createPlatformContext(
-    { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
+    { urlToFile }: Pick<CodeHost, 'urlToFile'>,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): BrowserPlatformContext {
@@ -61,25 +60,15 @@ export function createPlatformContext(
     const requestGraphQL: PlatformContext['requestGraphQL'] = <T, V = object>({
         request,
         variables,
-        mightContainPrivateInfo,
     }: {
         request: string
         variables: V
         mightContainPrivateInfo: boolean
+        privateCloudErrors?: Observable<boolean>
     }): Observable<GraphQLResult<T>> =>
         observeSourcegraphURL(isExtension).pipe(
             take(1),
-            switchMap(sourcegraphURL => {
-                if (mightContainPrivateInfo && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
-                    // If we can't determine the code host context, assume the current repository is private.
-                    const privateRepository = getContext ? getContext().privateRepository : true
-                    if (privateRepository) {
-                        const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-                        throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
-                    }
-                }
-                return requestGraphQlHelper(isExtension, sourcegraphURL)<T, V>({ request, variables })
-            })
+            switchMap(sourcegraphURL => requestGraphQlHelper(isExtension, sourcegraphURL)<T, V>({ request, variables }))
         )
 
     const context: BrowserPlatformContext = {

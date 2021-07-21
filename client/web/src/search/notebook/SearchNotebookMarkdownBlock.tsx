@@ -59,7 +59,10 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         }
     }, [id, isReadOnly, isEditing, setIsEditing, onSelectBlock])
 
-    const onEnterBlock = useCallback(() => setIsEditing(true), [setIsEditing])
+    // setTimeout turns on editing mode in a separate run-loop which prevents adding a newline at the start of the input
+    const onEnterBlock = useCallback(() => {
+        setTimeout(() => setIsEditing(true), 0)
+    }, [setIsEditing])
 
     const { onSelect } = useBlockSelection({
         id,
@@ -70,13 +73,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         ...props,
     })
 
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onEnterBlock,
-        ...props,
-        onRunBlock: runBlock,
-    })
+    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, ...props, onRunBlock: runBlock })
 
     useEffect(() => {
         if (isEditing) {
@@ -87,7 +84,13 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     }, [isEditing, editor])
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isReadOnly, ...props })
+    const commonMenuActions = useCommonBlockMenuActions({
+        modifierKeyLabel,
+        isInputFocused,
+        isReadOnly,
+        isMacPlatform,
+        ...props,
+    })
     const menuActions = useMemo(
         () =>
             [

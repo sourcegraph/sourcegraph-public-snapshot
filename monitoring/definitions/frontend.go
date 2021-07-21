@@ -490,11 +490,7 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("frontend"),
-			},
+
 			{
 				Title:  "Internal service requests",
 				Hidden: true,
@@ -576,52 +572,13 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ContainerMissing(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.GoGcDuration(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",
 				Hidden: true,

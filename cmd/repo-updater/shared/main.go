@@ -109,15 +109,17 @@ func Main(enterpriseInit EnterpriseInit) {
 	clock := func() time.Time { return time.Now().UTC() }
 
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
+	log15.Info("waiting for frontend")
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
 		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
 	}
-	log15.Debug("detected frontend ready")
+	log15.Info("detected frontend ready")
 
+	log15.Info("waiting for gitservers")
 	if err := gitserver.DefaultClient.WaitForGitServers(ctx); err != nil {
 		log.Fatalf("gitservers not reachable: %v", err)
 	}
-	log15.Debug("detected gitservers ready")
+	log15.Info("detected gitservers ready")
 
 	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
@@ -194,7 +196,11 @@ func Main(enterpriseInit EnterpriseInit) {
 			// cloud_default flag has been set.
 			NoNamespace:      true,
 			OnlyCloudDefault: true,
-			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
+			Kinds: []string{
+				extsvc.KindGitHub,
+				extsvc.KindGitLab,
+				extsvc.KindJVMPackages,
+			},
 		})
 		if err != nil {
 			log.Fatalf("failed to list external services: %v", err)
@@ -215,6 +221,8 @@ func Main(enterpriseInit EnterpriseInit) {
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
+			case *schema.JVMPackagesConnection:
+				server.JVMPackagesSource, err = repos.NewJVMPackagesSource(e)
 			}
 
 			if err != nil {
@@ -240,11 +248,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
-		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") == "true",
+		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") != "false",
 	}
 
 	if syncer.Streaming {
-		log15.Info("Running syncer in streaming mode because ENABLE_STREAMING_REPOS_SYNCER is set to true ")
+		log15.Info("Running syncer in streaming mode because ENABLE_STREAMING_REPOS_SYNCER != false")
 	}
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer

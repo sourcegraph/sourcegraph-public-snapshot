@@ -170,6 +170,16 @@ const fetchLsifUploads = fetch(
         failure: 'Whoops! The server encountered a boo-boo handling this input.',
         placeInQueue: null,
         associatedIndex: null,
+    },
+    {
+        id: '6',
+        state: LSIFUploadState.DELETING,
+        uploadedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: '2020-06-15T12:25:30+00:00',
+        finishedAt: '2020-06-15T12:30:30+00:00',
+        failure: null,
+        placeInQueue: null,
+        associatedIndex: null,
     }
 )
 

@@ -3,11 +3,11 @@
     height: 2rem;
     padding-top: 1rem;
 
-    &:global(.show-on-hover) > * {
+    &.show-on-hover > * {
         visibility: hidden;
     }
 
-    &:global(.show-on-hover):hover > * {
+    &.show-on-hover:hover > * {
         visibility: visible;
     }
 

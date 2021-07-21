@@ -33,6 +33,7 @@ export type BlockDirection = 'up' | 'down'
 export interface BlockProps {
     isReadOnly: boolean
     isSelected: boolean
+    isOtherBlockSelected: boolean
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, value: string): void

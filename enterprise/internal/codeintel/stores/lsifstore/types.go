@@ -45,10 +45,11 @@ type Diagnostic struct {
 	semantic.DiagnosticData
 }
 
-// CodeIntelligenceRange pairs a range with its definitions, reference, and hover text.
+// CodeIntelligenceRange pairs a range with its definitions, reference, hover text, and documentation.
 type CodeIntelligenceRange struct {
-	Range       Range
-	Definitions []Location
-	References  []Location
-	HoverText   string
+	Range               Range
+	Definitions         []Location
+	References          []Location
+	HoverText           string
+	DocumentationPathID string
 }

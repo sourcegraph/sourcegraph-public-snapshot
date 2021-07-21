@@ -12,12 +12,14 @@ interface UseCommonBlockMenuActionsOptions
     extends Pick<BlockProps, 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'> {
     modifierKeyLabel: string
     isInputFocused: boolean
+    isMacPlatform: boolean
 }
 
 export const useCommonBlockMenuActions = ({
     isInputFocused,
     isReadOnly,
     modifierKeyLabel,
+    isMacPlatform,
     onMoveBlock,
     onDeleteBlock,
     onDuplicateBlock,
@@ -49,7 +51,7 @@ export const useCommonBlockMenuActions = ({
                 label: 'Delete',
                 icon: <DeleteIcon className="icon-inline" />,
                 onClick: onDeleteBlock,
-                keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ⌫` : '',
+                keyboardShortcutLabel: !isInputFocused ? (isMacPlatform ? '⌘ + ⌫' : 'Del') : '',
             },
         ]
-    }, [isReadOnly, isInputFocused, modifierKeyLabel, onMoveBlock, onDeleteBlock, onDuplicateBlock])
+    }, [isReadOnly, isMacPlatform, isInputFocused, modifierKeyLabel, onMoveBlock, onDeleteBlock, onDuplicateBlock])

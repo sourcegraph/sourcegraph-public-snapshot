@@ -74,6 +74,8 @@ export interface RepoRevisionContainerContext
     globbing: boolean
 
     isMacPlatform: boolean
+
+    showBatchChanges: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -116,6 +118,8 @@ interface RepoRevisionContainerProps
     globbing: boolean
 
     isMacPlatform: boolean
+
+    showBatchChanges: boolean
 }
 
 interface RepoRevisionBreadcrumbProps

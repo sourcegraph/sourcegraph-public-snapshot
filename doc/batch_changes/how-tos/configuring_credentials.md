@@ -6,7 +6,7 @@ In order to [publish changesets with Batch Changes](publishing_changesets.md), y
 
 ## Requirements
 
-- Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quickstart)" guide on how to setup a Sourcegraph instance.
+- Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.
 
 ## Adding a personal access token
 

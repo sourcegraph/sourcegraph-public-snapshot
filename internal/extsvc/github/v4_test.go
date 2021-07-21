@@ -82,6 +82,59 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 	)
 }
 
+func TestV4Client_SearchRepos(t *testing.T) {
+	cli, save := newV4Client(t, "SearchRepos")
+	t.Cleanup(save)
+
+	for _, tc := range []struct {
+		name   string
+		ctx    context.Context
+		params SearchReposParams
+		err    string
+	}{
+		{
+			name: "narrow-query",
+			params: SearchReposParams{
+				Query: "repo:tsenart/vegeta",
+				First: 1,
+			},
+		},
+		{
+			name: "huge-query",
+			params: SearchReposParams{
+				Query: "stars:5..500000 sort:stars-desc",
+				First: 5,
+			},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			results, err := cli.SearchRepos(tc.ctx, tc.params)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			testutil.AssertGolden(t,
+				fmt.Sprintf("testdata/golden/SearchRepos-%s", tc.name),
+				update("SearchRepos"),
+				results,
+			)
+		})
+	}
+}
+
 func TestLoadPullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "LoadPullRequest")
 	defer save()

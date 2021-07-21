@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbws "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
@@ -81,7 +80,7 @@ type fakeRepoSyncHandler struct {
 	jobChan chan *repos.SyncJob
 }
 
-func (h *fakeRepoSyncHandler) Handle(ctx context.Context, tx dbws.Store, record workerutil.Record) error {
+func (h *fakeRepoSyncHandler) Handle(ctx context.Context, record workerutil.Record) error {
 	sj, ok := record.(*repos.SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)

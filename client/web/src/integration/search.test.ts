@@ -523,15 +523,16 @@ describe('Search', () => {
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
 
-        test('Show create code monitor button feature tour with valid search type', async () => {
-            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff', {
-                waitUntil: 'networkidle0',
-            })
-            await resetCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-            expect(await isCreateCodeMonitorFeatureTourVisible()).toBeTruthy()
-        })
+        // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/23046
+        // test('Show create code monitor button feature tour with valid search type', async () => {
+        //     testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+        //     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff', {
+        //         waitUntil: 'networkidle0',
+        //     })
+        //     await resetCreateCodeMonitorFeatureTour()
+        //     await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+        //     expect(await isCreateCodeMonitorFeatureTourVisible()).toBeTruthy()
+        // })
 
         test('Do not show create code monitor button feature tour if search contexts feature tour is not dismissed', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)

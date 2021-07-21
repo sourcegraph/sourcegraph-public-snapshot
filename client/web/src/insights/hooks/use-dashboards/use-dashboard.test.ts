@@ -5,41 +5,47 @@ import { ALL_INSIGHTS_DASHBOARD, getInsightsDashboards } from './use-dashboards'
 describe('getInsightsDashboards', () => {
     describe('should return empty custom list', () => {
         test('with null subject value', () => {
-            expect(getInsightsDashboards(null)).toStrictEqual([])
+            expect(getInsightsDashboards(null, {})).toStrictEqual([])
         })
 
         test('with error like settings value', () => {
             expect(
-                getInsightsDashboards([
-                    {
-                        subject: {
-                            __typename: 'User',
-                            id: '101',
-                            username: 'emirkusturica',
-                            displayName: 'Emir Kusturica',
-                            viewerCanAdminister: true,
+                getInsightsDashboards(
+                    [
+                        {
+                            subject: {
+                                __typename: 'User',
+                                id: '101',
+                                username: 'emirkusturica',
+                                displayName: 'Emir Kusturica',
+                                viewerCanAdminister: true,
+                            },
+                            settings: new Error(),
+                            lastID: null,
                         },
-                        settings: new Error(),
-                        lastID: null,
-                    },
-                ])
+                    ],
+                    {}
+                )
             ).toStrictEqual([ALL_INSIGHTS_DASHBOARD])
         })
 
         test('with unsupported types of settings cascade subject', () => {
             expect(
-                getInsightsDashboards([
-                    {
-                        subject: {
-                            __typename: 'Client',
-                            id: '101',
-                            displayName: 'Emir Kusturica',
-                            viewerCanAdminister: true,
+                getInsightsDashboards(
+                    [
+                        {
+                            subject: {
+                                __typename: 'Client',
+                                id: '101',
+                                displayName: 'Emir Kusturica',
+                                viewerCanAdminister: true,
+                            },
+                            settings: new Error(),
+                            lastID: null,
                         },
-                        settings: new Error(),
-                        lastID: null,
-                    },
-                ])
+                    ],
+                    {}
+                )
             ).toStrictEqual([ALL_INSIGHTS_DASHBOARD])
         })
     })
@@ -47,30 +53,33 @@ describe('getInsightsDashboards', () => {
     describe('should return dashboard list', () => {
         test('with built in dashboard only if dashboard settings are empty', () => {
             expect(
-                getInsightsDashboards([
-                    {
-                        subject: {
-                            __typename: 'Org',
-                            id: '102',
-                            name: 'sourcegraph',
-                            displayName: 'Sourcegraph',
-                            viewerCanAdminister: true,
+                getInsightsDashboards(
+                    [
+                        {
+                            subject: {
+                                __typename: 'Org',
+                                id: '102',
+                                name: 'sourcegraph',
+                                displayName: 'Sourcegraph',
+                                viewerCanAdminister: true,
+                            },
+                            settings: {},
+                            lastID: null,
                         },
-                        settings: {},
-                        lastID: null,
-                    },
-                    {
-                        subject: {
-                            __typename: 'User',
-                            id: '101',
-                            username: 'emirkusturica',
-                            displayName: 'Emir Kusturica',
-                            viewerCanAdminister: true,
+                        {
+                            subject: {
+                                __typename: 'User',
+                                id: '101',
+                                username: 'emirkusturica',
+                                displayName: 'Emir Kusturica',
+                                viewerCanAdminister: true,
+                            },
+                            settings: {},
+                            lastID: null,
                         },
-                        settings: {},
-                        lastID: null,
-                    },
-                ])
+                    ],
+                    {}
+                )
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
@@ -100,32 +109,35 @@ describe('getInsightsDashboards', () => {
 
         test('with personal (user-wide) dashboards only', () => {
             expect(
-                getInsightsDashboards([
-                    {
-                        subject: {
-                            __typename: 'User',
-                            id: '101',
-                            username: 'emirkusturica',
-                            displayName: 'Emir Kusturica',
-                            viewerCanAdminister: true,
-                        },
-                        settings: {
-                            'insights.dashboards': {
-                                'insights.dashboard.testDashboard': {
-                                    id: '001',
-                                    title: 'Test Dashboard',
-                                    insightIds: ['insightID1', 'insightID2'],
-                                },
-                                'insights.dashboard.anotherTestDashboard': {
-                                    id: '002',
-                                    title: 'Another Test Dashboard',
-                                    insightIds: ['insightID3', 'insightID4'],
+                getInsightsDashboards(
+                    [
+                        {
+                            subject: {
+                                __typename: 'User',
+                                id: '101',
+                                username: 'emirkusturica',
+                                displayName: 'Emir Kusturica',
+                                viewerCanAdminister: true,
+                            },
+                            settings: {
+                                'insights.dashboards': {
+                                    'insights.dashboard.testDashboard': {
+                                        id: '001',
+                                        title: 'Test Dashboard',
+                                        insightIds: ['insightID1', 'insightID2'],
+                                    },
+                                    'insights.dashboard.anotherTestDashboard': {
+                                        id: '002',
+                                        title: 'Another Test Dashboard',
+                                        insightIds: ['insightID3', 'insightID4'],
+                                    },
                                 },
                             },
+                            lastID: null,
                         },
-                        lastID: null,
-                    },
-                ])
+                    ],
+                    {}
+                )
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
@@ -166,46 +178,49 @@ describe('getInsightsDashboards', () => {
 
         test('with org-wide and personal dashboards', () => {
             expect(
-                getInsightsDashboards([
-                    {
-                        subject: {
-                            __typename: 'Org',
-                            id: '102',
-                            name: 'sourcegraph',
-                            displayName: 'Sourcegraph',
-                            viewerCanAdminister: true,
-                        },
-                        settings: {
-                            'insights.dashboards': {
-                                'insights.dashboard.testDashboard': {
-                                    id: '001',
-                                    title: 'Test Dashboard',
-                                    insightIds: ['insightID1', 'insightID2'],
+                getInsightsDashboards(
+                    [
+                        {
+                            subject: {
+                                __typename: 'Org',
+                                id: '102',
+                                name: 'sourcegraph',
+                                displayName: 'Sourcegraph',
+                                viewerCanAdminister: true,
+                            },
+                            settings: {
+                                'insights.dashboards': {
+                                    'insights.dashboard.testDashboard': {
+                                        id: '001',
+                                        title: 'Test Dashboard',
+                                        insightIds: ['insightID1', 'insightID2'],
+                                    },
                                 },
                             },
+                            lastID: null,
                         },
-                        lastID: null,
-                    },
-                    {
-                        subject: {
-                            __typename: 'User',
-                            id: '101',
-                            username: 'emirkusturica',
-                            displayName: 'Emir Kusturica',
-                            viewerCanAdminister: true,
-                        },
-                        settings: {
-                            'insights.dashboards': {
-                                'insights.dashboard.anotherTestDashboard': {
-                                    id: '002',
-                                    title: 'Another Test Dashboard',
-                                    insightIds: ['insightID3', 'insightID4'],
+                        {
+                            subject: {
+                                __typename: 'User',
+                                id: '101',
+                                username: 'emirkusturica',
+                                displayName: 'Emir Kusturica',
+                                viewerCanAdminister: true,
+                            },
+                            settings: {
+                                'insights.dashboards': {
+                                    'insights.dashboard.anotherTestDashboard': {
+                                        id: '002',
+                                        title: 'Another Test Dashboard',
+                                        insightIds: ['insightID3', 'insightID4'],
+                                    },
                                 },
                             },
+                            lastID: null,
                         },
-                        lastID: null,
-                    },
-                ])
+                    ],
+                    {}
+                )
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {

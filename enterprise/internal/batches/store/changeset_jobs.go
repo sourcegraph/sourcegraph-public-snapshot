@@ -188,6 +188,8 @@ func scanChangesetJob(c *btypes.ChangesetJob, s scanner) error {
 		c.Payload = new(btypes.ChangesetJobMergePayload)
 	case btypes.ChangesetJobTypeClose:
 		c.Payload = new(btypes.ChangesetJobClosePayload)
+	case btypes.ChangesetJobTypePublish:
+		c.Payload = new(btypes.ChangesetJobPublishPayload)
 	default:
 		return errors.Errorf("unknown job type %q", c.JobType)
 	}

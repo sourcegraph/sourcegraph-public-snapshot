@@ -48,6 +48,7 @@ add('default', () => (
                 output={of(streamingSearchResult)}
                 isSelected={false}
                 isReadOnly={false}
+                isOtherBlockSelected={false}
                 isMacPlatform={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
@@ -67,6 +68,7 @@ add('selected', () => (
                 input="query"
                 output={of(streamingSearchResult)}
                 isSelected={true}
+                isOtherBlockSelected={false}
                 isReadOnly={false}
                 isMacPlatform={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -88,6 +90,7 @@ add('read-only selected', () => (
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isReadOnly={true}
+                isOtherBlockSelected={false}
                 isMacPlatform={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}

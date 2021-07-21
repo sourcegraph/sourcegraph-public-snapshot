@@ -15,19 +15,24 @@ var repositoryRootError error
 
 // RepositoryRoot caches and returns the value of findRoot.
 func RepositoryRoot() (string, error) {
-	once.Do(func() { repositoryRootValue, repositoryRootError = findRoot() })
+	once.Do(func() { repositoryRootValue, repositoryRootError = findRootFromCwd() })
 	return repositoryRootValue, repositoryRootError
 }
 
-// findRoot finds root path of the sourcegraph/sourcegraph repository from
+// findRootFromCwd finds root path of the sourcegraph/sourcegraph repository from
 // the current working directory. Is it an error to run this binary outside
 // of the repository.
-func findRoot() (string, error) {
+func findRootFromCwd() (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 
+	return findRoot(wd)
+}
+
+// findRoot finds the root path of sourcegraph/sourcegraph from wd
+func findRoot(wd string) (string, error) {
 	for {
 		contents, err := os.ReadFile(filepath.Join(wd, "go.mod"))
 		if err == nil {

@@ -224,6 +224,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                                 {...blockCallbackProps}
                                 isReadOnly={isReadOnly}
                                 isSelected={selectedBlockId === block.id}
+                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
                             />
                         )}
                         {block.type === 'query' && (
@@ -233,6 +234,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                                 {...blockCallbackProps}
                                 isReadOnly={isReadOnly}
                                 isSelected={selectedBlockId === block.id}
+                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
                             />
                         )}
                     </>

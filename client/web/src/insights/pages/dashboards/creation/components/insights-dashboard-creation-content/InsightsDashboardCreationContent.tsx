@@ -62,8 +62,17 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     const nameValidator = useDashboardNameValidator({ settings: dashboardsSettings })
-    const name = useField('name', formAPI, { sync: nameValidator })
-    const visibility = useField('visibility', formAPI)
+
+    const name = useField({
+        name: 'name',
+        formApi: formAPI,
+        validators: { sync: nameValidator },
+    })
+
+    const visibility = useField({
+        name: 'visibility',
+        formApi: formAPI,
+    })
 
     // We always have user subject in our settings cascade
     const userSubject = getUserSubject(subjects)
@@ -80,7 +89,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 required={true}
                 autoFocus={true}
                 title="Name"
-                placeholder="Example: My personal code insight dashboard"
+                placeholder="Example: My personal code insights dashboard"
                 description="Shown as the title for your dashboard"
                 valid={name.meta.touched && name.meta.validState === 'VALID'}
                 error={name.meta.touched && name.meta.error}
@@ -101,7 +110,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 <hr className="mt-2 mb-3" />
 
                 <small className="d-block text-muted mb-3">
-                    Shared - visible to everyone is the chosen Organisation
+                    Shared - visible to everyone in the chosen organization
                 </small>
 
                 {organizationSubjects.map(org => (
