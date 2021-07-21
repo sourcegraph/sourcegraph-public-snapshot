@@ -519,22 +519,27 @@ commandsets:
   # TODO: Should we be able to define "env" vars _per set_?
 
   oss:
-    - frontend
-    - worker
-    - repo-updater
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - web
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - web
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
 
   enterprise: &enterprise_set
     checks:
@@ -563,26 +568,31 @@ commandsets:
   default: *enterprise_set
 
   enterprise-codeintel:
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - minio
-    - executor-queue
-    - precise-code-intel-worker
-    - codeintel-executor
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - minio
+      - executor-queue
+      - precise-code-intel-worker
+      - codeintel-executor
 
   enterprise-codeinsights:
     # Add the following overwrites to your sg.config.overwrite.yaml to get
@@ -592,56 +602,71 @@ commandsets:
     #     DISABLE_CODE_INSIGHTS_HISTORICAL: false
     #     DISABLE_CODE_INSIGHTS: false
     #
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - codeinsights-db
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - codeinsights-db
 
   api-only:
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - gitserver
-    - searcher
-    - symbols
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - gitserver
+      - searcher
+      - symbols
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
 
   batches:
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - executor-queue
-    - batches-executor
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - executor-queue
+      - batches-executor
 
 tests:
   # These can be run with `sg test [name]`
