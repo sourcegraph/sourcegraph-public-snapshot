@@ -41,7 +41,7 @@ const (
 	// This may be increased in the future pending stability evaluation, or may
 	// be removed entirely once streaming is in place and we don't need to buffer
 	// the whole result set in memory.
-	maxLimit = 5000
+	maxLimit = 20000
 
 	// numWorkers is how many concurrent readerGreps run in the case of
 	// regexSearch, and the number of parallel workers in the case of
