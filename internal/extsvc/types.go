@@ -311,6 +311,26 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) string
 	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID)
 }
 
+// ExtractToken attempts to extract the token from the supplied args
+func ExtractToken(config string, kind string) (string, error) {
+	parsed, err := ParseConfig(kind, config)
+	if err != nil {
+		return "", errors.Wrap(err, "loading service configuration")
+	}
+	switch c := parsed.(type) {
+	case *schema.GitHubConnection:
+		return c.Token, nil
+	case *schema.GitLabConnection:
+		return c.Token, nil
+	case *schema.BitbucketServerConnection:
+		return c.Token, nil
+	case *schema.PhabricatorConnection:
+		return c.Token, nil
+	default:
+		return "", errors.Errorf("unable to extract token for service kind %q", kind)
+	}
+}
+
 // ExtractRateLimitConfig extracts the rate limit config from the given args. If rate limiting is not
 // supported the error returned will be an ErrRateLimitUnsupported.
 func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, error) {
