@@ -212,7 +212,8 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 	return listProjects(ctx, client)
 }
 
-// FetchUserPermsByToken is the same as FetchUserPerms but only requires a token.
+// FetchUserPermsByToken is the same as FetchUserPerms but it only requires a
+// token.
 func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
 	client := p.clientProvider.GetOAuthClient(token)
 	return listProjects(ctx, client)
