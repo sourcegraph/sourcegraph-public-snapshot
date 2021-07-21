@@ -26,7 +26,7 @@ You will need:
   - Use the [resource estimator](../resource_estimator.md) to ensure you provision enough capacity.
   - Sourcegraph requires SSD backed storage.
   - The configured host must have [Docker Compose](https://docs.docker.com/compose/).
-- [Sourcegraph license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
+- [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
 We offer cloud-specific Sourcegraph installation guides:
 
@@ -44,7 +44,7 @@ You will need:
 
 - [Docker Compose](https://docs.docker.com/compose/) installed.
 - Use the [resource estimator](../resource_estimator.md) to ensure your machine has sufficient capacity.
-- [Sourcegraph license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
+- [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
 To get started, [configure Sourcegraph with Docker Compose](./operations.md#configure). Then run:
 

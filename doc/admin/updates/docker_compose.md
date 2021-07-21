@@ -204,3 +204,5 @@ docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 999
 ### Standard upgrade procedure
 
 Refer to the [upgrade guide](../install/docker-compose/operations.md#upgrade).
+
+
