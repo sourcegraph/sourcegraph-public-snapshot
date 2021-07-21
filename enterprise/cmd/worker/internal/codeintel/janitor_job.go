@@ -43,6 +43,11 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		return nil, err
 	}
 
+	dependencyIndexStore, err := InitDependencyIndexStore()
+	if err != nil {
+		return nil, err
+	}
+
 	dbStoreShim := &janitor.DBStoreShim{Store: dbStore}
 	uploadWorkerStore := dbstore.WorkerutilUploadStore(dbStoreShim, observationContext)
 	indexWorkerStore := dbstore.WorkerutilIndexStore(dbStoreShim, observationContext)
