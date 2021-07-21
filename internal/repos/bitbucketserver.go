@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -33,13 +32,14 @@ type BitbucketServerSource struct {
 
 var _ Source = &BitbucketServerSource{}
 var _ UserSource = &BitbucketServerSource{}
+var _ VersionSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
 func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newBitbucketServerSource(svc, &c, cf)
 }
@@ -323,4 +323,8 @@ func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (stri
 func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.AuthenticatedUsername(ctx)
 	return err
+}
+
+func (s *BitbucketServerSource) Version(ctx context.Context) (string, error) {
+	return s.client.GetVersion(ctx)
 }

@@ -3,12 +3,10 @@ package confdb
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 
@@ -113,7 +111,7 @@ func addDefault(ctx context.Context, tx queryable, contents string) (newLastID *
 func createIfUpToDate(ctx context.Context, tx queryable, lastID *int32, contents string) (latest *SiteConfig, err error) {
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
-		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
+		return nil, errors.Errorf("invalid settings JSON: %v", errs)
 	}
 
 	new := SiteConfig{Contents: contents}

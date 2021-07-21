@@ -206,10 +206,27 @@ func (e *APIError) AccountSuspended() bool {
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	if e, ok := errors.Cause(err).(*APIError); ok {
+	var e *APIError
+	if errors.As(err, &e) {
 		return e.Code
 	}
+
 	return 0
+}
+
+func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
+	if c.githubDotCom {
+		return "unknown", nil
+	}
+
+	var empty interface{}
+
+	header, err := c.requestGetWithHeader(ctx, "/", &empty)
+	if err != nil {
+		return "", err
+	}
+	v := header.Get("X-GitHub-Enterprise-Version")
+	return v, nil
 }
 
 func (c *V3Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {

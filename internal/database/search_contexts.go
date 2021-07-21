@@ -3,10 +3,10 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"sort"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"

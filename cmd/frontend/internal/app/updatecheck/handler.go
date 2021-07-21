@@ -2,7 +2,6 @@ package updatecheck
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -147,7 +146,7 @@ var timeNow = time.Now
 func canUpdateDate(clientVersionString string) (bool, error) {
 	match := dateRegex.FindStringSubmatch(clientVersionString)
 	if len(match) != 2 {
-		return false, fmt.Errorf("no date in version string %q", clientVersionString)
+		return false, errors.Errorf("no date in version string %q", clientVersionString)
 	}
 
 	t, err := time.ParseInLocation("2006-01-02", match[1], time.UTC)
@@ -191,6 +190,7 @@ type pingRequest struct {
 	ExtensionsUsage     json.RawMessage `json:"extensionsUsage"`
 	CodeInsightsUsage   json.RawMessage `json:"codeInsightsUsage"`
 	CodeMonitoringUsage json.RawMessage `json:"codeMonitoringUsage"`
+	CodeHostVersions    json.RawMessage `json:"codeHostVersions"`
 	InitialAdminEmail   string          `json:"initAdmin"`
 	TotalUsers          int32           `json:"totalUsers"`
 	HasRepos            bool            `json:"repos"`
@@ -295,6 +295,7 @@ type pingPayload struct {
 	ExtensionsUsage      json.RawMessage `json:"extensions_usage"`
 	CodeInsightsUsage    json.RawMessage `json:"code_insights_usage"`
 	CodeMonitoringUsage  json.RawMessage `json:"code_monitoring_usage"`
+	CodeHostVersions     json.RawMessage `json:"code_host_versions"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`
@@ -378,6 +379,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ExtensionsUsage:      pr.ExtensionsUsage,
 		CodeInsightsUsage:    pr.CodeInsightsUsage,
 		CodeMonitoringUsage:  pr.CodeMonitoringUsage,
+		CodeHostVersions:     pr.CodeHostVersions,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed: strconv.FormatBool(pr.BuiltinSignupAllowed),

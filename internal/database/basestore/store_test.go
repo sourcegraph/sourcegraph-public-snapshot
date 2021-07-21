@@ -3,10 +3,10 @@ package basestore
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 

@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +18,7 @@ import (
 	"time"
 
 	"github.com/beevik/etree"
+	"github.com/cockroachdb/errors"
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
 
@@ -204,7 +204,7 @@ func TestMiddleware(t *testing.T) {
 		if op.ExternalAccount.ServiceType == "saml" && op.ExternalAccount.ServiceID == idpServer.IDP.MetadataURL.String() && op.ExternalAccount.ClientID == "http://example.com/.auth/saml/metadata" && op.ExternalAccount.AccountID == mockedExternalID {
 			return mockedUserID, "", nil
 		}
-		return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
+		return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
 	defer func() { auth.MockGetAndSaveUser = nil }()
 
@@ -215,12 +215,12 @@ func TestMiddleware(t *testing.T) {
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/.api/", Middleware(nil).API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID && uid != 0 {
 			t.Errorf("got actor UID %d, want %d", uid, mockedUserID)
 		}
 	})))
-	authedHandler.Handle("/", Middleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/", Middleware(nil).App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
 			_, _ = w.Write([]byte("This is the home"))

@@ -45,6 +45,7 @@ type key int
 
 const actorKey key = iota
 
+// FromContext returns a new Actor instance from a given context.
 func FromContext(ctx context.Context) *Actor {
 	a, ok := ctx.Value(actorKey).(*Actor)
 	if !ok || a == nil {

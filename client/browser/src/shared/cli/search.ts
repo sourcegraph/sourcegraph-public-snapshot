@@ -98,7 +98,7 @@ export class SearchCommand {
                 this.settingsTimeoutHandler = 0
 
                 const platformContext = createPlatformContext(
-                    { urlToFile: undefined, getContext: undefined },
+                    { urlToFile: undefined },
                     { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
                     IS_EXTENSION
                 )

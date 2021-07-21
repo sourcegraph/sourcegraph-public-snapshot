@@ -1,12 +1,16 @@
-import * as jsonc from '@sqs/jsonc-parser'
+import { get } from 'lodash'
 
-import { Insight, InsightTypePrefix, isLangStatsInsight, isSearchBasedInsight } from '../types'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
+import {
+    Insight,
+    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
+    InsightType,
+    InsightTypePrefix,
+    isLangStatsInsight,
+    isSearchBasedInsight,
+} from '../types'
 
 /**
  * Returns insights extension name based on insight id.
@@ -24,18 +28,27 @@ const getExtensionNameByInsight = (insight: Insight): string | undefined => {
 }
 
 /**
- * Simplified jsonc API method to modify jsonc object.
- *
- * @param originalContent Original content (settings)
- * @param path - path to the field which will be modified
- * @param value - new value for modify field
+ * Returns insight settings key. Since different types of insight live in different
+ * places in the settings we have to derive this place (settings key) by insight types
  */
-const modify = (originalContent: string, path: jsonc.JSONPath, value: unknown): string => {
-    const addingExtensionKeyEdits = jsonc.modify(originalContent, path, value, {
-        formattingOptions: defaultFormattingOptions,
-    })
+const getInsightSettingKey = (insight: Insight): string[] => {
+    // Lang stats insight always lives on top level by its unique id
+    if (isLangStatsInsight(insight)) {
+        return [insight.id]
+    }
 
-    return jsonc.applyEdits(originalContent, addingExtensionKeyEdits)
+    // Search based insight may live in two main places
+    switch (insight.type) {
+        // Extension based lives on top level of settings file by its id
+        case InsightType.Extension: {
+            return [insight.id]
+        }
+
+        // Backend based insight lives in insights.allrepos map
+        case InsightType.Backend: {
+            return [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insight.id]
+        }
+    }
 }
 
 /**
@@ -46,7 +59,8 @@ const modify = (originalContent: string, path: jsonc.JSONPath, value: unknown): 
  * @param insight - insight configuration to add in settings file
  */
 export const addInsightToSettings = (settings: string, insight: Insight): string => {
-    const { id, visibility, ...originalInsight } = insight
+    // remove all synthetic properties from the insight object
+    const { id, visibility, type, ...originalInsight } = insight
 
     const extensionName = getExtensionNameByInsight(insight)
 
@@ -56,9 +70,10 @@ export const addInsightToSettings = (settings: string, insight: Insight): string
 
     // Turn on extension if user in creation code insight.
     const settingsWithExtension = modify(settings, ['extensions', extensionName], true)
+    const insightSettingsKey = getInsightSettingKey(insight)
 
     // Add insight to the user settings
-    return modify(settingsWithExtension, [id], originalInsight)
+    return modify(settingsWithExtension, insightSettingsKey, originalInsight)
 }
 
 interface RemoveInsightFromSettingsInputs {
@@ -96,11 +111,30 @@ export const removeInsightFromSettings = (props: RemoveInsightFromSettingsInputs
         )
     }
 
-    // Remove insight settings from subject (user/org settings)
-    return modify(
-        originalSettings,
-        // According to our naming convention <type>.insight.<name>
-        [insightID],
-        undefined
-    )
+    // Just to be sure that we removed this insight whatever this insight is (backend or extension based)
+    // Remove this insight from top level of settings file and from insights.allrepos
+    const allPossibleInsightSettingsKeys = [[insightID], [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insightID]]
+
+    let editedSettings = originalSettings
+    const parsedSettings = parseJSONCOrError<object>(originalSettings)
+
+    if (isErrorLike(parsedSettings)) {
+        return originalSettings
+    }
+
+    for (const settingsKey of allPossibleInsightSettingsKeys) {
+        // If settings content jsonc doesn't have a value under the settingsKey
+        // it fails with parsing error. We should check existence of the property that
+        // we're about to remove
+        if (get(parsedSettings, settingsKey)) {
+            editedSettings = modify(
+                originalSettings,
+                // According to our naming convention <type>.insight.<name>
+                settingsKey,
+                undefined
+            )
+        }
+    }
+
+    return editedSettings
 }

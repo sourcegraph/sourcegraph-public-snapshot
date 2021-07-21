@@ -101,8 +101,9 @@ type PatternInfo struct {
 	// and IncludePatterns are case sensitive.
 	PathPatternsAreCaseSensitive bool
 
-	// FileMatchLimit limits the number of files with matches that are returned.
-	FileMatchLimit int
+	// Limit is the cap on the total number of matches returned.
+	// A match is either a path match, or a fragment of a line matched by the query.
+	Limit int
 
 	// PatternMatchesPath is whether the pattern should be matched against the content
 	// of files.
@@ -152,8 +153,8 @@ func (p *PatternInfo) String() string {
 	if !p.PatternMatchesPath {
 		args = append(args, "nopath")
 	}
-	if p.FileMatchLimit > 0 {
-		args = append(args, fmt.Sprintf("filematchlimit:%d", p.FileMatchLimit))
+	if p.Limit > 0 {
+		args = append(args, fmt.Sprintf("limit:%d", p.Limit))
 	}
 	for _, lang := range p.Languages {
 		args = append(args, fmt.Sprintf("lang:%s", lang))
@@ -194,7 +195,9 @@ type Response struct {
 type FileMatch struct {
 	Path        string
 	LineMatches []LineMatch
-	// MatchCount is the number of matches. Different from len(LineMatches), as multiple lines may correspond to one logical match.
+
+	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
+	// lines may correspond to one logical match when doing a structural search
 	MatchCount int
 
 	// LimitHit is true if LineMatches may not include all LineMatches.

@@ -105,7 +105,7 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
                             {view.subtitle && <div className={styles.insightCardSubtitle}>{view.subtitle}</div>}
                         </div>
 
-                        {hasMenu && <InsightCardMenu insightID={id} onDelete={handleDelete} />}
+                        {hasMenu && <InsightCardMenu className="mr-n2" insightID={id} onDelete={handleDelete} />}
                     </header>
 
                     <InsightViewContent

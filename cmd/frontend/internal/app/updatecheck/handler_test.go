@@ -138,6 +138,7 @@ func TestSerializeBasic(t *testing.T) {
 		ClientVersionString:  "3.12.6",
 		AuthProviders:        []string{"foo", "bar"},
 		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		CodeHostVersions:     nil,
 		BuiltinSignupAllowed: true,
 		HasExtURL:            false,
 		UniqueUsers:          123,
@@ -189,6 +190,7 @@ func TestSerializeBasic(t *testing.T) {
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
@@ -252,6 +254,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
@@ -263,13 +266,14 @@ func TestSerializeFromQuery(t *testing.T) {
 	}`)
 }
 
-func TestSerializeAutomationUsage(t *testing.T) {
+func TestSerializeBatchChangesUsage(t *testing.T) {
 	pr := &pingRequest{
 		ClientSiteID:         "0101-0101",
 		DeployType:           "server",
 		ClientVersionString:  "3.12.6",
 		AuthProviders:        []string{"foo", "bar"},
 		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		CodeHostVersions:     nil,
 		BuiltinSignupAllowed: true,
 		HasExtURL:            false,
 		UniqueUsers:          123,
@@ -322,6 +326,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
@@ -409,6 +414,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		ClientVersionString:  "3.12.6",
 		AuthProviders:        []string{"foo", "bar"},
 		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		CodeHostVersions:     nil,
 		BuiltinSignupAllowed: true,
 		HasExtURL:            false,
 		UniqueUsers:          123,
@@ -520,6 +526,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
@@ -564,6 +571,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		ClientVersionString:  "3.12.6",
 		AuthProviders:        []string{"foo", "bar"},
 		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		CodeHostVersions:     nil,
 		BuiltinSignupAllowed: true,
 		HasExtURL:            false,
 		UniqueUsers:          123,
@@ -675,6 +683,79 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeCodeHostVersions(t *testing.T) {
+	pr := &pingRequest{
+		ClientSiteID:         "0101-0101",
+		DeployType:           "server",
+		ClientVersionString:  "3.12.6",
+		AuthProviders:        []string{"foo", "bar"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		CodeHostVersions:     json.RawMessage([]byte(`[{"external_service_kind":"GITHUB","version":"1.2.3.4"}]`)),
+		BuiltinSignupAllowed: true,
+		HasExtURL:            false,
+		UniqueUsers:          123,
+		Activity:             nil,
+		BatchChangesUsage:    nil,
+		CodeIntelUsage:       nil,
+		CodeMonitoringUsage:  nil,
+		NewCodeIntelUsage:    nil,
+		SearchUsage:          nil,
+		GrowthStatistics:     nil,
+		SavedSearches:        nil,
+		HomepagePanels:       nil,
+		SearchOnboarding:     nil,
+		InitialAdminEmail:    "test@sourcegraph.com",
+		TotalUsers:           234,
+		HasRepos:             true,
+		EverSearched:         false,
+		EverFindRefs:         true,
+		RetentionStatistics:  nil,
+	}
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"remote_site_id": "0101-0101",
+		"license_key": "",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": null,
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_monitoring_usage": null,
+		"search_usage": null,
+		"growth_statistics": null,
+		"saved_searches": null,
+		"homepage_panels": null,
+		"search_onboarding": null,
+		"repositories": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": [{"external_service_kind":"GITHUB","version":"1.2.3.4"}],
 		"builtin_signup_allowed": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",

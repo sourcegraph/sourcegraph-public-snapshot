@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
@@ -60,7 +61,7 @@ func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebho
 		ExternalServices: database.ExternalServices(db),
 	}
 
-	webhookhandlers.Init(&gh)
+	webhookhandlers.Init(db, &gh)
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(&gh))
 
@@ -110,8 +111,8 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs)))
-	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList)))
+	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
+	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -181,10 +182,11 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	trace.SetRequestErrorCause(r.Context(), err)
 
 	// Handle custom errors
-	if ee, ok := err.(*handlerutil.URLMovedError); ok {
-		err := handlerutil.RedirectToNewRepoName(w, r, ee.NewRepo)
+	var e *handlerutil.URLMovedError
+	if errors.As(err, &e) {
+		err := handlerutil.RedirectToNewRepoName(w, r, e.NewRepo)
 		if err != nil {
-			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewRepo)
+			log15.Error("error redirecting to new URI", "err", err, "new_url", e.NewRepo)
 		}
 		return
 	}

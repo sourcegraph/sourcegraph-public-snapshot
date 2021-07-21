@@ -51,14 +51,25 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	return false, err
 }
 
-// Head determines the tip commit of the default branch for the given repository.
-func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err error) {
+// Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
+// for the given repository (which occurs with empty repositories), a false-valued flag is returned along with
+// a nil error and empty revision.
+func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.head.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	if err != nil {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			err = nil
+		}
+
+		return "", false, err
+	}
+
+	return revision, true, nil
 }
 
 // CommitDate returns the time that the given commit was committed.
@@ -234,7 +245,7 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 
 		parts := strings.SplitN(line, ":", 4)
 		if len(parts) != 4 {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
 		commit := parts[0]
@@ -250,12 +261,12 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 			}
 		}
 		if refType == RefTypeUnknown {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
 		createdDate, err := time.Parse(time.RFC3339, parts[3])
 		if err != nil {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
 		refDescriptions[commit] = RefDescription{

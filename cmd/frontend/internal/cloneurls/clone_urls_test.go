@@ -8,12 +8,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestReposourceCloneURLToRepoName(t *testing.T) {
 	ctx := context.Background()
+
+	db := dbtest.NewDB(t, "")
 
 	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{
@@ -54,7 +57,7 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repoName, err := ReposourceCloneURLToRepoName(ctx, test.cloneURL)
+			repoName, err := ReposourceCloneURLToRepoName(ctx, db, test.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

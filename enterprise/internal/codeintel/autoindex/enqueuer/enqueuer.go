@@ -60,8 +60,8 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil {
+	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
+	if err != nil || !ok {
 		return nil, errors.Wrap(err, "gitserver.Head")
 	}
 	traceLog(log.String("commit", commit))
@@ -97,7 +97,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic
 
 	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, api.RepoName(repoName))
 	if err != nil {
-		if isNotFoundError(err) {
+		if errcode.IsNotFound(err) {
 			return nil
 		}
 
@@ -106,7 +106,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic
 
 	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
 	if err != nil {
-		if isNotFoundError(err) {
+		if errcode.IsNotFound(err) {
 			return nil
 		}
 
@@ -130,8 +130,8 @@ func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryI
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil {
+	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
+	if err != nil || !ok {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 	traceLog(log.String("commit", commit))
@@ -216,14 +216,4 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 	}
 
 	return indexes, nil
-}
-
-func isNotFoundError(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if errcode.IsNotFound(ex) {
-			return true
-		}
-	}
-
-	return false
 }

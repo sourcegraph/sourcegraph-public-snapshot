@@ -49,7 +49,7 @@ export const FormInput = forwardRef((props, reference) => {
     } = props
 
     return (
-        <label className={classnames(className)}>
+        <label className={classnames('w-100', className)}>
             {title && <div className="mb-2">{title}</div>}
 
             <LoaderInput className="d-flex" loading={loading}>
@@ -67,14 +67,12 @@ export const FormInput = forwardRef((props, reference) => {
             </LoaderInput>
 
             {error && (
-                <small className="text-danger form-text" role="alert">
+                <small role="alert" className="text-danger form-text">
                     {error}
                 </small>
             )}
             {!error && description && (
-                <small role="alert" className={classnames('text-muted', 'form-text')}>
-                    {description}
-                </small>
+                <small className={classnames('text-muted', 'form-text', styles.description)}>{description}</small>
             )}
         </label>
     )

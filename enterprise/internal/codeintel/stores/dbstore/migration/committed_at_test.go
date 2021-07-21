@@ -6,13 +6,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -38,7 +39,7 @@ func TestCommittedAtMigrator(t *testing.T) {
 			return expectedCommitDates[i], nil
 		}
 
-		return time.Time{}, fmt.Errorf("too many calls")
+		return time.Time{}, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -141,7 +142,7 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 			return allDates[i], nil
 		}
 
-		return time.Time{}, fmt.Errorf("too many calls")
+		return time.Time{}, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -238,13 +239,13 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, &basegitserver.RevisionNotFoundError{}
+				return time.Time{}, &gitserver.RevisionNotFoundError{}
 			}
 
 			return allDates[i], nil
 		}
 
-		return time.Time{}, fmt.Errorf("too many calls")
+		return time.Time{}, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {

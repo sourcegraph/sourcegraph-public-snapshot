@@ -123,7 +123,11 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             },
                         ]}
                         actions={
-                            <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
+                            <CodeIntelDeleteUpload
+                                state={uploadOrError.state}
+                                deleteUpload={deleteUpload}
+                                deletionOrError={deletionOrError}
+                            />
                         }
                         className="mb-3"
                     />
@@ -160,19 +164,31 @@ function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): 
 }
 
 interface CodeIntelDeleteUploadProps {
+    state: LSIFUploadState
     deleteUpload: () => Promise<void>
     deletionOrError?: 'loading' | 'deleted' | ErrorLike
 }
 
-const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({ deleteUpload, deletionOrError }) => (
-    <button
-        type="button"
-        className="btn btn-outline-danger"
-        onClick={deleteUpload}
-        disabled={deletionOrError === 'loading'}
-        aria-describedby="upload-delete-button-help"
-        data-tooltip="Deleting this upload makes it immediately unavailable to answer code intelligence queries."
-    >
-        <DeleteIcon className="icon-inline" /> Delete upload
-    </button>
-)
+const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
+    state,
+    deleteUpload,
+    deletionOrError,
+}) =>
+    state === LSIFUploadState.DELETING ? (
+        <></>
+    ) : (
+        <button
+            type="button"
+            className="btn btn-outline-danger"
+            onClick={deleteUpload}
+            disabled={deletionOrError === 'loading'}
+            aria-describedby="upload-delete-button-help"
+            data-tooltip={
+                state === LSIFUploadState.COMPLETED
+                    ? 'Deleting this upload will make it unavailable to answer code intelligence queries the next time the repository commit graph is refreshed.'
+                    : 'Delete this upload immediately'
+            }
+        >
+            <DeleteIcon className="icon-inline" /> Delete upload
+        </button>
+    )

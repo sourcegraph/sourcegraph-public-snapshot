@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,7 +32,7 @@ func TestUnknownCommitsJanitor(t *testing.T) {
 func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if commit == "foo-y" || commit == "bar-x" || commit == "baz-z" {
-			return &basegitserver.RevisionNotFoundError{}
+			return &gitserver.RevisionNotFoundError{}
 		}
 
 		return nil

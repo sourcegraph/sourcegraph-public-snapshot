@@ -10,9 +10,11 @@ import { eventLogger } from '../../../../tracking/eventLogger'
 import { queryAllChangesetIDs } from '../backend'
 
 import styles from './ChangesetSelectRow.module.scss'
+import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
 import { MergeChangesetsModal } from './MergeChangesetsModal'
+import { PublishChangesetsModal } from './PublishChangesetsModal'
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
 
 /**
@@ -103,6 +105,37 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
         isAvailable: ({ state }) => state === ChangesetState.OPEN,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <MergeChangesetsModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
+            />
+        ),
+    },
+    {
+        type: 'close',
+        buttonLabel: 'Close changesets',
+        dropdownTitle: 'Close changesets',
+        dropdownDescription:
+            'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
+        isAvailable: ({ state }) => state === ChangesetState.OPEN || state === ChangesetState.DRAFT,
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <CloseChangesetsModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
+            />
+        ),
+    },
+    {
+        type: 'publish',
+        buttonLabel: 'Publish changesets',
+        dropdownTitle: 'Publish changesets',
+        dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
+        isAvailable: ({ state }) => state !== ChangesetState.CLOSED,
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <PublishChangesetsModal
                 batchChangeID={batchChangeID}
                 changesetIDs={changesetIDs}
                 afterCreate={onDone}

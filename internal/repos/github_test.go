@@ -5,22 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -148,22 +150,22 @@ func TestGithubSource_makeRepo(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		schmea *schema.GitHubConnection
+		schema *schema.GitHubConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url: "https://github.com",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url:        "https://github.com",
 				GitURLType: "ssh",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url:                   "https://github.com",
 				RepositoryPathPattern: "gh/{nameWithOwner}",
 			},
@@ -175,7 +177,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(&svc, test.schmea, nil)
+			s, err := newGithubSource(&svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -438,7 +440,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 				src, err := githubSrc.WithAuthenticator(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {
@@ -471,5 +473,134 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 		if !githubSrc.excludes(r) {
 			t.Errorf("GitHubSource should exclude %+v", r)
 		}
+	}
+}
+
+func TestGithubSource_GetVersion(t *testing.T) {
+	t.Run("github.com", func(t *testing.T) {
+		svc := &types.ExternalService{
+			Kind: extsvc.KindGitHub,
+			Config: marshalJSON(t, &schema.GitHubConnection{
+				Url: "https://github.com",
+			}),
+		}
+
+		githubSrc, err := NewGithubSource(svc, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := githubSrc.Version(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if want := "unknown"; have != want {
+			t.Fatalf("wrong version returned. want=%s, have=%s", want, have)
+		}
+	})
+
+	t.Run("github enterprise", func(t *testing.T) {
+		// The GithubSource uses the github.Client under the hood, which
+		// uses rcache, a caching layer that uses Redis.
+		// We need to clear the cache before we run the tests
+		rcache.SetupForTest(t)
+
+		fixtureName := "githubenterprise-version"
+		gheToken := os.Getenv("GHE_TOKEN")
+		if update(fixtureName) && gheToken == "" {
+			t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
+		}
+
+		cf, save := newClientFactory(t, fixtureName)
+		defer save(t)
+
+		svc := &types.ExternalService{
+			Kind: extsvc.KindGitHub,
+			Config: marshalJSON(t, &schema.GitHubConnection{
+				Url:   "https://ghe.sgdev.org",
+				Token: gheToken,
+			}),
+		}
+
+		githubSrc, err := NewGithubSource(svc, cf)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := githubSrc.Version(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if want := "2.22.6"; have != want {
+			t.Fatalf("wrong version returned. want=%s, have=%s", want, have)
+		}
+	})
+}
+
+func TestRepositoryQuery_Do(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		query string
+		first int
+		limit int
+		now   time.Time
+	}{
+		{
+			name:  "exceeds-limit",
+			query: "stars:10000..10100",
+			first: 10,
+			limit: 20, // We simulate a lower limit that the 1000 limit on github.com
+		},
+		{
+			name:  "doesnt-exceed-limit",
+			query: "repo:tsenart/vegeta stars:>=14000",
+			first: 10,
+			limit: 20,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(t.Name()), t.Name())
+			t.Cleanup(save)
+
+			cli, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			apiURL, _ := url.Parse("https://api.github.com")
+			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+
+			q := repositoryQuery{
+				Query:    tc.query,
+				First:    tc.first,
+				Limit:    tc.limit,
+				Searcher: github.NewV4Client(apiURL, token, cli),
+			}
+
+			results := make(chan *githubResult)
+			go func() {
+				q.Do(context.Background(), results)
+				close(results)
+			}()
+
+			type result struct {
+				Repo  *github.Repository
+				Error string
+			}
+
+			var have []result
+			for r := range results {
+				res := result{Repo: r.repo}
+				if r.err != nil {
+					res.Error = r.err.Error()
+				}
+				have = append(have, res)
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+		})
 	}
 }

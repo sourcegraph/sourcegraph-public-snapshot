@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-oidc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -108,7 +109,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 		if op.ExternalAccount.ServiceType == "openidconnect" && op.ExternalAccount.ServiceID == oidcProvider.Issuer && op.ExternalAccount.ClientID == testClientID && op.ExternalAccount.AccountID == testOIDCUser {
 			return 123, "", nil
 		}
-		return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
+		return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
 
 	return srv, &email
@@ -168,8 +169,8 @@ func TestMiddleware(t *testing.T) {
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware.API(h))
-	authedHandler.Handle("/", Middleware.App(h))
+	authedHandler.Handle("/.api/", Middleware(nil).API(h))
+	authedHandler.Handle("/", Middleware(nil).App(h))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -346,7 +347,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	defer func() { database.Mocks = database.MockStores{} }()
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := Middleware.App(h)
+	authedHandler := Middleware(nil).App(h)
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))

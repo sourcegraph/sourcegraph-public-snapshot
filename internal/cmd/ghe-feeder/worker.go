@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v31/github"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -156,9 +156,9 @@ func (wkr *worker) run(ctx context.Context) {
 		if err != nil {
 			wkr.numFailed++
 			errType := "unknown"
-			var ferr *feederError
-			if errors.As(err, &ferr) {
-				errType = ferr.errType
+			var e *feederError
+			if errors.As(err, &e) {
+				errType = e.errType
 			}
 			reposFailedCounter.With(prometheus.Labels{"worker": wkr.name, "err_type": errType}).Inc()
 			_ = wkr.fdr.failed(line, errType)

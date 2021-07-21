@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -41,12 +40,13 @@ type GitLabSource struct {
 var _ Source = &GitLabSource{}
 var _ UserSource = &GitLabSource{}
 var _ AffiliatedRepositorySource = &GitLabSource{}
+var _ VersionSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGitLabSource(svc, &c, cf)
 }
@@ -144,6 +144,10 @@ func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
+}
+
+func (s GitLabSource) Version(ctx context.Context) (string, error) {
+	return s.client.GetVersion(ctx)
 }
 
 func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {

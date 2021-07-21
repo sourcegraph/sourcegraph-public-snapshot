@@ -31,6 +31,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -74,7 +75,8 @@ interface Props
         VersionContextProps,
         SearchContextInputProps,
         CodeMonitoringProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        FeatureFlagProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
@@ -255,7 +257,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         {props.showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
                         {codeInsights && (
                             <NavItem icon={BarChartIcon}>
-                                <NavLink to="/insights">Insights</NavLink>
+                                <NavLink to="/insights/dashboards/all">Insights</NavLink>
                             </NavItem>
                         )}
                         <NavItem icon={PuzzleOutlineIcon}>

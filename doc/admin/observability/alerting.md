@@ -147,7 +147,7 @@ The test alert may take up to a minute to fire. The triggered alert will automat
 
 ### Silencing alerts
 
-If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the [`observability.silenceAlerts`](../config/site_config.md#observability-silenceAlerts)field. For example:
+If there is an alert you are aware of and you wish to silence notifications (from the notification channels you have set up) for it, add an entry to the [`observability.silenceAlerts`](../config/site_config.md#observability-silenceAlerts)field. For example:
 
 ```json
 {
@@ -158,6 +158,8 @@ If there is an alert you are aware of and you wish to silence notifications for 
 ```
 
 You can find the appropriate identifier for each alert in [alert solutions](./alert_solutions.md).
+
+> NOTE: You can still see the alerts on your [Grafana dashboard](./metrics.md#grafana).
 
 ## Setting up alerting: before Sourcegraph 3.17
 

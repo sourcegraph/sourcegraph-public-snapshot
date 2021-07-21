@@ -2,16 +2,17 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -28,6 +29,8 @@ func init() {
 // 🚨 SECURITY: This guarantees the integrity of the identity resolution process (ensuring that new
 // external accounts are linked to the appropriate user account)
 func TestGetAndSaveUser(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	type innerCase struct {
 		description string
 		actorUID    int32
@@ -393,7 +396,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
-						userID, safeErr, err := GetAndSaveUser(ctx, op)
+						userID, safeErr, err := GetAndSaveUser(ctx, db, op)
 						for _, v := range []struct {
 							label string
 							got   interface{}
@@ -519,7 +522,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
 				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
 			}
-			if _, _, err := GetAndSaveUser(ctx, op); err != nil {
+			if _, _, err := GetAndSaveUser(ctx, nil, op); err != nil {
 				t.Fatal(err)
 			}
 			if user.DisplayName != test.wantDisplayName {
@@ -651,7 +654,7 @@ func (m *mocks) AssociateUserAndSave(userID int32, spec extsvc.AccountSpec, data
 	for _, u := range m.userInfos {
 		for _, a := range u.extAccts {
 			if a == spec && u.user.ID != userID {
-				return fmt.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, userID)
+				return errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, userID)
 			}
 		}
 	}

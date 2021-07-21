@@ -51,6 +51,8 @@ describe('StreamingSearchResults', () => {
         authenticatedUser: null,
 
         navbarSearchQueryState: { query: '' },
+        onNavbarQueryChange: () => {},
+        isSourcegraphDotCom: false,
 
         settingsCascade: {
             subjects: null,

@@ -24,6 +24,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -85,6 +86,10 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -487,13 +492,11 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 }
 
-const mutationApplyBatchChange = `
+const fragmentBatchChange = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
-
-mutation($batchSpec: ID!, $ensureBatchChange: ID){
-  applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange) {
-    id, name, description
+fragment batchChange on BatchChange {
+	id, name, description
     initialApplier    { ...u }
     lastApplier       { ...u }
     lastAppliedAt
@@ -503,16 +506,23 @@ mutation($batchSpec: ID!, $ensureBatchChange: ID){
     }
 
     changesets {
-      nodes {
-        __typename
-        state
-      }
+		nodes {
+			__typename
+			state
+		}
 
-      totalCount
+		totalCount
     }
-  }
 }
 `
+
+const mutationApplyBatchChange = `
+mutation($batchSpec: ID!, $ensureBatchChange: ID, $publicationStates: [ChangesetSpecPublicationStateInput!]){
+	applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange, publicationStates: $publicationStates) {
+		...batchChange
+	}
+}
+` + fragmentBatchChange
 
 func TestCreateBatchChange(t *testing.T) {
 	if testing.Short() {
@@ -571,10 +581,199 @@ func TestCreateBatchChange(t *testing.T) {
 }
 
 const mutationCreateBatchChange = `
-mutation($batchSpec: ID!){
-  createBatchChange(batchSpec: $batchSpec) { id }
+mutation($batchSpec: ID!, $publicationStates: [ChangesetSpecPublicationStateInput!]){
+	createBatchChange(batchSpec: $batchSpec, publicationStates: $publicationStates) {
+		...batchChange
+	}
 }
-`
+` + fragmentBatchChange
+
+func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+
+	// Ensure our site configuration doesn't have rollout windows so we get a
+	// consistent initial state.
+	ct.MockConfig(t, &conf.Unified{})
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
+	apiUser := &apitest.User{
+		ID:         userAPIID,
+		DatabaseID: userID,
+		SiteAdmin:  true,
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
+	cstore := store.NewWithClock(db, nil, clock)
+	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/apply-create-batch-change-test", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Since apply and create are essentially the same underneath, we can test
+	// them with the same test code provided we special case the response type
+	// handling.
+	for name, tc := range map[string]struct {
+		exec func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]interface{}) (*apitest.BatchChange, error)
+	}{
+		"applyBatchChange": {
+			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]interface{}) (*apitest.BatchChange, error) {
+				var response struct{ ApplyBatchChange apitest.BatchChange }
+				if errs := apitest.Exec(ctx, t, s, in, &response, mutationApplyBatchChange); errs != nil {
+					return nil, errors.Newf("GraphQL errors: %v", errs)
+				}
+				return &response.ApplyBatchChange, nil
+			},
+		},
+		"createBatchChange": {
+			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]interface{}) (*apitest.BatchChange, error) {
+				var response struct{ CreateBatchChange apitest.BatchChange }
+				if errs := apitest.Exec(ctx, t, s, in, &response, mutationCreateBatchChange); errs != nil {
+					return nil, errors.Newf("GraphQL errors: %v", errs)
+				}
+				return &response.CreateBatchChange, nil
+			},
+		},
+	} {
+		// Create initial specs. Note that we have to append the test case name
+		// to the batch spec ID to avoid cross-contamination between the test
+		// cases.
+		batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "batch-spec-"+name, userID)
+		changesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+			User:      userID,
+			Repo:      repo.ID,
+			BatchSpec: batchSpec.ID,
+			HeadRef:   "main",
+		})
+
+		// We need a couple more changeset specs to make this useful: we need to
+		// be able to test that changeset specs attached to other batch specs
+		// cannot be modified, and that changeset specs with explicit published
+		// fields cause errors.
+		otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "other-batch-spec-"+name, userID)
+		otherChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+			User:      userID,
+			Repo:      repo.ID,
+			BatchSpec: otherBatchSpec.ID,
+			HeadRef:   "main",
+		})
+
+		publishedChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+			User:      userID,
+			Repo:      repo.ID,
+			BatchSpec: batchSpec.ID,
+			HeadRef:   "main",
+			Published: true,
+		})
+
+		t.Run(name, func(t *testing.T) {
+			// Handle the interesting error cases for different
+			// publicationStates inputs.
+			for name, states := range map[string][]map[string]interface{}{
+				"other batch spec": {
+					{
+						"changesetSpec":    marshalChangesetSpecRandID(otherChangesetSpec.RandID),
+						"publicationState": true,
+					},
+				},
+				"duplicate batch specs": {
+					{
+						"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+						"publicationState": true,
+					},
+					{
+						"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+						"publicationState": true,
+					},
+				},
+				"invalid publication state": {
+					{
+						"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+						"publicationState": "foo",
+					},
+				},
+				"invalid changeset spec ID": {
+					{
+						"changesetSpec":    "foo",
+						"publicationState": true,
+					},
+				},
+				"changeset spec with a published state": {
+					{
+						"changesetSpec":    marshalChangesetSpecRandID(publishedChangesetSpec.RandID),
+						"publicationState": true,
+					},
+				},
+			} {
+				t.Run(name, func(t *testing.T) {
+					input := map[string]interface{}{
+						"batchSpec":         string(marshalBatchSpecRandID(batchSpec.RandID)),
+						"publicationStates": states,
+					}
+					if _, errs := tc.exec(actorCtx, t, s, input); errs == nil {
+						t.Fatalf("expected errors, got none")
+					}
+				})
+			}
+
+			// Finally, let's actually make a legit apply.
+			t.Run("success", func(t *testing.T) {
+				input := map[string]interface{}{
+					"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
+					"publicationStates": []map[string]interface{}{
+						{
+							"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
+							"publicationState": true,
+						},
+					},
+				}
+				have, err := tc.exec(actorCtx, t, s, input)
+				if err != nil {
+					t.Error(err)
+				}
+				want := &apitest.BatchChange{
+					ID:          have.ID,
+					Name:        batchSpec.Spec.Name,
+					Description: batchSpec.Spec.Description,
+					Namespace: apitest.UserOrg{
+						ID:         userAPIID,
+						DatabaseID: userID,
+						SiteAdmin:  true,
+					},
+					InitialApplier: apiUser,
+					LastApplier:    apiUser,
+					LastAppliedAt:  marshalDateTime(t, now),
+					Changesets: apitest.ChangesetConnection{
+						Nodes: []apitest.Changeset{
+							{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
+							{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
+						},
+						TotalCount: 2,
+					},
+				}
+				if diff := cmp.Diff(want, have); diff != "" {
+					t.Errorf("unexpected response (-want +have):\n%s", diff)
+				}
+			})
+		})
+	}
+}
 
 func TestMoveBatchChange(t *testing.T) {
 	if testing.Short() {
@@ -692,6 +891,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
+	var repoID api.RepoID = 123
+	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -720,7 +921,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				ExternalState:    &wantExternalStates[0],
+				ExternalStates:   wantExternalStates[0:1],
 				PublicationState: &wantPublicationStates[0],
 				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
 			},
@@ -812,6 +1013,16 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
 				OnlyArchived: true,
+			},
+		},
+		// Setting Repo
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				Repo: &repoGraphQLID,
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				RepoID: repoID,
 			},
 		},
 	}
@@ -1387,7 +1598,8 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	cstore := store.New(db, nil)
+	now := time.Now().UTC().Truncate(time.Millisecond)
+	cstore := store.NewWithClock(db, nil, func() time.Time { return now })
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
@@ -1413,6 +1625,13 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 		ID:        response.CreateBatchSpecExecution.ID,
 		InputSpec: testSpec,
 		State:     "QUEUED",
+		Initiator: apitest.User{
+			ID: string(graphqlbackend.MarshalUserID(userID)),
+		},
+		Namespace: apitest.UserOrg{
+			ID: string(graphqlbackend.MarshalUserID(userID)),
+		},
+		CreatedAt: graphqlbackend.DateTime{Time: now.Truncate(time.Second)},
 	}
 	if diff := cmp.Diff(want, response.CreateBatchSpecExecution); diff != "" {
 		t.Fatalf("invalid execution returned, diff=%s", diff)
@@ -1425,12 +1644,244 @@ mutation($spec: String!) {
 		id
 		inputSpec
 		state
+		createdAt
 		startedAt
 		finishedAt
 		failure
 		placeInQueue
 		batchSpec { id }
+		initiator { id }
+		namespace { id }
 	}
+}
+`
+
+func TestCloseChangesets(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+	cstore := store.New(db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
+	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repo := repos[0]
+	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
+	})
+	otherChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
+	})
+	mergedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateMerged,
+	})
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	generateInput := func() map[string]interface{} {
+		return map[string]interface{}{
+			"batchChange": marshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+		}
+	}
+
+	var response struct {
+		CloseChangesets apitest.BulkOperation
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("0 changesets fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("changeset in different batch change fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("merged changeset fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(mergedChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("runs successfully", func(t *testing.T) {
+		input := generateInput()
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+
+		if response.CloseChangesets.ID == "" {
+			t.Fatalf("expected bulk operation to be created, but was not")
+		}
+	})
+}
+
+const mutationCloseChangesets = `
+mutation($batchChange: ID!, $changesets: [ID!]!) {
+    closeChangesets(batchChange: $batchChange, changesets: $changesets) { id }
+}
+`
+
+func TestPublishChangesets(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+	cstore := store.New(db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
+	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repo := repos[0]
+	publishableChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		User:      userID,
+		Repo:      repo.ID,
+		BatchSpec: batchSpec.ID,
+		HeadRef:   "main",
+	})
+	unpublishableChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		User:      userID,
+		Repo:      repo.ID,
+		BatchSpec: batchSpec.ID,
+		HeadRef:   "main",
+		Published: true,
+	})
+	otherChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		User:      userID,
+		Repo:      repo.ID,
+		BatchSpec: otherBatchSpec.ID,
+		HeadRef:   "main",
+	})
+	publishableChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:            repo.ID,
+		BatchChange:     batchChange.ID,
+		ReconcilerState: btypes.ReconcilerStateCompleted,
+		CurrentSpec:     publishableChangesetSpec.ID,
+	})
+	unpublishableChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:            repo.ID,
+		BatchChange:     batchChange.ID,
+		ReconcilerState: btypes.ReconcilerStateCompleted,
+		CurrentSpec:     unpublishableChangesetSpec.ID,
+	})
+	otherChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:            repo.ID,
+		BatchChange:     otherBatchChange.ID,
+		ReconcilerState: btypes.ReconcilerStateCompleted,
+		CurrentSpec:     otherChangesetSpec.ID,
+	})
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	generateInput := func() map[string]interface{} {
+		return map[string]interface{}{
+			"batchChange": marshalBatchChangeID(batchChange.ID),
+			"changesets": []string{
+				string(marshalChangesetID(publishableChangeset.ID)),
+				string(marshalChangesetID(unpublishableChangeset.ID)),
+			},
+			"draft": true,
+		}
+	}
+
+	var response struct {
+		PublishChangesets apitest.BulkOperation
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("0 changesets fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationPublishChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("changeset in different batch change fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationPublishChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("runs successfully", func(t *testing.T) {
+		input := generateInput()
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationPublishChangesets)
+
+		if response.PublishChangesets.ID == "" {
+			t.Fatalf("expected bulk operation to be created, but was not")
+		}
+	})
+}
+
+const mutationPublishChangesets = `
+mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
+	publishChangesets(batchChange: $batchChange, changesets: $changesets, draft: $draft) { id }
 }
 `
 

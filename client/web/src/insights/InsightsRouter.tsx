@@ -1,6 +1,7 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
+import { Redirect } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -12,12 +13,13 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { CreationRoutes } from './pages/creation/CreationRoutes'
-import { getExperimentalFeatures } from './utils/get-experimental-features'
+import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
+import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
 
-const InsightsLazyPage = lazyComponent(() => import('./pages/insights/InsightsPage'), 'InsightsPage')
-const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
-const DashboardsLazyPage = lazyComponent(() => import('./pages/dashboards/DashboardsPage'), 'DashboardsPage')
+const EditInsightLazyPage = lazyComponent(
+    () => import('./pages/insights/edit-insight/EditInsightPage'),
+    'EditInsightPage'
+)
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -45,18 +47,10 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const { platformContext, settingsCascade, telemetryService, extensionsController, authenticatedUser } = props
 
     const match = useRouteMatch()
-    const { codeInsightsDashboards } = getExperimentalFeatures(settingsCascade)
 
     return (
         <Switch>
-            <Route path={match.url} exact={true}>
-                <InsightsLazyPage
-                    telemetryService={telemetryService}
-                    platformContext={platformContext}
-                    settingsCascade={settingsCascade}
-                    extensionsController={extensionsController}
-                />
-            </Route>
+            <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/all`} />
 
             <Route path={`${match.url}/create`}>
                 <CreationRoutes
@@ -79,19 +73,13 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                 )}
             />
 
-            {codeInsightsDashboards && (
-                <Route
-                    path={`${match.url}/dashboard/:dashboardId?`}
-                    render={(props: RouteComponentProps<{ dashboardId: string }>) => (
-                        <DashboardsLazyPage
-                            telemetryService={telemetryService}
-                            extensionsController={extensionsController}
-                            settingsCascade={settingsCascade}
-                            dashboardID={props.match.params.dashboardId}
-                        />
-                    )}
-                />
-            )}
+            <DashboardsRoutes
+                authenticatedUser={authenticatedUser}
+                telemetryService={telemetryService}
+                extensionsController={extensionsController}
+                platformContext={platformContext}
+                settingsCascade={settingsCascade}
+            />
 
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>

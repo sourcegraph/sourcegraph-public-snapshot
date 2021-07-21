@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -10,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -627,7 +627,7 @@ func TestFileDiffHighlighter(t *testing.T) {
 		case file2.path:
 			return template.HTML(highlightedNew), false, nil
 		default:
-			return "", false, fmt.Errorf("unknown file: %s", p.Filepath)
+			return "", false, errors.Errorf("unknown file: %s", p.Filepath)
 		}
 	}
 	t.Cleanup(highlight.ResetMocks)

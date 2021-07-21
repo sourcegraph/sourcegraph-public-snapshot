@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
@@ -95,7 +95,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 func InitDB() (*sql.DB, error) {
 	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
 	if err := dbconn.SetupGlobalConnection(opts); err != nil {
-		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
+		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()

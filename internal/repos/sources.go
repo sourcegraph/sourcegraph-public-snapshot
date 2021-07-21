@@ -72,10 +72,12 @@ func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) 
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:
 		return NewPerforceSource(svc)
+	case extsvc.KindJVMPackages:
+		return NewJVMPackagesSource(svc)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
-		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
+		return nil, fmt.Errorf("cannot create source for kind %q", svc.Kind)
 	}
 }
 
@@ -104,6 +106,11 @@ type UserSource interface {
 
 type AffiliatedRepositorySource interface {
 	AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
+}
+
+// A VersionSource is a source that can query the version of the code host.
+type VersionSource interface {
+	Version(context.Context) (string, error)
 }
 
 // UnsupportedAuthenticatorError is returned by WithAuthenticator if the
@@ -141,11 +148,12 @@ type SourceError struct {
 }
 
 func (s *SourceError) Error() string {
-	if multiErr, ok := s.Err.(*multierror.Error); ok {
+	var e *multierror.Error
+	if errors.As(s.Err, &e) {
 		// Create new Error with custom formatter. Do not mutate otherwise can
 		// race with other callers of Error.
 		return (&multierror.Error{
-			Errors:      multiErr.Errors,
+			Errors:      e.Errors,
 			ErrorFormat: sourceErrorFormatFunc,
 		}).Error()
 	}

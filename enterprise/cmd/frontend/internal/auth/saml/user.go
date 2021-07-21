@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -34,7 +35,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		return nil, errors.WithMessage(err, "reading AuthnResponse assertions")
 	}
 	if wi := assertions.WarningInfo; wi.InvalidTime || wi.NotInAudience {
-		return nil, fmt.Errorf("invalid SAML AuthnResponse: %+v", wi)
+		return nil, errors.Errorf("invalid SAML AuthnResponse: %+v", wi)
 	}
 
 	pi, err := p.getCachedInfoAndError()
@@ -85,7 +86,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // getOrCreateUser gets or creates a user account based on the SAML claims. It returns the
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, db dbutil.DB, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
 	var data extsvc.AccountData
 	data.SetAccountData(info.accountData)
 
@@ -94,7 +95,7 @@ func getOrCreateUser(ctx context.Context, allowSignup bool, info *authnResponseI
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", info.unnormalizedUsername), err
 	}
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, db, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        username,
 			Email:           info.email,
