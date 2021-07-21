@@ -10,8 +10,9 @@ import { Collapse } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
@@ -397,82 +398,36 @@ export function parsePlaceholder(placeholder: string): Placeholder {
     return parsedPlaceholder
 }
 
-function interleave<T>(values: T[], filler: T): T[] {
-    const result = []
-    if (values.length > 0) {
-        result.push(values[0])
-    }
-    for (let index = 1; index < values.length; index++) {
-        result.push(filler)
-        result.push(values[index])
-    }
-
-    return result
-}
-
-/**
- * Helper function to add quotation marks to filter values if needed. It's not
- * as simple as adding quotes if the value contains spaces due to the existence
- * of predicates.
- */
-function addQuotesIfNeeded(filter: FilterType, value: string): string {
-    switch (filter) {
-        case FilterType.repo:
-        case FilterType.file:
-            // All predicates so far start with `contains`. We should probably
-            // find a more reliable way to identify them eventually.
-            if (/^contains[(.]/.test(value)) {
-                return value
-            }
-    }
-
-    if (/\s/.test(value)) {
-        return `"${value}"`
-    }
-    return value
-}
-
 const classNameTokenMap = {
     text: 'search-filter-keyword',
     value: styles.placeholder,
 }
 
 interface SearchReferenceExampleProps {
-    filter: FilterType
     example: string
     onClick: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ filter, example, onClick }) => {
-    const parseResult = parseSearchQuery(example)
+const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
+    // All current examples are literal queries
+    const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
     // We only use valid queries as examples, so this will always be true
-    if (parseResult.type === 'success') {
+    if (scanResult.type === 'success') {
         return (
             <button className="btn p-0 flex-1" type="button" onClick={() => onClick(example)}>
-                {interleave(
-                    parseResult.nodes
-                        .map(node => {
-                            switch (node.type) {
-                                case 'parameter':
-                                    return (
-                                        <>
-                                            <span className="search-filter-keyword">{node.field}:</span>
-                                            {addQuotesIfNeeded(filter, node.value)}
-                                        </>
-                                    )
-                                case 'pattern':
-                                    return node.value
-                                case 'operator':
-                                    // we currently don't use operators in examples,
-                                    // but we need an entry to make TS happy. Once
-                                    // we do support operators, the query needs to
-                                    // be parsed/rendered differently
-                                    return node.kind
-                            }
-                        })
-                        .filter(Boolean),
-                    ' '
-                )}
+                {scanResult.term.map((term, index) => {
+                    switch (term.type) {
+                        case 'filter':
+                            return (
+                                <React.Fragment key={index}>
+                                    <span className="search-filter-keyword">{term.field.value}:</span>
+                                    {term.value?.quoted ? `"${term.value.value}"` : term.value?.value}
+                                </React.Fragment>
+                            )
+                        default:
+                            return example.slice(term.range.start, term.range.end)
+                    }
+                })}
             </button>
         )
     }
@@ -556,11 +511,7 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                             <div className={classNames('text-code', styles.examples)}>
                                 {searchReference.examples.map(example => (
                                     <p key={example}>
-                                        <SearchReferenceExample
-                                            filter={searchReference.type}
-                                            example={example}
-                                            onClick={onExampleClick}
-                                        />
+                                        <SearchReferenceExample example={example} onClick={onExampleClick} />
                                     </p>
                                 ))}
                             </div>
