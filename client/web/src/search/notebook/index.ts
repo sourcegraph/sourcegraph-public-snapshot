@@ -32,6 +32,7 @@ export type BlockDirection = 'up' | 'down'
 
 export interface BlockProps {
     isSelected: boolean
+    isOtherBlockSelected: boolean
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, value: string): void
@@ -42,20 +43,20 @@ export interface BlockProps {
 }
 
 export class Notebook {
-    private idToBlock: Map<string, Block>
+    private blocks: Map<string, Block>
     private blockOrder: string[]
 
     constructor(initializerBlocks: BlockInitializer[]) {
         const blocks = initializerBlocks.map(block => ({ ...block, id: uuid.v4(), output: null }))
 
-        this.idToBlock = new Map(blocks.map(block => [block.id, block]))
+        this.blocks = new Map(blocks.map(block => [block.id, block]))
         this.blockOrder = blocks.map(block => block.id)
 
         this.renderMarkdownBlocks()
     }
 
     private renderMarkdownBlocks(): void {
-        const blocks = this.idToBlock.values()
+        const blocks = this.blocks.values()
         for (const block of blocks) {
             if (block.type === 'md') {
                 this.runBlockById(block.id)
@@ -65,7 +66,7 @@ export class Notebook {
 
     public getBlocks(): Block[] {
         return this.blockOrder.map(blockId => {
-            const block = this.idToBlock.get(blockId)
+            const block = this.blocks.get(blockId)
             if (!block) {
                 throw new Error(`Block with id:${blockId} does not exist.`)
             }
@@ -74,24 +75,24 @@ export class Notebook {
     }
 
     public setBlockInputById(id: string, value: string): void {
-        const block = this.idToBlock.get(id)
+        const block = this.blocks.get(id)
         if (!block) {
             return
         }
-        this.idToBlock.set(block.id, { ...block, input: value })
+        this.blocks.set(block.id, { ...block, input: value })
     }
 
     public runBlockById(id: string): void {
-        const block = this.idToBlock.get(id)
+        const block = this.blocks.get(id)
         if (!block) {
             return
         }
         switch (block.type) {
             case 'md':
-                this.idToBlock.set(block.id, { ...block, output: renderMarkdown(block.input) })
+                this.blocks.set(block.id, { ...block, output: renderMarkdown(block.input) })
                 break
             case 'query':
-                this.idToBlock.set(block.id, {
+                this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch({
                         // Removes comments
@@ -112,7 +113,7 @@ export class Notebook {
         if (index === -1) {
             return
         }
-        this.idToBlock.delete(id)
+        this.blocks.delete(id)
         this.blockOrder.splice(index, 1)
     }
 
@@ -121,12 +122,12 @@ export class Notebook {
         const block = { id, type, input, output: null }
         // Insert block at the provided index
         this.blockOrder.splice(index, 0, id)
-        this.idToBlock.set(id, block)
+        this.blocks.set(id, block)
         return block
     }
 
     public getBlockById(id: string): Block | null {
-        return this.idToBlock.get(id) ?? null
+        return this.blocks.get(id) ?? null
     }
 
     public moveBlockById(id: string, direction: BlockDirection): void {
@@ -141,7 +142,7 @@ export class Notebook {
     }
 
     public duplicateBlockById(id: string): Block | null {
-        const block = this.idToBlock.get(id)
+        const block = this.blocks.get(id)
         if (!block) {
             return null
         }

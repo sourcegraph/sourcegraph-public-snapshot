@@ -47,6 +47,11 @@ describe('[VISUAL] Code insights page', () => {
     it('is styled correctly with back-end insights', async () => {
         overrideGraphQLExtensions({
             testContext,
+            userSettings: {
+                'insights.allrepos': {
+                    'searchInsights.insight.backend_ID_001': {},
+                },
+            },
             overrides: {
                 /**
                  * Mock back-end insights with standard gql API handler.
@@ -55,7 +60,7 @@ describe('[VISUAL] Code insights page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
 
         await takeChartSnapshot('Code insights page with back-end insights only')
     })
@@ -72,6 +77,9 @@ describe('[VISUAL] Code insights page', () => {
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {},
                 'searchInsights.insight.teamSize': {},
+                'insights.allrepos': {
+                    'searchInsights.insight.backend_ID_001': {},
+                },
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
@@ -85,7 +93,7 @@ describe('[VISUAL] Code insights page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
 
         await takeChartSnapshot('Code insights page with search-based insights only')
     })
@@ -102,6 +110,9 @@ describe('[VISUAL] Code insights page', () => {
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {},
                 'searchInsights.insight.teamSize': {},
+                'insights.allrepos': {
+                    'searchInsights.insight.backend_ID_001': {},
+                },
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': ({ message: 'Error message', name: 'hello' } as unknown) as View,
@@ -115,7 +126,7 @@ describe('[VISUAL] Code insights page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
 
         await takeChartSnapshot('Code insights page with search-based errored insight')
     })
@@ -133,6 +144,9 @@ describe('[VISUAL] Code insights page', () => {
                 'searchInsights.insight.graphQLTypesMigration': {},
                 'searchInsights.insight.teamSize': {},
                 'codeStatsInsights.insight.langUsage': {},
+                'insights.allrepos': {
+                    'searchInsights.insight.backend_ID_001': {},
+                },
             },
             insightExtensionsMocks: {
                 'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
@@ -147,7 +161,7 @@ describe('[VISUAL] Code insights page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
 
         await takeChartSnapshot('Code insights page with all types of insight')
     })

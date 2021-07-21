@@ -39,6 +39,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
+import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -123,6 +124,7 @@ interface Props
     location: H.Location
     history: H.History
     globbing: boolean
+    showBatchChanges: boolean
 }
 
 export const treePageRepositoryFragment = gql`
@@ -143,6 +145,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     caseSensitive,
     settingsCascade,
     useBreadcrumb,
+    showBatchChanges,
     ...props
 }) => {
     useEffect(() => {
@@ -352,6 +355,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
+
     return (
         <div className="tree-page">
             <Container className="tree-page__container">
@@ -421,6 +425,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
                                         </Link>
+                                        {showBatchChanges && (
+                                            <RepoBatchChangesButton
+                                                className="btn btn-outline-secondary"
+                                                repoName={repo.name}
+                                            />
+                                        )}
                                         {repo.viewerCanAdminister && (
                                             <Link
                                                 className="btn btn-outline-secondary"

@@ -5,22 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -535,4 +537,70 @@ func TestGithubSource_GetVersion(t *testing.T) {
 			t.Fatalf("wrong version returned. want=%s, have=%s", want, have)
 		}
 	})
+}
+
+func TestRepositoryQuery_Do(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		query string
+		first int
+		limit int
+		now   time.Time
+	}{
+		{
+			name:  "exceeds-limit",
+			query: "stars:10000..10100",
+			first: 10,
+			limit: 20, // We simulate a lower limit that the 1000 limit on github.com
+		},
+		{
+			name:  "doesnt-exceed-limit",
+			query: "repo:tsenart/vegeta stars:>=14000",
+			first: 10,
+			limit: 20,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(t.Name()), t.Name())
+			t.Cleanup(save)
+
+			cli, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			apiURL, _ := url.Parse("https://api.github.com")
+			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+
+			q := repositoryQuery{
+				Query:    tc.query,
+				First:    tc.first,
+				Limit:    tc.limit,
+				Searcher: github.NewV4Client(apiURL, token, cli),
+			}
+
+			results := make(chan *githubResult)
+			go func() {
+				q.Do(context.Background(), results)
+				close(results)
+			}()
+
+			type result struct {
+				Repo  *github.Repository
+				Error string
+			}
+
+			var have []result
+			for r := range results {
+				res := result{Repo: r.repo}
+				if r.err != nil {
+					res.Error = r.err.Error()
+				}
+				have = append(have, res)
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+		})
+	}
 }
