@@ -111,16 +111,16 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
         header: { label: 'Code intelligence', icon: BrainIcon },
         items: [
             {
-                to: '/code-intelligence/uploads',
+                to: '/uploads',
                 label: 'Uploads',
             },
             {
-                to: '/code-intelligence/indexes',
+                to: '/indexes',
                 label: 'Auto indexing',
                 condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
             {
-                to: '/code-intelligence/index-configuration',
+                to: '/index-configuration',
                 label: 'Index configuration',
                 condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
