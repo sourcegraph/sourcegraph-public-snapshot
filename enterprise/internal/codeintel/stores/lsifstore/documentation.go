@@ -191,7 +191,7 @@ SELECT
 	result_id,
 	path_id
 FROM
-	lsif_documentation_mappings
+	lsif_data_documentation_mappings
 WHERE
 	dump_id = %s AND
 	result_id = ANY (%s)
@@ -219,7 +219,7 @@ const documentationPathIDToIDQuery = `
 SELECT
 	result_id
 FROM
-	lsif_documentation_mappings
+	lsif_data_documentation_mappings
 WHERE
 	dump_id = %s AND
 	path_id = %s
@@ -262,7 +262,7 @@ const documentationPathIDToFilePathQuery = `
 SELECT
 	file_path
 FROM
-	lsif_documentation_mappings
+	lsif_data_documentation_mappings
 WHERE
 	dump_id = %s AND
 	path_id = %s
