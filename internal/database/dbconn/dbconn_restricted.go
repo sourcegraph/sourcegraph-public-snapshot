@@ -73,8 +73,15 @@ func buildPoolConfig(dataSource, app string) (*pgxpool.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// We supply the existing base configuration as a starting point for the
+	// pool, then customize where necessary.
+	//
+	// The pool can contain up to SRC_PGSQL_MAX_OPEN connections. Idle connections
+	// are reclaimed at one minute, and connections in general at one hour. This
+	// helps prevent abandoned connections from accumulating and frees resources.
 	poolConfig.ConnConfig = config
-	poolConfig.MinConns = int32(Global.Stats().MaxOpenConnections)
+	poolConfig.MinConns = int32(0)
 	poolConfig.MaxConns = int32(Global.Stats().MaxOpenConnections)
 	poolConfig.MaxConnIdleTime = time.Minute
 	poolConfig.MaxConnLifetime = time.Hour
