@@ -229,7 +229,6 @@ func BatchChangesEnabled() bool {
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
-
 	return true
 }
 
