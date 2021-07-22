@@ -14,12 +14,12 @@ _To get a better idea of your resource requirements for your instance use our_ [
 
 ## Deployment Best Practices
 
-## Docker Compose
+### Docker Compose
 
 - Docker Compose Sourcegraph may be customized using our [configuration guide](install/docker-compose/operations.md#configure), and should follow our [configuration best practices](install/docker-compose/operations.md#configuration-best-practices).
 - They should meet our [Docker Compose requirements](install/docker-compose/index.md#docker-compose).
 
-## Kubernetes
+### Kubernetes
 
 Kubernetes deployments may be customized in a variety of ways, we consider the following best practice:
 
@@ -35,7 +35,7 @@ _Unless scale, resiliency, or some other legitimate need exists that necessitate
 
 _Any major modifications outside of what we ship in the [standard deployment](https://github.com/sourcegraph/deploy-sourcegraph) are the responsibility of the user to manage, including but not limited to: Helm templates, Terraform configuration, and other ops/infrastructure tooling._
 
-## Sourcegraph Server (single Docker container)
+### Sourcegraph Server (single Docker container)
 
 Sourcegraph Server is best used for trying out Sourcegraph. It&#39;s not intended for enterprise production deployments for the following reasons:
 
