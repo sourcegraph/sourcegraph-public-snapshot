@@ -133,13 +133,13 @@ func textDecoder(query string, t *template.Template, w io.Writer) streaming.Deco
 		OnMatches: func(matches []streaming.EventMatch) {
 			for _, match := range matches {
 				switch match := match.(type) {
-				case *streaming.EventFileMatch:
-					err := t.ExecuteTemplate(w, "file", struct {
+				case *streaming.EventContentMatch:
+					err := t.ExecuteTemplate(w, "content", struct {
 						Query string
-						*streaming.EventFileMatch
+						*streaming.EventContentMatch
 					}{
-						Query:          query,
-						EventFileMatch: match,
+						Query:             query,
+						EventContentMatch: match,
 					},
 					)
 					if err != nil {
@@ -225,7 +225,7 @@ const streamingTemplate = `
 	{{- "\n" -}}
 {{- end -}}
 
-{{define "file"}}
+{{define "content"}}
 	{{- /* Repository and file name */ -}}
 	{{- color "search-repository"}}{{.Repository}}{{color "nc" -}}
 	{{- " › " -}}

@@ -158,8 +158,8 @@ func (r *eventMatchUnmarshaller) UnmarshalJSON(b []byte) error {
 	}
 
 	switch typeU.Type {
-	case FileMatchType:
-		r.EventMatch = &EventFileMatch{}
+	case ContentMatchType:
+		r.EventMatch = &EventContentMatch{}
 	case RepoMatchType:
 		r.EventMatch = &EventRepoMatch{}
 	case SymbolMatchType:

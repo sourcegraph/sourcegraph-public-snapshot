@@ -12,9 +12,9 @@ type EventMatch interface {
 	eventMatch()
 }
 
-// EventFileMatch is a subset of zoekt.FileMatch for our Event API.
-type EventFileMatch struct {
-	// Type is always FileMatchType. Included here for marshalling.
+// EventContentMatch is a subset of zoekt.FileMatch for our Event API.
+type EventContentMatch struct {
+	// Type is always ContentMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
 	Path       string   `json:"name"`
@@ -25,7 +25,7 @@ type EventFileMatch struct {
 	LineMatches []EventLineMatch `json:"lineMatches"`
 }
 
-func (e *EventFileMatch) eventMatch() {}
+func (e *EventContentMatch) eventMatch() {}
 
 // EventPathMatch is a subset of zoekt.FileMatch for our Event API.
 type EventPathMatch struct {
@@ -132,7 +132,7 @@ type EventError struct {
 type MatchType int
 
 const (
-	FileMatchType MatchType = iota
+	ContentMatchType MatchType = iota
 	RepoMatchType
 	SymbolMatchType
 	CommitMatchType
@@ -141,8 +141,8 @@ const (
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
 	switch t {
-	case FileMatchType:
-		return []byte(`"file"`), nil
+	case ContentMatchType:
+		return []byte(`"content"`), nil
 	case RepoMatchType:
 		return []byte(`"repo"`), nil
 	case SymbolMatchType:
@@ -158,8 +158,8 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 }
 
 func (t *MatchType) UnmarshalJSON(b []byte) error {
-	if bytes.Equal(b, []byte(`"file"`)) {
-		*t = FileMatchType
+	if bytes.Equal(b, []byte(`"content"`)) {
+		*t = ContentMatchType
 	} else if bytes.Equal(b, []byte(`"repo"`)) {
 		*t = RepoMatchType
 	} else if bytes.Equal(b, []byte(`"symbol"`)) {

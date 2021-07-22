@@ -37,8 +37,8 @@ func testServer(t *testing.T, handler http.Handler) *httptest.Server {
 }
 
 var event = []streaming.EventMatch{
-	&streaming.EventFileMatch{
-		Type:       streaming.FileMatchType,
+	&streaming.EventContentMatch{
+		Type:       streaming.ContentMatchType,
 		Path:       "path/to/file",
 		Repository: "org/repo",
 		Branches:   nil,

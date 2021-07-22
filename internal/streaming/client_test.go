@@ -27,8 +27,8 @@ func TestDecoder(t *testing.T) {
 	}, {
 		Name: "matches",
 		Value: []EventMatch{
-			&EventFileMatch{
-				Type: FileMatchType,
+			&EventContentMatch{
+				Type: ContentMatchType,
 				Path: "test",
 			},
 			&EventRepoMatch{
