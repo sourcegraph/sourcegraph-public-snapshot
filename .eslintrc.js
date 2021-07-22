@@ -77,6 +77,8 @@ const config = {
       files: '*.story.tsx',
       rules: {
         'react/forbid-dom-props': 'off',
+        // Required for Component Story Format (CSF)
+        'import/no-default-export': 'off',
       },
     },
   ],

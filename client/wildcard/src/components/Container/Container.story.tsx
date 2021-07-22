@@ -1,3 +1,4 @@
+import { Meta } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -5,7 +6,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Container } from './Container'
 
-export default {
+const Story: Meta = {
     title: 'wildcard/Container',
 
     decorators: [
@@ -18,6 +19,8 @@ export default {
         component: Container,
     },
 }
+
+export default Story
 
 export const Overview = () => (
     <>

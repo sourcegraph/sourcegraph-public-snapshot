@@ -1,3 +1,4 @@
+import { Meta } from '@storybook/react'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -10,7 +11,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PageHeader } from './PageHeader'
 
-export default {
+const Story: Meta = {
     title: 'wildcard/PageHeader',
 
     decorators: [
@@ -23,6 +24,8 @@ export default {
         component: PageHeader,
     },
 }
+
+export default Story
 
 export const BasicHeader = () => (
     <PageHeader

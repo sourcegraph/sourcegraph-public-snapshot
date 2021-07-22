@@ -1,4 +1,5 @@
 import { number } from '@storybook/addon-knobs'
+import { Meta } from '@storybook/react'
 import React, { useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -6,7 +7,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PageSelector } from './PageSelector'
 
-export default {
+const Story: Meta = {
     title: 'wildcard/PageSelector',
 
     decorators: [
@@ -19,6 +20,8 @@ export default {
         component: PageSelector,
     },
 }
+
+export default Story
 
 export const Short = () => {
     const [page, setPage] = useState(1)
