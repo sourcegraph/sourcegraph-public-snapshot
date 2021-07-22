@@ -28,7 +28,7 @@ Trying to deploy Sourcegraph? Refer to our [installation guide](./index.md#insta
 
 ## Deploy
 
-Refer to our [installation guides](./index.md#installation) for more details.
+Refer to our [installation guide](./index.md#installation) for more details.
 
 ## Configure
 
