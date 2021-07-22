@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-
 func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		clock := timeutil.NewFakeClock(time.Now(), 0)

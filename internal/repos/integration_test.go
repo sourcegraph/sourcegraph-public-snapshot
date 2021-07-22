@@ -42,6 +42,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/Run", testSyncRun},
 		{"Syncer/MultipleServices", testSyncerMultipleServices},
 		{"Syncer/OrphanedRepos", testOrphanedRepo},
+		{"Syncer/DeleteExternalService", testDeleteExternalService},
 		{"Syncer/UserAddedRepos", testUserAddedRepos},
 		{"Syncer/NameConflictOnRename", testNameOnConflictOnRename},
 		{"Syncer/ConflictingSyncers", testConflictingSyncers},
