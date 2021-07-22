@@ -420,10 +420,36 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamh
 }
 
 func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
-	if syms := fm.Symbols; len(syms) > 0 {
+	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
+	} else if len(fm.LineMatches) > 0 {
+		return fromContentMatch(fm, repoCache)
+	}
+	return fromPathMatch(fm, repoCache)
+}
+
+func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventPathMatch {
+	var branches []string
+	if fm.InputRev != nil {
+		branches = []string{*fm.InputRev}
 	}
 
+	var stars int
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		stars = r.Stars
+	}
+
+	return &streamhttp.EventPathMatch{
+		Type:       streamhttp.PathMatchType,
+		Path:       fm.Path,
+		Repository: string(fm.Repo.Name),
+		RepoStars:  stars,
+		Branches:   branches,
+		Version:    string(fm.CommitID),
+	}
+}
+
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventFileMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{

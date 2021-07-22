@@ -79,12 +79,11 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
         data: [
             { type: 'repo', repository: 'gitlab.sgdev.org/lg-test-private/lg-test' },
             {
-                type: 'file',
+                type: 'path',
                 name: 'overridable/bool_or_string_test.go',
                 repository: 'gitlab.sgdev.org/aharvey/batch-change-utils',
                 branches: [''],
                 version: '206c057cc03eea48300a4bd33f4dc4222d242114',
-                lineMatches: [],
             },
             {
                 type: 'file',

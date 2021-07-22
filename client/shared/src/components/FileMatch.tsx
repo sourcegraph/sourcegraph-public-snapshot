@@ -3,7 +3,14 @@ import React, { useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 import { AggregableBadge, Badge } from 'sourcegraph'
 
-import { FileLineMatch, FileSymbolMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
+import {
+    FileLineMatch,
+    FileSymbolMatch,
+    FilePathMatch,
+    getFileMatchUrl,
+    getRepositoryUrl,
+    getRevision,
+} from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { pluralize } from '../util/strings'
 
@@ -35,7 +42,7 @@ interface Props extends SettingsCascadeProps {
     /**
      * The file match search result.
      */
-    result: FileLineMatch | FileSymbolMatch
+    result: FileLineMatch | FileSymbolMatch | FilePathMatch
 
     /**
      * Formatted repository name to be displayed in repository link. If not

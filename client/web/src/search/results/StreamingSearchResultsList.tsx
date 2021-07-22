@@ -15,6 +15,7 @@ import {
     AggregateStreamingSearchResults,
     FileLineMatch,
     FileSymbolMatch,
+    FilePathMatch,
     SearchMatch,
     getMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
@@ -73,6 +74,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
         (result: SearchMatch): JSX.Element => {
             switch (result.type) {
                 case 'file':
+                case 'path':
                 case 'symbol':
                     return (
                         <FileMatch
@@ -130,7 +132,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     )
 }
 
-function getFileMatchIcon(result: FileLineMatch | FileSymbolMatch): React.ComponentType<{ className?: string }> {
+function getFileMatchIcon(
+    result: FileLineMatch | FileSymbolMatch | FilePathMatch
+): React.ComponentType<{ className?: string }> {
     if (result.type === 'file' && result.lineMatches && result.lineMatches.length > 0) {
         return FileDocumentIcon
     }

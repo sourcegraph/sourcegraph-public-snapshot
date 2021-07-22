@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { IHighlightLineRange } from '../graphql/schema'
-import { FileLineMatch, FileSymbolMatch, getFileMatchUrl } from '../search/stream'
+import { FileLineMatch, FileSymbolMatch, FilePathMatch, getFileMatchUrl } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { ThemeProps } from '../theme'
@@ -29,7 +29,7 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     eventLogger?: EventLogger
     items: MatchItem[]
-    result: FileLineMatch | FileSymbolMatch
+    result: FileLineMatch | FileSymbolMatch | FilePathMatch
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     /**
@@ -137,13 +137,10 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
-    const noMatches =
-        grouped.length === 0 && (result.type !== 'symbol' || !result.symbols || result.symbols.length === 0)
-
     return (
         <div className="file-match-children">
-            {/* No symbols or line matches means that this is a path match */}
-            {noMatches && (
+            {/* Path */}
+            {result.type === 'path' && (
                 <div className="file-match-children__item">
                     <small>Path match</small>
                 </div>

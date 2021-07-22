@@ -564,6 +564,15 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 					}
 					results.Results = append(results.Results, &r)
 
+				case *streamhttp.EventPathMatch:
+					var r SearchFileResult
+					r.File.Name = v.Path
+					r.Repository.Name = v.Repository
+					if len(v.Branches) > 0 {
+						r.RevSpec.Expr = v.Branches[0]
+					}
+					results.Results = append(results.Results, &r)
+
 				case *streamhttp.EventSymbolMatch:
 					var r SearchFileResult
 					r.File.Name = v.Path
@@ -618,6 +627,12 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 						File:        struct{ Path string }{Path: v.Path},
 						Repository:  RepositoryResult{Name: v.Repository},
 						LineMatches: lms,
+					})
+
+				case *streamhttp.EventPathMatch:
+					results = append(results, FileResult{
+						File:       struct{ Path string }{Path: v.Path},
+						Repository: RepositoryResult{Name: v.Repository},
 					})
 
 				case *streamhttp.EventSymbolMatch:
