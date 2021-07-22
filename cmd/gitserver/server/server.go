@@ -1157,6 +1157,23 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
 }
 
+func (s *Server) setLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time) error {
+	if s.DB == nil {
+		return nil
+	}
+	tx, err := database.Repos(s.DB).Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repo, err := tx.GetByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	return database.NewGitserverReposWith(tx).SetLastFetched(ctx, repo.ID, lastFetched, s.Hostname)
+}
+
 // setLastErrorNonFatal is the same as setLastError but only logs errors
 func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
 	var errString string
@@ -1379,6 +1396,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmp); err != nil {
 			return errors.Wrapf(err, "failed to update last changed time")
+		}
+
+		// Update the DB with the last fetched time
+		if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
+			return err
 		}
 
 		// Set gitattributes
@@ -1688,6 +1710,11 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {
 		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
+	}
+
+	// Update the DB with the last fetched time
+	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
+		return err
 	}
 
 	return nil

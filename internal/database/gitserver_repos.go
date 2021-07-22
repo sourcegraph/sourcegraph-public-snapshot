@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -213,6 +214,21 @@ SET (last_error, shard_id, updated_at) =
 `, id, ns, shardID))
 
 	return errors.Wrap(err, "setting last error")
+}
+
+// SetLastFetched will attempt to update ONLY the last fetched time of a GitServerRepo.
+// a matching row does not yet exist a new one will be created.
+func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, id api.RepoID, lastFetched time.Time, shardID string) error {
+	err := s.Exec(ctx, sqlf.Sprintf(`
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastFetched
+INSERT INTO gitserver_repos(repo_id, last_fetched, shard_id, updated_at)
+VALUES (%s, %s, %s, now())
+ON CONFLICT (repo_id) DO UPDATE
+SET (last_fetched, shard_id, updated_at) =
+    (EXCLUDED.last_fetched, EXCLUDED.shard_id, now())
+`, id, lastFetched, shardID))
+
+	return errors.Wrap(err, "setting last fetched")
 }
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be
