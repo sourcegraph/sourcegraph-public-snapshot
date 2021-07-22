@@ -235,7 +235,7 @@ select round((select cast(count(*) as float) from latest_state where state = 'er
 	backoffQuery := `
 -- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
 SELECT extract(epoch from max(now() - last_sync_at))
-FROM external_services as es
+FROM external_services AS es
 WHERE deleted_at IS NULL
 AND NOT cloud_default
 AND last_sync_at IS NOT NULL
