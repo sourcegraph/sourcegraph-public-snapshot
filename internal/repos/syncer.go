@@ -317,12 +317,16 @@ func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int6
 	// so we can remove anything else at the end.
 	for res := range results {
 		if err := res.Err; err != nil {
+			s.log().Error("syncer: error from codehost",
+				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
+
 			multierror.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 			if errcode.IsUnauthorized(errs) || errcode.IsForbidden(errs) || errcode.IsAccountSuspended(errs) {
 				// Delete all external service repos of this external service
 				seen = map[api.RepoID]struct{}{}
 				break
 			}
+
 			continue
 		}
 
