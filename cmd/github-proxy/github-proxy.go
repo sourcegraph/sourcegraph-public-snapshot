@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/alertmanager/client"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -30,9 +32,6 @@ import (
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 
 const port = "3180"
-
-// requestMu ensures we only do one request at a time to prevent tripping abuse detection.
-var requestMu sync.Mutex
 
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "github_proxy_waiting_requests",
@@ -71,13 +70,47 @@ func main() {
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
-	// Use a custom client/transport because GitHub closes keep-alive
-	// connections after 60s. In order to avoid running into EOF errors, we use
-	// a IdleConnTimeout of 30s, so connections are only kept around for <30s
-	client := &http.Client{Transport: &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
+	upstream, err := url.Parse("https://api.github.com")
+	if err != nil {
+		log.Fatalf("bad upstream url: %s", err)
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(upstream)
+	proxy.Transport = &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		// Use a custom client/transport because GitHub closes keep-alive
+		// connections after 60s. In order to avoid running into EOF errors, we use
+		// a IdleConnTimeout of 30s, so connections are only kept around for <30s
 		IdleConnTimeout: 30 * time.Second,
-	}}
+	}
+
+	var mu sync.RWMutex
+	locks := make(map[string]*sync.Mutex)
+
+	proxy.Director = func(r *http.Request) {
+		// We can't be sure that a single user won't user different tokens but it's
+		// reasonably unlikely that many successive concurrent requests would happen using
+		// those different tokens of the same user.
+		auth := r.Header.Get("Authorization")
+		if auth == "" {
+			auth = r.URL.User.String()
+		}
+		// Empty string maps to the unauthed lock
+
+		mu.RLock()
+		lock, ok := locks[auth]
+		mu.RUnlock()
+
+		if !ok {
+			lock = new(sync.Mutex)
+		}
+
+	}
+
+	// TODO: 1. Retries in GitHub source to sporadic errors. We can do it in the shared httpclient factory.
+	//       2. Deploy GitHub proxy once a day.
+	//       3. Refactor github-proxy to lock per token, rather than one lock for all tokens.
+	//       4. Reuse httputil.Proxy
 
 	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q2 := r.URL.Query()
@@ -121,7 +154,7 @@ func main() {
 			return
 		}
 		b, err := io.ReadAll(resp.Body)
-		log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
+		log15.Warn("proxy error", "status", resp.StatusCode)
 		_, _ = io.Copy(w, bytes.NewReader(b))
 	})
 	if logRequests {
