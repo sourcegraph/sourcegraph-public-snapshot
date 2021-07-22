@@ -634,7 +634,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -661,7 +661,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -910,11 +910,6 @@ func TestSyncRepoState(t *testing.T) {
 	s.Hostname = hostname
 	s.ctx = ctx
 
-	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	dbRepo := &types.Repo{
 		Name:        repoName,
 		URI:         string(repoName),
@@ -922,15 +917,20 @@ func TestSyncRepoState(t *testing.T) {
 	}
 
 	// Insert the repo into our database
-	err = database.Repos(db).Create(ctx, dbRepo)
+	err := database.Repos(db).Create(ctx, dbRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
-	if err == nil {
-		// GitserverRepo should not exist
-		t.Fatal("Expected an error")
+	if err != nil {
+		// GitserverRepo should exist after updating the lastFetched time
+		t.Fatal(err)
 	}
 
 	err = s.syncRepoState([]string{hostname}, 10, 10, true)
