@@ -44,12 +44,13 @@ func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore,
 func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, now())",
+		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, now())",
 			gr.RepoID,
 			gr.CloneStatus,
 			dbutil.NewNullString(gr.ShardID),
 			dbutil.NewNullInt64(gr.LastExternalService),
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
+			gr.LastFetched,
 		)
 
 		values = append(values, q)
@@ -58,11 +59,11 @@ func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.Gitserv
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.Upsert
 INSERT INTO
-    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, updated_at)
+    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, last_fetched, updated_at)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
-    SET (clone_status, shard_id, last_external_service, last_error, updated_at) =
-        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_external_service, EXCLUDED.last_error, now())
+    SET (clone_status, shard_id, last_external_service, last_error, last_fetched, updated_at) =
+        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_external_service, EXCLUDED.last_error, EXCLUDED.last_fetched, now())
 `, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "creating GitserverRepo")
@@ -90,6 +91,7 @@ SELECT repo.id,
        gr.shard_id,
        gr.last_external_service,
        gr.last_error,
+       gr.last_fetched,
        gr.updated_at
 FROM repo
     LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
@@ -117,6 +119,7 @@ FROM repo
 			&dbutil.NullString{S: &gr.ShardID},
 			&dbutil.NullInt64{N: &gr.LastExternalService},
 			&dbutil.NullString{S: &gr.LastError},
+			&dbutil.NullTime{Time: &gr.LastFetched},
 			&dbutil.NullTime{Time: &gr.UpdatedAt},
 		); err != nil {
 			return errors.Wrap(err, "scanning row")
@@ -153,6 +156,7 @@ SELECT
        shard_id,
        last_external_service,
        last_error,
+       last_fetched,
        updated_at
 FROM gitserver_repos
 WHERE repo_id = %s
@@ -170,6 +174,7 @@ WHERE repo_id = %s
 		&gr.ShardID,
 		&dbutil.NullInt64{N: &gr.LastExternalService},
 		&dbutil.NullString{S: &gr.LastError},
+		&dbutil.NullTime{Time: &gr.LastFetched},
 		&gr.UpdatedAt,
 	)
 	if err != nil {
