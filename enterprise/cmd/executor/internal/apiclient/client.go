@@ -66,9 +66,8 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
-		ExecutorName: c.options.ExecutorName,
-		// Hostname should be unique.
-		ExecutorHostname: c.options.ExecutorHostname + "-" + c.options.ExecutorName,
+		ExecutorName:     c.options.ExecutorName,
+		ExecutorHostname: c.options.ExecutorHostname,
 	})
 	if err != nil {
 		return false, err

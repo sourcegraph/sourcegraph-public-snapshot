@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -21,7 +20,7 @@ func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.
 
 	return apiserver.QueueOptions{
 		Name:              "batches",
-		Store:             background.NewExecutorStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
+		Store:             NewExecutorStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
 		RecordTransformer: recordTransformer,
 	}
 }

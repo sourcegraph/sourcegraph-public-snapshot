@@ -32,7 +32,7 @@ func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		job, dequeued, err := h.dequeue(r.Context(), h.queueOptions.Name, payload.ExecutorName, payload.ExecutorHostname)
+		job, dequeued, err := h.dequeue(r.Context(), payload.ExecutorName, payload.ExecutorHostname)
 		if !dequeued {
 			return http.StatusNoContent, nil, err
 		}
@@ -46,7 +46,7 @@ func (h *handler) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Requ
 	var payload apiclient.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.addExecutionLogEntry(r.Context(), h.queueOptions.Name, payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
+		err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
 		return http.StatusNoContent, nil, err
 	})
 }
@@ -56,7 +56,7 @@ func (h *handler) handleMarkComplete(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkCompleteRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.markComplete(r.Context(), h.queueOptions.Name, payload.ExecutorName, payload.JobID)
+		err := h.markComplete(r.Context(), payload.ExecutorName, payload.JobID)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -70,7 +70,7 @@ func (h *handler) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.markErrored(r.Context(), h.queueOptions.Name, payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+		err := h.markErrored(r.Context(), payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -84,7 +84,7 @@ func (h *handler) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.markFailed(r.Context(), h.queueOptions.Name, payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+		err := h.markFailed(r.Context(), payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
