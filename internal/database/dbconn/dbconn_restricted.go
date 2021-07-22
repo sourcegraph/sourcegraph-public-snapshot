@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	// Restricted is the "sg_service" DB connection.
+	// Restricted is the "sg_service" DB connection used to provide row level security.
+	// See https://docs.sourcegraph.com/admin/repo/row_level_security for more information.
 	// Only use this after a call to SetupRestrictedConnection.
 	Restricted *pgxpool.Pool
 )
