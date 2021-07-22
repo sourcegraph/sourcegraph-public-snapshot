@@ -16,7 +16,7 @@ _To get a better idea of your resource requirements for your instance use our_ [
 
 ## Docker Compose
 
-Docker Compose Sourcegraph may be customized by forking our [repo](https://github.com/sourcegraph/deploy-sourcegraph-docker) and altering our [standard](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker@master/-/blob/docker-compose/docker-compose.yaml)[_ **docker-compose.yaml** _](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker@master/-/blob/docker-compose/docker-compose.yaml)[file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker@master/-/blob/docker-compose/docker-compose.yaml), we consider the following best practice:
+Docker Compose Sourcegraph may be customized by forking our [repo](https://github.com/sourcegraph/deploy-sourcegraph-docker) and altering our standard [docker-compose.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker@master/-/blob/docker-compose/docker-compose.yaml) file, we consider the following best practice:
 
 - The version argument in the .yaml file must be the same as in the standard deployment
 - Users should only alter the .yaml file to adjust resource limits, or duplicate container entries to add more container replicas
