@@ -326,6 +326,8 @@ var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
 // specifically so we resort to matching on the error string.
 var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
 
+// DefaultRetryPolicy is the retry policy used in any Doer or Client returned
+// by NewExternalHTTPClientFactory.
 func DefaultRetryPolicy(a rehttp.Attempt) (retry bool) {
 	status := 0
 
