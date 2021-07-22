@@ -27,8 +27,8 @@ import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNa
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 import { AuthenticatedUser } from '../auth'
-import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { BatchChangesProps } from '../batches'
+import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
