@@ -10,24 +10,24 @@ var (
 	// ObservationTotal creates an observable from the given options backed by
 	// the counter specifying the number of operatons.
 	//
-	// Requires a counter of the format `src_{options.MetricName}_total`
+	// Requires a counter of the format `src_{options.MetricNameRoot}_total`
 	ObservationTotal observableConstructor = StandardCount("operations")
 
 	// ObservationDuration creates an observable from the given options backed by
 	// the histogram specifying the duration of operatons.
 	//
-	// Requires a histogram of the format `src_{options.MetricName}_duration_seconds_bucket`
+	// Requires a histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
 	ObservationDuration observableConstructor = StandardDuration("operation")
 
 	// ObservationErrors creates an observable from the given options backed by
 	// the counter specifying the number of operatons that resulted in an error.
 	//
-	// Requires a counter of the format `src_{options.MetricName}_errors_total`
+	// Requires a counter of the format `src_{options.MetricNameRoot}_errors_total`
 	ObservationErrors observableConstructor = StandardErrors("operation")
 )
 
 type ObservationGroupOptions struct {
-	ObservableOptions
+	GroupConstructorOptions
 
 	// Total transforms the default observable used to construct the operation count panel.
 	Total ObservableOption
@@ -44,20 +44,20 @@ type ObservationGroupOptions struct {
 // container.
 //
 // Requires a:
-//   - counter of the format `src_{options.MetricName}_total`
-//   - histogram of the format `src_{options.MetricName}_duration_seconds_bucket`
-//   - counter of the format `src_{options.MetricName}_errors_total`
+//   - counter of the format `src_{options.MetricNameRoot}_total`
+//   - histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
+//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
 //
 // These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
 func NewObservationGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	return monitoring.Group{
-		Title:  fmt.Sprintf("[%s] Observable: %s", options.Namespace, options.GroupDescription),
+		Title:  fmt.Sprintf("[%s] Observable: %s", options.DescriptionRoot, options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{
-				options.Total.safeApply(ObservationTotal(options.ObservableOptions)(containerName, owner)).Observable(),
-				options.Duration.safeApply(ObservationDuration(options.ObservableOptions)(containerName, owner)).Observable(),
-				options.Errors.safeApply(ObservationErrors(options.ObservableOptions)(containerName, owner)).Observable(),
+				options.Total.safeApply(ObservationTotal(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.Duration.safeApply(ObservationDuration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.Errors.safeApply(ObservationErrors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 			},
 		},
 	}

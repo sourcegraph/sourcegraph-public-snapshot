@@ -10,24 +10,24 @@ var (
 	// ResetterRecordResets creates an observable from the given options backed by
 	// the counter specifying the number of records reset to queued state.
 	//
-	// Requires a counter of the format `src_{options.MetricName}_record_resets_total`
-	ResetterRecordResets observableConstructor = func(options ObservableOptions) sharedObservable {
-		options.MetricName = fmt.Sprintf("%s_record_resets", options.MetricName)
+	// Requires a counter of the format `src_{options.MetricNameRoot}_record_resets_total`
+	ResetterRecordResets observableConstructor = func(options ObservableConstructorOptions) sharedObservable {
+		options.MetricNameRoot += "_record_resets"
 		return StandardCount("records reset to queued state")(options)
 	}
 
 	// ResetterRecordResetFailures creates an observable from the given options backed by
 	// the counter specifying the number of records reset to errored state.
 	//
-	// Requires a counter of the format `src_{options.MetricName}_record_reset_failures_total`
-	ResetterRecordResetFailures observableConstructor = func(options ObservableOptions) sharedObservable {
-		options.MetricName = fmt.Sprintf("%s_record_reset_failures", options.MetricName)
+	// Requires a counter of the format `src_{options.MetricNameRoot}_record_reset_failures_total`
+	ResetterRecordResetFailures observableConstructor = func(options ObservableConstructorOptions) sharedObservable {
+		options.MetricNameRoot += "_record_reset_failures"
 		return StandardCount("records reset to errored state")(options)
 	}
 )
 
 type ResetterGroupOptions struct {
-	ObservableOptions
+	GroupConstructorOptions
 
 	// Total transforms the default observable used to construct the reset count panel.
 	RecordResets ObservableOption
@@ -44,24 +44,24 @@ type ResetterGroupOptions struct {
 // within the given container.
 //
 // Requires a:
-//   - counter of the format `src_{options.MetricName}_record_resets_total`
-//   - counter of the format `src_{options.MetricName}_record_reset_failures_total`
-//   - counter of the format `src_{options.MetricName}_record_reset_errors_total`
+//   - counter of the format `src_{options.MetricNameRoot}_record_resets_total`
+//   - counter of the format `src_{options.MetricNameRoot}_record_reset_failures_total`
+//   - counter of the format `src_{options.MetricNameRoot}_record_reset_errors_total`
 //
 // These metrics are currently created by hand and assigned as fields of an instance of an
 // internal/workerutil/dbworker/ResetterMetrics struct in the Go backend. Metrics are emitted
 // by the resetter processes themselves.
 func NewResetterGroup(containerName string, owner monitoring.ObservableOwner, options ResetterGroupOptions) monitoring.Group {
-	errorsOptions := options.ObservableOptions
-	errorsOptions.MetricName = fmt.Sprintf("%s_record_reset", options.MetricName)
+	errorsOptions := options.ObservableConstructorOptions
+	errorsOptions.MetricNameRoot += "_record_reset"
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("[%s] Queue resetter: %s", options.Namespace, options.GroupDescription),
+		Title:  fmt.Sprintf("[%s] Queue resetter: %s", options.Namespace, options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{
-				options.RecordResets.safeApply(ResetterRecordResets(options.ObservableOptions)(containerName, owner)).Observable(),
-				options.RecordResetFailures.safeApply(ResetterRecordResetFailures(options.ObservableOptions)(containerName, owner)).Observable(),
+				options.RecordResets.safeApply(ResetterRecordResets(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.RecordResetFailures.safeApply(ResetterRecordResetFailures(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 				options.Errors.safeApply(ObservationErrors(errorsOptions)(containerName, owner)).Observable(),
 			},
 		},
