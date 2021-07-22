@@ -241,9 +241,13 @@ select round((select cast(count(*) as float) from latest_state where state = 'er
 	backoffQuery := `
 -- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
 SELECT extract(epoch from max(now() - last_sync_at)) FROM external_services
+FROM external_services as es
 WHERE deleted_at IS NULL
 AND NOT cloud_default
 AND last_sync_at IS NOT NULL
+-- Exclude any external services that are currently syncing since it's possible they may sync for more
+-- than our max backoff time.
+AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id = es.id AND finished_at IS NULL)
 `
 	if sourcegraphDotCom {
 		// We don't want to include user added external services on sourcegraph.com as we
