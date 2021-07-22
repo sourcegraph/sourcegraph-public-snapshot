@@ -28,7 +28,9 @@ Trying to deploy Sourcegraph? Refer to our [installation guide](./index.md#insta
 
 ## Deploy
 
-Refer to our [installation guide](./index.md#installation) for more details.
+Refer to our [installation guide](./index.md#installation) for more details on how to deploy Sourcegraph.
+
+Migrating from another [deployment type](../index.md)? Refer to our [migrating to Docker Compose guides](./migrate.md).
 
 ## Configure
 
@@ -307,7 +309,3 @@ zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docke
 ```
 
 7. Browse to your sourcegraph deployment, login and verify your existing configuration has been restored
-
-## Migrate to Docker Compose
-
-Refer to [Migrating to Docker Compose](./migrate.md).
