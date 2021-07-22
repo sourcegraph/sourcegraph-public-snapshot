@@ -95,7 +95,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		return err
 	}
 
-	tags := make(map[string]bool)
+	tags := map[string]bool{}
 
 	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir))
 	if err != nil {
@@ -119,7 +119,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		}
 	}
 
-	dependencyTags := make(map[string]struct{})
+	dependencyTags := make(map[string]struct{}, len(dependencies))
 	for _, dependency := range dependencies {
 		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
 	}

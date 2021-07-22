@@ -101,8 +101,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
 
