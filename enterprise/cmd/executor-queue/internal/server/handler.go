@@ -49,9 +49,8 @@ type executorMeta struct {
 }
 
 type jobMeta struct {
-	queueName string
-	recordID  int
-	started   time.Time
+	recordID int
+	started  time.Time
 }
 
 func newHandlerWithMetrics(options Options, queueOptions QueueOptions, queueName string, clock glock.Clock, observationContext *observation.Context) *handler {
@@ -92,14 +91,14 @@ func (h *handler) dequeue(ctx context.Context, executorName, executorHostname st
 	}
 
 	now := h.clock.Now()
-	h.addMeta(executorName, jobMeta{queueName: h.queueName, recordID: record.RecordID(), started: now})
+	h.addMeta(executorName, jobMeta{recordID: record.RecordID(), started: now})
 	return job, true, nil
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job. If the job identifier
 // is not known, a false-valued flag is returned.
 func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
-	_, err := h.findMeta(h.queueName, executorName, jobID, false)
+	_, err := h.findMeta(executorName, jobID, false)
 	if err != nil {
 		return err
 	}
@@ -114,7 +113,7 @@ func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string,
 // markComplete calls MarkComplete for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (h *handler) markComplete(ctx context.Context, executorName string, jobID int) error {
-	job, err := h.findMeta(h.queueName, executorName, jobID, true)
+	job, err := h.findMeta(executorName, jobID, true)
 	if err != nil {
 		return err
 	}
@@ -126,7 +125,7 @@ func (h *handler) markComplete(ctx context.Context, executorName string, jobID i
 // markErrored calls MarkErrored for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (h *handler) markErrored(ctx context.Context, executorName string, jobID int, errorMessage string) error {
-	job, err := h.findMeta(h.queueName, executorName, jobID, true)
+	job, err := h.findMeta(executorName, jobID, true)
 	if err != nil {
 		return err
 	}
@@ -138,7 +137,7 @@ func (h *handler) markErrored(ctx context.Context, executorName string, jobID in
 // markFailed calls MarkFailed for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (h *handler) markFailed(ctx context.Context, executorName string, jobID int, errorMessage string) error {
-	job, err := h.findMeta(h.queueName, executorName, jobID, true)
+	job, err := h.findMeta(executorName, jobID, true)
 	if err != nil {
 		return err
 	}
@@ -150,7 +149,7 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 // findMeta returns the job with the given id and executor name. If the job is
 // unknown, an error is returned. If the remove parameter is true, the job will
 // be removed from the executor's job list on success.
-func (h *handler) findMeta(queueName, executorName string, jobID int, remove bool) (jobMeta, error) {
+func (h *handler) findMeta(executorName string, jobID int, remove bool) (jobMeta, error) {
 	h.m.Lock()
 	defer h.m.Unlock()
 
@@ -160,7 +159,7 @@ func (h *handler) findMeta(queueName, executorName string, jobID int, remove boo
 	}
 
 	for i, job := range executor.jobs {
-		if job.queueName == queueName && job.recordID == jobID {
+		if job.recordID == jobID {
 			if remove {
 				l := len(executor.jobs) - 1
 				executor.jobs[i] = executor.jobs[l]
@@ -199,7 +198,7 @@ func (h *handler) updateMetrics() {
 
 	for executorName, meta := range h.executors {
 		for _, job := range meta.jobs {
-			stat, ok := queueStats[job.queueName]
+			stat, ok := queueStats[h.queueName]
 			if !ok {
 				stat = queueStat{
 					ExecutorNames: map[string]struct{}{},
@@ -208,7 +207,7 @@ func (h *handler) updateMetrics() {
 
 			stat.JobIDs = append(stat.JobIDs, job.recordID)
 			stat.ExecutorNames[executorName] = struct{}{}
-			queueStats[job.queueName] = stat
+			queueStats[h.queueName] = stat
 		}
 	}
 
