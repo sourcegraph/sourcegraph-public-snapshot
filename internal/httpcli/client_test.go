@@ -281,7 +281,7 @@ func TestNewTimeoutOpt(t *testing.T) {
 func TestExternalHTTPClientErrorResilience(t *testing.T) {
 	failures := int64(5)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		status := 200
+		status := 0
 		switch n := atomic.AddInt64(&failures, -1); n {
 		case 4:
 			status = 429
@@ -292,6 +292,8 @@ func TestExternalHTTPClientErrorResilience(t *testing.T) {
 		case 1:
 			status = 302
 			w.Header().Set("Location", "/")
+		case 0:
+			status = 404
 		}
 		w.WriteHeader(status)
 	}))
@@ -309,8 +311,8 @@ func TestExternalHTTPClientErrorResilience(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.StatusCode != 200 {
-		t.Fatalf("want status code 200, got: %d", res.StatusCode)
+	if res.StatusCode != 404 {
+		t.Fatalf("want status code 404, got: %d", res.StatusCode)
 	}
 }
 
