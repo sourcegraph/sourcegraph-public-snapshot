@@ -26,6 +26,10 @@ type Logger struct {
 	replacer *strings.Replacer
 }
 
+// logEntryBufSize is the maximum number of log entries that are logged by the
+// task execution but not yet written to the database.
+const logEntryBufsize = 50
+
 // NewLogger creates a new logger instance with the given store, job, record,
 // and replacement map.
 // When the log messages are serialized, any occurrence of sensitive values are
@@ -43,7 +47,7 @@ func NewLogger(store executionLogEntryStore, job executor.Job, record workerutil
 		job:      job,
 		record:   record,
 		done:     make(chan struct{}),
-		entries:  make(chan workerutil.ExecutionLogEntry),
+		entries:  make(chan workerutil.ExecutionLogEntry, logEntryBufsize),
 		replacer: strings.NewReplacer(oldnew...),
 	}
 
