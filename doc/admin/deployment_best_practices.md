@@ -50,7 +50,7 @@ Sourcegraph Server is best used for trying out Sourcegraph. It&#39;s not intende
   - more than 10 active users
 - Some Sourcegraph features do not have full functionality (Ex: Code Insights)
 
-_It is possible to migrate your data to a Docker-Compose or Kubernetes deployment, contact your Customer Engineer or reach out to support and we&#39;ll be happy to assist you in upgrading your deployment._
+_It is possible to migrate your data to a Docker-Compose or Kubernetes deployment, contact your Customer Engineer or reach out to support and we'll be happy to assist you in upgrading your deployment._
 
 ## Additional Support Information
 
@@ -67,9 +67,9 @@ _It is possible to migrate your data to a Docker-Compose or Kubernetes deploymen
 
 Only the latest versions of IDEs are generally supported, but most versions within a few months up-to-date generally work.
 
-- VS code: [https://github.com/sourcegraph/sourcegraph-vscode](https://github.com/sourcegraph/sourcegraph-vscode); we don&#39;t yet support VSCodium
+- VS code: [https://github.com/sourcegraph/sourcegraph-vscode](https://github.com/sourcegraph/sourcegraph-vscode); we don't yet support VSCodium
 - Atom: [https://github.com/sourcegraph/sourcegraph-atom](https://github.com/sourcegraph/sourcegraph-atom)
-- Sublime Text 3: [https://github.com/sourcegraph/sourcegraph-sublime](https://github.com/sourcegraph/sourcegraph-sublime); we don&#39;t yet support Sublime Text 2 or 4
+- Sublime Text 3: [https://github.com/sourcegraph/sourcegraph-sublime](https://github.com/sourcegraph/sourcegraph-sublime); we don't yet support Sublime Text 2 or 4
 - Jetbrains IDEs: [https://github.com/sourcegraph/sourcegraph-jetbrains](https://github.com/sourcegraph/sourcegraph-jetbrains) - we only test with IntelliJ IDEA, but it should work with no issues in all Jetbrains IDEs:
   - IntelliJ IDEA
   - IntelliJ IDEA Community Edition
