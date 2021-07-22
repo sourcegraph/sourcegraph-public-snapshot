@@ -67,27 +67,8 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	logger := command.NewLogger(union(h.options.RedactedValues, job.RedactedValues))
-
-	done := make(chan struct{})
-	defer func() {
-		close(logger.EntryC)
-
-		<-done
-	}()
-
-	go func() {
-		for entry := range logger.EntryC {
-			log15.Info("Writing log entry", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
-			// Perform this outside of the task execution context. If there is a timeout or
-			// cancellation error we don't want to skip uploading these logs as users will
-			// often want to see how far something progressed prior to a timeout.
-			if err := h.store.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
-				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "repositoryName", job.RepositoryName, "commit", job.Commit, "error", err)
-			}
-		}
-		close(done)
-	}()
+	logger := command.NewLogger(h.store, job, record, union(h.options.RedactedValues, job.RedactedValues))
+	defer logger.Flush()
 
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
