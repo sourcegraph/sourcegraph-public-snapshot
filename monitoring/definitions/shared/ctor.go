@@ -29,7 +29,8 @@ type ObservableConstructorOptions struct {
 	//               code intel resolver operations
 	//   metric desc ^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^ generic term (chosen by constructor)
 	//
-	// This value should start with a lower-case letter.
+	// This value should start with a lower-case letter. Note that setting the `By` field
+	// will add a prefix to the constructed legend.
 	MetricDescriptionRoot string
 
 	// Filters are additional prometheus filter expressions used to select or hide values
