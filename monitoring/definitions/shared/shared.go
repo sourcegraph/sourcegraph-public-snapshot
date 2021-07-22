@@ -133,9 +133,12 @@ func CadvisorNameMatcher(containerName string) string {
 }
 
 // makeFilters creates metric filters based on the given container name that matches
-// against the container name as well as any additionally supplied label filter expressions.
+// against the container name as well as any additionally supplied label filter
+// expressions. The given container name may be string or pattern, which will be matched
+// against the prefix of the value of the job label. Note that this excludes replicas like
+// -0 and -1 in docker-compose.
 func makeFilters(containerName string, filters ...string) string {
-	filters = append(filters, fmt.Sprintf(`job=~"%s"`, containerName))
+	filters = append(filters, fmt.Sprintf(`job=~"^%s.*"`, containerName))
 	return strings.Join(filters, ",")
 }
 
