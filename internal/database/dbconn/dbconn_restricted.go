@@ -73,7 +73,7 @@ func buildPoolConfig(dataSource, app string) (*pgxpool.Config, error) {
 		return nil, err
 	}
 	poolConfig.ConnConfig = config
-	poolConfig.MinConns = int32(0)
+	poolConfig.MinConns = int32(Global.Stats().MaxOpenConnections)
 	poolConfig.MaxConns = int32(Global.Stats().MaxOpenConnections)
 	poolConfig.MaxConnIdleTime = time.Minute
 	poolConfig.MaxConnLifetime = time.Hour
