@@ -27,9 +27,10 @@ var (
 // the burden on developers, since you only have to opt-in to using the connection
 // vs. invoking specific functions at specific times.
 //
-// The restricted connection is configured after the base connection, so we don't
-// need to handle the various liveness checks (e.g. is the database up). If we
-// reached this point, it is.
+// SetupRestrictedConnection does not handle the various liveness checks
+// (e.g. is the database up). Thus the restricted connection must be configured after the
+//  base connection is set up in SetupGlobalConnection which will ensure that the
+// liveness checks have already been set up.
 func SetupRestrictedConnection(opts Opts) (err error) {
 	Restricted, err = NewRestricted(opts)
 	return err
