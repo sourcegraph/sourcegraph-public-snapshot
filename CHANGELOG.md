@@ -30,6 +30,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.30.1
+
+### Fixed
+
+- An issue where the UI would occassionally display `lsifStore.Ranges: ERROR: relation \"lsif_documentation_mappings\" does not exist (SQLSTATE 42P01)` [#23115](https://github.com/sourcegraph/sourcegraph/pull/23115)
+
 ## 3.30.0
 
 ### Added
