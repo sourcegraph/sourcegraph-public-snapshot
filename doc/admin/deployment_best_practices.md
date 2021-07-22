@@ -7,7 +7,7 @@ Sourcegraph is a highly scalable and configurable application. As an open source
 ## Sourcegraph Performance Dependencies
 
 - number of users associated to instance
-- user&#39;s engagement level
+- user's engagement level
 - number and size of code repositories synced to Sourcegraph.
 
 _To get a better idea of your resource requirements for your instance use our_ [_resource estimator_](https://docs.sourcegraph.com/admin/install/resource_estimator)_._
