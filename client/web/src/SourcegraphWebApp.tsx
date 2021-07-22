@@ -33,7 +33,7 @@ import {
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { client } from './backend/graphql'
-import { BatchChangesProps } from './batches/batches'
+import { BatchChangesProps } from './batches'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'

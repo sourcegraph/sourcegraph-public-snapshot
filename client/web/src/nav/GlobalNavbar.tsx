@@ -28,7 +28,7 @@ import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sour
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
-import { BatchChangesProps } from '../batches/batches'
+import { BatchChangesProps } from '../batches'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'

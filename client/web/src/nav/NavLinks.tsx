@@ -14,7 +14,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
-import { BatchChangesProps } from '../batches/batches'
+import { BatchChangesProps } from '../batches'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
 import { LinkWithIcon } from '../components/LinkWithIcon'

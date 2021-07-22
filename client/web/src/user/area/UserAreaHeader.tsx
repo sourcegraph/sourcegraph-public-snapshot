@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom'
 
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import { BatchChangesProps } from '../../batches/batches'
+import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 

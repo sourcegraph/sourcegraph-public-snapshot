@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ListGroup, ListGroupItem } from 'reactstrap'
 
-import { BatchChangesProps } from '../batches/batches'
+import { BatchChangesProps } from '../batches'
 import { SidebarCollapseItems, SidebarGroupItems, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 

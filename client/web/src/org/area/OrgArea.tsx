@@ -16,7 +16,7 @@ import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/er
 
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
-import { BatchChangesProps } from '../../batches/batches'
+import { BatchChangesProps } from '../../batches'
 import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'

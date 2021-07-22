@@ -12,7 +12,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
-import { BatchChangesProps } from '../batches/batches'
+import { BatchChangesProps } from '../batches'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'

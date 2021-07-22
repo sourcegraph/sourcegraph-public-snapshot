@@ -25,7 +25,7 @@ import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
-import { BatchChangesProps } from '../batches/batches'
+import { BatchChangesProps } from '../batches'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'

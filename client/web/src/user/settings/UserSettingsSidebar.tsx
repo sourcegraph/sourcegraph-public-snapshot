@@ -5,7 +5,7 @@ import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
 import { AuthenticatedUser } from '../../auth'
-import { BatchChangesProps } from '../../batches/batches'
+import { BatchChangesProps } from '../../batches'
 import { Badge, BadgeStatus } from '../../components/Badge'
 import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
 import { UserAreaUserFields } from '../../graphql-operations'

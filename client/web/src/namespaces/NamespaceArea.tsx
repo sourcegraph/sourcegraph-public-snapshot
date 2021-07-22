@@ -3,7 +3,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
-import { BatchChangesProps } from '../batches/batches'
+import { BatchChangesProps } from '../batches'
 import { PatternTypeProps } from '../search'
 import { NavItemWithIconDescriptor, RouteDescriptor } from '../util/contributions'
 

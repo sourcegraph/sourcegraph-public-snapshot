@@ -17,7 +17,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
-import { BatchChangesProps } from './batches/batches'
+import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
