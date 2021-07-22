@@ -62,6 +62,8 @@ func NewRestricted(opts Opts) (*sql.DB, error) {
 	if db == nil {
 		return nil, errors.New("unable to open restricted db connection")
 	}
+
 	prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
+	configureConnectionPool(db)
 	return db, nil
 }
