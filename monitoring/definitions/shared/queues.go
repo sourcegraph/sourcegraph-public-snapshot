@@ -64,6 +64,10 @@ type QueueSizeGroupOptions struct {
 // Requires a:
 //   - gauge of the format `src_{options.MetricName}_total`
 //   - counter of the format `src_{options.MetricName}_processor_total`
+//
+// The queue size metric should be created via a Prometheus gauge function in the Go backend. For
+// instructions on how to create the processor metrics, see the `NewWorkerutilGroup` function in
+// this package.
 func NewQueueSizeGroup(containerName string, owner monitoring.ObservableOwner, options QueueSizeGroupOptions) monitoring.Group {
 	return monitoring.Group{
 		Title:  fmt.Sprintf("[%s] Queue: %s", options.Namespace, options.GroupDescription),

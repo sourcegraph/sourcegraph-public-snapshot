@@ -80,6 +80,11 @@ type WorkerutilGroupOptions struct {
 //   - histogram of the format `src_{options.MetricName}_processor_duration_seconds_bucket`
 //   - counter of the format `src_{options.MetricName}_processor_errors_total`
 //   - gauge of the format `src_{options.MetricName}_processor_handlers`
+//
+// These metrics can be created via internal/workerutil.NewMetrics("..._processor", ...) in the Go
+// backend. Note that we supply the `_processor` suffix here explicitly so that we can differentiate
+// metrics for the worker and the queue that backs the worker while still using the same metric name
+// root.
 func NewWorkerutilGroup(containerName string, owner monitoring.ObservableOwner, options WorkerutilGroupOptions) monitoring.Group {
 	return monitoring.Group{
 		Title:  fmt.Sprintf("[%s] Queue handler: %s", options.Namespace, options.GroupDescription),

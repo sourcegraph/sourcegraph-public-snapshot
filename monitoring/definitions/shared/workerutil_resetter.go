@@ -47,6 +47,10 @@ type ResetterGroupOptions struct {
 //   - counter of the format `src_{options.MetricName}_record_resets_total`
 //   - counter of the format `src_{options.MetricName}_record_reset_failures_total`
 //   - counter of the format `src_{options.MetricName}_record_reset_errors_total`
+//
+// These metrics are currently created by hand and assigned as fields of an instance of an
+// internal/workerutil/dbworker/ResetterMetrics struct in the Go backend. Metrics are emitted
+// by the resetter processes themselves.
 func NewResetterGroup(containerName string, owner monitoring.ObservableOwner, options ResetterGroupOptions) monitoring.Group {
 	errorsOptions := options.ObservableOptions
 	errorsOptions.MetricName = fmt.Sprintf("%s_record_reset", options.MetricName)

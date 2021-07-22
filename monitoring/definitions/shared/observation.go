@@ -47,6 +47,8 @@ type ObservationGroupOptions struct {
 //   - counter of the format `src_{options.MetricName}_total`
 //   - histogram of the format `src_{options.MetricName}_duration_seconds_bucket`
 //   - counter of the format `src_{options.MetricName}_errors_total`
+//
+// These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
 func NewObservationGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	return monitoring.Group{
 		Title:  fmt.Sprintf("[%s] Observable: %s", options.Namespace, options.GroupDescription),
