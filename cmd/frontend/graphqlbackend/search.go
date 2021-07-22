@@ -319,6 +319,12 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
+
+	if args.PatternInfo.IsEmpty() {
+		// Empty query isn't an error, but it has no results.
+		return nil, nil
+	}
+
 	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {
@@ -333,10 +339,6 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args.RepoPromise = (&search.RepoPromise{}).Resolve(resolved.RepoRevs)
 
-	if args.PatternInfo.IsEmpty() {
-		// Empty query isn't an error, but it has no results.
-		return nil, nil
-	}
 	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err

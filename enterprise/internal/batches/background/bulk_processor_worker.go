@@ -35,10 +35,11 @@ func newBulkOperationWorker(
 	r := &bulkProcessorWorker{sourcer: sourcer, store: s}
 
 	options := workerutil.WorkerOptions{
-		Name:        "batches_bulk_processor",
-		NumHandlers: 5,
-		Interval:    5 * time.Second,
-		Metrics:     metrics.bulkProcessorWorkerMetrics,
+		Name:              "batches_bulk_processor",
+		NumHandlers:       5,
+		HeartbeatInterval: 15 * time.Second,
+		Interval:          5 * time.Second,
+		Metrics:           metrics.bulkProcessorWorkerMetrics,
 	}
 
 	workerStore := createBulkOperationDBWorkerStore(s)
@@ -71,9 +72,8 @@ func createBulkOperationDBWorkerStore(s *store.Store) dbworkerstore.Store {
 
 		OrderByExpression: sqlf.Sprintf("changeset_jobs.state = 'errored', changeset_jobs.updated_at DESC"),
 
-		HeartbeatInterval: 15 * time.Second,
-		StalledMaxAge:     60 * time.Second,
-		MaxNumResets:      bulkProcessorMaxNumResets,
+		StalledMaxAge: 60 * time.Second,
+		MaxNumResets:  bulkProcessorMaxNumResets,
 
 		RetryAfter:    5 * time.Second,
 		MaxNumRetries: bulkProcessorMaxNumRetries,

@@ -50,6 +50,14 @@ const config = {
             message: 'Code using animationFrameScheduler breaks in Firefox when using Sentry.',
           },
         ],
+        patterns: [
+          {
+            group: ['**/enterprise/*'],
+            message: `The OSS product may not pull in any code from the enterprise codebase, to stay a 100% open-source program.
+
+See https://about.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
+          },
+        ],
       },
     ],
     'react/forbid-elements': [

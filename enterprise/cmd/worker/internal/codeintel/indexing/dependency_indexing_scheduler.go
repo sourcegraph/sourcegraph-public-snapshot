@@ -33,10 +33,11 @@ func NewDependencyIndexingScheduler(
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
-		Name:        "precise_code_intel_dependency_indexing_scheduler_worker",
-		NumHandlers: numProcessorRoutines,
-		Interval:    pollInterval,
-		Metrics:     workerMetrics,
+		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
+		NumHandlers:       numProcessorRoutines,
+		Interval:          pollInterval,
+		Metrics:           workerMetrics,
+		HeartbeatInterval: 1 * time.Second,
 	})
 }
 
