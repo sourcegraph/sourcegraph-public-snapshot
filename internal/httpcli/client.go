@@ -1,16 +1,21 @@
 package httpcli
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
+	"github.com/PuerkitoBio/rehttp"
 	"github.com/cockroachdb/errors"
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -72,11 +77,15 @@ func NewExternalHTTPClientFactory() *Factory {
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
-		NewTimeoutOpt(60*time.Second),
+		NewTimeoutOpt(5*time.Minute),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
+		NewErrorResilientTransportOpt(
+			DefaultRetryPolicy,
+			rehttp.ExpJitterDelay(200*time.Millisecond, 10*time.Second),
+		),
 		TracedTransportOpt,
 		NewCachedTransportOpt(redisCache, true),
 	)
@@ -305,6 +314,86 @@ func TracedTransportOpt(cli *http.Client) error {
 
 	cli.Transport = &ot.Transport{RoundTripper: cli.Transport}
 	return nil
+}
+
+// A regular expression to match the error returned by net/http when the
+// configured number of redirects is exhausted. This error isn't typed
+// specifically so we resort to matching on the error string.
+var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
+
+// A regular expression to match the error returned by net/http when the
+// scheme specified in the URL is invalid. This error isn't typed
+// specifically so we resort to matching on the error string.
+var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
+
+// DefaultRetryPolicy is the retry policy used in any Doer or Client returned
+// by NewExternalHTTPClientFactory.
+func DefaultRetryPolicy(a rehttp.Attempt) (retry bool) {
+	status := 0
+
+	defer func() {
+		log15.Error(
+			"external HTTP request",
+			"attempt", a.Index,
+			"method", a.Request.Method,
+			"url", a.Request.URL,
+			"status", status,
+			"retry", retry,
+			"err", a.Error,
+		)
+	}()
+
+	if a.Response != nil {
+		status = a.Response.StatusCode
+	}
+
+	if a.Index > 20 { // Max retries
+		return false
+	}
+
+	switch a.Error {
+	case nil:
+	case context.DeadlineExceeded, context.Canceled:
+		return false
+	default:
+		if v, ok := a.Error.(*url.Error); ok {
+			// Don't retry if the error was due to too many redirects.
+			if redirectsErrorRe.MatchString(v.Error()) {
+				return false
+			}
+
+			// Don't retry if the error was due to an invalid protocol scheme.
+			if schemeErrorRe.MatchString(v.Error()) {
+				return false
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+				return false
+			}
+		}
+		// The error is likely recoverable so retry.
+		return true
+	}
+
+	if status == 0 || status == 429 || (status >= 500 && status != 501) {
+		return true
+	}
+
+	return false
+}
+
+// NewErrorResilientTransportOpt returns an Opt that wraps an existing
+// http.Transport of an http.Client with automatic retries.
+func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) Opt {
+	return func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
+
+		cli.Transport = rehttp.NewTransport(cli.Transport, retry, delay)
+		return nil
+	}
 }
 
 // NewIdleConnTimeoutOpt returns a Opt that sets the IdleConnTimeout of an
