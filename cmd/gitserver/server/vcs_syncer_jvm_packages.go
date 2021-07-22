@@ -40,7 +40,7 @@ var _ VCSSyncer = &JVMPackagesSyncer{}
 
 func (s *JVMPackagesSyncer) MavenDependencies() []string {
 	if s.Config == nil || s.Config.Maven == nil || s.Config.Maven.Dependencies == nil {
-		return []string{}
+		return nil
 	}
 	return s.Config.Maven.Dependencies
 }
