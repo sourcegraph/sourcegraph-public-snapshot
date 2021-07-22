@@ -146,6 +146,19 @@ func textDecoder(query string, t *template.Template, w io.Writer) streaming.Deco
 						logError(fmt.Sprintf("error when executing template: %s\n", err))
 						return
 					}
+				case *streaming.EventPathMatch:
+					err := t.ExecuteTemplate(w, "path", struct {
+						Query string
+						*streaming.EventPathMatch
+					}{
+						Query:          query,
+						EventPathMatch: match,
+					},
+					)
+					if err != nil {
+						logError(fmt.Sprintf("error when executing template: %s\n", err))
+						return
+					}
 				case *streaming.EventRepoMatch:
 					err := t.ExecuteTemplate(w, "repo", struct {
 						SourcegraphEndpoint string
@@ -201,6 +214,17 @@ func isLimitHit(progress *streaming.Progress) bool {
 }
 
 const streamingTemplate = `
+{{define "path"}}
+	{{- /* Repository and file name */ -}}
+	{{- color "search-repository"}}{{.Repository}}{{color "nc" -}}
+	{{- " › " -}}
+	{{- color "search-filename"}}{{.Path}}{{color "nc" -}}
+	{{- color "success"}}{{matchOrMatches 0}}{{color "nc" -}}
+	{{- "\n" -}}
+	{{- color "search-border"}}{{"--------------------------------------------------------------------------------\n"}}{{color "nc"}}
+	{{- "\n" -}}
+{{- end -}}
+
 {{define "file"}}
 	{{- /* Repository and file name */ -}}
 	{{- color "search-repository"}}{{.Repository}}{{color "nc" -}}

@@ -166,6 +166,8 @@ func (r *eventMatchUnmarshaller) UnmarshalJSON(b []byte) error {
 		r.EventMatch = &EventSymbolMatch{}
 	case CommitMatchType:
 		r.EventMatch = &EventCommitMatch{}
+	case PathMatchType:
+		r.EventMatch = &EventPathMatch{}
 	default:
 		return fmt.Errorf("unknown MatchType %v", typeU.Type)
 	}
