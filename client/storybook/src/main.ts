@@ -86,6 +86,7 @@ const config = {
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
+        '@storybook/addon-docs',
     ],
 
     core: {
@@ -100,7 +101,7 @@ const config = {
 
     typescript: {
         check: false,
-        reactDocgen: false,
+        reactDocgen: 'react-docgen-typescript',
     },
 
     // Include DLL bundle script tag into preview-head.html if DLLPlugin is enabled.

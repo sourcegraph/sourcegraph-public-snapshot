@@ -11,9 +11,11 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PageHeader } from './PageHeader'
 
-const { add } = storiesOf('wildcard/PageHeader', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-))
+const { add } = storiesOf('wildcard/PageHeader', module)
+    .addDecorator(story => (
+        <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    ))
+    .addParameters({ component: PageHeader })
 
 add(
     'Basic header',

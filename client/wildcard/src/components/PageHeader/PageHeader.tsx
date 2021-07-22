@@ -37,6 +37,12 @@ interface Props {
     className?: string
 }
 
+/**
+ * A heading component that should be used to render key headings on different pages.
+ *
+ * It can be provided with a 'path' which will be rendered as a 'breadcrumb' series of links.
+ * It also supports rendering icons, descriptions, annotations and actions alongside the heading.
+ */
 export const PageHeader: React.FunctionComponent<Props> = ({
     annotation,
     path,

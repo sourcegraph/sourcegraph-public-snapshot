@@ -7,9 +7,11 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PageSelector } from './PageSelector'
 
-const { add } = storiesOf('wildcard/PageSelector', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-))
+const { add } = storiesOf('wildcard/PageSelector', module)
+    .addDecorator(story => (
+        <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    ))
+    .addParameters({ component: PageSelector })
 
 add('Short', () => {
     const [page, setPage] = useState(1)

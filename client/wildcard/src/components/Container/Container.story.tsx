@@ -6,9 +6,11 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Container } from './Container'
 
-const { add } = storiesOf('wildcard/Container', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-))
+const { add } = storiesOf('wildcard/Container', module)
+    .addDecorator(story => (
+        <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    ))
+    .addParameters({ component: Container })
 
 add(
     'Overview',
