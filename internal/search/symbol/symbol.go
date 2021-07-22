@@ -252,12 +252,14 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 		}},
 		&zoektquery.Symbol{Expr: query},
 	}
-	for _, p := range *includePatterns {
-		q, err := zoektutil.FileRe(p, true)
-		if err != nil {
-			return nil, err
+	if includePatterns != nil {
+		for _, p := range *includePatterns {
+			q, err := zoektutil.FileRe(p, true)
+			if err != nil {
+				return nil, err
+			}
+			ands = append(ands, q)
 		}
-		ands = append(ands, q)
 	}
 
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
