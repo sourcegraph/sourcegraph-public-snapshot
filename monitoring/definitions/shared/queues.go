@@ -17,13 +17,11 @@ var (
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
-				Name:           fmt.Sprintf("%s_queue_size", options.MetricName),
-				Description:    fmt.Sprintf("%s queue size", options.MetricDescription),
-				Query:          fmt.Sprintf(`max%s(src_%s_total{%s})`, by, options.MetricName, filters),
-				Panel:          monitoring.Panel().LegendFormat(fmt.Sprintf("%s records", legendPrefix)),
-				Owner:          owner,
-				NoAlert:        true,
-				Interpretation: "none",
+				Name:        fmt.Sprintf("%s_queue_size", options.MetricName),
+				Description: fmt.Sprintf("%s queue size", options.MetricDescription),
+				Query:       fmt.Sprintf(`max%s(src_%s_total{%s})`, by, options.MetricName, filters),
+				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s records", legendPrefix)),
+				Owner:       owner,
 			}
 		}
 	}
@@ -40,13 +38,11 @@ var (
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
-				Name:           fmt.Sprintf("%s_queue_growth_rate", options.MetricName),
-				Description:    fmt.Sprintf("%s queue growth rate over 30m", options.MetricDescription),
-				Query:          fmt.Sprintf(`sum%[1]s(increase(src_%[2]s_total{%[3]s}[30m])) / sum%[1]s(increase(src_%[2]s_processor_total{%[3]s}[30m]))`, by, options.MetricName, filters),
-				Panel:          monitoring.Panel().LegendFormat(fmt.Sprintf("%s queue growth rate", legendPrefix)),
-				Owner:          owner,
-				NoAlert:        true,
-				Interpretation: "none",
+				Name:        fmt.Sprintf("%s_queue_growth_rate", options.MetricName),
+				Description: fmt.Sprintf("%s queue growth rate over 30m", options.MetricDescription),
+				Query:       fmt.Sprintf(`sum%[1]s(increase(src_%[2]s_total{%[3]s}[30m])) / sum%[1]s(increase(src_%[2]s_processor_total{%[3]s}[30m]))`, by, options.MetricName, filters),
+				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s queue growth rate", legendPrefix)),
+				Owner:       owner,
 			}
 		}
 	}

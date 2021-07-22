@@ -45,13 +45,11 @@ var (
 			by, legendPrefix := makeBy(options.By...)
 
 			return Observable{
-				Name:           fmt.Sprintf("%s_handlers", options.MetricName),
-				Description:    fmt.Sprintf("%s active handlers", options.MetricDescription),
-				Query:          fmt.Sprintf(`sum%s(src_%s_processor_handlers{%s})`, by, options.MetricName, filters),
-				Panel:          monitoring.Panel().LegendFormat(fmt.Sprintf("%shandlers", legendPrefix)),
-				Owner:          owner,
-				NoAlert:        true,
-				Interpretation: "none",
+				Name:        fmt.Sprintf("%s_handlers", options.MetricName),
+				Description: fmt.Sprintf("%s active handlers", options.MetricDescription),
+				Query:       fmt.Sprintf(`sum%s(src_%s_processor_handlers{%s})`, by, options.MetricName, filters),
+				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%shandlers", legendPrefix)),
+				Owner:       owner,
 			}
 		}
 	}

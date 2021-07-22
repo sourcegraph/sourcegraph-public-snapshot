@@ -24,13 +24,11 @@ var (
 				by, legendPrefix := makeBy(options.By...)
 
 				return Observable{
-					Name:           fmt.Sprintf("%s_total", options.MetricName),
-					Description:    fmt.Sprintf("%s%s every 5m", options.MetricDescription, legend),
-					Query:          fmt.Sprintf(`sum%s(increase(src_%s_total{%s}[5m]))`, by, options.MetricName, filters),
-					Panel:          monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)),
-					Owner:          owner,
-					NoAlert:        true,
-					Interpretation: "none",
+					Name:        fmt.Sprintf("%s_total", options.MetricName),
+					Description: fmt.Sprintf("%s%s every 5m", options.MetricDescription, legend),
+					Query:       fmt.Sprintf(`sum%s(increase(src_%s_total{%s}[5m]))`, by, options.MetricName, filters),
+					Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)),
+					Owner:       owner,
 				}
 			}
 		}
@@ -52,13 +50,11 @@ var (
 				_, legendPrefix := makeBy(options.By...)
 
 				return Observable{
-					Name:           fmt.Sprintf("%s_99th_percentile_duration", options.MetricName),
-					Description:    fmt.Sprintf("99th percentile successful %s%s duration over 5m", options.MetricDescription, legend),
-					Query:          fmt.Sprintf(`histogram_quantile(0.99, sum %s(rate(src_%s_duration_seconds_bucket{%s}[5m])))`, by, options.MetricName, filters),
-					Panel:          monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)).Unit(monitoring.Seconds),
-					Owner:          owner,
-					NoAlert:        true,
-					Interpretation: "none",
+					Name:        fmt.Sprintf("%s_99th_percentile_duration", options.MetricName),
+					Description: fmt.Sprintf("99th percentile successful %s%s duration over 5m", options.MetricDescription, legend),
+					Query:       fmt.Sprintf(`histogram_quantile(0.99, sum %s(rate(src_%s_duration_seconds_bucket{%s}[5m])))`, by, options.MetricName, filters),
+					Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)).Unit(monitoring.Seconds),
+					Owner:       owner,
 				}
 			}
 		}
@@ -79,13 +75,11 @@ var (
 				by, legendPrefix := makeBy(options.By...)
 
 				return Observable{
-					Name:           fmt.Sprintf("%s_errors_total", options.MetricName),
-					Description:    fmt.Sprintf("%s%s errors every 5m", options.MetricDescription, legend),
-					Query:          fmt.Sprintf(`sum%s(increase(src_%s_errors_total{%s}[5m]))`, by, options.MetricName, filters),
-					Panel:          monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)),
-					Owner:          owner,
-					NoAlert:        true,
-					Interpretation: "none",
+					Name:        fmt.Sprintf("%s_errors_total", options.MetricName),
+					Description: fmt.Sprintf("%s%s errors every 5m", options.MetricDescription, legend),
+					Query:       fmt.Sprintf(`sum%s(increase(src_%s_errors_total{%s}[5m]))`, by, options.MetricName, filters),
+					Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)),
+					Owner:       owner,
 				}
 			}
 		}
