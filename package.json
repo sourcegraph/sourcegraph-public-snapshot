@@ -119,7 +119,7 @@
     "@storybook/addon-a11y": "^6.3.0",
     "@storybook/addon-actions": "^6.3.0",
     "@storybook/addon-console": "^1.2.1",
-    "@storybook/addon-docs": "^6.3.4",
+    "@storybook/addon-docs": "^6.3.0",
     "@storybook/addon-knobs": "^6.3.0",
     "@storybook/addon-links": "^6.3.0",
     "@storybook/addon-storyshots": "^6.3.0",

@@ -99,9 +99,15 @@ const config = {
         postcss: false,
     },
 
+    // https://storybook.js.org/docs/react/configure/typescript#mainjs-configuration
     typescript: {
         check: false,
+        checkOptions: {},
         reactDocgen: 'react-docgen-typescript',
+        reactDocgenTypescriptOptions: {
+            shouldExtractLiteralValuesFromEnum: true,
+            propFilter: (property: any) => (property.parent ? !/node_modules/.test(property.parent.fileName) : true),
+        },
     },
 
     // Include DLL bundle script tag into preview-head.html if DLLPlugin is enabled.

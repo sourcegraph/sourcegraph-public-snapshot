@@ -55,9 +55,9 @@ const validateProps = (props: PageSelectorProps): void => {
         errors.push(new Error('currentPage must be not be greater than totalPages'))
     }
 
-    // if (errors.length > 0) {
-    //     throw createAggregateError(errors)
-    // }
+    if (errors.length > 0) {
+        throw createAggregateError(errors)
+    }
 }
 
 /**

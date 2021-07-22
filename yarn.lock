@@ -3362,7 +3362,7 @@
   dependencies:
     global "^4.3.2"
 
-"@storybook/addon-docs@^6.3.4":
+"@storybook/addon-docs@^6.3.0":
   version "6.3.4"
   resolved "https://registry.npmjs.org/@storybook/addon-docs/-/addon-docs-6.3.4.tgz#e6dd9026b28d2d007bda7dc3fbcf2d404982939a"
   integrity sha512-KoC6GImsC5ZVvco228Jw3+1k/eGeDabjF3+V4In4rPWnOyv0qsFIlE7wcwOCRKcGrPfkBSCWYajH/h+rD0bzUw==
