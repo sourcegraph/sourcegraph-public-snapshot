@@ -28,30 +28,36 @@ var (
 // vs. invoking specific functions at specific times.
 //
 // SetupRestrictedConnection does not handle the various liveness checks
-// (e.g. is the database up). Thus the restricted connection must be configured after the
-//  base connection is set up in SetupGlobalConnection which will ensure that the
-// liveness checks have already been set up.
+// (e.g. is the database up). Thus the restricted connection must be configured
+// after the base connection is set up in SetupGlobalConnection, which will ensure
+// that the liveness checks have already been set up.
 func SetupRestrictedConnection(opts Opts) (err error) {
 	Restricted, err = NewRestricted(opts)
 	return err
 }
 
 // NewRestricted connects to the given data source, sets up the connection lifecycle
-// hooks, and returns the handle to the pool.
+// hooks, and returns the handle to the database.
 func NewRestricted(opts Opts) (*sql.DB, error) {
+	// The underlying Prometheus package will panic if duplicate metrics are
+	// registered, so we append a string here to disambiguate.
 	opts.AppName += "-restricted"
+
+	// This uses the same config management as the global DB connection.
 	config, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to build restricted db config")
 	}
 
-	// Connect to the database and register Prometheus metrics for observability.
+	// Connect to the database, and register a callback that will be triggered
+	// after each connection is established. We use this moment to forcibly lower
+	// the connection's privilege using the service role.
 	db := stdlib.OpenDB(*config, stdlib.OptionAfterConnect(func(ctx context.Context, conn *pgx.Conn) error {
-		if _, err := conn.Exec(ctx, "SET SESSION AUTHORIZATION 'sg_service';"); err != nil {
-			log.Println(errors.Wrap(err, "unable to assume sg_service role"))
-			return err
+		_, err := conn.Exec(ctx, "SET SESSION AUTHORIZATION 'sg_service'")
+		if err != nil {
+			log.Println(errors.Wrap(err, "unable to assume 'sg_service' role"))
 		}
-		return nil
+		return err
 	}))
 	if db == nil {
 		return nil, errors.New("unable to open restricted db connection")
