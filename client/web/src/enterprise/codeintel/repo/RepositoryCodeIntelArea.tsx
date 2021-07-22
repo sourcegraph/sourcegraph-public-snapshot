@@ -17,7 +17,7 @@ import { CodeIntelUploadPageProps } from '../detail/CodeIntelUploadPage'
 import { CodeIntelIndexesPageProps } from '../list/CodeIntelIndexesPage'
 import { CodeIntelUploadsPageProps } from '../list/CodeIntelUploadsPage'
 
-import { CodeIntelSidebar, CodeIntelSideBarGroups } from './RepoSettingsSidebar'
+import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string }
