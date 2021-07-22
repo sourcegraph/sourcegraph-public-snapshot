@@ -74,12 +74,14 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue where regexp query highlighting in the search bar would render incorrectly on Firefox. [#23043](https://github.com/sourcegraph/sourcegraph/pull/23043)
 - Code intelligence uploads and indexes are restricted to only site-admins. It was read-only for any user. [#22890](https://github.com/sourcegraph/sourcegraph/pull/22890)
 - Daily usage statistics are restricted to only site-admins. It was read-only for any user. [#23026](https://github.com/sourcegraph/sourcegraph/pull/23026)
+- Ephemeral storage requests now match their cache size requests for Kubernetes deployments. [#2953](https://github.com/sourcegraph/deploy-sourcegraph/pull/2953)
 
 ### Removed
 
 - The experimental paginated search feature (the `stable:` keyword) has been removed, to be replaced with streaming search. [#22428](https://github.com/sourcegraph/sourcegraph/pull/22428)
 - The experimental extensions view page has been removed. [#22565](https://github.com/sourcegraph/sourcegraph/pull/22565)
 - A search query diagnostic that previously warned the user when quotes are interpreted literally has been removed. The literal meaning has been Sourcegraph's default search behavior for some time now. [#22892](https://github.com/sourcegraph/sourcegraph/pull/22892)
+- The old batch repository syncer was removed and can no longer be activated by setting `ENABLE_STREAMING_REPOS_SYNCER=false`. [#22949](https://github.com/sourcegraph/sourcegraph/pull/22949)
 
 ### API docs (experimental)
 
