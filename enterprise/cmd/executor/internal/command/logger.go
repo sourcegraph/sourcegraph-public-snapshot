@@ -69,6 +69,8 @@ func (l *Logger) Log(entry workerutil.ExecutionLogEntry) {
 }
 
 func (l *Logger) writeEntries() {
+	defer func() { close(l.done) }()
+
 	for entry := range l.entries {
 		log15.Info("Writing log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 		// Perform this outside of the task execution context. If there is a timeout or
@@ -78,7 +80,6 @@ func (l *Logger) writeEntries() {
 			log15.Warn("Failed to upload executor log entry for job", "id", l.record.RecordID(), "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
 		}
 	}
-	close(l.done)
 }
 
 func redact(entry workerutil.ExecutionLogEntry, replacer *strings.Replacer) workerutil.ExecutionLogEntry {
