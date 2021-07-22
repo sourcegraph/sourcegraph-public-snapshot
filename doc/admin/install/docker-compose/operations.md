@@ -111,14 +111,14 @@ Guides for managing cloud storage and backups are available in our [cloud-specif
 
 The following instructions are specific to backing up and restoring the sourcegraph databases in a Docker Compose deployment. These do not apply to other deployment types.
 
-### Only core data will be backed up
-
-These instructions will only back up core data including user accounts, configuration, repository-metadata, etc. Other data will be regenerated automatically:
-
-* Repositories will be re-cloned
-* Search indexes will be rebuilt from scratch
-
-The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
+> WARNING: **Only core data will be backed up**.
+>
+> These instructions will only back up core data including user accounts, configuration, repository-metadata, etc. Other data will be regenerated automatically:
+>
+> - Repositories will be re-cloned
+> - Search indexes will be rebuilt from scratch
+>
+> The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
 
 ### Back up sourcegraph databases
 
