@@ -13,7 +13,6 @@ import (
 
 var (
 	// Restricted is the "sg_service" DB connection used to provide row level security.
-	// See https://docs.sourcegraph.com/admin/repo/row_level_security for more information.
 	// Only use this after a call to SetupRestrictedConnection.
 	Restricted *sql.DB
 )
@@ -31,6 +30,8 @@ var (
 // (e.g. is the database up). Thus the restricted connection must be configured
 // after the base connection is set up in SetupGlobalConnection, which will ensure
 // that the liveness checks have already been set up.
+//
+// See https://docs.sourcegraph.com/admin/repo/row_level_security for more information.
 func SetupRestrictedConnection(opts Opts) (err error) {
 	Restricted, err = NewRestricted(opts)
 	return err
