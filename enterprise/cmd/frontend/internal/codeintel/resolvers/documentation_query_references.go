@@ -38,6 +38,7 @@ func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID stri
 		}
 		if len(locations) > 0 {
 			location := locations[0]
+			r.path = location.Path
 			return r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, limit, rawCursor)
 		}
 	}

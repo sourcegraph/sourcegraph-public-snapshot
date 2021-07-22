@@ -34,6 +34,7 @@ func (r *queryResolver) DocumentationDefinitions(ctx context.Context, pathID str
 			return nil, errors.Wrap(err, "lsifStore.DocumentationDefinitions")
 		}
 		if len(locations) > 0 {
+			r.path = locations[0].Path
 			uploadsByID := map[int]dbstore.Dump{upload.ID: upload}
 			return r.adjustLocations(ctx, uploadsByID, locations)
 		}
