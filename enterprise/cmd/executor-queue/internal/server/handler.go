@@ -38,15 +38,6 @@ type Options struct {
 	// UnreportedMaxAge is the maximum time between a record being dequeued and it appearing
 	// in the executor's heartbeat requests before it being considered lost.
 	UnreportedMaxAge time.Duration
-
-	// DeathThreshold is the minimum time since the last heartbeat of an executor before that
-	// executor can be considered as unresponsive. This should be configured to be longer than
-	// the duration between heartbeat interval.
-	DeathThreshold time.Duration
-
-	// CleanupInterval is the duration between periodic invocations of Cleanup, which will
-	// requeue any records that are "lost" according to the thresholds described above.
-	CleanupInterval time.Duration
 }
 
 type QueueOptions struct {
@@ -59,8 +50,7 @@ type QueueOptions struct {
 }
 
 type executorMeta struct {
-	lastUpdate time.Time
-	jobs       []jobMeta
+	jobs []jobMeta
 }
 
 type jobMeta struct {
@@ -228,9 +218,7 @@ func (m *handler) addMeta(executorName string, job jobMeta) {
 		m.executors[executorName] = executor
 	}
 
-	now := m.clock.Now()
 	executor.jobs = append(executor.jobs, job)
-	executor.lastUpdate = now
 	m.updateMetrics()
 }
 

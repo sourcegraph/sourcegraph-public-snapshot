@@ -22,12 +22,6 @@ func (h *handler) heartbeat(ctx context.Context, executorName string, jobIDs []i
 	return unknownIDs, err
 }
 
-// cleanup will release the transactions held by any executor that has not sent a heartbeat
-// in a while. This method is called periodically in the background.
-func (h *handler) cleanup(ctx context.Context) error {
-	return h.requeueJobs(ctx, h.pruneExecutors())
-}
-
 // heartbeatJobs updates the set of job identifiers assigned to the given executor and returns
 // any job that was known to us but not reported by the executor, plus the set of job identifiers
 // reported by the executor which do not have an associated record held by this instance of the
@@ -64,7 +58,6 @@ func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []
 		}
 	}
 	executor.jobs = live
-	executor.lastUpdate = now
 
 	unknownIDs = make([]int, 0, len(ids))
 	for _, id := range ids {
@@ -74,24 +67,6 @@ func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []
 	}
 
 	return dead, unknownIDs, errs
-}
-
-// pruneExecutors will release the transactions held by any executor that has not sent a
-// heartbeat in a while and return the attached jobs.
-func (h *handler) pruneExecutors() (jobs []jobMeta) {
-	h.m.Lock()
-	defer h.m.Unlock()
-
-	for name, executor := range h.executors {
-		if h.clock.Now().Sub(executor.lastUpdate) <= h.options.DeathThreshold {
-			continue
-		}
-
-		jobs = append(jobs, executor.jobs...)
-		delete(h.executors, name)
-	}
-
-	return jobs
 }
 
 func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {

@@ -29,7 +29,5 @@ func (c *Config) ServerOptions(queueOptions map[string]apiserver.QueueOptions) a
 		QueueOptions:     queueOptions,
 		RequeueDelay:     c.JobRequeueDelay,
 		UnreportedMaxAge: c.JobCleanupInterval * time.Duration(c.MaximumNumMissedHeartbeats),
-		DeathThreshold:   c.JobCleanupInterval * time.Duration(c.MaximumNumMissedHeartbeats),
-		CleanupInterval:  c.JobCleanupInterval,
 	}
 }
