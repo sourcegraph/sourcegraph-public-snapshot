@@ -25,7 +25,7 @@ You will need:
 - A dedicated host for use with Sourcegraph.
   - Use the [resource estimator](../resource_estimator.md) to ensure you provision enough capacity.
   - Sourcegraph requires SSD backed storage.
-  - The configured host must have [Docker Compose](https://docs.docker.com/compose/).
+  - The configured host must have [Docker Compose](https://docs.docker.com/compose/) (also see [Docker Compose Requirements](#docker-compose)).
 - [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
 We offer cloud-specific Sourcegraph installation guides:
@@ -42,7 +42,7 @@ Deploy Sourcegraph with Docker Compose to your machine.
 
 You will need:
 
-- [Docker Compose](https://docs.docker.com/compose/) installed.
+- [Docker Compose](https://docs.docker.com/compose/) installed (also see [Docker Compose Requirements](#docker-compose))
 - Use the [resource estimator](../resource_estimator.md) to ensure your machine has sufficient capacity.
 - [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
@@ -65,9 +65,13 @@ For next steps and further configuration options, visit the [site administration
 
 ### Docker Compose
 
-Docker Compose is a tool for defining and running multi-[container](https://www.docker.com/resources/what-container) Docker applications (in this case, Sourcegraph!). With Docker Compose, you use a YAML file to configure your application’s services. Then, with a single command, you create and start all the services from your configuration.
+Docker Compose is a tool for defining and running multi-[container](https://www.docker.com/resources/what-container) Docker applications (in this case, Sourcegraph!). With Docker Compose, you use a YAML file to configure your application’s services. Then, with a single command, you create and start all the services from your configuration. Learn more about Docker Compose [here](https://docs.docker.com/compose/).
 
-Learn more about it [here](https://docs.docker.com/compose/).
+Our Docker Compose support also has the following requirements:
+
+- Minimum Docker version: v20.10.0 ([https://docs.docker.com/engine/release-notes/#20100](https://docs.docker.com/engine/release-notes/#20100))
+- Minimum version of Docker Compose: v1.22.0 ([https://docs.docker.com/compose/release-notes/#1220](https://docs.docker.com/compose/release-notes/#1220)) - this is first version that supports Docker Compose format `2.4`
+- Docker Compose deployments should only be deployed with `docker-compose up`, and not Docker Swarm
 
 ### Reference repository
 

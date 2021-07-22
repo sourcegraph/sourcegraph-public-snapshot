@@ -57,6 +57,11 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
 - Make and [commit](https://git-scm.com/docs/git-commit) customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to your `release` branch.
 
+### Configuration best practices
+
+- The version argument in the YAML file must be the same as in the standard deployment
+- Users should only alter the YAML file to adjust resource limits, or duplicate container entries to add more container replicas
+
 ## Upgrade
 
 This requires you to have [set up configuration for Docker Compose](#configure).
