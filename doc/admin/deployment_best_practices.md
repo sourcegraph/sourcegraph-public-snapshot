@@ -17,7 +17,7 @@ _To get a better idea of your resource requirements for your instance use our_ [
 ### Docker Compose
 
 - Docker Compose Sourcegraph may be customized using our [configuration guide](install/docker-compose/operations.md#configure), and should follow our [configuration best practices](install/docker-compose/operations.md#configuration-best-practices).
-- They should meet our [Docker Compose requirements](install/docker-compose/index.md#docker-compose).
+- Our [Docker Compose requirements](install/docker-compose/index.md#docker-compose) must be met.
 
 ### Kubernetes
 

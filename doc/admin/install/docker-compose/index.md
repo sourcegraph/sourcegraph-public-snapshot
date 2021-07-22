@@ -71,7 +71,7 @@ Our Docker Compose support also has the following requirements:
 
 - Minimum Docker version: v20.10.0 ([https://docs.docker.com/engine/release-notes/#20100](https://docs.docker.com/engine/release-notes/#20100))
 - Minimum version of Docker Compose: v1.22.0 ([https://docs.docker.com/compose/release-notes/#1220](https://docs.docker.com/compose/release-notes/#1220)) - this is first version that supports Docker Compose format `2.4`
-- Docker Compose deployments should only be deployed with `docker-compose up`, and not Docker Swarm
+- Docker Compose deployments should only be deployed with [one of our supported installation methods](#installation), and *not* Docker Swarm
 
 ### Reference repository
 
