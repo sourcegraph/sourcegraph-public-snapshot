@@ -18,6 +18,8 @@ import (
 
 type handler struct {
 	options      Options
+	queueOptions QueueOptions
+	queueName    string
 	clock        glock.Clock
 	executors    map[string]*executorMeta
 	m            sync.Mutex // protects executors
@@ -27,9 +29,6 @@ type handler struct {
 type Options struct {
 	// Port is the port on which to listen for HTTP connections.
 	Port int
-
-	// QueueOptions is a map from queue name to options specific to that queue.
-	QueueOptions map[string]QueueOptions
 
 	// UnreportedMaxAge is the maximum time between a record being dequeued and it appearing
 	// in the executor's heartbeat requests before it being considered lost.
@@ -55,13 +54,11 @@ type jobMeta struct {
 	started   time.Time
 }
 
-func newHandler(options Options, clock glock.Clock) *handler {
-	return newHandlerWithMetrics(options, clock, &observation.TestContext)
-}
-
-func newHandlerWithMetrics(options Options, clock glock.Clock, observationContext *observation.Context) *handler {
+func newHandlerWithMetrics(options Options, queueOptions QueueOptions, queueName string, clock glock.Clock, observationContext *observation.Context) *handler {
 	return &handler{
 		options:      options,
+		queueOptions: queueOptions,
+		queueName:    queueName,
 		clock:        clock,
 		executors:    map[string]*executorMeta{},
 		queueMetrics: newQueueMetrics(observationContext),
@@ -76,13 +73,8 @@ var (
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // or the server has hit its maximum transactions, a false-valued flag is returned.
-func (m *handler) dequeue(ctx context.Context, queueName, executorName, executorHostname string) (_ apiclient.Job, dequeued bool, _ error) {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return apiclient.Job{}, false, ErrUnknownQueue
-	}
-
-	record, dequeued, err := queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
+func (h *handler) dequeue(ctx context.Context, executorName, executorHostname string) (_ apiclient.Job, dequeued bool, _ error) {
+	record, dequeued, err := h.queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
 	if err != nil {
 		return apiclient.Job{}, false, err
 	}
@@ -90,34 +82,29 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 		return apiclient.Job{}, false, nil
 	}
 
-	job, err := queueOptions.RecordTransformer(ctx, record)
+	job, err := h.queueOptions.RecordTransformer(ctx, record)
 	if err != nil {
-		if _, err := queueOptions.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err)); err != nil {
+		if _, err := h.queueOptions.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err)); err != nil {
 			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
 		}
 
 		return apiclient.Job{}, false, err
 	}
 
-	now := m.clock.Now()
-	m.addMeta(executorName, jobMeta{queueName: queueName, recordID: record.RecordID(), started: now})
+	now := h.clock.Now()
+	h.addMeta(executorName, jobMeta{queueName: h.queueName, recordID: record.RecordID(), started: now})
 	return job, true, nil
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job. If the job identifier
 // is not known, a false-valued flag is returned.
-func (m *handler) addExecutionLogEntry(ctx context.Context, queueName, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	_, err := m.findMeta(queueName, executorName, jobID, false)
+func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
+	_, err := h.findMeta(h.queueName, executorName, jobID, false)
 	if err != nil {
 		return err
 	}
 
-	if err := queueOptions.Store.AddExecutionLogEntry(ctx, jobID, entry); err != nil {
+	if err := h.queueOptions.Store.AddExecutionLogEntry(ctx, jobID, entry); err != nil {
 		return err
 	}
 
@@ -126,63 +113,48 @@ func (m *handler) addExecutionLogEntry(ctx context.Context, queueName, executorN
 
 // markComplete calls MarkComplete for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
-func (m *handler) markComplete(ctx context.Context, queueName, executorName string, jobID int) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	job, err := m.findMeta(queueName, executorName, jobID, true)
+func (h *handler) markComplete(ctx context.Context, executorName string, jobID int) error {
+	job, err := h.findMeta(h.queueName, executorName, jobID, true)
 	if err != nil {
 		return err
 	}
 
-	_, err = queueOptions.Store.MarkComplete(ctx, job.recordID)
+	_, err = h.queueOptions.Store.MarkComplete(ctx, job.recordID)
 	return err
 }
 
 // markErrored calls MarkErrored for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
-func (m *handler) markErrored(ctx context.Context, queueName, executorName string, jobID int, errorMessage string) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	job, err := m.findMeta(queueName, executorName, jobID, true)
+func (h *handler) markErrored(ctx context.Context, executorName string, jobID int, errorMessage string) error {
+	job, err := h.findMeta(h.queueName, executorName, jobID, true)
 	if err != nil {
 		return err
 	}
 
-	_, err = queueOptions.Store.MarkErrored(ctx, job.recordID, errorMessage)
+	_, err = h.queueOptions.Store.MarkErrored(ctx, job.recordID, errorMessage)
 	return err
 }
 
 // markFailed calls MarkFailed for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
-func (m *handler) markFailed(ctx context.Context, queueName, executorName string, jobID int, errorMessage string) error {
-	queueOptions, ok := m.options.QueueOptions[queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	job, err := m.findMeta(queueName, executorName, jobID, true)
+func (h *handler) markFailed(ctx context.Context, executorName string, jobID int, errorMessage string) error {
+	job, err := h.findMeta(h.queueName, executorName, jobID, true)
 	if err != nil {
 		return err
 	}
 
-	_, err = queueOptions.Store.MarkFailed(ctx, job.recordID, errorMessage)
+	_, err = h.queueOptions.Store.MarkFailed(ctx, job.recordID, errorMessage)
 	return err
 }
 
 // findMeta returns the job with the given id and executor name. If the job is
 // unknown, an error is returned. If the remove parameter is true, the job will
 // be removed from the executor's job list on success.
-func (m *handler) findMeta(queueName, executorName string, jobID int, remove bool) (jobMeta, error) {
-	m.m.Lock()
-	defer m.m.Unlock()
+func (h *handler) findMeta(queueName, executorName string, jobID int, remove bool) (jobMeta, error) {
+	h.m.Lock()
+	defer h.m.Unlock()
 
-	executor, ok := m.executors[executorName]
+	executor, ok := h.executors[executorName]
 	if !ok {
 		return jobMeta{}, ErrUnknownJob
 	}
@@ -193,7 +165,7 @@ func (m *handler) findMeta(queueName, executorName string, jobID int, remove boo
 				l := len(executor.jobs) - 1
 				executor.jobs[i] = executor.jobs[l]
 				executor.jobs = executor.jobs[:l]
-				m.updateMetrics()
+				h.updateMetrics()
 			}
 
 			return job, nil
@@ -204,28 +176,28 @@ func (m *handler) findMeta(queueName, executorName string, jobID int, remove boo
 }
 
 // addMeta adds a job to the given executor's job list.
-func (m *handler) addMeta(executorName string, job jobMeta) {
-	m.m.Lock()
-	defer m.m.Unlock()
+func (h *handler) addMeta(executorName string, job jobMeta) {
+	h.m.Lock()
+	defer h.m.Unlock()
 
-	executor, ok := m.executors[executorName]
+	executor, ok := h.executors[executorName]
 	if !ok {
 		executor = &executorMeta{}
-		m.executors[executorName] = executor
+		h.executors[executorName] = executor
 	}
 
 	executor.jobs = append(executor.jobs, job)
-	m.updateMetrics()
+	h.updateMetrics()
 }
 
-func (m *handler) updateMetrics() {
+func (h *handler) updateMetrics() {
 	type queueStat struct {
 		JobIDs        []int
 		ExecutorNames map[string]struct{}
 	}
 	queueStats := map[string]queueStat{}
 
-	for executorName, meta := range m.executors {
+	for executorName, meta := range h.executors {
 		for _, job := range meta.jobs {
 			stat, ok := queueStats[job.queueName]
 			if !ok {
@@ -241,7 +213,7 @@ func (m *handler) updateMetrics() {
 	}
 
 	for queueName, temp := range queueStats {
-		m.queueMetrics.NumJobs.WithLabelValues(queueName).Set(float64(len(temp.JobIDs)))
-		m.queueMetrics.NumExecutors.WithLabelValues(queueName).Set(float64(len(temp.ExecutorNames)))
+		h.queueMetrics.NumJobs.WithLabelValues(queueName).Set(float64(len(temp.JobIDs)))
+		h.queueMetrics.NumExecutors.WithLabelValues(queueName).Set(float64(len(temp.ExecutorNames)))
 	}
 }

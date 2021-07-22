@@ -15,30 +15,22 @@ import (
 
 func TestHeartbeat(t *testing.T) {
 	store1 := workerstoremocks.NewMockStore()
-	store2 := workerstoremocks.NewMockStore()
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
 	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, true, nil)
 	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, true, nil)
-	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, true, nil)
-	store2.DequeueFunc.PushReturn(testRecord{ID: 44}, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 43}, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 44}, true, nil)
 
-	options := Options{
-		QueueOptions: map[string]QueueOptions{
-			"q1": {Store: store1, RecordTransformer: recordTransformer},
-			"q2": {Store: store2, RecordTransformer: recordTransformer},
-		},
-		UnreportedMaxAge: time.Second,
-	}
 	clock := glock.NewMockClock()
-	handler := newHandler(options, clock)
+	handler := newHandler(Options{UnreportedMaxAge: time.Second}, QueueOptions{Store: store1, RecordTransformer: recordTransformer}, "q1", clock)
 
-	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef", "test")
-	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal", "test")
-	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef", "test")
-	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal", "test")
+	_, dequeued1, _ := handler.dequeue(context.Background(), "deadbeef", "test")
+	_, dequeued2, _ := handler.dequeue(context.Background(), "deadveal", "test")
+	_, dequeued3, _ := handler.dequeue(context.Background(), "deadbeef", "test")
+	_, dequeued4, _ := handler.dequeue(context.Background(), "deadveal", "test")
 	if !dequeued1 || !dequeued2 || !dequeued3 || !dequeued4 {
 		t.Fatalf("failed to dequeue records")
 	}

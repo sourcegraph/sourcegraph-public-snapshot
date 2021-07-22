@@ -21,10 +21,9 @@ func (c *Config) Load() {
 	c.MaximumNumMissedHeartbeats = c.GetInt("EXECUTOR_QUEUE_MAXIMUM_NUM_MISSED_HEARTBEATS", "5", "The number of heartbeats an executor must miss to be considered unreachable.")
 }
 
-func (c *Config) ServerOptions(queueOptions map[string]apiserver.QueueOptions) apiserver.Options {
+func (c *Config) ServerOptions() apiserver.Options {
 	return apiserver.Options{
 		Port:             c.Port,
-		QueueOptions:     queueOptions,
 		UnreportedMaxAge: c.JobCleanupInterval * time.Duration(c.MaximumNumMissedHeartbeats),
 	}
 }

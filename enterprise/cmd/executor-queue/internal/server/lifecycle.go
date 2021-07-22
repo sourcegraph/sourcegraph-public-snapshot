@@ -60,10 +60,5 @@ func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []
 }
 
 func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {
-	queueOptions, ok := h.options.QueueOptions[job.queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	return queueOptions.Store.Heartbeat(ctx, job.recordID)
+	return h.queueOptions.Store.Heartbeat(ctx, job.recordID)
 }
