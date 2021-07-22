@@ -1,8 +1,26 @@
 import { SearchPatternType } from '../../graphql-operations'
+import { editor, Position } from 'monaco-editor'
 
 import { getHoverResult } from './hover'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
+
+/**
+ * Needed for mocking methods not implemented in JSDom, for tests dependent on Monaco editor model.
+ */
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(), // Deprecated
+        removeListener: jest.fn(), // Deprecated
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+    })),
+})
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -13,8 +31,9 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 describe('getHoverResult()', () => {
     test('returns hover contents for filters', () => {
-        const scannedQuery = toSuccess(scanSearchQuery('repo:sourcegraph file:code_intelligence'))
-        expect(getHoverResult(scannedQuery, { column: 4 })).toMatchInlineSnapshot(`
+        const input = 'repo:sourcegraph file:code_intelligence'
+        const scannedQuery = toSuccess(scanSearchQuery(input))
+        expect(getHoverResult(scannedQuery, new Position(1, 4), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -29,7 +48,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 18 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 18), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -44,7 +63,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 30 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 30), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -62,8 +81,9 @@ describe('getHoverResult()', () => {
     })
 
     test('returns hover contents for fields and regexp values', () => {
-        const scannedQuery = toSuccess(scanSearchQuery('repo:^hey$'))
-        expect(getHoverResult(scannedQuery, { column: 3 })).toMatchInlineSnapshot(`
+        const input = 'repo:^hey$'
+        const scannedQuery = toSuccess(scanSearchQuery(input))
+        expect(getHoverResult(scannedQuery, new Position(1, 3), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -78,7 +98,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 6 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 6), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -96,8 +116,9 @@ describe('getHoverResult()', () => {
     })
 
     test('returns hover contents regexp patterns', () => {
-        const scannedQuery = toSuccess(scanSearchQuery('\\b.*?', false, SearchPatternType.regexp))
-        expect(getHoverResult(scannedQuery, { column: 1 })).toMatchInlineSnapshot(`
+        const input = '\\b.*?'
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.regexp))
+        expect(getHoverResult(scannedQuery, new Position(1, 1), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -112,7 +133,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 2 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 2), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -127,7 +148,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 3 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 3), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -142,7 +163,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 4 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 4), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -157,7 +178,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 5 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 5), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -175,8 +196,9 @@ describe('getHoverResult()', () => {
     })
 
     test('regexp group range encloses pattern', () => {
-        const scannedQuery = toSuccess(scanSearchQuery('(abcd){1,3}', false, SearchPatternType.regexp))
-        expect(getHoverResult(scannedQuery, { column: 1 })).toMatchInlineSnapshot(`
+        const input = '(abcd){1,3}'
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.regexp))
+        expect(getHoverResult(scannedQuery, new Position(1, 1), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -191,7 +213,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 2 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 2), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -206,7 +228,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 8 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -224,8 +246,9 @@ describe('getHoverResult()', () => {
     })
 
     test('regexp escape characters', () => {
-        const scannedQuery = toSuccess(scanSearchQuery('\\q\\r\\n\\.\\\\', false, SearchPatternType.regexp))
-        expect(getHoverResult(scannedQuery, { column: 1 })).toMatchInlineSnapshot(`
+        const input = '\\q\\r\\n\\.\\\\'
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.regexp))
+        expect(getHoverResult(scannedQuery, new Position(1, 1), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -240,7 +263,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 3 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 3), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -255,7 +278,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 5 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 5), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -270,7 +293,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 7 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 7), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -285,7 +308,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 9 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 9), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -303,8 +326,9 @@ describe('getHoverResult()', () => {
     })
 
     test('ordinary and negated character class', () => {
-        const scannedQuery = toSuccess(scanSearchQuery('[^a-z][0-9]', false, SearchPatternType.regexp))
-        expect(getHoverResult(scannedQuery, { column: 2 })).toMatchInlineSnapshot(`
+        const input = '[^a-z][0-9]'
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.regexp))
+        expect(getHoverResult(scannedQuery, new Position(1, 2), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -320,7 +344,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 7 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 7), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -338,8 +362,9 @@ describe('getHoverResult()', () => {
     })
 
     test('literal search interprets parentheses as patterns', () => {
-        const scannedQuery = toSuccess(scanSearchQuery('(abcd)', false, SearchPatternType.literal))
-        expect(getHoverResult(scannedQuery, { column: 1 })).toMatchInlineSnapshot(`
+        const input = '(abcd)'
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
+        expect(getHoverResult(scannedQuery, new Position(1, 1), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -354,7 +379,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 2 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 2), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -372,15 +397,10 @@ describe('getHoverResult()', () => {
     })
 
     test('returns hover contents for revision syntax', () => {
-        const scannedQuery = toSuccess(
-            scanSearchQuery(
-                'repo:^foo$@head:v1.3 rev:*refs/heads/*:*!refs/heads/release*',
-                false,
-                SearchPatternType.literal
-            )
-        )
+        const input = 'repo:^foo$@head:v1.3 rev:*refs/heads/*:*!refs/heads/release*'
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
 
-        expect(getHoverResult(scannedQuery, { column: 11 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 11), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -396,7 +416,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 12 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 12), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -412,7 +432,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 16 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 16), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -428,7 +448,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 17 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 17), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -444,7 +464,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 26 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 26), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -460,7 +480,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 27 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 27), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -476,7 +496,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 41 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 41), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -494,9 +514,10 @@ describe('getHoverResult()', () => {
     })
 
     test('returns hover contents for structural syntax', () => {
-        const scannedQuery = toSuccess(scanSearchQuery(':[var~\\w+] ...', false, SearchPatternType.structural))
+        const input = ':[var~\\w+] ...'
+        const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.structural))
 
-        expect(getHoverResult(scannedQuery, { column: 1 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 1), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -512,7 +533,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 3 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 3), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -528,7 +549,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 6 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 6), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -544,7 +565,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 9 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 9), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -559,7 +580,7 @@ describe('getHoverResult()', () => {
               }
             }
         `)
-        expect(getHoverResult(scannedQuery, { column: 10 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 10), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -575,7 +596,7 @@ describe('getHoverResult()', () => {
             }
         `)
 
-        expect(getHoverResult(scannedQuery, { column: 12 })).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 12), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -594,9 +615,10 @@ describe('getHoverResult()', () => {
 })
 
 test('returns hover contents for select', () => {
-    const scannedQuery = toSuccess(scanSearchQuery('select:repo repo:foo', false, SearchPatternType.literal))
+    const input = 'select:repo repo:foo'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
 
-    expect(getHoverResult(scannedQuery, { column: 8 })).toMatchInlineSnapshot(`
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
         {
           "contents": [
             {
@@ -614,9 +636,10 @@ test('returns hover contents for select', () => {
 })
 
 test('returns repo:contains hovers', () => {
-    const scannedQuery = toSuccess(scanSearchQuery('repo:contains.file(foo)', false, SearchPatternType.literal))
+    const input = 'repo:contains.file(foo)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
 
-    expect(getHoverResult(scannedQuery, { column: 8 })).toMatchInlineSnapshot(`
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
         {
           "contents": [
             {
