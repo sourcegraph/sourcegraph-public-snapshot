@@ -101,26 +101,6 @@ func InitDB() (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database in restricted role: %s", err)
 	}
 
-	go func() {
-		for {
-			var user string
-			rows, err := dbconn.Restricted.QueryContext(context.Background(), "SELECT current_user")
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			for rows.Next() {
-				err := rows.Scan(&user)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				log.Printf("got user %q", user)
-			}
-			time.Sleep(time.Second)
-		}
-	}()
-
 	ctx := context.Background()
 	migrate := true
 
