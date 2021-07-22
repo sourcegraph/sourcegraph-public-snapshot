@@ -171,18 +171,17 @@ Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.e
 
 ```
 {
-// Other config goes here
+	// Other config goes here
 	"authorization": {
 		"identityProvider": {
 			"type": "username"
 		},
 		"oauth": {
-			"consumerKey": "KEY GOES HERE",
-			"signingKey": "KEY GOES HERE"
+			"consumerKey": "<KEY GOES HERE>",
+			"signingKey": "<KEY GOES HERE>"
 		}
 	}
 }
-
 ```
 
 Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Save your changes.
