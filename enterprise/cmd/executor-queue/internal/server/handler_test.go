@@ -8,6 +8,7 @@ import (
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
@@ -69,6 +70,8 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
+	fakeEntryID := 99
+	store.AddExecutionLogEntryFunc.SetDefaultReturn(fakeEntryID, nil)
 
 	handler := newHandler(QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
@@ -84,8 +87,12 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
-	if err := handler.addExecutionLogEntry(context.Background(), "deadbeef", job.ID, entry); err != nil {
+	haveEntryID, err := handler.addExecutionLogEntry(context.Background(), "deadbeef", job.ID, entry)
+	if err != nil {
 		t.Fatalf("unexpected error updating log contents: %s", err)
+	}
+	if haveEntryID != fakeEntryID {
+		t.Fatalf("unexpected entry ID returned. want=%d, have=%d", fakeEntryID, haveEntryID)
 	}
 
 	if value := len(store.AddExecutionLogEntryFunc.History()); value != 1 {
@@ -102,14 +109,69 @@ func TestAddExecutionLogEntry(t *testing.T) {
 
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
-	store.AddExecutionLogEntryFunc.SetDefaultReturn(ErrUnknownJob)
+	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, workerstore.ErrExecutionLogEntryNotUpdated)
 	handler := newHandler(QueueOptions{Store: store})
 
 	entry := workerutil.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
-	if err := handler.addExecutionLogEntry(context.Background(), "deadbeef", 42, entry); err != ErrUnknownJob {
+	if _, err := handler.addExecutionLogEntry(context.Background(), "deadbeef", 42, entry); err != ErrUnknownJob {
+		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
+	}
+}
+
+func TestUpdateExecutionLogEntry(t *testing.T) {
+	store := workerstoremocks.NewMockStore()
+	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return apiclient.Job{ID: 42}, nil
+	}
+
+	handler := newHandler(QueueOptions{Store: store, RecordTransformer: recordTransformer})
+
+	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing job: %s", err)
+	}
+	if !dequeued {
+		t.Fatalf("expected a job to be dequeued")
+	}
+
+	entry := workerutil.ExecutionLogEntry{
+		Command: []string{"ls", "-a"},
+		Out:     "<log payload>",
+	}
+
+	if err := handler.updateExecutionLogEntry(context.Background(), "deadbeef", job.ID, 99, entry); err != nil {
+		t.Fatalf("unexpected error updating log contents: %s", err)
+	}
+
+	if value := len(store.UpdateExecutionLogEntryFunc.History()); value != 1 {
+		t.Fatalf("unexpected number of calls to UpdateExecutionLogEntry. want=%d have=%d", 1, value)
+	}
+	call := store.UpdateExecutionLogEntryFunc.History()[0]
+	if call.Arg1 != 42 {
+		t.Errorf("unexpected job identifier. want=%d have=%d", 42, call.Arg1)
+	}
+	if call.Arg2 != 99 {
+		t.Errorf("unexpected entry ID. want=%d have=%d", 99, call.Arg1)
+	}
+	if diff := cmp.Diff(entry, call.Arg3); diff != "" {
+		t.Errorf("unexpected entry (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
+	store := workerstoremocks.NewMockStore()
+	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(workerstore.ErrExecutionLogEntryNotUpdated)
+	handler := newHandler(QueueOptions{Store: store})
+
+	entry := workerutil.ExecutionLogEntry{
+		Command: []string{"ls", "-a"},
+		Out:     "<log payload>",
+	}
+	if err := handler.updateExecutionLogEntry(context.Background(), "deadbeef", 42, 99, entry); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }

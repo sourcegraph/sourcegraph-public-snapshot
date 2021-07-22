@@ -32,14 +32,14 @@ func (o *HeartbeatOptions) ToSQLConds(formatQuery func(query string, args ...int
 	return conds
 }
 
-type AddExecutionLogEntryOptions struct {
+type ExecutionLogEntryOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
 	WorkerHostname string
 	// State, if set, enforces state to be set to a specific value.
 	State string
 }
 
-func (o *AddExecutionLogEntryOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
+func (o *ExecutionLogEntryOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
 	conds := []*sqlf.Query{}
 	if o.WorkerHostname != "" {
 		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
@@ -63,6 +63,10 @@ func (o *MarkFinalOptions) ToSQLConds(formatQuery func(query string, args ...int
 	return conds
 }
 
+// ErrExecutionLogEntryNotUpdated is retured by AddExecutionLogEntry and UpdateExecutionLogEntry, when
+// the log entry was not updated.
+var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated")
+
 // Store is the persistence layer for the dbworker package that handles worker-side operations backed by a Postgres
 // database. See Options for details on the required shape of the database tables (e.g. table column names/types).
 type Store interface {
@@ -85,8 +89,14 @@ type Store interface {
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
 
-	// AddExecutionLogEntry adds an executor log entry to the record.
-	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options AddExecutionLogEntryOptions) error
+	// AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
+	// used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
+	// or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
+	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error)
+
+	// UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
+	// found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
+	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -505,8 +515,10 @@ SET {state} = 'queued', {process_after} = %s
 WHERE {id} = %s
 `
 
-// AddExecutionLogEntry adds an executor log entry to the record.
-func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options AddExecutionLogEntryOptions) (err error) {
+// AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
+// used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
+// or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
+func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
 	ctx, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -517,19 +529,71 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	return s.Exec(ctx, s.formatQuery(
+	entryID, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		ExecutionLogEntry(entry),
 		sqlf.Join(conds, "AND"),
-	))
+	)))
+	if err != nil {
+		return entryID, err
+	}
+	if !ok {
+		return entryID, ErrExecutionLogEntryNotUpdated
+	}
+	return entryID, nil
 }
 
 const addExecutionLogEntryQuery = `
 -- source: internal/workerutil/store.go:AddExecutionLogEntry
-UPDATE %s
+UPDATE
+	%s
 SET {execution_logs} = {execution_logs} || %s::json
-WHERE %s
+WHERE
+	%s
+RETURNING array_length({execution_logs}, 1)
+`
+
+// UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
+// found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
+func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
+	ctx, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("recordID", recordID),
+		log.Int("entryID", entryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	conds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", recordID),
+		s.formatQuery("array_length({execution_logs}, 1) >= %s", entryID),
+	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
+
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
+		updateExecutionLogEntryQuery,
+		quote(s.options.TableName),
+		entryID,
+		ExecutionLogEntry(entry),
+		sqlf.Join(conds, "AND"),
+	)))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrExecutionLogEntryNotUpdated
+	}
+	return nil
+}
+
+const updateExecutionLogEntryQuery = `
+-- source: internal/workerutil/store.go:UpdateExecutionLogEntry
+UPDATE
+	%s
+SET {execution_logs}[%s] = %s::json
+WHERE
+	%s
+RETURNING
+	array_length({execution_logs}, 1)
 `
 
 // MarkComplete attempts to update the state of the record to complete. If this record has already been moved from

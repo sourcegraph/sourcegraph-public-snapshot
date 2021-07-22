@@ -400,8 +400,14 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 			Command: command,
 			Out:     payload,
 		}
-		if err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, AddExecutionLogEntryOptions{}); err != nil {
+
+		entryID, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+		if err != nil {
 			t.Fatalf("unexpected error adding executor log entry: %s", err)
+		}
+		// PostgreSQL's arrays use 1-based indexing, so the first entry is at 1
+		if entryID != i+1 {
+			t.Fatalf("executor log entry has wrong entry id. want=%d, have=%d", i+1, entryID)
 		}
 	}
 
@@ -425,6 +431,104 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 		}
 		if diff := cmp.Diff(expected, entry); diff != "" {
 			t.Errorf("unexpected entry (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestStoreAddExecutionLogEntryNoRecord(t *testing.T) {
+	db := setupStoreTest(t)
+
+	entry := workerutil.ExecutionLogEntry{
+		Command: []string{"ls", "-a"},
+		Out:     "output",
+	}
+
+	_, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+	if err == nil {
+		t.Fatalf("expected error but got none")
+	}
+}
+
+func TestStoreUpdateExecutionLogEntry(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'processing')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	numEntries := 5
+	for i := 0; i < numEntries; i++ {
+		command := []string{"ls", "-a", fmt.Sprintf("%d", i+1)}
+		payload := fmt.Sprintf("<load payload %d>", i+1)
+
+		entry := workerutil.ExecutionLogEntry{
+			Command: command,
+			Out:     payload,
+		}
+
+		entryID, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+		if err != nil {
+			t.Fatalf("unexpected error adding executor log entry: %s", err)
+		}
+		// PostgreSQL's arrays use 1-based indexing, so the first entry is at 1
+		if entryID != i+1 {
+			t.Fatalf("executor log entry has wrong entry id. want=%d, have=%d", i+1, entryID)
+		}
+
+		entry.Out += fmt.Sprintf("\n<load payload %d again, nobody was at home>", i+1)
+		if err := testStore(db, defaultTestStoreOptions(nil)).UpdateExecutionLogEntry(context.Background(), 1, entryID, entry, ExecutionLogEntryOptions{}); err != nil {
+			t.Fatalf("unexpected error updating executor log entry: %s", err)
+		}
+	}
+
+	contents, err := basestore.ScanStrings(db.QueryContext(context.Background(), `SELECT unnest(execution_logs)::text FROM workerutil_test WHERE id = 1`))
+	if err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if len(contents) != numEntries {
+		t.Fatalf("unexpected number of payloads. want=%d have=%d", numEntries, len(contents))
+	}
+
+	for i := 0; i < numEntries; i++ {
+		var entry workerutil.ExecutionLogEntry
+		if err := json.Unmarshal([]byte(contents[i]), &entry); err != nil {
+			t.Fatalf("unexpected error decoding entry: %s", err)
+		}
+
+		expected := workerutil.ExecutionLogEntry{
+			Command: []string{"ls", "-a", fmt.Sprintf("%d", i+1)},
+			Out:     fmt.Sprintf("<load payload %d>\n<load payload %d again, nobody was at home>", i+1, i+1),
+		}
+		if diff := cmp.Diff(expected, entry); diff != "" {
+			t.Errorf("unexpected entry (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestStoreUpdateExecutionLogEntryUnknownEntry(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'processing')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	entry := workerutil.ExecutionLogEntry{
+		Command: []string{"ls", "-a"},
+		Out:     "<load payload>",
+	}
+
+	for unknownEntryID := 0; unknownEntryID < 2; unknownEntryID++ {
+		err := testStore(db, defaultTestStoreOptions(nil)).UpdateExecutionLogEntry(context.Background(), 1, unknownEntryID, entry, ExecutionLogEntryOptions{})
+		if err == nil {
+			t.Fatal("expected error but got none")
 		}
 	}
 }

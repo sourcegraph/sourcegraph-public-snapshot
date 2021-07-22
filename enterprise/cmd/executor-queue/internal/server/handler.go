@@ -59,8 +59,8 @@ func (h *handler) dequeue(ctx context.Context, executorName, executorHostname st
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job.
-func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
-	return h.Store.AddExecutionLogEntry(ctx, jobID, entry, store.AddExecutionLogEntryOptions{
+func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
+	entryID, err = h.Store.AddExecutionLogEntry(ctx, jobID, entry, store.ExecutionLogEntryOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -68,6 +68,26 @@ func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string,
 		// We pass state to enforce adding log entries is only possible while the record is still dequeued.
 		State: "processing",
 	})
+	if err == store.ErrExecutionLogEntryNotUpdated {
+		return 0, ErrUnknownJob
+	}
+	return entryID, err
+}
+
+// updateExecutionLogEntry calls UpdateExecutionLogEntry for the given job and entry.
+func (h *handler) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry workerutil.ExecutionLogEntry) error {
+	err := h.Store.UpdateExecutionLogEntry(ctx, jobID, entryID, entry, store.ExecutionLogEntryOptions{
+		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
+		// both executors that ever got the job would be writing to the same record. This prevents it.
+		WorkerHostname: executorName,
+		// We pass state to enforce adding log entries is only possible while the record is still dequeued.
+		State: "processing",
+	})
+	if err == store.ErrExecutionLogEntryNotUpdated {
+		return ErrUnknownJob
+	}
+	return err
 }
 
 // markComplete calls MarkComplete for the given job.

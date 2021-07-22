@@ -55,10 +55,13 @@ stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z
 			},
 		}
 
-		for _, e := range entries {
-			err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), e, dbworkerstore.AddExecutionLogEntryOptions{})
+		for i, e := range entries {
+			entryID, err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), e, dbworkerstore.ExecutionLogEntryOptions{})
 			if err != nil {
 				t.Fatal(err)
+			}
+			if entryID != i+1 {
+				t.Fatalf("AddExecutionLogEntry returned wrong entryID. want=%d, have=%d", i+1, entryID)
 			}
 		}
 
