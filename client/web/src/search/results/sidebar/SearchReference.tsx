@@ -268,7 +268,7 @@ const operatorInfo: OperatorInfo[] = [
         alias: 'or',
         placeholder: parsePlaceholder('{a} OR {b}'),
         description:
-            'Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings. Note the regex or operator `|` may not work as expected with certain operators for example `file:(internal/repos)|(internal/gitserver)`, to recieve the expected results use [subexpressions](https://docs.sourcegraph.com/code_search/tutorials/search_subexpressions), `(file:internal/repos or file:internal/gitserver)`',
+            'Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings.',
         examples: ['conf.Get( or log15.Error(', 'conf.Get( OR log15.Error( OR after'],
     },
     {
