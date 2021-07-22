@@ -25,7 +25,7 @@ func TestHeartbeat(t *testing.T) {
 	store1.DequeueFunc.PushReturn(testRecord{ID: 44}, true, nil)
 
 	clock := glock.NewMockClock()
-	handler := newHandler(Options{UnreportedMaxAge: time.Second}, QueueOptions{Store: store1, RecordTransformer: recordTransformer}, "q1", clock)
+	handler := newHandler(Options{UnreportedMaxAge: time.Second}, QueueOptions{Store: store1, RecordTransformer: recordTransformer}, clock)
 
 	_, dequeued1, _ := handler.dequeue(context.Background(), "deadbeef", "test")
 	_, dequeued2, _ := handler.dequeue(context.Background(), "deadveal", "test")

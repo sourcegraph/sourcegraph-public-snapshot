@@ -8,14 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
-
-func newHandler(options Options, queueOptions QueueOptions, queueName string, clock glock.Clock) *handler {
-	return newHandlerWithMetrics(options, queueOptions, queueName, clock, &observation.TestContext)
-}
 
 func TestDequeue(t *testing.T) {
 	transformedJob := apiclient.Job{
@@ -40,7 +35,7 @@ func TestDequeue(t *testing.T) {
 		return transformedJob, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, glock.NewMockClock())
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -58,7 +53,7 @@ func TestDequeue(t *testing.T) {
 }
 
 func TestDequeueNoRecord(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, glock.NewMockClock())
 
 	_, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -76,7 +71,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, glock.NewMockClock())
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -107,7 +102,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 }
 
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, glock.NewMockClock())
 
 	entry := workerutil.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
@@ -125,7 +120,7 @@ func TestMarkComplete(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, glock.NewMockClock())
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -149,7 +144,7 @@ func TestMarkComplete(t *testing.T) {
 }
 
 func TestMarkCompleteUnknownJob(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, glock.NewMockClock())
 
 	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
@@ -163,7 +158,7 @@ func TestMarkErrored(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, glock.NewMockClock())
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -190,7 +185,7 @@ func TestMarkErrored(t *testing.T) {
 }
 
 func TestMarkErroredUnknownJob(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()}, glock.NewMockClock())
 
 	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
@@ -204,7 +199,7 @@ func TestMarkFailed(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, "test_queue", glock.NewMockClock())
+	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer}, glock.NewMockClock())
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {

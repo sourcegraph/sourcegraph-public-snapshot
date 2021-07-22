@@ -11,7 +11,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -19,11 +18,9 @@ import (
 type handler struct {
 	options      Options
 	queueOptions QueueOptions
-	queueName    string
 	clock        glock.Clock
 	executors    map[string]*executorMeta
 	m            sync.Mutex // protects executors
-	queueMetrics *QueueMetrics
 }
 
 type Options struct {
@@ -53,21 +50,16 @@ type jobMeta struct {
 	started  time.Time
 }
 
-func newHandlerWithMetrics(options Options, queueOptions QueueOptions, queueName string, clock glock.Clock, observationContext *observation.Context) *handler {
+func newHandler(options Options, queueOptions QueueOptions, clock glock.Clock) *handler {
 	return &handler{
 		options:      options,
 		queueOptions: queueOptions,
-		queueName:    queueName,
 		clock:        clock,
 		executors:    map[string]*executorMeta{},
-		queueMetrics: newQueueMetrics(observationContext),
 	}
 }
 
-var (
-	ErrUnknownQueue = errors.New("unknown queue")
-	ErrUnknownJob   = errors.New("unknown job")
-)
+var ErrUnknownJob = errors.New("unknown job")
 
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
@@ -164,7 +156,6 @@ func (h *handler) findMeta(executorName string, jobID int, remove bool) (jobMeta
 				l := len(executor.jobs) - 1
 				executor.jobs[i] = executor.jobs[l]
 				executor.jobs = executor.jobs[:l]
-				h.updateMetrics()
 			}
 
 			return job, nil
@@ -186,33 +177,23 @@ func (h *handler) addMeta(executorName string, job jobMeta) {
 	}
 
 	executor.jobs = append(executor.jobs, job)
-	h.updateMetrics()
 }
 
-func (h *handler) updateMetrics() {
-	type queueStat struct {
+func (h *handler) scrapeMetrics() (numJobs int, numExecutors int) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
+	var (
 		JobIDs        []int
-		ExecutorNames map[string]struct{}
-	}
-	queueStats := map[string]queueStat{}
+		ExecutorNames = make(map[string]struct{})
+	)
 
 	for executorName, meta := range h.executors {
 		for _, job := range meta.jobs {
-			stat, ok := queueStats[h.queueName]
-			if !ok {
-				stat = queueStat{
-					ExecutorNames: map[string]struct{}{},
-				}
-			}
-
-			stat.JobIDs = append(stat.JobIDs, job.recordID)
-			stat.ExecutorNames[executorName] = struct{}{}
-			queueStats[h.queueName] = stat
+			JobIDs = append(JobIDs, job.recordID)
+			ExecutorNames[executorName] = struct{}{}
 		}
 	}
 
-	for queueName, temp := range queueStats {
-		h.queueMetrics.NumJobs.WithLabelValues(queueName).Set(float64(len(temp.JobIDs)))
-		h.queueMetrics.NumExecutors.WithLabelValues(queueName).Set(float64(len(temp.ExecutorNames)))
-	}
+	return len(JobIDs), len(ExecutorNames)
 }
