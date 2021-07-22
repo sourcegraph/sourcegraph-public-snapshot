@@ -2,12 +2,12 @@ package dbconn
 
 import (
 	"context"
+	"database/sql"
 	"log"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -15,7 +15,7 @@ var (
 	// Restricted is the "sg_service" DB connection used to provide row level security.
 	// See https://docs.sourcegraph.com/admin/repo/row_level_security for more information.
 	// Only use this after a call to SetupRestrictedConnection.
-	Restricted *pgxpool.Pool
+	Restricted *sql.DB
 )
 
 // SetupRestrictedConnection connects to the given data source, ensures reduced
@@ -38,53 +38,24 @@ func SetupRestrictedConnection(opts Opts) (err error) {
 
 // NewRestricted connects to the given data source, sets up the connection lifecycle
 // hooks, and returns the handle to the pool.
-func NewRestricted(opts Opts) (*pgxpool.Pool, error) {
-	config, err := buildPoolConfig(opts.DSN, opts.AppName)
+func NewRestricted(opts Opts) (*sql.DB, error) {
+	opts.AppName += "-restricted"
+	config, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to build pool config")
-	}
-
-	// When each connection is checked out of the pool, we ensure that the service
-	// role is assumed automatically and transparently.
-	config.BeforeAcquire = func(ctx context.Context, c *pgx.Conn) bool {
-		if _, err := c.Exec(ctx, "SET SESSION AUTHORIZATION 'sg_service';"); err != nil {
-			log.Println(errors.Wrap(err, "unable to assume sg_service role"))
-			return false
-		}
-		return true
+		return nil, errors.Wrap(err, "unable to build restricted db config")
 	}
 
 	// Connect to the database and register Prometheus metrics for observability.
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to connect pgx pool")
+	db := stdlib.OpenDB(*config, stdlib.OptionAfterConnect(func(ctx context.Context, conn *pgx.Conn) error {
+		if _, err := conn.Exec(ctx, "SET SESSION AUTHORIZATION 'sg_service';"); err != nil {
+			log.Println(errors.Wrap(err, "unable to assume sg_service role"))
+			return err
+		}
+		return nil
+	}))
+	if db == nil {
+		return nil, errors.New("unable to open restricted db connection")
 	}
-	prometheus.MustRegister(newMetricsRestrictedCollector(pool, opts.DBName, opts.AppName))
-	return pool, nil
-}
-
-// buildPoolConfig takes either a Postgres connection string or connection URI,
-// parses it, and returns a pool config with additional parameters.
-func buildPoolConfig(dataSource, app string) (*pgxpool.Config, error) {
-	config, err := buildConfig(dataSource, app)
-	if err != nil {
-		return nil, err
-	}
-	poolConfig, err := pgxpool.ParseConfig(dataSource)
-	if err != nil {
-		return nil, err
-	}
-
-	// We supply the existing base configuration as a starting point for the
-	// pool, then customize where necessary.
-	//
-	// The pool can contain up to SRC_PGSQL_MAX_OPEN connections. Idle connections
-	// are reclaimed at one minute, and connections in general at one hour. This
-	// helps prevent abandoned connections from accumulating and frees resources.
-	poolConfig.ConnConfig = config
-	poolConfig.MinConns = int32(0)
-	poolConfig.MaxConns = int32(Global.Stats().MaxOpenConnections)
-	poolConfig.MaxConnIdleTime = time.Minute
-	poolConfig.MaxConnLifetime = time.Hour
-	return poolConfig, nil
+	prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
+	return db, nil
 }
