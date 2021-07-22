@@ -8,8 +8,6 @@
     min-width: 12rem;
 
     :global(.theme-redesign) & {
-        box-shadow: var(--search-input-shadow);
-
         @media (--xs-breakpoint-down) {
             background-color: var(--color-bg-1);
             border: 1px solid var(--input-border-color);
@@ -17,6 +15,10 @@
             display: inline;
             padding: 0.5rem;
         }
+    }
+
+    &__shadow {
+        box-shadow: var(--search-input-shadow);
     }
 
     &__background-container {

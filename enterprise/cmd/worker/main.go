@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -29,6 +31,7 @@ func main() {
 		"codeintel-janitor":        codeintel.NewJanitorJob(),
 		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
 		"codehost-version-syncing": versions.NewSyncingJob(),
+		"insights-job":             insights.NewInsightsJob(),
 	})
 }
 

@@ -36,10 +36,11 @@ func newReconcilerWorker(
 	r := reconciler.New(gitClient, sourcer, s)
 
 	options := workerutil.WorkerOptions{
-		Name:        "batches_reconciler_worker",
-		NumHandlers: 5,
-		Interval:    5 * time.Second,
-		Metrics:     metrics.reconcilerWorkerMetrics,
+		Name:              "batches_reconciler_worker",
+		NumHandlers:       5,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           metrics.reconcilerWorkerMetrics,
 	}
 
 	workerStore := createReconcilerDBWorkerStore(s)
@@ -79,9 +80,8 @@ func createReconcilerDBWorkerStore(s *store.Store) dbworkerstore.Store {
 		// If state is equal, prefer the newer ones.
 		OrderByExpression: sqlf.Sprintf("changesets.reconciler_state = 'errored', changesets.updated_at DESC"),
 
-		HeartbeatInterval: 15 * time.Second,
-		StalledMaxAge:     60 * time.Second,
-		MaxNumResets:      reconcilerMaxNumResets,
+		StalledMaxAge: 60 * time.Second,
+		MaxNumResets:  reconcilerMaxNumResets,
 
 		RetryAfter:    5 * time.Second,
 		MaxNumRetries: reconcilerMaxNumRetries,

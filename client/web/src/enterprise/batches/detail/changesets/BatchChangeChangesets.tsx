@@ -277,8 +277,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         extensionInfo: { extensionsController, hoverifier },
                         expandByDefault,
                         queryExternalChangesetWithFileDiffs,
-                        onSelect,
-                        isSelected: changesetSelected,
+                        selectable: { onSelect, isSelected: changesetSelected },
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}

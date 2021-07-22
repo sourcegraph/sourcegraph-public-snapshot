@@ -5,9 +5,13 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/dghubble/gologin"
 	"github.com/dghubble/gologin/github"
+	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -66,10 +70,35 @@ func parseProvider(p *schema.GitHubAuthProvider, db dbutil.DB, sourceCfg schema.
 					allowSignup: p.AllowSignup,
 					allowOrgs:   p.AllowOrgs,
 				}, sessionKey),
-				nil,
+				http.HandlerFunc(failureHandler),
 			)
 		},
 	}), messages
+}
+
+func failureHandler(w http.ResponseWriter, r *http.Request) {
+	// As a special case wa want to handle `access_denied` errors by redirecting
+	// back. This case arises when the user decides not to proceed by clicking `cancel`.
+	if err := r.URL.Query().Get("error"); err != "access_denied" {
+		// Fall back to default failure handler
+		gologin.DefaultFailureHandler.ServeHTTP(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	encodedState, err := goauth2.StateFromContext(ctx)
+	if err != nil {
+		log15.Error("OAuth failed: could not get state from context.", "error", err)
+		http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
+		return
+	}
+	state, err := oauth.DecodeState(encodedState)
+	if err != nil {
+		log15.Error("OAuth failed: could not decode state.", "error", err)
+		http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 }
 
 var clientIDSecretValidator = lazyregexp.New("^[a-z0-9]*$")

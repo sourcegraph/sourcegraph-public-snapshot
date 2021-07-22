@@ -4,17 +4,19 @@ import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import { Range, Selection, SelectionDirection } from 'monaco-editor'
+import { Range, Selection } from 'monaco-editor'
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { parseSearchQuery } from '@sourcegraph/shared/src/search/query/parser'
-import { appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
@@ -266,13 +268,17 @@ function parseSearchInput(searchInput: string): RegExp[] {
 function selectionForPlaceholder(
     placeholder: Placeholder,
     offset: number = 0,
-    direction: SelectionDirection = SelectionDirection.LTR
+    forSuggestions: boolean = false
 ): Selection {
     const token = placeholder.tokens.find(token => token.type === 'value')
     if (!token) {
         throw new Error('Search reference does not contain placeholder.')
     }
-    return Selection.createWithDirection(1, offset + token.start + 1, 1, offset + token.end, direction)
+    const selectionStart = offset + token.start + 1
+    // For filters with suggestions we create an "empty" selection to position
+    // the cursor right after the colon.
+    const selectionEnd = forSuggestions ? selectionStart : offset + token.end
+    return new Selection(1, selectionStart, 1, selectionEnd)
 }
 
 /**
@@ -309,16 +315,18 @@ export function updateQueryWithFilter(
 
     if (existingFilter && singular) {
         // Filter can only appear once
-        // Select the existing filter value or append the filter and select the
-        // placeholder
-        selection = Selection.createWithDirection(
-            1,
-            (existingFilter.value?.range.start || existingFilter.field.range.end) + 1,
-            1,
-            existingFilter.range.end + 1,
-            showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
-        )
-        revealRange = new Range(1, existingFilter.range.start + 1, 1, existingFilter.range.end + 1)
+        // Select or remove the existing filter value
+        if (showSuggestions) {
+            query = updateFilter(query, field, '')
+        }
+        const selectionStart = (existingFilter.value?.range.start || existingFilter.field.range.end) + 1
+        // For filters with suggestions, we create an "empty" selection to
+        // position the cursor after the colon
+        const selectionEnd = showSuggestions ? selectionStart : existingFilter.range.end + 1
+        selection = new Selection(1, selectionStart, 1, selectionEnd)
+        // A separate range is needed to make sure that the full filter, including
+        // the field name, is scrolled into view.
+        revealRange = new Range(1, existingFilter.range.start + 1, 1, selectionEnd)
     } else {
         // Filter can appear multiple times or doesn't exist yet. Always
         // append.
@@ -326,16 +334,19 @@ export function updateQueryWithFilter(
         // +1 because appendFilter inserts a whitespace character at the end of
         // the query
         const rangeStart = query.length + 1
-        query = appendFilter(query, field, searchReference.placeholder.text)
+        query = appendFilter(query, field, showSuggestions ? '' : searchReference.placeholder.text)
+        const offset = query.length - (showSuggestions ? 0 : searchReference.placeholder.text.length)
         selection = selectionForPlaceholder(
             searchReference.placeholder,
-            query.length - searchReference.placeholder.text.length,
+            offset,
             // If we need to trigger the suggestion popover we have to make
             // sure the input cursor is positioned at the beginning of the
             // selection (it usually is at the end)
-            showSuggestions ? SelectionDirection.RTL : SelectionDirection.LTR
+            showSuggestions
         )
-        revealRange = new Range(1, rangeStart + 1, 1, query.length + 1)
+        // A separate range is needed to make sure that the full filter, including
+        // the field name, is scrolled into view.
+        revealRange = new Range(1, rangeStart + 1, 1, selection.endColumn)
     }
 
     return {
@@ -387,82 +398,36 @@ export function parsePlaceholder(placeholder: string): Placeholder {
     return parsedPlaceholder
 }
 
-function interleave<T>(values: T[], filler: T): T[] {
-    const result = []
-    if (values.length > 0) {
-        result.push(values[0])
-    }
-    for (let index = 1; index < values.length; index++) {
-        result.push(filler)
-        result.push(values[index])
-    }
-
-    return result
-}
-
-/**
- * Helper function to add quotation marks to filter values if needed. It's not
- * as simple as adding quotes if the value contains spaces due to the existence
- * of predicates.
- */
-function addQuotesIfNeeded(filter: FilterType, value: string): string {
-    switch (filter) {
-        case FilterType.repo:
-        case FilterType.file:
-            // All predicates so far start with `contains`. We should probably
-            // find a more reliable way to identify them eventually.
-            if (/^contains[(.]/.test(value)) {
-                return value
-            }
-    }
-
-    if (/\s/.test(value)) {
-        return `"${value}"`
-    }
-    return value
-}
-
 const classNameTokenMap = {
     text: 'search-filter-keyword',
     value: styles.placeholder,
 }
 
 interface SearchReferenceExampleProps {
-    filter: FilterType
     example: string
     onClick: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ filter, example, onClick }) => {
-    const parseResult = parseSearchQuery(example)
+const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
+    // All current examples are literal queries
+    const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
     // We only use valid queries as examples, so this will always be true
-    if (parseResult.type === 'success') {
+    if (scanResult.type === 'success') {
         return (
             <button className="btn p-0 flex-1" type="button" onClick={() => onClick(example)}>
-                {interleave(
-                    parseResult.nodes
-                        .map(node => {
-                            switch (node.type) {
-                                case 'parameter':
-                                    return (
-                                        <>
-                                            <span className="search-filter-keyword">{node.field}:</span>
-                                            {addQuotesIfNeeded(filter, node.value)}
-                                        </>
-                                    )
-                                case 'pattern':
-                                    return node.value
-                                case 'operator':
-                                    // we currently don't use operators in examples,
-                                    // but we need an entry to make TS happy. Once
-                                    // we do support operators, the query needs to
-                                    // be parsed/rendered differently
-                                    return node.kind
-                            }
-                        })
-                        .filter(Boolean),
-                    ' '
-                )}
+                {scanResult.term.map((term, index) => {
+                    switch (term.type) {
+                        case 'filter':
+                            return (
+                                <React.Fragment key={index}>
+                                    <span className="search-filter-keyword">{term.field.value}:</span>
+                                    {term.value?.quoted ? `"${term.value.value}"` : term.value?.value}
+                                </React.Fragment>
+                            )
+                        default:
+                            return example.slice(term.range.start, term.range.end)
+                    }
+                })}
             </button>
         )
     }
@@ -546,11 +511,7 @@ const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> =
                             <div className={classNames('text-code', styles.examples)}>
                                 {searchReference.examples.map(example => (
                                     <p key={example}>
-                                        <SearchReferenceExample
-                                            filter={searchReference.type}
-                                            example={example}
-                                            onClick={onExampleClick}
-                                        />
+                                        <SearchReferenceExample example={example} onClick={onExampleClick} />
                                     </p>
                                 ))}
                             </div>
@@ -585,6 +546,7 @@ export interface SearchReferenceProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         VersionContextProps,
+        TelemetryProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     filter: string
@@ -596,15 +558,17 @@ export interface SearchReferenceProps
 const SearchReference = (props: SearchReferenceProps): ReactElement => {
     const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
+    const { onNavbarQueryChange, navbarSearchQueryState, filter, telemetryService } = props
+    const hasFilter = filter.length === 0
+
     const selectedFilters = useMemo(() => {
-        if (props.filter === '') {
+        if (!hasFilter) {
             return searchReferenceInfo
         }
-        const searchTerms = parseSearchInput(props.filter)
+        const searchTerms = parseSearchInput(filter)
         return searchReferenceInfo.filter(info => matches(searchTerms, info))
-    }, [props.filter])
+    }, [filter, hasFilter])
 
-    const { onNavbarQueryChange, navbarSearchQueryState } = props
     const updateQuery = useCallback(
         (searchReference: SearchReferenceInfo, negate: boolean) => {
             onNavbarQueryChange(updateQueryWithFilter(navbarSearchQueryState, searchReference, negate, FILTERS))
@@ -613,9 +577,10 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     )
     const updateQueryWithExample = useCallback(
         (example: string) => {
+            telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
             onNavbarQueryChange({ query: navbarSearchQueryState.query.trimEnd() + ' ' + example })
         },
-        [onNavbarQueryChange, navbarSearchQueryState]
+        [onNavbarQueryChange, navbarSearchQueryState, hasFilter, telemetryService]
     )
 
     const filterList = (

@@ -163,7 +163,7 @@ Array [
   <QueryInputToggle
     activeClassName="test-regexp-toggle--active"
     caseSensitive={false}
-    className="toggle-container__regexp-button test-regexp-toggle"
+    className="test-regexp-toggle"
     disableOn={
       Array [
         Object {
@@ -201,7 +201,7 @@ Array [
       aria-checked={false}
       aria-disabled={true}
       aria-label="Regular expression toggle"
-      className="btn btn-icon toggle-container__toggle toggle-container__regexp-button test-regexp-toggle disabled test-regexp-toggle--active"
+      className="btn btn-icon toggle-container__toggle test-regexp-toggle disabled test-regexp-toggle--active"
       data-tooltip="Query already contains one or more patterntype subexpressions"
       onClick={[Function]}
       role="checkbox"
@@ -216,7 +216,7 @@ Array [
     aria-checked={false}
     aria-disabled={true}
     aria-label="Regular expression toggle"
-    className="btn btn-icon toggle-container__toggle toggle-container__regexp-button test-regexp-toggle disabled test-regexp-toggle--active"
+    className="btn btn-icon toggle-container__toggle test-regexp-toggle disabled test-regexp-toggle--active"
     data-tooltip="Query already contains one or more patterntype subexpressions"
     onClick={[Function]}
     role="checkbox"

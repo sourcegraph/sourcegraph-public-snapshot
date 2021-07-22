@@ -20,14 +20,22 @@ import (
 
 const (
 	exampleJar                = "sources.jar"
+	exampleByteCodeJar        = "bytes.jar"
 	exampleJar2               = "sources2.jar"
+	exampleByteCodeJar2       = "bytes2.jar"
 	exampleFilePath           = "Example.java"
+	exampleClassfilePath      = "Example.class"
 	exampleFileContents       = "package example;\npublic class Example {}\n"
 	exampleFileContents2      = "package example;\npublic class Example { public static final int x = 42; }\n"
 	examplePackageVersion     = "1.0.0"
 	examplePackageVersion2    = "2.0.0"
 	examplePackageDependency  = "org.example:example:1.0.0"
 	examplePackageDependency2 = "org.example:example:2.0.0"
+	examplePackageUrl         = "maven/org.example/example"
+
+	// These magic numbers come from the table here https://en.wikipedia.org/wiki/Java_class_file#General_layout
+	java5MajorVersion  = 49
+	java11MajorVersion = 53
 )
 
 func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
@@ -41,6 +49,19 @@ func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
 	assert.Nil(t, err)
 	assert.Nil(t, zipWriter.Close())
 	assert.Nil(t, sourcesPath.Close())
+}
+
+func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
+	t.Helper()
+	byteCodePath, err := os.Create(path.Join(dir, jarName))
+	assert.Nil(t, err)
+	zipWriter := zip.NewWriter(byteCodePath)
+	exampleWriter, err := zipWriter.Create(exampleClassfilePath)
+	assert.Nil(t, err)
+	_, err = exampleWriter.Write(contents)
+	assert.Nil(t, err)
+	assert.Nil(t, zipWriter.Close())
+	assert.Nil(t, byteCodePath.Close())
 }
 
 func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
@@ -59,17 +80,27 @@ func coursierScript(t *testing.T, dir string) string {
 	defer coursierPath.Close()
 	script := fmt.Sprintf(`#!/usr/bin/env bash
 ARG="$3"
+CLASSIFIER="$5"
 if [[ "$ARG" =~ "%s" ]]; then
-  echo "%s"
+  if [[ "$CLASSIFIER" =~ "sources" ]]; then
+    echo "%s"
+  else
+    echo "%s"
+  fi
 elif [[ "$ARG" =~ "%s" ]]; then
-  echo "%s"
+  if [[ "$CLASSIFIER" =~ "sources" ]]; then
+    echo "%s"
+  else
+    echo "%s"
+  fi
 else
   echo "Invalid argument $1"
   exit 1
 fi
 `,
-		examplePackageVersion, path.Join(dir, exampleJar),
-		examplePackageVersion2, path.Join(dir, exampleJar2))
+		examplePackageVersion, path.Join(dir, exampleJar), path.Join(dir, exampleByteCodeJar),
+		examplePackageVersion2, path.Join(dir, exampleJar2), path.Join(dir, exampleByteCodeJar2),
+	)
 	_, err = coursierPath.WriteString(script)
 	assert.Nil(t, err)
 	return coursierPath.Name()
@@ -77,7 +108,7 @@ fi
 
 func (s JVMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
 	url := vcs.URL{
-		URL: url.URL{Path: "maven/org.example/example"},
+		URL: url.URL{Path: examplePackageUrl},
 	}
 	s.Config.Maven.Dependencies = dependencies
 	cmd, err := s.CloneCommand(context.Background(), &url, bareGitDirectory)
@@ -91,7 +122,11 @@ func TestJVMCloneCommand(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	createPlaceholderSourcesJar(t, dir, exampleFileContents, exampleJar)
+	createPlaceholderByteCodeJar(t,
+		[]byte{0xca, 0xfe, 0xba, 0xbe, 0x00, 0x00, 0x00, java5MajorVersion, 0xab}, dir, exampleByteCodeJar)
 	createPlaceholderSourcesJar(t, dir, exampleFileContents2, exampleJar2)
+	createPlaceholderByteCodeJar(t,
+		[]byte{0xca, 0xfe, 0xba, 0xbe, 0x00, 0x00, 0x00, java11MajorVersion, 0xab}, dir, exampleByteCodeJar2)
 
 	coursier.CoursierBinary = coursierScript(t, dir)
 
@@ -118,11 +153,26 @@ func TestJVMCloneCommand(t *testing.T) {
 		bareGitDirectory,
 		"v1.0.0\nv2.0.0\n", // verify that the v2.0.0 tag got added
 	)
+
+	assertCommandOutput(t,
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, "lsif-java.json")),
+		bareGitDirectory,
+		// Assert that Java 8 is used for a library compiled with Java 5.
+		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "8", examplePackageDependency),
+	)
+	assertCommandOutput(t,
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion2, "lsif-java.json")),
+		bareGitDirectory,
+		// Assert that Java 11 is used for a library compiled with Java 11.
+		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "11", examplePackageDependency2),
+	)
+
 	assertCommandOutput(t,
 		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
 	)
+
 	assertCommandOutput(t,
 		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion2, exampleFilePath)),
 		bareGitDirectory,

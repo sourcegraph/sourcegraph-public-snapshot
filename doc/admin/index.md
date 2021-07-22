@@ -5,7 +5,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 ## [Install Sourcegraph](install/index.md)
 
 ## Management, deployment, and configuration
-
+- [Best Practices](deployment_best_practices.md)
 - [Configuration](config/index.md)
 - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
 - [HTTP and HTTPS/SSL configuration](http_https_configuration.md)

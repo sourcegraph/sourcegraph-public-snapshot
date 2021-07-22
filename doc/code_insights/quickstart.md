@@ -59,7 +59,7 @@ Enter a descriptive **Title** for the chart, like `Count of TODOs in [repository
 
 This controls who else can see your insight. 
 
-Anything set to "Personal" won't be visible by anyone else. Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](#1-enable-the-experimental-feature-flag)).
+Anything set to "Private" won't be visible by anyone else. Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](#1-enable-the-experimental-feature-flag)).
 
 ### 8. Set the distance between data points to 1 month
 

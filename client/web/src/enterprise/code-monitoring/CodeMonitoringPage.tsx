@@ -16,7 +16,6 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -27,7 +26,7 @@ import {
 import { CodeMonitoringGettingStarted, HAS_SEEN_CODE_MONITORING_GETTING_STARTED } from './CodeMonitoringGettingStarted'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps, FeatureFlagProps {
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
@@ -41,7 +40,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     showGettingStarted = false,
     isLightTheme,
-    featureFlags,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
@@ -69,11 +67,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         HAS_SEEN_CODE_MONITORING_GETTING_STARTED,
         false
     )
-
-    // If feature flag is not on, make unauthenticated users sign in
-    if (!authenticatedUser && !featureFlags.get('w1-signup-optimisation')) {
-        return <Redirect to="/sign-in" />
-    }
 
     // If user has no code monitors, redirect to the getting started page
     if (!showGettingStarted && userHasCodeMonitors === false && !hasSeenGettingStarted) {

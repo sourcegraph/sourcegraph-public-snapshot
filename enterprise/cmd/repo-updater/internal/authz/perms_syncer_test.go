@@ -67,8 +67,9 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
-	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
+	fetchUserPerms        func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
+	fetchUserPermsByToken func(context.Context, string) (*authz.ExternalUserPermissions, error)
+	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
@@ -84,12 +85,17 @@ func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account)
 	return p.fetchUserPerms(ctx, acct)
 }
 
+func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+	return p.fetchUserPermsByToken(ctx, token)
+}
+
 func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return p.fetchRepoPerms(ctx, repo)
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
+		id:          1,
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
@@ -101,6 +107,13 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 			ServiceType: p.ServiceType(),
 			ServiceID:   p.ServiceID(),
 		},
+	}
+	extService := &types.ExternalService{
+		ID:              1,
+		Kind:            extsvc.KindGitLab,
+		DisplayName:     "GITHUB1",
+		Config:          `{"token": "deadbeef"}`,
+		NamespaceUserID: 1,
 	}
 
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
@@ -132,6 +145,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
 	}
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{extService}, nil
+	}
 	defer func() {
 		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
@@ -158,6 +174,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+				return &authz.ExternalUserPermissions{
+					Exacts: []extsvc.RepoID{"1"},
+				}, test.fetchErr
+			}
+			p.fetchUserPermsByToken = func(ctx context.Context, s string) (*authz.ExternalUserPermissions, error) {
 				return &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1"},
 				}, test.fetchErr
@@ -203,6 +224,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
+	}
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{}, nil
 	}
 	defer func() {
 		database.Mocks = database.MockStores{}
@@ -319,6 +343,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
+	}
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{}, nil
 	}
 	defer func() {
 		database.Mocks = database.MockStores{}

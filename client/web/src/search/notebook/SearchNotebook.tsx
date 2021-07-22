@@ -196,6 +196,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 {...block}
                                 {...blockCallbackProps}
                                 isSelected={selectedBlockId === block.id}
+                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
                             />
                         )}
                         {block.type === 'query' && (
@@ -204,6 +205,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({ o
                                 {...block}
                                 {...blockCallbackProps}
                                 isSelected={selectedBlockId === block.id}
+                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
                             />
                         )}
                     </>

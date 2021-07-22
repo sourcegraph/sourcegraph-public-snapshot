@@ -59,6 +59,36 @@ func (p *Provider) Validate() (problems []string) {
 	return nil
 }
 
+// FetchUserPermsByToken fetches all the private repo ids that the token can
+// access.
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
+	client := p.client.WithToken(token)
+
+	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
+	// when appending the first 100 results to the slice.
+	repoIDs := make([]extsvc.RepoID, 0, 100)
+	hasNextPage := true
+	var err error
+	for page := 1; hasNextPage; page++ {
+		var repos []*github.Repository
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page)
+		if err != nil {
+			return &authz.ExternalUserPermissions{
+				Exacts: repoIDs,
+			}, err
+		}
+
+		for _, r := range repos {
+			repoIDs = append(repoIDs, extsvc.RepoID(r.ID))
+		}
+	}
+
+	return &authz.ExternalUserPermissions{
+		Exacts: repoIDs,
+	}, nil
+}
+
 // FetchUserPerms returns a list of repository IDs (on code host) that the given account
 // has read access on the code host. The repository ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
@@ -82,30 +112,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	client := p.client.WithToken(tok.AccessToken)
-
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
-	repoIDs := make([]extsvc.RepoID, 0, 100)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page)
-		if err != nil {
-			return &authz.ExternalUserPermissions{
-				Exacts: repoIDs,
-			}, err
-		}
-
-		for _, r := range repos {
-			repoIDs = append(repoIDs, extsvc.RepoID(r.ID))
-		}
-	}
-
-	return &authz.ExternalUserPermissions{
-		Exacts: repoIDs,
-	}, nil
+	return p.FetchUserPermsByToken(ctx, tok.AccessToken)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

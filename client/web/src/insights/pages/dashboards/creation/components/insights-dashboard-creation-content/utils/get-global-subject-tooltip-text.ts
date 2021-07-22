@@ -10,7 +10,7 @@ export function getGlobalSubjectTooltipText(globalSubject: SettingsSiteSubject |
 
     const globalSubjectAdminCheckMessage = globalSubject.viewerCanAdminister
         ? undefined
-        : "You don't have a permission to change global scope. Reach out your site admin"
+        : 'Only site admins can create global dashboards'
 
     return globalSubject.allowSiteSettingsEdits
         ? globalSubjectAdminCheckMessage

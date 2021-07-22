@@ -8,7 +8,13 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PatternTypeProps, CaseSensitivityProps, OnboardingTourProps, SearchContextInputProps } from '..'
+import {
+    PatternTypeProps,
+    CaseSensitivityProps,
+    OnboardingTourProps,
+    SearchContextInputProps,
+    parseSearchURLQuery,
+} from '..'
 import { AuthenticatedUser } from '../../auth'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { VersionContext } from '../../schema/site.schema'
@@ -44,6 +50,9 @@ interface Props
  */
 export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) => {
     const autoFocus = props.isSearchAutoFocusRequired ?? true
+    // This uses the same logic as in Layout.tsx until we have a better solution
+    // or remove the search help button
+    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
@@ -66,6 +75,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 autoFocus={autoFocus}
                 showSearchContextFeatureTour={true}
                 isSearchOnboardingTourVisible={false}
+                hideHelpButton={isSearchPage}
             />
         </Form>
     )

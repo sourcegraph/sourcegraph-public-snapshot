@@ -356,7 +356,7 @@ describe('Code insight edit insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
         // Click on edit button of insight context menu (three dots-menu)
