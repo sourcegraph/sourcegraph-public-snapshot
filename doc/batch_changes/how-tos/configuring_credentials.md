@@ -10,7 +10,7 @@ In order to [publish changesets with Batch Changes](publishing_changesets.md), y
 
 ## Adding a personal access token
 
-Access tokens can be configured either for your user account, or globally, if you're a site admin of the Sourcegraph instance.
+Access tokens can be configured either for your user account, or globally, if you're a site admin of the Sourcegraph instance. Either token will suffice for most [interactions with the code host](../explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes), but some actions (such as [importing changesets](./tracking_existing_changesets.md) or syncing with the code host) require global credentials to be configured.
 
 ### For yourself
 
@@ -20,7 +20,9 @@ Adding personal access tokens is done through the Batch Changes section of your 
 1. Select **Settings** from the dropdown menu.
 1. Click **Batch Changes** on the sidebar menu.
 
-You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them. If a global access token has been configured, it is not required (but you can still do it, to create the changesets under your name) to do this. The UI will inform you if that's the case.
+You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them.
+
+Personal access tokens are not required if a global access token has been configured, but you can still do it to create the changesets under your name.
 
 ### Global service account
 
@@ -30,7 +32,9 @@ Configuring a global service account is done through the Batch Changes section o
 1. Select **Site admin** from the dropdown menu.
 1. Click **Batch Changes** on the sidebar menu.
 
-You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them. Credentials that are configured here will be usable by all users of the Sourcegraph instance for publishing and updating changesets on the code host.
+You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them.
+
+Global credentials are usable by all users of the Sourcegraph instance who have not added their own personal access tokens for Batch Changes. These credentials are also used whenever a user [imports](./tracking_existing_changesets.md) or manually syncs a changeset.
 
 ### Configuring a code host
 
@@ -99,3 +103,13 @@ You should now see a list of the code hosts that are configured on Sourcegraph. 
 To remove a personal access token for a code host, click **Remove** next to that code host. The code host's indicator will change to an empty red circle to indicate that no token is configured for that code host:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/no-tokens.png" alt="A list of code hosts, with all code hosts indicating that they do not have a token">
+
+## Site admin fallback token
+
+> WARNING: This fallback was deprecated in Sourcegraph 3.27 and removed as of Sourcegraph 3.29.
+
+For site admins, when neither a personal access token nor global credentials are configured, Batch Changes will fall back to using the Sourcegraph-wide token for the [code host connection](../../admin/external_service.md). This makes it easier to try out Batch Changes, but be aware that this may result in changesets being created or changed with different permissions from your normal code host user.
+
+Non-admin users are unable to apply batch changes without configuring access tokens.
+
+
