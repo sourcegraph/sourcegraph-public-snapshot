@@ -88,7 +88,7 @@ By configuring each subdirectory that has unique permissions, Sourcegraph is abl
 }
 ```
 
-as this will override the permissions for the `//Sourcegraph/Frontend/Extension/` depot. See Known limitations below. 
+as this will override the permissions for the `//Sourcegraph/Frontend/Extension/` depot. See **Known limitations** below. 
 
 #### Known limitations
 
