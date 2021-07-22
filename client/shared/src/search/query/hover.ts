@@ -197,13 +197,13 @@ const toHover = (token: DecoratedToken): string => {
  * This ensures hover tooltips happen at correct line and column offsets, and for ranges that span multiple lines.
  */
 const toMonacoHoverRange = ({ start, end }: CharacterRange, textModel: Monaco.editor.ITextModel): Monaco.IRange => {
-    const startPos = textModel.getPositionAt(start)
-    const endPos = textModel.getPositionAt(end)
+    const startPosition = textModel.getPositionAt(start)
+    const endPosition = textModel.getPositionAt(end)
     return {
-        startLineNumber: startPos.lineNumber,
-        endLineNumber: endPos.lineNumber,
-        startColumn: startPos.column,
-        endColumn: endPos.column,
+        startLineNumber: startPosition.lineNumber,
+        endLineNumber: endPosition.lineNumber,
+        startColumn: startPosition.column,
+        endColumn: endPosition.column,
     }
 }
 

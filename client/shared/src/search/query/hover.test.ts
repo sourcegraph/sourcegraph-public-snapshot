@@ -1,9 +1,12 @@
-import { SearchPatternType } from '../../graphql-operations'
 import { editor, Position } from 'monaco-editor'
+
+import { SearchPatternType } from '../../graphql-operations'
 
 import { getHoverResult } from './hover'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
+
+/* eslint-disable ban/ban */
 
 /**
  * Needed for mocking methods not implemented in JSDom, for tests dependent on Monaco editor model.
