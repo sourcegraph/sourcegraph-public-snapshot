@@ -17,9 +17,9 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = FileLineMatch | RepositoryMatch | CommitMatch | FileSymbolMatch | FilePathMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
 
-export interface FilePathMatch {
+export interface PathMatch {
     type: 'path'
     name: string
     repository: string
@@ -28,8 +28,8 @@ export interface FilePathMatch {
     version?: string
 }
 
-export interface FileLineMatch {
-    type: 'file'
+export interface ContentMatch {
+    type: 'content'
     name: string
     repository: string
     repoStars?: number
@@ -45,17 +45,17 @@ interface LineMatch {
     aggregableBadges?: AggregableBadge[]
 }
 
-export interface FileSymbolMatch {
+export interface SymbolMatch {
     type: 'symbol'
     name: string
     repository: string
     repoStars?: number
     branches?: string[]
     version?: string
-    symbols: SymbolMatch[]
+    symbols: MatchedSymbol[]
 }
 
-interface SymbolMatch {
+interface MatchedSymbol {
     url: string
     name: string
     containerName: string
@@ -440,7 +440,7 @@ export function getRevision(branches?: string[], version?: string): string {
     return revision
 }
 
-export function getFileMatchUrl(fileMatch: FileLineMatch | FileSymbolMatch | FilePathMatch): string {
+export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.version)
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`
 }
@@ -459,7 +459,7 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
-        case 'file':
+        case 'content':
         case 'symbol':
             return getFileMatchUrl(match)
         case 'commit':

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { IHighlightLineRange } from '../graphql/schema'
-import { FileLineMatch, FileSymbolMatch, FilePathMatch, getFileMatchUrl } from '../search/stream'
+import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { ThemeProps } from '../theme'
@@ -29,7 +29,7 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     eventLogger?: EventLogger
     items: MatchItem[]
-    result: FileLineMatch | FileSymbolMatch | FilePathMatch
+    result: ContentMatch | SymbolMatch | PathMatch
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     /**
