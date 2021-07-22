@@ -39,8 +39,8 @@ func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []
 	executorQueueIDsMap := map[int]struct{}{}
 	var live []jobMeta
 	for _, job := range executor.jobs {
-		executorQueueIDsMap[job.record.RecordID()] = struct{}{}
-		if _, ok := executorIDsMap[job.record.RecordID()]; ok || now.Sub(job.started) < h.options.UnreportedMaxAge {
+		executorQueueIDsMap[job.recordID] = struct{}{}
+		if _, ok := executorIDsMap[job.recordID]; ok || now.Sub(job.started) < h.options.UnreportedMaxAge {
 			live = append(live, job)
 			if err := h.heartbeatJob(ctx, job); err != nil {
 				errs = multierror.Append(errs, err)
@@ -65,5 +65,5 @@ func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {
 		return ErrUnknownQueue
 	}
 
-	return queueOptions.Store.Heartbeat(ctx, job.record.RecordID())
+	return queueOptions.Store.Heartbeat(ctx, job.recordID)
 }

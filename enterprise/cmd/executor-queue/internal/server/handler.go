@@ -51,7 +51,7 @@ type executorMeta struct {
 
 type jobMeta struct {
 	queueName string
-	record    workerutil.Record
+	recordID  int
 	started   time.Time
 }
 
@@ -100,7 +100,7 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 	}
 
 	now := m.clock.Now()
-	m.addMeta(executorName, jobMeta{queueName: queueName, record: record, started: now})
+	m.addMeta(executorName, jobMeta{queueName: queueName, recordID: record.RecordID(), started: now})
 	return job, true, nil
 }
 
@@ -137,7 +137,7 @@ func (m *handler) markComplete(ctx context.Context, queueName, executorName stri
 		return err
 	}
 
-	_, err = queueOptions.Store.MarkComplete(ctx, job.record.RecordID())
+	_, err = queueOptions.Store.MarkComplete(ctx, job.recordID)
 	return err
 }
 
@@ -154,7 +154,7 @@ func (m *handler) markErrored(ctx context.Context, queueName, executorName strin
 		return err
 	}
 
-	_, err = queueOptions.Store.MarkErrored(ctx, job.record.RecordID(), errorMessage)
+	_, err = queueOptions.Store.MarkErrored(ctx, job.recordID, errorMessage)
 	return err
 }
 
@@ -171,7 +171,7 @@ func (m *handler) markFailed(ctx context.Context, queueName, executorName string
 		return err
 	}
 
-	_, err = queueOptions.Store.MarkFailed(ctx, job.record.RecordID(), errorMessage)
+	_, err = queueOptions.Store.MarkFailed(ctx, job.recordID, errorMessage)
 	return err
 }
 
@@ -188,7 +188,7 @@ func (m *handler) findMeta(queueName, executorName string, jobID int, remove boo
 	}
 
 	for i, job := range executor.jobs {
-		if job.queueName == queueName && job.record.RecordID() == jobID {
+		if job.queueName == queueName && job.recordID == jobID {
 			if remove {
 				l := len(executor.jobs) - 1
 				executor.jobs[i] = executor.jobs[l]
@@ -234,7 +234,7 @@ func (m *handler) updateMetrics() {
 				}
 			}
 
-			stat.JobIDs = append(stat.JobIDs, job.record.RecordID())
+			stat.JobIDs = append(stat.JobIDs, job.recordID)
 			stat.ExecutorNames[executorName] = struct{}{}
 			queueStats[job.queueName] = stat
 		}
