@@ -26,6 +26,10 @@ Trying to deploy Sourcegraph? Refer to our [installation guide](./index.md#insta
   </a>
 </div>
 
+## Deploy
+
+Refer to our [installation guides](./index.md#installation) for more details.
+
 ## Configure
 
 We **strongly** recommend that you create and run Sourcegraph from your own fork of the [reference repository](./index.md#reference-repository) to track customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make [upgrades](#upgrade) far easier.**
