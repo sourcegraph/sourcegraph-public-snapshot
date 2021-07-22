@@ -655,3 +655,27 @@ test('returns repo:contains hovers', () => {
         }
     `)
 })
+
+test('returns multiline hovers', () => {
+    const input = `repo:contains(
+      file:foo
+      content:bar
+)`
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.literal))
+
+    expect(getHoverResult(scannedQuery, new Position(4, 1), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that satisfy the specified \`file:\` and \`content:\` filters. \`file:\` and \`content:\` filters should be regular expressions."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 4,
+            "startColumn": 6,
+            "endColumn": 2
+          }
+        }
+    `)
+})
