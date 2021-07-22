@@ -131,7 +131,7 @@ func collectDocumentation(ctx context.Context, state *State) documentationChanne
 
 	// Build a map of documentationResult IDs -> document IDs.
 	documentationResultIDToDocumentID := map[int]int{}
-	for documentID, _ := range state.DocumentData {
+	for documentID := range state.DocumentData {
 		ranges := state.Contains.Get(documentID)
 		if ranges != nil {
 			ranges.Each(func(rangeID int) {
