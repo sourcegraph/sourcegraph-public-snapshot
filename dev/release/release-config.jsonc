@@ -14,11 +14,11 @@
     "captainGitHubUsername": "daxmc99",
     // Release versions
     "previousRelease": "3.30.0",
-    "upcomingRelease": "3.31.0",
+    "upcomingRelease": "3.30.1",
     // Release dates
-    "oneWorkingDayBeforeRelease": "19 August 2021 10:00 PST",
-    "releaseDate": "20 August 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "21 August 2021 10:00 PST",
+    "oneWorkingDayBeforeRelease": "21 July 2021 10:00 PST",
+    "releaseDate": "22 July 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "23 July 2021 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",
     // Email for preparing calendar events

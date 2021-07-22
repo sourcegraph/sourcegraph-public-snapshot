@@ -35,7 +35,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
 
     {
         path: '/-/batch-changes',
-        condition: ({ showBatchChanges }) => showBatchChanges,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         render: context => (
             <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryBatchChangesArea {...context} />

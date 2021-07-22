@@ -121,6 +121,5 @@ func (h *handler) requeueJob(ctx context.Context, job jobMeta) error {
 		return ErrUnknownQueue
 	}
 
-	defer func() { h.dequeueSemaphore <- struct{}{} }()
 	return queueOptions.Store.Requeue(ctx, job.record.RecordID(), h.clock.Now().Add(h.options.RequeueDelay))
 }
