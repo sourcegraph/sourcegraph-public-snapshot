@@ -31,10 +31,6 @@ type Options struct {
 	// QueueOptions is a map from queue name to options specific to that queue.
 	QueueOptions map[string]QueueOptions
 
-	// RequeueDelay controls how far into the future to make a job record visible to the job
-	// queue once the currently processing executor has become unresponsive.
-	RequeueDelay time.Duration
-
 	// UnreportedMaxAge is the maximum time between a record being dequeued and it appearing
 	// in the executor's heartbeat requests before it being considered lost.
 	UnreportedMaxAge time.Duration

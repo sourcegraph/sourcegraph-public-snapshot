@@ -11,15 +11,7 @@ import (
 // identifiers to the /heartbeat route. This method returns the set of identifiers which the
 // executor erroneously claims to hold (and are sent back as a hint to stop processing).
 func (h *handler) heartbeat(ctx context.Context, executorName string, jobIDs []int) ([]int, error) {
-	deadJobs, unknownIDs, err := h.heartbeatJobs(ctx, executorName, jobIDs)
-	err2 := h.requeueJobs(ctx, deadJobs)
-	if err != nil && err2 != nil {
-		err = multierror.Append(err, err2)
-	}
-	if err2 != nil {
-		err = err2
-	}
-	return unknownIDs, err
+	return h.heartbeatJobs(ctx, executorName, jobIDs)
 }
 
 // heartbeatJobs updates the set of job identifiers assigned to the given executor and returns
@@ -27,7 +19,7 @@ func (h *handler) heartbeat(ctx context.Context, executorName string, jobIDs []i
 // reported by the executor which do not have an associated record held by this instance of the
 // executor queue. This can occur when the executor-queue restarts and loses its in-memory state.
 // We send these identifiers back to the executor as a hint to stop processing.
-func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []int) (dead []jobMeta, unknownIDs []int, errs error) {
+func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []int) (unknownInQueueJobs []int, errs error) {
 	now := h.clock.Now()
 
 	executorIDsMap := map[int]struct{}{}
@@ -53,20 +45,18 @@ func (h *handler) heartbeatJobs(ctx context.Context, executorName string, ids []
 			if err := h.heartbeatJob(ctx, job); err != nil {
 				errs = multierror.Append(errs, err)
 			}
-		} else {
-			dead = append(dead, job)
 		}
 	}
 	executor.jobs = live
 
-	unknownIDs = make([]int, 0, len(ids))
+	unknownInQueueJobs = make([]int, 0, len(ids))
 	for _, id := range ids {
 		if _, ok := executorQueueIDsMap[id]; !ok {
-			unknownIDs = append(unknownIDs, id)
+			unknownInQueueJobs = append(unknownInQueueJobs, id)
 		}
 	}
 
-	return dead, unknownIDs, errs
+	return unknownInQueueJobs, errs
 }
 
 func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {
@@ -76,25 +66,4 @@ func (h *handler) heartbeatJob(ctx context.Context, job jobMeta) error {
 	}
 
 	return queueOptions.Store.Heartbeat(ctx, job.record.RecordID())
-}
-
-// requeueJobs releases and requeues each of the given jobs.
-func (h *handler) requeueJobs(ctx context.Context, jobs []jobMeta) (errs error) {
-	for _, job := range jobs {
-		if err := h.requeueJob(ctx, job); err != nil {
-			errs = multierror.Append(errs, err)
-		}
-	}
-
-	return errs
-}
-
-// requeueJob requeues the given job and releases the associated transaction.
-func (h *handler) requeueJob(ctx context.Context, job jobMeta) error {
-	queueOptions, ok := h.options.QueueOptions[job.queueName]
-	if !ok {
-		return ErrUnknownQueue
-	}
-
-	return queueOptions.Store.Requeue(ctx, job.record.RecordID(), h.clock.Now().Add(h.options.RequeueDelay))
 }
