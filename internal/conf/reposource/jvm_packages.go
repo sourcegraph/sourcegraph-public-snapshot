@@ -16,6 +16,10 @@ type MavenModule struct {
 	ArtifactID string
 }
 
+func (m *MavenModule) IsJdk() bool {
+	return *m == jdkModule()
+}
+
 func (m *MavenModule) MatchesDependencyString(dependency string) bool {
 	return strings.HasPrefix(dependency, fmt.Sprintf("%s:%s:", m.GroupID, m.ArtifactID))
 }
@@ -24,7 +28,16 @@ func (m *MavenModule) SortText() string {
 	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifactID)
 }
 
+func (m *MavenModule) LsifJavaKind() string {
+	if m.IsJdk() {
+		return "jdk"
+	}
+	return "maven"
+}
 func (m *MavenModule) RepoName() api.RepoName {
+	if m.IsJdk() {
+		return "jdk"
+	}
 	return api.RepoName(fmt.Sprintf("maven/%s/%s", m.GroupID, m.ArtifactID))
 }
 
@@ -51,12 +64,23 @@ func SortDependencies(dependencies []MavenDependency) {
 	})
 }
 
+func (d *MavenDependency) IsJdk() bool {
+	return d.MavenModule.IsJdk()
+}
+
 func (d *MavenDependency) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s:%s", d.MavenModule.GroupID, d.MavenModule.ArtifactID, d.Version)
 }
 
 func (d *MavenDependency) GitTagFromVersion() string {
 	return "v" + d.Version
+}
+
+func (m *MavenDependency) LsifJavaDependencies() []string {
+	if m.IsJdk() {
+		return []string{}
+	}
+	return []string{m.CoursierSyntax()}
 }
 
 func ParseMavenDependency(dependency string) (MavenDependency, error) {
@@ -87,6 +111,9 @@ func ParseMavenDependency(dependency string) (MavenDependency, error) {
 
 // ParseMavenModule returns a parsed JVM module from the provided URL path, without a leading `/`
 func ParseMavenModule(urlPath string) (MavenModule, error) {
+	if urlPath == "jdk" {
+		return jdkModule(), nil
+	}
 	parts := strings.SplitN(strings.TrimPrefix(urlPath, "maven/"), "/", 2)
 	if len(parts) != 2 {
 		return MavenModule{}, fmt.Errorf("failed to parse a maven module from the path %s", urlPath)
@@ -96,4 +123,20 @@ func ParseMavenModule(urlPath string) (MavenModule, error) {
 		GroupID:    parts[0],
 		ArtifactID: parts[1],
 	}, nil
+}
+
+// jdkModule returns the module for the Java standard library (JDK). This module
+// is technically not a "maven module" because the JDK is not published as a
+// Maven library. The only difference that's relevant for Sourcegraph is that we
+// use a different coursier command to download JDK sources compared to normal
+// maven modules:
+// - JDK sources: `coursier java-home --jvm VERSION`
+// - Maven sources: `coursier fetch MAVEN_MODULE:VERSION --classifier=sources`
+// Since the difference is so small, the code is easier to read/maintain if we
+// model the JDK as a Maven module.
+func jdkModule() MavenModule {
+	return MavenModule{
+		GroupID:    "jdk",
+		ArtifactID: "jdk",
+	}
 }

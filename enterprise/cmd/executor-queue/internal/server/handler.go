@@ -17,12 +17,11 @@ import (
 )
 
 type handler struct {
-	options          Options
-	clock            glock.Clock
-	executors        map[string]*executorMeta
-	dequeueSemaphore chan struct{} // tracks available dequeue slots
-	m                sync.Mutex    // protects executors
-	queueMetrics     *QueueMetrics
+	options      Options
+	clock        glock.Clock
+	executors    map[string]*executorMeta
+	m            sync.Mutex // protects executors
+	queueMetrics *QueueMetrics
 }
 
 type Options struct {
@@ -31,11 +30,6 @@ type Options struct {
 
 	// QueueOptions is a map from queue name to options specific to that queue.
 	QueueOptions map[string]QueueOptions
-
-	// MaximumNumTransactions is the maximum number of active records that can be given out
-	// to executors from this machine. The dequeue method will stop returning records while
-	// the number of outstanding transactions is at or above this threshold.
-	MaximumNumTransactions int
 
 	// RequeueDelay controls how far into the future to make a job record visible to the job
 	// queue once the currently processing executor has become unresponsive.
@@ -72,7 +66,6 @@ type executorMeta struct {
 type jobMeta struct {
 	queueName string
 	record    workerutil.Record
-	cancel    context.CancelFunc
 	started   time.Time
 }
 
@@ -81,17 +74,11 @@ func newHandler(options Options, clock glock.Clock) *handler {
 }
 
 func newHandlerWithMetrics(options Options, clock glock.Clock, observationContext *observation.Context) *handler {
-	dequeueSemaphore := make(chan struct{}, options.MaximumNumTransactions)
-	for i := 0; i < options.MaximumNumTransactions; i++ {
-		dequeueSemaphore <- struct{}{}
-	}
-
 	return &handler{
-		options:          options,
-		clock:            clock,
-		dequeueSemaphore: dequeueSemaphore,
-		executors:        map[string]*executorMeta{},
-		queueMetrics:     newQueueMetrics(observationContext),
+		options:      options,
+		clock:        clock,
+		executors:    map[string]*executorMeta{},
+		queueMetrics: newQueueMetrics(observationContext),
 	}
 }
 
@@ -109,21 +96,7 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 		return apiclient.Job{}, false, ErrUnknownQueue
 	}
 
-	select {
-	case <-m.dequeueSemaphore:
-	default:
-		return apiclient.Job{}, false, nil
-	}
-	defer func() {
-		if !dequeued {
-			// Ensure that if we do not dequeue a record successfully we do not
-			// leak from the semaphore. This will happen if the dequeue call fails
-			// or if there are no records to process
-			m.dequeueSemaphore <- struct{}{}
-		}
-	}()
-
-	record, cancel, dequeued, err := queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
+	record, dequeued, err := queueOptions.Store.Dequeue(context.Background(), executorHostname, nil)
 	if err != nil {
 		return apiclient.Job{}, false, err
 	}
@@ -137,12 +110,11 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName, executor
 			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
 		}
 
-		cancel()
 		return apiclient.Job{}, false, err
 	}
 
 	now := m.clock.Now()
-	m.addMeta(executorName, jobMeta{queueName: queueName, record: record, cancel: cancel, started: now})
+	m.addMeta(executorName, jobMeta{queueName: queueName, record: record, started: now})
 	return job, true, nil
 }
 
@@ -179,8 +151,6 @@ func (m *handler) markComplete(ctx context.Context, queueName, executorName stri
 		return err
 	}
 
-	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	defer job.cancel()
 	_, err = queueOptions.Store.MarkComplete(ctx, job.record.RecordID())
 	return err
 }
@@ -198,8 +168,6 @@ func (m *handler) markErrored(ctx context.Context, queueName, executorName strin
 		return err
 	}
 
-	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	defer job.cancel()
 	_, err = queueOptions.Store.MarkErrored(ctx, job.record.RecordID(), errorMessage)
 	return err
 }
@@ -217,8 +185,6 @@ func (m *handler) markFailed(ctx context.Context, queueName, executorName string
 		return err
 	}
 
-	defer func() { m.dequeueSemaphore <- struct{}{} }()
-	defer job.cancel()
 	_, err = queueOptions.Store.MarkFailed(ctx, job.record.RecordID(), errorMessage)
 	return err
 }

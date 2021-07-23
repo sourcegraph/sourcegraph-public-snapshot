@@ -6,6 +6,52 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestExtractToken(t *testing.T) {
+	for _, tc := range []struct {
+		config string
+		kind   string
+		want   string
+	}{
+		{
+			config: `{"token": "deadbeef"}`,
+			kind:   KindGitLab,
+			want:   "deadbeef",
+		},
+		{
+			config: `{"token": "deadbeef"}`,
+			kind:   KindGitHub,
+			want:   "deadbeef",
+		},
+		{
+			config: `{"token": "deadbeef"}`,
+			kind:   KindBitbucketServer,
+			want:   "deadbeef",
+		},
+		{
+			config: `{"token": "deadbeef"}`,
+			kind:   KindPhabricator,
+			want:   "deadbeef",
+		},
+	} {
+		t.Run(tc.kind, func(t *testing.T) {
+			have, err := ExtractToken(tc.config, tc.kind)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != tc.want {
+				t.Errorf("Want %q, have %q", tc.want, have)
+			}
+		})
+	}
+
+	t.Run("fails for unsupported kind", func(t *testing.T) {
+		_, err := ExtractToken(`{}`, KindGitolite)
+		if err == nil {
+			t.Fatal("expected an error for unsupported kind")
+		}
+	})
+}
+
 func TestExtractRateLimitConfig(t *testing.T) {
 	for _, tc := range []struct {
 		name        string

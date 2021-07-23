@@ -80,6 +80,6 @@ Adding new tests to this test suite is as easy as adding a Go test, here are som
 - Use `gqltest-` prefix for entity name, and be as specific as possible for easier debugging, e.g. `gqltest-org-user-1`.
 - Restore the previous state regardless of failures, including:
   - Delete new users created during the test.
-  - Delete external service created during the test.
+  - Delete external services created during the test.
   - Although, sometimes you would not want to delete an entity so you could login and inspect the failure state.
-- Prefix your branch name with `main-dry-run/` will run integration tests in CI on your pull request.
+- Prefix your branch name with `backend-dry-run/` will run integration tests in CI on your pull request.

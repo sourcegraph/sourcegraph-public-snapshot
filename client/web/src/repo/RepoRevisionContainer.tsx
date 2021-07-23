@@ -25,6 +25,7 @@ import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
@@ -64,7 +65,8 @@ export interface RepoRevisionContainerContext
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        BatchChangesProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -76,8 +78,6 @@ export interface RepoRevisionContainerContext
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
-
-    showBatchChanges: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -101,7 +101,8 @@ interface RepoRevisionContainerProps
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        BatchChangesProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -122,8 +123,6 @@ interface RepoRevisionContainerProps
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
-
-    showBatchChanges: boolean
 }
 
 interface RepoRevisionBreadcrumbProps

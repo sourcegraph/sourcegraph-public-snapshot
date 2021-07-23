@@ -36,6 +36,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -90,7 +91,8 @@ export interface RepoContainerContext
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        BatchChangesProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -106,8 +108,6 @@ export interface RepoContainerContext
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
-
-    showBatchChanges: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -133,7 +133,8 @@ interface RepoContainerProps
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        BatchChangesProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -145,7 +146,6 @@ interface RepoContainerProps
     globbing: boolean
     showSearchNotebook: boolean
     isMacPlatform: boolean
-    showBatchChanges: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'

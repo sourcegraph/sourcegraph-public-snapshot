@@ -37,10 +37,10 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 }
 
 // Dequeue calls into the inner store.
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 
 	return s.Store.Dequeue(ctx, workerHostname, conditions)

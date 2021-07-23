@@ -364,9 +364,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				// when a repository stored in the database is not accessible anymore, no other
 				// external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
-						r.DeletedAt = s.Now()
-					}))
+					err = s.Store.RepoStore.Delete(ctx, repo.ID)
 					if err != nil {
 						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
 					}
@@ -438,9 +436,8 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 			return nil, err
 		}
 	case extsvc.JVMPackages:
-		artifactPath := strings.TrimPrefix(remoteName, "maven/")
 		if s.JVMPackagesSource != nil {
-			repo, err = s.JVMPackagesSource.GetRepo(ctx, artifactPath)
+			repo, err = s.JVMPackagesSource.GetRepo(ctx, remoteName)
 			if err != nil {
 				if errcode.IsNotFound(err) {
 					return &protocol.RepoLookupResult{
@@ -465,7 +462,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}, nil
 	}
 
-	err = s.Syncer.SyncRepo(ctx, s.Store, repo)
+	err = s.Syncer.SyncRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
