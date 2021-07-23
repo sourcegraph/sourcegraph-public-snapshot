@@ -17,7 +17,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -137,28 +136,28 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "temporary metric to measure the impact of logging access granted to private repos",
 })
 
-func logRepoAccessGranted(ctx context.Context, db dbutil.DB, repoID api.RepoID) {
-	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
-		Resource string `json:"resource"`
-		RepoID   int32  `json:"repo_id"`
-	}{
-		Resource: "db.repo",
-		RepoID:   int32(repoID),
-	})
-
-	event := &SecurityEvent{
-		Name:            SecurityEventNameAccessGranted,
-		URL:             "",
-		UserID:          uint32(a.UID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	SecurityEventLogs(db).LogEvent(ctx, event)
-}
+//func logRepoAccessGranted(ctx context.Context, db dbutil.DB, repoID api.RepoID) {
+//	a := actor.FromContext(ctx)
+//	arg, _ := json.Marshal(struct {
+//		Resource string `json:"resource"`
+//		RepoID   int32  `json:"repo_id"`
+//	}{
+//		Resource: "db.repo",
+//		RepoID:   int32(repoID),
+//	})
+//
+//	event := &SecurityEvent{
+//		Name:            SecurityEventNameAccessGranted,
+//		URL:             "",
+//		UserID:          uint32(a.UID),
+//		AnonymousUserID: "",
+//		Argument:        arg,
+//		Source:          "BACKEND",
+//		Timestamp:       time.Now(),
+//	}
+//
+//	SecurityEventLogs(db).LogEvent(ctx, event)
+//}
 
 // GetByName returns the repository with the given nameOrUri from the
 // database, or an error. If we have a match on name and uri, we prefer the
