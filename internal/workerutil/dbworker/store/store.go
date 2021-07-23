@@ -569,8 +569,7 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 
 	preds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
-		// TODO: Why is completed allowed?
-		s.formatQuery("({state} = 'processing' OR {state} = 'completed')"),
+		s.formatQuery("{state} = 'processing'"),
 	}
 	if options.WorkerHostname != "" {
 		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
@@ -603,8 +602,7 @@ func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, o
 
 	preds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
-		// TODO: Why is completed allowed?
-		s.formatQuery("({state} = 'processing' OR {state} = 'completed')"),
+		s.formatQuery("{state} = 'processing'"),
 	}
 	if options.WorkerHostname != "" {
 		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))

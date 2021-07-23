@@ -612,8 +612,8 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
-	if !marked {
-		t.Fatalf("expected record to be marked")
+	if marked {
+		t.Fatalf("expected record not to be marked errired")
 	}
 
 	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
@@ -631,11 +631,11 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 	if err := rows.Scan(&state, &failureMessage); err != nil {
 		t.Fatalf("unexpected error scanning record: %s", err)
 	}
-	if state != "errored" {
-		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
+	if state != "completed" {
+		t.Errorf("unexpected state. want=%q have=%q", "completed", state)
 	}
-	if failureMessage == nil || *failureMessage != "new message" {
-		t.Errorf("unexpected failure message. want=%v have=%v", "new message", failureMessage)
+	if failureMessage != nil {
+		t.Errorf("unexpected non-empty failure message")
 	}
 }
 
