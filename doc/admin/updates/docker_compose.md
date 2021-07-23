@@ -25,6 +25,14 @@ Please upgrade to the [`v3.30.0` tag of deploy-sourcegraph-docker](https://githu
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
 
+## 3.29 -> 3.30.1
+
+**⚠️ Prefer upgrading to the 3.30.1 release over 3.30.0 release, see the CHANGELOG for more info**
+
+No manual migration required.
+
+Please upgrade to the [`v3.30.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.26.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
 ## 3.28 -> 3.29
 
 This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
@@ -209,5 +217,3 @@ docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 999
 ### Standard upgrade procedure
 
 Refer to the [upgrade guide](../install/docker-compose/operations.md#upgrade).
-
-
