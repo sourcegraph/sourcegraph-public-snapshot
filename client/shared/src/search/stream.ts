@@ -207,7 +207,7 @@ interface ErrorAggregateResults extends BaseAggregateResults {
 
 export type AggregateStreamingSearchResults = SuccessfulAggregateResults | ErrorAggregateResults
 
-const emptyAggregateResults: AggregateStreamingSearchResults = {
+export const emptyAggregateResults: AggregateStreamingSearchResults = {
     state: 'loading',
     results: [],
     filters: [],
