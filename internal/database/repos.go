@@ -125,7 +125,7 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 	repo := repos[0]
 	if repo.Private {
 		counterAccessGranted.Inc()
-		logRepoAccessGranted(ctx, s.Handle().DB(), repo.ID)
+		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), []api.RepoID{repo.ID})
 	}
 
 	return repo, repo.IsBlocked()
@@ -136,14 +136,14 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "metric to measure the impact of logging access granted to private repos",
 })
 
-func logRepoAccessGranted(ctx context.Context, db dbutil.DB, repoID api.RepoID) {
+func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.RepoID) {
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
-		Resource string  `json:"resource"`
-		Repos    []int32 `json:"repo_id"`
+		Resource string       `json:"resource"`
+		Repos    []api.RepoID `json:"repo_id"`
 	}{
 		Resource: "db.repo",
-		Repos:    []int32{int32(repoID)},
+		Repos:    ids,
 	})
 
 	event := &SecurityEvent{
@@ -319,8 +319,9 @@ var repoColumns = []string{
 	getSourcesByRepoQueryStr,
 }
 
+// id, name, private
 func minimalColumns(columns []string) []string {
-	return columns[:2]
+	return columns[:3]
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -632,32 +633,56 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	}
 
 	var repos []types.RepoName
+	var privateIDs []api.RepoID
+
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
-		err := rows.Scan(&r.ID, &r.Name)
+		var private bool
+		err := rows.Scan(&r.ID, &r.Name, &private)
 		if err != nil {
 			return err
 		}
 
 		repos = append(repos, r)
+
+		if private {
+			privateIDs = append(privateIDs, r.ID)
+		}
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: Actually log event here
+	counterAccessGranted.Add(float64(len(privateIDs)))
+
 	return repos, nil
 }
 
 func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
-	return rs, s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+	var privateIDs []api.RepoID
+	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
 		if err := scanRepo(rows, &r); err != nil {
 			return err
 		}
 
 		rs = append(rs, &r)
+		if r.Private {
+			privateIDs = append(privateIDs, r.ID)
+		}
+
 		return nil
 	})
+
+	if len(privateIDs) > 0 {
+		// TODO: Actually log event here
+		counterAccessGranted.Add(float64(len(privateIDs)))
+	}
+
+	return rs, err
 }
 
 func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
