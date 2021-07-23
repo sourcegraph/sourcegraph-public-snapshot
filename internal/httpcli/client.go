@@ -332,13 +332,16 @@ func DefaultRetryPolicy(a rehttp.Attempt) (retry bool) {
 	status := 0
 
 	defer func() {
+		if !retry {
+			return
+		}
+
 		log15.Error(
 			"external HTTP request",
 			"attempt", a.Index,
 			"method", a.Request.Method,
 			"url", a.Request.URL,
 			"status", status,
-			"retry", retry,
 			"err", a.Error,
 		)
 	}()
