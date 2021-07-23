@@ -62,8 +62,13 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	// because zoekt will anyway have to search all its shards.
 	var indexed *zoektutil.IndexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
+		q, err := search.QueryToZoektQuery(args.PatternInfo, false)
+		if err != nil {
+			return err
+		}
 		indexed = &zoektutil.IndexedSearchRequest{
 			Args:     args,
+			Query:    q,
 			Typ:      zoektutil.TextRequest,
 			RepoRevs: &zoektutil.IndexedRepoRevs{},
 		}

@@ -168,8 +168,9 @@ type IndexedSearchRequest struct {
 	DisableUnindexedSearch bool
 
 	// inputs
-	Args *search.TextParameters
-	Typ  IndexedRequestType
+	Args  *search.TextParameters
+	Query zoektquery.Q
+	Typ   IndexedRequestType
 
 	// RepoRevs is the repository revisions that are indexed and will be
 	// searched.
@@ -202,7 +203,7 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 		since = s.since
 	}
 
-	return zoektSearch(ctx, s.Args, s.RepoRevs, s.Typ, since, c)
+	return zoektSearch(ctx, s.Args, s.Query, s.RepoRevs, s.Typ, since, c)
 }
 
 const maxUnindexedRepoRevSearchesPerQuery = 200
@@ -291,9 +292,15 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
 	}
 
+	q, err := search.QueryToZoektQuery(args.PatternInfo, typ == SymbolRequest)
+	if err != nil {
+		return nil, err
+	}
+
 	return &IndexedSearchRequest{
-		Args: args,
-		Typ:  typ,
+		Args:  args,
+		Query: q,
+		Typ:   typ,
 
 		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		RepoRevs:  indexed,
@@ -303,7 +310,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 }
 
 // zoektSearchGlobal searches the entire universe of indexed repositories.
-func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query zoektquery.Q, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if args == nil {
 		return nil
 	}
@@ -314,12 +321,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	queryExceptRepos, err := search.QueryToZoektQuery(args.PatternInfo, typ == SymbolRequest)
-	if err != nil {
-		return err
-	}
-
-	finalQuery := zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
+	finalQuery := zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, query)
 	k := ResultCountFactor(0, args.PatternInfo.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
 
@@ -432,13 +434,13 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *IndexedRepoRevs, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.Q, repos *IndexedRepoRevs, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if args == nil {
 		return nil
 	}
 
 	if args.Mode == search.ZoektGlobalSearch {
-		return zoektSearchGlobal(ctx, args, typ, since, c)
+		return zoektSearchGlobal(ctx, args, q, typ, since, c)
 	}
 
 	if len(repos.repoRevs) == 0 {
@@ -448,12 +450,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	queryExceptRepos, err := search.QueryToZoektQuery(args.PatternInfo, typ == SymbolRequest)
-	if err != nil {
-		return err
-	}
-
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
 
 	k := ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, false)
 	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
@@ -491,7 +488,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	}
 
 	foundResults := atomic.Bool{}
-	err = args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	err := args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 
 		files := event.Files
