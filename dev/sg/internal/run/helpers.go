@@ -1,6 +1,7 @@
-package command
+package run
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
-func RunGit(args ...string) (string, error) {
+func GitCmd(args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Env = append(os.Environ(),
 		// Don't use the system wide git config.
@@ -17,14 +18,14 @@ func RunGit(args ...string) (string, error) {
 		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
 		"GIT_CONFIG=/dev/null")
 
-	return RunInRoot(cmd)
+	return InRoot(cmd)
 }
 
-func RunDocker(args ...string) (string, error) {
-	return RunInRoot(exec.Command("docker", args...))
+func DockerCmd(args ...string) (string, error) {
+	return InRoot(exec.Command("docker", args...))
 }
 
-func RunInRoot(cmd *exec.Cmd) (string, error) {
+func InRoot(cmd *exec.Cmd) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return "", err
@@ -37,4 +38,10 @@ func RunInRoot(cmd *exec.Cmd) (string, error) {
 	}
 
 	return string(out), nil
+}
+
+func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {
+	c := exec.CommandContext(ctx, "bash", "-c", cmd)
+	c.Env = env
+	return InRoot(c)
 }

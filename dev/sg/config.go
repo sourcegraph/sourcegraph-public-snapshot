@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"gopkg.in/yaml.v2"
 )
 
@@ -52,82 +53,6 @@ func ParseConfig(data []byte) (*Config, error) {
 	return &conf, nil
 }
 
-type Command struct {
-	Name             string
-	Cmd              string            `yaml:"cmd"`
-	Install          string            `yaml:"install"`
-	CheckBinary      string            `yaml:"checkBinary"`
-	Env              map[string]string `yaml:"env"`
-	Watch            []string          `yaml:"watch"`
-	InstallDocDarwin string            `yaml:"installDoc.darwin"`
-	InstallDocLinux  string            `yaml:"installDoc.linux"`
-	IgnoreStdout     bool              `yaml:"ignoreStdout"`
-	IgnoreStderr     bool              `yaml:"ignoreStderr"`
-	DefaultArgs      string            `yaml:"defaultArgs"`
-
-	// ATTENTION: If you add a new field here, be sure to also handle that
-	// field in `Merge` (below).
-}
-
-func (c Command) Merge(other Command) Command {
-	merged := c
-
-	if other.Name != merged.Name && other.Name != "" {
-		merged.Name = other.Name
-	}
-	if other.Cmd != merged.Cmd && other.Cmd != "" {
-		merged.Cmd = other.Cmd
-	}
-	if other.Install != merged.Install && other.Install != "" {
-		merged.Install = other.Install
-	}
-	if other.InstallDocDarwin != merged.InstallDocDarwin && other.InstallDocDarwin != "" {
-		merged.InstallDocDarwin = other.InstallDocDarwin
-	}
-	if other.InstallDocLinux != merged.InstallDocLinux && other.InstallDocLinux != "" {
-		merged.InstallDocLinux = other.InstallDocLinux
-	}
-	if other.IgnoreStdout != merged.IgnoreStdout && !merged.IgnoreStdout {
-		merged.IgnoreStdout = other.IgnoreStdout
-	}
-	if other.IgnoreStderr != merged.IgnoreStderr && !merged.IgnoreStderr {
-		merged.IgnoreStderr = other.IgnoreStderr
-	}
-	if other.DefaultArgs != merged.DefaultArgs && other.DefaultArgs != "" {
-		merged.DefaultArgs = other.DefaultArgs
-	}
-
-	for k, v := range other.Env {
-		merged.Env[k] = v
-	}
-
-	if !equal(merged.Watch, other.Watch) {
-		merged.Watch = other.Watch
-	}
-
-	return merged
-}
-
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
-type Check struct {
-	Name        string `yaml:"-"`
-	Cmd         string `yaml:"cmd"`
-	FailMessage string `yaml:"failMessage"`
-}
-
 type Commandset struct {
 	Name     string   `yaml:"-"`
 	Commands []string `yaml:"commands"`
@@ -156,10 +81,10 @@ func (c *Commandset) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 type Config struct {
 	Env         map[string]string      `yaml:"env"`
-	Commands    map[string]Command     `yaml:"commands"`
+	Commands    map[string]run.Command `yaml:"commands"`
 	Commandsets map[string]*Commandset `yaml:"commandsets"`
-	Tests       map[string]Command     `yaml:"tests"`
-	Checks      map[string]Check       `yaml:"checks"`
+	Tests       map[string]run.Command `yaml:"tests"`
+	Checks      map[string]run.Check   `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver
