@@ -42,7 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.30.0
 
-__⚠️ Prefer upgrading to the 3.30.1 release instead of 3.30 release to avoid issues with repo-updater errors__
+__⚠️ Prefer upgrading to the 3.30.1 release instead of 3.30.0 release to avoid issues with repo-updater errors__
 ### Added
 
 - Added support for `select:file.directory` in search queries, which returns unique directory paths for results that satisfy the query. [#22449](https://github.com/sourcegraph/sourcegraph/pull/22449)
