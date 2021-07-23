@@ -6,25 +6,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-var (
-	// ResetterRecordResets creates an observable from the given options backed by
-	// the counter specifying the number of records reset to queued state.
-	//
-	// Requires a counter of the format `src_{options.MetricNameRoot}_record_resets_total`
-	ResetterRecordResets observableConstructor = func(options ObservableConstructorOptions) sharedObservable {
-		options.MetricNameRoot += "_record_resets"
-		return StandardCount("records reset to queued state")(options)
-	}
+// WorkerutilResetter exports available shared observable and group constructors related to workerutil
+// resetter metrics emitted by instances of internal/workerutil/dbworker/ResetterMetrics in the Go backend.
+var WorkerutilResetter workerutilResetterConstructor
 
-	// ResetterRecordResetFailures creates an observable from the given options backed by
-	// the counter specifying the number of records reset to errored state.
-	//
-	// Requires a counter of the format `src_{options.MetricNameRoot}_record_reset_failures_total`
-	ResetterRecordResetFailures observableConstructor = func(options ObservableConstructorOptions) sharedObservable {
-		options.MetricNameRoot += "_record_reset_failures"
-		return StandardCount("records reset to errored state")(options)
-	}
-)
+// workerutilResetterConstructor provides `WorkerutilResetter` implementations.
+type workerutilResetterConstructor struct{}
+
+// Resets creates an observable from the given options backed by the counter specifying the
+// number of records reset to queued state.
+//
+// Requires a counter of the format `src_{options.MetricNameRoot}_record_resets_total`
+func (workerutilResetterConstructor) Resets(options ObservableConstructorOptions) sharedObservable {
+	options.MetricNameRoot += "_record_resets"
+	return Standard.Count("records reset to queued state")(options)
+}
+
+// ResetFailures creates an observable from the given options backed by the counter specifying
+// the number of records reset to errored state.
+//
+// Requires a counter of the format `src_{options.MetricNameRoot}_record_reset_failures_total`
+func (workerutilResetterConstructor) ResetFailures(options ObservableConstructorOptions) sharedObservable {
+	options.MetricNameRoot += "_record_reset_failures"
+	return Standard.Count("records reset to errored state")(options)
+}
 
 type ResetterGroupOptions struct {
 	GroupConstructorOptions
@@ -39,9 +44,8 @@ type ResetterGroupOptions struct {
 	Errors ObservableOption
 }
 
-// NewResetterGroup creates a group containing panels displaying the total number of records
-// reset, the number of records moved to errored, and the error rate of the resetter operating
-// within the given container.
+// NewGroup creates a group containing panels displaying the total number of records reset, the number
+// of records moved to errored, and the error rate of the resetter operating within the given container.
 //
 // Requires a:
 //   - counter of the format `src_{options.MetricNameRoot}_record_resets_total`
@@ -51,7 +55,7 @@ type ResetterGroupOptions struct {
 // These metrics are currently created by hand and assigned as fields of an instance of an
 // internal/workerutil/dbworker/ResetterMetrics struct in the Go backend. Metrics are emitted
 // by the resetter processes themselves.
-func NewResetterGroup(containerName string, owner monitoring.ObservableOwner, options ResetterGroupOptions) monitoring.Group {
+func (workerutilResetterConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ResetterGroupOptions) monitoring.Group {
 	errorsOptions := options.ObservableConstructorOptions
 	errorsOptions.MetricNameRoot += "_record_reset"
 
@@ -60,9 +64,9 @@ func NewResetterGroup(containerName string, owner monitoring.ObservableOwner, op
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{
-				options.RecordResets.safeApply(ResetterRecordResets(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.RecordResetFailures.safeApply(ResetterRecordResetFailures(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Errors.safeApply(ObservationErrors(errorsOptions)(containerName, owner)).Observable(),
+				options.RecordResets.safeApply(WorkerutilResetter.Resets(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.RecordResetFailures.safeApply(WorkerutilResetter.ResetFailures(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.Errors.safeApply(Observation.Errors(errorsOptions)(containerName, owner)).Observable(),
 			},
 		},
 	}

@@ -6,25 +6,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-var (
-	// ObservationTotal creates an observable from the given options backed by
-	// the counter specifying the number of operatons.
+// Observation exports available shared observable and group constructors related
+// to the metrics emitted by internal/metrics.NewOperationMetrics in the Go backend.
+var Observation = observationConstructor{
+	Total:    Standard.Count("operations"),
+	Duration: Standard.Duration("operation"),
+	Errors:   Standard.Errors("operation"),
+}
+
+// observationConstructor provides `Observation` implementations.
+type observationConstructor struct {
+	// Total creates an observable from the given options backed by the counter specifying
+	// the number of operatons.
 	//
 	// Requires a counter of the format `src_{options.MetricNameRoot}_total`
-	ObservationTotal observableConstructor = StandardCount("operations")
+	Total observableConstructor
 
-	// ObservationDuration creates an observable from the given options backed by
-	// the histogram specifying the duration of operatons.
+	// Duration creates an observable from the given options backed by the histogram
+	// specifying the duration of operatons.
 	//
 	// Requires a histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
-	ObservationDuration observableConstructor = StandardDuration("operation")
+	Duration observableConstructor
 
-	// ObservationErrors creates an observable from the given options backed by
-	// the counter specifying the number of operatons that resulted in an error.
+	// Errors creates an observable from the given options backed by the counter specifying
+	// the number of operatons that resulted in an error.
 	//
 	// Requires a counter of the format `src_{options.MetricNameRoot}_errors_total`
-	ObservationErrors observableConstructor = StandardErrors("operation")
-)
+	Errors observableConstructor
+}
 
 type ObservationGroupOptions struct {
 	GroupConstructorOptions
@@ -39,9 +48,8 @@ type ObservationGroupOptions struct {
 	Errors ObservableOption
 }
 
-// NewObservationGroup creates a group containing panels displaying the total number of operations,
-// operation duration histogram, and number of errors for the given observable within the given
-// container.
+// NewGroup creates a group containing panels displaying the total number of operations, operation
+// duration histogram, and number of errors for the given observable within the given container.
 //
 // Requires a:
 //   - counter of the format `src_{options.MetricNameRoot}_total`
@@ -49,15 +57,15 @@ type ObservationGroupOptions struct {
 //   - counter of the format `src_{options.MetricNameRoot}_errors_total`
 //
 // These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
-func NewObservationGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
+func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	return monitoring.Group{
 		Title:  fmt.Sprintf("[%s] Observable: %s", options.DescriptionRoot, options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{
-				options.Total.safeApply(ObservationTotal(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Duration.safeApply(ObservationDuration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Errors.safeApply(ObservationErrors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.Total.safeApply(Observation.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.Duration.safeApply(Observation.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.Errors.safeApply(Observation.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 			},
 		},
 	}
