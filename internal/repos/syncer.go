@@ -394,9 +394,9 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	defer func() {
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
-		tx.Done(err)
-
-		if s.Synced != nil && d.Len() > 0 {
+		if txerr := tx.Done(err); txerr != nil {
+			s.log().Error("syncer: failed to close transaction, skipping", "repo", sourced.Name, "error", txerr)
+		} else if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
 			case s.Synced <- d:
