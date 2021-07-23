@@ -5,10 +5,6 @@ import (
 	"strings"
 )
 
-// observableConstructor is a type of constructor function used in this package that creates
-// a shared observable given a set of common observable options.
-type observableConstructor func(options ObservableConstructorOptions) sharedObservable
-
 type ObservableConstructorOptions struct {
 	// MetricNameRoot is the root of the Prometheus metric name used to construct the query
 	// for the target panel. For example:
@@ -46,6 +42,10 @@ type ObservableConstructorOptions struct {
 	// queue + shared label values ^^^^^^^^^^ ^^^^^^^^^^^^^^^^ metric desc + generic term (chosen by constructor)
 	By []string
 }
+
+// observableConstructor is a type of constructor function used in this package that creates
+// a shared observable given a set of common observable options.
+type observableConstructor func(options ObservableConstructorOptions) sharedObservable
 
 type GroupConstructorOptions struct {
 	// ObservableConstructorOptions are shared between child observables of the group.
