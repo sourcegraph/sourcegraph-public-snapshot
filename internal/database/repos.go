@@ -132,7 +132,7 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 }
 
 var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_access_granted",
+	Name: "src_access_granted_private_repo",
 	Help: "temporary metric to measure the impact of logging access granted to private repos",
 })
 
