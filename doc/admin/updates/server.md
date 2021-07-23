@@ -13,7 +13,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-## 3.28 -> 3.29 
+## 3.29 -> 3.30.1
 
 ## Standard upgrade procedure
 
@@ -21,7 +21,15 @@ To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.
 
 You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
 
-## 3.27 -> 3.28 
+## 3.28 -> 3.29
+
+## Standard upgrade procedure
+
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+
+You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+
+## 3.27 -> 3.28
 
 ## Standard upgrade procedure
 
