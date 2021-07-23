@@ -83,6 +83,7 @@ export interface RepoContainerContext
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
+        CodeIntelligenceProps,
         BatchChangesProps,
         ActionItemsBarProps {
     repo: RepositoryFields
