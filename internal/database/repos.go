@@ -14,6 +14,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -119,8 +121,18 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 		return nil, &RepoNotFoundErr{ID: id}
 	}
 
-	return repos[0], repos[0].IsBlocked()
+	repo := repos[0]
+	if repo.Private {
+		counterAccessGranted.Inc()
+	}
+
+	return repo, repo.IsBlocked()
 }
+
+var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_access_granted_private_repo",
+	Help: "temporary metric to measure the impact of logging access granted to private repos",
+})
 
 // GetByName returns the repository with the given nameOrUri from the
 // database, or an error. If we have a match on name and uri, we prefer the
