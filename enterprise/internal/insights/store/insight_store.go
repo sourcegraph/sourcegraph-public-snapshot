@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -92,6 +94,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
+	log15.Info("getdataseries", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanDataSeries(s.Query(ctx, q))
 }
 
@@ -114,8 +117,10 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.NextRecordingAfter,
 			&temp.RecordingIntervalDays,
 		); err != nil {
-			results = append(results, temp)
+			return []types.InsightSeries{}, err
 		}
+		log15.Info("temp", "temp", temp)
+		results = append(results, temp)
 	}
 	return results, nil
 }
@@ -210,6 +215,31 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	return series, nil
 }
 
+type DataSeriesStore interface {
+	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
+	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+}
+
+// StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
+func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	current := s.Now()
+	next := current.Add(time.Hour * 24 * time.Duration(series.RecordingIntervalDays))
+	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.LastRecordedAt = current
+	series.NextRecordingAfter = next
+	return series, nil
+}
+
+const stampRecordingSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StampRecording
+UPDATE insight_series
+SET last_recorded_at = %s,
+    next_recording_after = %s
+WHERE id = %s;
+`
+
 const attachSeriesToViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AttachSeriesToView
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
@@ -243,6 +273,6 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, deleted_at from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days from insight_series
 WHERE %s
 `

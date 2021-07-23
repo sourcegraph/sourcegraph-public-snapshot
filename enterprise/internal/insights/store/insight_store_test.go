@@ -338,7 +338,7 @@ func TestAttachSeriesView(t *testing.T) {
 	})
 }
 
-func TestGetDataSeries(t *testing.T) {
+func TestInsightStore_GetDataSeries(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 	now := time.Now().Round(0).Truncate(time.Microsecond)
@@ -349,4 +349,65 @@ func TestGetDataSeries(t *testing.T) {
 		return now
 	}
 
+	t.Run("test create and get series", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID:              "unique-1",
+			Query:                 "query-1",
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:    now,
+			RecordingIntervalDays: 4,
+		}
+		created, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []types.InsightSeries{created}
+
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatched insight data series want/got: %v", diff)
+		}
+	})
+}
+
+func TestInsightStore_StampRecording(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test create and update stamp", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID:              "unique-1",
+			Query:                 "query-1",
+			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:    now,
+			RecordingIntervalDays: 4,
+		}
+		created, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := created
+		want.LastRecordedAt = now
+		want.NextRecordingAfter = now.Add(time.Hour * 24 * time.Duration(want.RecordingIntervalDays))
+
+		got, err := store.StampRecording(ctx, created)
+		if err != nil {
+			return
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatched updated recording stamp want/got: %v", diff)
+		}
+	})
 }
