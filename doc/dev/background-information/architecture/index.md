@@ -4,14 +4,24 @@ This document provides a high level overview of Sourcegraph's architecture so yo
 
 The **"Dependencies"** sections give a short, high-level overview of dependencies on other architecture components and the most important aspects of _how_ they are used.
 
-## Code syncing
+## Repository syncing
 
-At its core, Sourcegraph maintains a persistent cache of all the code that is connected to it. It is persistent, because this data is critical for Sourcegraph to function, but it is ultimately a cache because the code host is the source of truth and our cache is eventually consistent.
+At its core, Sourcegraph maintains a persistent cache of all repositories that are connected to it. It is persistent, because this data is critical for Sourcegraph to function, but it is ultimately a cache because the code host is the source of truth and our cache is eventually consistent.
 
-- [gitserver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver/README.md) is the sharded service that stores the code and makes it accessible to other Sourcegraph services.
-- [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all the code in gitserver is as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing code repository metadata from the code host that is stored in the `repo` table of our Postgres database.
+- [gitserver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver/README.md) is the sharded service that stores repositories and makes them accessible to other Sourcegraph services.
+- [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all repositories in gitserver are as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing repository metadata from the code host that is stored in the `repo` table of our Postgres database.
 
-If you want to learn more about how code is synchronized, read [Life of a repository](life-of-a-repository.md).
+If you want to learn more about how repositories are synchronized, read [Life of a repository](life-of-a-repository.md).
+
+## Permissions syncing
+
+Repository permissions are by default being mirrored from code hosts to Sourcegraph, it builds the fundantion of Sourcegraph authorization for repositories to ensure users see consistent content as on code hosts. Currently, the background permissions syncer resides in the [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md).
+
+If you want to learn more about how repository permissions are synchronized in the background, read [Background permissions syncing](../../../admin/repo/permissions.md#background-permissions-syncing).
+
+## User settings
+
+Sourcegraph offers the flexibility of customizing settings by users. The settings of a single user is the result of bundled individual settings, organization settings and global settings.
 
 ## Search
 
@@ -113,7 +123,7 @@ If you want to learn more about code insights:
   - Exhaustive search (with `count:all`/`count:999999` operator)
   - Historical search (= unindexed search, currently)
   - Commit search to find historical commits to search over
-- [Code Syncing](#code-syncing)
+- [Repository Syncing](#repository-syncing)
   - The WIP code insights backend has direct dependencies on `gitserver` and `repo-updater`
 - Future: [Batch Changes](#batch-changes)
   - "Create a batch change from a code insight" flow
@@ -164,7 +174,7 @@ If you want to learn more about native integrations:
 
 ### Dependencies
 
-- [Code syncing](#code-syncing)
+- [Repository Syncing](#repository-syncing)
   - Uses the GraphQL API to resolve repositories and revisions on code hosts
 
 ## Sourcegraph extension API
