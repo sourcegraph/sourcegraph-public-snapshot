@@ -117,6 +117,7 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 func TestMarkComplete(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
+	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
@@ -146,7 +147,7 @@ func TestMarkComplete(t *testing.T) {
 
 func TestMarkCompleteUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
-	store.MarkCompleteFunc.SetDefaultReturn(false, ErrUnknownJob)
+	store.MarkCompleteFunc.SetDefaultReturn(false, nil)
 	handler := newHandler(QueueOptions{Store: store})
 
 	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != ErrUnknownJob {
@@ -157,6 +158,7 @@ func TestMarkCompleteUnknownJob(t *testing.T) {
 func TestMarkErrored(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
+	store.MarkErroredFunc.SetDefaultReturn(true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
@@ -189,7 +191,7 @@ func TestMarkErrored(t *testing.T) {
 
 func TestMarkErroredUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
-	store.MarkErroredFunc.SetDefaultReturn(false, ErrUnknownJob)
+	store.MarkErroredFunc.SetDefaultReturn(false, nil)
 	handler := newHandler(QueueOptions{Store: store})
 
 	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
@@ -200,6 +202,7 @@ func TestMarkErroredUnknownJob(t *testing.T) {
 func TestMarkFailed(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
+	store.MarkFailedFunc.SetDefaultReturn(true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
@@ -227,6 +230,16 @@ func TestMarkFailed(t *testing.T) {
 	}
 	if call.Arg2 != "OH NO" {
 		t.Errorf("unexpected job error. want=%s have=%s", "OH NO", call.Arg2)
+	}
+}
+
+func TestMarkFailedUnknownJob(t *testing.T) {
+	store := workerstoremocks.NewMockStore()
+	store.MarkFailedFunc.SetDefaultReturn(false, nil)
+	handler := newHandler(QueueOptions{Store: store})
+
+	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
+		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }
 
