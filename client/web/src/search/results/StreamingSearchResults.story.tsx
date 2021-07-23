@@ -68,7 +68,7 @@ const defaultProps: StreamingSearchResultsProps = {
     streamSearch: () => of(streamingSearchResult),
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
-    enableCodeMonitoring: false,
+    enableCodeMonitoring: true,
     featureFlags: EMPTY_FEATURE_FLAGS,
 }
 
