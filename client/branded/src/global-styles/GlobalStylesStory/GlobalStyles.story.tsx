@@ -8,7 +8,6 @@ import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
@@ -22,7 +21,6 @@ import { Form } from '../../components/Form'
 
 import { AlertsStory } from './AlertsStory'
 import { BadgeVariants } from './BadgeVariants/BadgeVariants'
-import { ButtonVariants } from './ButtonVariants'
 import { CardsStory } from './CardsStory'
 import { ColorVariants } from './ColorVariants'
 import { SEMANTIC_COLORS } from './constants'
@@ -387,54 +385,6 @@ add(
                     'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
             },
         ],
-    }
-)
-
-add(
-    'Buttons',
-    () => (
-        <>
-            <h1>Buttons</h1>
-            <p>
-                Use Bootstrap’s custom button styles for actions in forms, dialogs, and more with support for multiple
-                sizes, states, and more.{' '}
-                <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
-            </p>
-            <h2>Semantic variants</h2>
-            <ButtonVariants variants={SEMANTIC_COLORS} />
-            <h2>Outline variants</h2>
-            <ButtonVariants variants={['primary', 'secondary', 'danger']} variantType="btn-outline" />
-            <h2>Icons</h2>
-            <p>We can use icons with our buttons</p>
-            <ButtonVariants variants={['danger']} icon={SearchIcon} />
-            <ButtonVariants variants={['danger']} variantType="btn-outline" icon={SearchIcon} />
-            <h2>Size</h2>
-            <p>We can make our buttons smaller</p>
-            <ButtonVariants variants={['primary']} variantType="btn-outline" small={true} />
-            <h2>Links</h2>
-            <p>Links can be made to look like buttons:</p>
-            <a href="https://example.com" className="btn btn-secondary mb-3" target="_blank" rel="noopener noreferrer">
-                I am a link
-            </a>
-            <p>Buttons can be made to look like links:</p>
-            <button type="button" className="btn btn-link mr-3">
-                Link button
-            </button>
-            <button type="button" className="btn btn-link mr-3 focus">
-                Focused
-            </button>
-            <button type="button" className="btn btn-link mr-3" disabled={true}>
-                Disabled
-            </button>
-        </>
-    ),
-    {
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
-        },
     }
 )
 
