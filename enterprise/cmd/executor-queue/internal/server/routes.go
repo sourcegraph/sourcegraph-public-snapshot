@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/derision-test/glock"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
@@ -31,7 +30,7 @@ func setupRoutes(options Options, queueOptionsMap map[string]QueueOptions) (func
 			return m
 		}, func(router *mux.Router) {
 			for name, queueOptions := range queueOptionsMap {
-				h := newHandler(options, queueOptions, glock.NewRealClock())
+				h := newHandler(options, queueOptions)
 				hs[name] = h
 
 				subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()

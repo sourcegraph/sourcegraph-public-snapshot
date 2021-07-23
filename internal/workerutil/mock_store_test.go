@@ -49,8 +49,8 @@ func NewMockStore() *MockStore {
 			},
 		},
 		HeartbeatFunc: &StoreHeartbeatFunc{
-			defaultHook: func(context.Context, int) error {
-				return nil
+			defaultHook: func(context.Context, []int) ([]int, error) {
+				return nil, nil
 			},
 		},
 		MarkCompleteFunc: &StoreMarkCompleteFunc{
@@ -330,23 +330,23 @@ func (c StoreDequeueFuncCall) Results() []interface{} {
 // StoreHeartbeatFunc describes the behavior when the Heartbeat method of
 // the parent MockStore instance is invoked.
 type StoreHeartbeatFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
+	defaultHook func(context.Context, []int) ([]int, error)
+	hooks       []func(context.Context, []int) ([]int, error)
 	history     []StoreHeartbeatFuncCall
 	mutex       sync.Mutex
 }
 
 // Heartbeat delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Heartbeat(v0 context.Context, v1 int) error {
-	r0 := m.HeartbeatFunc.nextHook()(v0, v1)
-	m.HeartbeatFunc.appendCall(StoreHeartbeatFuncCall{v0, v1, r0})
-	return r0
+func (m *MockStore) Heartbeat(v0 context.Context, v1 []int) ([]int, error) {
+	r0, r1 := m.HeartbeatFunc.nextHook()(v0, v1)
+	m.HeartbeatFunc.appendCall(StoreHeartbeatFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Heartbeat method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, int) error) {
+func (f *StoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, []int) ([]int, error)) {
 	f.defaultHook = hook
 }
 
@@ -354,7 +354,7 @@ func (f *StoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, int) erro
 // Heartbeat method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreHeartbeatFunc) PushHook(hook func(context.Context, int) error) {
+func (f *StoreHeartbeatFunc) PushHook(hook func(context.Context, []int) ([]int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -362,21 +362,21 @@ func (f *StoreHeartbeatFunc) PushHook(hook func(context.Context, int) error) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *StoreHeartbeatFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
-		return r0
+func (f *StoreHeartbeatFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]int, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *StoreHeartbeatFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
-		return r0
+func (f *StoreHeartbeatFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]int, error) {
+		return r0, r1
 	})
 }
 
-func (f *StoreHeartbeatFunc) nextHook() func(context.Context, int) error {
+func (f *StoreHeartbeatFunc) nextHook() func(context.Context, []int) ([]int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -414,10 +414,13 @@ type StoreHeartbeatFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -429,7 +432,7 @@ func (c StoreHeartbeatFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreHeartbeatFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreMarkCompleteFunc describes the behavior when the MarkComplete method

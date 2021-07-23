@@ -183,7 +183,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 			}
 
 			id := record.RecordID()
-			if err := w.store.Heartbeat(heartbeatCtx, id); err != nil {
+			if _, err := w.store.Heartbeat(heartbeatCtx, []int{id}); err != nil {
 				log15.Error("Failed to refresh last_heartbeat_at", "name", w.options.Name, "id", id, "error", err)
 			}
 		}

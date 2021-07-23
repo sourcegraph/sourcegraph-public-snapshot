@@ -22,8 +22,9 @@ type Store interface {
 	// flag indicating the existence of a processable record.
 	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, bool, error)
 
-	// Heartbeat marks the given record as currently being processed.:2
-	Heartbeat(ctx context.Context, id int) error
+	// Heartbeat updates last_heartbeat_at of all the given jobs, when they're processing. All IDs of records that were
+	// touched are returned.
+	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs []int, err error)
 
 	// AddExecutionLogEntry adds an executor log entry to the record.
 	AddExecutionLogEntry(ctx context.Context, id int, entry ExecutionLogEntry) error

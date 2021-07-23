@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // TODO: Fix this comment.
@@ -17,38 +17,18 @@ import (
 // executor queue. This can occur when the executor-queue restarts and loses its in-memory state.
 // We send these identifiers back to the executor as a hint to stop processing.
 func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (unknownInQueueJobs []int, errs error) {
-	now := h.clock.Now()
+	knownIDs, err := h.queueOptions.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{WorkerHostname: executorName})
+	if err != nil {
+		return nil, err
+	}
+	knownIDsMap := map[int]struct{}{}
+	for _, id := range knownIDs {
+		knownIDsMap[id] = struct{}{}
+	}
 
-	executorIDsMap := map[int]struct{}{}
+	unknownInQueueJobs = make([]int, 0)
 	for _, id := range ids {
-		executorIDsMap[id] = struct{}{}
-	}
-
-	h.m.Lock()
-	defer h.m.Unlock()
-
-	executor, ok := h.executors[executorName]
-	if !ok {
-		executor = &executorMeta{}
-		h.executors[executorName] = executor
-	}
-
-	executorQueueIDsMap := map[int]struct{}{}
-	var live []jobMeta
-	for _, job := range executor.jobs {
-		executorQueueIDsMap[job.recordID] = struct{}{}
-		if _, ok := executorIDsMap[job.recordID]; ok || now.Sub(job.started) < h.options.UnreportedMaxAge {
-			live = append(live, job)
-			if err := h.queueOptions.Store.Heartbeat(ctx, job.recordID); err != nil {
-				errs = multierror.Append(errs, err)
-			}
-		}
-	}
-	executor.jobs = live
-
-	unknownInQueueJobs = make([]int, 0, len(ids))
-	for _, id := range ids {
-		if _, ok := executorQueueIDsMap[id]; !ok {
+		if _, ok := knownIDsMap[id]; !ok {
 			unknownInQueueJobs = append(unknownInQueueJobs, id)
 		}
 	}

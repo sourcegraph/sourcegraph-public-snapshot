@@ -19,6 +19,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+var ErrWrongWorkerHostname = errors.New("worker hostname doesn't match")
+
+type HeartbeatOptions struct {
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
+	// If it doesn't match, ErrWrongWorkerHostname
+	WorkerHostname string
+}
+
+type AddExecutionLogEntryOptions struct {
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
+	// If it doesn't match, ErrWrongWorkerHostname
+	WorkerHostname string
+}
+
+type MarkFinalOptions struct {
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
+	// If it doesn't match, ErrWrongWorkerHostname
+	WorkerHostname string
+}
+
 // Store is the persistence layer for the dbworker package that handles worker-side operations backed by a Postgres
 // database. See Options for details on the required shape of the database tables (e.g. table column names/types).
 type Store interface {
@@ -35,29 +55,29 @@ type Store interface {
 	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
 
 	// Heartbeat marks the given record as currently being processed.
-	Heartbeat(ctx context.Context, id int) error
+	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
 
 	// AddExecutionLogEntry adds an executor log entry to the record.
-	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options AddExecutionLogEntryOptions) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 	// indicating if the record was updated.
-	MarkComplete(ctx context.Context, id int) (bool, error)
+	MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (bool, error)
 
 	// MarkErrored attempts to update the state of the record to errored. This method will only have an effect
 	// if the current state of the record is processing or completed. A requeued record or a record already marked
 	// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-	MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error)
+	MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (bool, error)
 
 	// MarkFailed attempts to update the state of the record to failed. This method will only have an effect
 	// if the current state of the record is processing or completed. A requeued record or a record already marked
 	// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-	MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error)
+	MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (bool, error)
 
 	// ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 	// queued state. In order to prevent input that continually crashes worker instances, records that have been reset
@@ -379,6 +399,8 @@ SET
 	{last_heartbeat_at} = %s,
 	{finished_at} = NULL,
 	{failure_message} = NULL,
+	-- TODO: we want to reset logs on a new dequeue.
+	-- {execution_logs} = NULL,
 	{worker_hostname} = %s
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
@@ -389,21 +411,64 @@ const selectRecordQuery = `
 SELECT %s FROM %s WHERE {id} = %s
 `
 
-func (s *store) Heartbeat(ctx context.Context, id int) error {
-	err := s.Exec(ctx, s.formatQuery(updateCandidateQuery, quote(s.options.TableName), s.now(), id))
+func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
+	if len(ids) == 0 {
+		return []int{}, nil
+	}
+
+	sqlIDs := make([]*sqlf.Query, 0)
+	for _, id := range ids {
+		sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
+	}
+	quotedTableName := quote(s.options.TableName)
+	rows, err := s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(sqlIDs, ""), options.WorkerHostname, quotedTableName, s.now()))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var id int
+
+		if err := rows.Scan(
+			&id,
+		); err != nil {
+			return nil, err
+		}
+
+		knownIDs = append(knownIDs, id)
+	}
+
 	if err != nil {
 		if err != ctx.Err() {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return knownIDs, nil
 }
 
 const updateCandidateQuery = `
 -- source: internal/workerutil/store.go:Heartbeat
-UPDATE %s
-SET {last_heartbeat_at} = %s
-WHERE {id} = %s AND {state} = 'processing'
+WITH alive_candidates AS (
+	SELECT
+		id
+	FROM
+		%s
+	WHERE
+		{id} IN (%s)
+		AND
+		{state} = 'processing'
+		AND
+		{worker_hostname} = %s
+	FOR UPDATE
+)
+UPDATE
+	%s
+SET
+	{last_heartbeat_at} = %s
+WHERE
+	id IN (SELECT id FROM alive_candidates)
+RETURNING id
 `
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
@@ -431,7 +496,7 @@ WHERE {id} = %s
 `
 
 // AddExecutionLogEntry adds an executor log entry to the record.
-func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (err error) {
+func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options AddExecutionLogEntryOptions) (err error) {
 	ctx, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -455,7 +520,7 @@ WHERE {id} = %s
 // MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 // the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 // indicating if the record was updated.
-func (s *store) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
+func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -476,7 +541,7 @@ RETURNING {id}
 // MarkErrored attempts to update the state of the record to errored. This method will only have an effect
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) (_ bool, err error) {
+func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -501,7 +566,7 @@ RETURNING {id}
 // MarkFailed attempts to update the state of the record to failed. This method will only have an effect
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string) (_ bool, err error) {
+func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})

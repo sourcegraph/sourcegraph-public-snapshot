@@ -56,7 +56,7 @@ stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z
 		}
 
 		for _, e := range entries {
-			err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), e)
+			err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), e, dbworkerstore.AddExecutionLogEntryOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
