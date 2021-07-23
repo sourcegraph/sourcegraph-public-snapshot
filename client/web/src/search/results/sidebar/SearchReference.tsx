@@ -258,7 +258,7 @@ const operatorInfo: OperatorInfo[] = [
     {
         operator: 'AND',
         alias: 'and',
-        placeholder: parsePlaceholder('{a} AND {b}'),
+        placeholder: parsePlaceholder('{expr} AND {expr}'),
         description:
             'Returns results for files containing matches on the left and right side of the `and` (set intersection).',
         examples: ['conf.Get( and log15.Error(', 'conf.Get( AND log15.Error( AND after'],
@@ -266,7 +266,7 @@ const operatorInfo: OperatorInfo[] = [
     {
         operator: 'OR',
         alias: 'or',
-        placeholder: parsePlaceholder('{a} OR {b}'),
+        placeholder: parsePlaceholder('({expr} OR {expr})'),
         description:
             'Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings.',
         examples: ['conf.Get( or log15.Error(', 'conf.Get( OR log15.Error( OR after'],
@@ -274,9 +274,9 @@ const operatorInfo: OperatorInfo[] = [
     {
         operator: 'NOT',
         alias: 'not',
-        placeholder: parsePlaceholder('NOT {a}'),
+        placeholder: parsePlaceholder('NOT {expr}'),
         description:
-            '`NOT` can be used in place of `-` to negate keywords, such as `file`, `content`, `lang`, `repohasfile`, and `repo`. For search patterns, `NOT` excludes documents that contain the term after `NOT`. For readability, you can also include the `AND` operator before a `NOT` (i.e. `panic NOT ever` is equivalent to `panic AND NOT ever`).',
+            '`NOT` can be prepended to negate filters like `file`, `lang`, `repo`. Prepending `NOT` to search patterns excludes documents that contain the pattern. For readability, you may use `NOT` in conjunction with `AND` if you like: `panic AND NOT ever`.',
         examples: ['lang:go not file:main.go panic', 'panic NOT ever'],
     },
 ]
@@ -452,6 +452,7 @@ interface SearchReferenceExampleProps {
 const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
     // All current examples are literal queries
     const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
+    console.log(scanResult)
     // We only use valid queries as examples, so this will always be true
     if (scanResult.type === 'success') {
         return (
@@ -466,14 +467,7 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
                                 </React.Fragment>
                             )
                         case 'keyword':
-                            // We are using example.slice instead of term.value
-                            // to get the actual character sequence in the
-                            // example. term.value doesn't preserve case
-                            return (
-                                <span className="search-filter-keyword">
-                                    {example.slice(term.range.start, term.range.end)}
-                                </span>
-                            )
+                            return <span className="search-filter-keyword">{term.value}</span>
                         default:
                             return example.slice(term.range.start, term.range.end)
                     }
