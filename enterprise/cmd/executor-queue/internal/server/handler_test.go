@@ -101,7 +101,9 @@ func TestAddExecutionLogEntry(t *testing.T) {
 }
 
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()})
+	store := workerstoremocks.NewMockStore()
+	store.AddExecutionLogEntryFunc.SetDefaultReturn(ErrUnknownJob)
+	handler := newHandler(Options{}, QueueOptions{Store: store})
 
 	entry := workerutil.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
@@ -143,7 +145,9 @@ func TestMarkComplete(t *testing.T) {
 }
 
 func TestMarkCompleteUnknownJob(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()})
+	store := workerstoremocks.NewMockStore()
+	store.MarkCompleteFunc.SetDefaultReturn(false, ErrUnknownJob)
+	handler := newHandler(Options{}, QueueOptions{Store: store})
 
 	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
@@ -184,7 +188,9 @@ func TestMarkErrored(t *testing.T) {
 }
 
 func TestMarkErroredUnknownJob(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()})
+	store := workerstoremocks.NewMockStore()
+	store.MarkErroredFunc.SetDefaultReturn(false, ErrUnknownJob)
+	handler := newHandler(Options{}, QueueOptions{Store: store})
 
 	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)

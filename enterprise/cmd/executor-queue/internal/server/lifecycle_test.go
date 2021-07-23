@@ -3,13 +3,12 @@ package server
 import (
 	"context"
 	"testing"
-	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
@@ -23,8 +22,17 @@ func TestHeartbeat(t *testing.T) {
 	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, true, nil)
 	store1.DequeueFunc.PushReturn(testRecord{ID: 43}, true, nil)
 	store1.DequeueFunc.PushReturn(testRecord{ID: 44}, true, nil)
+	store1.HeartbeatFunc.SetDefaultHook(func(ctx context.Context, ids []int, options store.HeartbeatOptions) ([]int, error) {
+		knownIDs := make([]int, 0)
+		for _, id := range ids {
+			if id >= 41 && id <= 44 {
+				knownIDs = append(knownIDs, id)
+			}
+		}
 
-	clock := glock.NewMockClock()
+		return knownIDs, nil
+	})
+
 	handler := newHandler(Options{}, QueueOptions{Store: store1, RecordTransformer: recordTransformer})
 
 	_, dequeued1, _ := handler.dequeue(context.Background(), "deadbeef", "test")
@@ -35,52 +43,41 @@ func TestHeartbeat(t *testing.T) {
 		t.Fatalf("failed to dequeue records")
 	}
 
-	// // missing all jobs, but they're less than UnreportedMaxAge
-	// clock.Advance(time.Second / 2)
-	// if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{}); err != nil {
-	// 	t.Fatalf("unexpected error performing heartbeat: %s", err)
-	// }
-	// if _, err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
-	// 	t.Fatalf("unexpected error performing heartbeat: %s", err)
-	// }
-
 	// missing no jobs
-	clock.Advance(time.Minute * 2)
-	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 43}); err != nil {
+	if ids, err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 43}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
+	} else if diff := cmp.Diff(ids, []int{}); diff != "" {
+		t.Fatalf("invalid unknownIDs returned diff=%s", diff)
 	}
-	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44}); err != nil {
+	if ids, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
+	} else if diff := cmp.Diff(ids, []int{}); diff != "" {
+		t.Fatalf("invalid unknownIDs returned diff=%s", diff)
 	}
 
 	// missing one deadbeef jobs
-	clock.Advance(time.Minute * 2)
-	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{41}); err != nil {
+	if ids, err := handler.heartbeat(context.Background(), "deadbeef", []int{41}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
-	}
-	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44}); err != nil {
-		t.Fatalf("unexpected error performing heartbeat: %s", err)
+	} else if diff := cmp.Diff(ids, []int{}); diff != "" {
+		t.Fatalf("invalid unknownIDs returned diff=%s", diff)
 	}
 
 	// missing two deadveal jobs
-	clock.Advance(time.Minute * 2)
-	if _, err := handler.heartbeat(context.Background(), "deadbeef", []int{41}); err != nil {
+	if ids, err := handler.heartbeat(context.Background(), "deadbeef", []int{}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
-	}
-	if _, err := handler.heartbeat(context.Background(), "deadveal", []int{}); err != nil {
-		t.Fatalf("unexpected error performing heartbeat: %s", err)
+	} else if diff := cmp.Diff(ids, []int{}); diff != "" {
+		t.Fatalf("invalid unknownIDs returned diff=%s", diff)
 	}
 
 	// unknown jobs
-	clock.Advance(time.Minute * 2)
 	if unknownIDs, err := handler.heartbeat(context.Background(), "deadbeef", []int{41, 43, 45}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
-	} else if diff := cmp.Diff([]int{43, 45}, unknownIDs); diff != "" {
+	} else if diff := cmp.Diff([]int{45}, unknownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 	}
 	if unknownIDs, err := handler.heartbeat(context.Background(), "deadveal", []int{42, 44, 45}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
-	} else if diff := cmp.Diff([]int{42, 44, 45}, unknownIDs); diff != "" {
+	} else if diff := cmp.Diff([]int{45}, unknownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 	}
 }

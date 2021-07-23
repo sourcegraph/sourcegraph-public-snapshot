@@ -355,9 +355,9 @@ func TestWorkerDequeueHeartbeat(t *testing.T) {
 	}
 
 	heartbeats := make(chan struct{})
-	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i int) error {
+	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []int) ([]int, error) {
 		heartbeats <- struct{}{}
-		return nil
+		return i, nil
 	})
 
 	worker := newWorker(context.Background(), store, handler, options, clock)
