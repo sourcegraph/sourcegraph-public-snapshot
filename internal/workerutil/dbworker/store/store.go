@@ -19,23 +19,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+// ErrWrongWorkerHostname is returned from store functions, that are able to enforce
+// a specific worker hostname to be set, when it doesn't match.
 var ErrWrongWorkerHostname = errors.New("worker hostname doesn't match")
 
 type HeartbeatOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	// If it doesn't match, ErrWrongWorkerHostname
+	// If it doesn't match, ErrWrongWorkerHostname is returned.
 	WorkerHostname string
 }
 
 type AddExecutionLogEntryOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	// If it doesn't match, ErrWrongWorkerHostname
+	// If it doesn't match, ErrWrongWorkerHostname is returned.
 	WorkerHostname string
+	// State, if set, enforces state to be set to a specific value.
+	State string
 }
 
 type MarkFinalOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	// If it doesn't match, ErrWrongWorkerHostname
+	// If it doesn't match, ErrWrongWorkerHostname is returned.
 	WorkerHostname string
 }
 
@@ -514,6 +518,9 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	if options.WorkerHostname != "" {
 		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
 	}
+	if options.State != "" {
+		preds = append(preds, s.formatQuery("{state} = %s", options.State))
+	}
 
 	return s.Exec(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
@@ -570,6 +577,7 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 
 	preds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
+		// TODO: Why is completed allowed?
 		s.formatQuery("({state} = 'processing' OR {state} = 'completed')"),
 	}
 	if options.WorkerHostname != "" {
@@ -603,6 +611,7 @@ func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, o
 
 	preds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
+		// TODO: Why is completed allowed?
 		s.formatQuery("({state} = 'processing' OR {state} = 'completed')"),
 	}
 	if options.WorkerHostname != "" {
