@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs'
+import { startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -10,7 +11,6 @@ import {
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { LATEST_VERSION } from '../results/StreamingSearchResults'
-import { startWith } from 'rxjs/operators'
 
 export type BlockType = 'md' | 'query'
 
