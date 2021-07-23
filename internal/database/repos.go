@@ -156,6 +156,13 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 		Timestamp:       time.Now(),
 	}
 
+	// If this event was triggered by an internal actor we need to ensure that at
+	// least the UserID or AnonymousUserID field are set so that we don't trigger
+	// the security_event_logs_check_has_user constraint
+	if a.Internal {
+		event.AnonymousUserID = "internal"
+	}
+
 	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
