@@ -46,8 +46,15 @@ import { ActionItemsBarProps, useWebActionItems } from '../extensions/components
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps, searchQueryForRepoRevision } from '../search'
+import {
+    CaseSensitivityProps,
+    PatternTypeProps,
+    SearchContextProps,
+    searchQueryForRepoRevision,
+    SearchStreamingProps,
+} from '../search'
 import { QueryState } from '../search/helpers'
+import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -82,8 +89,10 @@ export interface RepoContainerContext
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        BatchChangesProps,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        BatchChangesProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -95,6 +104,10 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
+
+    showSearchNotebook: boolean
+
+    isMacPlatform: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -118,8 +131,10 @@ interface RepoContainerProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        BatchChangesProps,
-        BreadcrumbsProps {
+        BreadcrumbsProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        BatchChangesProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -129,6 +144,8 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+    showSearchNotebook: boolean
+    isMacPlatform: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
