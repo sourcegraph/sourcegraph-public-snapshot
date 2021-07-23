@@ -1537,17 +1537,17 @@ This panel indicates 99th percentile successful handler operation duration over 
 
 <br />
 
-#### precise-code-intel-worker: codeintel_upload_processor_99th_percentile_duration
+#### precise-code-intel-worker: codeintel_upload_processor_errors_total
 
-This panel indicates 99th percentile successful handler operation duration over 5m.
+This panel indicates handler operation errors every 5m.
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_upload_processor_99th_percentile_duration
+#### precise-code-intel-worker: codeintel_upload_handlers
 
-This panel indicates 99th percentile successful handler operation duration over 5m.
+This panel indicates handler active handlers.
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
@@ -2175,17 +2175,17 @@ This panel indicates 99th percentile successful handler operation duration over 
 
 <br />
 
-#### worker: codeintel_dependency_index_processor_99th_percentile_duration
+#### worker: codeintel_dependency_index_processor_errors_total
 
-This panel indicates 99th percentile successful handler operation duration over 5m.
+This panel indicates handler operation errors every 5m.
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
-#### worker: codeintel_dependency_index_processor_99th_percentile_duration
+#### worker: codeintel_dependency_index_handlers
 
-This panel indicates 99th percentile successful handler operation duration over 5m.
+This panel indicates handler active handlers.
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
@@ -4519,17 +4519,17 @@ This panel indicates 99th percentile successful handler operation duration over 
 
 <br />
 
-#### executor: executor_processor_99th_percentile_duration
+#### executor: executor_processor_errors_total
 
-This panel indicates 99th percentile successful handler operation duration over 5m.
+This panel indicates handler operation errors every 5m.
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
-#### executor: executor_processor_99th_percentile_duration
+#### executor: executor_handlers
 
-This panel indicates 99th percentile successful handler operation duration over 5m.
+This panel indicates handler active handlers.
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
