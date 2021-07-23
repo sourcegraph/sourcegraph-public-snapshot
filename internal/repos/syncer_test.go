@@ -3,6 +3,7 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"testing"
@@ -239,6 +240,23 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					)}},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "account suspended",
+				},
+				testCase{
+					// Test that spurious errors don't cause deletions.
+					name: string(tc.repo.Name) + "/spurious-error",
+					sourcer: repos.NewFakeSourcer(nil,
+						repos.NewFakeSource(tc.svc.Clone(), io.EOF),
+					),
+					store: s,
+					stored: types.Repos{tc.repo.With(
+						types.Opt.RepoSources(tc.svc.URN()),
+					)},
+					now: clock.Now,
+					diff: repos.Diff{Unmodified: types.Repos{tc.repo.With(
+						types.Opt.RepoSources(tc.svc.URN()),
+					)}},
+					svcs: []*types.ExternalService{tc.svc},
+					err:  io.EOF.Error(),
 				},
 				testCase{
 					// It's expected that there could be multiple stored sources but only one will ever be returned
