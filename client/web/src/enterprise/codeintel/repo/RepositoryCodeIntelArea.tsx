@@ -105,7 +105,7 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Code intelligence', icon: BrainIcon },
+        header: { label: 'Precise intelligence', icon: BrainIcon },
         items: [
             {
                 to: '/uploads',
