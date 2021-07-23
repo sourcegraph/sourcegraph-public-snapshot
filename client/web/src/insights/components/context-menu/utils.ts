@@ -6,12 +6,12 @@ const DEFAULT_VERTICAL_OFFSET = 4
  * Custom popover position calculator. Returns position objects (top,left,right,bottom) styles
  * with values such that the target and the popover element have the same right borders.
  *
- * ------------ | Target | --------
- * ----|*****************| --------
- * ----|*****************| --------
- * ----|*** Popover *****| --------
- * ----|*****************| --------
- * ----|*****************| --------
+ *     ------------ | Target | --------
+ *     ----|*****************| --------
+ *     ----|*****************| --------
+ *     ----|*** Popover *****| --------
+ *     ----|*****************| --------
+ *     ----|*****************| --------
  *
  * @param targetRectangle - bounding client rect of the target element
  * @param popoverRectangle - bounding client rect of the pop-over element. All calculation props
