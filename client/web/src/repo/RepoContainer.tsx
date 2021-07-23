@@ -37,6 +37,7 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
+import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -92,6 +93,7 @@ export interface RepoContainerContext
         ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
         BatchChangesProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
@@ -134,6 +136,7 @@ interface RepoContainerProps
         BreadcrumbsProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
         BatchChangesProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]

@@ -1,6 +1,7 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -41,6 +42,7 @@ import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -115,6 +117,7 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         VersionContextProps,
+        CodeIntelligenceProps,
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
@@ -146,6 +149,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     caseSensitive,
     settingsCascade,
     useBreadcrumb,
+    codeIntelligenceEnabled,
     batchChangesEnabled,
     ...props
 }) => {
@@ -426,6 +430,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
                                         </Link>
+                                        {codeIntelligenceEnabled && (
+                                            <Link
+                                                className="btn btn-outline-secondary"
+                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                            >
+                                                <BrainIcon className="icon-inline" /> Code Intelligence
+                                            </Link>
+                                        )}
                                         {batchChangesEnabled && (
                                             <RepoBatchChangesButton
                                                 className="btn btn-outline-secondary"
