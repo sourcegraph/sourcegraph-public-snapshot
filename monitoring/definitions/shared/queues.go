@@ -25,7 +25,7 @@ func (queueConstructor) Size(options ObservableConstructorOptions) sharedObserva
 		return Observable{
 			Name:        fmt.Sprintf("%s_queue_size", options.MetricNameRoot),
 			Description: fmt.Sprintf("%s queue size", options.MetricDescriptionRoot),
-			Query:       fmt.Sprintf(`max%s(src_%s_total{%s})`, by, options.MetricDescriptionRoot, filters),
+			Query:       fmt.Sprintf(`max%s(src_%s_total{%s})`, by, options.MetricNameRoot, filters),
 			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s records", legendPrefix)),
 			Owner:       owner,
 		}

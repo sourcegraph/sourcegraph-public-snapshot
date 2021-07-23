@@ -59,7 +59,7 @@ type ObservationGroupOptions struct {
 // These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	return monitoring.Group{
-		Title:  fmt.Sprintf("[%s] Observable: %s", options.DescriptionRoot, options.DescriptionRoot),
+		Title:  fmt.Sprintf("[%s] Observable: %s", options.Namespace, options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{
