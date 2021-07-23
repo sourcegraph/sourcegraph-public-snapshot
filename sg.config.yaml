@@ -444,7 +444,7 @@ commands:
       EXECUTOR_HEALTH_SERVER_PORT: "3193"
       SRC_PROF_HTTP: ":6093"
 
-  # If you want to use this, either start it with `sg run batches-executor-firecracker` or 
+  # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
   batches-executor-firecracker:
     <<: *executor_template
@@ -681,6 +681,19 @@ commandsets:
       - zoekt-webserver-1
       - executor-queue
       - batches-executor
+
+  core-app:
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - caddy
+      - github-proxy
 
 tests:
   # These can be run with `sg test [name]`
