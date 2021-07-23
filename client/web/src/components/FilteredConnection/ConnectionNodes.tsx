@@ -2,7 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 
 import { Connection } from './ConnectionType'
-import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './generic-ui'
+import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'
 import { hasID, hasNextPage } from './utils'
 
 /**

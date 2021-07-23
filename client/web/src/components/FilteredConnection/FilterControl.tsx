@@ -32,7 +32,7 @@ interface FilterControlProps {
     filters: FilteredConnectionFilter[]
 
     /** Called when a filter is selected. */
-    onDidSelectValue: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
+    onValueSelect: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
     values: Map<string, FilteredConnectionFilterValue>
 }
@@ -40,7 +40,7 @@ interface FilterControlProps {
 export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
     filters,
     values,
-    onDidSelectValue,
+    onValueSelect,
     children,
 }) => {
     const onChange = useCallback(
@@ -49,9 +49,9 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
             if (value === undefined) {
                 return
             }
-            onDidSelectValue(filter, value)
+            onValueSelect(filter, value)
         },
-        [onDidSelectValue]
+        [onValueSelect]
     )
 
     return (

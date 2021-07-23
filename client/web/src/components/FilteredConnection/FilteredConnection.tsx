@@ -19,15 +19,14 @@ import {
     share,
 } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
-import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
-import { ConnectionError, ConnectionLoading, ConnectionForm } from './generic-ui'
-import type { ConnectionFormProps } from './generic-ui/ConnectionForm'
+import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
+import { ConnectionError, ConnectionLoading, ConnectionForm } from './ui'
+import type { ConnectionFormProps } from './ui/ConnectionForm'
 import { getFilterFromURL, getUrlQuery, parseQueryInt } from './utils'
 
 /**
@@ -67,15 +66,6 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
 
     /** Whether we will use the URL query string to reflect the filter and pagination state or not. */
     useURLQuery?: boolean
-
-    /**
-     * The filter to select by default. If not supplied, this defaults to the first
-     * filter defined in the list.
-     */
-    defaultFilter?: string
-
-    /** Called when a filter is selected and on initial render. */
-    onValueSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 }
 
 /**
@@ -490,7 +480,7 @@ export class FilteredConnection<
                             onChange={this.onChange}
                             autoFocus={this.props.autoFocus}
                             filters={this.props.filters}
-                            onDidSelectValue={this.onDidSelectValue}
+                            onValueSelect={this.onDidSelectValue}
                             values={this.state.activeValues}
                         />
                     )

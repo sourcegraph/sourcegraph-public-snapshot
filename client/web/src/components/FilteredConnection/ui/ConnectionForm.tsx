@@ -29,7 +29,7 @@ export interface ConnectionFormProps {
      */
     filters?: FilteredConnectionFilter[]
 
-    onDidSelectValue?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
+    onValueSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
     /** An element rendered as a sibling of the filters. */
     additionalFilterElement?: React.ReactElement
@@ -47,7 +47,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             onChange,
             autoFocus,
             filters,
-            onDidSelectValue,
+            onValueSelect,
             additionalFilterElement,
             values,
         },
@@ -63,8 +63,8 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                 className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
                 onSubmit={handleSubmit}
             >
-                {filters && onDidSelectValue && values && (
-                    <FilterControl filters={filters} onDidSelectValue={onDidSelectValue} values={values}>
+                {filters && onValueSelect && values && (
+                    <FilterControl filters={filters} onValueSelect={onValueSelect} values={values}>
                         {additionalFilterElement}
                     </FilterControl>
                 )}
