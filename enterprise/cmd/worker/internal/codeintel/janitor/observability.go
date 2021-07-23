@@ -56,41 +56,41 @@ func newMetrics(observationContext *observation.Context) *metrics {
 	)
 
 	numUploadResets := counter(
-		"src_codeintel_background_upload_resets_total",
+		"src_codeintel_background_upload_record_resets_total",
 		"The number of upload record resets.",
 	)
 	numUploadResetFailures := counter(
-		"src_codeintel_background_upload_reset_failures_total",
+		"src_codeintel_background_upload_record_reset_failures_total",
 		"The number of upload reset failures.",
 	)
 	numUploadResetErrors := counter(
-		"src_codeintel_background_upload_reset_errors_total",
+		"src_codeintel_background_upload_record_reset_errors_total",
 		"The number of errors that occur during upload record resets.",
 	)
 
 	numIndexResets := counter(
-		"src_codeintel_background_index_resets_total",
+		"src_codeintel_background_index_record_resets_total",
 		"The number of index records reset.",
 	)
 	numIndexResetFailures := counter(
-		"src_codeintel_background_index_reset_failures_total",
+		"src_codeintel_background_index_record_reset_failures_total",
 		"The number of dependency index reset failures.",
 	)
 	numIndexResetErrors := counter(
-		"src_codeintel_background_index_reset_errors_total",
+		"src_codeintel_background_index_record_reset_errors_total",
 		"The number of errors that occur during index records reset.",
 	)
 
 	numDependencyIndexResets := counter(
-		"src_codeintel_background_dependency_index_resets_total",
+		"src_codeintel_background_dependency_index_record_resets_total",
 		"The number of dependency index records reset.",
 	)
 	numDependencyIndexResetFailures := counter(
-		"src_codeintel_background_dependency_index_reset_failures_total",
+		"src_codeintel_background_dependency_index_record_reset_failures_total",
 		"The number of index reset failures.",
 	)
 	numDependencyIndexResetErrors := counter(
-		"src_codeintel_background_dependency_index_reset_errors_total",
+		"src_codeintel_background_dependency_index_record_reset_errors_total",
 		"The number of errors that occur during dependency index records reset.",
 	)
 
