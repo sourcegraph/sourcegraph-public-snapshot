@@ -37,6 +37,7 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
+import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -118,6 +119,7 @@ interface RepoContainerProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
+        CodeIntelligenceProps,
         BatchChangesProps,
         BreadcrumbsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]

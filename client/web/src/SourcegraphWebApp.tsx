@@ -34,6 +34,7 @@ import {
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { client } from './backend/graphql'
 import { BatchChangesProps } from './batches'
+import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'
@@ -99,7 +100,7 @@ import {
     experimentalFeaturesFromSettings,
 } from './util/settings'
 
-export interface SourcegraphWebAppProps extends BatchChangesProps, KeyboardShortcutsProps {
+export interface SourcegraphWebAppProps extends CodeIntelligenceProps, BatchChangesProps, KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]

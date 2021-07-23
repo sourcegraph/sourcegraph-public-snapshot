@@ -42,6 +42,7 @@ import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -116,6 +117,7 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         VersionContextProps,
+        CodeIntelligenceProps,
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
@@ -147,6 +149,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     caseSensitive,
     settingsCascade,
     useBreadcrumb,
+    codeIntelligenceEnabled,
     batchChangesEnabled,
     ...props
 }) => {
