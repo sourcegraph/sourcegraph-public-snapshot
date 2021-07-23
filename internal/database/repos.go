@@ -139,11 +139,11 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 func logRepoAccessGranted(ctx context.Context, db dbutil.DB, repoID api.RepoID) {
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
-		Resource string `json:"resource"`
-		RepoID   int32  `json:"repo_id"`
+		Resource string  `json:"resource"`
+		Repos    []int32 `json:"repo_id"`
 	}{
 		Resource: "db.repo",
-		RepoID:   int32(repoID),
+		Repos:    []int32{int32(repoID)},
 	})
 
 	event := &SecurityEvent{
