@@ -140,7 +140,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Resource string       `json:"resource"`
-		Repos    []api.RepoID `json:"repo_id"`
+		Repos    []api.RepoID `json:"repo_ids"`
 	}{
 		Resource: "db.repo",
 		Repos:    ids,
