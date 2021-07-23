@@ -427,12 +427,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
                                         </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                        >
-                                            <BrainIcon className="icon-inline" /> Code Intelligence
-                                        </Link>
+                                        {codeIntelligenceEnabled && (
+                                            <Link
+                                                className="btn btn-outline-secondary"
+                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                            >
+                                                <BrainIcon className="icon-inline" /> Code Intelligence
+                                            </Link>
+                                        )}
                                         {batchChangesEnabled && (
                                             <RepoBatchChangesButton
                                                 className="btn btn-outline-secondary"
