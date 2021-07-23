@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -643,7 +644,26 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	tr.LogFields(trace.SQL(q))
 
-	rows, err := s.Query(ctx, q)
+	/*** BEGIN RLS HACKING ***/
+	txn, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = txn.Done(err) }()
+
+	userID := actor.FromContext(ctx).UID
+	if _, err := txn.Handle().DB().ExecContext(ctx, fmt.Sprintf("SET LOCAL rls.user_id = %d", userID)); err != nil {
+		return err
+	}
+	if _, err := txn.Handle().DB().ExecContext(ctx, "SET LOCAL rls.use_permissions_user_mapping = false"); err != nil {
+		return err
+	}
+	if _, err := txn.Handle().DB().ExecContext(ctx, "SET LOCAL rls.permission = 'read'"); err != nil {
+		return err
+	}
+	/*** END RLS HACKING ***/
+
+	rows, err := txn.Query(ctx, q)
 	if err != nil {
 		return err
 	}
