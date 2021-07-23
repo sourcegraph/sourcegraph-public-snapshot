@@ -15,9 +15,11 @@ export interface ConnectionFormProps {
     /** Placeholder text for the <input> element */
     inputPlaceholder?: string
 
-    query: string
+    /** Value of the <input> element */
+    inputValue?: string
 
-    onChange: React.ChangeEventHandler<HTMLInputElement>
+    /** Called when the <input> element value changes */
+    onInputChange?: React.ChangeEventHandler<HTMLInputElement>
 
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
@@ -43,8 +45,8 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             hideSearch,
             inputClassName,
             inputPlaceholder,
-            query,
-            onChange,
+            inputValue,
+            onInputChange,
             autoFocus,
             filters,
             onValueSelect,
@@ -74,8 +76,8 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                         type="search"
                         placeholder={inputPlaceholder}
                         name="query"
-                        value={query}
-                        onChange={onChange}
+                        value={inputValue}
+                        onChange={onInputChange}
                         autoFocus={autoFocus}
                         autoComplete="off"
                         autoCorrect="off"

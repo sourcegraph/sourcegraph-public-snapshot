@@ -147,7 +147,6 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
                             history={props.history}
                             location={props.location}
                             filters={filters}
-                            defaultFilter="All"
                         />
                     </div>
                 </>

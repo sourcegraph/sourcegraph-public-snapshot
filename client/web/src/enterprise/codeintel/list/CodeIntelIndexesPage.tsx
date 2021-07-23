@@ -104,7 +104,6 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                     location={props.location}
                     cursorPaging={true}
                     filters={filters}
-                    defaultFilter="All"
                 />
             </div>
         </div>

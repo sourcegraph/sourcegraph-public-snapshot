@@ -476,8 +476,8 @@ export class FilteredConnection<
                             hideSearch={this.props.hideSearch}
                             inputClassName={this.props.inputClassName}
                             inputPlaceholder={this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`}
-                            query={this.state.query}
-                            onChange={this.onChange}
+                            inputValue={this.state.query}
+                            onInputChange={this.onChange}
                             autoFocus={this.props.autoFocus}
                             filters={this.props.filters}
                             onValueSelect={this.onDidSelectValue}

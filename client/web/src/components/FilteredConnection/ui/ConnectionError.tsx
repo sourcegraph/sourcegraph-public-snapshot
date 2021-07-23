@@ -1,10 +1,9 @@
-import { GraphQLError } from 'graphql'
 import React from 'react'
 
 import { ErrorMessage } from '../../alerts'
 
 interface ConnectionErrorProps {
-    errors: string[] | readonly GraphQLError[]
+    errors: string[]
 }
 
 export const ConnectionError: React.FunctionComponent<ConnectionErrorProps> = ({ errors }) => (
