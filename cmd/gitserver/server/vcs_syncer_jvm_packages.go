@@ -38,6 +38,13 @@ type JVMPackagesSyncer struct {
 
 var _ VCSSyncer = &JVMPackagesSyncer{}
 
+func (s *JVMPackagesSyncer) MavenDependencies() []string {
+	if s.Config == nil || s.Config.Maven == nil || s.Config.Maven.Dependencies == nil {
+		return nil
+	}
+	return s.Config.Maven.Dependencies
+}
+
 func (s *JVMPackagesSyncer) Type() string {
 	return "jvm_packages"
 }
@@ -150,7 +157,7 @@ func (s *JVMPackagesSyncer) packageDependencies(repoUrlPath string) (dependencie
 	if err != nil {
 		return nil, err
 	}
-	for _, dependency := range s.Config.Maven.Dependencies {
+	for _, dependency := range s.MavenDependencies() {
 		if module.MatchesDependencyString(dependency) {
 			dependency, err := reposource.ParseMavenDependency(dependency)
 			if err != nil {
