@@ -1507,7 +1507,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	}
 
-	if args.ResultTypes.Has(result.TypeSymbol) {
+	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
 		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
