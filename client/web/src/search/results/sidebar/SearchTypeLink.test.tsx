@@ -11,6 +11,8 @@ const defaultProps: SearchTypeLinksProps = {
     versionContext: undefined,
     selectedSearchContextSpec: 'global',
     query: 'test',
+    navbarSearchQueryState: { query: 'test' },
+    onNavbarQueryChange: () => {},
 }
 
 describe('SearchTypeLink', () => {
