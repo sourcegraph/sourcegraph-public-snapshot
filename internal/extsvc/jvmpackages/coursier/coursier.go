@@ -48,8 +48,9 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		// vcs_syncer_jvm_packages_test.go if you change the arguments
 		// here. The test case assumes that the "--classifier sources"
 		// arguments appears at a specific index.
-		"fetch", "--quiet", "--intransitive",
-		dependency.CoursierSyntax(),
+		"fetch",
+		"--quiet", "--quiet",
+		"--intransitive", dependency.CoursierSyntax(),
 		"--classifier", "sources",
 	)
 }
@@ -62,8 +63,9 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 		// vcs_syncer_jvm_packages_test.go if you change the arguments
 		// here. The test case assumes that the "--classifier sources"
 		// arguments appears at a specific index.
-		"fetch", "--quiet", "--intransitive",
-		dependency.CoursierSyntax(),
+		"fetch",
+		"--quiet", "--quiet",
+		"--intransitive", dependency.CoursierSyntax(),
 	)
 }
 
@@ -76,7 +78,7 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 		ctx,
 		config,
 		"resolve",
-		"--quiet",
+		"--quiet", "--quiet",
 		dependency.CoursierSyntax(),
 	)
 	return err != nil
