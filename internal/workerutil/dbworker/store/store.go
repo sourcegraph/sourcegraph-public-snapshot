@@ -403,8 +403,7 @@ SET
 	{last_heartbeat_at} = %s,
 	{finished_at} = NULL,
 	{failure_message} = NULL,
-	-- TODO: we want to reset logs on a new dequeue.
-	-- {execution_logs} = NULL,
+	{execution_logs} = NULL,
 	{worker_hostname} = %s
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}

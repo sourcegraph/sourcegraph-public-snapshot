@@ -149,6 +149,22 @@ func TestStoreDequeueConditions(t *testing.T) {
 	assertDequeueRecordResult(t, 3, record, ok, err)
 }
 
+func TestStoreDequeueResetExecutionLogs(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, execution_logs, uploaded_at)
+		VALUES
+			(1, 'queued', E'{"{\\"key\\": \\"test\\"}"}', NOW() - '1 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordResult(t, 1, record, ok, err)
+	assertDequeueRecordResultLogCount(t, 0, record)
+}
+
 func TestStoreDequeueDelay(t *testing.T) {
 	db := setupStoreTest(t)
 
