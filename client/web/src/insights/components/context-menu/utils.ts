@@ -1,4 +1,4 @@
-import { getCollisions, Position } from '@reach/popover';
+import { getCollisions, Position } from '@reach/popover'
 
 const DEFAULT_VERTICAL_OFFSET = 4
 
@@ -19,15 +19,15 @@ const DEFAULT_VERTICAL_OFFSET = 4
  */
 export const positionRight: Position = (targetRectangle, popoverRectangle) => {
     if (!targetRectangle || !popoverRectangle) {
-        return {};
+        return {}
     }
 
-    const { directionUp } = getCollisions(targetRectangle, popoverRectangle);
+    const { directionUp } = getCollisions(targetRectangle, popoverRectangle)
 
     return {
         left: `${targetRectangle.right - popoverRectangle.width + window.pageXOffset}px`,
         top: directionUp
             ? `${targetRectangle.top - popoverRectangle.height + window.pageYOffset - DEFAULT_VERTICAL_OFFSET}px`
             : `${targetRectangle.top + targetRectangle.height + window.pageYOffset + DEFAULT_VERTICAL_OFFSET}px`,
-    };
-};
+    }
+}
