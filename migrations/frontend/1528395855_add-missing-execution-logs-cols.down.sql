@@ -1,4 +1,3 @@
-
 BEGIN;
 
 ALTER TABLE IF EXISTS cm_trigger_jobs DROP COLUMN IF EXISTS execution_logs;
