@@ -72,7 +72,6 @@ const defaultProps = (
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)
