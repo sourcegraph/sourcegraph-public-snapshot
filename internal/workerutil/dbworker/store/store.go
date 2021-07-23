@@ -19,19 +19,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-// ErrWrongWorkerHostname is returned from store functions, that are able to enforce
-// a specific worker hostname to be set, when it doesn't match.
-var ErrWrongWorkerHostname = errors.New("worker hostname doesn't match")
-
 type HeartbeatOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	// If it doesn't match, ErrWrongWorkerHostname is returned.
 	WorkerHostname string
 }
 
 type AddExecutionLogEntryOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	// If it doesn't match, ErrWrongWorkerHostname is returned.
 	WorkerHostname string
 	// State, if set, enforces state to be set to a specific value.
 	State string
@@ -39,7 +33,6 @@ type AddExecutionLogEntryOptions struct {
 
 type MarkFinalOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	// If it doesn't match, ErrWrongWorkerHostname is returned.
 	WorkerHostname string
 }
 
