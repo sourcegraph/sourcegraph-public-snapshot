@@ -390,7 +390,19 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	if err != nil {
 		return Diff{}, errors.Wrap(err, "syncer: opening transaction")
 	}
-	defer func() { tx.Done(err) }()
+
+	defer func() {
+		// We must commit the transaction before publishing to s.Synced
+		// so that gitserver finds the repo in the database.
+		if txerr := tx.Done(err); txerr != nil {
+			s.log().Error("syncer: failed to close transaction, skipping", "repo", sourced.Name, "error", txerr)
+		} else if s.Synced != nil && d.Len() > 0 {
+			select {
+			case <-ctx.Done():
+			case s.Synced <- d:
+			}
+		}
+	}()
 
 	stored, err := tx.RepoStore.List(ctx, database.ReposListOptions{
 		Names:          []string{string(sourced.Name)},
@@ -465,13 +477,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		d.Added = append(d.Added, sourced)
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
-	}
-
-	if s.Synced != nil && d.Len() > 0 {
-		select {
-		case <-ctx.Done():
-		case s.Synced <- d:
-		}
 	}
 
 	return d, nil
