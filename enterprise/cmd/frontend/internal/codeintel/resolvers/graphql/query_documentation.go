@@ -105,3 +105,30 @@ type DocumentationPathInfoResult struct {
 	// Children is a list of the children page paths immediately below this one.
 	Children []DocumentationPathInfoResult `json:"children"`
 }
+
+func (r *QueryResolver) DocumentationDefinitions(ctx context.Context, args *gql.LSIFQueryDocumentationArgs) (gql.LocationConnectionResolver, error) {
+	locations, err := r.resolver.DocumentationDefinitions(ctx, args.PathID)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
+}
+
+func (r *QueryResolver) DocumentationReferences(ctx context.Context, args *gql.LSIFPagedQueryDocumentationArgs) (gql.LocationConnectionResolver, error) {
+	limit := derefInt32(args.First, DefaultReferencesPageSize)
+	if limit <= 0 {
+		return nil, ErrIllegalLimit
+	}
+	cursor, err := decodeCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	locations, cursor, err := r.resolver.DocumentationReferences(ctx, args.PathID, limit, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+}

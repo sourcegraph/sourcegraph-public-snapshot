@@ -28,14 +28,19 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 	return 0, errors.New("unimplemented")
 }
 
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
 	var job executor.Job
 	dequeued, err := s.queueStore.Dequeue(ctx, s.queueName, &job)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 
-	return job, func() {}, dequeued, nil
+	return job, dequeued, nil
+}
+
+func (s *storeShim) Heartbeat(ctx context.Context, id int) error {
+	// Not needed, we do bulk updates from the executor.
+	return nil
 }
 
 func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {

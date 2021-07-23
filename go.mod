@@ -9,6 +9,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
+	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v0.5.1
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
@@ -204,7 +205,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210720153132-eaae5ca7e35b
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210721121719-c54bd1fb8d2e
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534

@@ -24,7 +24,7 @@ func TestDequeue(t *testing.T) {
 	}
 
 	store := workerstoremocks.NewMockStore()
-	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42, Payload: "secret"}, func() {}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42, Payload: "secret"}, true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		if tr, ok := record.(testRecord); !ok {
 			t.Errorf("mismatched record type.")
@@ -39,7 +39,6 @@ func TestDequeue(t *testing.T) {
 		QueueOptions: map[string]QueueOptions{
 			"test_queue": {Store: store, RecordTransformer: recordTransformer},
 		},
-		MaximumNumTransactions: 10,
 	}
 	handler := newHandler(options, glock.NewMockClock())
 
@@ -63,7 +62,6 @@ func TestDequeueNoRecord(t *testing.T) {
 		QueueOptions: map[string]QueueOptions{
 			"test_queue": {Store: workerstoremocks.NewMockStore()},
 		},
-		MaximumNumTransactions: 10,
 	}
 	handler := newHandler(options, glock.NewMockClock())
 
@@ -85,63 +83,9 @@ func TestDequeueUnknownQueue(t *testing.T) {
 	}
 }
 
-func TestDequeueMaxTransactions(t *testing.T) {
-	store := workerstoremocks.NewMockStore()
-	store.DequeueFunc.PushReturn(testRecord{ID: 41}, func() {}, true, nil)
-	store.DequeueFunc.PushReturn(testRecord{ID: 42}, func() {}, true, nil)
-	store.DequeueFunc.PushReturn(testRecord{ID: 43}, func() {}, true, nil)
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
-		return apiclient.Job{}, nil
-	}
-
-	options := Options{
-		QueueOptions: map[string]QueueOptions{
-			"test_queue": {Store: store, RecordTransformer: recordTransformer},
-		},
-		MaximumNumTransactions: 2,
-	}
-	handler := newHandler(options, glock.NewMockClock())
-
-	_, dequeued1, err := handler.dequeue(context.Background(), "test_queue", "deadbeef", "test")
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing job: %s", err)
-	}
-	if !dequeued1 {
-		t.Fatalf("expected job to be dequeued")
-	}
-
-	_, dequeued2, err := handler.dequeue(context.Background(), "test_queue", "deadbeef", "test")
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing job: %s", err)
-	}
-	if !dequeued2 {
-		t.Fatalf("expected a second job to be dequeued")
-	}
-
-	_, dequeued3, err := handler.dequeue(context.Background(), "test_queue", "deadbeef", "test")
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing job: %s", err)
-	}
-	if dequeued3 {
-		t.Fatalf("did not expect a third job to be dequeued")
-	}
-
-	if err := handler.markComplete(context.Background(), "test_queue", "deadbeef", 42); err != nil {
-		t.Fatalf("unexpected error completing job: %s", err)
-	}
-
-	_, dequeued4, err := handler.dequeue(context.Background(), "test_queue", "deadbeef", "test")
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing job: %s", err)
-	}
-	if !dequeued4 {
-		t.Fatalf("expected a third job to be dequeued after a release")
-	}
-}
-
 func TestAddExecutionLogEntry(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
-	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, func() {}, true, nil)
+	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
@@ -150,7 +94,6 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		QueueOptions: map[string]QueueOptions{
 			"test_queue": {Store: store, RecordTransformer: recordTransformer},
 		},
-		MaximumNumTransactions: 10,
 	}
 	handler := newHandler(options, glock.NewMockClock())
 
@@ -213,9 +156,8 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 }
 
 func TestMarkComplete(t *testing.T) {
-	var cancel int
 	store := workerstoremocks.NewMockStore()
-	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, func() { cancel++ }, true, nil)
+	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
@@ -224,7 +166,6 @@ func TestMarkComplete(t *testing.T) {
 		QueueOptions: map[string]QueueOptions{
 			"test_queue": {Store: store, RecordTransformer: recordTransformer},
 		},
-		MaximumNumTransactions: 10,
 	}
 	handler := newHandler(options, glock.NewMockClock())
 
@@ -246,10 +187,6 @@ func TestMarkComplete(t *testing.T) {
 	call := store.MarkCompleteFunc.History()[0]
 	if call.Arg1 != 42 {
 		t.Errorf("unexpected job identifier. want=%d have=%d", 42, call.Arg1)
-	}
-
-	if cancel != 1 {
-		t.Errorf("unexpected cancel call count. want=%d have=%d", 1, cancel)
 	}
 }
 
@@ -276,9 +213,8 @@ func TestMarkCompleteUnknownQueue(t *testing.T) {
 }
 
 func TestMarkErrored(t *testing.T) {
-	var cancel int
 	store := workerstoremocks.NewMockStore()
-	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, func() { cancel++ }, true, nil)
+	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
@@ -287,7 +223,6 @@ func TestMarkErrored(t *testing.T) {
 		QueueOptions: map[string]QueueOptions{
 			"test_queue": {Store: store, RecordTransformer: recordTransformer},
 		},
-		MaximumNumTransactions: 10,
 	}
 	handler := newHandler(options, glock.NewMockClock())
 
@@ -312,10 +247,6 @@ func TestMarkErrored(t *testing.T) {
 	}
 	if call.Arg2 != "OH NO" {
 		t.Errorf("unexpected job error. want=%s have=%s", "OH NO", call.Arg2)
-	}
-
-	if cancel != 1 {
-		t.Errorf("unexpected cancel call count. want=%d have=%d", 1, cancel)
 	}
 }
 
@@ -342,9 +273,8 @@ func TestMarkErroredUnknownQueue(t *testing.T) {
 }
 
 func TestMarkFailed(t *testing.T) {
-	var cancel int
 	store := workerstoremocks.NewMockStore()
-	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, func() { cancel++ }, true, nil)
+	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
@@ -353,7 +283,6 @@ func TestMarkFailed(t *testing.T) {
 		QueueOptions: map[string]QueueOptions{
 			"test_queue": {Store: store, RecordTransformer: recordTransformer},
 		},
-		MaximumNumTransactions: 10,
 	}
 	handler := newHandler(options, glock.NewMockClock())
 
@@ -378,10 +307,6 @@ func TestMarkFailed(t *testing.T) {
 	}
 	if call.Arg2 != "OH NO" {
 		t.Errorf("unexpected job error. want=%s have=%s", "OH NO", call.Arg2)
-	}
-
-	if cancel != 1 {
-		t.Errorf("unexpected cancel call count. want=%d have=%d", 1, cancel)
 	}
 }
 

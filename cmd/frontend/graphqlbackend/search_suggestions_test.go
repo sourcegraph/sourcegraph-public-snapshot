@@ -163,19 +163,16 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
 				t.Errorf("got %q, want %q", repos, want)
 			}
-			return []result.Match{
-				mkFileMatch(types.RepoName{Name: "foo-repo"}, "dir/file"),
-			}, &streaming.Stats{}, nil
+			return []result.Match{&result.RepoMatch{Name: "foo-repo", ID: 23}},
+				&streaming.Stats{},
+				nil
 		}
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
-			testSuggestions(t, "repo:foo", v, []string{"repo:foo-repo", "file:dir/file"})
+			testSuggestions(t, "repo:foo", v, []string{"repo:foo-repo"})
 			if !calledReposListRepoNames {
 				t.Error("!calledReposListRepoNames")
-			}
-			if !calledSearchFilesInRepos.Load() {
-				t.Error("!calledSearchFilesInRepos")
 			}
 		}
 	})

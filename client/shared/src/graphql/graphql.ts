@@ -4,7 +4,6 @@ import {
     useMutation as useApolloMutation,
     DocumentNode,
     ApolloClient,
-    InMemoryCache,
     createHttpLink,
     NormalizedCacheObject,
     OperationVariables,
@@ -13,6 +12,7 @@ import {
     MutationHookOptions,
     MutationTuple,
 } from '@apollo/client'
+import { GraphQLError } from 'graphql'
 import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
@@ -21,7 +21,7 @@ import { Omit } from 'utility-types'
 import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
 
-import * as GQL from './schema'
+import { cache } from './cache'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -35,7 +35,7 @@ export interface SuccessGraphQLResult<T> {
 }
 export interface ErrorGraphQLResult {
     data: undefined
-    errors: GQL.IGraphQLResponseError[]
+    errors: readonly GraphQLError[]
 }
 
 export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
@@ -54,17 +54,11 @@ export function dataOrThrowErrors<T>(result: GraphQLResult<T>): T {
     return result.data
 }
 
-export interface GraphQLError extends Error {
-    queryName: string
-}
 export const createInvalidGraphQLQueryResponseError = (queryName: string): GraphQLError =>
-    Object.assign(new Error(`Invalid GraphQL response: query ${queryName}`), {
-        queryName,
-    })
+    new GraphQLError(`Invalid GraphQL response: query ${queryName}`)
+
 export const createInvalidGraphQLMutationResponseError = (queryName: string): GraphQLError =>
-    Object.assign(new Error(`Invalid GraphQL response: mutation ${queryName}`), {
-        queryName,
-    })
+    new GraphQLError(`Invalid GraphQL response: mutation ${queryName}`)
 
 export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'body'> {
     baseUrl?: string
@@ -99,7 +93,7 @@ export function requestGraphQLCommon<T, V = object>({
 export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
     new ApolloClient({
         uri: GRAPHQL_URI,
-        cache: new InMemoryCache(),
+        cache,
         link: createHttpLink({
             uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
             headers,

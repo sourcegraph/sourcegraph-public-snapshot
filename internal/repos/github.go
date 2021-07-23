@@ -14,7 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -136,7 +135,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		searchClient = github.NewV3SearchClient(apiURL, token, cli)
 	)
 
-	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
+	if svc.NamespaceUserID == 0 {
 		for resource, monitor := range map[string]*ratelimit.Monitor{
 			"rest":    v3Client.RateLimitMonitor(),
 			"graphql": v4Client.RateLimitMonitor(),
@@ -561,49 +560,153 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 }
 
 // listSearch handles the `repositoryQuery` config option when a keyword is not present.
-// It returns the repositories resulting from from GitHub's advanced repository search
-// by hitting the /search/repositories endpoint.
-func (s *GithubSource) listSearch(ctx context.Context, query string, results chan *githubResult) {
-	s.paginate(ctx, results, func(page int) ([]*github.Repository, bool, int, error) {
-		reposPage, err := s.searchClient.ListRepositoriesForSearch(ctx, query, page)
+// It returns the repositories matching a GitHub's advanced repository search query
+// via the GraphQL API.
+func (s *GithubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
+	(&repositoryQuery{Query: q, Searcher: s.v4Client}).Do(ctx, results)
+}
+
+// GitHub was founded on February 2008, so this minimum date covers all repos
+// created on it.
+var minCreated = time.Date(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
+
+type dateRange struct{ From, To time.Time }
+
+func (r dateRange) String() string {
+	const dateFormat = "2006-01-02T15:04:05-07:00"
+
+	return fmt.Sprintf("%s..%s",
+		r.From.Format(dateFormat),
+		r.To.Format(dateFormat),
+	)
+}
+
+func (r dateRange) Size() time.Duration { return r.To.Sub(r.From) }
+
+type repositoryQuery struct {
+	Query    string
+	Created  *dateRange
+	Cursor   github.Cursor
+	First    int
+	Limit    int
+	Searcher *github.V4Client
+}
+
+func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
+	if q.First == 0 {
+		q.First = 100
+	}
+
+	if q.Limit == 0 {
+		// Default GitHub API search results limit per search.
+		q.Limit = 1000
+	}
+
+	for {
+		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+			Query: q.String(),
+			First: q.First,
+			After: q.Cursor,
+		})
 		if err != nil {
-			return nil, false, 0, errors.Wrapf(err, "failed to list GitHub repositories for search: page=%d, searchString=%q", page, query)
+			results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}
+			return
 		}
 
-		if reposPage.TotalCount > 1000 {
-			// GitHub's advanced repository search will only
-			// return 1000 results. We specially handle this case
-			// to ensure the admin gets a detailed error
-			// message. https://github.com/sourcegraph/sourcegraph/issues/2562
-			return nil, false, 0, errors.Errorf(`repositoryQuery %q would return %d results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: {"repositoryQuery": %s}`, query, reposPage.TotalCount, exampleRepositoryQuerySplit(query))
+		switch {
+		case res.TotalCount > q.Limit:
+			log15.Info(
+				fmt.Sprintf("repositoryQuery matched more than %d results, refining it and retrying", q.Limit),
+				"query",
+				q.String(),
+			)
+
+			if q.Refine() {
+				log15.Info("repositoryQuery refined", "query", q)
+				continue
+			}
+
+			results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}
+			return
+		case res.TotalCount < q.First:
+			log15.Info(
+				fmt.Sprintf("repositoryQuery matched less than %d results, expanding it and retrying", q.First),
+				"query",
+				q.String(),
+			)
+
+			if q.Expand() {
+				log15.Info("repositoryQuery expanded", "query", q)
+				continue
+			}
 		}
 
-		repos, hasNext := reposPage.Repos, reposPage.HasNextPage
-		remaining, reset, retry, ok := s.searchClient.RateLimitMonitor().Get()
-		log15.Debug(
-			"github sync: ListRepositoriesForSearch",
-			"searchString", query,
-			"repos", len(repos),
-			"rateLimitRemaining", remaining,
-			"rateLimitReset", reset,
-			"retryAfter", retry,
-		)
+		log15.Info("repositoryQuery matched", "query", q, "total", res.TotalCount, "page", len(res.Repos))
 
-		// GitHub search has vastly different rate limits to
-		// the normal GitHub API (30req/m vs
-		// 5000req/h). RecommendedWaitForBackgroundOp has
-		// heuristics tuned for the normal API, part of which
-		// is to not sleep if we have ample rate limit left.
-		//
-		// So we only let the heuristic kick in if we have
-		// less than 5 requests left.
-		var cost int
-		if retry > 0 || (ok && remaining < 5) {
-			cost = 1
+		for i := range res.Repos {
+			results <- &githubResult{repo: &res.Repos[i]}
 		}
 
-		return repos, hasNext, cost, nil
-	})
+		if res.EndCursor != "" {
+			q.Cursor = res.EndCursor
+		} else if !q.Next() {
+			return
+		}
+	}
+}
+
+func (s *repositoryQuery) Next() bool {
+	if s.Created == nil || !s.Created.From.After(minCreated) {
+		return false
+	}
+
+	s.Cursor = ""
+
+	size := s.Created.Size()
+	s.Created.To = s.Created.From.Add(-time.Second)
+	if s.Created.From = s.Created.To.Add(-size); s.Created.From.Before(minCreated) {
+		s.Created.From = minCreated
+	}
+
+	return true
+}
+
+// Refine does one pass at refining the query to match <= 1000 repos in order
+// to avoid hitting the GitHub search API 1000 results limit, which would cause
+// use to miss matches.
+func (s *repositoryQuery) Refine() bool {
+	if s.Created == nil {
+		s.Created = &dateRange{From: minCreated, To: time.Now().UTC()}
+		return true
+	}
+
+	if s.Created.Size() < 2*time.Second {
+		// Can't refine further than 1 second
+		return false
+	}
+
+	s.Created.From = s.Created.From.Add(s.Created.Size() / 2)
+	return true
+}
+
+// Expand does one pass at expanding the query to match closer to 1000 repos, but still less.
+// This is so we maximize the number of matches in query search.
+func (s *repositoryQuery) Expand() bool {
+	if s.Created == nil || !s.Created.From.After(minCreated) {
+		// Can't expand further.
+		return false
+	}
+
+	s.Created.From = s.Created.From.Add(-(s.Created.Size() / 2))
+	return true
+}
+
+func (s repositoryQuery) String() string {
+	q := s.Query
+	if s.Created != nil {
+		q += " created:" + s.Created.String()
+	}
+	return q
 }
 
 // regOrg is a regular expression that matches the pattern `org:<org-name>`

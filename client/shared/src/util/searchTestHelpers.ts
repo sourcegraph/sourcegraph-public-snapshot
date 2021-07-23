@@ -5,10 +5,10 @@ import sinon from 'sinon'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
-import { AggregateStreamingSearchResults, FileLineMatch, RepositoryMatch } from '../search/stream'
+import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
 
-export const RESULT: FileLineMatch = {
-    type: 'file',
+export const RESULT: ContentMatch = {
+    type: 'content',
     name: '.travis.yml',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
@@ -25,8 +25,8 @@ export const REPO_MATCH_RESULT: RepositoryMatch = {
     repository: 'github.com/golang/oauth2',
 }
 
-export const MULTIPLE_MATCH_RESULT: FileLineMatch = {
-    type: 'file',
+export const MULTIPLE_MATCH_RESULT: ContentMatch = {
+    type: 'content',
     name: 'clientcredentials/clientcredentials_test.go',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
@@ -119,7 +119,7 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
         RESULT,
         MULTIPLE_MATCH_RESULT,
         {
-            type: 'file',
+            type: 'content',
             name: 'example_test.go',
             version: 'some-branch',
             repository: 'github.com/golang/oauth2',

@@ -10,9 +10,6 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// UploadHeartbeatInterval is the duration between heartbeat updates to the upload job records.
-const UploadHeartbeatInterval = time.Second
-
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an
 // upload as "processing" and locking the upload row during processing. An unlocked row that
 // is marked as processing likely indicates that the worker that dequeued the upload has died.
@@ -25,13 +22,12 @@ const StalledUploadMaxAge = time.Second * 5
 const UploadMaxNumResets = 3
 
 var uploadWorkerStoreOptions = dbworkerstore.Options{
-	Name:              "precise_code_intel_upload_worker_store",
+	Name:              "codeintel_upload",
 	TableName:         "lsif_uploads",
 	ViewName:          "lsif_uploads_with_repository_name u",
 	ColumnExpressions: uploadColumnsWithNullRank,
 	Scan:              scanFirstUploadRecord,
 	OrderByExpression: sqlf.Sprintf("u.uploaded_at, u.id"),
-	HeartbeatInterval: UploadHeartbeatInterval,
 	StalledMaxAge:     StalledUploadMaxAge,
 	MaxNumResets:      UploadMaxNumResets,
 }
@@ -39,9 +35,6 @@ var uploadWorkerStoreOptions = dbworkerstore.Options{
 func WorkerutilUploadStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
 	return dbworkerstore.NewWithMetrics(s.Handle(), uploadWorkerStoreOptions, observationContext)
 }
-
-// IndexHeartbeatInterval is the duration between heartbeat updates to the index job records.
-const IndexHeartbeatInterval = time.Second
 
 // StalledIndexMaxAge is the maximum allowable duration between updating the state of an
 // index as "processing" and locking the index row during processing. An unlocked row that
@@ -55,13 +48,12 @@ const StalledIndexMaxAge = time.Second * 5
 const IndexMaxNumResets = 3
 
 var indexWorkerStoreOptions = dbworkerstore.Options{
-	Name:              "precise_code_intel_index_worker_store",
+	Name:              "codeintel_index",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
 	ColumnExpressions: indexColumnsWithNullRank,
 	Scan:              scanFirstIndexRecord,
 	OrderByExpression: sqlf.Sprintf("u.queued_at, u.id"),
-	HeartbeatInterval: IndexHeartbeatInterval,
 	StalledMaxAge:     StalledIndexMaxAge,
 	MaxNumResets:      IndexMaxNumResets,
 }
@@ -83,7 +75,7 @@ const StalledDependencyIndexingJobMaxAge = time.Second * 5
 const DependencyIndexingJobMaxNumResets = 3
 
 var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
-	Name:              "precise_code_intel_dependency_indexing_scheduler_worker_store",
+	Name:              "codeintel_dependency_index",
 	TableName:         "lsif_dependency_indexing_jobs j",
 	ColumnExpressions: dependencyIndexingJobColumns,
 	Scan:              scanFirstDependencyIndexingJobRecord,
@@ -92,6 +84,6 @@ var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumResets:      DependencyIndexingJobMaxNumResets,
 }
 
-func WorkerutilDependencyIndexingJobStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+func WorkerutilDependencyIndexStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
 	return dbworkerstore.NewWithMetrics(s.Handle(), dependencyIndexingJobWorkerStoreOptions, observationContext)
 }

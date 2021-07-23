@@ -30,4 +30,3 @@ var _ goroutine.Handler = &handlerWrapper{}
 
 func (hw *handlerWrapper) Handle(ctx context.Context) error { return hw.handler.cleanup(ctx) }
 func (hw *handlerWrapper) HandleError(err error)            { log15.Error("Failed to requeue jobs", "err", err) }
-func (hw *handlerWrapper) OnShutdown()                      { hw.handler.shutdown() }

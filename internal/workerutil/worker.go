@@ -46,6 +46,11 @@ type WorkerOptions struct {
 	// Interval is the frequency to poll the underlying store for new work.
 	Interval time.Duration
 
+	// HeartbeatInterval is the interval between heartbeat updates to a job's last_heartbeat_at field. This
+	// field is periodically updated while being actively processed to signal to other workers that the
+	// record is neither pending nor abandoned.
+	HeartbeatInterval time.Duration
+
 	// Metrics configures logging, tracing, and metrics for the work loop.
 	Metrics WorkerMetrics
 }
@@ -155,7 +160,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Select a queued record to process and the transaction that holds it
-	record, cancel, dequeued, err := w.store.Dequeue(w.ctx, w.options.WorkerHostname, extraDequeueArguments)
+	record, dequeued, err := w.store.Dequeue(w.ctx, w.options.WorkerHostname, extraDequeueArguments)
 	if err != nil {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
@@ -163,6 +168,26 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		// Nothing to process
 		return false, nil
 	}
+
+	// Create a background routine that periodically writes the current time to the record.
+	// This will keep a record claimed by an active worker for a small amount of time so that
+	// it will not be processed by a second worker concurrently.
+
+	heartbeatCtx, cancel := context.WithCancel(w.ctx)
+	go func() {
+		for {
+			select {
+			case <-heartbeatCtx.Done():
+				return
+			case <-w.clock.After(w.options.HeartbeatInterval):
+			}
+
+			id := record.RecordID()
+			if err := w.store.Heartbeat(heartbeatCtx, id); err != nil {
+				log15.Error("Failed to refresh last_heartbeat_at", "name", w.options.Name, "id", id, "error", err)
+			}
+		}
+	}()
 
 	w.options.Metrics.numJobs.Inc()
 	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())

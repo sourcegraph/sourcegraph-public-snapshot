@@ -340,20 +340,20 @@ describe('Search', () => {
                     data: [
                         { type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
                             name: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                         },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
                             name: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             version: 'abcd',
                         },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
                             name: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
@@ -519,7 +519,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await resetCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await driver.page.waitForSelector('.create-code-monitor-button', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
 
@@ -529,7 +529,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await resetCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await driver.page.waitForSelector('.create-code-monitor-button', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeTruthy()
         })
 
@@ -539,7 +539,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await resetCreateCodeMonitorFeatureTour(false)
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await driver.page.waitForSelector('.create-code-monitor-button', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
     })
