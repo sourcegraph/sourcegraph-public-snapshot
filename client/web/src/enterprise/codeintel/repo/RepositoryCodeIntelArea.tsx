@@ -136,7 +136,7 @@ export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeInte
     useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Intelligence' }), []))
 
     return (
-        <div className="repo-settings-area container d-flex mt-3">
+        <div className="container d-flex mt-3">
             <CodeIntelSidebar className="flex-0 mr-3" codeIntelSidebarGroups={sidebarRoutes} match={match} {...props} />
 
             <div className="flex-bounded">
