@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -30,15 +29,6 @@ type QueueOptions struct {
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
 	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
-}
-
-type executorMeta struct {
-	jobs []jobMeta
-}
-
-type jobMeta struct {
-	recordID int
-	started  time.Time
 }
 
 func newHandler(options Options, queueOptions QueueOptions) *handler {
