@@ -1002,13 +1002,19 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 	modified := false
 	seen := make(map[api.RepoID]struct{})
 	errs := new(multierror.Error)
+	fatal := func(err error) bool {
+		return errcode.IsUnauthorized(err) ||
+			errcode.IsForbidden(err) ||
+			errcode.IsAccountSuspended(err)
+	}
 
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
 	for res := range results {
 		if err := res.Err; err != nil {
 			multierror.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
-			if errcode.IsUnauthorized(errs) || errcode.IsForbidden(errs) || errcode.IsAccountSuspended(errs) {
+
+			if fatal(err) {
 				// Delete all external service repos of this external service
 				seen = map[api.RepoID]struct{}{}
 				break
@@ -1021,8 +1027,9 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 			continue
 		}
 
-		diff, err := s.sync(ctx, tx, svc, sourced)
-		if err != nil {
+		var diff Diff
+		if diff, err = s.sync(ctx, tx, svc, sourced); err != nil {
+			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
 			multierror.Append(errs, err)
 			continue
 		}
@@ -1034,10 +1041,17 @@ func (s *Syncer) StreamingSyncExternalService(ctx context.Context, tx *Store, ex
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 	}
 
-	// Remove associations and any repos that are no longer associated with any external service.
-	deleted, err := s.delete(ctx, tx, svc, seen)
-	if err != nil {
-		multierror.Append(errs, errors.Wrap(err, "some repos couldn't be deleted"))
+	deleted := 0
+	if err = errs.ErrorOrNil(); err == nil || fatal(err) {
+		// Remove associations and any repos that are no longer associated with any external service.
+		//
+		// We don't want to delete all repos that weren't seen if we had a lot of spurious errors since that could
+		// cause lots of repos to be deleted, only to be added the next sync. We delete only if we had no errors or we
+		// had one of the fatal errors.
+		deleted, err = s.delete(ctx, tx, svc, seen)
+		if err != nil {
+			multierror.Append(errs, errors.Wrap(err, "some repos couldn't be deleted"))
+		}
 	}
 
 	now := s.Now()
@@ -1073,7 +1087,7 @@ func (s *Syncer) userReposMaxPerUser() uint64 {
 // syncs a sourced repo of a given external service, returning a diff with a single repo.
 func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService, sourced *types.Repo) (d Diff, err error) {
 	defer func() {
-		if s.Synced != nil && d.Len() > 0 {
+		if s.Synced != nil && d.Len() > 0 && err == nil {
 			select {
 			case <-ctx.Done():
 			case s.Synced <- d:
@@ -1090,7 +1104,7 @@ func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService
 			// We must commit the transaction before publishing to s.Synced
 			// so that gitserver finds the repo in the database.
 			if txerr := tx.Done(err); txerr != nil {
-				s.log().Error("syncer: failed to close transaction, skipping", "repo", sourced.Name, "error", txerr)
+				err = multierror.Append(txerr, err)
 			}
 		}()
 	}
