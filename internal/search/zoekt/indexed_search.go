@@ -314,7 +314,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, typ Ind
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
+	queryExceptRepos, err := search.QueryToZoektQuery(args.PatternInfo, typ == SymbolRequest)
 	if err != nil {
 		return err
 	}
@@ -448,7 +448,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
+	queryExceptRepos, err := search.QueryToZoektQuery(args.PatternInfo, typ == SymbolRequest)
 	if err != nil {
 		return err
 	}
@@ -748,83 +748,6 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	}()
 
 	return cNew, cancel
-}
-
-func queryToZoektQuery(query *search.TextPatternInfo, typ IndexedRequestType) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
-	var q zoektquery.Q
-	var err error
-	if query.IsRegExp {
-		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
-		contentOnly := !query.PatternMatchesPath && query.PatternMatchesContent
-		q, err = parseRe(query.Pattern, fileNameOnly, contentOnly, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		q = &zoektquery.Substring{
-			Pattern:       query.Pattern,
-			CaseSensitive: query.IsCaseSensitive,
-
-			FileName: true,
-			Content:  true,
-		}
-	}
-
-	if query.IsNegated {
-		q = &zoektquery.Not{Child: q}
-	}
-
-	if typ == SymbolRequest {
-		// Tell zoekt q must match on symbols
-		q = &zoektquery.Symbol{
-			Expr: q,
-		}
-	}
-
-	and = append(and, q)
-
-	// zoekt also uses regular expressions for file paths
-	// TODO PathPatternsAreCaseSensitive
-	// TODO whitespace in file path patterns?
-	for _, p := range query.IncludePatterns {
-		q, err := FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if query.ExcludePattern != "" {
-		q, err := FileRe(query.ExcludePattern, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: q})
-	}
-
-	// For conditionals that happen on a repo we can use type:repo queries. eg
-	// (type:repo file:foo) (type:repo file:bar) will match all repos which
-	// contain a filename matching "foo" and a filename matchinb "bar".
-	//
-	// Note: (type:repo file:foo file:bar) will only find repos with a
-	// filename containing both "foo" and "bar".
-	for _, p := range query.FilePatternsReposMustInclude {
-		q, err := FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q})
-	}
-	for _, p := range query.FilePatternsReposMustExclude {
-		q, err := FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q}})
-	}
-
-	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
