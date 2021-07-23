@@ -30,10 +30,10 @@ export interface ButtonProps
 /**
  * Simple button.
  *
- * Can be configured to be styled as different button variants.
+ * Style can be configured using different button `variant`s.
  *
  * Buttons should be used to allow users to trigger specific actions on the page.
- * Always be mindful of how intent is signalled to the user when using Buttons. We should consider the correct Button `variant` for each action.
+ * Always be mindful of how intent is signalled to the user when using buttons. We should consider the correct button `variant` for each action.
  *
  * Some examples:
  * - The main action a user should take on the page should usually be styled with the `primary` variant.
