@@ -13,8 +13,6 @@ func Executor() *monitoring.Container {
 		queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|executor-queue)"
 	)
 
-	filters := []string{`queue=~"${queue:regex}"`}
-
 	return &monitoring.Container{
 		Name:        "executor",
 		Title:       "Executor",
@@ -36,135 +34,12 @@ func Executor() *monitoring.Container {
 			},
 		},
 		Groups: []monitoring.Group{
-			// src_executor_total
-			// src_executor_processor_total
-			shared.Queue.NewGroup(queueContainerName, monitoring.ObservableOwnerCodeIntel, shared.QueueSizeGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "executor",
-					DescriptionRoot: "Executor jobs",
-
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "executor",
-						MetricDescriptionRoot: "unprocessed executor job",
-						Filters:               filters,
-					},
-				},
-
-				QueueSize: shared.NoAlertsOption("none"),
-				QueueGrowthRate: shared.NoAlertsOption(`
-					This value compares the rate of enqueues against the rate of finished jobs for the selected queue.
-
-						- A value < than 1 indicates that process rate > enqueue rate
-						- A value = than 1 indicates that process rate = enqueue rate
-						- A value > than 1 indicates that process rate < enqueue rate
-				`),
-			}),
-
-			// src_executor_processor_total
-			// src_executor_processor_duration_seconds_bucket
-			// src_executor_processor_errors_total
-			// src_executor_processor_handlers
-			shared.Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.WorkerutilGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "executor",
-					DescriptionRoot: "Executor jobs",
-
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "executor",
-						MetricDescriptionRoot: "handler",
-						Filters:               filters,
-					},
-				},
-
-				Total:    shared.NoAlertsOption("none"),
-				Duration: shared.NoAlertsOption("none"),
-				Errors:   shared.NoAlertsOption("none"),
-				Handlers: shared.NoAlertsOption("none"),
-			}),
-
-			// src_apiworker_apiclient_total
-			// src_apiworker_apiclient_duration_seconds_bucket
-			// src_apiworker_apiclient_errors_total
-			shared.Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ObservationGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "executor",
-					DescriptionRoot: "Queue API client",
-					Hidden:          true,
-
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "apiworker_apiclient",
-						MetricDescriptionRoot: "client",
-						Filters:               nil, // note: shared between queues
-					},
-				},
-
-				Total:    shared.NoAlertsOption("none"),
-				Duration: shared.NoAlertsOption("none"),
-				Errors:   shared.NoAlertsOption("none"),
-			}),
-
-			// src_apiworker_command_total
-			// src_apiworker_command_duration_seconds_bucket
-			// src_apiworker_command_errors_total
-			shared.Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ObservationGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "executor",
-					DescriptionRoot: "Subprocess execution (for job setup)",
-					Hidden:          true,
-
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "apiworker_command",
-						MetricDescriptionRoot: "command",
-						Filters:               []string{`op=~"setup.*"`}, // note: shared between queues
-					},
-				},
-
-				Total:    shared.NoAlertsOption("none"),
-				Duration: shared.NoAlertsOption("none"),
-				Errors:   shared.NoAlertsOption("none"),
-			}),
-
-			// src_apiworker_command_total
-			// src_apiworker_command_duration_seconds_bucket
-			// src_apiworker_command_errors_total
-			shared.Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ObservationGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "executor",
-					DescriptionRoot: "Subprocess execution (for job execution)",
-					Hidden:          true,
-
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "apiworker_command",
-						MetricDescriptionRoot: "command",
-						Filters:               []string{`op=~"exec.*"`}, // note: shared between queues
-					},
-				},
-
-				Total:    shared.NoAlertsOption("none"),
-				Duration: shared.NoAlertsOption("none"),
-				Errors:   shared.NoAlertsOption("none"),
-			}),
-
-			// src_apiworker_command_total
-			// src_apiworker_command_duration_seconds_bucket
-			// src_apiworker_command_errors_total
-			shared.Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ObservationGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "executor",
-					DescriptionRoot: "Subprocess execution (for job teardown)",
-					Hidden:          true,
-
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "apiworker_command",
-						MetricDescriptionRoot: "command",
-						Filters:               []string{`op=~"teardown.*"`}, // note: shared between queues
-					},
-				},
-
-				Total:    shared.NoAlertsOption("none"),
-				Duration: shared.NoAlertsOption("none"),
-				Errors:   shared.NoAlertsOption("none"),
-			}),
+			shared.CodeIntelligence.NewExecutorQueueGroup(queueContainerName),
+			shared.CodeIntelligence.NewExecutorProcessorGroup(containerName),
+			shared.CodeIntelligence.NewExecutorAPIClientGroup(containerName),
+			shared.CodeIntelligence.NewExecutorSetupCommandGroup(containerName),
+			shared.CodeIntelligence.NewExecutorExecutionCommandGroup(containerName),
+			shared.CodeIntelligence.NewExecutorTeardownCommandGroup(containerName),
 
 			// Resource monitoring
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
