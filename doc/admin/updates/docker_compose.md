@@ -4,7 +4,7 @@ This document describes the exact changes needed to update a [Docker Compose Sou
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 **Always refer to this page before upgrading Sourcegraph**, as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-Also refer to the [upgrade guide](../install/docker-compose/operations.md#upgrade).
+After checking the relevant update notes here, refer to the [upgrade guide](../install/docker-compose/operations.md#upgrade) to upgrade your instance.
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
@@ -33,13 +33,10 @@ This upgrade adds a new `worker` service that runs a number of background jobs t
 
 ## 3.27 -> 3.28
 
-TODO
+- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.27).*
 
-## Unreleased
-
-- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
 ## 3.26 -> 3.27
 
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
