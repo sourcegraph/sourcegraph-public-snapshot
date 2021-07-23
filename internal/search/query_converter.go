@@ -2,6 +2,7 @@ package search
 
 import (
 	"regexp"
+	"regexp/syntax"
 	"strconv"
 	"strings"
 	"time"
@@ -10,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+
+	zoekt "github.com/google/zoekt/query"
 )
 
 // unionRegexp separates values with a | operator to create a string
@@ -167,4 +170,119 @@ func TimeoutDuration(b query.Basic) time.Duration {
 		d = maxTimeout
 	}
 	return d
+}
+
+func FileRe(pattern string, queryIsCaseSensitive bool) (zoekt.Q, error) {
+	return parseRe(pattern, true, false, queryIsCaseSensitive)
+}
+
+func noOpAnyChar(re *syntax.Regexp) {
+	if re.Op == syntax.OpAnyChar {
+		re.Op = syntax.OpAnyCharNotNL
+	}
+	for _, s := range re.Sub {
+		noOpAnyChar(s)
+	}
+}
+
+func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoekt.Q, error) {
+	// these are the flags used by zoekt, which differ to searcher.
+	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return nil, err
+	}
+	noOpAnyChar(re)
+	// zoekt decides to use its literal optimization at the query parser
+	// level, so we check if our regex can just be a literal.
+	if re.Op == syntax.OpLiteral {
+		return &zoekt.Substring{
+			Pattern:       string(re.Rune),
+			CaseSensitive: queryIsCaseSensitive,
+			Content:       contentOnly,
+			FileName:      filenameOnly,
+		}, nil
+	}
+	return &zoekt.Regexp{
+		Regexp:        re,
+		CaseSensitive: queryIsCaseSensitive,
+		Content:       contentOnly,
+		FileName:      filenameOnly,
+	}, nil
+}
+
+func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
+	var and []zoekt.Q
+
+	var q zoekt.Q
+	var err error
+	if p.IsRegExp {
+		fileNameOnly := p.PatternMatchesPath && !p.PatternMatchesContent
+		contentOnly := !p.PatternMatchesPath && p.PatternMatchesContent
+		q, err = parseRe(p.Pattern, fileNameOnly, contentOnly, p.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		q = &zoekt.Substring{
+			Pattern:       p.Pattern,
+			CaseSensitive: p.IsCaseSensitive,
+
+			FileName: true,
+			Content:  true,
+		}
+	}
+
+	if p.IsNegated {
+		q = &zoekt.Not{Child: q}
+	}
+
+	if forSymbols {
+		// Tell zoekt q must match on symbols
+		q = &zoekt.Symbol{
+			Expr: q,
+		}
+	}
+
+	and = append(and, q)
+
+	// zoekt also uses regular expressions for file paths
+	// TODO PathPatternsAreCaseSensitive
+	// TODO whitespace in file path patterns?
+	for _, i := range p.IncludePatterns {
+		q, err := FileRe(i, p.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, q)
+	}
+	if p.ExcludePattern != "" {
+		q, err := FileRe(p.ExcludePattern, p.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoekt.Not{Child: q})
+	}
+
+	// For conditionals that happen on a repo we can use type:repo queries. eg
+	// (type:repo file:foo) (type:repo file:bar) will match all repos which
+	// contain a filename matching "foo" and a filename matchinb "bar".
+	//
+	// Note: (type:repo file:foo file:bar) will only find repos with a
+	// filename containing both "foo" and "bar".
+	for _, i := range p.FilePatternsReposMustInclude {
+		q, err := FileRe(i, p.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoekt.Type{Type: zoekt.TypeRepo, Child: q})
+	}
+	for _, i := range p.FilePatternsReposMustExclude {
+		q, err := FileRe(i, p.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoekt.Not{Child: &zoekt.Type{Type: zoekt.TypeRepo, Child: q}})
+	}
+
+	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
 }
