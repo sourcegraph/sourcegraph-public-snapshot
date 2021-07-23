@@ -11,7 +11,7 @@ RUN apk add --no-cache nss su-exec shadow &&\
     chown -R postgres:postgres /var/lib/postgresql &&\
     chown -R postgres:postgres /var/run/postgresql
 
-RUN apk add --upgrade --no-cache libxml2=2.9.10-r7
+RUN apk add --upgrade --no-cache libxml2=2.9.10-r7 libgcrypt=1.8.8-r0
 
 ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \
