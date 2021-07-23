@@ -105,10 +105,6 @@ type jvmDependencyNotFound struct {
 	dependencies []reposource.MavenDependency
 }
 
-func (jvmDependencyNotFound) NotFound() bool {
-	return true
-}
-
 func (e *jvmDependencyNotFound) Error() string {
 	return fmt.Sprintf("not found: jvm dependency '%v'", e.dependencies)
 }
