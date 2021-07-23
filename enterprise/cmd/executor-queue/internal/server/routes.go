@@ -14,39 +14,25 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
-type metrics struct {
-	NumJobs      int
-	NumExecutors int
-}
+func setupRoutes(queueOptionsMap map[string]QueueOptions) func(router *mux.Router) {
+	return func(router *mux.Router) {
+		for name, queueOptions := range queueOptionsMap {
+			h := newHandler(queueOptions)
 
-func setupRoutes(options Options, queueOptionsMap map[string]QueueOptions) (func() map[string]metrics, func(router *mux.Router)) {
-	hs := make(map[string]*handler)
-	return func() (m map[string]metrics) {
-			m = make(map[string]metrics)
-			for name, h := range hs {
-				numJobs, numExecutors := h.scrapeMetrics()
-				m[name] = metrics{NumJobs: numJobs, NumExecutors: numExecutors}
+			subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
+			routes := map[string]func(w http.ResponseWriter, r *http.Request){
+				"dequeue":              h.handleDequeue,
+				"addExecutionLogEntry": h.handleAddExecutionLogEntry,
+				"markComplete":         h.handleMarkComplete,
+				"markErrored":          h.handleMarkErrored,
+				"markFailed":           h.handleMarkFailed,
+				"heartbeat":            h.handleHeartbeat,
 			}
-			return m
-		}, func(router *mux.Router) {
-			for name, queueOptions := range queueOptionsMap {
-				h := newHandler(options, queueOptions)
-				hs[name] = h
-
-				subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
-				routes := map[string]func(w http.ResponseWriter, r *http.Request){
-					"dequeue":              h.handleDequeue,
-					"addExecutionLogEntry": h.handleAddExecutionLogEntry,
-					"markComplete":         h.handleMarkComplete,
-					"markErrored":          h.handleMarkErrored,
-					"markFailed":           h.handleMarkFailed,
-					"heartbeat":            h.handleHeartbeat,
-				}
-				for path, handler := range routes {
-					subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
-				}
+			for path, handler := range routes {
+				subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
 			}
 		}
+	}
 }
 
 // POST /{queueName}/dequeue

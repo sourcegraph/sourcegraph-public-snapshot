@@ -13,13 +13,7 @@ import (
 )
 
 type handler struct {
-	options      Options
 	queueOptions QueueOptions
-}
-
-type Options struct {
-	// Port is the port on which to listen for HTTP connections.
-	Port int
 }
 
 type QueueOptions struct {
@@ -31,9 +25,8 @@ type QueueOptions struct {
 	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
 }
 
-func newHandler(options Options, queueOptions QueueOptions) *handler {
+func newHandler(queueOptions QueueOptions) *handler {
 	return &handler{
-		options:      options,
 		queueOptions: queueOptions,
 	}
 }
@@ -90,32 +83,4 @@ func (h *handler) markErrored(ctx context.Context, executorName string, jobID in
 func (h *handler) markFailed(ctx context.Context, executorName string, jobID int, errorMessage string) error {
 	_, err := h.queueOptions.Store.MarkFailed(ctx, jobID, errorMessage, store.MarkFinalOptions{WorkerHostname: executorName})
 	return err
-}
-
-func (h *handler) scrapeMetrics() (numJobs int, numExecutors int) {
-	var (
-		JobIDs        []int
-		ExecutorNames = make(map[string]struct{})
-	)
-
-	// TODO: Reimplement metrics scraping from the database.
-	// SELECT
-	// 	COUNT(id)
-	// FROM
-	// 	{table_name}
-	// GROUP BY worker_hostname
-	// for executorName, meta := range h.executors {
-	// 	for _, job := range meta.jobs {
-	// 		JobIDs = append(JobIDs, job.recordID)
-	// 		ExecutorNames[executorName] = struct{}{}
-	// 	}
-	// }
-	// TODO: We don't record executors anymore as we don't hold them in memory,
-	// so we cannot tell when whether an executor is not getting a job or it is dead
-	// right now. We want to build out a separate store for executors so they're persisted
-	// for a while, so we can build some admin UI for viewing their status.
-	// Maybe it is fine until then to not have this number and report it again then.
-	// Otherwise we need to hold it in the DB now.
-
-	return len(JobIDs), len(ExecutorNames)
 }

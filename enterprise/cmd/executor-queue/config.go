@@ -15,8 +15,8 @@ func (c *Config) Load() {
 	c.Port = c.GetInt("EXECUTOR_QUEUE_API_PORT", "3191", "The port to listen on.")
 }
 
-func (c *Config) ServerOptions() apiserver.Options {
-	return apiserver.Options{
+func (c *Config) ServerOptions() apiserver.ServerOptions {
+	return apiserver.ServerOptions{
 		Port: c.Port,
 	}
 }

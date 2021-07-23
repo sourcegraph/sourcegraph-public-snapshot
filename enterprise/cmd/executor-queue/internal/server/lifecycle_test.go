@@ -33,7 +33,7 @@ func TestHeartbeat(t *testing.T) {
 		return knownIDs, nil
 	})
 
-	handler := newHandler(Options{}, QueueOptions{Store: store1, RecordTransformer: recordTransformer})
+	handler := newHandler(QueueOptions{Store: store1, RecordTransformer: recordTransformer})
 
 	_, dequeued1, _ := handler.dequeue(context.Background(), "deadbeef", "test")
 	_, dequeued2, _ := handler.dequeue(context.Background(), "deadveal", "test")

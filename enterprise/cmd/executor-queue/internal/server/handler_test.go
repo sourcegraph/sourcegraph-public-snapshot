@@ -34,7 +34,7 @@ func TestDequeue(t *testing.T) {
 		return transformedJob, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer})
+	handler := newHandler(QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -52,7 +52,7 @@ func TestDequeue(t *testing.T) {
 }
 
 func TestDequeueNoRecord(t *testing.T) {
-	handler := newHandler(Options{}, QueueOptions{Store: workerstoremocks.NewMockStore()})
+	handler := newHandler(QueueOptions{Store: workerstoremocks.NewMockStore()})
 
 	_, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -70,7 +70,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer})
+	handler := newHandler(QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -103,7 +103,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.AddExecutionLogEntryFunc.SetDefaultReturn(ErrUnknownJob)
-	handler := newHandler(Options{}, QueueOptions{Store: store})
+	handler := newHandler(QueueOptions{Store: store})
 
 	entry := workerutil.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
@@ -121,7 +121,7 @@ func TestMarkComplete(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer})
+	handler := newHandler(QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -147,7 +147,7 @@ func TestMarkComplete(t *testing.T) {
 func TestMarkCompleteUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkCompleteFunc.SetDefaultReturn(false, ErrUnknownJob)
-	handler := newHandler(Options{}, QueueOptions{Store: store})
+	handler := newHandler(QueueOptions{Store: store})
 
 	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
@@ -161,7 +161,7 @@ func TestMarkErrored(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer})
+	handler := newHandler(QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
@@ -190,7 +190,7 @@ func TestMarkErrored(t *testing.T) {
 func TestMarkErroredUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkErroredFunc.SetDefaultReturn(false, ErrUnknownJob)
-	handler := newHandler(Options{}, QueueOptions{Store: store})
+	handler := newHandler(QueueOptions{Store: store})
 
 	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
@@ -204,7 +204,7 @@ func TestMarkFailed(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	handler := newHandler(Options{}, QueueOptions{Store: store, RecordTransformer: recordTransformer})
+	handler := newHandler(QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
 	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", "test")
 	if err != nil {
