@@ -79,8 +79,8 @@ func coursierScript(t *testing.T, dir string) string {
 	assert.Nil(t, err)
 	defer coursierPath.Close()
 	script := fmt.Sprintf(`#!/usr/bin/env bash
-ARG="$3"
-CLASSIFIER="$5"
+ARG="$4"
+CLASSIFIER="$6"
 if [[ "$ARG" =~ "%s" ]]; then
   if [[ "$CLASSIFIER" =~ "sources" ]]; then
     echo "%s"
