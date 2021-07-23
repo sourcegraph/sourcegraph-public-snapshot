@@ -127,11 +127,15 @@ export const useConnection = <TResult, TVariables, TData>({
                 }
 
                 if (cursor) {
-                    // Cursor paging so append to results
+                    // Update resultant data in the cache by prepending the `previousResult`s to the
+                    // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
+                    // order to access and modify the actual `nodes` in the connection response because we
+                    // don't know the exact response structure
                     const previousNodes = getConnection({ data: previousResult }).nodes
                     getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
                 } else {
-                    // Batch-based pagination, update `first` to fetch more results next time
+                    // With batch-based pagination, we have all the results already in `fetchMoreResult`,
+                    // we just need to update `first` to fetch more results next time
                     firstReference.current.actual *= 2
                 }
 
