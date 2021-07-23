@@ -273,32 +273,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         [props.location, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService]
     )
 
-    const extendButton = useMemo(
-        () =>
-            // Only show extend button to signed out users that have the feature flag enabled
-            showActionButtonExperimentalVersion ? (
-                <li className="mr-2">
-                    <ExperimentalActionButton
-                        showExperimentalVersion={showActionButtonExperimentalVersion}
-                        nonExperimentalLinkTo="/extensions"
-                        button={
-                            <>
-                                <PuzzleOutlineIcon className="icon-inline mr-1" />
-                                Extend
-                            </>
-                        }
-                        icon={<ExtensionRadialGradientIcon />}
-                        title="Extend your search experience"
-                        copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
-                        source="Extend"
-                        returnTo="/extensions"
-                        telemetryService={props.telemetryService}
-                    />
-                </li>
-            ) : null,
-        [showActionButtonExperimentalVersion, props.telemetryService]
-    )
-
     const extraContext = useMemo(
         () => ({
             searchQuery: props.query || null,
@@ -344,8 +318,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         showLoadingSpinnerDuringExecution={true}
                         actionItemClass="btn btn-outline-secondary mr-2 text-decoration-none btn-sm"
                     />
-
-                    {extendButton}
 
                     {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
