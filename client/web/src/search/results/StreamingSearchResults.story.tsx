@@ -47,7 +47,12 @@ const defaultProps: StreamingSearchResultsProps = {
 
     history,
     location: history.location,
-    authenticatedUser: null,
+    authenticatedUser: {
+        url: '/users/alice',
+        displayName: 'Alice',
+        username: 'alice',
+        email: 'alice@email.test',
+    } as AuthenticatedUser,
     isLightTheme: true,
 
     navbarSearchQueryState: { query: '' },
@@ -73,6 +78,10 @@ const { add } = storiesOf('web/search/results/StreamingSearchResults', module).a
 
 add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
 
+add('unauthenticated user standard render', () => (
+    <WebStory>{() => <StreamingSearchResults {...defaultProps} authenticatedUser={null} />}</WebStory>
+))
+
 add('no results', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
@@ -95,14 +104,6 @@ add('diffs tab selected, code monitoring enabled, user logged in', () => (
                 {...defaultProps}
                 parsedSearchQuery="r:golang/oauth2 test f:travis type:diff"
                 enableCodeMonitoring={true}
-                authenticatedUser={
-                    {
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    } as AuthenticatedUser
-                }
             />
         )}
     </WebStory>
@@ -115,14 +116,6 @@ add('code tab selected, code monitoring enabled, user logged in', () => (
                 {...defaultProps}
                 parsedSearchQuery="r:golang/oauth2 test f:travis"
                 enableCodeMonitoring={true}
-                authenticatedUser={
-                    {
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    } as AuthenticatedUser
-                }
             />
         )}
     </WebStory>
