@@ -1072,12 +1072,27 @@ func (s *Syncer) userReposMaxPerUser() uint64 {
 
 // syncs a sourced repo of a given external service, returning a diff with a single repo.
 func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService, sourced *types.Repo) (d Diff, err error) {
+	defer func() {
+		if s.Synced != nil && d.Len() > 0 {
+			select {
+			case <-ctx.Done():
+			case s.Synced <- d:
+			}
+		}
+	}()
+
 	if !tx.InTransaction() {
 		tx, err = tx.Transact(ctx)
 		if err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: opening transaction")
 		}
-		defer func() { tx.Done(err) }()
+		defer func() {
+			// We must commit the transaction before publishing to s.Synced
+			// so that gitserver finds the repo in the database.
+			if txerr := tx.Done(err); txerr != nil {
+				s.log().Error("syncer: failed to close transaction, skipping", "repo", sourced.Name, "error", txerr)
+			}
+		}()
 	}
 
 	stored, err := tx.RepoStore.List(ctx, database.ReposListOptions{
@@ -1153,13 +1168,6 @@ func (s *Syncer) sync(ctx context.Context, tx *Store, svc *types.ExternalService
 		d.Added = append(d.Added, sourced)
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
-	}
-
-	if s.Synced != nil && d.Len() > 0 {
-		select {
-		case <-ctx.Done():
-		case s.Synced <- d:
-		}
 	}
 
 	return d, nil
