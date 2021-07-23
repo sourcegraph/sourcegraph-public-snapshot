@@ -16,7 +16,6 @@ import {
     parseSearchURLQuery,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
@@ -31,8 +30,7 @@ interface Props
         SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps,
-        TelemetryProps,
-        FeatureFlagProps {
+        TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
