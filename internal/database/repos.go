@@ -14,7 +14,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -119,7 +122,42 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 		return nil, &RepoNotFoundErr{ID: id}
 	}
 
-	return repos[0], repos[0].IsBlocked()
+	repo := repos[0]
+	if repo.Private {
+		// TODO: Before we enable this, we want to instrument to see the volume of events
+		counterAccessGranted.Inc()
+		//logRepoAccessGranted(ctx, s.Handle().DB(), repo.ID)
+	}
+
+	return repo, repo.IsBlocked()
+}
+
+var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_access_granted",
+	Help: "temporary metric to measure the impact of logging access granted to private repos",
+})
+
+func logRepoAccessGranted(ctx context.Context, db dbutil.DB, repoID api.RepoID) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Resource string `json:"resource"`
+		RepoID   int32  `json:"repo_id"`
+	}{
+		Resource: "db.repo",
+		RepoID:   int32(repoID),
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccessGranted,
+		URL:             "",
+		UserID:          uint32(a.UID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
