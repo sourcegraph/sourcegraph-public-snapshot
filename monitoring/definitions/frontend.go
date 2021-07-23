@@ -428,7 +428,6 @@ func Frontend() *monitoring.Container {
 						MetricNameRoot:        "oobmigration",
 						MetricDescriptionRoot: "migration handler",
 						Filters:               []string{`op="up"`},
-						By:                    []string{"migration"},
 					},
 				},
 
@@ -450,7 +449,6 @@ func Frontend() *monitoring.Container {
 						MetricNameRoot:        "oobmigration",
 						MetricDescriptionRoot: "migration handler",
 						Filters:               []string{`op="down"`},
-						By:                    []string{"migration"},
 					},
 				},
 
