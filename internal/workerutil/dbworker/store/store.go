@@ -420,8 +420,18 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 	for _, id := range ids {
 		sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
 	}
+
 	quotedTableName := quote(s.options.TableName)
-	rows, err := s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(sqlIDs, ""), options.WorkerHostname, quotedTableName, s.now()))
+
+	preds := []*sqlf.Query{
+		s.formatQuery("{id} in (%s)", sqlf.Join(sqlIDs, "")),
+		s.formatQuery("{state} = 'processing'"),
+	}
+	if options.WorkerHostname != "" {
+		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
+	}
+
+	rows, err := s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(preds, "AND"), quotedTableName, s.now()))
 	if err != nil {
 		return nil, err
 	}
@@ -455,11 +465,7 @@ WITH alive_candidates AS (
 	FROM
 		%s
 	WHERE
-		{id} IN (%s)
-		AND
-		{state} = 'processing'
-		AND
-		{worker_hostname} = %s
+		%s
 	FOR UPDATE
 )
 UPDATE
@@ -502,11 +508,18 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	}})
 	defer endObservation(1, observation.Args{})
 
+	preds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+	}
+	if options.WorkerHostname != "" {
+		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
+	}
+
 	return s.Exec(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		ExecutionLogEntry(entry),
-		id,
+		sqlf.Join(preds, "AND"),
 	))
 }
 
@@ -514,7 +527,7 @@ const addExecutionLogEntryQuery = `
 -- source: internal/workerutil/store.go:AddExecutionLogEntry
 UPDATE %s
 SET {execution_logs} = {execution_logs} || %s::json
-WHERE {id} = %s
+WHERE %s
 `
 
 // MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
@@ -526,7 +539,15 @@ func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptio
 	}})
 	defer endObservation(1, observation.Args{})
 
-	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markCompleteQuery, quote(s.options.TableName), id)))
+	preds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+		s.formatQuery("{state} = 'processing'"),
+	}
+	if options.WorkerHostname != "" {
+		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
+	}
+
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markCompleteQuery, quote(s.options.TableName), sqlf.Join(preds, "AND"))))
 	return ok, err
 }
 
@@ -534,7 +555,7 @@ const markCompleteQuery = `
 -- source: internal/workerutil/store.go:MarkComplete
 UPDATE %s
 SET {state} = 'completed', {finished_at} = clock_timestamp()
-WHERE {id} = %s AND {state} = 'processing'
+WHERE %s
 RETURNING {id}
 `
 
@@ -547,7 +568,15 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, id)
+	preds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+		s.formatQuery("({state} = 'processing' OR {state} = 'completed')"),
+	}
+	if options.WorkerHostname != "" {
+		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
+	}
+
+	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, sqlf.Join(preds, "AND"))
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
@@ -559,7 +588,7 @@ SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
-WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
+WHERE %s
 RETURNING {id}
 `
 
@@ -572,7 +601,15 @@ func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, o
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := s.formatQuery(markFailedQuery, quote(s.options.TableName), failureMessage, id)
+	preds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+		s.formatQuery("({state} = 'processing' OR {state} = 'completed')"),
+	}
+	if options.WorkerHostname != "" {
+		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
+	}
+
+	q := s.formatQuery(markFailedQuery, quote(s.options.TableName), failureMessage, sqlf.Join(preds, "AND"))
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
@@ -584,7 +621,7 @@ SET {state} = 'failed',
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
-WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
+WHERE %s
 RETURNING {id}
 `
 
