@@ -1450,7 +1450,9 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
 			OnlyPrivate: true,
 			LimitOffset: &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
-		}); err == nil {
+		}); err != nil {
+			tr.LazyPrintf("error resolving private repos: %v", err)
+		} else {
 			argsIndexed.UserPrivateRepos = res
 		}
 
