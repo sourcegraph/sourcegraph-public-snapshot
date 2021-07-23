@@ -61,12 +61,18 @@ func (h *handler) dequeue(ctx context.Context, executorName, executorHostname st
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job. If the job identifier
 // is not known, a false-valued flag is returned.
 func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
+	// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+	// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
+	// both executors that ever got the job would be writing to the same record. This prevents it.
 	return h.queueOptions.Store.AddExecutionLogEntry(ctx, jobID, entry, store.AddExecutionLogEntryOptions{WorkerHostname: executorName})
 }
 
 // markComplete calls MarkComplete for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (h *handler) markComplete(ctx context.Context, executorName string, jobID int) error {
+	// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+	// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
+	// both executors that ever got the job would be writing to the same record. This prevents it.
 	_, err := h.queueOptions.Store.MarkComplete(ctx, jobID, store.MarkFinalOptions{WorkerHostname: executorName})
 	return err
 }
@@ -74,6 +80,9 @@ func (h *handler) markComplete(ctx context.Context, executorName string, jobID i
 // markErrored calls MarkErrored for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (h *handler) markErrored(ctx context.Context, executorName string, jobID int, errorMessage string) error {
+	// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+	// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
+	// both executors that ever got the job would be writing to the same record. This prevents it.
 	_, err := h.queueOptions.Store.MarkErrored(ctx, jobID, errorMessage, store.MarkFinalOptions{WorkerHostname: executorName})
 	return err
 }
@@ -81,6 +90,9 @@ func (h *handler) markErrored(ctx context.Context, executorName string, jobID in
 // markFailed calls MarkFailed for the given job, then commits the job's transaction.
 // The job is removed from the executor's job list on success.
 func (h *handler) markFailed(ctx context.Context, executorName string, jobID int, errorMessage string) error {
+	// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+	// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
+	// both executors that ever got the job would be writing to the same record. This prevents it.
 	_, err := h.queueOptions.Store.MarkFailed(ctx, jobID, errorMessage, store.MarkFinalOptions{WorkerHostname: executorName})
 	return err
 }
