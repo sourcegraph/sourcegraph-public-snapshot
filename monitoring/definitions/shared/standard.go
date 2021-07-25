@@ -87,7 +87,7 @@ func (standardConstructor) Errors(legend string) observableConstructor {
 				Name:        fmt.Sprintf("%s_errors_total", options.MetricNameRoot),
 				Description: fmt.Sprintf("%s%s errors every 5m", options.MetricDescriptionRoot, legend),
 				Query:       fmt.Sprintf(`sum%s(increase(src_%s_errors_total{%s}[5m]))`, by, options.MetricNameRoot, filters),
-				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)),
+				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData()),
 				Owner:       owner,
 			}
 		}

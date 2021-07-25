@@ -37,26 +37,24 @@ func (workerutilConstructor) Duration(options ObservableConstructorOptions) shar
 // Requires a counter of the format `src_{options.MetricNameRoot}_processor_errors_total`
 func (workerutilConstructor) Errors(options ObservableConstructorOptions) sharedObservable {
 	options.MetricNameRoot += "_processor"
-	return Observation.Duration(options)
+	return Observation.Errors(options)
 }
 
 // Handlers creates an observable from the given options backed by the gauge specifying the number
 // of handler invocations performed by workerutil.
 //
 // Requires a gauge of the format `src_{options.MetricNameRoot}_processor_handlers`
-func (workerutilConstructor) Handlers() observableConstructor {
-	return func(options ObservableConstructorOptions) sharedObservable {
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(containerName, options.Filters...)
-			by, legendPrefix := makeBy(options.By...)
+func (workerutilConstructor) Handlers(options ObservableConstructorOptions) sharedObservable {
+	return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		filters := makeFilters(containerName, options.Filters...)
+		by, legendPrefix := makeBy(options.By...)
 
-			return Observable{
-				Name:        fmt.Sprintf("%s_handlers", options.MetricNameRoot),
-				Description: fmt.Sprintf("%s active handlers", options.MetricDescriptionRoot),
-				Query:       fmt.Sprintf(`sum%s(src_%s_processor_handlers{%s})`, by, options.MetricNameRoot, filters),
-				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%shandlers", legendPrefix)),
-				Owner:       owner,
-			}
+		return Observable{
+			Name:        fmt.Sprintf("%s_handlers", options.MetricNameRoot),
+			Description: fmt.Sprintf("%s active handlers", options.MetricDescriptionRoot),
+			Query:       fmt.Sprintf(`sum%s(src_%s_processor_handlers{%s})`, by, options.MetricNameRoot, filters),
+			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%shandlers", legendPrefix)),
+			Owner:       owner,
 		}
 	}
 }
@@ -100,7 +98,7 @@ func (workerutilConstructor) NewGroup(containerName string, owner monitoring.Obs
 				options.Total.safeApply(Workerutil.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 				options.Duration.safeApply(Workerutil.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 				options.Errors.safeApply(Workerutil.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Handlers.safeApply(Workerutil.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.Handlers.safeApply(Workerutil.Handlers(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 			},
 		},
 	}
