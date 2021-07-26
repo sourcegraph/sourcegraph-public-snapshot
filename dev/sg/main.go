@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -323,7 +324,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	var checks []Check
+	var checks []run.Check
 	for _, name := range set.Checks {
 		check, ok := globalConf.Checks[name]
 		if !ok {
@@ -333,7 +334,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		checks = append(checks, check)
 	}
 
-	ok, err := runChecks(ctx, checks...)
+	ok, err := run.Checks(ctx, globalConf.Env, checks...)
 	if err != nil {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s\n", err))
 	}
@@ -343,7 +344,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	cmds := make([]Command, 0, len(set.Commands))
+	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
 		cmd, ok := globalConf.Commands[name]
 		if !ok {
@@ -353,7 +354,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run(ctx, cmds...)
+	return run.Commands(ctx, globalConf.Env, cmds...)
 }
 
 func testExec(ctx context.Context, args []string) error {
@@ -374,7 +375,7 @@ func testExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	return runTest(ctx, cmd, args[1:])
+	return run.Test(ctx, cmd, args[1:], globalConf.Env)
 }
 
 func startExec(ctx context.Context, args []string) error {
@@ -415,7 +416,7 @@ func runExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	return run(ctx, cmd)
+	return run.Commands(ctx, globalConf.Env, cmd)
 }
 
 func doctorExec(ctx context.Context, args []string) error {
@@ -425,11 +426,11 @@ func doctorExec(ctx context.Context, args []string) error {
 		os.Exit(1)
 	}
 
-	var checks []Check
+	var checks []run.Check
 	for _, c := range globalConf.Checks {
 		checks = append(checks, c)
 	}
-	_, err := runChecks(ctx, checks...)
+	_, err := run.Checks(ctx, globalConf.Env, checks...)
 	return err
 }
 

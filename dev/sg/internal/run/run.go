@@ -1,7 +1,6 @@
-package main
+package run
 
 import (
-	"bytes"
 	"context"
 	"crypto/md5"
 	"fmt"
@@ -10,20 +9,18 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/rjeczalik/notify"
 
-	// TODO - deduplicate me
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/command"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func run(ctx context.Context, cmds ...Command) error {
+func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -52,7 +49,7 @@ func run(ctx context.Context, cmds ...Command) error {
 		go func(cmd Command, ch <-chan struct{}) {
 			defer wg.Done()
 
-			if err := runWatch(ctx, cmd, root, ch); err != nil {
+			if err := runWatch(ctx, cmd, root, globalEnv, ch); err != nil {
 				if err != ctx.Err() {
 					failures <- failedRun{cmdName: cmd.Name, err: err}
 					cancel()
@@ -65,7 +62,7 @@ func run(ctx context.Context, cmds ...Command) error {
 
 	select {
 	case failure := <-failures:
-		printCmdError(out, failure.cmdName, failure.err)
+		printCmdError(stdout.Out, failure.cmdName, failure.err)
 		return failure
 	default:
 		return nil
@@ -159,7 +156,7 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
-func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struct{}) error {
+func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}) error {
 	startedOnce := false
 
 	var (
@@ -179,18 +176,14 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 	for {
 		// Build it
 		if cmd.Install != "" {
-			out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
+			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
 
-			c := exec.CommandContext(ctx, "bash", "-c", cmd.Install)
-			c.Dir = root
-			c.Env = makeEnv(globalConf.Env, cmd.Env)
-
-			cmdOut, err := c.CombinedOutput()
+			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
 					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
 				} else {
-					printCmdError(out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
+					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
 					// Now we wait for a reload signal before we start to build it again
 					select {
 					case <-reload:
@@ -205,7 +198,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			default:
 			}
 
-			out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
 
 			if cmd.CheckBinary != "" {
 				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
@@ -226,9 +219,9 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			cancelFuncs = nil
 
 			// Run it
-			out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
+			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
 
-			sc, err := startCmd(ctx, root, cmd)
+			sc, err := startCmd(ctx, root, cmd, globalEnv)
 			defer sc.cancel()
 
 			if err != nil {
@@ -260,80 +253,23 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			// we're sure that the command has booted up -- maybe healthchecks?)
 			startedOnce = true
 		} else {
-			out.WriteLine(output.Linef("", output.StylePending, "Binary did not change. Not restarting."))
+			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Binary did not change. Not restarting."))
 		}
 
 		select {
 		case <-reload:
-			out.WriteLine(output.Linef("", output.StylePending, "Change detected. Reloading %s...", cmd.Name))
+			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Change detected. Reloading %s...", cmd.Name))
 
 			continue // Reinstall
 
 		case err := <-errs:
 			// Exited on its own or errored
 			if err == nil {
-				out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
+				stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
 			}
 			return err
 		}
 	}
-}
-
-type startedCmd struct {
-	*exec.Cmd
-
-	cancel func()
-
-	stdoutBuf *prefixSuffixSaver
-	stderrBuf *prefixSuffixSaver
-}
-
-func (sc *startedCmd) CapturedStdout() string {
-	if sc.stdoutBuf == nil {
-		return ""
-	}
-
-	return string(sc.stdoutBuf.Bytes())
-}
-
-func (sc *startedCmd) CapturedStderr() string {
-	if sc.stderrBuf == nil {
-		return ""
-	}
-
-	return string(sc.stderrBuf.Bytes())
-}
-
-func startCmd(ctx context.Context, dir string, cmd Command) (*startedCmd, error) {
-	sc := &startedCmd{
-		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
-		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
-	}
-
-	commandCtx, cancel := context.WithCancel(ctx)
-	sc.cancel = cancel
-
-	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
-	sc.Cmd.Dir = dir
-	sc.Cmd.Env = makeEnv(globalConf.Env, cmd.Env)
-
-	logger := newCmdLogger(cmd.Name, out)
-	if cmd.IgnoreStdout {
-		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-	} else {
-		sc.Cmd.Stdout = io.MultiWriter(logger, sc.stdoutBuf)
-	}
-	if cmd.IgnoreStderr {
-		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-	} else {
-		sc.Cmd.Stderr = io.MultiWriter(logger, sc.stderrBuf)
-	}
-
-	if err := sc.Start(); err != nil {
-		return sc, err
-	}
-
-	return sc, nil
 }
 
 func makeEnv(envs ...map[string]string) []string {
@@ -470,15 +406,15 @@ func watch() (<-chan string, error) {
 	return paths, nil
 }
 
-func runTest(ctx context.Context, cmd Command, args []string) error {
+func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]string) error {
 	root, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %q.", cmd.Name))
+	stdout.Out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %q.", cmd.Name))
 	if len(args) != 0 {
-		out.WriteLine(output.Linef("", output.StylePending, "\tAdditional arguments: %s", args))
+		stdout.Out.WriteLine(output.Linef("", output.StylePending, "\tAdditional arguments: %s", args))
 	}
 	commandCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -492,16 +428,16 @@ func runTest(ctx context.Context, cmd Command, args []string) error {
 
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(globalConf.Env, cmd.Env)
+	c.Env = makeEnv(globalEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
+	stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
 
 	return c.Run()
 }
 
-func runChecks(ctx context.Context, checks ...Check) (bool, error) {
+func Checks(ctx context.Context, globalEnv map[string]string, checks ...Check) (bool, error) {
 	success := true
 
 	for _, check := range checks {
@@ -509,25 +445,25 @@ func runChecks(ctx context.Context, checks ...Check) (bool, error) {
 		defer cancel()
 
 		c := exec.CommandContext(commandCtx, "bash", "-c", check.Cmd)
-		c.Env = makeEnv(globalConf.Env)
+		c.Env = makeEnv(globalEnv)
 
-		p := out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
+		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
 
-		if cmdOut, err := command.RunInRoot(c); err != nil {
+		if cmdOut, err := InRoot(c); err != nil {
 			success = false
 
 			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
 
-			out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
 			if len(cmdOut) != 0 {
-				out.WriteLine(output.Linef("", output.StyleWarning, "Check produced the following output:"))
+				stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Check produced the following output:"))
 				separator := strings.Repeat("-", 80)
 				line := output.Linef(
 					"", output.StyleWarning,
 					"%s\n%s%s%s%s%s",
 					separator, output.StyleReset, cmdOut, output.StyleWarning, separator, output.StyleReset,
 				)
-				out.WriteLine(line)
+				stdout.Out.WriteLine(line)
 			}
 		} else {
 			p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
@@ -535,83 +471,4 @@ func runChecks(ctx context.Context, checks ...Check) (bool, error) {
 	}
 
 	return success, nil
-}
-
-// prefixSuffixSaver is an io.Writer which retains the first N bytes
-// and the last N bytes written to it. The Bytes() methods reconstructs
-// it with a pretty error message.
-//
-// Copy of https://sourcegraph.com/github.com/golang/go@3b770f2ccb1fa6fecc22ea822a19447b10b70c5c/-/blob/src/os/exec/exec.go#L661-729
-type prefixSuffixSaver struct {
-	N         int // max size of prefix or suffix
-	prefix    []byte
-	suffix    []byte // ring buffer once len(suffix) == N
-	suffixOff int    // offset to write into suffix
-	skipped   int64
-
-	// TODO(bradfitz): we could keep one large []byte and use part of it for
-	// the prefix, reserve space for the '... Omitting N bytes ...' message,
-	// then the ring buffer suffix, and just rearrange the ring buffer
-	// suffix when Bytes() is called, but it doesn't seem worth it for
-	// now just for error messages. It's only ~64KB anyway.
-}
-
-func (w *prefixSuffixSaver) Write(p []byte) (n int, err error) {
-	lenp := len(p)
-	p = w.fill(&w.prefix, p)
-
-	// Only keep the last w.N bytes of suffix data.
-	if overage := len(p) - w.N; overage > 0 {
-		p = p[overage:]
-		w.skipped += int64(overage)
-	}
-	p = w.fill(&w.suffix, p)
-
-	// w.suffix is full now if p is non-empty. Overwrite it in a circle.
-	for len(p) > 0 { // 0, 1, or 2 iterations.
-		n := copy(w.suffix[w.suffixOff:], p)
-		p = p[n:]
-		w.skipped += int64(n)
-		w.suffixOff += n
-		if w.suffixOff == w.N {
-			w.suffixOff = 0
-		}
-	}
-	return lenp, nil
-}
-
-// fill appends up to len(p) bytes of p to *dst, such that *dst does not
-// grow larger than w.N. It returns the un-appended suffix of p.
-func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
-	if remain := w.N - len(*dst); remain > 0 {
-		add := minInt(len(p), remain)
-		*dst = append(*dst, p[:add]...)
-		p = p[add:]
-	}
-	return p
-}
-
-func (w *prefixSuffixSaver) Bytes() []byte {
-	if w.suffix == nil {
-		return w.prefix
-	}
-	if w.skipped == 0 {
-		return append(w.prefix, w.suffix...)
-	}
-	var buf bytes.Buffer
-	buf.Grow(len(w.prefix) + len(w.suffix) + 50)
-	buf.Write(w.prefix)
-	buf.WriteString("\n... omitting ")
-	buf.WriteString(strconv.FormatInt(w.skipped, 10))
-	buf.WriteString(" bytes ...\n")
-	buf.Write(w.suffix[w.suffixOff:])
-	buf.Write(w.suffix[:w.suffixOff])
-	return buf.Bytes()
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
