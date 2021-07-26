@@ -24,7 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- The search reference will now show matching entries when using the filter input. [TBD](TBD)
 
 ### Removed
 

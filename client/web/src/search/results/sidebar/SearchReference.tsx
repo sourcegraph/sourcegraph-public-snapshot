@@ -559,7 +559,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
     const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
     const { onNavbarQueryChange, navbarSearchQueryState, filter, telemetryService } = props
-    const hasFilter = filter.length === 0
+    const hasFilter = filter.length > 0
 
     const selectedFilters = useMemo(() => {
         if (!hasFilter) {
