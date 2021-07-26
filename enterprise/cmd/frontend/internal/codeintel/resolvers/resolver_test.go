@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/time/rate"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
@@ -62,13 +63,18 @@ const expectedFallbackIndexConfiguration = `{
 }`
 
 func TestFallbackIndexConfiguration(t *testing.T) {
+	enqueuerConfig := &enqueuer.Config{
+		MaximumRepositoriesInspectedPerSecond:    rate.Inf,
+		MaximumIndexJobsPerInferredConfiguration: 50,
+	}
+
 	mockDBStore := NewMockDBStore() // returns no dumps
 	mockEnqueuerDBStore := NewMockEnqueuerDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	gitServerClient := NewMockEnqueuerGitserverClient()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, mockRepoUpdater, &observation.TestContext)
+	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, mockRepoUpdater, enqueuerConfig, &observation.TestContext)
 
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(dbstore.IndexConfiguration{}, false, nil)
 	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", true, nil)
