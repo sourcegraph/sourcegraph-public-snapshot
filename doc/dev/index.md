@@ -99,7 +99,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Exposing services](background-information/exposing-services.md)
 - [Developing a store](background-information/basestore.md)
 - [Developing a worker](background-information/workers.md)
-- [Developing an out-of-band migration](background-information/oobmigrations.md)
+- [Developing an out-of-band migration](background-information/oobmigration/index.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
 
 ### [Languages](background-information/languages/index.md)

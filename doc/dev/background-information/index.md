@@ -33,7 +33,7 @@
 - [Exposing services](exposing-services.md)
 - [Developing a store](basestore.md)
 - [Developing a worker](workers.md)
-- [Developing an out-of-band migration](oobmigrations.md)
+- [Developing an out-of-band migration](oobmigration/index.md)
 - [Developing a background routine](backgroundroutine.md)
 - [High-performance SQL](sql.md)
 

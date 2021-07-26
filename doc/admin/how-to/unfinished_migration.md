@@ -32,5 +32,5 @@ As an escape hatch, the environment variable `SRC_DISABLE_OOBMIGRATION_VALIDATIO
 
 ## Further resources
 
-* [Out of band migrations](../migrations.md)
+* [Out of band migrations](../migration/index.md)
 * [Sourcegraph - Upgrading Sourcegraph to a new version](https://docs.sourcegraph.com/admin/updates)
