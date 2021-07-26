@@ -155,7 +155,7 @@ join LATERAL (
     limit 1
     ) sub on sub.repo_id = r.repo_id and r.series_id = sub.series_id
 order by interval_time, repo_id) as sub
-left join repo_names rn on sub.repo_name_id = rn.id
+join repo_names rn on sub.repo_name_id = rn.id
 where %s
 group by sub.series_id, sub.interval_time
 order by interval_time desc
