@@ -58,7 +58,7 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoupdater.DefaultClient, observationContext)
+	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoupdater.DefaultClient, indexingConfigInst.AutoIndexEnqueuerConfig, observationContext)
 	metrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor", nil)
 
 	settingStore := database.Settings(db)
