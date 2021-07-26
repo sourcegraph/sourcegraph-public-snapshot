@@ -110,7 +110,7 @@ func (w *Worker) Start() {
 			ids := w.runningIDSet.Slice()
 			knownIDs, err := w.store.Heartbeat(w.ctx, ids)
 			if err != nil {
-				log15.Error("Failed to refresh heartbeats", "name", w.options.Name, "id", "error", err)
+				log15.Error("Failed to refresh heartbeats", "name", w.options.Name, "error", err)
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
