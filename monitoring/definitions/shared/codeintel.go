@@ -23,12 +23,16 @@ func (codeIntelligence) NewResolversGroup(containerName string) monitoring.Group
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_resolvers",
 				MetricDescriptionRoot: "graphql",
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"), // TODO - should alert on these
-		Errors:   NoAlertsOption("none"), // TODO - should alert on these
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -141,12 +145,16 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_index_scheduler",
 				MetricDescriptionRoot: "scheduler",
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -265,13 +273,17 @@ func (codeIntelligence) NewExecutorSetupCommandGroup(containerName string) monit
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
 				MetricDescriptionRoot: "command",
-				Filters:               []string{`op=~"setup.*"`}, // note: shared between queues
+				Filters:               []string{`op=~"setup.*"`},
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -288,13 +300,17 @@ func (codeIntelligence) NewExecutorExecutionCommandGroup(containerName string) m
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
 				MetricDescriptionRoot: "command",
-				Filters:               []string{`op=~"exec.*"`}, // note: shared between queues
+				Filters:               []string{`op=~"exec.*"`},
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -311,13 +327,17 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
 				MetricDescriptionRoot: "command",
-				Filters:               []string{`op=~"teardown.*"`}, // note: shared between queues
+				Filters:               []string{`op=~"teardown.*"`},
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -334,13 +354,17 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_apiclient",
 				MetricDescriptionRoot: "client",
-				Filters:               nil, // note: shared between queues
+				Filters:               nil,
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -357,27 +381,31 @@ func (codeIntelligence) NewDBStoreGroup(containerName string) monitoring.Group {
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_dbstore",
 				MetricDescriptionRoot: "store",
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
-// src_workerutil_dbworker_store_codeintel_dependency_index_total
-// src_workerutil_dbworker_store_codeintel_dependency_index_duration_seconds_bucket
-// src_workerutil_dbworker_store_codeintel_dependency_index_errors_total
-func (codeIntelligence) NewDependencyIndexDBWorkerStoreGroup(containerName string) monitoring.Group {
+// src_workerutil_dbworker_store_codeintel_upload_total
+// src_workerutil_dbworker_store_codeintel_upload_duration_seconds_bucket
+// src_workerutil_dbworker_store_codeintel_upload_errors_total
+func (codeIntelligence) NewUploadDBWorkerStoreGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "workerutil",
-			DescriptionRoot: "dbworker/store stats (db=frontend, table=lsif_dependency_indexes)",
+			DescriptionRoot: "dbworker/store stats (db=frontend, table=lsif_uploads)",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_codeintel_dependency_index",
+				MetricNameRoot:        "workerutil_dbworker_store_codeintel_upload",
 				MetricDescriptionRoot: "store",
 			},
 		},
@@ -410,6 +438,28 @@ func (codeIntelligence) NewIndexDBWorkerStoreGroup(containerName string) monitor
 	})
 }
 
+// src_workerutil_dbworker_store_codeintel_dependency_index_total
+// src_workerutil_dbworker_store_codeintel_dependency_index_duration_seconds_bucket
+// src_workerutil_dbworker_store_codeintel_dependency_index_errors_total
+func (codeIntelligence) NewDependencyIndexDBWorkerStoreGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "workerutil",
+			DescriptionRoot: "dbworker/store stats (db=frontend, table=lsif_dependency_indexes)",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "workerutil_dbworker_store_codeintel_dependency_index",
+				MetricDescriptionRoot: "store",
+			},
+		},
+
+		Total:    NoAlertsOption("none"),
+		Duration: NoAlertsOption("none"),
+		Errors:   NoAlertsOption("none"),
+	})
+}
+
 // src_codeintel_lsifstore_total
 // src_codeintel_lsifstore_duration_seconds_bucket
 // src_codeintel_lsifstore_errors_total
@@ -423,34 +473,16 @@ func (codeIntelligence) NewLSIFStoreGroup(containerName string) monitoring.Group
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_lsifstore",
 				MetricDescriptionRoot: "store",
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
-	})
-}
-
-// src_workerutil_dbworker_store_codeintel_upload_total
-// src_workerutil_dbworker_store_codeintel_upload_duration_seconds_bucket
-// src_workerutil_dbworker_store_codeintel_upload_errors_total
-func (codeIntelligence) NewUploadDBWorkerStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
-		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "workerutil",
-			DescriptionRoot: "dbworker/store stats (db=frontend, table=lsif_uploads)",
-			Hidden:          true,
-
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_codeintel_upload",
-				MetricDescriptionRoot: "store",
-			},
-		},
-
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -467,12 +499,16 @@ func (codeIntelligence) NewGitserverClientGroup(containerName string) monitoring
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_gitserver",
 				MetricDescriptionRoot: "client",
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -489,12 +525,16 @@ func (codeIntelligence) NewUploadStoreGroup(containerName string) monitoring.Gro
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_uploadstore",
 				MetricDescriptionRoot: "store",
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
@@ -511,12 +551,16 @@ func (codeIntelligence) NewAutoIndexEnqueuerGroup(containerName string) monitori
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_autoindex_enqueuer",
 				MetricDescriptionRoot: "enqueuer",
+				By:                    []string{"op"},
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:             NoAlertsOption("none"),
+		Duration:          NoAlertsOption("none"),
+		Errors:            NoAlertsOption("none"),
+		AggregateTotal:    NoAlertsOption("none"),
+		AggregateDuration: NoAlertsOption("none"),
+		AggregateErrors:   NoAlertsOption("none"),
 	})
 }
 
