@@ -21,12 +21,13 @@ func setupRoutes(queueOptionsMap map[string]QueueOptions) func(router *mux.Route
 
 			subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
 			routes := map[string]func(w http.ResponseWriter, r *http.Request){
-				"dequeue":              h.handleDequeue,
-				"addExecutionLogEntry": h.handleAddExecutionLogEntry,
-				"markComplete":         h.handleMarkComplete,
-				"markErrored":          h.handleMarkErrored,
-				"markFailed":           h.handleMarkFailed,
-				"heartbeat":            h.handleHeartbeat,
+				"dequeue":                 h.handleDequeue,
+				"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
+				"updateExecutionLogEntry": h.handleUpdateExecutionLogEntry,
+				"markComplete":            h.handleMarkComplete,
+				"markErrored":             h.handleMarkErrored,
+				"markFailed":              h.handleMarkFailed,
+				"heartbeat":               h.handleHeartbeat,
 			}
 			for path, handler := range routes {
 				subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
@@ -54,7 +55,17 @@ func (h *handler) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Requ
 	var payload apiclient.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
+		id, err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
+		return http.StatusOK, id, err
+	})
+}
+
+// POST /{queueName}/updateExecutionLogEntry
+func (h *handler) handleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+	var payload apiclient.UpdateExecutionLogEntryRequest
+
+	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
+		err := h.updateExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.EntryID, payload.ExecutionLogEntry)
 		return http.StatusNoContent, nil, err
 	})
 }

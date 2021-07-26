@@ -76,7 +76,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	return c.client.DoAndDecode(ctx, req, &job)
 }
 
-func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (err error) {
+func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
 	ctx, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.Int("jobID", jobID),
@@ -86,6 +86,28 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/addExecutionLogEntry", queueName), executor.AddExecutionLogEntryRequest{
 		ExecutorName:      c.options.ExecutorName,
 		JobID:             jobID,
+		ExecutionLogEntry: entry,
+	})
+	if err != nil {
+		return entryID, err
+	}
+
+	_, err = c.client.DoAndDecode(ctx, req, &entryID)
+	return entryID, err
+}
+
+func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) (err error) {
+	ctx, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("queueName", queueName),
+		log.Int("jobID", jobID),
+		log.Int("entryID", entryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/updateExecutionLogEntry", queueName), executor.UpdateExecutionLogEntryRequest{
+		ExecutorName:      c.options.ExecutorName,
+		JobID:             jobID,
+		EntryID:           entryID,
 		ExecutionLogEntry: entry,
 	})
 	if err != nil {

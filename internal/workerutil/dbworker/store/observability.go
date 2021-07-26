@@ -8,15 +8,16 @@ import (
 )
 
 type operations struct {
-	queuedCount          *observation.Operation
-	dequeue              *observation.Operation
-	requeue              *observation.Operation
-	addExecutionLogEntry *observation.Operation
-	markComplete         *observation.Operation
-	markErrored          *observation.Operation
-	markFailed           *observation.Operation
-	resetStalled         *observation.Operation
-	heartbeat            *observation.Operation
+	queuedCount             *observation.Operation
+	dequeue                 *observation.Operation
+	requeue                 *observation.Operation
+	addExecutionLogEntry    *observation.Operation
+	updateExecutionLogEntry *observation.Operation
+	markComplete            *observation.Operation
+	markErrored             *observation.Operation
+	markFailed              *observation.Operation
+	resetStalled            *observation.Operation
+	heartbeat               *observation.Operation
 }
 
 func newOperations(storeName string, observationContext *observation.Context) *operations {
@@ -36,14 +37,15 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 	}
 
 	return &operations{
-		queuedCount:          op("QueuedCount"),
-		dequeue:              op("Dequeue"),
-		requeue:              op("Requeue"),
-		addExecutionLogEntry: op("AddExecutionLogEntry"),
-		markComplete:         op("MarkComplete"),
-		markErrored:          op("MarkErrored"),
-		markFailed:           op("MarkFailed"),
-		resetStalled:         op("ResetStalled"),
-		heartbeat:            op("Heartbeat"),
+		queuedCount:             op("QueuedCount"),
+		dequeue:                 op("Dequeue"),
+		requeue:                 op("Requeue"),
+		addExecutionLogEntry:    op("AddExecutionLogEntry"),
+		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),
+		markComplete:            op("MarkComplete"),
+		markErrored:             op("MarkErrored"),
+		markFailed:              op("MarkFailed"),
+		resetStalled:            op("ResetStalled"),
+		heartbeat:               op("Heartbeat"),
 	}
 }

@@ -67,7 +67,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	logger := command.NewLogger(h.store, job, record, union(h.options.RedactedValues, job.RedactedValues))
+	logger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
 	defer logger.Flush()
 
 	// Create a working directory for this job which will be removed once the job completes.

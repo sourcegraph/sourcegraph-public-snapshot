@@ -50,8 +50,12 @@ func (s *storeShim) Heartbeat(ctx context.Context, ids []int) (knownIDs []int, e
 	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
 }
 
-func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {
-	return s.Store.AddExecutionLogEntry(ctx, id, entry, store.AddExecutionLogEntryOptions{})
+func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
+	return s.Store.AddExecutionLogEntry(ctx, id, entry, store.ExecutionLogEntryOptions{})
+}
+
+func (s *storeShim) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry) error {
+	return s.Store.UpdateExecutionLogEntry(ctx, recordID, entryID, entry, store.ExecutionLogEntryOptions{})
 }
 
 func (s *storeShim) MarkComplete(ctx context.Context, id int) (bool, error) {
