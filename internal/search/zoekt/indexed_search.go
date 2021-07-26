@@ -347,6 +347,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
 
 		g.Go(func() error {
+			ctx := ctx
 			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query), args, typ, c)
 		})
 	}
@@ -360,6 +361,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		}
 
 		g.Go(func() error {
+			ctx := ctx
 			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query), args, typ, c)
 		})
 	}
