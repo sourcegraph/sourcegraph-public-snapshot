@@ -13,7 +13,7 @@ import (
 )
 
 type handler struct {
-	queueOptions QueueOptions
+	QueueOptions
 }
 
 type QueueOptions struct {
@@ -27,7 +27,7 @@ type QueueOptions struct {
 
 func newHandler(queueOptions QueueOptions) *handler {
 	return &handler{
-		queueOptions: queueOptions,
+		QueueOptions: queueOptions,
 	}
 }
 
@@ -38,7 +38,7 @@ var ErrUnknownJob = errors.New("unknown job")
 // a false-valued flag is returned.
 func (h *handler) dequeue(ctx context.Context, executorName, executorHostname string) (_ apiclient.Job, dequeued bool, _ error) {
 	// We explicitly DON'T want to use executorHostname here, it is NOT guaranteed to be unique.
-	record, dequeued, err := h.queueOptions.Store.Dequeue(context.Background(), executorName, nil)
+	record, dequeued, err := h.Store.Dequeue(context.Background(), executorName, nil)
 	if err != nil {
 		return apiclient.Job{}, false, err
 	}
@@ -46,9 +46,9 @@ func (h *handler) dequeue(ctx context.Context, executorName, executorHostname st
 		return apiclient.Job{}, false, nil
 	}
 
-	job, err := h.queueOptions.RecordTransformer(ctx, record)
+	job, err := h.RecordTransformer(ctx, record)
 	if err != nil {
-		if _, err := h.queueOptions.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
+		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
 			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
 		}
 
@@ -60,7 +60,7 @@ func (h *handler) dequeue(ctx context.Context, executorName, executorHostname st
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job.
 func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
-	return h.queueOptions.Store.AddExecutionLogEntry(ctx, jobID, entry, store.AddExecutionLogEntryOptions{
+	return h.Store.AddExecutionLogEntry(ctx, jobID, entry, store.AddExecutionLogEntryOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -72,7 +72,7 @@ func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string,
 
 // markComplete calls MarkComplete for the given job.
 func (h *handler) markComplete(ctx context.Context, executorName string, jobID int) error {
-	ok, err := h.queueOptions.Store.MarkComplete(ctx, jobID, store.MarkFinalOptions{
+	ok, err := h.Store.MarkComplete(ctx, jobID, store.MarkFinalOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -86,7 +86,7 @@ func (h *handler) markComplete(ctx context.Context, executorName string, jobID i
 
 // markErrored calls MarkErrored for the given job.
 func (h *handler) markErrored(ctx context.Context, executorName string, jobID int, errorMessage string) error {
-	ok, err := h.queueOptions.Store.MarkErrored(ctx, jobID, errorMessage, store.MarkFinalOptions{
+	ok, err := h.Store.MarkErrored(ctx, jobID, errorMessage, store.MarkFinalOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -100,7 +100,7 @@ func (h *handler) markErrored(ctx context.Context, executorName string, jobID in
 
 // markFailed calls MarkFailed for the given job.
 func (h *handler) markFailed(ctx context.Context, executorName string, jobID int, errorMessage string) error {
-	ok, err := h.queueOptions.Store.MarkFailed(ctx, jobID, errorMessage, store.MarkFinalOptions{
+	ok, err := h.Store.MarkFailed(ctx, jobID, errorMessage, store.MarkFinalOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.

@@ -12,7 +12,7 @@ import (
 // The set of job identifiers assigned to the given executor are getting a heartbeat, indicating they're
 // still being worked on.
 func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (unknownInQueueJobs []int, errs error) {
-	knownIDs, err := h.queueOptions.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{WorkerHostname: executorName})
+	knownIDs, err := h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{WorkerHostname: executorName})
 	if err != nil {
 		return nil, err
 	}
