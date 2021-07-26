@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Omit } from 'utility-types'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -42,14 +42,14 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
      *
      * @param key The key of saved query fields that a change of this input should update
      */
-    const createInputChangeHandler = (key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> => {
-        return event => {
-            const { value, checked, type } = event.currentTarget
-            setValues(values => ({
-                ...values,
-                [key]: type === 'checkbox' ? checked : value,
-            }))
-        }
+    const createInputChangeHandler = (
+        key: keyof SavedQueryFields
+    ): React.FormEventHandler<HTMLInputElement> => event => {
+        const { value, checked, type } = event.currentTarget
+        setValues(values => ({
+            ...values,
+            [key]: type === 'checkbox' ? checked : value,
+        }))
     }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
@@ -60,10 +60,10 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
     /**
      * Tells if the query is unsupported for sending notifications.
      */
-    const isUnsupportedNotifyQuery = (savedQuery: Omit<SavedQueryFields, 'id'>): boolean => {
-        const notifying = savedQuery.notify || savedQuery.notifySlack
-        return notifying && !savedQuery.query.includes('type:diff') && !savedQuery.query.includes('type:commit')
-    }
+    const isUnsupportedNotifyQuery = useMemo((): boolean => {
+        const notifying = values.notify || values.notifySlack
+        return notifying && !values.query.includes('type:diff') && !values.query.includes('type:commit')
+    }, [values])
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
@@ -151,13 +151,13 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                             </small>
                         </div>
                     )}
-                    {isUnsupportedNotifyQuery(values) && (
+                    {isUnsupportedNotifyQuery && (
                         <div className="alert alert-warning mb-3">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
                             Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
                         </div>
                     )}
-                    {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery(values) && (
+                    {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (
                         <div className="alert alert-warning mb-3">
                             <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
                             server.{' '}
