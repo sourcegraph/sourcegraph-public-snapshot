@@ -468,6 +468,8 @@ WITH alive_candidates AS (
 		%s
 	WHERE
 		%s
+	ORDER BY
+		id ASC
 	FOR UPDATE
 )
 UPDATE
