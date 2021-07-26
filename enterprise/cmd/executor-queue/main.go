@@ -97,7 +97,7 @@ func main() {
 		}))
 	}
 
-	server := apiserver.NewServer(serviceConfig.ServerOptions(queueOptions), observationContext)
+	server := apiserver.NewServer(serviceConfig.ServerOptions(), queueOptions)
 	goroutine.MonitorBackgroundRoutines(context.Background(), server)
 }
 

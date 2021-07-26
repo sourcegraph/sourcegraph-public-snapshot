@@ -247,7 +247,7 @@ func TestMarkFailed(t *testing.T) {
 func TestHeartbeat(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/heartbeat",
+		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
@@ -256,7 +256,7 @@ func TestHeartbeat(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		unknownIDs, err := client.Heartbeat(context.Background(), []int{1, 2, 3})
+		unknownIDs, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3})
 		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
@@ -270,7 +270,7 @@ func TestHeartbeat(t *testing.T) {
 func TestHeartbeatBadResponse(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/heartbeat",
+		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
@@ -279,7 +279,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if _, err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
+		if _, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3}); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})

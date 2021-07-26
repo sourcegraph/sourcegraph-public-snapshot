@@ -38,9 +38,9 @@ func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArg
 	return job, dequeued, nil
 }
 
-func (s *storeShim) Heartbeat(ctx context.Context, id int) error {
+func (s *storeShim) Heartbeat(ctx context.Context, ids []int) ([]int, error) {
 	// Not needed, we do bulk updates from the executor.
-	return nil
+	return nil, nil
 }
 
 func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {

@@ -19,6 +19,50 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+type HeartbeatOptions struct {
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
+	WorkerHostname string
+}
+
+func (o *HeartbeatOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	return conds
+}
+
+type AddExecutionLogEntryOptions struct {
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
+	WorkerHostname string
+	// State, if set, enforces state to be set to a specific value.
+	State string
+}
+
+func (o *AddExecutionLogEntryOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	if o.State != "" {
+		conds = append(conds, formatQuery("{state} = %s", o.State))
+	}
+	return conds
+}
+
+type MarkFinalOptions struct {
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
+	WorkerHostname string
+}
+
+func (o *MarkFinalOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	return conds
+}
+
 // Store is the persistence layer for the dbworker package that handles worker-side operations backed by a Postgres
 // database. See Options for details on the required shape of the database tables (e.g. table column names/types).
 type Store interface {
@@ -35,29 +79,29 @@ type Store interface {
 	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
 
 	// Heartbeat marks the given record as currently being processed.
-	Heartbeat(ctx context.Context, id int) error
+	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
 
 	// AddExecutionLogEntry adds an executor log entry to the record.
-	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options AddExecutionLogEntryOptions) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 	// indicating if the record was updated.
-	MarkComplete(ctx context.Context, id int) (bool, error)
+	MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (bool, error)
 
 	// MarkErrored attempts to update the state of the record to errored. This method will only have an effect
 	// if the current state of the record is processing or completed. A requeued record or a record already marked
 	// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-	MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error)
+	MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (bool, error)
 
 	// MarkFailed attempts to update the state of the record to failed. This method will only have an effect
 	// if the current state of the record is processing or completed. A requeued record or a record already marked
 	// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-	MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error)
+	MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (bool, error)
 
 	// ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 	// queued state. In order to prevent input that continually crashes worker instances, records that have been reset
@@ -379,6 +423,7 @@ SET
 	{last_heartbeat_at} = %s,
 	{finished_at} = NULL,
 	{failure_message} = NULL,
+	{execution_logs} = NULL,
 	{worker_hostname} = %s
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
@@ -389,21 +434,51 @@ const selectRecordQuery = `
 SELECT %s FROM %s WHERE {id} = %s
 `
 
-func (s *store) Heartbeat(ctx context.Context, id int) error {
-	err := s.Exec(ctx, s.formatQuery(updateCandidateQuery, quote(s.options.TableName), s.now(), id))
-	if err != nil {
-		if err != ctx.Err() {
-			return err
-		}
+func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
+	ctx, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return []int{}, nil
 	}
-	return nil
+
+	sqlIDs := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
+	}
+
+	quotedTableName := quote(s.options.TableName)
+
+	conds := []*sqlf.Query{
+		s.formatQuery("{id} in (%s)", sqlf.Join(sqlIDs, "")),
+		s.formatQuery("{state} = 'processing'"),
+	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
+
+	knownIDs, err = basestore.ScanInts(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
+	return knownIDs, err
 }
 
 const updateCandidateQuery = `
 -- source: internal/workerutil/store.go:Heartbeat
-UPDATE %s
-SET {last_heartbeat_at} = %s
-WHERE {id} = %s AND {state} = 'processing'
+WITH alive_candidates AS (
+	SELECT
+		id
+	FROM
+		%s
+	WHERE
+		%s
+	ORDER BY
+		id ASC
+	FOR UPDATE
+)
+UPDATE
+	%s
+SET
+	{last_heartbeat_at} = %s
+WHERE
+	id IN (SELECT id FROM alive_candidates)
+RETURNING id
 `
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
@@ -431,17 +506,22 @@ WHERE {id} = %s
 `
 
 // AddExecutionLogEntry adds an executor log entry to the record.
-func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (err error) {
+func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options AddExecutionLogEntryOptions) (err error) {
 	ctx, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
+	conds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
+
 	return s.Exec(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		ExecutionLogEntry(entry),
-		id,
+		sqlf.Join(conds, "AND"),
 	))
 }
 
@@ -449,19 +529,25 @@ const addExecutionLogEntryQuery = `
 -- source: internal/workerutil/store.go:AddExecutionLogEntry
 UPDATE %s
 SET {execution_logs} = {execution_logs} || %s::json
-WHERE {id} = %s
+WHERE %s
 `
 
 // MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 // the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 // indicating if the record was updated.
-func (s *store) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
+func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markCompleteQuery, quote(s.options.TableName), id)))
+	conds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+		s.formatQuery("{state} = 'processing'"),
+	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
+
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markCompleteQuery, quote(s.options.TableName), sqlf.Join(conds, "AND"))))
 	return ok, err
 }
 
@@ -469,20 +555,26 @@ const markCompleteQuery = `
 -- source: internal/workerutil/store.go:MarkComplete
 UPDATE %s
 SET {state} = 'completed', {finished_at} = clock_timestamp()
-WHERE {id} = %s AND {state} = 'processing'
+WHERE %s
 RETURNING {id}
 `
 
 // MarkErrored attempts to update the state of the record to errored. This method will only have an effect
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) (_ bool, err error) {
+func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, id)
+	conds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+		s.formatQuery("{state} = 'processing'"),
+	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
+
+	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, sqlf.Join(conds, "AND"))
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
@@ -494,20 +586,26 @@ SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
-WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
+WHERE %s
 RETURNING {id}
 `
 
 // MarkFailed attempts to update the state of the record to failed. This method will only have an effect
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
-func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string) (_ bool, err error) {
+func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := s.formatQuery(markFailedQuery, quote(s.options.TableName), failureMessage, id)
+	conds := []*sqlf.Query{
+		s.formatQuery("{id} = %s", id),
+		s.formatQuery("{state} = 'processing'"),
+	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
+
+	q := s.formatQuery(markFailedQuery, quote(s.options.TableName), failureMessage, sqlf.Join(conds, "AND"))
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
@@ -519,7 +617,7 @@ SET {state} = 'failed',
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
-WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
+WHERE %s
 RETURNING {id}
 `
 

@@ -46,6 +46,26 @@ func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArg
 	return s.Store.Dequeue(ctx, workerHostname, conditions)
 }
 
+func (s *storeShim) Heartbeat(ctx context.Context, ids []int) (knownIDs []int, err error) {
+	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
+}
+
+func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {
+	return s.Store.AddExecutionLogEntry(ctx, id, entry, store.AddExecutionLogEntryOptions{})
+}
+
+func (s *storeShim) MarkComplete(ctx context.Context, id int) (bool, error) {
+	return s.Store.MarkComplete(ctx, id, store.MarkFinalOptions{})
+}
+
+func (s *storeShim) MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error) {
+	return s.Store.MarkFailed(ctx, id, failureMessage, store.MarkFinalOptions{})
+}
+
+func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string) (bool, error) {
+	return s.Store.MarkErrored(ctx, id, errorMessage, store.MarkFinalOptions{})
+}
+
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.
 var ErrNotConditions = errors.New("expected slice of *sqlf.Query values")
 

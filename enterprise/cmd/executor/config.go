@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -97,8 +98,12 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 }
 
 func (c *Config) ClientOptions(transport http.RoundTripper) apiclient.Options {
+	hn := hostname.Get()
+
 	return apiclient.Options{
-		ExecutorName:      uuid.New().String(),
+		// Be unique but also descriptive.
+		ExecutorName:      hn + "-" + uuid.New().String(),
+		ExecutorHostname:  hn,
 		PathPrefix:        "/.executors/queue",
 		EndpointOptions:   c.EndpointOptions(),
 		BaseClientOptions: c.BaseClientOptions(transport),

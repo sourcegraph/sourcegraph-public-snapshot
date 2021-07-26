@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -15,24 +14,25 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
-func (h *handler) setupRoutes(router *mux.Router) {
-	var names []string
-	for queueName := range h.options.QueueOptions {
-		names = append(names, regexp.QuoteMeta(queueName))
-	}
+func setupRoutes(queueOptionsMap map[string]QueueOptions) func(router *mux.Router) {
+	return func(router *mux.Router) {
+		for name, queueOptions := range queueOptionsMap {
+			h := newHandler(queueOptions)
 
-	routes := map[string]func(w http.ResponseWriter, r *http.Request){
-		"dequeue":              h.handleDequeue,
-		"addExecutionLogEntry": h.handleAddExecutionLogEntry,
-		"markComplete":         h.handleMarkComplete,
-		"markErrored":          h.handleMarkErrored,
-		"markFailed":           h.handleMarkFailed,
+			subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
+			routes := map[string]func(w http.ResponseWriter, r *http.Request){
+				"dequeue":              h.handleDequeue,
+				"addExecutionLogEntry": h.handleAddExecutionLogEntry,
+				"markComplete":         h.handleMarkComplete,
+				"markErrored":          h.handleMarkErrored,
+				"markFailed":           h.handleMarkFailed,
+				"heartbeat":            h.handleHeartbeat,
+			}
+			for path, handler := range routes {
+				subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
+			}
+		}
 	}
-	for path, handler := range routes {
-		router.Path(fmt.Sprintf("/{queueName:(?:%s)}/%s", strings.Join(names, "|"), path)).Methods("POST").HandlerFunc(handler)
-	}
-
-	router.Path("/heartbeat").Methods("POST").HandlerFunc(h.handleHeartbeat)
 }
 
 // POST /{queueName}/dequeue
@@ -40,7 +40,7 @@ func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		job, dequeued, err := h.dequeue(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.ExecutorHostname)
+		job, dequeued, err := h.dequeue(r.Context(), payload.ExecutorName, payload.ExecutorHostname)
 		if !dequeued {
 			return http.StatusNoContent, nil, err
 		}
@@ -54,7 +54,7 @@ func (h *handler) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Requ
 	var payload apiclient.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.addExecutionLogEntry(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
+		err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
 		return http.StatusNoContent, nil, err
 	})
 }
@@ -64,7 +64,7 @@ func (h *handler) handleMarkComplete(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkCompleteRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.markComplete(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID)
+		err := h.markComplete(r.Context(), payload.ExecutorName, payload.JobID)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -78,7 +78,7 @@ func (h *handler) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.markErrored(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+		err := h.markErrored(r.Context(), payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -92,7 +92,7 @@ func (h *handler) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.markFailed(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+		err := h.markFailed(r.Context(), payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -101,7 +101,7 @@ func (h *handler) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /heartbeat
+// POST /{queueName}/heartbeat
 func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.HeartbeatRequest
 
