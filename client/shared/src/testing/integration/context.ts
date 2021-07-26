@@ -107,7 +107,7 @@ export const createSharedIntegrationTestContext = async <
     }
     const subscriptions = new Subscription()
     const cdpAdapterOptions: CdpAdapterOptions = {
-        page: driver.page,
+        browser: driver.browser,
     }
     const polly = new Polly(snakeCase(currentTest.title), {
         adapters: [CdpAdapter.id],
