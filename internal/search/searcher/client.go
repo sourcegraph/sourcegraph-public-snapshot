@@ -68,7 +68,6 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 
 		"PathPatternsAreRegExps": []string{"true"},
 		"IndexerEndpoints":       indexerEndpoints,
-		"Select":                 []string{p.Select.Root()},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()

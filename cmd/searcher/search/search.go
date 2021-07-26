@@ -154,7 +154,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender *limit
 	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
 	span.SetTag("deadline", p.Deadline)
 	span.SetTag("indexerEndpoints", p.IndexerEndpoints)
-	span.SetTag("select", p.Select)
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to

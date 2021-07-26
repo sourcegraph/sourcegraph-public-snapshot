@@ -136,6 +136,7 @@ type TextParameters struct {
 	FileMatchLimit int32
 	RepoOptions    RepoOptions
 	ResultTypes    result.Types
+	Select         filter.SelectPath
 	Timeout        time.Duration
 
 	// deprecated
@@ -185,7 +186,6 @@ type TextPatternInfo struct {
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 	Index           query.YesNoOnly
-	Select          filter.SelectPath
 
 	// We do not support IsMultiline
 	// IsMultiline     bool

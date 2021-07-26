@@ -580,10 +580,13 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 		forceResultTypes = result.Types(0)
 	}
 
+	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
+
 	args := search.TextParameters{
 		PatternInfo:    p,
 		Query:          q,
 		FileMatchLimit: int32(search.FileMatchLimit(b, r.protocol())),
+		Select:         selector,
 		Timeout:        search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.

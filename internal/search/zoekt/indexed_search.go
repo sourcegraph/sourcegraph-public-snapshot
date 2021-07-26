@@ -389,7 +389,7 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextP
 
 	// PERF: if we are going to be selecting to repo results only anyways, we can
 	// just ask zoekt for only results of type repo.
-	if args.PatternInfo.Select.Root() == filter.Repository {
+	if args.Select.Root() == filter.Repository {
 		repoList, err := args.Zoekt.Client.List(ctx, q, nil)
 		if err != nil {
 			return err
@@ -465,7 +465,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.
 
 	// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 	// zoekt for only results of type repo.
-	if args.PatternInfo.Select.Root() == filter.Repository {
+	if args.Select.Root() == filter.Repository {
 		return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
 			repoRevMap := make(map[api.RepoID]*search.RepositoryRevisions, len(repos.repoRevs))
 			for _, r := range repos.repoRevs {

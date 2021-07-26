@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	zoekt "github.com/google/zoekt/query"
@@ -105,7 +104,6 @@ func ToTextPatternInfo(q query.Basic, transform query.BasicPass) *TextPatternInf
 	filesInclude = append(filesInclude, mapSlice(langInclude, langToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, langToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := IncludeExcludeValues(q, query.FieldRepoHasFile)
-	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 
 	// Ugly assumption: for a literal search, the IsRegexp member of
 	// TextPatternInfo must be set true. The logic assumes that a literal
@@ -150,7 +148,6 @@ func ToTextPatternInfo(q query.Basic, transform query.BasicPass) *TextPatternInf
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    q.FindValue(query.FieldCombyRule),
 		Index:                        q.Index(),
-		Select:                       selector,
 	}
 }
 
