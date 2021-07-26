@@ -18,12 +18,13 @@ import (
 )
 
 type IndexEnqueuer struct {
-	dbStore         DBStore
-	gitserverClient GitserverClient
-	repoUpdater     RepoUpdaterClient
-	config          *Config
-	limiter         *rate.Limiter
-	operations      *operations
+	dbStore            DBStore
+	gitserverClient    GitserverClient
+	repoUpdater        RepoUpdaterClient
+	config             *Config
+	gitserverLimiter   *rate.Limiter
+	repoUpdaterLimiter *rate.Limiter
+	operations         *operations
 }
 
 func NewIndexEnqueuer(
@@ -34,12 +35,13 @@ func NewIndexEnqueuer(
 	observationContext *observation.Context,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
-		dbStore:         dbStore,
-		gitserverClient: gitClient,
-		repoUpdater:     repoUpdater,
-		config:          config,
-		limiter:         rate.NewLimiter(config.MaximumRepositoriesInspectedPerSecond, 1),
-		operations:      newOperations(observationContext),
+		dbStore:            dbStore,
+		gitserverClient:    gitClient,
+		repoUpdater:        repoUpdater,
+		config:             config,
+		gitserverLimiter:   rate.NewLimiter(config.MaximumRepositoriesInspectedPerSecond, 1),
+		repoUpdaterLimiter: rate.NewLimiter(config.MaximumRepositoriesUpdatedPerSecond, 1),
+		operations:         newOperations(observationContext),
 	}
 }
 
@@ -101,6 +103,10 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic
 	}
 	traceLog(log.String("repoName", repoName))
 	traceLog(log.String("revision", revision))
+
+	if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {
+		return err
+	}
 
 	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, api.RepoName(repoName))
 	if err != nil {
@@ -205,7 +211,7 @@ func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, comm
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
 func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJob, error) {
-	if err := s.limiter.Wait(ctx); err != nil {
+	if err := s.gitserverLimiter.Wait(ctx); err != nil {
 		return nil, err
 	}
 
