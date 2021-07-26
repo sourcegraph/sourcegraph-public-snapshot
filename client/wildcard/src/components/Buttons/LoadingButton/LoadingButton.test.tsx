@@ -8,7 +8,7 @@ describe('LoadingButton', () => {
         const { container } = render(<LoadingButton loading={false}>Hello world</LoadingButton>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <button
-              class="btn btn-primary"
+              class="btn"
               type="button"
             >
               Hello world
@@ -20,7 +20,7 @@ describe('LoadingButton', () => {
         const { container } = render(<LoadingButton loading={true}>Hello world</LoadingButton>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <button
-              class="btn btn-primary"
+              class="btn"
               type="button"
             >
               <div
@@ -39,7 +39,7 @@ describe('LoadingButton', () => {
         )
         expect(container.firstChild).toMatchInlineSnapshot(`
             <button
-              class="btn btn-primary"
+              class="btn"
               type="button"
             >
               <div

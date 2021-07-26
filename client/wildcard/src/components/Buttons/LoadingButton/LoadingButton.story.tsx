@@ -31,7 +31,7 @@ export const Simple = () => (
         loading={boolean('Loading', true)}
         alwaysShowChildren={boolean('Always show label', true)}
         variant={select('Variant', BUTTON_VARIANTS, 'secondary')}
-        size={select('Size', BUTTON_SIZES, 'md')}
+        size={select('Size', BUTTON_SIZES, undefined)}
         disabled={boolean('Disabled', false)}
         outline={boolean('Outline', false)}
     >

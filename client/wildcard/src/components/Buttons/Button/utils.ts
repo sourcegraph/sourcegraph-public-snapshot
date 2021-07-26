@@ -17,10 +17,4 @@ interface GetButtonSizeParameters {
     size: typeof BUTTON_SIZES[number]
 }
 
-export const getButtonSize = ({ size }: GetButtonSizeParameters): string => {
-    if (size === 'md') {
-        return ''
-    }
-
-    return `btn-${size}`
-}
+export const getButtonSize = ({ size }: GetButtonSizeParameters): string => `btn-${size}`

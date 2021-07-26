@@ -10,9 +10,9 @@ export interface ButtonProps
     /**
      * The variant style of the button. Defaults to `primary`
      */
-    variant: typeof BUTTON_VARIANTS[number]
+    variant?: typeof BUTTON_VARIANTS[number]
     /**
-     * The size of the button. Defaults to `md`
+     * Allows modifying the size of the button. Supports larger or smaller variants.
      */
     size?: typeof BUTTON_SIZES[number]
     /**
@@ -46,21 +46,17 @@ export interface ButtonProps
  */
 export const Button: React.FunctionComponent<ButtonProps> = React.forwardRef(
     (
-        {
-            children,
-            as: Component = 'button',
-            type = 'button',
-            variant,
-            size = 'md',
-            outline,
-            className,
-            ...attributes
-        },
+        { children, as: Component = 'button', type = 'button', variant, size, outline, className, ...attributes },
         reference
     ) => (
         <Component
             ref={reference}
-            className={classNames('btn', getButtonStyle({ variant, outline }), getButtonSize({ size }), className)}
+            className={classNames(
+                'btn',
+                variant && getButtonStyle({ variant, outline }),
+                size && getButtonSize({ size }),
+                className
+            )}
             type={Component === 'button' ? type : undefined}
             {...attributes}
         >

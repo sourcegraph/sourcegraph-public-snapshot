@@ -9,7 +9,7 @@ describe('Button', () => {
         const { container } = render(<Button>Hello world</Button>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <button
-              class="btn btn-primary"
+              class="btn"
               type="button"
             >
               Hello world
@@ -21,7 +21,7 @@ describe('Button', () => {
         const { container } = render(<Button as="a">I am a link</Button>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <a
-              class="btn btn-primary"
+              class="btn"
             >
               I am a link
             </a>

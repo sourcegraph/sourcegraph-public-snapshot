@@ -37,7 +37,7 @@ export default Story
 export const Simple = () => (
     <Button
         variant={select('Variant', BUTTON_VARIANTS, 'primary')}
-        size={select('Size', BUTTON_SIZES, 'md')}
+        size={select('Size', BUTTON_SIZES, undefined)}
         disabled={boolean('Disabled', false)}
         outline={boolean('Outline', false)}
     >

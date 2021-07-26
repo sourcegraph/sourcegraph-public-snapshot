@@ -8,4 +8,4 @@ export const BUTTON_VARIANTS = [
     'merged',
     'link',
 ] as const
-export const BUTTON_SIZES = ['sm', 'md', 'lg'] as const
+export const BUTTON_SIZES = ['sm', 'lg'] as const
