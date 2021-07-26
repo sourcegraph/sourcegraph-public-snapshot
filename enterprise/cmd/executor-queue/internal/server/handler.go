@@ -38,7 +38,7 @@ var ErrUnknownJob = errors.New("unknown job")
 // a false-valued flag is returned.
 func (h *handler) dequeue(ctx context.Context, executorName, executorHostname string) (_ apiclient.Job, dequeued bool, _ error) {
 	// We explicitly DON'T want to use executorHostname here, it is NOT guaranteed to be unique.
-	record, dequeued, err := h.Store.Dequeue(context.Background(), executorName, nil)
+	record, dequeued, err := h.Store.Dequeue(ctx, executorName, nil)
 	if err != nil {
 		return apiclient.Job{}, false, err
 	}
