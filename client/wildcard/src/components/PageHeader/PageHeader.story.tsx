@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -11,68 +11,78 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PageHeader } from './PageHeader'
 
-const { add } = storiesOf('wildcard/PageHeader', module)
-    .addDecorator(story => (
-        <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-    ))
-    .addParameters({ component: PageHeader })
+const Story: Meta = {
+    title: 'wildcard/PageHeader',
 
-add(
-    'Basic header',
-    () => (
-        <PageHeader
-            path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
-            actions={
-                <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
-                    <SearchIcon className="icon-inline" /> Button with icon
+    decorators: [
+        story => (
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+        ),
+    ],
+
+    parameters: {
+        component: PageHeader,
+    },
+}
+
+export default Story
+
+export const BasicHeader = () => (
+    <PageHeader
+        path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
+        actions={
+            <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
+                <SearchIcon className="icon-inline" /> Button with icon
+            </Link>
+        }
+    />
+)
+
+BasicHeader.story = {
+    name: 'Basic header',
+
+    parameters: {
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        },
+    },
+}
+
+export const ComplexHeader = () => (
+    <PageHeader
+        annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+        path={[{ to: '/level-0', icon: PuzzleOutlineIcon }, { to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
+        byline={
+            <>
+                Created by <Link to="/page">user</Link> 3 months ago
+            </>
+        }
+        description="Enter the description for your section here. This is useful on list and create pages."
+        actions={
+            <div className="d-flex">
+                <Link to="/page" className="btn btn-secondary mr-2">
+                    Secondary
                 </Link>
-            }
-        />
-    ),
-    {
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
-        },
-    }
+                <Link to="/page" className="btn btn-primary text-nowrap">
+                    <PlusIcon className="icon-inline" /> Create
+                </Link>
+            </div>
+        }
+    />
 )
 
-add(
-    'Complex header',
-    () => (
-        <PageHeader
-            annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-            path={[
-                { to: '/level-0', icon: PuzzleOutlineIcon },
-                { to: '/level-1', text: 'Level 1' },
-                { text: 'Level 2' },
-            ]}
-            byline={
-                <>
-                    Created by <Link to="/page">user</Link> 3 months ago
-                </>
-            }
-            description="Enter the description for your section here. This is useful on list and create pages."
-            actions={
-                <div className="d-flex">
-                    <Link to="/page" className="btn btn-secondary mr-2">
-                        Secondary
-                    </Link>
-                    <Link to="/page" className="btn btn-primary text-nowrap">
-                        <PlusIcon className="icon-inline" /> Create
-                    </Link>
-                </div>
-            }
-        />
-    ),
-    {
+ComplexHeader.story = {
+    name: 'Complex header',
+
+    parameters: {
         design: {
             type: 'figma',
             name: 'Figma',
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
         },
-    }
-)
+    },
+}
