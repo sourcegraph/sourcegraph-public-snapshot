@@ -132,10 +132,11 @@ func (m GlobalSearchMode) String() string {
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
-	PatternInfo *TextPatternInfo
-	RepoOptions RepoOptions
-	ResultTypes result.Types
-	Timeout     time.Duration
+	PatternInfo    *TextPatternInfo
+	FileMatchLimit int32
+	RepoOptions    RepoOptions
+	ResultTypes    result.Types
+	Timeout        time.Duration
 
 	// deprecated
 	RepoPromise *RepoPromise

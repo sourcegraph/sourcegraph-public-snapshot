@@ -99,12 +99,13 @@ func TestSearchRepositories(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			q, _ := query.ParseLiteral(tc.q)
 			b, _ := query.ToBasicQuery(q)
-			pattern := search.ToTextPatternInfo(b, search.Batch, query.Identity)
+			pattern := search.ToTextPatternInfo(b, query.Identity)
 			matches, _, err := searchRepositoriesBatch(context.Background(), &search.TextParameters{
-				PatternInfo: pattern,
-				RepoPromise: (&search.RepoPromise{}).Resolve(repositories),
-				Query:       q,
-				Zoekt:       zoekt,
+				PatternInfo:    pattern,
+				FileMatchLimit: int32(search.FileMatchLimit(b, search.Batch)),
+				RepoPromise:    (&search.RepoPromise{}).Resolve(repositories),
+				Query:          q,
+				Zoekt:          zoekt,
 			}, int32(100))
 			if err != nil {
 				t.Fatal(err)
@@ -285,11 +286,12 @@ func BenchmarkSearchRepositories(b *testing.B) {
 	}
 	q, _ := query.ParseLiteral("context.WithValue")
 	bq, _ := query.ToBasicQuery(q)
-	pattern := search.ToTextPatternInfo(bq, search.Batch, query.Identity)
+	pattern := search.ToTextPatternInfo(bq, query.Identity)
 	tp := search.TextParameters{
-		PatternInfo: pattern,
-		RepoPromise: (&search.RepoPromise{}).Resolve(repos),
-		Query:       q,
+		PatternInfo:    pattern,
+		FileMatchLimit: int32(search.FileMatchLimit(bq, search.Batch)),
+		RepoPromise:    (&search.RepoPromise{}).Resolve(repos),
+		Query:          q,
 	}
 	for i := 0; i < b.N; i++ {
 		_, _, err := searchRepositoriesBatch(context.Background(), &tp, tp.PatternInfo.FileMatchLimit)

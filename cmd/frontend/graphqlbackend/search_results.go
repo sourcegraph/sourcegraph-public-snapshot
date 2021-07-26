@@ -570,7 +570,7 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 	if err != nil {
 		return nil, err
 	}
-	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
+	p := search.ToTextPatternInfo(b, query.Identity)
 
 	// Fallback to literal search for searching repos and files if
 	// the structural search pattern is empty.
@@ -581,9 +581,10 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 	}
 
 	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       q,
-		Timeout:     search.TimeoutDuration(b),
+		PatternInfo:    p,
+		Query:          q,
+		FileMatchLimit: int32(search.FileMatchLimit(b, r.protocol())),
+		Timeout:        search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
 		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || r.stream != nil,

@@ -394,7 +394,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// Not an atomic pattern, can't guarantee it will behave well.
 			return nil, nil
 		}
-		p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
+		p := search.ToTextPatternInfo(q, query.Identity)
 		if p.Pattern == "" {
 			return nil, nil
 		}
@@ -404,11 +404,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
 			return symbol.Search(ctx, &search.TextParameters{
-				PatternInfo:  p,
-				RepoPromise:  (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
-				Query:        r.Query,
-				Zoekt:        r.zoekt,
-				SearcherURLs: r.searcherURLs,
+				PatternInfo:    p,
+				FileMatchLimit: int32(search.FileMatchLimit(q, search.Batch)),
+				RepoPromise:    (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
+				Query:          r.Query,
+				Zoekt:          r.zoekt,
+				SearcherURLs:   r.searcherURLs,
 			}, 7, stream)
 		})
 		if err != nil {

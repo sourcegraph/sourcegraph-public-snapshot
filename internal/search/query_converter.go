@@ -66,7 +66,7 @@ func IncludeExcludeValues(q query.Basic, field string) (include, exclude []strin
 	return include, exclude
 }
 
-func count(q query.Basic, p Protocol) int {
+func FileMatchLimit(q query.Basic, p Protocol) int {
 	if count := q.GetCount(); count != "" {
 		v, _ := strconv.Atoi(count) // Invariant: count is validated.
 		return v
@@ -96,7 +96,7 @@ const (
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *TextPatternInfo {
+func ToTextPatternInfo(q query.Basic, transform query.BasicPass) *TextPatternInfo {
 	q = transform(q)
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
@@ -106,7 +106,6 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 	filesExclude = append(filesExclude, mapSlice(langExclude, langToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := IncludeExcludeValues(q, query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
-	count := count(q, p)
 
 	// Ugly assumption: for a literal search, the IsRegexp member of
 	// TextPatternInfo must be set true. The logic assumes that a literal
@@ -139,7 +138,6 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 		IsRegExp:        isRegexp,
 		IsStructuralPat: q.IsStructural(),
 		IsCaseSensitive: q.IsCaseSensitive(),
-		FileMatchLimit:  int32(count),
 		Pattern:         pattern,
 		IsNegated:       negated,
 
