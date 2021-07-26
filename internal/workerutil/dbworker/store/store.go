@@ -442,7 +442,7 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 		return []int{}, nil
 	}
 
-	sqlIDs := make([]*sqlf.Query, 0)
+	sqlIDs := make([]*sqlf.Query, 0, len(ids))
 	for _, id := range ids {
 		sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
 	}
@@ -455,30 +455,8 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 	}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	rows, err := s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now()))
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		var id int
-
-		if err := rows.Scan(
-			&id,
-		); err != nil {
-			return nil, err
-		}
-
-		knownIDs = append(knownIDs, id)
-	}
-
-	if err != nil {
-		if err != ctx.Err() {
-			return nil, err
-		}
-	}
-	return knownIDs, nil
+	knownIDs, err = basestore.ScanInts(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
+	return knownIDs, err
 }
 
 const updateCandidateQuery = `
