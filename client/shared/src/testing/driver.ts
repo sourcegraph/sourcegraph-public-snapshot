@@ -746,24 +746,26 @@ interface DriverOptions extends LaunchOptions {
     keepBrowser?: boolean
 }
 
-export async function createDriverForTest(options?: DriverOptions): Promise<Driver> {
+export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
+    const config = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools')
+
     // Apply defaults
-    options = {
-        ...getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools'),
+    const resolvedOptions: typeof config & typeof options = {
+        ...config,
         ...options,
     }
 
-    const { loadExtension } = options
+    const { loadExtension } = resolvedOptions
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
         ignoreHTTPSErrors: true,
-        ...options,
+        ...resolvedOptions,
         args,
         defaultViewport: null,
         timeout: 30000,
     }
     let browser: puppeteer.Browser
-    const browserName = options.browser || 'chrome'
+    const browserName = resolvedOptions.browser || 'chrome'
     if (browserName === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
@@ -825,7 +827,7 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
 
     const page = await browser.newPage()
 
-    return new Driver(browser, page, options)
+    return new Driver(browser, page, resolvedOptions)
 }
 
 /**
