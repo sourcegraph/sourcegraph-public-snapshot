@@ -311,13 +311,13 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 // zoektSearchGlobal searches the entire universe of indexed repositories.
 //
+// We send 2 queries to Zoekt. One query for public repos and one query for
+// private repos.
+//
 // We only have to search "HEAD", because global queries, per definition, don't
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-//
-// We send 2 queries to Zoekt. One query for public repos and one query for
-// private repos
 func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query zoektquery.Q, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if args == nil {
 		return nil
@@ -358,11 +358,11 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		for _, r := range args.UserPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
+
 		g.Go(func() error {
 			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query), args, typ, c)
 		})
 	}
-
 	return g.Wait()
 }
 
@@ -419,7 +419,6 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextP
 			return repo, []string{""}, true
 		}, typ, c)
 	}))
-
 }
 
 // zoektSearch searches repositories using zoekt.
