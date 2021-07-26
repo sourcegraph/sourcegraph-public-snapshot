@@ -24,6 +24,14 @@ type HeartbeatOptions struct {
 	WorkerHostname string
 }
 
+func (o *HeartbeatOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	return conds
+}
+
 type AddExecutionLogEntryOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
 	WorkerHostname string
@@ -31,9 +39,28 @@ type AddExecutionLogEntryOptions struct {
 	State string
 }
 
+func (o *AddExecutionLogEntryOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	if o.State != "" {
+		conds = append(conds, formatQuery("{state} = %s", o.State))
+	}
+	return conds
+}
+
 type MarkFinalOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
 	WorkerHostname string
+}
+
+func (o *MarkFinalOptions) ToSQLConds(formatQuery func(query string, args ...interface{}) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	return conds
 }
 
 // Store is the persistence layer for the dbworker package that handles worker-side operations backed by a Postgres
@@ -419,15 +446,13 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 
 	quotedTableName := quote(s.options.TableName)
 
-	preds := []*sqlf.Query{
+	conds := []*sqlf.Query{
 		s.formatQuery("{id} in (%s)", sqlf.Join(sqlIDs, "")),
 		s.formatQuery("{state} = 'processing'"),
 	}
-	if options.WorkerHostname != "" {
-		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
-	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	rows, err := s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(preds, "AND"), quotedTableName, s.now()))
+	rows, err := s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now()))
 	if err != nil {
 		return nil, err
 	}
@@ -504,21 +529,16 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 	}})
 	defer endObservation(1, observation.Args{})
 
-	preds := []*sqlf.Query{
+	conds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
 	}
-	if options.WorkerHostname != "" {
-		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
-	}
-	if options.State != "" {
-		preds = append(preds, s.formatQuery("{state} = %s", options.State))
-	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
 	return s.Exec(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		ExecutionLogEntry(entry),
-		sqlf.Join(preds, "AND"),
+		sqlf.Join(conds, "AND"),
 	))
 }
 
@@ -538,15 +558,13 @@ func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptio
 	}})
 	defer endObservation(1, observation.Args{})
 
-	preds := []*sqlf.Query{
+	conds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
 		s.formatQuery("{state} = 'processing'"),
 	}
-	if options.WorkerHostname != "" {
-		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
-	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markCompleteQuery, quote(s.options.TableName), sqlf.Join(preds, "AND"))))
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markCompleteQuery, quote(s.options.TableName), sqlf.Join(conds, "AND"))))
 	return ok, err
 }
 
@@ -567,15 +585,13 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	preds := []*sqlf.Query{
+	conds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
 		s.formatQuery("{state} = 'processing'"),
 	}
-	if options.WorkerHostname != "" {
-		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
-	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, sqlf.Join(preds, "AND"))
+	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, sqlf.Join(conds, "AND"))
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
@@ -600,15 +616,13 @@ func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, o
 	}})
 	defer endObservation(1, observation.Args{})
 
-	preds := []*sqlf.Query{
+	conds := []*sqlf.Query{
 		s.formatQuery("{id} = %s", id),
 		s.formatQuery("{state} = 'processing'"),
 	}
-	if options.WorkerHostname != "" {
-		preds = append(preds, s.formatQuery("{worker_hostname} = %s", options.WorkerHostname))
-	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	q := s.formatQuery(markFailedQuery, quote(s.options.TableName), failureMessage, sqlf.Join(preds, "AND"))
+	q := s.formatQuery(markFailedQuery, quote(s.options.TableName), failureMessage, sqlf.Join(conds, "AND"))
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
