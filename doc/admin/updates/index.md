@@ -26,5 +26,5 @@ For product update notes, please refer to the [changelog](../../CHANGELOG.md).
 
 See [this page](../install/index.md) to get advice on which deployment type you should be running.
 
-- [Migrate to Docker Compose](install/docker-compose/migrate.md) for improved stability and performance if you are using a single-container `sourcegraph/server` deployment.
-- [Migrate to a Kubernetes cluster](https://docs.sourcegraph.com/admin/install/kubernetes) if you exceed the limits of a single machine Docker Compose deployment.
+- [Migrate to Docker Compose](../install/docker-compose/migrate.md) for improved stability and performance if you are using a single-container `sourcegraph/server` deployment.
+- [Migrate to a Kubernetes cluster](../install/kubernetes/index.md) if you exceed the limits of a single machine Docker Compose deployment.
