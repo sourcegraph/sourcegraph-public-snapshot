@@ -75,7 +75,7 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 		runnerFactory: command.NewRunner,
 	}
 
-	executor := workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
+	worker := workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
 	heartbeat := goroutine.NewHandlerWithErrorMessage("heartbeat", func(ctx context.Context) error {
 		unknownIDs, err := queueStore.Heartbeat(ctx, options.QueueName, idSet.Slice())
 		if err != nil {
@@ -90,7 +90,7 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	})
 
 	return goroutine.CombinedRoutine{
-		executor,
+		worker,
 		goroutine.NewPeriodicGoroutine(context.Background(), options.HeartbeatInterval, heartbeat),
 	}
 }
