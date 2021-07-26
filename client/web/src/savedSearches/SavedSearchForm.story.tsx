@@ -9,7 +9,10 @@ import { SavedSearchForm, SavedSearchFormProps } from './SavedSearchForm'
 
 const { add } = storiesOf('web/savedSearches/SavedSearchForm', module)
 
-window.context = { emailEnabled: true } as SourcegraphContext & SuiteFunction
+if (!window.context) {
+    window.context = {} as SourcegraphContext & SuiteFunction
+}
+window.context.emailEnabled = true
 
 const commonProps: SavedSearchFormProps = {
     submitLabel: 'Submit',
@@ -59,25 +62,6 @@ add('existing saved search, notifications disabled', () => (
     </WebStory>
 ))
 
-add('existing saved search, notifications enabled, with invalid query warning', () => (
-    <WebStory>
-        {webProps => (
-            <SavedSearchForm
-                {...webProps}
-                {...commonProps}
-                submitLabel="Update saved search"
-                title="Manage saved search"
-                defaultValues={{
-                    id: '1',
-                    description: 'Existing saved search',
-                    query: 'test',
-                    notify: true,
-                }}
-            />
-        )}
-    </WebStory>
-))
-
 add('existing saved search, notifications enabled', () => (
     <WebStory>
         {webProps => (
@@ -90,6 +74,25 @@ add('existing saved search, notifications enabled', () => (
                     id: '1',
                     description: 'Existing saved search',
                     query: 'test type:diff',
+                    notify: true,
+                }}
+            />
+        )}
+    </WebStory>
+))
+
+add('existing saved search, notifications enabled, with invalid query warning', () => (
+    <WebStory>
+        {webProps => (
+            <SavedSearchForm
+                {...webProps}
+                {...commonProps}
+                submitLabel="Update saved search"
+                title="Manage saved search"
+                defaultValues={{
+                    id: '1',
+                    description: 'Existing saved search',
+                    query: 'test',
                     notify: true,
                 }}
             />
