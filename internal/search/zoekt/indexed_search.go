@@ -347,6 +347,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
 
 		g.Go(func() error {
+			// Copy context to avoid duplicate span IDs in tracing.
 			ctx := ctx
 			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query), args, typ, c)
 		})
