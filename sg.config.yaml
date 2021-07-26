@@ -47,7 +47,6 @@ env:
       { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
-      { "Name": "executor-queue", "Host": "127.0.0.1:6091" },
       { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
       { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-indexserver-0", "Host": "127.0.0.1:6072" },
@@ -399,17 +398,6 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-queue:
-    cmd: .bin/executor-queue
-    install: |
-      go build -o .bin/executor-queue github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
-    checkBinary: .bin/executor-queue
-    watch:
-      - lib
-      - internal
-      - enterprise/internal
-      - enterprise/cmd/executor-queue
-
   executor-template: &executor_template
     # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
@@ -577,7 +565,6 @@ commandsets:
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
-      - executor-queue
 
   default: *enterprise_set
 
@@ -604,7 +591,6 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
       - minio
-      - executor-queue
       - precise-code-intel-worker
       - codeintel-executor
 
@@ -679,7 +665,6 @@ commandsets:
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
-      - executor-queue
       - batches-executor
 
   core-app:

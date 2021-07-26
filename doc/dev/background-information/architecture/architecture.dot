@@ -65,12 +65,6 @@ digraph architecture {
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/frontend"
         ]
 
-        executor_queue [
-            label="executor-queue"
-            fillcolor="#22ffff"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/executor-queue"
-        ]
-
         subgraph cluster_internal_services {
             label="Internal services"
             graph [style="dotted"]
@@ -214,12 +208,11 @@ digraph architecture {
     codeintel_worker -> {postgres, codeintel_db} [ fillcolor="#eac1c1"]
 
     /* Internal routes */
-    frontend -> {searcher, symbols, query_runner, executor_queue, blob_store, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
+    frontend -> {searcher, symbols, query_runner, blob_store, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
     searcher -> gitserver [fillcolor="#e2a8fd"]
     symbols -> gitserver [fillcolor="#c1eaea"]
     zoekt_indexserver -> {frontend, gitserver} [fillcolor="#aaccff"]
     codeintel_worker -> {gitserver} [fillcolor="#eac1c1"]
-    executor_queue -> {postgres, gitserver} [fillcolor="#22ffff"]
     executor -> frontend [fillcolor="#0dc9b6"]
 
 
