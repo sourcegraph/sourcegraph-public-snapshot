@@ -15,9 +15,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -177,6 +180,117 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
+	}
+}
+
+func TestRepos_Restricted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := context.Background()
+
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	// create a site admin
+	_, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a@admin.com",
+		Username:              "admin",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createUserWithExt := func(username string) (*types.User, *types.ExternalService) {
+		t.Helper()
+
+		user, err := Users(db).Create(ctx, NewUser{
+			Email:                 username + "@user.com",
+			Username:              username,
+			Password:              "p",
+			EmailVerificationCode: "c",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// create user external service
+		userExt := types.ExternalService{
+			Kind:            extsvc.KindGitHub,
+			DisplayName:     "Github - Test",
+			Config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			NamespaceUserID: user.ID,
+		}
+
+		confGet := func() *conf.Unified {
+			return &conf.Unified{}
+		}
+
+		err = ExternalServices(db).Create(ctx, confGet, &userExt)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return user, &userExt
+	}
+
+	makeRepos := func(user *types.User, ext *types.ExternalService) []*types.Repo {
+		t.Helper()
+
+		var repos []*types.Repo
+
+		for i := 0; i < 5; i++ {
+			repo := types.MakeRepo(fmt.Sprintf("github.com/%s/repo-%d", user.Username, i+1), "http://github.com", extsvc.TypeGitHub, ext)
+			repo.Metadata = new(github.Repository)
+			repo.ExternalRepo.ID = fmt.Sprintf("%s/repo-%d", user.Username, i+1)
+			repo.Private = true
+			if err := Repos(db).Create(ctx, repo); err != nil {
+				t.Fatal(err)
+			}
+
+			repos = append(repos, repo)
+		}
+
+		sort.Sort(types.Repos(repos))
+
+		return repos
+	}
+
+	listRepos := func(user *types.User) []*types.Repo {
+		t.Helper()
+
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
+		repos, err := Repos(db).List(ctx, ReposListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		sort.Sort(types.Repos(repos))
+
+		return repos
+	}
+
+	// create two normal users with their external services
+	user1, ext1 := createUserWithExt("user1")
+	user2, ext2 := createUserWithExt("user2")
+
+	// create private repos for each user
+	user1Repos := makeRepos(user1, ext1)
+	user2Repos := makeRepos(user2, ext2)
+
+	// list repos for user1
+	if diff := cmp.Diff(listRepos(user1), user1Repos, cmpopts.EquateEmpty()); diff != "" {
+		t.Fatalf("List:\n%s", diff)
+	}
+
+	// list repos for user2
+	if diff := cmp.Diff(listRepos(user2), user2Repos, cmpopts.EquateEmpty()); diff != "" {
+		t.Fatalf("List:\n%s", diff)
 	}
 }
 

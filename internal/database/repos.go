@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	regexpsyntax "regexp/syntax"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -637,33 +638,39 @@ func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 }
 
 func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
-	q, err := s.listSQL(ctx, opt)
+	tx := s
+
+	var err error
+	// if the query originates from an authenticated request
+	// open a transaction or a savepoint and change the current role.
+	if actor := actor.FromContext(ctx); actor.IsAuthenticated() && !actor.Internal {
+		// TODO(asdine): What about site-admins?
+		// Ensure we are in a transaction or a savepoint
+		tx, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = tx.Done(err) }()
+
+		// Set local permissions for the current user
+		err = tx.Exec(ctx, sqlf.Sprintf(`
+				SET LOCAL rls.user_id TO `+strconv.Itoa(int(actor.UID))+`;
+				SET LOCAL rls.permission TO 'read';
+				SET LOCAL rls.use_permissions_user_mapping TO true;
+			`))
+		if err != nil {
+			return err
+		}
+	}
+
+	q, err := tx.listSQL(ctx, opt)
 	if err != nil {
 		return err
 	}
 
 	tr.LogFields(trace.SQL(q))
 
-	/*** BEGIN RLS HACKING ***/
-	txn, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = txn.Done(err) }()
-
-	userID := actor.FromContext(ctx).UID
-	if _, err := txn.Handle().DB().ExecContext(ctx, fmt.Sprintf("SET LOCAL rls.user_id = %d", userID)); err != nil {
-		return err
-	}
-	if _, err := txn.Handle().DB().ExecContext(ctx, "SET LOCAL rls.use_permissions_user_mapping = false"); err != nil {
-		return err
-	}
-	if _, err := txn.Handle().DB().ExecContext(ctx, "SET LOCAL rls.permission = 'read'"); err != nil {
-		return err
-	}
-	/*** END RLS HACKING ***/
-
-	rows, err := txn.Query(ctx, q)
+	rows, err := tx.Query(ctx, q)
 	if err != nil {
 		return err
 	}
