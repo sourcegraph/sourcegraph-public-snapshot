@@ -13,7 +13,7 @@ var Standard standardConstructor
 type standardConstructor struct{}
 
 // Count creates an observable from the given options backed by the counter specifying
-// the number of operatons. The legend name supplied to the outermost function will be
+// the number of operations. The legend name supplied to the outermost function will be
 // used as the panel's dataset legend. Note that the legend is also supplemented by label
 // values if By is also assigned.
 //
@@ -40,7 +40,7 @@ func (standardConstructor) Count(legend string) observableConstructor {
 }
 
 // Duration creates an observable from the given options backed by the histogram specifying
-// the duration of operatons. The legend name supplied to the outermost function will be
+// the duration of operations. The legend name supplied to the outermost function will be
 // used as the panel's dataset legend. Note that the legend is also supplemented by label
 // values if By is also assigned.
 //
@@ -68,7 +68,7 @@ func (standardConstructor) Duration(legend string) observableConstructor {
 }
 
 // Errors creates an observable from the given options backed by the counter specifying
-// the number of operatons that resulted in an error. The legend name supplied to the
+// the number of operations that resulted in an error. The legend name supplied to the
 // outermost function will be used as the panel's dataset legend. Note that the legend
 // is also supplemented by label values if By is also assigned.
 //
@@ -95,7 +95,7 @@ func (standardConstructor) Errors(legend string) observableConstructor {
 }
 
 // ErrorRate creates an observable from the given options backed by the counters specifying
-// the number of operatons that resulted in success and error, respectively. The legend name
+// the number of operations that resulted in success and error, respectively. The legend name
 // supplied to the outermost function will be used as the panel's dataset legend. Note that
 // the legend is also supplemented by label values if By is also assigned.
 //
