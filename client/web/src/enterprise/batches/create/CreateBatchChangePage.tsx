@@ -24,10 +24,10 @@ import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 
 import { createBatchSpecExecution } from './backend'
 import styles from './CreateBatchChangePage.module.scss'
-import combySample from './samples/comby.batch.yaml'
-import helloWorldSample from './samples/empty.batch.yaml'
-import goImportsSample from './samples/go-imports.batch.yaml'
-import minimalSample from './samples/minimal.batch.yaml'
+import combySample from './examples/comby.batch.yaml'
+import helloWorldSample from './examples/empty.batch.yaml'
+import goImportsSample from './examples/go-imports.batch.yaml'
+import minimalSample from './examples/minimal.batch.yaml'
 
 interface SampleTabHeaderProps {
     sample: Sample
