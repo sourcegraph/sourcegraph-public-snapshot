@@ -14,7 +14,7 @@ export const getButtonStyle = ({ variant, outline }: GetButtonStyleParameters): 
 }
 
 interface GetButtonSizeParameters {
-    size?: typeof BUTTON_SIZES[number]
+    size: typeof BUTTON_SIZES[number]
 }
 
 export const getButtonSize = ({ size }: GetButtonSizeParameters): string => {

@@ -2,6 +2,7 @@ import classnames from 'classnames'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
 import { Button, ButtonProps } from '../Button'
 
 interface LoadingButtonProps extends ButtonProps {
@@ -27,7 +28,7 @@ interface LoadingButtonProps extends ButtonProps {
  * For example, it may be appropriate to use the 'success' variant once the action has completed successfully.
  * Likewise, you may want to use the 'danger' variant if the action failed.
  */
-export const LoadingButton: React.FunctionComponent<Partial<LoadingButtonProps>> = ({
+export const LoadingButton: React.FunctionComponent<LoadingButtonProps> = ({
     loading,
     children,
     alwaysShowChildren,

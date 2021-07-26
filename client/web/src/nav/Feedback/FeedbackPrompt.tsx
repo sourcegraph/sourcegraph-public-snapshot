@@ -151,7 +151,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         disabled={!rating || !text || loading}
                         role="menuitem"
                         type="submit"
-                        color="secondary"
+                        variant="secondary"
                         className="btn-block feedback-prompt__button"
                     >
                         Send

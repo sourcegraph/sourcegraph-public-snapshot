@@ -1,15 +1,16 @@
 import classNames from 'classnames'
 import React from 'react'
+
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { getButtonSize, getButtonStyle } from './utils'
 
 export interface ButtonProps
-    extends React.ButtonHTMLAttributes<`HTMLButtonElement`>,
+    extends React.ButtonHTMLAttributes<'HTMLButtonElement'>,
         React.RefAttributes<HTMLButtonElement> {
     /**
      * The variant style of the button. Defaults to `primary`
      */
-    variant?: typeof BUTTON_VARIANTS[number]
+    variant: typeof BUTTON_VARIANTS[number]
     /**
      * The size of the button. Defaults to `md`
      */
@@ -49,23 +50,21 @@ export const Button: React.FunctionComponent<ButtonProps> = React.forwardRef(
             children,
             as: Component = 'button',
             type = 'button',
-            variant = 'primary',
+            variant,
             size = 'md',
             outline,
             className,
             ...attributes
         },
-        ref
-    ) => {
-        return (
-            <Component
-                ref={ref}
-                className={classNames('btn', getButtonStyle({ variant, outline }), getButtonSize({ size }), className)}
-                type={Component === 'button' ? type : undefined}
-                {...attributes}
-            >
-                {children}
-            </Component>
-        )
-    }
+        reference
+    ) => (
+        <Component
+            ref={reference}
+            className={classNames('btn', getButtonStyle({ variant, outline }), getButtonSize({ size }), className)}
+            type={Component === 'button' ? type : undefined}
+            {...attributes}
+        >
+            {children}
+        </Component>
+    )
 )

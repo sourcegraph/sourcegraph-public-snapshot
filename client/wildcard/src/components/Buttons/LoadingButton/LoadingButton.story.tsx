@@ -1,11 +1,13 @@
+import { boolean, select } from '@storybook/addon-knobs'
 import { Meta } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { boolean, select } from '@storybook/addon-knobs'
-import { LoadingButton } from './LoadingButton'
+
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../Button/constants'
+
+import { LoadingButton } from './LoadingButton'
 
 const Story: Meta = {
     title: 'wildcard/Buttons/LoadingButton',
@@ -21,6 +23,7 @@ const Story: Meta = {
     },
 }
 
+// eslint-disable-next-line import/no-default-export
 export default Story
 
 export const Simple = () => (

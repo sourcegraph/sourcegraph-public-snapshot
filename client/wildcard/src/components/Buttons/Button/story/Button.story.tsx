@@ -1,13 +1,15 @@
+import { boolean, select } from '@storybook/addon-knobs'
 import { Meta } from '@storybook/react'
+import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import SearchIcon from 'mdi-react/SearchIcon'
-import { boolean, select } from '@storybook/addon-knobs'
+
 import { Button } from '../Button'
-import { ButtonVariants } from './ButtonVariants'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
+
+import { ButtonVariants } from './ButtonVariants'
 
 const Story: Meta = {
     title: 'wildcard/Buttons/Button',
@@ -29,6 +31,7 @@ const Story: Meta = {
     },
 }
 
+// eslint-disable-next-line import/no-default-export
 export default Story
 
 export const Simple = () => (
