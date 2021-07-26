@@ -318,7 +318,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query zoektquery.Q, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query zoektquery.Q, typ IndexedRequestType, c streaming.Sender) error {
 	if args == nil {
 		return nil
 	}
@@ -430,7 +430,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.
 	}
 
 	if args.Mode == search.ZoektGlobalSearch {
-		return zoektSearchGlobal(ctx, args, q, typ, since, c)
+		return zoektSearchGlobal(ctx, args, q, typ, c)
 	}
 
 	if len(repos.repoRevs) == 0 {
