@@ -368,7 +368,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.PatternInfo.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
+	searchOpts := SearchOpts(ctx, k, args.PatternInfo.FileMatchLimit)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -441,7 +441,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
 
 	k := ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
+	searchOpts := SearchOpts(ctx, k, args.PatternInfo.FileMatchLimit)
 
 	// Start event stream.
 	t0 := time.Now()
