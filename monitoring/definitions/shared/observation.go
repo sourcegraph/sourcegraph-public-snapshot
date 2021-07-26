@@ -9,9 +9,10 @@ import (
 // Observation exports available shared observable and group constructors related
 // to the metrics emitted by internal/metrics.NewOperationMetrics in the Go backend.
 var Observation = observationConstructor{
-	Total:    Standard.Count("operations"),
-	Duration: Standard.Duration("operation"),
-	Errors:   Standard.Errors("operation"),
+	Total:     Standard.Count("operations"),
+	Duration:  Standard.Duration("operation"),
+	Errors:    Standard.Errors("operation"),
+	ErrorRate: Standard.ErrorRate("operation"),
 }
 
 // observationConstructor provides `Observation` implementations.
@@ -33,6 +34,15 @@ type observationConstructor struct {
 	//
 	// Requires a counter of the format `src_{options.MetricNameRoot}_errors_total`
 	Errors observableConstructor
+
+	// ErrorRate creates an observable from the given options backed by the counter specifying
+	// the number of successful operations and another counter specifying the number of operatons
+	// that resulted in an error.
+	//
+	// Requires a:
+	//   - counter of the format `src_{options.MetricNameRoot}_total`
+	//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
+	ErrorRate observableConstructor
 }
 
 type ObservationGroupOptions struct {
@@ -44,8 +54,11 @@ type ObservationGroupOptions struct {
 	// Duration transforms the default observable used to construct the duration histogram panel.
 	Duration ObservableOption
 
-	// Errors transforms the default observable used to construct the error rate panel.
+	// Errors transforms the default observable used to construct the error count panel.
 	Errors ObservableOption
+
+	// ErrorRate transforms the default observable used to construct the error rate panel.
+	ErrorRate ObservableOption
 }
 
 // NewGroup creates a group containing panels displaying the total number of operations, operation
@@ -66,6 +79,7 @@ func (observationConstructor) NewGroup(containerName string, owner monitoring.Ob
 				options.Total.safeApply(Observation.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 				options.Duration.safeApply(Observation.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 				options.Errors.safeApply(Observation.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.ErrorRate.safeApply(Observation.ErrorRate(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 			},
 		},
 	}

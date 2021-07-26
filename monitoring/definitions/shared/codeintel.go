@@ -26,9 +26,10 @@ func (codeIntelligence) NewResolversGroup(containerName string) monitoring.Group
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"), // TODO - should alert on these
-		Errors:   NoAlertsOption("none"), // TODO - should alert on these
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -122,9 +123,10 @@ func (codeIntelligence) NewCommitGraphProcessorGroup(containerName string) monit
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -144,9 +146,10 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -269,9 +272,10 @@ func (codeIntelligence) NewExecutorSetupCommandGroup(containerName string) monit
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -292,9 +296,10 @@ func (codeIntelligence) NewExecutorExecutionCommandGroup(containerName string) m
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -315,9 +320,10 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -338,9 +344,10 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -360,9 +367,10 @@ func (codeIntelligence) NewDBStoreGroup(containerName string) monitoring.Group {
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -382,9 +390,10 @@ func (codeIntelligence) NewDependencyIndexDBWorkerStoreGroup(containerName strin
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -404,9 +413,10 @@ func (codeIntelligence) NewIndexDBWorkerStoreGroup(containerName string) monitor
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -426,9 +436,10 @@ func (codeIntelligence) NewLSIFStoreGroup(containerName string) monitoring.Group
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -448,9 +459,10 @@ func (codeIntelligence) NewUploadDBWorkerStoreGroup(containerName string) monito
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -470,9 +482,10 @@ func (codeIntelligence) NewGitserverClientGroup(containerName string) monitoring
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -492,9 +505,10 @@ func (codeIntelligence) NewUploadStoreGroup(containerName string) monitoring.Gro
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
@@ -514,9 +528,10 @@ func (codeIntelligence) NewAutoIndexEnqueuerGroup(containerName string) monitori
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
 	})
 }
 
