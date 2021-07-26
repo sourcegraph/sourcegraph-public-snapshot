@@ -2,11 +2,212 @@ package search
 
 import (
 	"encoding/json"
+	"sort"
 	"testing"
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+
+	zoekt "github.com/google/zoekt/query"
 )
+
+type IndexedRequestType string
+
+const (
+	TextRequest   IndexedRequestType = "text"
+	SymbolRequest IndexedRequestType = "symbol"
+)
+
+func TestQueryToZoektQuery(t *testing.T) {
+	cases := []struct {
+		Name    string
+		Type    IndexedRequestType
+		Pattern *TextPatternInfo
+		Query   string
+	}{
+		{
+			Name: "substr",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: "foo case:no",
+		},
+		{
+			Name: "symbol substr",
+			Type: SymbolRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: "sym:foo case:no",
+		},
+		{
+			Name: "regex",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "(foo).*?(bar)",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: "(foo).*?(bar) case:no",
+		},
+		{
+			Name: "path",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
+				ExcludePattern:               `\bvendor\b`,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+		},
+		{
+			Name: "case",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              true,
+				Pattern:                      "foo",
+				IncludePatterns:              []string{`\.go$`, `yaml`},
+				ExcludePattern:               "",
+				PathPatternsAreCaseSensitive: true,
+			},
+			Query: `foo case:yes f:\.go$ f:yaml`,
+		},
+		{
+			Name: "casepath",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              true,
+				Pattern:                      "foo",
+				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
+				ExcludePattern:               `\bvendor\b`,
+				PathPatternsAreCaseSensitive: true,
+			},
+			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+		},
+		{
+			Name: "path matches only",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "test",
+				IncludePatterns:              []string{},
+				ExcludePattern:               ``,
+				PathPatternsAreCaseSensitive: true,
+				PatternMatchesContent:        false,
+				PatternMatchesPath:           true,
+			},
+			Query: `f:test`,
+		},
+		{
+			Name: "content matches only",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "test",
+				IncludePatterns:              []string{},
+				ExcludePattern:               ``,
+				PathPatternsAreCaseSensitive: true,
+				PatternMatchesContent:        true,
+				PatternMatchesPath:           false,
+			},
+			Query: `c:test`,
+		},
+		{
+			Name: "content and path matches 1",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "test",
+				IncludePatterns:              []string{},
+				ExcludePattern:               ``,
+				PathPatternsAreCaseSensitive: true,
+				PatternMatchesContent:        true,
+				PatternMatchesPath:           true,
+			},
+			Query: `test`,
+		},
+		{
+			Name: "content and path matches 2",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "test",
+				IncludePatterns:              []string{},
+				ExcludePattern:               ``,
+				PathPatternsAreCaseSensitive: true,
+				PatternMatchesContent:        false,
+				PatternMatchesPath:           false,
+			},
+			Query: `test`,
+		},
+		{
+			Name: "repos must include",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IsRegExp:                     true,
+				Pattern:                      "foo",
+				FilePatternsReposMustInclude: []string{`\.go$`, `\.yaml$`},
+				FilePatternsReposMustExclude: []string{`\.java$`, `\.xml$`},
+			},
+			Query: `foo (type:repo file:\.go$) (type:repo file:\.yaml$) -(type:repo file:\.java$) -(type:repo file:\.xml$)`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			q, err := zoekt.Parse(tt.Query)
+			if err != nil {
+				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+			}
+			got, err := QueryToZoektQuery(tt.Pattern, tt.Type == SymbolRequest)
+			if err != nil {
+				t.Fatal("queryToZoektQuery failed:", err)
+			}
+			if !queryEqual(got, q) {
+				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
+			}
+		})
+	}
+}
+
+func queryEqual(a, b zoekt.Q) bool {
+	sortChildren := func(q zoekt.Q) zoekt.Q {
+		switch s := q.(type) {
+		case *zoekt.And:
+			sort.Slice(s.Children, func(i, j int) bool {
+				return s.Children[i].String() < s.Children[j].String()
+			})
+		case *zoekt.Or:
+			sort.Slice(s.Children, func(i, j int) bool {
+				return s.Children[i].String() < s.Children[j].String()
+			})
+		}
+		return q
+	}
+	return zoekt.Map(a, sortChildren).String() == zoekt.Map(b, sortChildren).String()
+}
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
 	q, err := query.Parse(input, query.SearchTypeLiteral)
