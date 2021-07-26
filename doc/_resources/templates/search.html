@@ -1,5 +1,5 @@
 {{define "title"}}
-	{{.Query}} - Search
+	Search{{if .Query}} - {{.Query}}{{end}}
 {{end}}
 
 {{define "head"}}
@@ -9,8 +9,10 @@
 {{define "query"}}{{.Query}}{{end}}
 
 {{define "content"}}
-	<section id="content" class="search-result">
-		<h1>{{.Result.Total}} result{{if ne .Result.Total 1}}s{{end}} found for <strong>{{.Query}}</strong></h1>
+	<section id="content" class="search-result st-search-container">
+        {{if .Query}}
+		    <h1>{{.Result.Total}} result{{if ne .Result.Total 1}}s{{end}} found for <strong>{{.Query}}</strong></h1>
+        {{end}}
 		{{if .Result.DocumentResults}}
 		<ol class="document-results">
 			{{range $dr := .Result.DocumentResults}}

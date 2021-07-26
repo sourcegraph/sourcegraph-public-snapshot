@@ -42,7 +42,7 @@
                     </a></h1>
                     <form id="search-form" method="get" action="/search">
                         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.172 24l-7.387-7.387c-1.388.874-3.024 1.387-4.785 1.387-4.971 0-9-4.029-9-9s4.029-9 9-9 9 4.029 9 9c0 1.761-.514 3.398-1.387 4.785l7.387 7.387-2.828 2.828zm-12.172-8c3.859 0 7-3.14 7-7s-3.141-7-7-7-7 3.14-7 7 3.141 7 7 7z"/></svg>
-					    <input type="text" id="search" name="q" value="{{block "query" .}}{{end}}" placeholder="" spellcheck="false" aria-label="Query" />
+					    <input type="text" id="search" name="q" value="{{block "query" .}}{{end}}" placeholder="" spellcheck="false" aria-label="Query" class="st-default-search-input" />
                         <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
 					    <button id="search-button" type="submit" aria-label="Search" class="sr-only">Search</button>
 				    </form>
@@ -91,6 +91,20 @@
                 </footer>
             </div>
 		</body>
+
+        <!--
+            https://app.swiftype.com/engines/sourcegraph-docs
+
+            Remove the script block to disable Swifttype search and use the built-in docsite search!
+        -->
+        <script type="text/javascript">
+            (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+            (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+            e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+            })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+            _st('install','u68TjdsBrrjUZHvJqtyt','2.0.0');
+        </script>
 	</html>
 {{end}}
 

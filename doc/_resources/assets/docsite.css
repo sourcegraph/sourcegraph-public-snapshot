@@ -262,6 +262,15 @@ body > #sidebar #search-form .search-icon {
     left: 26px;
     top: 18px;
 }
+/* disable swiftype search icon */
+body > #sidebar #search-form .st-default-search-input, .st-ui-search-input {
+    background: none;
+}
+/* tweak generated swifttype autocomplete bar */
+.st-default-autocomplete {
+    position: fixed;
+    min-width: 25%;
+}
 /* Nav */
 body > #sidebar nav.links {
     margin-top: calc(0.75*var(--spacing));
@@ -689,6 +698,14 @@ body > #page > main > #content {
 .search-result .excerpt {
   display: inline-block;
   margin: 0;
+}
+/* tweak swifttype search results */
+.search-result a.st-ui-result:hover .st-ui-type-detail,
+.search-result a.st-ui-result:hover .st-ui-type-detail .st-ui-type-detail-bold {
+    color: var(--text-color);
+}
+body.theme-dark .search-result a.st-ui-result:hover .st-ui-type-detail em {
+    color: var(--body-bg);
 }
 
 /* CONTENT */
