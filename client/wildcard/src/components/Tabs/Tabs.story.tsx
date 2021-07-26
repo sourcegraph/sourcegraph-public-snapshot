@@ -12,7 +12,7 @@ export const TabsStory: Story = () => (
     <BrandedStory styles={webStyles}>
         {() => (
             <Container>
-                <Tabs>
+                <Tabs lazy={true} behavior="forceRender">
                     <TabList>
                         <Tab>Tab 1</Tab>
                         <Tab>Tab 2</Tab>
