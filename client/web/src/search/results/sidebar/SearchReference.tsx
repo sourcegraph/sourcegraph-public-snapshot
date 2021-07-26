@@ -558,7 +558,8 @@ export interface SearchReferenceProps
 const SearchReference = (props: SearchReferenceProps): ReactElement => {
     const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
-    const { onNavbarQueryChange, navbarSearchQueryState, filter, telemetryService } = props
+    const { onNavbarQueryChange, navbarSearchQueryState, telemetryService } = props
+    const filter = props.filter.trim()
     const hasFilter = filter.length > 0
 
     const selectedFilters = useMemo(() => {
@@ -589,7 +590,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
 
     return (
         <div>
-            {props.filter ? (
+            {hasFilter ? (
                 filterList
             ) : (
                 <Tabs index={selectedTab} onChange={setSelectedTab}>
