@@ -35,9 +35,8 @@ type observationConstructor struct {
 	// Requires a counter of the format `src_{options.MetricNameRoot}_errors_total`
 	Errors observableConstructor
 
-	// ErrorRate creates an observable from the given options backed by the counter specifying
-	// the number of successful operations and another counter specifying the number of operations
-	// that resulted in an error.
+	// ErrorRate creates an observable from the given options backed by the counters specifying
+	// the number of operatons that resulted in success and error, respectively
 	//
 	// Requires a:
 	//   - counter of the format `src_{options.MetricNameRoot}_total`
