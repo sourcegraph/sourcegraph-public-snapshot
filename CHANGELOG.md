@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
+- Operator documentation has been added to the Search Reference sidebar section. [#23116]https://github.com/sourcegraph/sourcegraph/pull/23116)
 
 ### Changed
 
@@ -24,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- The search reference will now show matching entries when using the filter input. [#23224](https://github.com/sourcegraph/sourcegraph/pull/23224)
 
 ### Removed
 
@@ -34,9 +35,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- An issue where the UI would occassionally display `lsifStore.Ranges: ERROR: relation \"lsif_documentation_mappings\" does not exist (SQLSTATE 42P01)` [#23115](https://github.com/sourcegraph/sourcegraph/pull/23115)
+- An issue where the UI would occasionally display `lsifStore.Ranges: ERROR: relation \"lsif_documentation_mappings\" does not exist (SQLSTATE 42P01)` [#23115](https://github.com/sourcegraph/sourcegraph/pull/23115)
+- Fixed a vulnerability in our Postgres Alpine image related to libgcrypt [#23174](https://github.com/sourcegraph/sourcegraph/pull/23174)
+- When syncing in streaming mode, repo-updater will now ensure a repo's transaction is committed before notifying gitserver to update that repo. [#23169](https://github.com/sourcegraph/sourcegraph/pull/23169)
+- When encountering spurious errors during streaming syncing (like temporary 500s from codehosts), repo-updater will no longer delete all associated repos that weren't seen. Deletion will happen only if there were no errors or if the error was one of "Unauthorized", "Forbidden" or "Account Suspended". [#23171](https://github.com/sourcegraph/sourcegraph/pull/23171)
+- External HTTP requests are now automatically retried when appropriate. [#23131](https://github.com/sourcegraph/sourcegraph/pull/23131)
 
 ## 3.30.0
+
+**⚠️ Prefer upgrading to the 3.30.1 release instead of 3.30.0 release to avoid issues with repo-updater errors**
 
 ### Added
 
@@ -88,6 +95,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The experimental extensions view page has been removed. [#22565](https://github.com/sourcegraph/sourcegraph/pull/22565)
 - A search query diagnostic that previously warned the user when quotes are interpreted literally has been removed. The literal meaning has been Sourcegraph's default search behavior for some time now. [#22892](https://github.com/sourcegraph/sourcegraph/pull/22892)
 - The old batch repository syncer was removed and can no longer be activated by setting `ENABLE_STREAMING_REPOS_SYNCER=false`. [#22949](https://github.com/sourcegraph/sourcegraph/pull/22949)
+- Non-root overlays were removed for `deploy-sourcegraph` in favor of using `non-privileged`. [#3404](https://github.com/sourcegraph/deploy-sourcegraph/pull/3404)
 
 ### API docs (experimental)
 

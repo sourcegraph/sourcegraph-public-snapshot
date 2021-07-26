@@ -19,9 +19,14 @@ and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.29 -> 3.30
+## 3.29 -> 3.30.1
 
-No manual migration required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your
+**⚠️ Prefer upgrading to the 3.30.1 release see CHANGELOG for more info**
+
+This upgrade removes the `non-root` overlay, in favor of using only the `non-privileged` overlay for deploying Sourcegraph in secure environments. If you were
+previously deploying using the `non-root` overlay, you should now generate overlays using the `non-privileged` overlay.
+
+No other manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your
 deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*

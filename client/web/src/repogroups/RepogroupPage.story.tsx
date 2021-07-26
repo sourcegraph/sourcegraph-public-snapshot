@@ -112,7 +112,6 @@ const commonProps = () =>
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-        featureFlags: new Map(),
     })
 
 add('Refactor Python 2 to 3', () => (

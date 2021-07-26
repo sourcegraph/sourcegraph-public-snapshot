@@ -395,6 +395,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, nil
 		}
 		p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
+		if p.Pattern == "" {
+			return nil, nil
+		}
 
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()

@@ -27,7 +27,6 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { InsightsApiContext, InsightsViewGrid } from '../../insights'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
@@ -56,8 +55,7 @@ export interface SearchPageProps
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
-        ShowQueryBuilderProps,
-        FeatureFlagProps {
+        ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

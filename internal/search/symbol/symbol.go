@@ -59,10 +59,6 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		tr.Finish()
 	}()
 
-	if args.PatternInfo.Pattern == "" {
-		return nil
-	}
-
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 

@@ -32,7 +32,6 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -77,8 +76,7 @@ interface Props
         SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps,
-        BatchChangesProps,
-        FeatureFlagProps {
+        BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null

@@ -22,7 +22,6 @@ import (
 )
 
 type handler struct {
-	idSet         *IDSet
 	store         workerutil.Store
 	options       Options
 	operations    *command.Operations
@@ -30,9 +29,6 @@ type handler struct {
 }
 
 var _ workerutil.Handler = &handler{}
-
-// ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
-var ErrJobAlreadyExists = errors.New("job already exists")
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
@@ -56,18 +52,13 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 	}()
 
-	if !h.idSet.Add(job.ID, cancel) {
-		return ErrJobAlreadyExists
-	}
-	defer h.idSet.Remove(job.ID)
-
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
 	// in a command constructed and run in the following function. Note that the command and
 	// its output may both contain sensitive values, but only values which we directly
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	logger := command.NewLogger(h.store, job, record, union(h.options.RedactedValues, job.RedactedValues))
+	logger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
 	defer logger.Flush()
 
 	// Create a working directory for this job which will be removed once the job completes.
