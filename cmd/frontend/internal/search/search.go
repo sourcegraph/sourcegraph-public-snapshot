@@ -195,6 +195,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		repoMetadata := h.getEventRepoMetadata(ctx, event)
 		for _, match := range event.Results {
+			// Don't send matches which we cannot map to a repo the actor has access to. This
+			// check is expected to always pass. Missing metadata is a sign that we have
+			// searched repos that user shouldn't have access to.
+			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+				continue
+			}
 			matchesAppend(fromMatch(match, repoMetadata))
 		}
 
