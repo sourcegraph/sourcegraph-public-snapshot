@@ -42,7 +42,6 @@ export DISABLE_CNCF=notonmybox
 export EXECUTOR_FRONTEND_URL=http://localhost:3080
 export EXECUTOR_FRONTEND_USERNAME=executor
 export EXECUTOR_FRONTEND_PASSWORD=hunter2
-export EXECUTOR_QUEUE_URL=http://localhost:3191
 export EXECUTOR_USE_FIRECRACKER=false
 export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 
