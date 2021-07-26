@@ -188,7 +188,7 @@ func TestRepos_Restricted(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db, restrictedDB := dbtest.NewRestrictedDB(t, "")
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -265,7 +265,7 @@ func TestRepos_Restricted(t *testing.T) {
 		t.Helper()
 
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
-		repos, err := Repos(db).List(ctx, ReposListOptions{})
+		repos, err := Repos(restrictedDB).List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -283,8 +283,9 @@ func TestRepos_Restricted(t *testing.T) {
 	user1Repos := makeRepos(user1, ext1)
 	user2Repos := makeRepos(user2, ext2)
 
+	gotUser1Repos := listRepos(user1)
 	// list repos for user1
-	if diff := cmp.Diff(listRepos(user1), user1Repos, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(gotUser1Repos, user1Repos, cmpopts.EquateEmpty()); diff != "" {
 		t.Fatalf("List:\n%s", diff)
 	}
 

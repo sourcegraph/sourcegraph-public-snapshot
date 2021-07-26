@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
@@ -56,6 +57,52 @@ var rngLock sync.Mutex
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) *sql.DB {
+	config := createTempDB(t, dsn)
+
+	testDB := dbConn(t, config)
+	t.Logf("testdb: %s", config.String())
+
+	// Some tests that exercise concurrency need lots of connections or they block forever.
+	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
+	testDB.SetMaxOpenConns(10)
+
+	t.Cleanup(func() {
+		if err := testDB.Close(); err != nil {
+			t.Fatalf("failed to close test database: %s", err)
+		}
+	})
+	return testDB
+}
+
+// NewRestrictedDB returns two connections to a clean, new temporary testing database
+// with the same schema as Sourcegraph's production Postgres database.
+// The first connection has a global access to the database with no restriction,
+// the second one has restricted access.
+func NewRestrictedDB(t testing.TB, dsn string) (*sql.DB, *sql.DB) {
+	config := createTempDB(t, dsn)
+
+	testDB := dbConn(t, config)
+	t.Logf("testdb: %s", config.String())
+
+	restricedDB := restrictedDBConn(t, config)
+
+	// Some tests that exercise concurrency need lots of connections or they block forever.
+	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
+	testDB.SetMaxOpenConns(10)
+	restricedDB.SetMaxOpenConns(10)
+
+	t.Cleanup(func() {
+		if err := testDB.Close(); err != nil {
+			t.Fatalf("failed to close test database: %s", err)
+		}
+		if err := restricedDB.Close(); err != nil {
+			t.Fatalf("failed to close test database: %s", err)
+		}
+	})
+	return testDB, restricedDB
+}
+
+func createTempDB(t testing.TB, dsn string) *url.URL {
 	var err error
 	var config *url.URL
 	if dsn == "" {
@@ -81,12 +128,6 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName()))
 
 	config.Path = "/" + dbname
-	testDB := dbConn(t, config)
-	t.Logf("testdb: %s", config.String())
-
-	// Some tests that exercise concurrency need lots of connections or they block forever.
-	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
-	testDB.SetMaxOpenConns(10)
 
 	t.Cleanup(func() {
 		defer db.Close()
@@ -96,14 +137,11 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 			return
 		}
 
-		if err := testDB.Close(); err != nil {
-			t.Fatalf("failed to close test database: %s", err)
-		}
 		dbExec(t, db, killClientConnsQuery, dbname)
 		dbExec(t, db, `DROP DATABASE `+pq.QuoteIdentifier(dbname))
 	})
 
-	return testDB
+	return config
 }
 
 var templateOnce sync.Once
@@ -163,6 +201,18 @@ func wdHash() string {
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 	t.Helper()
 	db, err := dbconn.NewRaw(cfg.String())
+	if err != nil {
+		t.Fatalf("failed to connect to database %q: %s", cfg, err)
+	}
+	return db
+}
+
+func restrictedDBConn(t testing.TB, cfg *url.URL) *sql.DB {
+	t.Helper()
+	db, err := dbconn.NewRestricted(dbconn.Opts{
+		DSN:     cfg.String(),
+		AppName: "sourcegraph",
+	})
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

@@ -652,7 +652,6 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		}
 		defer func() { err = tx.Done(err) }()
 
-		// Set local permissions for the current user
 		err = tx.Exec(ctx, sqlf.Sprintf(`
 				SET LOCAL rls.user_id TO `+strconv.Itoa(int(actor.UID))+`;
 				SET LOCAL rls.permission TO 'read';
