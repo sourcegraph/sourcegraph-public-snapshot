@@ -20,7 +20,10 @@ import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
-window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
+if (!window.context) {
+    window.context = {} as SourcegraphContext & SuiteFunction
+}
+window.context.assetsRoot = 'https://sourcegraph.com/.assets'
 
 const history = createMemoryHistory()
 
