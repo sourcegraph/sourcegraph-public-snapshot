@@ -22,7 +22,6 @@ type Config struct {
 	FrontendPassword     string
 	QueueName            string
 	QueuePollInterval    time.Duration
-	HeartbeatInterval    time.Duration
 	MaximumNumJobs       int
 	FirecrackerImage     string
 	UseFirecracker       bool
@@ -41,7 +40,6 @@ func (c *Config) Load() {
 	c.FrontendPassword = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password supplied to the frontend.")
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
-	c.HeartbeatInterval = c.GetInterval("EXECUTOR_HEARTBEAT_INTERVAL", "1s", "Interval between heartbeat requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", "true", "Whether to isolate commands in virtual machines.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
@@ -57,7 +55,6 @@ func (c *Config) Load() {
 func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options {
 	return apiworker.Options{
 		QueueName:            c.QueueName,
-		HeartbeatInterval:    c.HeartbeatInterval,
 		WorkerOptions:        c.WorkerOptions(),
 		FirecrackerOptions:   c.FirecrackerOptions(),
 		ResourceOptions:      c.ResourceOptions(),
@@ -74,10 +71,11 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 
 func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
-		Name:        "precise_code_intel_index_worker",
-		NumHandlers: c.MaximumNumJobs,
-		Interval:    c.QueuePollInterval,
-		Metrics:     makeWorkerMetrics(c.QueueName),
+		Name:              "precise_code_intel_index_worker",
+		NumHandlers:       c.MaximumNumJobs,
+		Interval:          c.QueuePollInterval,
+		HeartbeatInterval: 1 * time.Second,
+		Metrics:           makeWorkerMetrics(c.QueueName),
 	}
 }
 

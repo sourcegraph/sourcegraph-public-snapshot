@@ -23,9 +23,6 @@ type Options struct {
 	// horizontal scaling factors while still uniformly processing events.
 	QueueName string
 
-	// HeartbeatInterval denotes the time between heartbeat requests to the queue API.
-	HeartbeatInterval time.Duration
-
 	// GitServicePath is the path to the internal git service API proxy in the frontend.
 	// This path should contain the endpoints info/refs and git-upload-pack.
 	GitServicePath string
@@ -59,7 +56,6 @@ type Options struct {
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
 func NewWorker(options Options, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	idSet := newIDSet()
 	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
@@ -68,31 +64,13 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	}
 
 	handler := &handler{
-		idSet:         idSet,
 		store:         store,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
 	}
 
-	worker := workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
-	heartbeat := goroutine.NewHandlerWithErrorMessage("heartbeat", func(ctx context.Context) error {
-		unknownIDs, err := queueStore.Heartbeat(ctx, options.QueueName, idSet.Slice())
-		if err != nil {
-			return err
-		}
-
-		for _, id := range unknownIDs {
-			idSet.Remove(id)
-		}
-
-		return nil
-	})
-
-	return goroutine.CombinedRoutine{
-		worker,
-		goroutine.NewPeriodicGoroutine(context.Background(), options.HeartbeatInterval, heartbeat),
-	}
+	return workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

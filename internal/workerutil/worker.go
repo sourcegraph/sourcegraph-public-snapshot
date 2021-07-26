@@ -14,6 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
+var ErrJobAlreadyExists = errors.New("job already exists")
+
 // Worker is a generic consumer of records from the workerutil store.
 type Worker struct {
 	store            Store
@@ -25,6 +28,7 @@ type Worker struct {
 	cancel           func()          // cancels the root context
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
+	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
 }
 
 type WorkerOptions struct {
@@ -84,12 +88,42 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		ctx:              ctx,
 		cancel:           cancel,
 		finished:         make(chan struct{}),
+		runningIDSet:     newIDSet(),
 	}
 }
 
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker) Start() {
 	defer close(w.finished)
+
+	// Create a background routine that periodically writes the current time to the running records.
+	// This will keep the records claimed by the active worker for a small amount of time so that
+	// it will not be processed by a second worker concurrently.
+	go func() {
+		for {
+			select {
+			case <-w.ctx.Done():
+				return
+			case <-w.clock.After(w.options.HeartbeatInterval):
+			}
+
+			ids := w.runningIDSet.Slice()
+			knownIDs, err := w.store.Heartbeat(w.ctx, ids)
+			if err != nil {
+				log15.Error("Failed to refresh heartbeats", "name", w.options.Name, "id", "error", err)
+			}
+			knownIDsMap := map[int]struct{}{}
+			for _, id := range knownIDs {
+				knownIDsMap[id] = struct{}{}
+			}
+
+			for _, id := range ids {
+				if _, ok := knownIDsMap[id]; !ok {
+					w.runningIDSet.Remove(id)
+				}
+			}
+		}
+	}()
 
 loop:
 	for {
@@ -169,31 +203,17 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, nil
 	}
 
-	// Create a background routine that periodically writes the current time to the record.
-	// This will keep a record claimed by an active worker for a small amount of time so that
-	// it will not be processed by a second worker concurrently.
-
-	heartbeatCtx, cancel := context.WithCancel(w.ctx)
-	go func() {
-		for {
-			select {
-			case <-heartbeatCtx.Done():
-				return
-			case <-w.clock.After(w.options.HeartbeatInterval):
-			}
-
-			id := record.RecordID()
-			if _, err := w.store.Heartbeat(heartbeatCtx, []int{id}); err != nil {
-				log15.Error("Failed to refresh last_heartbeat_at", "name", w.options.Name, "id", id, "error", err)
-			}
-		}
-	}()
+	handleCtx, cancel := context.WithCancel(w.ctx)
+	// Register the record as running so it is included in heartbeat updates.
+	if !w.runningIDSet.Add(record.RecordID(), cancel) {
+		return false, ErrJobAlreadyExists
+	}
 
 	w.options.Metrics.numJobs.Inc()
 	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
 	if hook, ok := w.handler.(WithHooks); ok {
-		hook.PreHandle(w.ctx, record)
+		hook.PreHandle(handleCtx, record)
 	}
 
 	w.wg.Add(1)
@@ -201,16 +221,20 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	go func() {
 		defer func() {
 			if hook, ok := w.handler.(WithHooks); ok {
+				// Don't use handleCtx here, the record is already not owned by
+				// this worker anymore at this point.
 				hook.PostHandle(w.ctx, record)
 			}
 
-			cancel()
+			// Remove the record from the set of running jobs, so it is not included
+			// in heartbeat updates anymore.
+			defer w.runningIDSet.Remove(record.RecordID())
 			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
 		}()
 
-		if err := w.handle(record); err != nil {
+		if err := w.handle(handleCtx, record); err != nil {
 			log15.Error("Failed to finalize record", "name", w.options.Name, "err", err)
 		}
 	}()
@@ -220,8 +244,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
-func (w *Worker) handle(record Record) (err error) {
-	ctx, endOperation := w.options.Metrics.operations.handle.With(w.ctx, &err, observation.Args{})
+func (w *Worker) handle(ctx context.Context, record Record) (err error) {
+	ctx, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
 	handleErr := w.handler.Handle(ctx, record)
