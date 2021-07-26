@@ -4,10 +4,12 @@ import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -27,6 +29,8 @@ import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { fetchDocumentationPage, fetchDocumentationPathInfo, isExcluded, Tag } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="repository-docs-page__error alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
@@ -42,10 +46,14 @@ interface Props
     extends RepoHeaderContributionsLifecycleProps,
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        SettingsCascadeProps,
+        VersionContextProps {
     repo: RepositoryFields
     history: H.History
     location: H.Location
+    isLightTheme: boolean
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     pathID: string
     commitID: string
 }
