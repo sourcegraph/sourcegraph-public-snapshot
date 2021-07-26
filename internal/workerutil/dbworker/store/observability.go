@@ -16,6 +16,7 @@ type operations struct {
 	markErrored          *observation.Operation
 	markFailed           *observation.Operation
 	resetStalled         *observation.Operation
+	heartbeat            *observation.Operation
 }
 
 func newOperations(storeName string, observationContext *observation.Context) *operations {
@@ -43,5 +44,6 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 		markErrored:          op("MarkErrored"),
 		markFailed:           op("MarkFailed"),
 		resetStalled:         op("ResetStalled"),
+		heartbeat:            op("Heartbeat"),
 	}
 }

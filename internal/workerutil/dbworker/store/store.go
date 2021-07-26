@@ -435,6 +435,9 @@ SELECT %s FROM %s WHERE {id} = %s
 `
 
 func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
+	ctx, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	if len(ids) == 0 {
 		return []int{}, nil
 	}
