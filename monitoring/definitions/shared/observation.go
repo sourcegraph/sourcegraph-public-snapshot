@@ -18,25 +18,25 @@ var Observation = observationConstructor{
 // observationConstructor provides `Observation` implementations.
 type observationConstructor struct {
 	// Total creates an observable from the given options backed by the counter specifying
-	// the number of operatons.
+	// the number of operations.
 	//
 	// Requires a counter of the format `src_{options.MetricNameRoot}_total`
 	Total observableConstructor
 
 	// Duration creates an observable from the given options backed by the histogram
-	// specifying the duration of operatons.
+	// specifying the duration of operations.
 	//
 	// Requires a histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
 	Duration observableConstructor
 
 	// Errors creates an observable from the given options backed by the counter specifying
-	// the number of operatons that resulted in an error.
+	// the number of operations that resulted in an error.
 	//
 	// Requires a counter of the format `src_{options.MetricNameRoot}_errors_total`
 	Errors observableConstructor
 
 	// ErrorRate creates an observable from the given options backed by the counter specifying
-	// the number of successful operations and another counter specifying the number of operatons
+	// the number of successful operations and another counter specifying the number of operations
 	// that resulted in an error.
 	//
 	// Requires a:
