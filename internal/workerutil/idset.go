@@ -1,4 +1,4 @@
-package worker
+package workerutil
 
 import (
 	"context"

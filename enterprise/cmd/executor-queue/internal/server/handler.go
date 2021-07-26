@@ -131,3 +131,13 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 	}
 	return err
 }
+
+// heartbeat calls Heartbeat for the given jobs.
+func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (knownIDs []int, err error) {
+	return h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
+		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
+		// both executors that ever got the job would be writing to the same record. This prevents it.
+		WorkerHostname: executorName,
+	})
+}

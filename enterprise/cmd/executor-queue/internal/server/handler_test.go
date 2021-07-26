@@ -8,6 +8,7 @@ import (
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
@@ -302,6 +303,25 @@ func TestMarkFailedUnknownJob(t *testing.T) {
 
 	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
+	}
+}
+
+func TestHeartbeat(t *testing.T) {
+	s := workerstoremocks.NewMockStore()
+	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+		return apiclient.Job{ID: record.RecordID()}, nil
+	}
+	testKnownID := 10
+	s.HeartbeatFunc.SetDefaultHook(func(ctx context.Context, ids []int, options store.HeartbeatOptions) ([]int, error) {
+		return []int{testKnownID}, nil
+	})
+
+	handler := newHandler(QueueOptions{Store: s, RecordTransformer: recordTransformer})
+
+	if knownIDs, err := handler.heartbeat(context.Background(), "deadbeef", []int{testKnownID, 10}); err != nil {
+		t.Fatalf("unexpected error performing heartbeat: %s", err)
+	} else if diff := cmp.Diff([]int{testKnownID}, knownIDs); diff != "" {
+		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 	}
 }
 
