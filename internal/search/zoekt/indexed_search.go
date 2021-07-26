@@ -330,7 +330,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var queries []zoektquery.Q
+	g, ctx := errgroup.WithContext(ctx)
 
 	// Public
 	if !args.RepoOptions.OnlyPrivate {
@@ -346,7 +346,9 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		apply(zoektquery.RcOnlyForks, args.RepoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
 
-		queries = append(queries, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
+		g.Go(func() error {
+			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query), args, typ, c)
+		})
 	}
 
 	// Private
@@ -356,9 +358,15 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		for _, r := range args.UserPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-		queries = append(queries, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
+		g.Go(func() error {
+			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query), args, typ, c)
+		})
 	}
 
+	return g.Wait()
+}
+
+func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.PatternInfo.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
 
@@ -379,47 +387,39 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		defer cancel()
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	// PERF: if we are going to be selecting to repo results only anyways, we can
+	// just ask zoekt for only results of type repo.
+	if args.PatternInfo.Select.Root() == filter.Repository {
+		repoList, err := args.Zoekt.Client.List(ctx, q, nil)
+		if err != nil {
+			return err
+		}
 
-	for _, q := range queries {
-		q2 := q
-		g.Go(func() error {
-			// PERF: if we are going to be selecting to repo results only anyways, we can
-			// just ask zoekt for only results of type repo.
-			if args.PatternInfo.Select.Root() == filter.Repository {
-				repoList, err := args.Zoekt.Client.List(ctx, q2, nil)
-				if err != nil {
-					return err
-				}
+		matches := make([]result.Match, 0, len(repoList.Repos))
+		for _, repo := range repoList.Repos {
+			matches = append(matches, &result.RepoMatch{
+				Name: api.RepoName(repo.Repository.Name),
+				ID:   api.RepoID(repo.Repository.ID),
+			})
+		}
 
-				matches := make([]result.Match, 0, len(repoList.Repos))
-				for _, repo := range repoList.Repos {
-					matches = append(matches, &result.RepoMatch{
-						Name: api.RepoName(repo.Repository.Name),
-						ID:   api.RepoID(repo.Repository.ID),
-					})
-				}
-
-				c.Send(streaming.SearchEvent{
-					Results: matches,
-					Stats:   streaming.Stats{}, // TODO
-				})
-				return nil
-			}
-
-			return args.Zoekt.Client.StreamSearch(ctx, q2, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-				sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
-					repo := types.RepoName{
-						ID:   api.RepoID(file.RepositoryID),
-						Name: api.RepoName(file.Repository),
-					}
-					return repo, []string{""}, true
-				}, typ, c)
-			}))
+		c.Send(streaming.SearchEvent{
+			Results: matches,
+			Stats:   streaming.Stats{}, // TODO
 		})
+		return nil
 	}
 
-	return g.Wait()
+	return args.Zoekt.Client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
+			repo := types.RepoName{
+				ID:   api.RepoID(file.RepositoryID),
+				Name: api.RepoName(file.Repository),
+			}
+			return repo, []string{""}, true
+		}, typ, c)
+	}))
+
 }
 
 // zoektSearch searches repositories using zoekt.
