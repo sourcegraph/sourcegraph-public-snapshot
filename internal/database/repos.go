@@ -662,8 +662,8 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		return nil, err
 	}
 
-	counterAccessGranted.Add(float64(len(privateIDs)))
 	if len(privateIDs) > 0 {
+		counterAccessGranted.Add(float64(len(privateIDs)))
 		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
 	}
 
