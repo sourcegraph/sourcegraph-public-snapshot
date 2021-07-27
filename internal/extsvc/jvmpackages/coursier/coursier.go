@@ -79,9 +79,9 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 		config,
 		"resolve",
 		"--quiet", "--quiet",
-		dependency.CoursierSyntax(),
+		"--intransitive", dependency.CoursierSyntax(),
 	)
-	return err != nil
+	return err == nil
 }
 
 func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) ([]string, error) {
