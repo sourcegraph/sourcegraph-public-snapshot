@@ -24,6 +24,7 @@ package shared
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -116,4 +117,12 @@ func CadvisorNameMatcher(containerName string) string {
 	//   See https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+target_label:+name&patternType=literal
 	// - because of above, suffix could be pod name in Kubernetes
 	return fmt.Sprintf(`name=~"^%s.*"`, containerName)
+}
+
+func titlecase(s string) string {
+	if s == "" {
+		return s
+	}
+
+	return strings.ToUpper(s[:1]) + s[1:]
 }

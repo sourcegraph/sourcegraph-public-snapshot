@@ -96,7 +96,7 @@ func (observationConstructor) NewGroup(containerName string, owner monitoring.Ob
 	}
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("[%s] Observable: %s", options.Namespace, options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows:   rows,
 	}
