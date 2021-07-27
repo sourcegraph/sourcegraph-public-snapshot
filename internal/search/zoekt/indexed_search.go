@@ -208,9 +208,9 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 
 const maxUnindexedRepoRevSearchesPerQuery = 200
 
-type onMissingRepoRevs func([]*search.RepositoryRevisions)
+type OnMissingRepoRevs func([]*search.RepositoryRevisions)
 
-func MissingRepoRevStatus(stream streaming.Sender) onMissingRepoRevs {
+func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
 	return func(repoRevs []*search.RepositoryRevisions) {
 		var status search.RepoStatusMap
 		for _, r := range repoRevs {
@@ -224,7 +224,7 @@ func MissingRepoRevStatus(stream streaming.Sender) onMissingRepoRevs {
 	}
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, onMissing onMissingRepoRevs) (_ *IndexedSearchRequest, err error) {
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, onMissing OnMissingRepoRevs) (_ *IndexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -784,7 +784,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 // excluded.
 //
 // A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onMissing onMissingRepoRevs) []*search.RepositoryRevisions {
+func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) []*search.RepositoryRevisions {
 	var missing []*search.RepositoryRevisions
 
 	for i, repoRevs := range unindexed {
