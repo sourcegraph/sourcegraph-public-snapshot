@@ -274,7 +274,7 @@ function renderFiles(
     // Parse the URL here instead of accepting it as a React prop because the
     // URL can change based on shortcuts like `y` that won't trigger a re-render
     // in React. By parsing the URL here, we avoid the risk of rendering links to a revision that
-    // doesn't match the active revision in the
+    // doesn't match the active revision in the browser's address bar.
     const repoUrl = parseBrowserRepoURL(location.pathname + location.search + location.hash)
     const indexedFileCount = indexing ? indexing.indexedFileCount : ''
     const cacheKey = `${state.query}-${state.maxResults}${indexedFileCount}-${repoUrl.revision || ''}`
