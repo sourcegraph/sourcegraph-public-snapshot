@@ -126,13 +126,6 @@ func (observationConstructor) NewGroup(containerName string, owner monitoring.Ob
 	return monitoring.Group{
 		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
 		Hidden: options.Hidden,
-		Rows: []monitoring.Row{
-			{
-				options.Total.safeApply(Observation.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Duration.safeApply(Observation.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Errors.safeApply(Observation.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.ErrorRate.safeApply(Observation.ErrorRate(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-			},
-		},
+		Rows:   rows,
 	}
 }
