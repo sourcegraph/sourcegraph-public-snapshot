@@ -48,6 +48,17 @@
     margin-bottom: 4px;
 }
 
+.hover-overlay__badge--github {
+    // GitHub badges (.label) are larger than badges on other codehosts, so
+    // move badges up to prevent spilling over into the next section (hover content)
+    margin-top: -0.33rem;
+}
+
+.hover-overlay__close-button--github {
+    // Align close button with large GitHub badges
+    top: 0.33rem !important; // !important to override default close button `top`
+}
+
 // Blob view
 // Make sure only our code view toolbar shrinks and wraps,
 // not GitHub's UI groups

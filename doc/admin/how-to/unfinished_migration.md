@@ -19,7 +19,7 @@ ERROR: Unfinished migrations. Please revert Sourcegraph to the previous version 
 
 1. Roll back from v3.X to the previous working version v3.Y
 2. Navigate to the `Site Admin > Maintenance > Migrations` page and note the set of unfinished migrations (progress < 100%) deprecated after v3.X but not after v3.Y
-  - These are the set of migrations that need to be completed before upgrading back to 3.Y
+  - These are the set of migrations that need to be completed before upgrading back to 3.X
 3. If a migration is making upwards progress, simply wait for it to complete
   - Note that the speed of some migrations may be tunable via environment variables or configuration
 4. If a migration has stalled and is no longer making progress, check the recent errors associated with migration in the UI

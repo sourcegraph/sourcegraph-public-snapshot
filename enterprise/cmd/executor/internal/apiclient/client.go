@@ -184,7 +184,7 @@ func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err 
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (unknownIDs []int, err error) {
+func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
 	ctx, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.String("jobIDs", intsToString(jobIDs)),
@@ -199,11 +199,11 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		return nil, err
 	}
 
-	if _, err := c.client.DoAndDecode(ctx, req, &unknownIDs); err != nil {
+	if _, err := c.client.DoAndDecode(ctx, req, &knownIDs); err != nil {
 		return nil, err
 	}
 
-	return unknownIDs, nil
+	return knownIDs, nil
 }
 
 func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {
