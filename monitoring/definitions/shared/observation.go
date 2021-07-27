@@ -46,6 +46,21 @@ type ObservationGroupOptions struct {
 
 	// Errors transforms the default observable used to construct the error rate panel.
 	Errors ObservableOption
+
+	// AggregateTotal transforms the default observable used to construct the aggregate operation count panel.
+	// This option should only be supplied if a label is supplied (via the By option) by which to split the data
+	// series.
+	AggregateTotal ObservableOption
+
+	// AggregateDuration transforms the default observable used to construct the aggregate duration histogram panel.
+	// This option should only be supplied if a label is supplied (via the By option) by which to split the data
+	// series.
+	AggregateDuration ObservableOption
+
+	// AggregateErrors transforms the default observable used to construct the aggregate error rate panel.
+	// This option should only be supplied if a label is supplied (via the By option) by which to split the data
+	// series.
+	AggregateErrors ObservableOption
 }
 
 // NewGroup creates a group containing panels displaying the total number of operations, operation
@@ -58,15 +73,41 @@ type ObservationGroupOptions struct {
 //
 // These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
-	return monitoring.Group{
-		Title:  fmt.Sprintf("[%s] Observable: %s", options.Namespace, options.DescriptionRoot),
-		Hidden: options.Hidden,
-		Rows: []monitoring.Row{
-			{
-				options.Total.safeApply(Observation.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Duration.safeApply(Observation.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Errors.safeApply(Observation.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-			},
+	if len(options.By) == 0 {
+		if options.AggregateTotal != nil || options.AggregateDuration != nil || options.AggregateErrors != nil {
+			panic("AggregateTotal, AggregateDuration, and AggregateErrors must not be supplied when By is not set")
+		}
+	} else {
+		if options.AggregateTotal == nil || options.AggregateDuration == nil || options.AggregateErrors == nil {
+			panic("AggregateTotal, AggregateDuration, and AggregateErrors must be supplied when By is set")
+		}
+	}
+
+	rows := []monitoring.Row{
+		{
+			options.Total.safeApply(Observation.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+			options.Duration.safeApply(Observation.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+			options.Errors.safeApply(Observation.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 		},
+	}
+
+	if len(options.By) > 0 {
+		aggregateOptions := options.ObservableConstructorOptions
+		aggregateOptions.By = nil
+		aggregateOptions.MetricDescriptionRoot = "aggregate " + aggregateOptions.MetricDescriptionRoot
+
+		aggregateRow := monitoring.Row{
+			options.AggregateTotal.safeApply(Observation.Total(aggregateOptions)(containerName, owner)).Observable(),
+			options.AggregateDuration.safeApply(Observation.Duration(aggregateOptions)(containerName, owner)).Observable(),
+			options.AggregateErrors.safeApply(Observation.Errors(aggregateOptions)(containerName, owner)).Observable(),
+		}
+
+		rows = append([]monitoring.Row{aggregateRow}, rows...)
+	}
+
+	return monitoring.Group{
+		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
+		Hidden: options.Hidden,
+		Rows:   rows,
 	}
 }
