@@ -269,3 +269,61 @@ export const fetchDocumentationReferences = (
             return repo.commit.tree.lsif.documentationReferences as GQL.ILocationConnection | null
         })
     )
+
+export interface DocumentationBlameVariables {
+    repo: string
+    revspec: string
+    path: string
+    startLine: number
+    endLine: number
+}
+
+export const fetchDocumentationBlame = (
+    args: DocumentationBlameVariables
+): Observable<GQL.ILocationConnection | null> =>
+    requestGraphQL<GQL.ILocationConnection | null, DocumentationBlameVariables>(
+        gql`
+            query DocumentationBlame(
+                $repo: String!
+                $revspec: String!
+                $path: String!
+                $startLine: Int!
+                $endLine: Int!
+            ) {
+                repository(name: $repo) {
+                    commit(rev: $revspec) {
+                        blob(path: $path) {
+                            blame(startLine: $startLine, endLine: $endLine) {
+                                author {
+                                    person {
+                                        name
+                                        displayName
+                                        email
+                                        avatarURL
+                                    }
+                                    date
+                                }
+                                commit {
+                                    url
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (
+                !data ||
+                !data.repository ||
+                !data.repository.commit ||
+                !data.repository.commit.blob ||
+                !data.repository.commit.blob.blame
+            ) {
+                throw createAggregateError(errors)
+            }
+            return data.repository.commit.blob.blame as GQL.IHunk[]
+        })
+    )

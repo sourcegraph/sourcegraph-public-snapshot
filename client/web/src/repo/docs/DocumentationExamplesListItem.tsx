@@ -1,15 +1,22 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useMemo } from 'react'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 
-import { map } from 'rxjs/operators'
+import { catchError, map, startWith } from 'rxjs/operators'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Observable } from 'rxjs'
 import { RepositoryFields } from '../../graphql-operations'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+import { fetchDocumentationBlame } from './graphql'
+import { PersonLink } from '../../person/PersonLink'
+import { Timestamp } from '../../components/time/Timestamp'
+import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 
 interface Props extends SettingsCascadeProps, VersionContextProps {
     location: H.Location
@@ -22,6 +29,8 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
 }
 
 const contextLines = 1
+
+const LOADING = 'loading' as const
 
 export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     fetchHighlightedFileLineRanges,
@@ -58,6 +67,24 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
         [repo, commitID, item, fetchHighlightedFileLineRanges]
     )
 
+    const blameHunks =
+        useObservable(
+            useMemo(
+                () =>
+                    fetchDocumentationBlame({
+                        repo: item.resource.repository.name,
+                        revspec: item.resource.commit.oid,
+                        path: item.resource.path,
+                        startLine: item.range?.start.line || 0,
+                        endLine: item.range?.end.line || 0,
+                    }).pipe(
+                        catchError(error => [asError(error)]),
+                        startWith(LOADING)
+                    ),
+                [item]
+            )
+        ) || LOADING
+
     return (
         <div className="documentation-examples-list-item mt-2">
             <div className="p-2">
@@ -74,6 +101,14 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
                     fileURL={item.url.replace('/-/tree/', '/-/blob/')}
                     className="documentation-examples-list-item__repo-file-link"
                 />
+                {blameHunks !== LOADING && !isErrorLike(blameHunks) && blameHunks.length > 0 && (
+                    <span className="float-right text-muted">
+                        by <PersonLink person={blameHunks[0].author.person} className="font-weight-bold" />{' '}
+                        <Link to={blameHunks[0].commit.url}>
+                            <Timestamp date={blameHunks[0].author.date} />
+                        </Link>
+                    </span>
+                )}
             </div>
             <CodeExcerpt
                 key={item.url}
