@@ -27,11 +27,11 @@ import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNa
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -76,7 +76,7 @@ interface Props
         SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps,
-        FeatureFlagProps {
+        BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
@@ -85,7 +85,6 @@ interface Props
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
-    showBatchChanges: boolean
     routes: readonly LayoutRouteProps<{}>[]
 
     // Whether globbing is enabled for filters.
@@ -254,7 +253,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <NavLink to="/code-monitoring">Monitoring</NavLink>
                             </NavItem>
                         )}
-                        {props.showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
+                        {props.batchChangesEnabled && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
                         {codeInsights && (
                             <NavItem icon={BarChartIcon}>
                                 <NavLink to="/insights/dashboards/all">Insights</NavLink>

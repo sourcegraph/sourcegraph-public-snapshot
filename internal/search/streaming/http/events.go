@@ -13,8 +13,8 @@ type EventMatch interface {
 	eventMatch()
 }
 
-// EventFileMatch is a subset of zoekt.FileMatch for our Event API.
-type EventFileMatch struct {
+// EventContentMatch is a subset of zoekt.FileMatch for our Event API.
+type EventContentMatch struct {
 	// Type is always FileMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
@@ -27,7 +27,24 @@ type EventFileMatch struct {
 	LineMatches []EventLineMatch `json:"lineMatches"`
 }
 
-func (e *EventFileMatch) eventMatch() {}
+func (e *EventContentMatch) eventMatch() {}
+
+// EventPathMatch is a subset of zoekt.FileMatch for our Event API.
+// It is used for result.FileMatch results with no line matches and
+// no symbol matches, indicating it represents a match of the file itself
+// and not its content.
+type EventPathMatch struct {
+	// Type is always PathMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Path       string   `json:"name"`
+	Repository string   `json:"repository"`
+	RepoStars  int      `json:"repoStars,omitempty"`
+	Branches   []string `json:"branches,omitempty"`
+	Version    string   `json:"version,omitempty"`
+}
+
+func (e *EventPathMatch) eventMatch() {}
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
@@ -127,37 +144,41 @@ type EventError struct {
 type MatchType int
 
 const (
-	FileMatchType MatchType = iota
+	ContentMatchType MatchType = iota
 	RepoMatchType
 	SymbolMatchType
 	CommitMatchType
+	PathMatchType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
 	switch t {
-	case FileMatchType:
-		return []byte(`"file"`), nil
+	case ContentMatchType:
+		return []byte(`"content"`), nil
 	case RepoMatchType:
 		return []byte(`"repo"`), nil
 	case SymbolMatchType:
 		return []byte(`"symbol"`), nil
 	case CommitMatchType:
 		return []byte(`"commit"`), nil
+	case PathMatchType:
+		return []byte(`"path"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
-
 }
 
 func (t *MatchType) UnmarshalJSON(b []byte) error {
-	if bytes.Equal(b, []byte(`"file"`)) {
-		*t = FileMatchType
+	if bytes.Equal(b, []byte(`"content"`)) {
+		*t = ContentMatchType
 	} else if bytes.Equal(b, []byte(`"repo"`)) {
 		*t = RepoMatchType
 	} else if bytes.Equal(b, []byte(`"symbol"`)) {
 		*t = SymbolMatchType
 	} else if bytes.Equal(b, []byte(`"commit"`)) {
 		*t = CommitMatchType
+	} else if bytes.Equal(b, []byte(`"path"`)) {
+		*t = PathMatchType
 	} else {
 		return errors.Errorf("unknown MatchType: %s", b)
 	}

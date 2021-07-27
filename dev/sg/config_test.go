@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 )
 
 func TestParseConfig(t *testing.T) {
@@ -45,7 +46,7 @@ commandsets:
 
 	want := &Config{
 		Env: map[string]string{"SRC_REPOS_DIR": "$HOME/.sourcegraph/repos"},
-		Commands: map[string]Command{
+		Commands: map[string]run.Command{
 			"frontend": {
 				Name:        "frontend",
 				Cmd:         "ulimit -n 10000 && .bin/frontend",
@@ -66,7 +67,7 @@ commandsets:
 				Checks:   []string{"docker"},
 			},
 		},
-		Checks: map[string]Check{
+		Checks: map[string]run.Check{
 			"docker": {
 				Name:        "docker",
 				Cmd:         "docker version",

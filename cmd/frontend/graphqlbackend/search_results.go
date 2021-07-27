@@ -21,11 +21,13 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -548,8 +550,12 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 
 	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
 	isIndexedSearch := args.PatternInfo.Index != query.No
-	if isGlobalSearch() && isIndexedSearch && isFileOrPath {
+	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
+	if isGlobalSearch() && isIndexedSearch && isFileOrPath && !isEmpty {
 		args.Mode = search.ZoektGlobalSearch
+	}
+	if isEmpty {
+		args.Mode = search.SkipContentAndPathSearch
 	}
 	return args
 }
@@ -1437,8 +1443,19 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
-	if args.Mode == search.ZoektGlobalSearch && !args.PatternInfo.IsEmpty() {
+	if args.Mode == search.ZoektGlobalSearch {
 		argsIndexed := *args
+
+		// Get all private repos that are accessible by the current actor.
+		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+			OnlyPrivate: true,
+			LimitOffset: &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+		}); err != nil {
+			tr.LazyPrintf("error resolving private repos: %v", err)
+		} else {
+			argsIndexed.UserPrivateRepos = res
+		}
+
 		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1449,7 +1466,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// of indexed default searchrepos. No need to call searcher, because
 		// len(searcherRepos) will always be 0.
 		if envvar.SourcegraphDotComMode() {
-			args.Mode = search.NoFilePath
+			args.Mode = search.SkipContentAndPathSearch
 		} else {
 			args.Mode = search.SearcherOnly
 		}
@@ -1503,7 +1520,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	}
 
-	if args.ResultTypes.Has(result.TypeSymbol) {
+	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
 		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1513,7 +1530,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-		if args.Mode != search.NoFilePath && !args.PatternInfo.IsEmpty() {
+		if args.Mode != search.SkipContentAndPathSearch {
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {

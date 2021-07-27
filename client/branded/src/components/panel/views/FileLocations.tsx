@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { FileLineMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -180,7 +180,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         <FileMatch
             location={this.props.location}
             expanded={true}
-            result={referencesToFileLineMatch(uri, locationsByURI.get(uri)!)}
+            result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
             icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
@@ -191,10 +191,10 @@ export class FileLocations extends React.PureComponent<Props, State> {
     )
 }
 
-function referencesToFileLineMatch(uri: string, references: Badged<Location>[]): FileLineMatch {
+function referencesToContentMatch(uri: string, references: Badged<Location>[]): ContentMatch {
     const parsedUri = parseRepoURI(uri)
     return {
-        type: 'file',
+        type: 'content',
         name: parsedUri.filePath || '',
         version: (parsedUri.commitID || parsedUri.revision)!,
         repository: parsedUri.repoName,

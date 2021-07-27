@@ -1602,6 +1602,7 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 	cstore := store.NewWithClock(db, nil, func() time.Time { return now })
 
 	userID := ct.CreateTestUser(t, db, true).ID
+	orgID := ct.InsertTestOrg(t, db, "test-org")
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	r := &Resolver{store: cstore}
@@ -1610,37 +1611,45 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 		t.Fatal(err)
 	}
 	testSpec := `testSpec: yeah`
-	input := map[string]interface{}{
-		"spec": testSpec,
-	}
-	var response struct {
-		CreateBatchSpecExecution apitest.BatchSpecExecution
-	}
-	apitest.MustExec(userCtx, t, s, input, &response, mutationCreateBatchSpecExecution)
+	mutateAndAssert := func(namespaceID, expectNamespaceID string) {
+		input := map[string]interface{}{
+			"spec": testSpec,
+		}
+		if namespaceID != "" {
+			input["namespace"] = namespaceID
+		}
+		var response struct {
+			CreateBatchSpecExecution apitest.BatchSpecExecution
+		}
+		apitest.MustExec(userCtx, t, s, input, &response, mutationCreateBatchSpecExecution)
 
-	if response.CreateBatchSpecExecution.ID == "" {
-		t.Fatalf("expected execution to be created, but was not")
+		if response.CreateBatchSpecExecution.ID == "" {
+			t.Fatalf("expected execution to be created, but was not")
+		}
+		want := apitest.BatchSpecExecution{
+			ID:        response.CreateBatchSpecExecution.ID,
+			InputSpec: testSpec,
+			State:     "QUEUED",
+			Initiator: apitest.User{
+				ID: string(graphqlbackend.MarshalUserID(userID)),
+			},
+			Namespace: apitest.UserOrg{
+				ID: expectNamespaceID,
+			},
+			CreatedAt: graphqlbackend.DateTime{Time: now.Truncate(time.Second)},
+		}
+		if diff := cmp.Diff(want, response.CreateBatchSpecExecution); diff != "" {
+			t.Fatalf("invalid execution returned, diff=%s", diff)
+		}
 	}
-	want := apitest.BatchSpecExecution{
-		ID:        response.CreateBatchSpecExecution.ID,
-		InputSpec: testSpec,
-		State:     "QUEUED",
-		Initiator: apitest.User{
-			ID: string(graphqlbackend.MarshalUserID(userID)),
-		},
-		Namespace: apitest.UserOrg{
-			ID: string(graphqlbackend.MarshalUserID(userID)),
-		},
-		CreatedAt: graphqlbackend.DateTime{Time: now.Truncate(time.Second)},
-	}
-	if diff := cmp.Diff(want, response.CreateBatchSpecExecution); diff != "" {
-		t.Fatalf("invalid execution returned, diff=%s", diff)
-	}
+	mutateAndAssert("", string(graphqlbackend.MarshalUserID(userID)))
+	mutateAndAssert(string(graphqlbackend.MarshalUserID(userID)), string(graphqlbackend.MarshalUserID(userID)))
+	mutateAndAssert(string(graphqlbackend.MarshalOrgID(orgID)), string(graphqlbackend.MarshalOrgID(orgID)))
 }
 
 const mutationCreateBatchSpecExecution = `
-mutation($spec: String!) {
-    createBatchSpecExecution(spec: $spec) {
+mutation($spec: String!, $namespace: ID) {
+    createBatchSpecExecution(spec: $spec, namespace: $namespace) {
 		id
 		inputSpec
 		state

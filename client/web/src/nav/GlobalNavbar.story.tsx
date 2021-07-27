@@ -20,7 +20,10 @@ import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
-window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
+if (!window.context) {
+    window.context = {} as SourcegraphContext & SuiteFunction
+}
+window.context.assetsRoot = 'https://sourcegraph.com/.assets'
 
 const history = createMemoryHistory()
 
@@ -62,7 +65,7 @@ const defaultProps = (
     navbarSearchQueryState: { query: '' },
     onNavbarQueryChange: () => {},
     isExtensionAlertAnimating: false,
-    showBatchChanges: true,
+    batchChangesEnabled: true,
     enableCodeMonitoring: true,
     activation: undefined,
     hideNavLinks: false,
@@ -72,7 +75,6 @@ const defaultProps = (
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

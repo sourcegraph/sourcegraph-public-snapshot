@@ -340,20 +340,20 @@ describe('Search', () => {
                     data: [
                         { type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
                             name: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                         },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
                             name: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             version: 'abcd',
                         },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
                             name: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',

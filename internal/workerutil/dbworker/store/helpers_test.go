@@ -7,6 +7,7 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -20,8 +21,9 @@ func testStore(db dbutil.DB, options Options) *store {
 }
 
 type TestRecord struct {
-	ID    int
-	State string
+	ID            int
+	State         string
+	ExecutionLogs []ExecutionLogEntry
 }
 
 func (v TestRecord) RecordID() int {
@@ -36,7 +38,7 @@ func testScanFirstRecord(rows *sql.Rows, queryErr error) (v workerutil.Record, _
 
 	if rows.Next() {
 		var record TestRecord
-		if err := rows.Scan(&record.ID, &record.State); err != nil {
+		if err := rows.Scan(&record.ID, &record.State, pq.Array(&record.ExecutionLogs)); err != nil {
 			return nil, false, err
 		}
 
@@ -146,6 +148,7 @@ func defaultTestStoreOptions(clock glock.Clock) Options {
 		ColumnExpressions: []*sqlf.Query{
 			sqlf.Sprintf("w.id"),
 			sqlf.Sprintf("w.state"),
+			sqlf.Sprintf("w.execution_logs"),
 		},
 		StalledMaxAge: time.Second * 5,
 		MaxNumResets:  5,
@@ -167,6 +170,12 @@ func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{},
 	}
 	if val := record.(TestRecord).State; val != "processing" {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
+	}
+}
+
+func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record interface{}) {
+	if val := len(record.(TestRecord).ExecutionLogs); val != expectedLogCount {
+		t.Errorf("unexpected count of logs. want=%d have=%d", expectedLogCount, val)
 	}
 }
 

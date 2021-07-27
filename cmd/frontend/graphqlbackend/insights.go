@@ -34,8 +34,10 @@ type InsightStatusResolver interface {
 }
 
 type InsightsPointsArgs struct {
-	From *DateTime
-	To   *DateTime
+	From             *DateTime
+	To               *DateTime
+	IncludeRepoRegex *string
+	ExcludeRepoRegex *string
 }
 
 type InsightSeriesResolver interface {
