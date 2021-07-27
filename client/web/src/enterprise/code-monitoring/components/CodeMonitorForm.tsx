@@ -36,7 +36,7 @@ export interface CodeMonitorFormProps {
     showDeleteButton?: boolean
     /* Optional trigger query to pre-populate the trigger form */
     triggerQuery?: string
-    /* Optional descritption to pre-populate the name */
+    /* Optional description to pre-populate the name */
     description?: string
 
     deleteCodeMonitor?: typeof _deleteCodeMonitor
