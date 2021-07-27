@@ -79,10 +79,11 @@ func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
-		Handlers: NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
+		Handlers:  NoAlertsOption("none"),
 	})
 }
 
@@ -206,10 +207,11 @@ func (codeIntelligence) NewDependencyIndexProcessorGroup(containerName string) m
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
-		Handlers: NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
+		Handlers:  NoAlertsOption("none"),
 	})
 }
 
@@ -258,10 +260,11 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 			},
 		},
 
-		Total:    NoAlertsOption("none"),
-		Duration: NoAlertsOption("none"),
-		Errors:   NoAlertsOption("none"),
-		Handlers: NoAlertsOption("none"),
+		Total:     NoAlertsOption("none"),
+		Duration:  NoAlertsOption("none"),
+		Errors:    NoAlertsOption("none"),
+		ErrorRate: NoAlertsOption("none"),
+		Handlers:  NoAlertsOption("none"),
 	})
 }
 

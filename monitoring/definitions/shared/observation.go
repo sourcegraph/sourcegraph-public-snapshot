@@ -80,7 +80,8 @@ type ObservationGroupOptions struct {
 }
 
 // NewGroup creates a group containing panels displaying the total number of operations, operation
-// duration histogram, and number of errors for the given observable within the given container.
+// duration histogram, number of errors, and error rate for the given observable within the given
+// icontainer.
 //
 // Requires a:
 //   - counter of the format `src_{options.MetricNameRoot}_total`
@@ -90,12 +91,12 @@ type ObservationGroupOptions struct {
 // These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	if len(options.By) == 0 {
-		if options.AggregateTotal != nil || options.AggregateDuration != nil || options.AggregateErrors != nil {
-			panic("AggregateTotal, AggregateDuration, and AggregateErrors must not be supplied when By is not set")
+		if options.AggregateTotal != nil || options.AggregateDuration != nil || options.AggregateErrors != nil || options.AggregateErrorRate != nil {
+			panic("AggregateTotal, AggregateDuration, AggregateErrors, and AggregateErrorRate must not be supplied when By is not set")
 		}
 	} else {
-		if options.AggregateTotal == nil || options.AggregateDuration == nil || options.AggregateErrors == nil {
-			panic("AggregateTotal, AggregateDuration, and AggregateErrors must be supplied when By is set")
+		if options.AggregateTotal == nil || options.AggregateDuration == nil || options.AggregateErrors == nil || options.AggregateErrorRate == nil {
+			panic("AggregateTotal, AggregateDuration, AggregateErrors, and AggregateErrorRate must be supplied when By is set")
 		}
 	}
 
