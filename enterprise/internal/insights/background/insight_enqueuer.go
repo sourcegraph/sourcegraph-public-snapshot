@@ -102,7 +102,11 @@ func discoverAndEnqueueInsights(
 
 		// The recording timestamp update can't be transactional because this is a separate database currently, so we will use
 		// at-least-once semantics by waiting until the queue transaction is complete and without error.
-		insightStore.StampRecording(ctx, series)
+		_, err = insightStore.StampRecording(ctx, series)
+		if err != nil {
+			multi = multierror.Append(multi, err)
+			continue // might as well try the other insights and just skip this one
+		}
 	}
 
 	return multi
