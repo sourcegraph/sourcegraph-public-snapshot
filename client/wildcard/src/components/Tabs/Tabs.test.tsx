@@ -12,21 +12,21 @@ const TabsChildren = () => (
             <Tab>Tab 2</Tab>
         </TabList>
         <TabPanels>
-            <TabPanel forceRender={true}>Panel 1</TabPanel>
-            <TabPanel forceRender={true}>Panel 2</TabPanel>
+            <TabPanel>Panel 1</TabPanel>
+            <TabPanel>Panel 2</TabPanel>
         </TabPanels>
     </>
 )
 
-const TabsNoForceRender = () => (
+const TabsChildrenWithActions = () => (
     <>
-        <TabList>
+        <TabList actions={<div>Actions</div>}>
             <Tab>Tab 1</Tab>
             <Tab>Tab 2</Tab>
         </TabList>
         <TabPanels>
-            <TabPanel forceRender={false}>Panel 1</TabPanel>
-            <TabPanel forceRender={false}>Panel 2</TabPanel>
+            <TabPanel>Panel 1</TabPanel>
+            <TabPanel>Panel 2</TabPanel>
         </TabPanels>
     </>
 )
@@ -38,54 +38,95 @@ describe('Tabs', () => {
 
     afterEach(cleanup)
 
-    describe('Invalid configuration', () => {
-        it('will error when no children are added', () => {
-            expect(() => {
-                renderWithProps({ index: 1, children: undefined })
-            }).toThrowErrorMatchingSnapshot()
-        })
-    })
-
-    describe('Tabs with forceRender=true', () => {
+    describe('Main component structure', () => {
         beforeEach(() => {
-            queries = renderWithProps({ children: <TabsChildren /> })
+            queries = renderWithProps({ children: <TabsChildren />, lazy: false })
         })
+
         it('will render tabs children correctly', () => {
             expect(queries.getByTestId('wildcard-tabs')).toBeInTheDocument()
             expect(queries.getByTestId('wildcard-tab-list')).toBeInTheDocument()
             expect(queries.getByTestId('wildcard-tab-panels')).toBeInTheDocument()
         })
+
         it('will render the right amount of <Tab/> components', () => {
             const tabGroup = queries.getAllByTestId('wildcard-tab')
-            tabGroup.forEach(tab => {
+            for (const tab of tabGroup) {
                 expect(tab).toBeInTheDocument()
-            })
+            }
             expect(queries.getAllByTestId('wildcard-tab')).toHaveLength(2)
         })
+
         it('will render the right amount of <TabPanel/> components', () => {
             const tabPanelGroup = queries.getAllByTestId('wildcard-tab')
-            tabPanelGroup.forEach(tabPanelGroup => {
-                expect(tabPanelGroup).toBeInTheDocument()
-            })
+            for (const tab of tabPanelGroup) {
+                expect(tab).toBeInTheDocument()
+            }
             expect(queries.getAllByTestId('wildcard-tab-panel')).toHaveLength(2)
         })
 
-        it('will render <TabPanel/> children each time associated <Tab>  is clicked', () => {
-            fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
-            expect(queries.getByText('Panel 1')).toBeInTheDocument()
-            expect(queries.queryByText('Panel 2')).toBeNull()
-            fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
-            expect(queries.getByText('Panel 2')).toBeInTheDocument()
-            expect(queries.queryByText('Panel 1')).toBeNull()
+        it('will not render actions prop as a component', () => {
+            expect(queries.queryByText('Actions')).not.toBeInTheDocument()
         })
     })
 
-    describe('Tabs with forceRender=false', () => {
+    describe('with actions', () => {
         beforeEach(() => {
-            queries = renderWithProps({ children: <TabsNoForceRender /> })
+            queries = renderWithProps({ children: <TabsChildrenWithActions />, lazy: true, behavior: 'forceRender' })
         })
 
-        it('will render <TabPanel/> children each time associated <Tab>  is clicked', () => {
+        it('will render actions prop as a component', () => {
+            expect(queries.getByText('Actions')).toBeInTheDocument()
+        })
+    })
+
+    describe('Lazy = true', () => {
+        describe('Tabs with behavior = forceRender', () => {
+            beforeEach(() => {
+                queries = renderWithProps({ children: <TabsChildren />, lazy: true, behavior: 'forceRender' })
+            })
+
+            it('will render <TabPanel/> children each time associated <Tab>  is clicked', () => {
+                fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
+                expect(queries.getByText('Panel 1')).toBeInTheDocument()
+                expect(queries.queryByText('Panel 2')).not.toBeInTheDocument()
+                fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
+                expect(queries.getByText('Panel 2')).toBeInTheDocument()
+                expect(queries.queryByText('Panel 1')).not.toBeInTheDocument()
+            })
+        })
+
+        describe('Tabs with behavior = memoize', () => {
+            beforeEach(() => {
+                queries = renderWithProps({ children: <TabsChildren />, lazy: true, behavior: 'memoize' })
+            })
+
+            it('will render and keep mounted <TabPanel/> children when <Tab> is clicked', () => {
+                fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
+                expect(queries.getByText('Panel 1')).toBeInTheDocument()
+                expect(queries.queryByText('Panel 2')).not.toBeInTheDocument()
+                fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
+                expect(queries.getByText('Panel 2')).toBeInTheDocument()
+                expect(queries.queryByText('Panel 1')).toBeInTheDocument()
+            })
+
+            it('will not render and keep unmounted <TabPanel/> children when <Tab> is not selected', () => {
+                fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
+                expect(queries.getByText('Panel 1')).toBeInTheDocument()
+                expect(queries.queryByText('Panel 2')).not.toBeInTheDocument()
+                fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
+                expect(queries.getByText('Panel 2')).toBeInTheDocument()
+                expect(queries.queryByText('Panel 1')).toBeInTheDocument()
+            })
+        })
+    })
+
+    describe('Lazy = false', () => {
+        beforeEach(() => {
+            queries = renderWithProps({ children: <TabsChildren />, lazy: false })
+        })
+
+        it('will render all <TabPanel/> children', () => {
             fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
             expect(queries.getByText('Panel 1')).toBeInTheDocument()
             expect(queries.queryByText('Panel 2')).toBeInTheDocument()

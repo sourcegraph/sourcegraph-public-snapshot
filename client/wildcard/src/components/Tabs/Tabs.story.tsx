@@ -12,14 +12,14 @@ export const TabsStory: Story = () => (
     <BrandedStory styles={webStyles}>
         {() => (
             <Container>
-                <Tabs lazy={true} behavior="forceRender">
-                    <TabList>
+                <Tabs lazy={true} behavior="memoize">
+                    <TabList actions={<div>hola</div>}>
                         <Tab>Tab 1</Tab>
                         <Tab>Tab 2</Tab>
                     </TabList>
                     <TabPanels>
-                        <TabPanel forceRender={true}>Panel 1</TabPanel>
-                        <TabPanel forceRender={true}>Panel 2</TabPanel>
+                        <TabPanel>Panel 1</TabPanel>
+                        <TabPanel>Panel 2</TabPanel>
                     </TabPanels>
                 </Tabs>
             </Container>
