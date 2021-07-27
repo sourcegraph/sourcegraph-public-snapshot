@@ -2,38 +2,58 @@ import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Container } from '..'
 
-import { Tabs, Tab, TabList, TabPanel, TabPanels } from '.'
+import { Tabs, Tab, TabList, TabPanel, TabPanels, TabsProps } from '.'
 
-export const TabsStory: Story = () => (
-    <BrandedStory styles={webStyles}>
-        {() => (
-            <Container>
-                <Tabs lazy={true} behavior="memoize" size="large">
-                    <TabList actions={<div>custom component rendered</div>}>
-                        <Tab>Tab 1</Tab>
-                        <Tab>Tab 2</Tab>
-                    </TabList>
-                    <TabPanels>
-                        <TabPanel>Panel 1</TabPanel>
-                        <TabPanel>Panel 2</TabPanel>
-                    </TabPanels>
-                </Tabs>
-            </Container>
-        )}
-    </BrandedStory>
-)
+export const TabsStory: Story<TabsProps & { actions: boolean }> = args => {
+    const { actions, ...props } = args
+
+    return (
+        <BrandedStory>
+            {() => (
+                <Container>
+                    <Tabs {...props}>
+                        <TabList actions={actions ? <div>custom component rendered</div> : null}>
+                            <Tab>Tab 1</Tab>
+                            <Tab>Tab 2</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel>Panel 1</TabPanel>
+                            <TabPanel>Panel 2</TabPanel>
+                        </TabPanels>
+                    </Tabs>
+                </Container>
+            )}
+        </BrandedStory>
+    )
+}
 
 TabsStory.storyName = 'Tabs component'
 
-// eslint-disable-next-line import/no-default-export
-export default {
+const config: Meta = {
     title: 'wildcard/Tabs',
-    component: TabsStory,
-    args: {
-        size: ['small', 'medium', 'large'],
+    component: Tabs,
+    argTypes: {
+        size: {
+            options: ['small', 'medium', 'large'],
+            control: { type: 'radio' },
+        },
+        lazy: {
+            options: [true, false],
+            control: { type: 'radio' },
+        },
+        behavior: {
+            options: ['memoize', 'forceRender'],
+            control: { type: 'radio' },
+        },
+        actions: {
+            options: [true, false],
+            control: { type: 'radio' },
+        },
     },
-} as Meta
+}
+
+// eslint-disable-next-line import/no-default-export
+export default config
