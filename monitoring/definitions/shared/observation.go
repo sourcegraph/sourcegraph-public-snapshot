@@ -79,7 +79,7 @@ func (observationConstructor) NewGroup(containerName string, owner monitoring.Ob
 		}
 	} else {
 		if options.AggregateTotal == nil || options.AggregateDuration == nil || options.AggregateErrors == nil {
-			panic("AggregateTotal, AggregateDuration, and AggregateErrors must be supplied without By")
+			panic("AggregateTotal, AggregateDuration, and AggregateErrors must be supplied when By is set")
 		}
 	}
 
