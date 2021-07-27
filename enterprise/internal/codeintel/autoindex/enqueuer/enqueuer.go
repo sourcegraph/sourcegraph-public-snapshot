@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,22 +18,30 @@ import (
 )
 
 type IndexEnqueuer struct {
-	dbStore          DBStore
-	gitserverClient  GitserverClient
-	repoUpdater      RepoUpdaterClient
-	maxJobsPerCommit int
-	operations       *operations
+	dbStore            DBStore
+	gitserverClient    GitserverClient
+	repoUpdater        RepoUpdaterClient
+	config             *Config
+	gitserverLimiter   *rate.Limiter
+	repoUpdaterLimiter *rate.Limiter
+	operations         *operations
 }
 
-const defaultMaxJobsPerCommit = 25
-
-func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient, repoUpdater RepoUpdaterClient, observationContext *observation.Context) *IndexEnqueuer {
+func NewIndexEnqueuer(
+	dbStore DBStore,
+	gitClient GitserverClient,
+	repoUpdater RepoUpdaterClient,
+	config *Config,
+	observationContext *observation.Context,
+) *IndexEnqueuer {
 	return &IndexEnqueuer{
-		dbStore:          dbStore,
-		gitserverClient:  gitClient,
-		repoUpdater:      repoUpdater,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(observationContext),
+		dbStore:            dbStore,
+		gitserverClient:    gitClient,
+		repoUpdater:        repoUpdater,
+		config:             config,
+		gitserverLimiter:   rate.NewLimiter(config.MaximumRepositoriesInspectedPerSecond, 1),
+		repoUpdaterLimiter: rate.NewLimiter(config.MaximumRepositoriesUpdatedPerSecond, 1),
+		operations:         newOperations(observationContext),
 	}
 }
 
@@ -94,6 +103,10 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic
 	}
 	traceLog(log.String("repoName", repoName))
 	traceLog(log.String("revision", revision))
+
+	if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {
+		return err
+	}
 
 	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, api.RepoName(repoName))
 	if err != nil {
@@ -198,6 +211,10 @@ func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, comm
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
 func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJob, error) {
+	if err := s.gitserverLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
 	paths, err := s.gitserverClient.ListFiles(ctx, repositoryID, commit, inference.Patterns)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.ListFiles")
@@ -210,7 +227,7 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 		indexes = append(indexes, recognizer.InferIndexJobs(gitclient, paths)...)
 	}
 
-	if len(indexes) > s.maxJobsPerCommit {
+	if len(indexes) > s.config.MaximumIndexJobsPerInferredConfiguration {
 		log15.Info("Too many inferred roots. Scheduling no index jobs for repository.", "repository_id", repositoryID)
 		return nil, nil
 	}

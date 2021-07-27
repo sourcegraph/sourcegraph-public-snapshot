@@ -452,7 +452,6 @@ interface SearchReferenceExampleProps {
 const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
     // All current examples are literal queries
     const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
-    console.log(scanResult)
     // We only use valid queries as examples, so this will always be true
     if (scanResult.type === 'success') {
         return (

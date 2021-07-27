@@ -5,9 +5,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestTransformRecord(t *testing.T) {
@@ -27,9 +29,12 @@ func TestTransformRecord(t *testing.T) {
 		IndexerArgs: []string{"-p", "."},
 		Outfile:     "",
 	}
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 	config := &Config{
 		Shared: &config.SharedConfig{
-			FrontendURL:      "https://test.io",
 			FrontendUsername: "test*",
 			FrontendPassword: "hunter2",
 		},
@@ -106,9 +111,12 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		IndexerArgs: nil,
 		Outfile:     "other/path/lsif.dump",
 	}
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 	config := &Config{
 		Shared: &config.SharedConfig{
-			FrontendURL:      "https://test.io",
 			FrontendUsername: "test*",
 			FrontendPassword: "hunter2",
 		},

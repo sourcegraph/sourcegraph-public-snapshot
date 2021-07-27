@@ -41,7 +41,6 @@ var SourcegraphDockerImages = []string{
 	"searcher",
 	"symbols",
 	"precise-code-intel-worker",
-	"executor-queue",
 	"executor",
 
 	// Images under docker-images/

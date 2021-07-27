@@ -368,7 +368,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.PatternInfo.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
+	searchOpts := SearchOpts(ctx, k, args.PatternInfo.FileMatchLimit)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -411,12 +411,12 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextP
 	}
 
 	return args.Zoekt.Client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
+		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
 			repo := types.RepoName{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
-			return repo, []string{""}, true
+			return repo, []string{""}
 		}, typ, c)
 	}))
 }
@@ -441,7 +441,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
 
 	k := ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
+	searchOpts := SearchOpts(ctx, k, args.PatternInfo.FileMatchLimit)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -478,10 +478,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.
 	foundResults := atomic.Bool{}
 	err := args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
-			repo, inputRevs := repos.getRepoInputRev(file)
-			return repo, inputRevs, true
-		}, typ, c)
+		sendMatches(event, repos.getRepoInputRev, typ, c)
 	}))
 	if err != nil {
 		return err
@@ -514,10 +511,7 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ Ind
 
 	matches := make([]result.Match, 0, len(files))
 	for _, file := range files {
-		repo, inputRevs, ok := getRepoInputRev(&file)
-		if !ok {
-			continue
-		}
+		repo, inputRevs := getRepoInputRev(&file)
 
 		var lines []*result.LineMatch
 		if typ != SymbolRequest {

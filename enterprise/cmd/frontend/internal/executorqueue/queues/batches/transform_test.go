@@ -7,12 +7,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/config"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestTransformRecord(t *testing.T) {
@@ -37,9 +39,12 @@ func TestTransformRecord(t *testing.T) {
 		NamespaceUserID: 1,
 		BatchSpec:       testBatchSpec,
 	}
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 	config := &Config{
 		Shared: &config.SharedConfig{
-			FrontendURL:      "https://test.io",
 			FrontendUsername: "test*",
 			FrontendPassword: "hunter2",
 		},

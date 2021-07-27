@@ -298,6 +298,7 @@ func Frontend() *monitoring.Container {
 			shared.CodeIntelligence.NewResolversGroup(containerName),
 			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
+			shared.CodeIntelligence.NewIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
 			shared.CodeIntelligence.NewUploadStoreGroup(containerName),

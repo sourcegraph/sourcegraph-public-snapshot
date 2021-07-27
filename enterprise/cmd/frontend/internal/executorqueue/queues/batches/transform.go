@@ -8,6 +8,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -34,12 +35,14 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 		return apiclient.Job{}, err
 	}
 
-	srcEndpoint, err := makeURL(config.Shared.FrontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
+	frontendURL := conf.Get().ExternalURL
+
+	srcEndpoint, err := makeURL(frontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
 
-	redactedSrcEndpoint, err := makeURL(config.Shared.FrontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
+	redactedSrcEndpoint, err := makeURL(frontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
 	if err != nil {
 		return apiclient.Job{}, err
 	}

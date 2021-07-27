@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -71,7 +72,7 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 
 func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
-		Name:              "precise_code_intel_index_worker",
+		Name:              fmt.Sprintf("executor_%s_worker", c.QueueName),
 		NumHandlers:       c.MaximumNumJobs,
 		Interval:          c.QueuePollInterval,
 		HeartbeatInterval: 1 * time.Second,
