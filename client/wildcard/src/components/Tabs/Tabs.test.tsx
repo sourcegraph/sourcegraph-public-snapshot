@@ -40,7 +40,7 @@ describe('Tabs', () => {
 
     describe('Main component structure', () => {
         beforeEach(() => {
-            queries = renderWithProps({ children: <TabsChildren />, lazy: false })
+            queries = renderWithProps({ children: <TabsChildren />, lazy: false, size: 'medium' })
         })
 
         it('will render tabs children correctly', () => {
@@ -72,7 +72,12 @@ describe('Tabs', () => {
 
     describe('with actions', () => {
         beforeEach(() => {
-            queries = renderWithProps({ children: <TabsChildrenWithActions />, lazy: true, behavior: 'forceRender' })
+            queries = renderWithProps({
+                children: <TabsChildrenWithActions />,
+                lazy: true,
+                behavior: 'forceRender',
+                size: 'medium',
+            })
         })
 
         it('will render actions prop as a component', () => {
@@ -83,7 +88,12 @@ describe('Tabs', () => {
     describe('Lazy = true', () => {
         describe('Tabs with behavior = forceRender', () => {
             beforeEach(() => {
-                queries = renderWithProps({ children: <TabsChildren />, lazy: true, behavior: 'forceRender' })
+                queries = renderWithProps({
+                    children: <TabsChildren />,
+                    lazy: true,
+                    behavior: 'forceRender',
+                    size: 'medium',
+                })
             })
 
             it('will render <TabPanel/> children each time associated <Tab>  is clicked', () => {
@@ -98,7 +108,12 @@ describe('Tabs', () => {
 
         describe('Tabs with behavior = memoize', () => {
             beforeEach(() => {
-                queries = renderWithProps({ children: <TabsChildren />, lazy: true, behavior: 'memoize' })
+                queries = renderWithProps({
+                    children: <TabsChildren />,
+                    lazy: true,
+                    behavior: 'memoize',
+                    size: 'medium',
+                })
             })
 
             it('will render and keep mounted <TabPanel/> children when <Tab> is clicked', () => {
@@ -123,7 +138,7 @@ describe('Tabs', () => {
 
     describe('Lazy = false', () => {
         beforeEach(() => {
-            queries = renderWithProps({ children: <TabsChildren />, lazy: false })
+            queries = renderWithProps({ children: <TabsChildren />, lazy: false, size: 'medium' })
         })
 
         it('will render all <TabPanel/> children', () => {
