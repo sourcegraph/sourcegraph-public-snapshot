@@ -14,31 +14,10 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/server"
 )
 
-var queueURL = env.Get("EXECUTOR_QUEUE_URL", "", "HTTP address for the internal executor-queue.")
-var sharedUsername = env.Get("EXECUTOR_FRONTEND_USERNAME", "", "The username used to securely communicate between the executor service and the internal API provided by this proxy.")
-var sharedPassword = env.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password used to securely communicate between the executor service and the internal API provided by this proxy.")
-
-func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, error) {
-	if queueURL == "" {
-		factory := func() http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusNotFound)
-			})
-		}
-
-		return factory, nil
-	}
-
-	if sharedUsername == "" {
-		return nil, errors.Errorf("invalid value for EXECUTOR_FRONTEND_USERNAME: no value supplied")
-	}
-	if sharedPassword == "" {
-		return nil, errors.Errorf("invalid value for EXECUTOR_FRONTEND_PASSWORD: no value supplied")
-	}
-
+func newInternalProxyHandler(uploadHandler http.Handler, queueOptions map[string]apiserver.QueueOptions) (func() http.Handler, error) {
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))
@@ -49,11 +28,6 @@ func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, e
 		return nil, errors.Wrap(err, "failed to construct the origin for the internal frontend")
 	}
 
-	queueOrigin, err := url.Parse(queueURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct the origin for the executor-queue")
-	}
-
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
 		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
@@ -62,8 +36,8 @@ func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, e
 		// Proxy only info/refs and git-upload-pack for gitservice (git clone/fetch)
 		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
-		// Proxy only the known routes in the executor queue API
-		base.Path("/queue/{rest:.*/(?:dequeue|addExecutionLogEntry|updateExecutionLogEntry|markComplete|markErrored|markFailed|heartbeat)}").Handler(reverseProxy(queueOrigin))
+		// Install routes for each queue under a distinct path
+		apiserver.SetupRoutes(queueOptions)(base.PathPrefix("/queue").Subrouter())
 
 		// Upload LSIF indexes without a sudo access token or github tokens
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
@@ -88,7 +62,8 @@ func basicAuthMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		if username != sharedUsername || password != sharedPassword {
+
+		if username != sharedConfig.FrontendUsername || password != sharedConfig.FrontendPassword {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
