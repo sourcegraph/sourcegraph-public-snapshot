@@ -15,6 +15,8 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ## 3.29 -> 3.30.1
 
+**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved **
+
 ## Standard upgrade procedure
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
