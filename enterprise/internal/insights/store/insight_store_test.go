@@ -365,6 +365,9 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 		want := []types.InsightSeries{created}
 
 		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("mismatched insight data series want/got: %v", diff)
