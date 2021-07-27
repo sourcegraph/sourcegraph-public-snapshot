@@ -87,6 +87,16 @@ func basicAuthMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		if sharedConfig.FrontendUsername == "" {
+			w.WriteHeader(http.StatusInternalServerError)
+			log15.Error("invalid value for EXECUTOR_FRONTEND_USERNAME: no value supplied")
+			return
+		}
+		if sharedConfig.FrontendPassword == "" {
+			w.WriteHeader(http.StatusInternalServerError)
+			log15.Error("invalid value for EXECUTOR_FRONTEND_PASSWORD: no value supplied")
+			return
+		}
 		if username != sharedConfig.FrontendUsername || password != sharedConfig.FrontendPassword {
 			w.WriteHeader(http.StatusForbidden)
 			return
