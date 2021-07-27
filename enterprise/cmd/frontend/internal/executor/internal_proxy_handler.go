@@ -36,8 +36,11 @@ func newInternalProxyHandler(uploadHandler http.Handler, queueOptions map[string
 		// Proxy only info/refs and git-upload-pack for gitservice (git clone/fetch)
 		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
-		// Install routes for each queue under a distinct path
-		apiserver.SetupRoutes(queueOptions)(base.PathPrefix("/queue").Subrouter())
+		queueRouter := base.PathPrefix("/queue").Subrouter()
+		for name, queueOptions := range queueOptions {
+			// Install routes for each queue under a distinct path
+			apiserver.SetupRoutesFor(queueRouter, name, queueOptions)
+		}
 
 		// Upload LSIF indexes without a sudo access token or github tokens
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)

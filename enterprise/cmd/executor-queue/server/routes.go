@@ -36,6 +36,24 @@ func SetupRoutes(queueOptionsMap map[string]QueueOptions) func(router *mux.Route
 	}
 }
 
+func SetupRoutesFor(router *mux.Router, name string, queueOptions QueueOptions) {
+	h := newHandler(queueOptions)
+	routes := map[string]func(w http.ResponseWriter, r *http.Request){
+		"dequeue":                 h.handleDequeue,
+		"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
+		"updateExecutionLogEntry": h.handleUpdateExecutionLogEntry,
+		"markComplete":            h.handleMarkComplete,
+		"markErrored":             h.handleMarkErrored,
+		"markFailed":              h.handleMarkFailed,
+		"heartbeat":               h.handleHeartbeat,
+	}
+
+	subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
+	for path, handler := range routes {
+		subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
+	}
+}
+
 // POST /{queueName}/dequeue
 func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.DequeueRequest
