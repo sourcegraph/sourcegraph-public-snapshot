@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -70,33 +72,41 @@ func (s *JVMPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*
 		return nil, err
 	}
 
+	nonExistentDependencies := make([]reposource.MavenDependency, 0)
+	hasAtLeastOneValidDependency := false
 	for _, dep := range dependencies {
 		if dep.MavenModule == module {
-			exists, err := coursier.Exists(ctx, s.config, dep)
-			if err != nil {
-				return nil, err
-			}
-			if !exists {
-				return nil, &mavenArtifactNotFound{
-					dependency: dep,
-				}
+			if coursier.Exists(ctx, s.config, dep) {
+				hasAtLeastOneValidDependency = true
+			} else {
+				nonExistentDependencies = append(nonExistentDependencies, dep)
 			}
 		}
+	}
+
+	if !hasAtLeastOneValidDependency {
+		return nil, &jvmDependencyNotFound{
+			dependencies: nonExistentDependencies,
+		}
+	}
+
+	for _, nonExistentDependency := range nonExistentDependencies {
+		// Don't reject all versions if a single version fails to
+		// resolve. Instead, we just log a warning about the unresolved
+		// dependency. A dependency can fail to resolve if it gets
+		// removed from the package host for some reason.
+		log15.Warn("Skipping non-existing JVM package", "nonExistentDependency", nonExistentDependency.CoursierSyntax())
 	}
 
 	return s.makeRepo(module), nil
 }
 
-type mavenArtifactNotFound struct {
-	dependency reposource.MavenDependency
+type jvmDependencyNotFound struct {
+	dependencies []reposource.MavenDependency
 }
 
-func (mavenArtifactNotFound) NotFound() bool {
-	return true
-}
-
-func (e *mavenArtifactNotFound) Error() string {
-	return fmt.Sprintf("not found: maven dependency '%v'", e.dependency)
+func (e *jvmDependencyNotFound) Error() string {
+	return fmt.Sprintf("not found: jvm dependency '%v'", e.dependencies)
 }
 
 func (s *JVMPackagesSource) makeRepo(module reposource.MavenModule) *types.Repo {
