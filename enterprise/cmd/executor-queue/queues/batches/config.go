@@ -1,7 +1,7 @@
-package codeintel
+package batches
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/config"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
