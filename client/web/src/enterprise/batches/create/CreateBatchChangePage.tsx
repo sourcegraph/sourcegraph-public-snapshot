@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
+import { Redirect } from 'react-router'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,
@@ -185,7 +185,7 @@ const CreateBatchSpecExecutionForm: React.FunctionComponent<CreateBatchSpecExecu
     )
 
     if (!userNamespace) {
-        throw new Error('Bye')
+        throw new Error('No user namespace found')
     }
 
     const [content, setContent] = useState<string>(initialContent)
@@ -206,6 +206,10 @@ const CreateBatchSpecExecutionForm: React.FunctionComponent<CreateBatchSpecExecu
             setIsLoading(error)
         }
     }, [content, selectedNamespace])
+
+    if (batchSpecExecution) {
+        return <Redirect to={`${batchSpecExecution.namespace.url}/batch-changes/executions/${batchSpecExecution.id}`} />
+    }
 
     return (
         <>
@@ -247,16 +251,6 @@ const CreateBatchSpecExecutionForm: React.FunctionComponent<CreateBatchSpecExecu
                 >
                     Run batch spec
                 </button>
-                {batchSpecExecution && (
-                    <div className="mt-3 mb-0 alert alert-success">
-                        Running batch spec.{' '}
-                        <Link
-                            to={`${batchSpecExecution.namespace.url}/batch-changes/executions/${batchSpecExecution.id}`}
-                        >
-                            Check it out here.
-                        </Link>
-                    </div>
-                )}
                 {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             </Container>
         </>

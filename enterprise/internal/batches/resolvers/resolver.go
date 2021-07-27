@@ -1440,7 +1440,6 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 		UserID:    actor.UID,
 	}
 
-	// TODO: Add a test to verify namespace is correctly set and permissions are enforced properly.
 	if args.Namespace != nil {
 		err = graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &exec.NamespaceUserID, &exec.NamespaceOrgID)
 		if err != nil {
