@@ -75,7 +75,7 @@ type ObservationGroupOptions struct {
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	if len(options.By) == 0 {
 		if options.AggregateTotal != nil || options.AggregateDuration != nil || options.AggregateErrors != nil {
-			panic("AggregateTotal, AggregateDuration, and AggregateErrors must not be supplied without By")
+			panic("AggregateTotal, AggregateDuration, and AggregateErrors must not be supplied when By is not set")
 		}
 	} else {
 		if options.AggregateTotal == nil || options.AggregateDuration == nil || options.AggregateErrors == nil {
