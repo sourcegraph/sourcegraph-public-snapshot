@@ -105,7 +105,10 @@ export function logUserEvent(event: UserEvent): void {
                 }
             }
         `,
-        { event, userCookieID: eventLogger.getAnonymousUserID() }
+        { event, userCookieID: eventLogger.getAnonymousUserID() },
+        {
+            batchRequests: true,
+        }
     )
         .pipe(
             map(({ data, errors }) => {
