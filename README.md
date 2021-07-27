@@ -76,6 +76,9 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 
 ## Version History
 
+#### v1.2.1
+- Added `Open In Sourcegraph` action to VCS History and Git Log to open a revision in the Sourcegraph diff view.
+
 #### v1.2.0
 
 - The search menu entry is now no longer present when no text has been selected.

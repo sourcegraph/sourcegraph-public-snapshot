@@ -15,6 +15,11 @@
 
   <change-notes><![CDATA[
     <ul>
+      <li>v1.2.1 - Open Revision in Sourcegraph
+       <ul>
+          <li>Added "Open In Sourcegraph" action to VCS History and Git Log to open a revision in the Sourcegraph diff view.</li>
+        </ul>
+      </li>
       <li>v1.2.0 - Copy link to file, search in repository, per-repository configuration, bug fixes & more
        <ul>
           <li>The search menu entry is now no longer present when no text has been selected.</li>
@@ -82,6 +87,12 @@
       <reference ref="sourcegraph.copy"/>
       <add-to-group anchor="last" group-id="EditorPopupMenu"/>
     </group>
+    <action id="OpenRevisionAction" icon="/icons/icon.png" class="OpenRevisionAction" text="Open In Sourcegraph" description="Open revision diff in Sourcegraph">
+      <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
+      <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
+      <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
+      <add-to-group group-id="VcsSelectionHistoryDialog.Popup" anchor="last"/>
+    </action>
   </actions>
 
 </idea-plugin>
