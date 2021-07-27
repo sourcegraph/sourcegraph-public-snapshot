@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -85,27 +84,27 @@ func discoverAndEnqueueInsights(
 		}
 		uniqueSeries[seriesID] = series
 
-			// Enqueue jobs for each unique series, offsetting each job execution by a minute so we
-			// don't execute all queries at once and harm search performance in general.
-			processAfter := now().Add(offset)
-			offset += queryJobOffsetTime
-			err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
-				SeriesID:     seriesID,
-				SearchQuery:  withCountUnlimited(series.Query),
-				ProcessAfter: &processAfter,
-				State:        "queued",
-				Priority:     int(priority.High),
-				Cost:         int(priority.Indexed),
-			})
-			if err != nil {
-				multi = multierror.Append(multi, err)
-			}
+		// Enqueue jobs for each unique series, offsetting each job execution by a minute so we
+		// don't execute all queries at once and harm search performance in general.
+		processAfter := now().Add(offset)
+		offset += queryJobOffsetTime
+		err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
+			SeriesID:     seriesID,
+			SearchQuery:  withCountUnlimited(series.Query),
+			ProcessAfter: &processAfter,
+			State:        "queued",
+			Priority:     int(priority.High),
+			Cost:         int(priority.Indexed),
+		})
+		if err != nil {
+			multi = multierror.Append(multi, err)
 		}
 
 		// The recording timestamp update can't be transactional because this is a separate database currently, so we will use
 		// at-least-once semantics by waiting until the queue transaction is complete and without error.
 		insightStore.StampRecording(ctx, series)
 	}
+
 	return multi
 }
 
