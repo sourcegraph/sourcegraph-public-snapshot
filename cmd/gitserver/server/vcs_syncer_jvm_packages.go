@@ -52,7 +52,7 @@ func (s *JVMPackagesSyncer) Type() string {
 // IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 // error indicates there is a problem.
 func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	dependencies, err := s.packageDependencies(remoteURL.Path)
+	dependencies, err := s.packageDependencies(ctx, remoteURL.Path)
 	if err != nil {
 		return err
 	}
@@ -95,9 +95,10 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-// Fetch does nothing for Maven packages because they are immutable and cannot be updated after publishing.
+// Fetch adds git tags for newly added dependency versions and removes git tags
+// for deleted deleted versions.
 func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
-	dependencies, err := s.packageDependencies(remoteURL.Path)
+	dependencies, err := s.packageDependencies(ctx, remoteURL.Path)
 	if err != nil {
 		return err
 	}
@@ -152,23 +153,32 @@ func (s *JVMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 // packageDependencies returns the list of JVM dependencies that belong to the given URL path.
 // The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s *JVMPackagesSyncer) packageDependencies(repoUrlPath string) (dependencies []reposource.MavenDependency, err error) {
+func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (dependencies []reposource.MavenDependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, dependency := range s.MavenDependencies() {
 		if module.MatchesDependencyString(dependency) {
 			dependency, err := reposource.ParseMavenDependency(dependency)
 			if err != nil {
 				return nil, err
 			}
-			dependencies = append(dependencies, dependency)
+
+			if coursier.Exists(ctx, s.Config, dependency) {
+				dependencies = append(dependencies, dependency)
+			}
+			// Silently ignore non-existent dependencies because
+			// they are already logged out in the `GetRepo` method
+			// in internal/repos/jvm_packages.go.
 		}
 	}
+
 	if len(dependencies) == 0 {
-		return nil, errors.Errorf("no tracked dependencies for URL path %s", repoUrlPath)
+		return nil, errors.Errorf("no JVM dependencies for URL path %s", repoUrlPath)
 	}
+
 	reposource.SortDependencies(dependencies)
 	return dependencies, nil
 }
