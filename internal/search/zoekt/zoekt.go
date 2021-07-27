@@ -68,7 +68,7 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 	return true, spanContext
 }
 
-func SearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt.SearchOptions {
+func SearchOpts(ctx context.Context, k int, fileMatchLimit int32) zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
 		Trace:                  shouldTrace,
@@ -80,11 +80,11 @@ func SearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt
 		TotalMaxImportantMatch: 25 * k,
 		// Ask for 2000 more results so we have results to populate
 		// RepoStatusLimitHit.
-		MaxDocDisplayCount: int(query.FileMatchLimit) + 2000,
+		MaxDocDisplayCount: int(fileMatchLimit) + 2000,
 	}
 
-	if userProbablyWantsToWaitLonger := query.FileMatchLimit > search.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(search.DefaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := fileMatchLimit > search.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
 	}
 
 	return searchOpts
