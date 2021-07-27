@@ -18,7 +18,7 @@ type ServerOptions struct {
 // NewServer returns an HTTP job queue server.
 func NewServer(options ServerOptions, queueOptions map[string]QueueOptions) goroutine.BackgroundRoutine {
 	addr := fmt.Sprintf(":%d", options.Port)
-	router := setupRoutes(queueOptions)
+	router := SetupRoutes(queueOptions)
 	httpHandler := ot.Middleware(httpserver.NewHandler(router))
 	server := httpserver.NewFromAddr(addr, &http.Server{Handler: httpHandler})
 	return server

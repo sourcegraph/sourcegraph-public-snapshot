@@ -14,7 +14,7 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
-func setupRoutes(queueOptionsMap map[string]QueueOptions) func(router *mux.Router) {
+func SetupRoutes(queueOptionsMap map[string]QueueOptions) func(router *mux.Router) {
 	return func(router *mux.Router) {
 		for name, queueOptions := range queueOptionsMap {
 			h := newHandler(queueOptions)
