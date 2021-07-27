@@ -12,8 +12,8 @@ export const TabsStory: Story = () => (
     <BrandedStory styles={webStyles}>
         {() => (
             <Container>
-                <Tabs lazy={true} behavior="memoize">
-                    <TabList actions={<div>hola</div>}>
+                <Tabs lazy={true} behavior="memoize" size="large">
+                    <TabList actions={<div>custom component rendered</div>}>
                         <Tab>Tab 1</Tab>
                         <Tab>Tab 2</Tab>
                     </TabList>
@@ -33,4 +33,7 @@ TabsStory.storyName = 'Tabs component'
 export default {
     title: 'wildcard/Tabs',
     component: TabsStory,
+    args: {
+        size: ['small', 'medium', 'large'],
+    },
 } as Meta

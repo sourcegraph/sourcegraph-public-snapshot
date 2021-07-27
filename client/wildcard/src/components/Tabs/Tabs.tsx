@@ -12,7 +12,8 @@ import {
 } from '@reach/tabs'
 import React from 'react'
 
-import { TabsContext } from './context'
+import { TabsContext, useTabsContext } from './context'
+import styles from './Tabs.module.scss'
 import { useTabPanelBehavior } from './useTabPanelBehavior'
 import { useTabPanelsState } from './useTabPanelsState'
 import { TabsApi, useTabs } from './useTabs'
@@ -38,19 +39,31 @@ export const Tabs: React.FunctionComponent<TabsProps> = props => {
 
     return (
         <TabsContext.Provider value={contextValue}>
-            <ReachTabs data-testid="wildcard-tabs" {...reachProps} />
+            <div className={styles.wildcardTabs} data-testid="wildcard-tabs">
+                <ReachTabs {...reachProps} />
+            </div>
         </TabsContext.Provider>
     )
 }
 
-export const TabList: React.FunctionComponent<TabListProps> = props => (
-    <div>
-        <ReachTabList data-testid="wildcard-tab-list" {...props} />
-        {props.actions}
-    </div>
-)
+export const TabList: React.FunctionComponent<TabListProps> = props => {
+    const { actions, ...reachProps } = props
+    return (
+        <div className={styles.tablistWrapper}>
+            <ReachTabList data-testid="wildcard-tab-list" {...reachProps} />
+            {actions}
+        </div>
+    )
+}
 
-export const Tab: React.FunctionComponent<TabProps> = props => <ReachTab data-testid="wildcard-tab" {...props} />
+export const Tab: React.FunctionComponent<TabProps> = props => {
+    const { state } = useTabsContext()
+
+    const { size = 'small' } = state
+    const styleSize = styles[size] as keyof typeof styles
+
+    return <ReachTab className={styleSize} data-testid="wildcard-tab" {...props} />
+}
 
 export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children }) => {
     const { show, element } = useTabPanelsState(children)

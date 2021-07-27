@@ -1,3 +1,5 @@
+import { TabsApi } from './useTabs'
+
 interface Tab {
     mounted: boolean
     index: number
@@ -7,10 +9,7 @@ export interface Tabs {
     [key: number]: Tab
 }
 
-export interface State {
-    size?: 'small' | 'default' | 'large'
-    lazy?: boolean
-    behavior?: 'memoize' | 'forceRender'
+export interface State extends TabsApi {
     current: number
     tabs: Tabs
 }

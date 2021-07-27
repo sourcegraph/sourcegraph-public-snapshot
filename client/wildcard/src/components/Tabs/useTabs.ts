@@ -4,7 +4,7 @@ import { TabsContext } from './context'
 import { reducer } from './reducer'
 
 export interface TabsApi {
-    size?: 'small' | 'default' | 'large'
+    size: 'small' | 'medium' | 'large'
     lazy?: boolean
     behavior?: 'memoize' | 'forceRender'
 }
