@@ -84,22 +84,23 @@ func NewRestrictedDB(t testing.TB, dsn string) (*sql.DB, *sql.DB) {
 	testDB := dbConn(t, config)
 	t.Logf("testdb: %s", config.String())
 
-	restricedDB := restrictedDBConn(t, config)
+	restrictedDB := restrictedDBConn(t, config)
+	t.Logf("restrictedDB: %s", config.String())
 
 	// Some tests that exercise concurrency need lots of connections or they block forever.
 	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
 	testDB.SetMaxOpenConns(10)
-	restricedDB.SetMaxOpenConns(10)
+	restrictedDB.SetMaxOpenConns(10)
 
 	t.Cleanup(func() {
 		if err := testDB.Close(); err != nil {
 			t.Fatalf("failed to close test database: %s", err)
 		}
-		if err := restricedDB.Close(); err != nil {
-			t.Fatalf("failed to close test database: %s", err)
+		if err := restrictedDB.Close(); err != nil {
+			t.Fatalf("failed to close restricted test database: %s", err)
 		}
 	})
-	return testDB, restricedDB
+	return testDB, restrictedDB
 }
 
 func createTempDB(t testing.TB, dsn string) *url.URL {
