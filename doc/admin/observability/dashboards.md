@@ -294,6 +294,32 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
+### Frontend: [workerutil] Observable: dbworker/store stats (db=frontend, table=lsif_indexes)
+
+#### frontend: workerutil_dbworker_store_codeintel_index_total
+
+This panel indicates store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: workerutil_dbworker_store_codeintel_index_99th_percentile_duration
+
+This panel indicates 99th percentile successful store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: workerutil_dbworker_store_codeintel_index_errors_total
+
+This panel indicates store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Frontend: [codeintel] Observable: lsifstore stats (db=codeintel-db)
 
 #### frontend: codeintel_lsifstore_total
@@ -4210,272 +4236,9 @@ This panel indicates percentage pods available.
 
 <br />
 
-## Executor Queue
-
-<p class="subtitle">Coordinates the executor work queues.</p>
-
-### Executor Queue: [executor] Queue: Executor jobs
-
-#### executor-queue: executor_queue_size
-
-This panel indicates unprocessed executor job queue size.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: executor_queue_growth_rate
-
-This panel indicates unprocessed executor job queue growth rate over 30m.
-
-This value compares the rate of enqueues against the rate of finished jobs for the selected queue.
-
-	- A value < than 1 indicates that process rate > enqueue rate
-	- A value = than 1 indicates that process rate = enqueue rate
-	- A value > than 1 indicates that process rate < enqueue rate
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: [workerutil] Observable: dbworker/store stats (db=frontend, table=lsif_indexes)
-
-#### executor-queue: workerutil_dbworker_store_codeintel_index_total
-
-This panel indicates store operations every 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: workerutil_dbworker_store_codeintel_index_99th_percentile_duration
-
-This panel indicates 99th percentile successful store operation duration over 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: workerutil_dbworker_store_codeintel_index_errors_total
-
-This panel indicates store operation errors every 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Internal service requests
-
-#### executor-queue: frontend_internal_api_error_responses
-
-This panel indicates frontend-internal API error responses every 5m by route.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-frontend-internal-api-error-responses).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Database connections
-
-#### executor-queue: max_open_conns
-
-This panel indicates maximum open.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: open_conns
-
-This panel indicates established.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: in_use
-
-This panel indicates used.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: idle
-
-This panel indicates idle.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: mean_blocked_seconds_per_conn_request
-
-This panel indicates mean blocked seconds per conn request.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-mean-blocked-seconds-per-conn-request).
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: closed_max_idle
-
-This panel indicates closed by SetMaxIdleConns.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: closed_max_lifetime
-
-This panel indicates closed by SetConnMaxLifetime.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: closed_max_idle_time
-
-This panel indicates closed by SetConnMaxIdleTime.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Executor Queue: Container monitoring (not available on server)
-
-#### executor-queue: container_missing
-
-This panel indicates container missing.
-
-This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod executor-queue` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p executor-queue`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' executor-queue` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the executor-queue container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs executor-queue` (note this will include logs from the previous and currently running container).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: container_cpu_usage
-
-This panel indicates container cpu usage total (1m average) across all cores by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-container-cpu-usage).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: container_memory_usage
-
-This panel indicates container memory usage by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-container-memory-usage).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: fs_io_operations
-
-This panel indicates filesystem reads and writes rate by instance over 1h.
-
-This value indicates the number of filesystem read and write operations by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Executor Queue: Provisioning indicators (not available on server)
-
-#### executor-queue: provisioning_container_cpu_usage_long_term
-
-This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-cpu-usage-long-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: provisioning_container_memory_usage_long_term
-
-This panel indicates container memory usage (1d maximum) by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-memory-usage-long-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: provisioning_container_cpu_usage_short_term
-
-This panel indicates container cpu usage total (5m maximum) across all cores by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-cpu-usage-short-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: provisioning_container_memory_usage_short_term
-
-This panel indicates container memory usage (5m maximum) by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-memory-usage-short-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Golang runtime monitoring
-
-#### executor-queue: go_goroutines
-
-This panel indicates maximum active goroutines.
-
-A high value here indicates a possible goroutine leak.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-go-goroutines).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: go_gc_duration_seconds
-
-This panel indicates maximum go garbage collection duration.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-go-gc-duration-seconds).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Kubernetes monitoring (only available on Kubernetes)
-
-#### executor-queue: pods_available_percentage
-
-This panel indicates percentage pods available.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-pods-available-percentage).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
 ## Executor
 
-<p class="subtitle">Executes jobs from the executor-queue.</p>
+<p class="subtitle">Executes jobs in an isolated environment.</p>
 
 ### Executor: [executor] Queue: Executor jobs
 
