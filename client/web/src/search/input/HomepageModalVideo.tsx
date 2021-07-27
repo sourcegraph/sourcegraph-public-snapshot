@@ -35,43 +35,7 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
                         className={styles.thumbnail}
                     />
                     <div className={styles.playIconWrapper}>
-                        <svg width="33" height="33" viewBox="0 0 49 53" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <g filter="url(#filter0_dd)">
-                                <path d="M37 26.5L12.25 40.79V12.21L37 26.5z" fill="#fff" />
-                            </g>
-                            <defs>
-                                <filter
-                                    id="filter0_dd"
-                                    x=".25"
-                                    y=".211"
-                                    width="48.75"
-                                    height="52.579"
-                                    filterUnits="userSpaceOnUse"
-                                    colorInterpolationFilters="sRGB"
-                                >
-                                    <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                                    <feColorMatrix
-                                        in="SourceAlpha"
-                                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-                                        result="hardAlpha"
-                                    />
-                                    <feOffset />
-                                    <feGaussianBlur stdDeviation="6" />
-                                    <feColorMatrix values="0 0 0 0 0.00505209 0 0 0 0 0.0449636 0 0 0 0 0.404167 0 0 0 0.25 0" />
-                                    <feBlend in2="BackgroundImageFix" result="effect1_dropShadow" />
-                                    <feColorMatrix
-                                        in="SourceAlpha"
-                                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-                                        result="hardAlpha"
-                                    />
-                                    <feOffset dy="4" />
-                                    <feGaussianBlur stdDeviation="2" />
-                                    <feColorMatrix values="0 0 0 0 0 0 0 0 0 0.055 0 0 0 0 0.25 0 0 0 0.25 0" />
-                                    <feBlend in2="effect1_dropShadow" result="effect2_dropShadow" />
-                                    <feBlend in="SourceGraphic" in2="effect2_dropShadow" result="shape" />
-                                </filter>
-                            </defs>
-                        </svg>
+                        <PlayIcon />
                     </div>
                 </button>
                 <div className="text-center mt-2">
@@ -112,3 +76,35 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
         </>
     )
 }
+
+const PlayIcon = React.memo(() => (
+    <svg width="33" height="33" viewBox="0 0 49 53" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g filter="url(#filter0_dd)">
+            <path d="M37 26.5L12.25 40.79V12.21L37 26.5z" fill="#fff" />
+        </g>
+        <defs>
+            <filter
+                id="filter0_dd"
+                x=".25"
+                y=".211"
+                width="48.75"
+                height="52.579"
+                filterUnits="userSpaceOnUse"
+                colorInterpolationFilters="sRGB"
+            >
+                <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                <feOffset />
+                <feGaussianBlur stdDeviation="6" />
+                <feColorMatrix values="0 0 0 0 0.00505209 0 0 0 0 0.0449636 0 0 0 0 0.404167 0 0 0 0.25 0" />
+                <feBlend in2="BackgroundImageFix" result="effect1_dropShadow" />
+                <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                <feOffset dy="4" />
+                <feGaussianBlur stdDeviation="2" />
+                <feColorMatrix values="0 0 0 0 0 0 0 0 0 0.055 0 0 0 0 0.25 0 0 0 0.25 0" />
+                <feBlend in2="effect1_dropShadow" result="effect2_dropShadow" />
+                <feBlend in="SourceGraphic" in2="effect2_dropShadow" result="shape" />
+            </filter>
+        </defs>
+    </svg>
+))
