@@ -73,6 +73,16 @@ type ObservationGroupOptions struct {
 //
 // These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
+	if len(options.By) == 0 {
+		if options.AggregateTotal != nil || options.AggregateDuration != nil || options.AggregateErrors != nil {
+			panic("AggregateTotal, AggregateDuration, and AggregateErrors must not be supplied without By")
+		}
+	} else {
+		if options.AggregateTotal == nil || options.AggregateDuration == nil || options.AggregateErrors == nil {
+			panic("AggregateTotal, AggregateDuration, and AggregateErrors must be supplied without By")
+		}
+	}
+
 	rows := []monitoring.Row{
 		{
 			options.Total.safeApply(Observation.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
