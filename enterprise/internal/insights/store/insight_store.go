@@ -94,7 +94,6 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
-	log15.Info("getdataseries", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanDataSeries(s.Query(ctx, q))
 }
 
