@@ -1,6 +1,11 @@
 import { Observable } from 'rxjs'
 
-import { graphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
+import {
+    graphQLClient,
+    GraphQLResult,
+    requestGraphQLApollo,
+    requestGraphQLCommon,
+} from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 const getHeaders = (): { [header: string]: string } => ({
@@ -8,6 +13,14 @@ const getHeaders = (): { [header: string]: string } => ({
     Accept: 'application/json',
     'Content-Type': 'application/json',
     'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
+})
+
+export const client = graphQLClient({
+    headers: {
+        ...window?.context?.xhrHeaders,
+        'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
+        // Note: Do not use getHeaders() here due to a bug that Apollo has duplicating headers with different letter casing. Issue to fix: https://github.com/apollographql/apollo-client/issues/8447
+    },
 })
 
 /**
@@ -23,10 +36,10 @@ export const requestGraphQL = <TResult, TVariables = object>(
     request: string,
     variables?: TVariables
 ): Observable<GraphQLResult<TResult>> =>
-    requestGraphQLCommon({
+    requestGraphQLApollo({
         request,
         variables,
-        headers: getHeaders(),
+        client,
     })
 
 /**
@@ -60,11 +73,3 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
         variables,
         headers: getHeaders(),
     })
-
-export const client = graphQLClient({
-    headers: {
-        ...window?.context?.xhrHeaders,
-        'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
-        // Note: Do not use getHeaders() here due to a bug that Apollo has duplicating headers with different letter casing. Issue to fix: https://github.com/apollographql/apollo-client/issues/8447
-    },
-})

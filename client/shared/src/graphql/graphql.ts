@@ -4,18 +4,22 @@ import {
     useMutation as useApolloMutation,
     DocumentNode,
     ApolloClient,
-    createHttpLink,
     NormalizedCacheObject,
     OperationVariables,
     QueryHookOptions,
     QueryResult,
     MutationHookOptions,
     MutationTuple,
+    ApolloQueryResult,
+    FetchResult as ApolloFetchResult,
 } from '@apollo/client'
+import { getOperationDefinition } from '@apollo/client/utilities'
+import { BatchHttpLink } from '@apollo/client/link/batch-http'
 import { GraphQLError } from 'graphql'
 import { useMemo } from 'react'
-import { Observable } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
+import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { checkOk } from '../backend/fetch'
@@ -90,13 +94,71 @@ export function requestGraphQLCommon<T, V = object>({
     })
 }
 
+/**
+ * Map non-conforming GraphQL responses to a GraphQLResult.
+ */
+export const apolloToGraphQLResult = <T>(response: ApolloQueryResult<T> | ApolloFetchResult<T>): GraphQLResult<T> => {
+    if (response.errors) {
+        return {
+            data: undefined,
+            errors: response.errors,
+        }
+    }
+
+    if (!response.data) {
+        // This should never happen unless `errorPolicy` is set to `ignore` when calling `client.mutate`
+        // We don't support this configuration through this wrapper function, so OK to error here.
+        throw new Error('Invalid response. Neither data nor errors is present in the response.')
+    }
+
+    return {
+        data: response.data,
+        errors: undefined,
+    }
+}
+
+export function requestGraphQLApollo<T, V = object>({
+    request,
+    variables,
+    client,
+}: GraphQLRequestOptions & {
+    request: string
+    variables?: V
+    client: ApolloClient<NormalizedCacheObject>
+}): Observable<GraphQLResult<T>> {
+    const document = getDocumentNode(request)
+    const queryDefinition = getOperationDefinition(document)
+
+    if (!queryDefinition) {
+        throw new Error('No GraphQL operation found.')
+    }
+
+    if (queryDefinition.operation === 'query') {
+        return from(client.query({ query: document, variables, fetchPolicy: 'no-cache' })).pipe(
+            map(apolloToGraphQLResult)
+        )
+    }
+
+    if (queryDefinition.operation === 'mutation') {
+        return from(client.mutate({ mutation: document, variables, fetchPolicy: 'no-cache' })).pipe(
+            map(apolloToGraphQLResult)
+        )
+    }
+
+    // We don't support the GraphQL subscription operation.
+    // If we have a use-case for this in the future, we should use useSubscription from Apollo
+    throw new Error(`Unsupported GraphQL operation: ${queryDefinition.operation}`)
+}
+
 export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
     new ApolloClient({
         uri: GRAPHQL_URI,
         cache,
-        link: createHttpLink({
+        link: new BatchHttpLink({
             uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
             headers,
+            batchMax: 5, // No more than 5 operations per batch
+            batchInterval: 20, // Wait no more than 20ms after first batched operation
         }),
     })
 
