@@ -73,7 +73,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			RepoRevs: &zoektutil.IndexedRepoRevs{},
 		}
 	} else {
-		indexed, err = zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, stream)
+		indexed, err = zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
