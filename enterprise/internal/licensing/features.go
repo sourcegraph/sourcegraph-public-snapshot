@@ -50,7 +50,6 @@ func checkFeature(info *Info, feature Feature) error {
 			// as we now guard against that while generating licenses, but there
 			// are quite a few "wrong" licenses out there as of today (2021-07-19).
 			if Feature(strings.TrimSpace(t)) == want {
-				fmt.Printf("fuck yeah feature %q is on\n", want)
 				return true
 			}
 		}
