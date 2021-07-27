@@ -163,6 +163,9 @@ export function logEvent(event: string, eventProperties?: unknown): void {
             url: window.location.href,
             source: EventSource.WEB,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
+        },
+        {
+            batchRequests: true,
         }
     )
         .pipe(map(dataOrThrowErrors))

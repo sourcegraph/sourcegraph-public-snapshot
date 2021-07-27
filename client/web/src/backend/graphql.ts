@@ -5,6 +5,7 @@ import {
     GraphQLResult,
     requestGraphQLApollo,
     requestGraphQLCommon,
+    RequestGraphQLContext,
 } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
@@ -34,12 +35,14 @@ export const client = graphQLClient({
  */
 export const requestGraphQL = <TResult, TVariables = object>(
     request: string,
-    variables?: TVariables
+    variables?: TVariables,
+    context?: RequestGraphQLContext
 ): Observable<GraphQLResult<TResult>> =>
     requestGraphQLApollo({
         request,
         variables,
         client,
+        context,
     })
 
 /**

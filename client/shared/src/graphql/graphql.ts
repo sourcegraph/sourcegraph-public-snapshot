@@ -12,9 +12,11 @@ import {
     MutationTuple,
     ApolloQueryResult,
     FetchResult as ApolloFetchResult,
+    split,
+    HttpLink,
 } from '@apollo/client'
-import { getOperationDefinition } from '@apollo/client/utilities'
 import { BatchHttpLink } from '@apollo/client/link/batch-http'
+import { getOperationDefinition } from '@apollo/client/utilities'
 import { GraphQLError } from 'graphql'
 import { useMemo } from 'react'
 import { from, Observable } from 'rxjs'
@@ -117,14 +119,20 @@ export const apolloToGraphQLResult = <T>(response: ApolloQueryResult<T> | Apollo
     }
 }
 
+export interface RequestGraphQLContext {
+    batchRequests?: boolean
+}
+
 export function requestGraphQLApollo<T, V = object>({
     request,
     variables,
     client,
+    context,
 }: GraphQLRequestOptions & {
     request: string
     variables?: V
     client: ApolloClient<NormalizedCacheObject>
+    context?: RequestGraphQLContext
 }): Observable<GraphQLResult<T>> {
     const document = getDocumentNode(request)
     const queryDefinition = getOperationDefinition(document)
@@ -134,13 +142,13 @@ export function requestGraphQLApollo<T, V = object>({
     }
 
     if (queryDefinition.operation === 'query') {
-        return from(client.query({ query: document, variables, fetchPolicy: 'no-cache' })).pipe(
+        return from(client.query({ query: document, variables, fetchPolicy: 'no-cache', context })).pipe(
             map(apolloToGraphQLResult)
         )
     }
 
     if (queryDefinition.operation === 'mutation') {
-        return from(client.mutate({ mutation: document, variables, fetchPolicy: 'no-cache' })).pipe(
+        return from(client.mutate({ mutation: document, variables, fetchPolicy: 'no-cache', context })).pipe(
             map(apolloToGraphQLResult)
         )
     }
@@ -154,12 +162,19 @@ export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }):
     new ApolloClient({
         uri: GRAPHQL_URI,
         cache,
-        link: new BatchHttpLink({
-            uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
-            headers,
-            batchMax: 5, // No more than 5 operations per batch
-            batchInterval: 20, // Wait no more than 20ms after first batched operation
-        }),
+        link: split(
+            operation => operation.getContext().batchRequests,
+            new BatchHttpLink({
+                uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
+                headers,
+                batchMax: 5, // No more than 5 operations per batch
+                batchInterval: 20, // Wait no more than 20ms after first batched operation
+            }),
+            new HttpLink({
+                uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
+                headers,
+            })
+        ),
     })
 
 type RequestDocument = string | DocumentNode
