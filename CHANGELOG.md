@@ -30,7 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Email notifications for saved searches are now deprecated in favor of Code Monitoring. Email notifications can no longer be enabled for saved searches. Saved searches that already have notifications enabled will continue to work, but there is now a button users can click to migrate to code monitors. Notifications for saved searches will be removed entirely in the future. [#23275](https://github.com/sourcegraph/sourcegraph/pull/23275)
 
 ## 3.30.1
 
