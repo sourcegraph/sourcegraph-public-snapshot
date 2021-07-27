@@ -4,7 +4,7 @@ import * as path from 'path'
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 
-import * as campaigns from './campaigns'
+import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
 import { Config, releaseVersions } from './config'
 import {
@@ -42,7 +42,7 @@ export type StepID =
     // testing
     | '_test:google-calendar'
     | '_test:slack'
-    | '_test:campaign-create-from-changes'
+    | '_test:batchchange-create-from-changes'
     | '_test:config'
     | '_test:dockerensure'
 
@@ -293,7 +293,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
     },
     {
         id: 'release:stage',
-        description: 'Open pull requests and a campaign staging a release',
+        description: 'Open pull requests and a batch change staging a release',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release, previous } = await releaseVersions(config)
@@ -305,13 +305,16 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
-            // set up campaign config
-            const campaign = campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
+            // set up batch change config
+            const batchChange = batchChanges.releaseTrackingBatchChange(
+                release.version,
+                await batchChanges.sourcegraphCLIConfig()
+            )
 
             // default values
             const notPatchRelease = release.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
-            const campaignURL = campaigns.campaignURL(campaign)
+            const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
             if (!trackingIssue) {
                 // Do not block release staging on lack of tracking issue
@@ -327,7 +330,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
 ${customMessage || ''}
 
-* [Release campaign](${campaignURL})
+* [Release batch change](${batchChangeURL})
 * ${trackingIssue ? `[Tracking issue](${trackingIssue.url})` : 'No tracking issue exists for this release'}`
                 if (!actionItems || actionItems.length === 0) {
                     return { draft: false, body: defaultBody }
@@ -411,7 +414,7 @@ cc @${config.captainGitHubUsername}
                                     )
                                 }
                                 items.push(
-                                    'Ensure all other pull requests in the campaign have been merged - then run `yarn run release release:finalize` to generate the tags required, re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
+                                    'Ensure all other pull requests in the batch change have been merged - then run `yarn run release release:finalize` to generate the tags required, re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
                                 )
                                 return items
                             })()
@@ -484,22 +487,22 @@ cc @${config.captainGitHubUsername}
                 dryRun: dryRun.changesets,
             })
 
-            // if changesets were actually published, set up a campaign and post in Slack
+            // if changesets were actually published, set up a batch change and post in Slack
             if (!dryRun.changesets) {
-                // Create campaign to track changes
+                // Create batch change to track changes
                 try {
-                    console.log(`Creating campaign in ${campaign.cliConfig.SRC_ENDPOINT}`)
-                    await campaigns.createCampaign(createdChanges, campaign)
+                    console.log(`Creating batch change in ${batchChange.cliConfig.SRC_ENDPOINT}`)
+                    await batchChanges.createBatchChange(createdChanges, batchChange)
                 } catch (error) {
                     console.error(error)
-                    console.error('Failed to create campaign for this release, continuing with announcement')
+                    console.error('Failed to create batch change for this release, continuing with announcement')
                 }
 
                 // Announce release update in Slack
                 await postMessage(
-                    `:captain: *Sourcegraph ${release.version} release has been staged*
+                    `:captain: *Sourcegraph ${release.version} has been staged.*
 
-Campaign: ${campaignURL}`,
+Batch change: ${batchChangeURL}`,
                     slackAnnounceChannel
                 )
             }
@@ -516,17 +519,20 @@ Campaign: ${campaignURL}`,
                 throw new Error('Missing parameters (required: version, repo, change ID)')
             }
 
-            const campaign = campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
-            await campaigns.addToCampaign(
+            const batchChange = batchChanges.releaseTrackingBatchChange(
+                release.version,
+                await batchChanges.sourcegraphCLIConfig()
+            )
+            await batchChanges.addToBatchChange(
                 [
                     {
                         repository: changeRepo,
                         pullRequestNumber: parseInt(changeID, 10),
                     },
                 ],
-                campaign
+                batchChange
             )
-            console.log(`Added ${changeRepo}#${changeID} to campaign ${campaigns.campaignURL(campaign)}`)
+            console.log(`Added ${changeRepo}#${changeID} to batch change ${batchChanges.batchChangeURL(batchChange)}`)
         },
     },
     {
@@ -573,13 +579,13 @@ Campaign: ${campaignURL}`,
 
             // Set up announcement message
             const versionAnchor = release.format().replace(/\./g, '-')
-            const campaignURL = campaigns.campaignURL(
-                campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
+            const batchChangeURL = batchChanges.batchChangeURL(
+                batchChanges.releaseTrackingBatchChange(release.version, await batchChanges.sourcegraphCLIConfig())
             )
             const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
 * Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
-* Release campaign: ${campaignURL}`
+* Release batch change: ${batchChangeURL}`
 
             // Slack
             await postMessage(`:captain: ${releaseMessage}`, slackAnnounceChannel)
@@ -633,12 +639,12 @@ Campaign: ${campaignURL}`,
         },
     },
     {
-        id: '_test:campaign-create-from-changes',
-        description: 'Test campaigns integration',
-        argNames: ['campaignConfigJSON'],
-        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
-        run: async (_config, campaignConfigJSON) => {
-            const campaignConfig = JSON.parse(campaignConfigJSON) as {
+        id: '_test:batchchange-create-from-changes',
+        description: 'Test batch changes integration',
+        argNames: ['batchchangeConfigJSON'],
+        // Example: yarn run release _test:batchchange-create-from-changes "$(cat ./.secrets/import.json)"
+        run: async (_config, batchchangeConfigJSON) => {
+            const batchChangeConfig = JSON.parse(batchchangeConfigJSON) as {
                 changes: CreatedChangeset[]
                 name: string
                 description: string
@@ -646,15 +652,15 @@ Campaign: ${campaignURL}`,
 
             // set up src-cli
             await commandExists('src')
-            const campaign = {
-                name: campaignConfig.name,
-                description: campaignConfig.description,
+            const batchChange = {
+                name: batchChangeConfig.name,
+                description: batchChangeConfig.description,
                 namespace: 'sourcegraph',
-                cliConfig: await campaigns.sourcegraphCLIConfig(),
+                cliConfig: await batchChanges.sourcegraphCLIConfig(),
             }
 
-            await campaigns.createCampaign(campaignConfig.changes, campaign)
-            console.log(`Created campaign ${campaigns.campaignURL(campaign)}`)
+            await batchChanges.createBatchChange(batchChangeConfig.changes, batchChange)
+            console.log(`Created batch change ${batchChanges.batchChangeURL(batchChange)}`)
         },
     },
     {

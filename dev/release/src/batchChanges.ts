@@ -19,7 +19,7 @@ interface SourcegraphCLIConfig {
  * Retrieves src-cli configuration and ensures src-cli exists.
  */
 export async function sourcegraphCLIConfig(): Promise<SourcegraphCLIConfig> {
-    await commandExists('src') // CLI must be present for campaigns interactions
+    await commandExists('src') // CLI must be present for batch change interactions
     return {
         SRC_ENDPOINT: DEFAULT_SRC_ENDPOINT,
         SRC_ACCESS_TOKEN: await readLine('k8s.sgdev.org src-cli token: ', `${cacheFolder}/src-cli.txt`),
@@ -27,11 +27,11 @@ export async function sourcegraphCLIConfig(): Promise<SourcegraphCLIConfig> {
 }
 
 /**
- * Parameters defining a campaign to interact with.
+ * Parameters defining a batch change to interact with.
  *
  * Generate `cliConfig` using `sourcegraphCLIConfig()`.
  */
-export interface CampaignOptions {
+export interface BatchChangeOptions {
     name: string
     description: string
     namespace: string
@@ -39,9 +39,9 @@ export interface CampaignOptions {
 }
 
 /**
- * Generate campaign configuration for a given release.
+ * Generate batch change configuration for a given release.
  */
-export function releaseTrackingCampaign(version: string, cliConfig: SourcegraphCLIConfig): CampaignOptions {
+export function releaseTrackingBatchChange(version: string, cliConfig: SourcegraphCLIConfig): BatchChangeOptions {
     return {
         name: `release-sourcegraph-${version}`,
         description: `Track publishing of sourcegraph@${version}`,
@@ -51,25 +51,25 @@ export function releaseTrackingCampaign(version: string, cliConfig: SourcegraphC
 }
 
 /**
- * Generates a URL for a campaign that would be created under the given camapign options.
+ * Generates a URL for a batch change that would be created under the given camapign options.
  *
- * Does not ensure the campaign exists.
+ * Does not ensure the batch change exists.
  */
-export function campaignURL(options: CampaignOptions): string {
-    return `${options.cliConfig.SRC_ENDPOINT}/organizations/${options.namespace}/campaigns/${options.name}`
+export function batchChangeURL(options: BatchChangeOptions): string {
+    return `${options.cliConfig.SRC_ENDPOINT}/organizations/${options.namespace}/batch changes/${options.name}`
 }
 
 /**
- * Create a new campaign from a set of changes.
+ * Create a new batch change from a set of changes.
  */
-export async function createCampaign(changes: CreatedChangeset[], options: CampaignOptions): Promise<void> {
-    // create a campaign spec
+export async function createBatchChange(changes: CreatedChangeset[], options: BatchChangeOptions): Promise<void> {
+    // create a batch change spec
     const importChangesets = changes.map(change => ({
         repository: `github.com/${change.repository}`,
         externalIDs: [change.pullRequestNumber],
     }))
-    // apply campaign
-    return await applyCampaign(
+    // apply batch change
+    return await applyBatchChange(
         {
             name: options.name,
             description: options.description,
@@ -80,11 +80,11 @@ export async function createCampaign(changes: CreatedChangeset[], options: Campa
 }
 
 /**
- * Append changes to an existing campaign.
+ * Append changes to an existing batch change.
  */
-export async function addToCampaign(
+export async function addToBatchChange(
     changes: { repository: string; pullRequestNumber: number }[],
-    options: CampaignOptions
+    options: BatchChangeOptions
 ): Promise<void> {
     const response = await fetch(`${options.cliConfig.SRC_ENDPOINT}/.api/graphql`, {
         method: 'POST',
@@ -92,9 +92,9 @@ export async function addToCampaign(
             Authorization: `token ${options.cliConfig.SRC_ACCESS_TOKEN}`,
         },
         body: JSON.stringify({
-            query: `query getCampaigns($namespace:String!) {
+            query: `query getBatchChanges($namespace:String!) {
                 organization(name:$namespace) {
-                  campaigns(first:99) {
+                  batchChanges(first:99) {
                     nodes { name currentSpec { originalInput } }
                   }
                 }
@@ -107,43 +107,43 @@ export async function addToCampaign(
     const {
         data: {
             organization: {
-                campaigns: { nodes: results },
+                batchChanges: { nodes: results },
             },
         },
     } = (await response.json()) as {
-        data: { organization: { campaigns: { nodes: { name: string; currentSpec: { originalInput: string } }[] } } }
+        data: { organization: { batchChanges: { nodes: { name: string; currentSpec: { originalInput: string } }[] } } }
     }
-    const campaign = results.find(result => result.name === options.name)
-    if (!campaign) {
-        throw new Error(`Cannot find campaign ${options.name}`)
+    const batchChange = results.find(result => result.name === options.name)
+    if (!batchChange) {
+        throw new Error(`Cannot find batch change ${options.name}`)
     }
 
     const importChangesets = changes.map(change => ({
         repository: `github.com/${change.repository}`,
         externalIDs: [change.pullRequestNumber],
     }))
-    const newSpec = YAML.parse(campaign.currentSpec.originalInput) as CampaignSpec
+    const newSpec = YAML.parse(batchChange.currentSpec.originalInput) as BatchChangeSpec
     newSpec.importChangesets.push(...importChangesets)
-    await applyCampaign(newSpec, options)
+    await applyBatchChange(newSpec, options)
 }
 
 /**
- * Subset of campaign spec: https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference
+ * Subset of batch change spec: https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference
  */
-interface CampaignSpec {
+interface BatchChangeSpec {
     name: string
     description: string
     importChangesets: { repository: string; externalIDs: number[] }[]
 }
 
-async function applyCampaign(campaign: CampaignSpec, options: CampaignOptions): Promise<void> {
-    const campaignYAML = YAML.stringify(campaign)
-    console.log(`Rendered campaign spec:\n\n${campaignYAML}`)
+async function applyBatchChange(batchChange: BatchChangeSpec, options: BatchChangeOptions): Promise<void> {
+    const batchChangeYAML = YAML.stringify(batchChange)
+    console.log(`Rendered batch change spec:\n\n${batchChangeYAML}`)
 
-    // apply the campaign
-    await execa('src', ['campaign', 'apply', '-namespace', options.namespace, '-f', '-'], {
+    // apply the batch change
+    await execa('src', ['batch change', 'apply', '-namespace', options.namespace, '-f', '-'], {
         stdout: 'inherit',
-        input: campaignYAML,
+        input: batchChangeYAML,
         env: options.cliConfig,
     })
 }
