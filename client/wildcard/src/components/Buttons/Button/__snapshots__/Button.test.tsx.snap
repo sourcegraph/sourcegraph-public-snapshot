@@ -9,15 +9,6 @@ exports[`Button Renders size 'lg' correctly 1`] = `
 </button>
 `;
 
-exports[`Button Renders size 'md' correctly 1`] = `
-<button
-  class="btn btn-md"
-  type="button"
->
-  Hello world
-</button>
-`;
-
 exports[`Button Renders size 'sm' correctly 1`] = `
 <button
   class="btn btn-sm"
