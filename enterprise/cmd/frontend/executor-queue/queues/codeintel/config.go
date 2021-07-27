@@ -1,7 +1,7 @@
 package codeintel
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/executor-queue/config"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 

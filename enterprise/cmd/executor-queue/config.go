@@ -1,7 +1,7 @@
 package main
 
 import (
-	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/server"
+	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/executor-queue/server"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 

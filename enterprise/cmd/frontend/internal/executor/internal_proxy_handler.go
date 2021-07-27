@@ -14,7 +14,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/server"
+	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/executor-queue/server"
 )
 
 func newInternalProxyHandler(uploadHandler http.Handler, queueOptions map[string]apiserver.QueueOptions) (func() http.Handler, error) {
