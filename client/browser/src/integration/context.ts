@@ -4,7 +4,9 @@ import {
     IntegrationTestContext,
     IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
+
 import { BrowserGraphQlOperations } from '../graphql-operations'
+
 import { commonBrowserGraphQlResults } from './graphql'
 
 export interface BrowserIntegrationTestContext

@@ -240,8 +240,7 @@ export const createSharedIntegrationTestContext = async <
         driver,
         server,
         overrideGraphQL: overrides => {
-            // TOOD(tj): merge overrides and test
-            graphQlOverrides = overrides
+            graphQlOverrides = { ...graphQlOverrides, ...overrides }
         },
         waitForGraphQLRequest: async <O extends TGraphQlOperationNames>(
             triggerRequest: () => Promise<void> | void,

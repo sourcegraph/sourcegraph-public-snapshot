@@ -245,13 +245,7 @@ export class Driver {
         await this.page.waitForSelector('.test-sourcegraph-url')
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
-        await this.page.waitForFunction(
-            () => {
-                const element = document.querySelector('.test-connection-status')
-                return element?.textContent?.includes('Connected')
-            },
-            { timeout: 5000 }
-        )
+        await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
     }
 
     public async close(): Promise<void> {
