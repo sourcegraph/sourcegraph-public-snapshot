@@ -113,6 +113,9 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":jest: Test wildcard client code",
 			bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+
+		// TEMPORARY: BROWSER EXTENSION INTEGRATION TESTS. ADD MORE CONDS BEFORE RUNNING
+		addBrowserExtensionIntegrationSteps(pipeline)
 	}
 }
 
@@ -181,6 +184,28 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
+}
+
+func addBrowserExtensionIntegrationSteps(pipeline *bk.Pipeline) {
+	for _, browser := range []string{"chrome"} {
+		// Run integration tests
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "true"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Env("RECORD", "false"), // ensure that we use existing recordings
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
+			bk.Cmd("pushd client/browser"),
+			bk.Cmd("yarn -s run build"),
+			bk.Cmd("yarn -s run test-integration"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
 	}
 }
 
