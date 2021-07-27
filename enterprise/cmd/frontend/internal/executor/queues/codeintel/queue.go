@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/executor-queue/server"
+	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executor/server"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
