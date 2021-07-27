@@ -69,11 +69,11 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		return err
 	}
 
-	proxyHandler, err := newExecutorQueueHandler(db, observationContext, queueOptions, handler)
+	queueHandler, err := newExecutorQueueHandler(db, observationContext, queueOptions, handler)
 	if err != nil {
 		return err
 	}
 
-	enterpriseServices.NewExecutorProxyHandler = proxyHandler
+	enterpriseServices.NewExecutorProxyHandler = queueHandler
 	return nil
 }
