@@ -316,7 +316,7 @@ This panel indicates enqueuer operation errors every 5m.
 
 <br />
 
-### Frontend: Codeintel: dbstore stats (db=frontend)
+### Frontend: Codeintel: dbstore stats
 
 #### frontend: codeintel_dbstore_total
 
@@ -366,7 +366,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Frontend: Workerutil: dbworker/store stats (db=frontend, table=lsif_indexes)
+### Frontend: Workerutil: lsif_indexes dbworker/store stats
 
 #### frontend: workerutil_dbworker_store_codeintel_index_total
 
@@ -392,7 +392,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Frontend: Codeintel: lsifstore stats (db=codeintel-db)
+### Frontend: Codeintel: lsifstore stats
 
 #### frontend: codeintel_lsifstore_total
 
@@ -492,7 +492,7 @@ This panel indicates client operation errors every 5m.
 
 <br />
 
-### Frontend: Codeintel: uploadstore stats (queries GCS/S3/MinIO)
+### Frontend: Codeintel: uploadstore stats
 
 #### frontend: codeintel_uploadstore_total
 
@@ -1723,7 +1723,7 @@ This panel indicates handler active handlers.
 
 <br />
 
-### Precise Code Intel Worker: Codeintel: dbstore stats (db=frontend)
+### Precise Code Intel Worker: Codeintel: dbstore stats
 
 #### precise-code-intel-worker: codeintel_dbstore_total
 
@@ -1773,7 +1773,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Precise Code Intel Worker: Codeintel: lsifstore stats (db=codeintel-db)
+### Precise Code Intel Worker: Codeintel: lsifstore stats
 
 #### precise-code-intel-worker: codeintel_lsifstore_total
 
@@ -1823,7 +1823,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Precise Code Intel Worker: Workerutil: dbworker/store stats (db=frontend, table=lsif_uploads)
+### Precise Code Intel Worker: Workerutil: lsif_uploads dbworker/store stats
 
 #### precise-code-intel-worker: workerutil_dbworker_store_codeintel_upload_total
 
@@ -1899,7 +1899,7 @@ This panel indicates client operation errors every 5m.
 
 <br />
 
-### Precise Code Intel Worker: Codeintel: uploadstore stats (queries GCS/S3/MinIO)
+### Precise Code Intel Worker: Codeintel: uploadstore stats
 
 #### precise-code-intel-worker: codeintel_uploadstore_total
 
@@ -2599,7 +2599,7 @@ This panel indicates enqueuer operation errors every 5m.
 
 <br />
 
-### Worker: Codeintel: dbstore stats (db=frontend)
+### Worker: Codeintel: dbstore stats
 
 #### worker: codeintel_dbstore_total
 
@@ -2649,7 +2649,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Worker: Codeintel: lsifstore stats (db=codeintel-db)
+### Worker: Codeintel: lsifstore stats
 
 #### worker: codeintel_lsifstore_total
 
@@ -2699,7 +2699,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Worker: Workerutil: dbworker/store stats (db=frontend, table=lsif_dependency_indexes)
+### Worker: Workerutil: lsif_dependency_indexes dbworker/store stats
 
 #### worker: workerutil_dbworker_store_codeintel_dependency_index_total
 
@@ -4708,7 +4708,7 @@ This panel indicates client operation errors every 5m.
 
 <br />
 
-### Executor: Executor: Subprocess execution (for job setup)
+### Executor: Executor: Job setup
 
 #### executor: apiworker_command_total
 
@@ -4758,7 +4758,7 @@ This panel indicates command operation errors every 5m.
 
 <br />
 
-### Executor: Executor: Subprocess execution (for job execution)
+### Executor: Executor: Job execution
 
 #### executor: apiworker_command_total
 
@@ -4808,7 +4808,7 @@ This panel indicates command operation errors every 5m.
 
 <br />
 
-### Executor: Executor: Subprocess execution (for job teardown)
+### Executor: Executor: Job teardown
 
 #### executor: apiworker_command_total
 

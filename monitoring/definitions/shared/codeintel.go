@@ -267,7 +267,7 @@ func (codeIntelligence) NewExecutorSetupCommandGroup(containerName string) monit
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
-			DescriptionRoot: "Subprocess execution (for job setup)",
+			DescriptionRoot: "Job setup",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -294,7 +294,7 @@ func (codeIntelligence) NewExecutorExecutionCommandGroup(containerName string) m
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
-			DescriptionRoot: "Subprocess execution (for job execution)",
+			DescriptionRoot: "Job execution",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -321,7 +321,7 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
-			DescriptionRoot: "Subprocess execution (for job teardown)",
+			DescriptionRoot: "Job teardown",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -375,7 +375,7 @@ func (codeIntelligence) NewDBStoreGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "dbstore stats (db=frontend)",
+			DescriptionRoot: "dbstore stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -401,7 +401,7 @@ func (codeIntelligence) NewUploadDBWorkerStoreGroup(containerName string) monito
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "workerutil",
-			DescriptionRoot: "dbworker/store stats (db=frontend, table=lsif_uploads)",
+			DescriptionRoot: "lsif_uploads dbworker/store stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -423,7 +423,7 @@ func (codeIntelligence) NewIndexDBWorkerStoreGroup(containerName string) monitor
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "workerutil",
-			DescriptionRoot: "dbworker/store stats (db=frontend, table=lsif_indexes)",
+			DescriptionRoot: "lsif_indexes dbworker/store stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -445,7 +445,7 @@ func (codeIntelligence) NewDependencyIndexDBWorkerStoreGroup(containerName strin
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "workerutil",
-			DescriptionRoot: "dbworker/store stats (db=frontend, table=lsif_dependency_indexes)",
+			DescriptionRoot: "lsif_dependency_indexes dbworker/store stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -467,7 +467,7 @@ func (codeIntelligence) NewLSIFStoreGroup(containerName string) monitoring.Group
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "lsifstore stats (db=codeintel-db)",
+			DescriptionRoot: "lsifstore stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -519,7 +519,7 @@ func (codeIntelligence) NewUploadStoreGroup(containerName string) monitoring.Gro
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "uploadstore stats (queries GCS/S3/MinIO)",
+			DescriptionRoot: "uploadstore stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
