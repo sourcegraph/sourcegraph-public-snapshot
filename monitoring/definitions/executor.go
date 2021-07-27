@@ -10,13 +10,13 @@ import (
 func Executor() *monitoring.Container {
 	const (
 		containerName      = "(executor|sourcegraph-code-intel-indexers|executor-batches)"
-		queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|executor-queue)"
+		queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend)"
 	)
 
 	return &monitoring.Container{
 		Name:        "executor",
 		Title:       "Executor",
-		Description: `Executes jobs from the executor-queue.`,
+		Description: `Executes jobs in isolated containers.`,
 		Templates: []sdk.TemplateVar{
 			{
 				Label:      "Queue name",
