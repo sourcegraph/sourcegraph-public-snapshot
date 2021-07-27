@@ -13,6 +13,6 @@ type SharedConfig struct {
 }
 
 func (c *SharedConfig) Load() {
-	c.FrontendUsername = c.Get("EXECUTOR_FRONTEND_USERNAME", "", "The username supplied to the frontend.")
-	c.FrontendPassword = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password supplied to the frontend.")
+	c.FrontendUsername = c.GetOptional("EXECUTOR_FRONTEND_USERNAME", "The username supplied to the frontend.")
+	c.FrontendPassword = c.GetOptional("EXECUTOR_FRONTEND_PASSWORD", "The password supplied to the frontend.")
 }

@@ -41,12 +41,6 @@ func init() {
 	for _, config := range configs {
 		config.Load()
 	}
-
-	for _, config := range configs {
-		if err := config.Validate(); err != nil {
-			log.Fatalf("failed to load config: %s", err)
-		}
-	}
 }
 
 // Init initializes the executor endpoints required for use with the executor service.
@@ -56,6 +50,11 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+	}
+	for _, config := range []configuration{sharedConfig, codeintelConfig, batchesConfig} {
+		if err := config.Validate(); err != nil {
+			log.Fatalf("failed to load config: %s", err)
+		}
 	}
 
 	// Register queues.
