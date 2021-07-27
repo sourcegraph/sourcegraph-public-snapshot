@@ -40,6 +40,12 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	if args.To != nil {
 		opts.To = &args.To.Time
 	}
+	if args.IncludeRepoRegex != nil {
+		opts.IncludeRepoRegex = *args.IncludeRepoRegex
+	}
+	if args.ExcludeRepoRegex != nil {
+		opts.ExcludeRepoRegex = *args.ExcludeRepoRegex
+	}
 	// TODO(slimsag): future: Pass through opts.Limit
 
 	points, err := r.insightsStore.SeriesPoints(ctx, opts)
