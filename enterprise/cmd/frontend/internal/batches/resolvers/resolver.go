@@ -1462,6 +1462,48 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
+func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CancelBatchSpecExecution", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user is admin.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalBatchSpecExecutionRandID(args.BatchSpecExecution)
+	if err != nil {
+		return nil, err
+	}
+	if dbID == "" {
+		return nil, ErrIDIsZero{}
+	}
+	exec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{RandID: dbID})
+	if err != nil {
+		return nil, err
+	}
+	exec.Cancel = true
+	if exec.State == btypes.BatchSpecExecutionStateQueued {
+		exec.State = btypes.BatchSpecExecutionStateErrored
+		fmsg := "Canceled"
+		exec.FailureMessage = &fmsg
+		now := r.store.Clock()()
+		exec.FinishedAt = &now
+	}
+	if err := r.store.UpdateBatchSpecExecution(ctx, exec); err != nil {
+		return nil, err
+	}
+
+	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
+}
+
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
 		return btypes.BatchChangeStateAny, nil

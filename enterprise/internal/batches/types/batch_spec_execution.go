@@ -35,6 +35,7 @@ type BatchSpecExecution struct {
 	UserID          int32
 	NamespaceUserID int32
 	NamespaceOrgID  int32
+	Cancel          bool
 }
 
 func (i BatchSpecExecution) RecordID() int {

@@ -41,6 +41,12 @@ func (r *batchSpecExecutionResolver) InputSpec() string {
 }
 
 func (r *batchSpecExecutionResolver) State() string {
+	if r.exec.Cancel {
+		return "CANCELING"
+	}
+	if r.exec.FailureMessage != nil && strings.Contains(*r.exec.FailureMessage, "context canceled") {
+		return "CANCELED"
+	}
 	return strings.ToUpper(string(r.exec.State))
 }
 
