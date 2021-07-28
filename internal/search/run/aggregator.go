@@ -92,6 +92,14 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 }
 
 func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextParameters) (err error) {
+	tr, ctx := trace.New(ctx, "doStructuralSearch", "")
+	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
+	defer func() {
+		a.Error(err)
+		tr.SetErrorIfNotContext(err)
+		tr.Finish()
+	}()
+
 	// For structural search with default limits we retry if we get no results.
 	fileMatches, stats, err := unindexed.SearchFilesInReposBatch(ctx, args)
 
@@ -133,11 +141,6 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextPara
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
-
-	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == search.DefaultMaxSearchResults
-	if isDefaultStructuralSearch {
-		return a.DoStructuralSearch(ctx, args)
-	}
 
 	return unindexed.SearchFilesInRepos(ctx, args, a)
 }
