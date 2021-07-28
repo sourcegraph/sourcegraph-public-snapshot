@@ -20,6 +20,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 -
+- Code Insights backend has moved from the `repo-updater` service to the `worker` service. [#23050](https://github.com/sourcegraph/sourcegraph/pull/23050)
+- Code Insights feature flag `DISABLE_CODE_INSIGHTS` environment variable has moved from the `repo-updater` service to the `worker` service. Any users of this flag will need to update their `worker` service configuration to continue using it. [#23050](https://github.com/sourcegraph/sourcegraph/pull/23050)
 
 ### Fixed
 
@@ -28,6 +30,14 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 -
+
+## 3.30.2
+
+**⚠️ Users upgrading from 3.29 are advised to upgrade directly to 3.30.2**
+
+### Fixed
+
+- Postgres database images have been reverted back to debian due to corruption caused by glibc and alpine. [23302](https://github.com/sourcegraph/sourcegraph/pull/23302)
 
 ## 3.30.1
 
