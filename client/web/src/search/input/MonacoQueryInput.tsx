@@ -4,6 +4,7 @@ import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -83,6 +84,26 @@ const hasKeybindingService = (
     hasProperty('_standaloneKeybindingService')(editor) &&
     typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
         .addDynamicKeybinding === 'function'
+
+const toMonacoRange = ({ start, end }: CharacterRange, textModel: Monaco.editor.ITextModel): Monaco.IRange => {
+    const startPosition = textModel.getPositionAt(start)
+    const endPosition = textModel.getPositionAt(end)
+    return {
+        startLineNumber: startPosition.lineNumber,
+        endLineNumber: endPosition.lineNumber,
+        startColumn: startPosition.column,
+        endColumn: endPosition.column,
+    }
+}
+
+const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => {
+    return {
+        selectionStartLineNumber: range.startLineNumber,
+        positionLineNumber: range.endLineNumber,
+        selectionStartColumn: range.startColumn,
+        positionColumn: range.endColumn,
+    }
+}
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
@@ -221,11 +242,18 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 // Don't react to user input
                 break
             case QueryChangeSource.searchReference: {
-                editor.setSelection(queryState.selection)
-                if (queryState.showSuggestions) {
-                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                const textModel = editor.getModel()
+                if (textModel) {
+                    const selectionRange = toMonacoSelection(toMonacoRange(queryState.selectionRange, textModel))
+                    editor.setSelection(selectionRange)
+                    if (queryState.showSuggestions) {
+                        editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                    }
+                    // For some reason this has to come *after* triggering the
+                    // suggestion, otherwise the suggestion box will be shown
+                    // and the filter is not scrolled into view.
+                    editor.revealRange(toMonacoRange(queryState.revealRange, textModel))
                 }
-                editor.revealRange(queryState.revealRange)
                 break
             }
             default: {
