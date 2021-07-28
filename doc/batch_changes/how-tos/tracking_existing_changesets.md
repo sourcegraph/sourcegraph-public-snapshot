@@ -7,7 +7,7 @@ Batch Changes allow you not only to [publish changesets](publishing_changesets.m
 ## Requirements
 
 - Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.
-- A [globally-configured access token](../how-tos/configuring_credentials.md#global-service-account) for Batch Changes (a personal access token **cannot** currently be used for importing changesets)
+- A [globally service account token](../how-tos/configuring_credentials.md#global-service-account-tokens) for Batch Changes (**a personal access token cannot currently be used for importing changesets**)
 
 ## Importing changesets into a batch change
 

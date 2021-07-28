@@ -46,4 +46,3 @@ Batch Changes makes it possible to create changesets in tens, hundreds, or thous
       * The default number of parallel jobs defaults to the number of CPU cores on the system running src-cli. This setting can be configured with the [`-j` flag when running `src batch apply` or `src batch preview`](../../cli/references/batch/apply.md).
   * Disk space is also required for the generated patches. This requirement *is* cumulative across each repository altered.
 * Git
-* A [personal access token](../how-tos/configuring_credentials.md#adding-a-personal-access-token) configured for each target code host that the batch change should publish changesets on
