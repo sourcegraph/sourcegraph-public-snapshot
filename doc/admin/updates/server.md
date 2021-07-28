@@ -7,9 +7,9 @@ This document describes the exact changes needed to update a single-node Sourceg
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, refer to the [standard upgrade procedure](../install/docker-compose/operations.md#standard-upgrade-procedure) to upgrade your instance.
 
-## 3.29 -> 3.30.1
+## 3.29 -> 3.30.2
 
-**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved **
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.2. If you have upgraded to 3.30.0 and 3.30.1 please reach out to support@sourcegraph.com for assistance**
 
 ## Standard upgrade procedure
 

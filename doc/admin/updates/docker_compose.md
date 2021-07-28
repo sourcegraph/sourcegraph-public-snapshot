@@ -10,23 +10,13 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.29 -> 3.30
+## 3.29 -> 3.30.2
 
-**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
-
-No manual migration required.
-
-Please upgrade to the [`v3.30.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/5d48fde63b2a60f46cd12bbc321a92ccdca79575) by following the [standard upgrade procedure](#standard-upgrade-procedure).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
-
-## 3.29 -> 3.30.1
-
-**⚠️ Prefer upgrading to the 3.30.1 release over 3.30.0 release, see the CHANGELOG for more info**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.2. If you have upgraded to 3.30.0 and 3.30.1 please reach out to support@sourcegraph.com for assistance**
 
 No manual migration required.
 
-Please upgrade to the [`v3.30.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.26.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+Please upgrade to the [`v3.30.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.30.2/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## 3.28 -> 3.29
 
