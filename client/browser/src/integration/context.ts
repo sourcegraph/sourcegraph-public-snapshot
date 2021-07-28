@@ -1,15 +1,16 @@
+import { URL } from 'url'
+
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     createSharedIntegrationTestContext,
     IntegrationTestContext,
     IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { BrowserGraphQlOperations } from '../graphql-operations'
 
 import { commonBrowserGraphQlResults } from './graphql'
-import { URL } from 'url'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 export interface BrowserIntegrationTestContext
     extends IntegrationTestContext<
@@ -38,7 +39,7 @@ export const createBrowserIntegrationTestContext = async ({
                     return host
                 }
                 return null
-            } catch (err) {
+            } catch {
                 return null
             }
         })
