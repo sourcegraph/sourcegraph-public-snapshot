@@ -77,11 +77,13 @@ loop:
 			log15.Error("Failed to reset stalled records", "name", r.options.Name, "error", err)
 		}
 
-		for _, id := range resetIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id)
+		now := time.Now()
+
+		for id, lastHeartbeatTimestamp := range resetIDs {
+			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
 		}
-		for _, id := range erroredIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id)
+		for id, lastHeartbeatTimestamp := range erroredIDs {
+			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
 		}
 
 		r.options.Metrics.RecordResets.Add(float64(len(resetIDs)))

@@ -14,7 +14,7 @@ import (
 // upload as "processing" and locking the upload row during processing. An unlocked row that
 // is marked as processing likely indicates that the worker that dequeued the upload has died.
 // There should be a nearly-zero delay between these states during normal operation.
-const StalledUploadMaxAge = time.Second * 5
+const StalledUploadMaxAge = time.Second * 25
 
 // UploadMaxNumResets is the maximum number of times an upload can be reset. If an upload's
 // failed attempts counter reaches this threshold, it will be moved into "errored" rather than
@@ -40,7 +40,7 @@ func WorkerutilUploadStore(s basestore.ShareableStore, observationContext *obser
 // index as "processing" and locking the index row during processing. An unlocked row that
 // is marked as processing likely indicates that the indexer that dequeued the index has
 // died. There should be a nearly-zero delay between these states during normal operation.
-const StalledIndexMaxAge = time.Second * 5
+const StalledIndexMaxAge = time.Second * 25
 
 // IndexMaxNumResets is the maximum number of times an index can be reset. If an index's
 // failed attempts counter reaches this threshold, it will be moved into "errored" rather than
@@ -67,7 +67,7 @@ func WorkerutilIndexStore(s basestore.ShareableStore, observationContext *observ
 // processing. An unlocked row that is marked as processing likely indicates that the worker
 // that dequeued the job has died. There should be a nearly-zero delay between these states
 // during normal operation.
-const StalledDependencyIndexingJobMaxAge = time.Second * 5
+const StalledDependencyIndexingJobMaxAge = time.Second * 25
 
 // DependencyIndexingJobMaxNumResets is the maximum number of times a dependency indexing
 // job can be reset. If an job's failed attempts counter reaches this threshold, it will be

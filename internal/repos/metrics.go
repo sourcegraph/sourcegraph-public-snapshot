@@ -220,7 +220,7 @@ with latest_state as (
     order by external_service_id, finished_at desc
 )
 select round((select cast(count(*) as float) from latest_state where state = 'errored') /
-             (select cast(count(*) as float) from latest_state) * 100)
+             nullif((select cast(count(*) as float) from latest_state), 0) * 100)
 `)
 		if err != nil {
 			log15.Error("Failed to get total errored sync jobs", "err", err)

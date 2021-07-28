@@ -47,7 +47,6 @@ env:
       { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
-      { "Name": "executor-queue", "Host": "127.0.0.1:6091" },
       { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
       { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-indexserver-0", "Host": "127.0.0.1:6072" },
@@ -90,7 +89,6 @@ env:
   EXECUTOR_FRONTEND_URL: http://localhost:3080
   EXECUTOR_FRONTEND_USERNAME: executor
   EXECUTOR_FRONTEND_PASSWORD: hunter2
-  EXECUTOR_QUEUE_URL: http://localhost:3191
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
@@ -399,17 +397,6 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-queue:
-    cmd: .bin/executor-queue
-    install: |
-      go build -o .bin/executor-queue github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
-    checkBinary: .bin/executor-queue
-    watch:
-      - lib
-      - internal
-      - enterprise/internal
-      - enterprise/cmd/executor-queue
-
   executor-template: &executor_template
     # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
@@ -450,7 +437,7 @@ commands:
     <<: *executor_template
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_HEALTH_SERVER_PORT,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_USERNAME,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_QUEUE_URL,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_HEALTH_SERVER_PORT,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_USERNAME,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
@@ -577,7 +564,6 @@ commandsets:
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
-      - executor-queue
 
   default: *enterprise_set
 
@@ -604,7 +590,6 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
       - minio
-      - executor-queue
       - precise-code-intel-worker
       - codeintel-executor
 
@@ -679,7 +664,6 @@ commandsets:
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
-      - executor-queue
       - batches-executor
 
   core-app:

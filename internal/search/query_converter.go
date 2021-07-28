@@ -172,7 +172,7 @@ func TimeoutDuration(b query.Basic) time.Duration {
 	return d
 }
 
-func FileRe(pattern string, queryIsCaseSensitive bool) (zoekt.Q, error) {
+func fileRe(pattern string, queryIsCaseSensitive bool) (zoekt.Q, error) {
 	return parseRe(pattern, true, false, queryIsCaseSensitive)
 }
 
@@ -249,14 +249,14 @@ func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
 	for _, i := range p.IncludePatterns {
-		q, err := FileRe(i, p.IsCaseSensitive)
+		q, err := fileRe(i, p.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
 	if p.ExcludePattern != "" {
-		q, err := FileRe(p.ExcludePattern, p.IsCaseSensitive)
+		q, err := fileRe(p.ExcludePattern, p.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -270,14 +270,14 @@ func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
 	// Note: (type:repo file:foo file:bar) will only find repos with a
 	// filename containing both "foo" and "bar".
 	for _, i := range p.FilePatternsReposMustInclude {
-		q, err := FileRe(i, p.IsCaseSensitive)
+		q, err := fileRe(i, p.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, &zoekt.Type{Type: zoekt.TypeRepo, Child: q})
 	}
 	for _, i := range p.FilePatternsReposMustExclude {
-		q, err := FileRe(i, p.IsCaseSensitive)
+		q, err := fileRe(i, p.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}

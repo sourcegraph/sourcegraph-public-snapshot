@@ -67,7 +67,7 @@ func initServices(ctx context.Context, db dbutil.DB) error {
 		gitserverClient := gitserver.New(dbStore, observationContext)
 
 		// Initialize the index enqueuer
-		indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{dbStore}, gitserverClient, repoupdater.DefaultClient, observationContext)
+		indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{dbStore}, gitserverClient, repoupdater.DefaultClient, config.AutoIndexEnqueuerConfig, observationContext)
 
 		services.dbStore = dbStore
 		services.locker = locker

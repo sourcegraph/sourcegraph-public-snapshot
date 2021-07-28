@@ -149,6 +149,22 @@ func TestStoreDequeueConditions(t *testing.T) {
 	assertDequeueRecordResult(t, 3, record, ok, err)
 }
 
+func TestStoreDequeueResetExecutionLogs(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, execution_logs, uploaded_at)
+		VALUES
+			(1, 'queued', E'{"{\\"key\\": \\"test\\"}"}', NOW() - '1 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	assertDequeueRecordResult(t, 1, record, ok, err)
+	assertDequeueRecordResultLogCount(t, 0, record)
+}
+
 func TestStoreDequeueDelay(t *testing.T) {
 	db := setupStoreTest(t)
 
@@ -384,8 +400,14 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 			Command: command,
 			Out:     payload,
 		}
-		if err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry); err != nil {
+
+		entryID, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+		if err != nil {
 			t.Fatalf("unexpected error adding executor log entry: %s", err)
+		}
+		// PostgreSQL's arrays use 1-based indexing, so the first entry is at 1
+		if entryID != i+1 {
+			t.Fatalf("executor log entry has wrong entry id. want=%d, have=%d", i+1, entryID)
 		}
 	}
 
@@ -413,6 +435,104 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 	}
 }
 
+func TestStoreAddExecutionLogEntryNoRecord(t *testing.T) {
+	db := setupStoreTest(t)
+
+	entry := workerutil.ExecutionLogEntry{
+		Command: []string{"ls", "-a"},
+		Out:     "output",
+	}
+
+	_, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+	if err == nil {
+		t.Fatalf("expected error but got none")
+	}
+}
+
+func TestStoreUpdateExecutionLogEntry(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'processing')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	numEntries := 5
+	for i := 0; i < numEntries; i++ {
+		command := []string{"ls", "-a", fmt.Sprintf("%d", i+1)}
+		payload := fmt.Sprintf("<load payload %d>", i+1)
+
+		entry := workerutil.ExecutionLogEntry{
+			Command: command,
+			Out:     payload,
+		}
+
+		entryID, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+		if err != nil {
+			t.Fatalf("unexpected error adding executor log entry: %s", err)
+		}
+		// PostgreSQL's arrays use 1-based indexing, so the first entry is at 1
+		if entryID != i+1 {
+			t.Fatalf("executor log entry has wrong entry id. want=%d, have=%d", i+1, entryID)
+		}
+
+		entry.Out += fmt.Sprintf("\n<load payload %d again, nobody was at home>", i+1)
+		if err := testStore(db, defaultTestStoreOptions(nil)).UpdateExecutionLogEntry(context.Background(), 1, entryID, entry, ExecutionLogEntryOptions{}); err != nil {
+			t.Fatalf("unexpected error updating executor log entry: %s", err)
+		}
+	}
+
+	contents, err := basestore.ScanStrings(db.QueryContext(context.Background(), `SELECT unnest(execution_logs)::text FROM workerutil_test WHERE id = 1`))
+	if err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if len(contents) != numEntries {
+		t.Fatalf("unexpected number of payloads. want=%d have=%d", numEntries, len(contents))
+	}
+
+	for i := 0; i < numEntries; i++ {
+		var entry workerutil.ExecutionLogEntry
+		if err := json.Unmarshal([]byte(contents[i]), &entry); err != nil {
+			t.Fatalf("unexpected error decoding entry: %s", err)
+		}
+
+		expected := workerutil.ExecutionLogEntry{
+			Command: []string{"ls", "-a", fmt.Sprintf("%d", i+1)},
+			Out:     fmt.Sprintf("<load payload %d>\n<load payload %d again, nobody was at home>", i+1, i+1),
+		}
+		if diff := cmp.Diff(expected, entry); diff != "" {
+			t.Errorf("unexpected entry (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestStoreUpdateExecutionLogEntryUnknownEntry(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'processing')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	entry := workerutil.ExecutionLogEntry{
+		Command: []string{"ls", "-a"},
+		Out:     "<load payload>",
+	}
+
+	for unknownEntryID := 0; unknownEntryID < 2; unknownEntryID++ {
+		err := testStore(db, defaultTestStoreOptions(nil)).UpdateExecutionLogEntry(context.Background(), 1, unknownEntryID, entry, ExecutionLogEntryOptions{})
+		if err == nil {
+			t.Fatal("expected error but got none")
+		}
+	}
+}
+
 func TestStoreMarkComplete(t *testing.T) {
 	db := setupStoreTest(t)
 
@@ -424,7 +544,7 @@ func TestStoreMarkComplete(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkComplete(context.Background(), 1)
+	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkComplete(context.Background(), 1, MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
@@ -466,7 +586,7 @@ func TestStoreMarkCompleteNotProcessing(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkComplete(context.Background(), 1)
+	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkComplete(context.Background(), 1, MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
@@ -508,7 +628,7 @@ func TestStoreMarkErrored(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -550,7 +670,7 @@ func TestStoreMarkFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkFailed(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkFailed(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking upload as completed: %s", err)
 	}
@@ -592,12 +712,12 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
-	if !marked {
-		t.Fatalf("expected record to be marked")
+	if marked {
+		t.Fatalf("expected record not to be marked errired")
 	}
 
 	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
@@ -615,11 +735,11 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 	if err := rows.Scan(&state, &failureMessage); err != nil {
 		t.Fatalf("unexpected error scanning record: %s", err)
 	}
-	if state != "errored" {
-		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
+	if state != "completed" {
+		t.Errorf("unexpected state. want=%q have=%q", "completed", state)
 	}
-	if failureMessage == nil || *failureMessage != "new message" {
-		t.Errorf("unexpected failure message. want=%v have=%v", "new message", failureMessage)
+	if failureMessage != nil {
+		t.Errorf("unexpected non-empty failure message")
 	}
 }
 
@@ -634,7 +754,7 @@ func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -682,7 +802,7 @@ func TestStoreMarkErroredRetriesExhausted(t *testing.T) {
 	store := testStore(db, options)
 
 	for i := 1; i < 3; i++ {
-		marked, err := store.MarkErrored(context.Background(), i, "new message")
+		marked, err := store.MarkErrored(context.Background(), i, "new message", MarkFinalOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error marking record as errored: %s", err)
 		}
@@ -744,11 +864,21 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resetIDs, erroredIDs, err := testStore(db, defaultTestStoreOptions(nil)).ResetStalled(context.Background())
+	resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs, err := testStore(db, defaultTestStoreOptions(nil)).ResetStalled(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error resetting stalled records: %s", err)
 	}
+
+	var resetIDs []int
+	for id := range resetLastHeartbeatsByIDs {
+		resetIDs = append(resetIDs, id)
+	}
 	sort.Ints(resetIDs)
+
+	var erroredIDs []int
+	for id := range erroredLastHeartbeatsByIDs {
+		erroredIDs = append(erroredIDs, id)
+	}
 	sort.Ints(erroredIDs)
 
 	if diff := cmp.Diff([]int{1, 4}, resetIDs); diff != "" {
@@ -814,7 +944,7 @@ func TestStoreHeartbeat(t *testing.T) {
 	clock := glock.NewMockClockAt(now)
 	store := testStore(db, defaultTestStoreOptions(clock))
 
-	if err := store.Heartbeat(context.Background(), 1); err != nil {
+	if _, err := store.Heartbeat(context.Background(), []int{1}, HeartbeatOptions{}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 
@@ -849,7 +979,7 @@ func TestStoreHeartbeat(t *testing.T) {
 	`); err != nil {
 		t.Fatalf("unexpected error updating records: %s", err)
 	}
-	if err := store.Heartbeat(context.Background(), 1); err != nil {
+	if _, err := store.Heartbeat(context.Background(), []int{1}, HeartbeatOptions{}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 

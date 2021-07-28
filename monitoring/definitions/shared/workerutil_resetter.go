@@ -60,7 +60,7 @@ func (workerutilResetterConstructor) NewGroup(containerName string, owner monito
 	errorsOptions.MetricNameRoot += "_record_reset"
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("[%s] Queue resetter: %s", options.Namespace, options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{
