@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import { State, Action } from './reducer'
 
@@ -26,18 +26,4 @@ export const useTabsIndexContext = (): number => {
         throw new Error('TabsIndexContext can not be used outside the <Tabs> component scope')
     }
     return context
-}
-
-export const useTabsSetter = (): any => {
-    const { dispatch } = useTabsContext()
-
-    const { setMountedTab } = useMemo(
-        () => ({
-            setMountedTab: (mounted: boolean, index: number) =>
-                dispatch({ type: 'MOUNTED_TAB', payload: { index, mounted } }),
-        }),
-        [dispatch]
-    )
-
-    return setMountedTab
 }

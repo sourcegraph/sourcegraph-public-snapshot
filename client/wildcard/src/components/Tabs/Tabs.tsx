@@ -21,18 +21,27 @@ import { TabsApi, useTabs } from './useTabs'
 interface TabsProps extends ReachTabsProps, TabsApi {}
 
 interface TabListProps extends ReachTabListProps {
+    /*
+     * action is used to render content in the left side of
+     * the component. e.g. a close button or a list of links.
+     */
     actions?: React.ReactNode
 }
 
 interface TabProps extends ReachTabProps {}
-
 interface TabPanelsProps extends ReachTabPanelsProps {}
-interface TabPanelProps extends ReachTabPanelProps {
-    forceRender?: boolean
-}
+interface TabPanelProps extends ReachTabPanelProps {}
 
 export type { TabsProps, TabPanelsProps, TabPanelProps }
 
+/**
+ *
+ * reach UI tabs component with steroids, this tabs handles how the data should be loaded
+ * in terms of a11y tabs are following all the WAI-ARIA Tabs Design Pattern.
+ *
+ * See: https://reach.tech/tabs/
+ *
+ */
 export const Tabs: React.FunctionComponent<TabsProps> = props => {
     const { lazy, size, behavior, ...reachProps } = props
     const { contextValue } = useTabs({ lazy, size, behavior })

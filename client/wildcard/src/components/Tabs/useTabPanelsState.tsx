@@ -4,7 +4,14 @@ import { useTabsContext, TabsIndexContext } from './context'
 import { Tabs } from './reducer'
 
 interface UseTabPanelsState {
+    /* Determines if the tab collection ca be rendered */
     show: boolean
+    /**
+     * A dynamic element with a context provider per child valid for getting
+     * single values per child component. In this case, each ancestor will know
+     * which index is associated with the current child handling events without
+     * declaring props for every child.
+     */
     element: React.ReactNodeArray | null | undefined
 }
 
