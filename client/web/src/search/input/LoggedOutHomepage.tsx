@@ -82,7 +82,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
 
             <div className="mt-5 d-flex justify-content-center">
                 <div className="d-flex align-items-center flex-column">
-                    <SignUpCta className={styles.loggedOutHomepageCta} />
+                    <SignUpCta className={styles.loggedOutHomepageCta} telemetryService={props.telemetryService} />
                     <div className="mt-2 text-center">
                         Search private code by{' '}
                         <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener noreferrer">
