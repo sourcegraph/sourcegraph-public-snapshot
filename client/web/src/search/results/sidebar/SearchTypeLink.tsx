@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import React, { ReactElement, useCallback } from 'react'
-import { QueryState } from 'src/search/helpers'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -10,6 +9,8 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { QueryChangeSource, QueryState } from '../../helpers'
+import { createFilterExampleFromString, updateQueryWithFilterAndExample } from '../../helpers/examplevalue'
 import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
@@ -106,18 +107,42 @@ const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> =
     return <SearchTypeButton onClick={setSymbolSearch}>{props.children}</SearchTypeButton>
 }
 
-export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => [
-    // TODO: Implement repo button
-    <SearchTypeButton onClick={() => {}} key="repo">
-        Search repos by org or name
-    </SearchTypeButton>,
-    <SearchSymbol {...props} key="symbol">
-        Find a symbol
-    </SearchSymbol>,
-    <SearchTypeLink {...props} type="diff" key="diff">
-        Search diffs
-    </SearchTypeLink>,
-    <SearchTypeLink {...props} type="commit" key="commit">
-        Search commit messages
-    </SearchTypeLink>,
-]
+const repoExample = createFilterExampleFromString('{regexp-pattern}')
+
+export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
+    function updateQueryWithRepoExample(): void {
+        const updatedQuery = updateQueryWithFilterAndExample(
+            props.navbarSearchQueryState.query,
+            FilterType.repo,
+            repoExample,
+            {
+                singular: false,
+                negate: false,
+                emptyValue: true,
+            }
+        )
+        props.onNavbarQueryChange({
+            changeSource: QueryChangeSource.searchTypes,
+            query: updatedQuery.query,
+            selectionRange: updatedQuery.placeholderRange,
+            revealRange: updatedQuery.filterRange,
+            showSuggestions: true,
+        })
+    }
+
+    return [
+        // TODO: Implement repo button
+        <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo">
+            Search repos by org or name
+        </SearchTypeButton>,
+        <SearchSymbol {...props} key="symbol">
+            Find a symbol
+        </SearchSymbol>,
+        <SearchTypeLink {...props} type="diff" key="diff">
+            Search diffs
+        </SearchTypeLink>,
+        <SearchTypeLink {...props} type="commit" key="commit">
+            Search commit messages
+        </SearchTypeLink>,
+    ]
+}

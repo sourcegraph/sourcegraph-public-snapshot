@@ -96,14 +96,12 @@ const toMonacoRange = ({ start, end }: CharacterRange, textModel: Monaco.editor.
     }
 }
 
-const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => {
-    return {
-        selectionStartLineNumber: range.startLineNumber,
-        positionLineNumber: range.endLineNumber,
-        selectionStartColumn: range.startColumn,
-        positionColumn: range.endColumn,
-    }
-}
+const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
+    selectionStartLineNumber: range.startLineNumber,
+    positionLineNumber: range.endLineNumber,
+    selectionStartColumn: range.startColumn,
+    positionColumn: range.endColumn,
+})
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
@@ -241,6 +239,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             case QueryChangeSource.userInput:
                 // Don't react to user input
                 break
+            case QueryChangeSource.searchTypes:
             case QueryChangeSource.searchReference: {
                 const textModel = editor.getModel()
                 if (textModel) {

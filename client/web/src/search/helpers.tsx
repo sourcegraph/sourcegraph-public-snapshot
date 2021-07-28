@@ -180,6 +180,7 @@ export enum QueryChangeSource {
      */
     userInput,
     searchReference,
+    searchTypes,
 }
 
 /**
@@ -194,8 +195,8 @@ export type QueryState =
           query: string
       }
     | {
-          /** Changes from the search reference side bar */
-          changeSource: QueryChangeSource.searchReference
+          /** Changes from the search side bar */
+          changeSource: QueryChangeSource.searchReference | QueryChangeSource.searchTypes
           query: string
           /** The query input will apply this selection */
           selectionRange: CharacterRange
