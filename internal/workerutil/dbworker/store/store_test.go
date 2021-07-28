@@ -924,8 +924,8 @@ func TestStoreResetStalled(t *testing.T) {
 	if err := rows.Scan(&state); err != nil {
 		t.Fatalf("unexpected error scanning record: %s", err)
 	}
-	if state != "errored" {
-		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
+	if state != "failed" {
+		t.Errorf("unexpected state. want=%q have=%q", "failed", state)
 	}
 }
 

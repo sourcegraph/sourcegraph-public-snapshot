@@ -66,7 +66,7 @@ func (r *Resetter) Start() {
 
 loop:
 	for {
-		resetIDs, erroredIDs, err := r.store.ResetStalled(r.ctx)
+		resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err := r.store.ResetStalled(r.ctx)
 		if err != nil {
 			if r.ctx.Err() != nil && errors.Is(err, r.ctx.Err()) {
 				// If the error is due to the loop being shut down, just break
@@ -79,15 +79,15 @@ loop:
 
 		now := time.Now()
 
-		for id, lastHeartbeatTimestamp := range resetIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
+		for id, lastHeartbeatTimestamp := range resetLastHeartbeatsByIDs {
+			log15.Warn("Reset stalled record back to 'queued' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
 		}
-		for id, lastHeartbeatTimestamp := range erroredIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
+		for id, lastHeartbeatTimestamp := range failedLastHeartbeatsByIDs {
+			log15.Warn("Reset stalled record to 'failed' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
 		}
 
-		r.options.Metrics.RecordResets.Add(float64(len(resetIDs)))
-		r.options.Metrics.RecordResetFailures.Add(float64(len(erroredIDs)))
+		r.options.Metrics.RecordResets.Add(float64(len(resetLastHeartbeatsByIDs)))
+		r.options.Metrics.RecordResetFailures.Add(float64(len(failedLastHeartbeatsByIDs)))
 
 		select {
 		case <-r.clock.After(r.options.Interval):
