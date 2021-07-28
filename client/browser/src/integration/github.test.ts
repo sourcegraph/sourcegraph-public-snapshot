@@ -189,6 +189,8 @@ describe('GitHub', () => {
                 response.type('application/javascript; charset=utf-8').send(extensionBundleString)
             })
 
+        await driver.page.setBypassCSP(true)
+
         await driver.page.goto(
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         )
