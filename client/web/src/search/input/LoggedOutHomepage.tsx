@@ -52,7 +52,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                             Search examples
                         </div>
                         <div className="font-weight-normal text-muted">
-                            Better code search than IDEs, editors, and command line tools
+                            Find answers faster with code search across multiple repos and commits
                         </div>
                     </div>
                     <div className={styles.searchExamples}>
