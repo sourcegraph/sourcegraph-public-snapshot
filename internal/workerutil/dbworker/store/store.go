@@ -461,7 +461,7 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 	quotedTableName := quote(s.options.TableName)
 
 	conds := []*sqlf.Query{
-		s.formatQuery("{id} in (%s)", sqlf.Join(sqlIDs, "")),
+		s.formatQuery("{id} IN (%s)", sqlf.Join(sqlIDs, "")),
 		s.formatQuery("{state} = 'processing'"),
 	}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
@@ -474,13 +474,13 @@ const updateCandidateQuery = `
 -- source: internal/workerutil/store.go:Heartbeat
 WITH alive_candidates AS (
 	SELECT
-		id
+		{id}
 	FROM
 		%s
 	WHERE
 		%s
 	ORDER BY
-		id ASC
+		{id} ASC
 	FOR UPDATE
 )
 UPDATE
@@ -488,8 +488,8 @@ UPDATE
 SET
 	{last_heartbeat_at} = %s
 WHERE
-	id IN (SELECT id FROM alive_candidates)
-RETURNING id
+	{id} IN (SELECT {id} FROM alive_candidates)
+RETURNING {id}
 `
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
