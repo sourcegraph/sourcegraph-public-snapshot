@@ -100,7 +100,7 @@ To remove a token, navigate back to the same section of the site admin area, the
 
 > WARNING: Using code host connection tokens with Batch Changes will be deprecated and removed in future versions of Sourcegraph.
 
-[Code host connection tokens](../../admin/external_service.md) are typically configured the first time a site administrator is connecting Sourcegraph to the external code host. They are only used for syncing and importing changesets when a global service account token is not configured.
+[Code host connection tokens](../../admin/external_service.md) are typically configured the first time a site administrator is connecting Sourcegraph to the external code host. Within Batch Changes, they are only used for syncing and importing changesets when a global service account token is not configured.
 
 > NOTE: Prior to Sourcegraph 3.29, admin users were also able to use the code host connection token as a fallback for other Batch Changes operations, such as creating and updating changesets. However, non-admin users were unable to apply batch changes without another form of access token being configured.
 
