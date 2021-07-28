@@ -151,6 +151,17 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
 
             const mode = getModeFromPath(filePath)
 
+            // Redirect OpenGrok-style line number hashes (#123) to query parameter (?L123)
+            const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)$/)
+            if (objectType === 'blob' && hashLineNumberMatch) {
+                const lineNumber = parseInt(hashLineNumberMatch[1], 10)
+                const url = appendLineRangeQueryParameter(
+                    window.location.pathname + window.location.search,
+                    `L${lineNumber}`
+                )
+                return <Redirect to={url} />
+            }
+
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
             // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
             if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(window.location.hash)) {
