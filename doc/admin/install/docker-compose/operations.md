@@ -86,11 +86,11 @@ Address any merge conflicts you might have.
 
 If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**. Then run:
 
-**Please note: You must fully stop the Docker Compose instance of Sourcegraph currently running by running:**
+**Please note: You must fully stop the Docker Compose instance of Sourcegraph currently running:**
 ```bash
 docker-compose down --remove-orphans
 ```
-Then start Docker Compose again, now using the latest contents of the Sourcegraph configuration by running:
+Then start Docker Compose again, now using the latest contents of the Sourcegraph configuration:
 ```bash
 docker-compose up -d
 ```
