@@ -115,9 +115,9 @@ type Store interface {
 
 	// ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 	// queued state. In order to prevent input that continually crashes worker instances, records that have been reset
-	// more than `MaxNumResets` times will be marked as errored. This method returns a list of record identifiers that
-	// have been reset and a list of record identifiers that have been marked as errored.
-	ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error)
+	// more than `MaxNumResets` times will be marked as errored. This method returns a pair of maps from record
+	// identifiers the record's last heartbeat timestamp for each record reset to queued and errored states, respectively.
+	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs map[int]time.Time, err error)
 }
 
 type ExecutionLogEntry workerutil.ExecutionLogEntry
@@ -173,6 +173,7 @@ type Options struct {
 	//   - num_resets: integer not null
 	//   - num_failures: integer not null
 	//   - execution_logs: json[] (each entry has the form of `ExecutionLogEntry`)
+	//   - worker_hostname: text
 	//
 	// The names of these columns may be customized based on the table name by adding a replacement
 	// pair in the AlternateColumnNames mapping.
@@ -307,7 +308,7 @@ var columns = []struct {
 	{"num_resets", true},
 	{"num_failures", true},
 	{"execution_logs", true},
-	{"worker_hostname", true},
+	{"worker_hostname", false},
 }
 
 // DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
@@ -687,32 +688,52 @@ RETURNING {id}
 
 // ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 // queued state. In order to prevent input that continually crashes worker instances, records that have been reset
-// more than `MaxNumResets` times will be marked as errored. This method returns a list of record identifiers that
-// have been reset and a list of record identifiers that have been marked as errored.
-func (s *store) ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error) {
+// more than `MaxNumResets` times will be marked as errored. This method returns a pair of maps from record
+// identifiers the record's last heartbeat timestamp for each record reset to queued and errored states, respectively.
+func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs map[int]time.Time, err error) {
 	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	resetIDs, err = s.resetStalled(ctx, resetStalledQuery)
+	resetLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledQuery)
 	if err != nil {
-		return resetIDs, erroredIDs, err
+		return resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs, err
 	}
-	traceLog(log.Int("numResetIDs", len(resetIDs)))
+	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
-	erroredIDs, err = s.resetStalled(ctx, resetStalledMaxResetsQuery)
+	erroredLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledMaxResetsQuery)
 	if err != nil {
-		return resetIDs, erroredIDs, err
+		return resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs, err
 	}
-	traceLog(log.Int("numErroredIDs", len(erroredIDs)))
+	traceLog(log.Int("numErroredIDs", len(erroredLastHeartbeatsByIDs)))
 
-	return resetIDs, erroredIDs, nil
+	return resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs, nil
 }
 
-func (s *store) resetStalled(ctx context.Context, q string) ([]int, error) {
-	return basestore.ScanInts(s.Query(
+func scanLastHeartbeatTimestamps(rows *sql.Rows, queryErr error) (_ map[int]time.Time, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	m := map[int]time.Time{}
+	for rows.Next() {
+		var id int
+		var lastHeartbeat time.Time
+		if err := rows.Scan(&id, &lastHeartbeat); err != nil {
+			return nil, err
+		}
+
+		m[id] = lastHeartbeat
+	}
+
+	return m, nil
+}
+
+func (s *store) resetStalled(ctx context.Context, query string) (map[int]time.Time, error) {
+	return scanLastHeartbeatTimestamps(s.Query(
 		ctx,
 		s.formatQuery(
-			q,
+			query,
 			quote(s.options.TableName),
 			s.now(),
 			int(s.options.StalledMaxAge/time.Second),
@@ -738,7 +759,7 @@ SET
 	{started_at} = null,
 	{num_resets} = {num_resets} + 1
 WHERE {id} IN (SELECT {id} FROM stalled)
-RETURNING {id}
+RETURNING {id}, {last_heartbeat_at}
 `
 
 const resetStalledMaxResetsQuery = `
@@ -757,7 +778,7 @@ SET
 	{finished_at} = clock_timestamp(),
 	{failure_message} = 'failed to process'
 WHERE {id} IN (SELECT {id} FROM stalled)
-RETURNING {id}
+RETURNING {id}, {last_heartbeat_at}
 `
 
 func (s *store) formatQuery(query string, args ...interface{}) *sqlf.Query {

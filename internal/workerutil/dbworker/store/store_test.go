@@ -864,11 +864,21 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resetIDs, erroredIDs, err := testStore(db, defaultTestStoreOptions(nil)).ResetStalled(context.Background())
+	resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs, err := testStore(db, defaultTestStoreOptions(nil)).ResetStalled(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error resetting stalled records: %s", err)
 	}
+
+	var resetIDs []int
+	for id := range resetLastHeartbeatsByIDs {
+		resetIDs = append(resetIDs, id)
+	}
 	sort.Ints(resetIDs)
+
+	var erroredIDs []int
+	for id := range erroredLastHeartbeatsByIDs {
+		erroredIDs = append(erroredIDs, id)
+	}
 	sort.Ints(erroredIDs)
 
 	if diff := cmp.Diff([]int{1, 4}, resetIDs); diff != "" {
