@@ -462,7 +462,7 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 	quotedTableName := quote(s.options.TableName)
 
 	conds := []*sqlf.Query{
-		s.formatQuery("{id} IN (%s)", sqlf.Join(sqlIDs, "")),
+		s.formatQuery("{id} IN (%s)", sqlf.Join(sqlIDs, ",")),
 		s.formatQuery("{state} = 'processing'"),
 	}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
