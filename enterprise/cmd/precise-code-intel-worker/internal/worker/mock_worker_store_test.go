@@ -103,7 +103,7 @@ func NewMockWorkerStore() *MockWorkerStore {
 			},
 		},
 		ResetStalledFunc: &WorkerStoreResetStalledFunc{
-			defaultHook: func(context.Context) ([]int, []int, error) {
+			defaultHook: func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 				return nil, nil, nil
 			},
 		},
@@ -1163,15 +1163,15 @@ func (c WorkerStoreRequeueFuncCall) Results() []interface{} {
 // WorkerStoreResetStalledFunc describes the behavior when the ResetStalled
 // method of the parent MockWorkerStore instance is invoked.
 type WorkerStoreResetStalledFunc struct {
-	defaultHook func(context.Context) ([]int, []int, error)
-	hooks       []func(context.Context) ([]int, []int, error)
+	defaultHook func(context.Context) (map[int]time.Time, map[int]time.Time, error)
+	hooks       []func(context.Context) (map[int]time.Time, map[int]time.Time, error)
 	history     []WorkerStoreResetStalledFuncCall
 	mutex       sync.Mutex
 }
 
 // ResetStalled delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockWorkerStore) ResetStalled(v0 context.Context) ([]int, []int, error) {
+func (m *MockWorkerStore) ResetStalled(v0 context.Context) (map[int]time.Time, map[int]time.Time, error) {
 	r0, r1, r2 := m.ResetStalledFunc.nextHook()(v0)
 	m.ResetStalledFunc.appendCall(WorkerStoreResetStalledFuncCall{v0, r0, r1, r2})
 	return r0, r1, r2
@@ -1180,7 +1180,7 @@ func (m *MockWorkerStore) ResetStalled(v0 context.Context) ([]int, []int, error)
 // SetDefaultHook sets function that is called when the ResetStalled method
 // of the parent MockWorkerStore instance is invoked and the hook queue is
 // empty.
-func (f *WorkerStoreResetStalledFunc) SetDefaultHook(hook func(context.Context) ([]int, []int, error)) {
+func (f *WorkerStoreResetStalledFunc) SetDefaultHook(hook func(context.Context) (map[int]time.Time, map[int]time.Time, error)) {
 	f.defaultHook = hook
 }
 
@@ -1188,7 +1188,7 @@ func (f *WorkerStoreResetStalledFunc) SetDefaultHook(hook func(context.Context) 
 // ResetStalled method of the parent MockWorkerStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *WorkerStoreResetStalledFunc) PushHook(hook func(context.Context) ([]int, []int, error)) {
+func (f *WorkerStoreResetStalledFunc) PushHook(hook func(context.Context) (map[int]time.Time, map[int]time.Time, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1196,21 +1196,21 @@ func (f *WorkerStoreResetStalledFunc) PushHook(hook func(context.Context) ([]int
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *WorkerStoreResetStalledFunc) SetDefaultReturn(r0 []int, r1 []int, r2 error) {
-	f.SetDefaultHook(func(context.Context) ([]int, []int, error) {
+func (f *WorkerStoreResetStalledFunc) SetDefaultReturn(r0 map[int]time.Time, r1 map[int]time.Time, r2 error) {
+	f.SetDefaultHook(func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *WorkerStoreResetStalledFunc) PushReturn(r0 []int, r1 []int, r2 error) {
-	f.PushHook(func(context.Context) ([]int, []int, error) {
+func (f *WorkerStoreResetStalledFunc) PushReturn(r0 map[int]time.Time, r1 map[int]time.Time, r2 error) {
+	f.PushHook(func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *WorkerStoreResetStalledFunc) nextHook() func(context.Context) ([]int, []int, error) {
+func (f *WorkerStoreResetStalledFunc) nextHook() func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1248,10 +1248,10 @@ type WorkerStoreResetStalledFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []int
+	Result0 map[int]time.Time
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 []int
+	Result1 map[int]time.Time
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
