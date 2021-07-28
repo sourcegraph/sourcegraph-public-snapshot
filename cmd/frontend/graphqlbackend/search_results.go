@@ -1448,8 +1448,12 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 		// Get all private repos that are accessible by the current actor.
 		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
-			OnlyPrivate: true,
-			LimitOffset: &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+			OnlyPrivate:  true,
+			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+			OnlyForks:    args.RepoOptions.OnlyForks,
+			NoForks:      args.RepoOptions.NoForks,
+			OnlyArchived: args.RepoOptions.OnlyArchived,
+			NoArchived:   args.RepoOptions.NoArchived,
 		}); err != nil {
 			tr.LazyPrintf("error resolving private repos: %v", err)
 		} else {
