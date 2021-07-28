@@ -281,10 +281,13 @@ export interface DocumentationBlameVariables {
     endLine: number
 }
 
+interface DocumentationBlameResults {
+    repository: GQL.IRepository
+}
 export const fetchDocumentationBlame = (
     args: DocumentationBlameVariables
 ): Observable<GQL.IHunk[]> =>
-    requestGraphQL<GQL.IHunk[], DocumentationBlameVariables>(
+    requestGraphQL<DocumentationBlameResults, DocumentationBlameVariables>(
         gql`
             query DocumentationBlame(
                 $repo: String!
@@ -327,6 +330,6 @@ export const fetchDocumentationBlame = (
             ) {
                 throw createAggregateError(errors)
             }
-            return data.repository.commit.blob.blame as GQL.IHunk[]
+            return data.repository.commit.blob.blame
         })
     )
