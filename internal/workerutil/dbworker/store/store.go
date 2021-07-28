@@ -173,6 +173,7 @@ type Options struct {
 	//   - num_resets: integer not null
 	//   - num_failures: integer not null
 	//   - execution_logs: json[] (each entry has the form of `ExecutionLogEntry`)
+	//   - worker_hostname: text
 	//
 	// The names of these columns may be customized based on the table name by adding a replacement
 	// pair in the AlternateColumnNames mapping.
@@ -307,7 +308,7 @@ var columns = []struct {
 	{"num_resets", true},
 	{"num_failures", true},
 	{"execution_logs", true},
-	{"worker_hostname", true},
+	{"worker_hostname", false},
 }
 
 // DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
