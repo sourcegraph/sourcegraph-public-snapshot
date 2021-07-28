@@ -3,15 +3,12 @@ import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-import { ViewInsightProviderSourceType } from '../../../../../../core/backend/types'
-import styles from '../../InsightCard.module.scss'
 import { InsightDescription } from '../insight-card-description/InsightCardDescription'
 
 interface InsightLoadingContentProps {
     text: string
     subTitle: string
     icon: MdiReactIconComponentType
-    type?: ViewInsightProviderSourceType
 }
 
 export const InsightLoadingContent: React.FunctionComponent<InsightLoadingContentProps> = props => {
@@ -22,7 +19,7 @@ export const InsightLoadingContent: React.FunctionComponent<InsightLoadingConten
             <span className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                 <LoadingSpinner /> {text}
             </span>
-            <InsightDescription className={styles.insightCardDescription} title={subTitle} icon={icon} />
+            <InsightDescription className="mt-auto" title={subTitle} icon={icon} />
         </div>
     )
 }
