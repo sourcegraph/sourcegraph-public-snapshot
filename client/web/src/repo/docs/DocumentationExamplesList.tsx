@@ -58,7 +58,7 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
             {referencesLocations === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
-                (referencesLocations as GQL.ILocationConnection).nodes.map((location, index) => (
+                (referencesLocations as GQL.ILocationConnection).nodes.map(location => (
                     <DocumentationExamplesListItem
                         key={location.url}
                         item={location}
@@ -75,7 +75,7 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
                     <ErrorIcon className="icon-inline" /> Error: {referencesLocations}
                 </span>
             )}
-            {referencesLocations !== LOADING && referencesLocations.nodes.length === 0 && (
+            {referencesLocations !== LOADING && !isErrorLike(referencesLocations) && referencesLocations.nodes.length === 0 && (
                 <span className="ml-2">
                     <InformationIcon className="icon-inline" /> None found
                 </span>
