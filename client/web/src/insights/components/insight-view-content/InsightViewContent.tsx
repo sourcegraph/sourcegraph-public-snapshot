@@ -10,6 +10,8 @@ import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { ChartViewContent } from './chart-view-content/ChartViewContent'
 
+import './InsightViewContent.scss'
+
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
 

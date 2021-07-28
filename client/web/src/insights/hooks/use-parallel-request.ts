@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { of, from, Subject, ObservableInput, Observable } from 'rxjs';
+import { useEffect, useState } from 'react'
+import { of, from, Subject, ObservableInput, Observable } from 'rxjs'
 import {
     mergeMap,
     map,
@@ -10,32 +10,32 @@ import {
     takeWhile,
     switchMap,
     publish,
-    refCount
+    refCount,
 } from 'rxjs/operators'
 
-import { ErrorLike, asError, isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { ErrorLike, asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 interface Request<T> {
     /**
      * Request factory (return promise or subscription like request)
      */
-    request: () => ObservableInput<T>,
+    request: () => ObservableInput<T>
 
     /**
      * Calls whenever request resolves
      *
      * @param result - fetch result from the request
      */
-    onComplete: (result: T | ErrorLike ) => void;
+    onComplete: (result: T | ErrorLike) => void
 
     /**
      * Cancel request stream in order to prevent execution of ongoing  stream
      */
-    cancel: Observable<boolean>;
+    cancel: Observable<boolean>
 }
 
 interface FetchResult<T> {
-    data: T | undefined,
+    data: T | undefined
     error: ErrorLike | undefined
     loading: boolean
 }
@@ -49,44 +49,41 @@ requests
     .pipe(
         // Merge map is used here for the concurrent logic over gql request operations.
         // Only N (be default 2) requests can be run in parallel
-        mergeMap(
-            event => {
-                const { request, onComplete, cancel } = event;
+        mergeMap(event => {
+            const { request, onComplete, cancel } = event
 
-                return of(null).pipe(
-                    // Makes this stream async to be able stop further execution in takeWhile
-                    // by add event to the cancelledRequests set.
-                    delay(0),
-                    takeWhile(() => {
-                        if (cancelledRequests.has(event)) {
+            return of(null).pipe(
+                // Makes this stream async to be able stop further execution in takeWhile
+                // by add event to the cancelledRequests set.
+                delay(0),
+                takeWhile(() => {
+                    if (cancelledRequests.has(event)) {
+                        // Make sure we do not have a memory leak in cancelledRequests set.
+                        cancelledRequests.delete(event)
 
-                            // Make sure we do not have a memory leak in cancelledRequests set.
-                            cancelledRequests.delete(event)
+                        return false
+                    }
 
-                            return false
-                        }
-
-                        return true
-                    }),
-                    switchMap(() =>
-                        from(request())
-                            .pipe(
-                                // In order to be able to cancel this ongoing stream/request
-                                takeUntil(cancel),
-                                map(payload => ({ payload, onComplete })),
-                                // In order to close observable and free up space for other queued requests
-                                // in merge map queue. Consider to move this into consumers request calls
-                                take(1),
-                                catchError(error => of({
-                                    payload: asError(error),
-                                    onComplete
-                                }))
-                            )
+                    return true
+                }),
+                switchMap(() =>
+                    from(request()).pipe(
+                        // In order to be able to cancel this ongoing stream/request
+                        takeUntil(cancel),
+                        map(payload => ({ payload, onComplete })),
+                        // In order to close observable and free up space for other queued requests
+                        // in merge map queue. Consider to move this into consumers request calls
+                        take(1),
+                        catchError(error =>
+                            of({
+                                payload: asError(error),
+                                onComplete,
+                            })
+                        )
                     )
                 )
-            },
-            MAX_PARALLEL_QUERIES
-        )
+            )
+        }, MAX_PARALLEL_QUERIES)
     )
     // eslint-disable-next-line rxjs/no-ignored-subscription
     .subscribe(event => {
@@ -104,13 +101,13 @@ export function useParallelRequests<T>(request: () => ObservableInput<T>): Fetch
     const [state, setState] = useState<FetchResult<T>>({
         data: undefined,
         error: undefined,
-        loading: true
+        loading: true,
     })
 
     useEffect(() => {
         const cancelStream = new Subject<boolean>()
 
-        const event: Request<T>  = {
+        const event: Request<T> = {
             request,
             // Makes cancel stream a hot observable
             cancel: cancelStream.pipe(publish(), refCount()),
@@ -120,7 +117,7 @@ export function useParallelRequests<T>(request: () => ObservableInput<T>): Fetch
                 }
 
                 setState({ data: result, loading: false, error: undefined })
-            }
+            },
         }
 
         requests.next(event as Request<unknown>)
@@ -134,5 +131,5 @@ export function useParallelRequests<T>(request: () => ObservableInput<T>): Fetch
         }
     }, [request])
 
-    return state;
+    return state
 }

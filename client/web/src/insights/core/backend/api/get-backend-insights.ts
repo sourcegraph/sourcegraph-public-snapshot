@@ -42,7 +42,7 @@ export function getBackendInsights(insightIds?: string[]): Observable<ViewInsigh
 function getRawBackendInsights(insightIds: string[]): Observable<ViewInsightProviderResult[]> {
     return fetchBackendInsights(insightIds).pipe(
         map(backendInsights =>
-            backendInsights?.map(
+            backendInsights.map(
                 (insight): ViewInsightProviderResult => ({
                     id: insight.id,
                     view: {
@@ -55,13 +55,13 @@ function getRawBackendInsights(insightIds: string[]): Observable<ViewInsightProv
             )
         ),
         catchError(error =>
-            of<ViewInsightProviderResult[]>([
-                {
-                    id: 'Backend insight',
+            of<ViewInsightProviderResult[]>(
+                insightIds.map(id => ({
+                    id,
                     view: asError(error),
                     source: ViewInsightProviderSourceType.Backend,
-                },
-            ])
+                }))
+            )
         )
     )
 }
