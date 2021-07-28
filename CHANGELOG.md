@@ -33,9 +33,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
-## 3.30.2
+## 3.30.3
 
-**⚠️ Users upgrading from 3.29 are advised to upgrade directly to 3.30.2**
+**⚠️ Users upgrading from 3.29 are advised to upgrade directly to 3.30.3**
+
+### Fixed
+
+- Codeintel-db database images have been reverted back to debian due to corruption caused by glibc and alpine. [23324](https://github.com/sourcegraph/sourcegraph/pull/23324)
+
+## 3.30.2
 
 ### Fixed
 
