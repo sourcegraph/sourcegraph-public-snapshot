@@ -9,6 +9,10 @@ interface ConnectionListProps {
     className?: string
 }
 
+/**
+ * Render a list of FilteredConnection nodes.
+ * Can be configured to render as different elements to support alternative representations of data such as through the <table> element.
+ */
 export const ConnectionList: React.FunctionComponent<ConnectionListProps> = ({
     as: ListComponent = 'ul',
     className,

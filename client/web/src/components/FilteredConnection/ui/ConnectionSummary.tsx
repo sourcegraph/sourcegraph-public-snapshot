@@ -23,6 +23,10 @@ interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = 
     totalCount: number | null
 }
 
+/**
+ * FilteredConnection summary content.
+ * Used to configure a suitable summary from a specific connection response.
+ */
 export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>({
     noSummaryIfAllNodesVisible,
     connection,

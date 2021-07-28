@@ -39,6 +39,10 @@ export interface ConnectionFormProps {
     values?: Map<string, FilteredConnectionFilterValue>
 }
 
+/**
+ * FilteredConnection form input.
+ * Supports <input> for querying and <select>/<radio> controls for filtering
+ */
 export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormProps>(
     (
         {

@@ -6,6 +6,9 @@ interface ShowMoreProps {
     onClick: () => void
 }
 
+/**
+ * FilteredConnection styled Button to support fetching more results
+ */
 export const ShowMoreButton: React.FunctionComponent<ShowMoreProps> = ({ className, onClick }) => (
     <button
         type="button"
