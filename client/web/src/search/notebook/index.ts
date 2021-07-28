@@ -1,8 +1,13 @@
 import { Observable } from 'rxjs'
+import { startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { aggregateStreamingSearch, AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import {
+    aggregateStreamingSearch,
+    AggregateStreamingSearchResults,
+    emptyAggregateResults,
+} from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { LATEST_VERSION } from '../results/StreamingSearchResults'
@@ -103,7 +108,7 @@ export class Notebook {
                         caseSensitive: false,
                         versionContext: undefined,
                         trace: undefined,
-                    }),
+                    }).pipe(startWith(emptyAggregateResults)),
                 })
                 break
         }

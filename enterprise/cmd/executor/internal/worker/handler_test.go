@@ -58,7 +58,6 @@ func TestHandle(t *testing.T) {
 	}
 
 	handler := &handler{
-		idSet:      newIDSet(),
 		options:    Options{},
 		operations: command.NewOperations(&observation.TestContext),
 		runnerFactory: func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner {

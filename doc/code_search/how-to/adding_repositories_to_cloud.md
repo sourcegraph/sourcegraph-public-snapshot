@@ -10,7 +10,7 @@ To add repositories you own or collaborate on from GitHub or GitLab, you must fi
 
 1. Go to **User menu > Settings** in the top navigation bar.
 1. Go to **Code host connections** in the sidebar navigation.
-1. Connect with GitHub and/or Gitlab using OAuth, or choose "Connect with access token" to enter a manually-created access token for the given code host.
+1. Connect with GitHub and/or Gitlab using OAuth.
 
 Once you've connected with a code host, you can add repositories:
 

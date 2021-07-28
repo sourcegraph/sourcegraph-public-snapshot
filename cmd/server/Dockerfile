@@ -44,7 +44,7 @@ RUN apk update && apk add --no-cache \
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     'bash=5.0.17-r0' \
-    'redis=5.0.11-r0' \
+    'redis=5.0.13-r0' \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
     git-p4 \

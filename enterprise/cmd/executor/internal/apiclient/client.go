@@ -76,7 +76,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	return c.client.DoAndDecode(ctx, req, &job)
 }
 
-func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (err error) {
+func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
 	ctx, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.Int("jobID", jobID),
@@ -86,6 +86,28 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/addExecutionLogEntry", queueName), executor.AddExecutionLogEntryRequest{
 		ExecutorName:      c.options.ExecutorName,
 		JobID:             jobID,
+		ExecutionLogEntry: entry,
+	})
+	if err != nil {
+		return entryID, err
+	}
+
+	_, err = c.client.DoAndDecode(ctx, req, &entryID)
+	return entryID, err
+}
+
+func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) (err error) {
+	ctx, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("queueName", queueName),
+		log.Int("jobID", jobID),
+		log.Int("entryID", entryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/updateExecutionLogEntry", queueName), executor.UpdateExecutionLogEntryRequest{
+		ExecutorName:      c.options.ExecutorName,
+		JobID:             jobID,
+		EntryID:           entryID,
 		ExecutionLogEntry: entry,
 	})
 	if err != nil {
@@ -151,8 +173,8 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) Ping(ctx context.Context, jobIDs []int) (err error) {
-	req, err := c.makeRequest("POST", "heartbeat", executor.HeartbeatRequest{
+func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err error) {
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 	})
 	if err != nil {
@@ -162,13 +184,14 @@ func (c *Client) Ping(ctx context.Context, jobIDs []int) (err error) {
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (unknownIDs []int, err error) {
+func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
 	ctx, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("queueName", queueName),
 		log.String("jobIDs", intsToString(jobIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.makeRequest("POST", "heartbeat", executor.HeartbeatRequest{
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
 	})
@@ -176,11 +199,11 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (unknownIDs []int,
 		return nil, err
 	}
 
-	if _, err := c.client.DoAndDecode(ctx, req, &unknownIDs); err != nil {
+	if _, err := c.client.DoAndDecode(ctx, req, &knownIDs); err != nil {
 		return nil, err
 	}
 
-	return unknownIDs, nil
+	return knownIDs, nil
 }
 
 func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {

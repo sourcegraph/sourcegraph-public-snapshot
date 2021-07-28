@@ -2,6 +2,9 @@
 
 This document describes the exact changes needed to update a [Docker Compose Sourcegraph instance](../install/docker-compose.md).
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+**Always refer to this page before upgrading Sourcegraph**, as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+
+After checking the relevant update notes here, refer to the [upgrade guide](../install/docker-compose/operations.md#upgrade) to upgrade your instance.
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
@@ -12,17 +15,25 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 > ⚠️ **Regardless of your deployment type:** ⚠️
 > <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
 
-**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
-
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## 3.29 -> 3.30
+
+**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
 
 No manual migration required.
 
 Please upgrade to the [`v3.30.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/5d48fde63b2a60f46cd12bbc321a92ccdca79575) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
+
+## 3.29 -> 3.30.1
+
+**⚠️ Prefer upgrading to the 3.30.1 release over 3.30.0 release, see the CHANGELOG for more info**
+
+No manual migration required.
+
+Please upgrade to the [`v3.30.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.26.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## 3.28 -> 3.29
 
@@ -32,13 +43,10 @@ This upgrade adds a new `worker` service that runs a number of background jobs t
 
 ## 3.27 -> 3.28
 
-TODO
+- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.27).*
 
-## Unreleased
-
-- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
 ## 3.26 -> 3.27
 
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
@@ -210,20 +218,4 @@ docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 999
 
 ### Standard upgrade procedure
 
-In your fork of [the deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) repository, merge the new version into the `release` branch if you maintain any changes (see: [storing customizations in a fork](../install/docker-compose.md#optional-recommended-store-customizations-in-a-fork)):
-
-```sh
-cd docker-compose/
-git fetch upstream
-git merge upstream $NEW_VERSION
-# Address any merge conflicts you may have.
-```
-
-Then on your server:
-
-```sh
-cd deploy-sourcegraph-docker/docker-compose/
-docker-compose down --remove-orphans
-git pull
-docker-compose up -d
-```
+Refer to the [upgrade guide](../install/docker-compose/operations.md#upgrade).

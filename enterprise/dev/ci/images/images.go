@@ -41,15 +41,12 @@ var SourcegraphDockerImages = []string{
 	"searcher",
 	"symbols",
 	"precise-code-intel-worker",
-	"executor-queue",
 	"executor",
 
 	// Images under docker-images/
 	"alpine-3.12",
 	"cadvisor",
 	"indexed-searcher",
-	"postgres-11.4",
-	"postgres-12.6",
 	"redis-cache",
 	"redis_exporter",
 	"redis-store",

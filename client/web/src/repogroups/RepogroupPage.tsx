@@ -18,7 +18,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { VersionContext } from '../schema/site.schema'
@@ -52,8 +51,7 @@ export interface RepogroupPageProps
         VersionContextProps,
         SearchContextInputProps,
         OnboardingTourProps,
-        ShowQueryBuilderProps,
-        FeatureFlagProps {
+        ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

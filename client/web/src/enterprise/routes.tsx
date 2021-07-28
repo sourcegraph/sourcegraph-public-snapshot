@@ -28,7 +28,10 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
     {
         path: '/batch-changes',
         render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        // We also render this route on sourcegraph.com as a precaution in case anyone
+        // follows an in-app link to /batch-changes from sourcegraph.com; the component
+        // will just redirect the visitor to the marketing page
+        condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
     },
     {
         path: '/stats',

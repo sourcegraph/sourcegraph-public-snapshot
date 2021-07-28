@@ -6,7 +6,9 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { FetchFeatureFlagsResult } from '../graphql-operations'
 
-export type FeatureFlagName = 'w0-signup-optimisation'
+// This should be a `|` separated union of feature flag strings,
+// but right now we don't have any feature flags being tested.
+export type FeatureFlagName = never
 
 export type FlagSet = Map<FeatureFlagName, boolean>
 

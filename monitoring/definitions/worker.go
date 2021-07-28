@@ -11,220 +11,15 @@ import (
 func Worker() *monitoring.Container {
 	const containerName = "worker"
 
-	return &monitoring.Container{
-		Name:        "worker",
-		Title:       "Worker",
-		Description: "Manages background processes.",
-		Groups: []monitoring.Group{
-			{
-				Title: "Active jobs",
-				Rows: append([]monitoring.Row{
-					{
-						{
-							Name:        "worker_job_count",
-							Description: "number of worker instances running each job",
-							Query:       `sum by (job_name) (src_worker_jobs{job="worker"})`,
-							Panel:       monitoring.Panel().LegendFormat("instances running {{job_name}}"),
-							NoAlert:     true,
-							Interpretation: `
-								The number of worker instances running each job type.
-								It is necessary for each job type to be managed by at least one worker instance.
-							`,
-						},
-					},
-				}, createWorkerActiveJobRows()...),
-			},
-			{
-				Title:  "Precise code intelligence commit graph updater",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:              "codeintel_commit_graph_queue_size",
-							Description:       "commit graph queue size",
-							Query:             `max(src_dirty_repositories_total)`,
-							Warning:           monitoring.Alert().GreaterOrEqual(100, nil),
-							Panel:             monitoring.Panel().LegendFormat("repositories with stale commit graphs"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "codeintel_commit_graph_queue_growth_rate",
-							Description:       "commit graph queue growth rate over 30m",
-							Query:             `sum(increase(src_dirty_repositories_total[30m])) / sum(increase(src_codeintel_commit_graph_updater_total[30m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(5, nil),
-							Panel:             monitoring.Panel().LegendFormat("rate of (enqueued / processed)"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "codeintel_commit_graph_updater_99th_percentile_duration",
-							Description:       "99th percentile successful commit graph updater operation duration over 5m",
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_commit_graph_updater_duration_seconds_bucket{job=~"worker"}[5m])))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("update").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "codeintel_commit_graph_updater_errors",
-							Description:       "commit graph updater errors every 5m",
-							Query:             `sum(increase(src_codeintel_commit_graph_updater_errors_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
-				},
-			},
-			{
-				Title:  "Precise code intelligence janitor",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:              "codeintel_janitor_errors",
-							Description:       "janitor errors every 5m",
-							Query:             `sum(increase(src_codeintel_background_errors_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:           "codeintel_upload_records_removed",
-							Description:    "upload records expired or deleted every 5m",
-							Query:          `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"worker"}[5m]))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("uploads removed"),
-							Owner:          monitoring.ObservableOwnerCodeIntel,
-							Interpretation: "none",
-						},
-						{
-							Name:           "codeintel_index_records_removed",
-							Description:    "index records expired or deleted every 5m",
-							Query:          `sum(increase(src_codeintel_background_index_records_removed_total{job=~"worker"}[5m]))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("indexes removed"),
-							Owner:          monitoring.ObservableOwnerCodeIntel,
-							Interpretation: "none",
-						},
-						{
-							Name:           "codeintel_lsif_data_removed",
-							Description:    "data for unreferenced upload records removed every 5m",
-							Query:          `sum(increase(src_codeintel_background_uploads_purged_total{job=~"worker"}[5m]))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("uploads purged"),
-							Owner:          monitoring.ObservableOwnerCodeIntel,
-							Interpretation: "none",
-						},
-					},
-					{
-						{
-							Name:              "codeintel_background_upload_resets",
-							Description:       "upload records re-queued (due to unresponsive worker) every 5m",
-							Query:             `sum(increase(src_codeintel_background_upload_resets_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("uploads"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "codeintel_background_upload_reset_failures",
-							Description:       "upload records errored due to repeated reset every 5m",
-							Query:             `sum(increase(src_codeintel_background_upload_reset_failures_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("uploads"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "codeintel_background_index_resets",
-							Description:       "index records re-queued (due to unresponsive indexer) every 5m",
-							Query:             `sum(increase(src_codeintel_background_index_resets_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("indexes"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "codeintel_background_index_reset_failures",
-							Description:       "index records errored due to repeated reset every 5m",
-							Query:             `sum(increase(src_codeintel_background_index_reset_failures_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("indexes"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
-				},
-			},
-			{
-				Title:  "Auto-indexing",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:           "codeintel_indexing_99th_percentile_duration",
-							Description:    "99th percentile successful indexing operation duration over 5m",
-							Query:          `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_indexing_duration_seconds_bucket{job=~"worker"}[5m])))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("operations").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCodeIntel,
-							Interpretation: "none",
-						},
-						{
-							Name:              "codeintel_indexing_errors",
-							Description:       "indexing errors every 5m",
-							Query:             `sum(increase(src_codeintel_indexing_errors_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:           "codeintel_autoindex_enqueuer_99th_percentile_duration",
-							Description:    "99th percentile successful index enqueuer operation duration over 5m",
-							Query:          `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"worker"}[5m])))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("operations").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCodeIntel,
-							Interpretation: "none",
-						},
-						{
-							Name:              "codeintel_autoindex_enqueuer_errors",
-							Description:       "index enqueuer errors every 5m",
-							Query:             `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"worker"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
-				},
-			},
-
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-		},
+	var workerJobs = []struct {
+		Name  string
+		Owner monitoring.ObservableOwner
+	}{
+		{Name: "codeintel-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-commitgraph", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-auto-indexing", Owner: monitoring.ObservableOwnerCodeIntel},
 	}
-}
 
-var workerJobs = []struct {
-	Name  string
-	Owner monitoring.ObservableOwner
-}{
-	{Name: "codeintel-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
-	{Name: "codeintel-commitgraph", Owner: monitoring.ObservableOwnerCodeIntel},
-	{Name: "codeintel-auto-indexing", Owner: monitoring.ObservableOwnerCodeIntel},
-}
-
-func createWorkerActiveJobRows() []monitoring.Row {
 	var activeJobObservables []monitoring.Observable
 	for _, job := range workerJobs {
 		activeJobObservables = append(activeJobObservables, monitoring.Observable{
@@ -263,5 +58,115 @@ func createWorkerActiveJobRows() []monitoring.Row {
 		activeJobRows[n-1] = append(activeJobRows[n-1], observable)
 	}
 
-	return activeJobRows
+	activeJobsGroup := monitoring.Group{
+		Title: "Active jobs",
+		Rows: append(
+			[]monitoring.Row{
+				{
+					{
+						Name:        "worker_job_count",
+						Description: "number of worker instances running each job",
+						Query:       `sum by (job_name) (src_worker_jobs{job="worker"})`,
+						Panel:       monitoring.Panel().LegendFormat("instances running {{job_name}}"),
+						NoAlert:     true,
+						Interpretation: `
+							The number of worker instances running each job type.
+							It is necessary for each job type to be managed by at least one worker instance.
+						`,
+					},
+				},
+			},
+			activeJobRows...,
+		),
+	}
+
+	return &monitoring.Container{
+		Name:        "worker",
+		Title:       "Worker",
+		Description: "Manages background processes.",
+		Groups: []monitoring.Group{
+			// src_worker_jobs
+			activeJobsGroup,
+
+			shared.CodeIntelligence.NewCommitGraphQueueGroup(containerName),
+			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),
+			shared.CodeIntelligence.NewDependencyIndexQueueGroup(containerName),
+			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
+			shared.CodeIntelligence.NewJanitorGroup(containerName),
+			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
+			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
+			shared.CodeIntelligence.NewDBStoreGroup(containerName),
+			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
+			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),
+			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
+
+			// src_codeintel_background_upload_resets_total
+			// src_codeintel_background_upload_reset_failures_total
+			// src_codeintel_background_upload_reset_errors_total
+			shared.WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ResetterGroupOptions{
+				GroupConstructorOptions: shared.GroupConstructorOptions{
+					Namespace:       "codeintel",
+					DescriptionRoot: "lsif_upload record resetter",
+					Hidden:          true,
+
+					ObservableConstructorOptions: shared.ObservableConstructorOptions{
+						MetricNameRoot:        "codeintel_background_upload",
+						MetricDescriptionRoot: "lsif_upload",
+					},
+				},
+
+				RecordResets:        shared.NoAlertsOption("none"),
+				RecordResetFailures: shared.NoAlertsOption("none"),
+				Errors:              shared.NoAlertsOption("none"),
+			}),
+
+			// src_codeintel_background_index_resets_total
+			// src_codeintel_background_index_reset_failures_total
+			// src_codeintel_background_index_reset_errors_total
+			shared.WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ResetterGroupOptions{
+				GroupConstructorOptions: shared.GroupConstructorOptions{
+					Namespace:       "codeintel",
+					DescriptionRoot: "lsif_index record resetter",
+					Hidden:          true,
+
+					ObservableConstructorOptions: shared.ObservableConstructorOptions{
+						MetricNameRoot:        "codeintel_background_index",
+						MetricDescriptionRoot: "lsif_index",
+					},
+				},
+
+				RecordResets:        shared.NoAlertsOption("none"),
+				RecordResetFailures: shared.NoAlertsOption("none"),
+				Errors:              shared.NoAlertsOption("none"),
+			}),
+
+			// src_codeintel_background_dependency_index_resets_total
+			// src_codeintel_background_dependency_index_reset_failures_total
+			// src_codeintel_background_dependency_index_reset_errors_total
+			shared.WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ResetterGroupOptions{
+				GroupConstructorOptions: shared.GroupConstructorOptions{
+					Namespace:       "codeintel",
+					DescriptionRoot: "lsif_dependency_index record resetter",
+					Hidden:          true,
+
+					ObservableConstructorOptions: shared.ObservableConstructorOptions{
+						MetricNameRoot:        "codeintel_background_dependency_index",
+						MetricDescriptionRoot: "lsif_dependency_index",
+					},
+				},
+
+				RecordResets:        shared.NoAlertsOption("none"),
+				RecordResetFailures: shared.NoAlertsOption("none"),
+				Errors:              shared.NoAlertsOption("none"),
+			}),
+
+			// Resource monitoring
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+		},
+	}
 }
