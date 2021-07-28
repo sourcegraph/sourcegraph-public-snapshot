@@ -48,6 +48,7 @@
 .title {
     font-size: 0.75rem;
     font-weight: 700;
+    text-transform: uppercase;
 }
 
 .search-examples {
@@ -74,7 +75,7 @@
     margin-bottom: 0.5rem;
 
     &:hover .search-example-icon {
-        color: #fff;
+        color: #ffffff;
         background-color: var(--primary);
     }
 }

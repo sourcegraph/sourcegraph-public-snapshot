@@ -39,7 +39,13 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
                     </div>
                 </button>
                 <div className="text-center mt-2">
-                    <Link to="https://learn.sourcegraph.com/three-ways-to-search-video">Three ways to search</Link>
+                    <Link
+                        to="https://learn.sourcegraph.com/three-ways-to-search-video"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Three ways to search
+                    </Link>
                 </div>
             </div>
             {isOpen && (
@@ -53,7 +59,7 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
                             <h3 id={THREE_WAYS_TO_SEARCH_TITLE}>Three ways to search</h3>
                             <button
                                 type="button"
-                                className="btn btn-icon"
+                                className="btn btn-icon p-1"
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >

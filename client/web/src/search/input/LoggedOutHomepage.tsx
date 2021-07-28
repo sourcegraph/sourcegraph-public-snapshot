@@ -48,7 +48,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
             <div className={styles.helpContent}>
                 <div className="mr-3">
                     <div className="d-flex align-items-baseline mb-2">
-                        <div className={classNames('mr-2', styles.title)}>SEARCH EXAMPLES</div>
+                        <div className={classNames('mr-2', styles.title)}>Search examples</div>
                         <div className="font-weight-normal text-muted">
                             Better code search than IDEs, editors, and command line tools
                         </div>
@@ -78,7 +78,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     </div>
                 </div>
                 <div>
-                    <div className={classNames(styles.title, 'mb-2')}>WATCH AND LEARN</div>
+                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
                     <HomepageModalVideo {...props} />
                 </div>
             </div>
