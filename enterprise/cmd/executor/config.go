@@ -53,6 +53,15 @@ func (c *Config) Load() {
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 }
 
+func (c *Config) Validate() error {
+	if c.FirecrackerNumCPUs != 1 && c.FirecrackerNumCPUs%2 != 0 {
+		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
+		c.AddError(fmt.Errorf("EXECUTOR_FIRECRACKER_NUM_CPUS must be 1 or an even number"))
+	}
+
+	return c.BaseConfig.Validate()
+}
+
 func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options {
 	return apiworker.Options{
 		QueueName:            c.QueueName,
