@@ -1,13 +1,12 @@
 import assert from 'assert'
 
-import { percySnapshot } from '@percy/puppeteer'
 import delay from 'delay'
 import expect from 'expect'
 import type * as sourcegraph from 'sourcegraph'
 
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 

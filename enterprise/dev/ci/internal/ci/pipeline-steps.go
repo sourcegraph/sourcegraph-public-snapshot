@@ -75,10 +75,11 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("RECORD", "false"), // ensure that we use existing recordings
+			bk.Env("PERCY_ON", "true"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
-			bk.Cmd("yarn -s run cover-browser-integration"),
+			bk.Cmd("yarn percy exec -- yarn run cover-browser-integration"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"),
