@@ -10,9 +10,9 @@ and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.29 -> 3.30.1
+## 3.29 -> 3.30.2
 
-**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.2. If you have upgraded to 3.30.0 and 3.30.1 please reach out to support@sourcegraph.com for assistance**
 
 This upgrade removes the `non-root` overlay, in favor of using only the `non-privileged` overlay for deploying Sourcegraph in secure environments. If you were
 previously deploying using the `non-root` overlay, you should now generate overlays using the `non-privileged` overlay.
