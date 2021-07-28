@@ -466,7 +466,11 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
                                 </React.Fragment>
                             )
                         case 'keyword':
-                            return <span className="search-filter-keyword">{term.value}</span>
+                            return (
+                                <span key={index} className="search-filter-keyword">
+                                    {term.value}
+                                </span>
+                            )
                         default:
                             return example.slice(term.range.start, term.range.end)
                     }
