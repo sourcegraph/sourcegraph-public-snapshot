@@ -319,9 +319,10 @@ func Frontend() *monitoring.Container {
 					},
 				},
 
-				Total:    shared.NoAlertsOption("none"),
-				Duration: shared.NoAlertsOption("none"),
-				Errors:   shared.NoAlertsOption("none"),
+				Total:     shared.NoAlertsOption("none"),
+				Duration:  shared.NoAlertsOption("none"),
+				Errors:    shared.NoAlertsOption("none"),
+				ErrorRate: shared.NoAlertsOption("none"),
 			}),
 
 			// src_oobmigration_total
@@ -340,9 +341,10 @@ func Frontend() *monitoring.Container {
 					},
 				},
 
-				Total:    shared.NoAlertsOption("none"),
-				Duration: shared.NoAlertsOption("none"),
-				Errors:   shared.NoAlertsOption("none"),
+				Total:     shared.NoAlertsOption("none"),
+				Duration:  shared.NoAlertsOption("none"),
+				Errors:    shared.NoAlertsOption("none"),
+				ErrorRate: shared.NoAlertsOption("none"),
 			}),
 
 			{

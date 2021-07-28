@@ -40,6 +40,17 @@ func (workerutilConstructor) Errors(options ObservableConstructorOptions) shared
 	return Observation.Errors(options)
 }
 
+// ErrorRate creates an observable from the given options backed by the counters specifying
+// the number of operations that resulted in success and error, respectively.
+//
+// Requires a:
+//   - counter of the format `src_{options.MetricNameRoot}_total`
+//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
+func (workerutilConstructor) ErrorRate(options ObservableConstructorOptions) sharedObservable {
+	options.MetricNameRoot += "_processor"
+	return Observation.ErrorRate(options)
+}
+
 // Handlers creates an observable from the given options backed by the gauge specifying the number
 // of handler invocations performed by workerutil.
 //
@@ -68,16 +79,19 @@ type WorkerutilGroupOptions struct {
 	// Duration transforms the default observable used to construct the processor duration histogram panel.
 	Duration ObservableOption
 
-	// Errors transforms the default observable used to construct the processor error rate panel.
+	// Errors transforms the default observable used to construct the processor error count panel.
 	Errors ObservableOption
+
+	// ErrorRate transforms the default observable used to construct the processor error rate panel.
+	ErrorRate ObservableOption
 
 	// Handlers transforms the default observable used to construct the processor count panel.
 	Handlers ObservableOption
 }
 
 // NewGroup creates a group containing panels displaying the total number of jobs, duration of
-// processing, error rate, and number of workers operating on the queue for the given worker
-// observable within the given container.
+// processing, error count, error rate, and number of workers operating on the queue for the given
+// worker observable within the given container.
 //
 // Requires a:
 //   - counter of the format `src_{options.MetricNameRoot}_processor_total`
@@ -95,10 +109,12 @@ func (workerutilConstructor) NewGroup(containerName string, owner monitoring.Obs
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{
+				options.Handlers.safeApply(Workerutil.Handlers(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+			}, {
 				options.Total.safeApply(Workerutil.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 				options.Duration.safeApply(Workerutil.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 				options.Errors.safeApply(Workerutil.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Handlers.safeApply(Workerutil.Handlers(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
+				options.ErrorRate.safeApply(Workerutil.ErrorRate(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
 			},
 		},
 	}
