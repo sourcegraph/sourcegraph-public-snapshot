@@ -99,7 +99,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
 
             <div className="mt-5">
                 <div className="d-flex align-items-baseline mt-5 mb-3">
-                    <h3 className="mr-2">Repository groups</h3>
+                    <div className={classNames(styles.title, 'mr-2')}>Repository groups</div>
                     <div className="font-weight-normal text-muted">Search sets of repositories</div>
                 </div>
                 <div className={styles.loggedOutHomepageRepogroupListCards}>
