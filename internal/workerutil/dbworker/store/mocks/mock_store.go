@@ -103,7 +103,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ResetStalledFunc: &StoreResetStalledFunc{
-			defaultHook: func(context.Context) ([]int, []int, error) {
+			defaultHook: func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 				return nil, nil, nil
 			},
 		},
@@ -1152,15 +1152,15 @@ func (c StoreRequeueFuncCall) Results() []interface{} {
 // StoreResetStalledFunc describes the behavior when the ResetStalled method
 // of the parent MockStore instance is invoked.
 type StoreResetStalledFunc struct {
-	defaultHook func(context.Context) ([]int, []int, error)
-	hooks       []func(context.Context) ([]int, []int, error)
+	defaultHook func(context.Context) (map[int]time.Time, map[int]time.Time, error)
+	hooks       []func(context.Context) (map[int]time.Time, map[int]time.Time, error)
 	history     []StoreResetStalledFuncCall
 	mutex       sync.Mutex
 }
 
 // ResetStalled delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) ResetStalled(v0 context.Context) ([]int, []int, error) {
+func (m *MockStore) ResetStalled(v0 context.Context) (map[int]time.Time, map[int]time.Time, error) {
 	r0, r1, r2 := m.ResetStalledFunc.nextHook()(v0)
 	m.ResetStalledFunc.appendCall(StoreResetStalledFuncCall{v0, r0, r1, r2})
 	return r0, r1, r2
@@ -1168,7 +1168,7 @@ func (m *MockStore) ResetStalled(v0 context.Context) ([]int, []int, error) {
 
 // SetDefaultHook sets function that is called when the ResetStalled method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreResetStalledFunc) SetDefaultHook(hook func(context.Context) ([]int, []int, error)) {
+func (f *StoreResetStalledFunc) SetDefaultHook(hook func(context.Context) (map[int]time.Time, map[int]time.Time, error)) {
 	f.defaultHook = hook
 }
 
@@ -1176,7 +1176,7 @@ func (f *StoreResetStalledFunc) SetDefaultHook(hook func(context.Context) ([]int
 // ResetStalled method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreResetStalledFunc) PushHook(hook func(context.Context) ([]int, []int, error)) {
+func (f *StoreResetStalledFunc) PushHook(hook func(context.Context) (map[int]time.Time, map[int]time.Time, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1184,21 +1184,21 @@ func (f *StoreResetStalledFunc) PushHook(hook func(context.Context) ([]int, []in
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *StoreResetStalledFunc) SetDefaultReturn(r0 []int, r1 []int, r2 error) {
-	f.SetDefaultHook(func(context.Context) ([]int, []int, error) {
+func (f *StoreResetStalledFunc) SetDefaultReturn(r0 map[int]time.Time, r1 map[int]time.Time, r2 error) {
+	f.SetDefaultHook(func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *StoreResetStalledFunc) PushReturn(r0 []int, r1 []int, r2 error) {
-	f.PushHook(func(context.Context) ([]int, []int, error) {
+func (f *StoreResetStalledFunc) PushReturn(r0 map[int]time.Time, r1 map[int]time.Time, r2 error) {
+	f.PushHook(func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreResetStalledFunc) nextHook() func(context.Context) ([]int, []int, error) {
+func (f *StoreResetStalledFunc) nextHook() func(context.Context) (map[int]time.Time, map[int]time.Time, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1236,10 +1236,10 @@ type StoreResetStalledFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []int
+	Result0 map[int]time.Time
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 []int
+	Result1 map[int]time.Time
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
