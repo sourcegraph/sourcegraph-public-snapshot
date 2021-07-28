@@ -3,7 +3,6 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -27,25 +26,25 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
 
     return (
         <>
-            <div>
-                <button type="button" className={styles.wrapper} onClick={() => toggleDialog(true)}>
+            <div className={styles.wrapper}>
+                <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
                     <img
                         src={`${assetsRoot}/img/watch-and-learn-${isLightTheme ? 'light' : 'dark'}.png`}
                         alt="Watch and learn video thumbnail"
-                        className={styles.thumbnail}
+                        className={styles.thumbnailImage}
                     />
                     <div className={styles.playIconWrapper}>
                         <PlayIcon />
                     </div>
                 </button>
                 <div className="text-center mt-2">
-                    <Link
-                        to="https://learn.sourcegraph.com/three-ways-to-search-video"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
+                        className="btn btn-link font-weight-normal p-0"
+                        type="button"
+                        onClick={() => toggleDialog(true)}
                     >
                         Three ways to search
-                    </Link>
+                    </button>
                 </div>
             </div>
             {isOpen && (
@@ -66,15 +65,17 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
                                 <CloseIcon className="icon-inline" />
                             </button>
                         </div>
-                        <div className="d-flex align-items-center justify-content-center">
-                            <iframe
-                                className={styles.iframeVideo}
-                                src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
-                                title="YouTube video player"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen={true}
-                            />
+                        <div className="w-100">
+                            <div className={styles.iframeVideoWrapper}>
+                                <iframe
+                                    className={styles.iframeVideo}
+                                    src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                                    title="YouTube video player"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen={true}
+                                />
+                            </div>
                         </div>
                     </div>
                 </Dialog>
