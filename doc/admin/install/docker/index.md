@@ -99,5 +99,5 @@ To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull i
 ## Next steps
 
 - [Configuring Sourcegraph](../../config/index.md)
-- [Upgrading Sourcegraph](../../updates.md)
+- [Upgrading Sourcegraph](../../updates/index.md)
 - [Site administration documentation](../../index.md)

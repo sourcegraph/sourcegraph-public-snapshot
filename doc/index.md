@@ -75,7 +75,7 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 
 ## Core documentation
 
-- [Install](#getting-started) or [update](admin/updates.md) Sourcegraph
+- [Install](#getting-started) or [update](admin/updates/index.md) Sourcegraph
 - [Using Sourcegraph](getting-started/index.md)
 - [Administration](admin/index.md)
 - [Extensions](extensions/index.md)

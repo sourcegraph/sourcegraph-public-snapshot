@@ -26,7 +26,7 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 
 ### Tips
 
-* **We recommend Docker Compose for most initial production deployments**. You can [migrate to a different deployment method](../updates.md#migrating-to-a-new-deployment-type) later on if needed.
+* **We recommend Docker Compose for most initial production deployments**. You can [migrate to a different deployment method](../updates/index.md#migrating-to-a-new-deployment-type) later on if needed.
 * Note that **for a Kubernetes deployment, you are expected to have a team that is familiar with operating Kubernetes clusters**, including but not limited to the use of persistent storage. If in any doubt about your team's ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 * Don't want to worry about managing a Sourcegraph deployment? Consider a [managed instance](./managed.md).
 

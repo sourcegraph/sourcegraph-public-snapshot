@@ -17,7 +17,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [Add organizations](../organizations.md)
 - [Set up HTTPS](../http_https_configuration.md)
 - [Use a custom domain](../url.md)
-- [Update Sourcegraph](../updates.md)
+- [Update Sourcegraph](../updates/index.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](../external_services/index.md)
 
 ## Advanced tasks
