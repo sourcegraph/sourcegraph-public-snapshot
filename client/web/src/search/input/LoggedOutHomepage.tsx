@@ -3,80 +3,85 @@ import React, { useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
+import { HomepageModalVideo } from './HomepageModalVideo'
 import styles from './LoggedOutHomepage.module.scss'
 import { SignUpCta } from './SignUpCta'
 
 const exampleQueries = [
-    { query: 'repo:hashicorp lang:TypeScript async ()', patternType: 'literal' },
-    { query: 'repo:sourcegraph/sourcegraph type:diff after:"1 week ago"', patternType: 'literal' },
     {
-        query: 'lang:TypeScript useState OR useMemo',
-        patternType: 'literal',
+        label: 'Search all of your repos, without escaping or regex',
+        trackEventName: 'HomepageExampleRepoClicked',
+        query: 'repo:sourcegraph/.* Sprintf("%d -file:tests',
+        to: '/search?q=context:global+repo:sourcegraph/*+Sprintf%28%22%25d+-file:tests&patternType=literal&case=yes',
     },
-    { query: 'repo:^github\\.com/sourcegraph/sourcegraph$@3.17 CONTAINER_ID', patternType: 'literal' },
+    {
+        label: 'Search and review commits faster than git log and grep',
+        trackEventName: 'HomepageExampleDiffClicked',
+        query: 'type:diff before:"last week" TODO',
+        to:
+            '/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+after:"last+week"+select:commit.diff.added+TODO&patternType=literal&case=yes',
+    },
+    {
+        label: 'Quickly filter by language and other key attributes',
+        trackEventName: 'HomepageExampleFiltersClicked',
+        query: 'repo:sourcegraph lang:go or lang:Typescript',
+        to:
+            '/search?q=context:global+repo:sourcegraph/*+-f:tests+%28lang:TypeScript+or+lang:go%29+Config%28%29&patternType=literal&case=yes',
+    },
 ]
 
-export interface LoggedOutHomepageProps extends TelemetryProps {}
+export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps {}
 
 export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
-    const SearchExampleClicked = useCallback(
-        (url: string) => (): void => props.telemetryService.log('ExampleSearchClicked', { url }),
+    const searchExampleClicked = useCallback(
+        (trackEventName: string) => (): void => props.telemetryService.log(trackEventName),
         [props.telemetryService]
     )
 
     return (
         <div className={styles.loggedOutHomepage}>
-            <div className={styles.loggedOutHomepageHelpContent}>
-                <div className={classNames('mr-2', styles.loggedOutHomepageHelpContentExampleSearches)}>
-                    <h3 className="my-3">Example searches</h3>
-                    <div className="mt-2">
+            <div className={styles.helpContent}>
+                <div className={styles.searchExamplesWrapper}>
+                    <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
+                        <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>
+                            Search examples
+                        </div>
+                        <div className="font-weight-normal text-muted">
+                            Find answers faster with code search across multiple repos and commits
+                        </div>
+                    </div>
+                    <div className={styles.searchExamples}>
                         {exampleQueries.map(example => (
-                            <div key={example.query} className="pb-2">
+                            <div key={example.query} className={styles.searchExampleCardWrapper}>
                                 <Link
-                                    to={`/search?q=${encodeURIComponent(example.query)}&patternType=${
-                                        example.patternType
-                                    }`}
-                                    className={classNames(
-                                        styles.loggedOutHomepageHelpContentExampleSearchesQueryLink,
-                                        'search-query-link',
-                                        'text-monospace',
-                                        'mb-2'
-                                    )}
-                                    onClick={SearchExampleClicked(
-                                        `/search?q=${encodeURIComponent(example.query)}&patternType=${
-                                            example.patternType
-                                        }`
-                                    )}
+                                    to={example.to}
+                                    className={classNames('card', styles.searchExampleCard)}
+                                    onClick={searchExampleClicked(example.trackEventName)}
                                 >
-                                    <SyntaxHighlightedSearchQuery query={example.query} />
+                                    <div className={classNames(styles.searchExampleIcon)}>
+                                        <MagnifyingGlassSearchIcon />
+                                    </div>
+                                    <div className={styles.searchExampleQueryWrapper}>
+                                        <div className={styles.searchExampleQuery}>
+                                            <SyntaxHighlightedSearchQuery query={example.query} />
+                                        </div>
+                                    </div>
+                                </Link>
+                                <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
+                                    {example.label}
                                 </Link>
                             </div>
                         ))}
                     </div>
                 </div>
-                <div>
-                    <h3 className="my-3">Search basics</h3>
-                    <div className="mt-2">
-                        <div className="mb-2">
-                            Search for code without escaping.{' '}
-                            <span
-                                className={classNames(
-                                    styles.loggedOutHomepageInlineCode,
-                                    'text-code',
-                                    'bg-code',
-                                    'p-1'
-                                )}
-                            >
-                                console.log("
-                            </span>{' '}
-                            results in:
-                        </div>
-                        <LiteralCodeSearchExample />
-                    </div>
+                <div className={styles.thumbnail}>
+                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                    <HomepageModalVideo {...props} />
                 </div>
             </div>
 
@@ -94,11 +99,8 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
 
             <div className="mt-5">
                 <div className="d-flex align-items-baseline mt-5 mb-3">
-                    <h3 className="mr-2">Repository group pages</h3>
-                    <small className="text-monospace font-weight-normal small">
-                        <span className="search-filter-keyword">repogroup:</span>
-                        <i>name</i>
-                    </small>
+                    <div className={classNames(styles.title, 'mr-2')}>Repository groups</div>
+                    <div className="font-weight-normal text-muted">Search sets of repositories</div>
                 </div>
                 <div className={styles.loggedOutHomepageRepogroupListCards}>
                     {repogroupList.map(repogroup => (
@@ -110,10 +112,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                             />
                             <Link
                                 to={repogroup.url}
-                                className={classNames(
-                                    styles.loggedOutHomepageRepogroupListingTitle,
-                                    'font-weight-bold'
-                                )}
+                                className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
                             >
                                 {repogroup.title}
                             </Link>
@@ -125,417 +124,11 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     )
 }
 
-const LiteralCodeSearchExample = React.memo(() => (
-    <div className={styles.loggedOutHomepageLiteralSearch}>
-        <code className={classNames(styles.loggedOutHomepageLiteralSearchCodeExcerpt, 'code-excerpt')}>
-            <table>
-                <tbody>
-                    <tr>
-                        <td className="line" data-line="12" />
-                        <td className="code annotated">
-                            <div>
-                                <span className="hl-source hl-js hl-react">
-                                    <span className="hl-meta hl-function-call hl-method hl-js">
-                                        <span className="hl-variable hl-other hl-readwrite hl-js">
-                                            <span>
-                                                <span>
-                                                    <span>
-                                                        <span>wsServer</span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                        </span>
-                                        <span className="hl-punctuation hl-accessor hl-js">
-                                            <span>
-                                                <span>
-                                                    <span>
-                                                        <span>.</span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                        </span>
-                                        <span className="hl-variable hl-function hl-js">
-                                            <span>
-                                                <span>
-                                                    <span>
-                                                        <span>on</span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                        </span>
-                                        <span className="hl-meta hl-group hl-js">
-                                            <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
-                                                <span>
-                                                    <span>
-                                                        <span>
-                                                            <span>(</span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                            <span className="hl-meta hl-string hl-js">
-                                                <span className="hl-string hl-quoted hl-double hl-js">
-                                                    <span className="hl-punctuation hl-definition hl-string hl-begin hl-js">
-                                                        <span>
-                                                            <span>
-                                                                <span>
-                                                                    <span>"</span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                    <span>
-                                                        <span>
-                                                            <span>
-                                                                <span>connection</span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                    <span className="hl-punctuation hl-definition hl-string hl-end hl-js">
-                                                        <span>
-                                                            <span>
-                                                                <span>
-                                                                    <span>"</span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                            <span className="hl-punctuation hl-separator hl-comma hl-js">
-                                                <span>
-                                                    <span>
-                                                        <span>
-                                                            <span>,</span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                            <span> </span>
-                                            <span className="hl-meta hl-function hl-js" />
-                                            <span className="hl-meta hl-function hl-declaration hl-js">
-                                                <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
-                                                    <span>
-                                                        <span>
-                                                            <span>
-                                                                <span>(</span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                                <span className="hl-meta hl-binding hl-name hl-js">
-                                                    <span className="hl-variable hl-parameter hl-function hl-js">
-                                                        <span>
-                                                            <span>
-                                                                <span>
-                                                                    <span>ws</span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                                <span className="hl-punctuation hl-separator hl-parameter hl-function hl-js">
-                                                    <span>
-                                                        <span>
-                                                            <span>
-                                                                <span>,</span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                                <span> </span>
-                                                <span className="hl-meta hl-binding hl-name hl-js">
-                                                    <span className="hl-variable hl-parameter hl-function hl-js">
-                                                        <span>
-                                                            <span>
-                                                                <span>
-                                                                    <span>req</span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                                <span className="hl-punctuation hl-section hl-group hl-end hl-js">
-                                                    <span>
-                                                        <span>
-                                                            <span>
-                                                                <span>)</span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                                <span> </span>
-                                                <span className="hl-storage hl-type hl-function hl-arrow hl-js">
-                                                    <span>
-                                                        <span>
-                                                            <span>
-                                                                <span>=</span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                    <span>
-                                                        <span>
-                                                            <span>
-                                                                <span>
-                                                                    <span>&gt;</span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                            <span className="hl-meta hl-function hl-js">
-                                                <span> </span>
-                                                <span className="hl-meta hl-block hl-js">
-                                                    <span className="hl-punctuation hl-section hl-block hl-begin hl-js">
-                                                        <span>
-                                                            <span>
-                                                                <span>
-                                                                    <span>&#123;</span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                    <span />
-                                                </span>
-                                            </span>
-                                        </span>
-                                    </span>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td className="line" data-line="13" />
-                        <td className="code annotated">
-                            <div>
-                                <span className="hl-source hl-js hl-react">
-                                    <span className="hl-meta hl-function-call hl-method hl-js">
-                                        <span className="hl-meta hl-group hl-js">
-                                            <span className="hl-meta hl-function hl-js">
-                                                <span className="hl-meta hl-block hl-js">
-                                                    <span> </span>
-                                                    <span className="hl-meta hl-function-call hl-method hl-js">
-                                                        <span className="hl-support hl-type hl-object hl-console hl-js selection-highlight">
-                                                            <span>
-                                                                <span>
-                                                                    <span>
-                                                                        <span>console</span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                        <span className="hl-punctuation hl-accessor hl-js selection-highlight">
-                                                            <span>
-                                                                <span>
-                                                                    <span>
-                                                                        <span>.</span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                        <span className="hl-support hl-function hl-console hl-js selection-highlight">
-                                                            <span>
-                                                                <span>
-                                                                    <span>
-                                                                        <span>log</span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                        <span className="hl-meta hl-group hl-js">
-                                                            <span className="hl-punctuation hl-section hl-group hl-begin hl-js selection-highlight">
-                                                                <span>
-                                                                    <span>
-                                                                        <span>
-                                                                            <span>(</span>
-                                                                        </span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                            <span className="hl-meta hl-string hl-js">
-                                                                <span className="hl-string hl-quoted hl-double hl-js">
-                                                                    <span className="hl-punctuation hl-definition hl-string hl-begin hl-js selection-highlight">
-                                                                        <span>
-                                                                            <span>
-                                                                                <span>
-                                                                                    <span>"</span>
-                                                                                </span>
-                                                                            </span>
-                                                                        </span>
-                                                                    </span>
-                                                                    <span>
-                                                                        <span>
-                                                                            <span>
-                                                                                <span>Connected</span>
-                                                                            </span>
-                                                                        </span>
-                                                                    </span>
-                                                                    <span className="hl-punctuation hl-definition hl-string hl-end hl-js">
-                                                                        <span>
-                                                                            <span>
-                                                                                <span>
-                                                                                    <span>"</span>
-                                                                                </span>
-                                                                            </span>
-                                                                        </span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                            <span className="hl-punctuation hl-section hl-group hl-end hl-js">
-                                                                <span>
-                                                                    <span>
-                                                                        <span>
-                                                                            <span>)</span>
-                                                                        </span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                    <span className="hl-punctuation hl-terminator hl-statement hl-js">
-                                                        <span>
-                                                            <span>
-                                                                <span>
-                                                                    <span>;</span>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                    <span />
-                                                </span>
-                                            </span>
-                                        </span>
-                                    </span>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td className="line" data-line="14" />
-                        <td className="code annotated">
-                            <div>
-                                <span className="hl-source hl-js hl-react">
-                                    <span className="hl-meta hl-function-call hl-method hl-js">
-                                        <span className="hl-meta hl-group hl-js">
-                                            <span className="hl-meta hl-function hl-js">
-                                                <span className="hl-meta hl-block hl-js" />
-                                            </span>
-                                        </span>
-                                    </span>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td className="line" data-line="15" />
-                        <td className="code annotated">
-                            <div>
-                                <span className="hl-source hl-js hl-react">
-                                    <span className="hl-meta hl-function-call hl-method hl-js">
-                                        <span className="hl-meta hl-group hl-js">
-                                            <span className="hl-meta hl-function hl-js">
-                                                <span className="hl-meta hl-block hl-js">
-                                                    <span />
-                                                    <span className="hl-meta hl-function-call hl-method hl-js">
-                                                        <span className="hl-variable hl-other hl-readwrite hl-js">
-                                                            <span>
-                                                                <span>ws</span>
-                                                            </span>
-                                                        </span>
-                                                        <span className="hl-punctuation hl-accessor hl-js">
-                                                            <span>
-                                                                <span>.</span>
-                                                            </span>
-                                                        </span>
-                                                        <span className="hl-variable hl-function hl-js">
-                                                            <span>
-                                                                <span>on</span>
-                                                            </span>
-                                                        </span>
-                                                        <span className="hl-meta hl-group hl-js">
-                                                            <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
-                                                                <span>
-                                                                    <span>(</span>
-                                                                </span>
-                                                            </span>
-                                                            <span className="hl-meta hl-string hl-js">
-                                                                <span className="hl-string hl-quoted hl-double hl-js">
-                                                                    <span className="hl-punctuation hl-definition hl-string hl-begin hl-js">
-                                                                        <span>
-                                                                            <span>"</span>
-                                                                        </span>
-                                                                    </span>
-                                                                    <span>
-                                                                        <span>message</span>
-                                                                    </span>
-                                                                    <span className="hl-punctuation hl-definition hl-string hl-end hl-js">
-                                                                        <span>
-                                                                            <span>"</span>
-                                                                        </span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                            <span className="hl-punctuation hl-separator hl-comma hl-js">
-                                                                <span>
-                                                                    <span>,</span>
-                                                                </span>
-                                                            </span>
-                                                            <span> </span>
-                                                            <span className="hl-meta hl-function hl-js" />
-                                                            <span className="hl-meta hl-function hl-declaration hl-js">
-                                                                <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
-                                                                    <span>
-                                                                        <span>(</span>
-                                                                    </span>
-                                                                </span>
-                                                                <span className="hl-meta hl-binding hl-name hl-js">
-                                                                    <span className="hl-variable hl-parameter hl-function hl-js">
-                                                                        <span>
-                                                                            <span>data</span>
-                                                                        </span>
-                                                                    </span>
-                                                                </span>
-                                                                <span className="hl-punctuation hl-section hl-group hl-end hl-js">
-                                                                    <span>
-                                                                        <span>)</span>
-                                                                    </span>
-                                                                </span>
-                                                                <span> </span>
-                                                                <span className="hl-storage hl-type hl-function hl-arrow hl-js">
-                                                                    <span>
-                                                                        <span>=</span>
-                                                                    </span>
-                                                                    <span>
-                                                                        <span>
-                                                                            <span>&gt;</span>
-                                                                        </span>
-                                                                    </span>
-                                                                </span>
-                                                            </span>
-                                                            <span className="hl-meta hl-function hl-js">
-                                                                <span> </span>
-                                                                <span className="hl-meta hl-block hl-js">
-                                                                    <span className="hl-punctuation hl-section hl-block hl-begin hl-js">
-                                                                        <span>
-                                                                            <span>&#123;</span>
-                                                                        </span>
-                                                                    </span>
-                                                                    <span />
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                        </span>
-                                    </span>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </code>
-    </div>
+const MagnifyingGlassSearchIcon = React.memo(() => (
+    <svg width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+            d="M6.686.5a6.672 6.672 0 016.685 6.686 6.438 6.438 0 01-1.645 4.32l.308.308h.823L18 16.957 16.457 18.5l-5.143-5.143v-.823l-.308-.308a6.438 6.438 0 01-4.32 1.645A6.672 6.672 0 010 7.186 6.672 6.672 0 016.686.5zm0 2.057a4.61 4.61 0 00-4.629 4.629 4.61 4.61 0 004.629 4.628 4.61 4.61 0 004.628-4.628 4.61 4.61 0 00-4.628-4.629z"
+            fill="currentColor"
+        />
+    </svg>
 ))
