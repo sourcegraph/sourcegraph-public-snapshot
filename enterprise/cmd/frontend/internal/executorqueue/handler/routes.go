@@ -1,4 +1,4 @@
-package server
+package handler
 
 import (
 	"bytes"
@@ -14,24 +14,24 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
-func setupRoutes(queueOptionsMap map[string]QueueOptions) func(router *mux.Router) {
-	return func(router *mux.Router) {
-		for name, queueOptions := range queueOptionsMap {
-			h := newHandler(queueOptions)
+// SetupRoutes registers all route handlers required for all configured executor
+// queues with the given router.
+func SetupRoutes(queueOptionsMap map[string]QueueOptions, router *mux.Router) {
+	for name, queueOptions := range queueOptionsMap {
+		h := newHandler(queueOptions)
 
-			subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
-			routes := map[string]func(w http.ResponseWriter, r *http.Request){
-				"dequeue":                 h.handleDequeue,
-				"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
-				"updateExecutionLogEntry": h.handleUpdateExecutionLogEntry,
-				"markComplete":            h.handleMarkComplete,
-				"markErrored":             h.handleMarkErrored,
-				"markFailed":              h.handleMarkFailed,
-				"heartbeat":               h.handleHeartbeat,
-			}
-			for path, handler := range routes {
-				subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
-			}
+		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
+		routes := map[string]func(w http.ResponseWriter, r *http.Request){
+			"dequeue":                 h.handleDequeue,
+			"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
+			"updateExecutionLogEntry": h.handleUpdateExecutionLogEntry,
+			"markComplete":            h.handleMarkComplete,
+			"markErrored":             h.handleMarkErrored,
+			"markFailed":              h.handleMarkFailed,
+			"heartbeat":               h.handleHeartbeat,
+		}
+		for path, handler := range routes {
+			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
 		}
 	}
 }

@@ -508,7 +508,14 @@ export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<Re
 }
 
 export function toPrettyBlobURL(
-    target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
+    target: RepoSpec &
+        Partial<RevisionSpec> &
+        Partial<ResolvedRevisionSpec> &
+        FileSpec &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec> &
+        Partial<RenderModeSpec>
 ): string {
     const searchParameters = addLineRangeQueryParameter(
         addRenderModeQueryParameter(new URLSearchParams(), target),

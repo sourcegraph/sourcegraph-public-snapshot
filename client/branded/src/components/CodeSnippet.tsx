@@ -15,7 +15,7 @@ interface CodeSnippetProps {
 export const CodeSnippet: React.FunctionComponent<CodeSnippetProps> = ({ code, language, className }) => {
     const highlightedInput = useMemo(() => ({ __html: highlightCodeSafe(code, language) }), [code, language])
     return (
-        <pre className={classNames('bg-code rounded p-3', className)}>
+        <pre className={classNames('bg-code rounded border p-3', className)}>
             <code dangerouslySetInnerHTML={highlightedInput} />
         </pre>
     )

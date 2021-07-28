@@ -44,10 +44,12 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	}
 	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
 
+	insightsMetadataStore := store.NewInsightStore(insightsDB)
+
 	// Start background goroutines for all of our workers.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, workerBaseStore, settingStore, observationContext),
+		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, observationContext),
 
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to TimescaleDB.

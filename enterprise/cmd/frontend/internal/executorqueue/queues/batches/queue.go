@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -14,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) apiserver.QueueOptions {
+func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) handler.QueueOptions {
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		return transformRecord(ctx, db, record.(*btypes.BatchSpecExecution), config)
 	}
 
-	return apiserver.QueueOptions{
+	return handler.QueueOptions{
 		Store:             background.NewExecutorStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
 		RecordTransformer: recordTransformer,
 	}

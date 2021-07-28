@@ -75,7 +75,7 @@ type QueueSizeGroupOptions struct {
 // this package.
 func (queueConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options QueueSizeGroupOptions) monitoring.Group {
 	return monitoring.Group{
-		Title:  fmt.Sprintf("[%s] Queue: %s", options.Namespace, options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows: []monitoring.Row{
 			{

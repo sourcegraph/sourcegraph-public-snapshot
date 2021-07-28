@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Backend Code Insights GraphQL queries now support arguments `includeRepoRegex` and `excludeRepoRegex` to filter on repository names. [#23256](https://github.com/sourcegraph/sourcegraph/pull/23256)
 - Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
-- Operator documentation has been added to the Search Reference sidebar section. [#23116]https://github.com/sourcegraph/sourcegraph/pull/23116)
+- Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
 
 ### Changed
 
@@ -27,12 +27,15 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The search reference will now show matching entries when using the filter input. [#23224](https://github.com/sourcegraph/sourcegraph/pull/23224)
+- Graceful termination periods have been added to database deployments. [#3358](https://github.com/sourcegraph/deploy-sourcegraph/pull/3358) & [#477](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/477)
 
 ### Removed
 
 -
 
 ## 3.30.1
+
+**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
 
 ### Fixed
 
@@ -44,7 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.30.0
 
-**⚠️ Prefer upgrading to the 3.30.1 release instead of 3.30.0 release to avoid issues with repo-updater errors**
+**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
 
 ### Added
 

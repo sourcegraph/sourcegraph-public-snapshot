@@ -216,7 +216,31 @@ This panel indicates search API alert user suggestions shown every 5m.
 
 <br />
 
-### Frontend: [codeintel] Observable: Precise code intelligence usage at a glance
+### Frontend: Codeintel: Precise code intelligence usage at a glance
+
+#### frontend: codeintel_resolvers_total
+
+This panel indicates aggregate graphql operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_resolvers_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate graphql operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_resolvers_errors_total
+
+This panel indicates aggregate graphql operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### frontend: codeintel_resolvers_total
 
@@ -242,7 +266,31 @@ This panel indicates graphql operation errors every 5m.
 
 <br />
 
-### Frontend: [codeintel] Observable: Auto-index enqueuer
+### Frontend: Codeintel: Auto-index enqueuer
+
+#### frontend: codeintel_autoindex_enqueuer_total
+
+This panel indicates aggregate enqueuer operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_autoindex_enqueuer_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate enqueuer operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_autoindex_enqueuer_errors_total
+
+This panel indicates aggregate enqueuer operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### frontend: codeintel_autoindex_enqueuer_total
 
@@ -268,7 +316,31 @@ This panel indicates enqueuer operation errors every 5m.
 
 <br />
 
-### Frontend: [codeintel] Observable: dbstore stats (db=frontend)
+### Frontend: Codeintel: dbstore stats
+
+#### frontend: codeintel_dbstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_dbstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_dbstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### frontend: codeintel_dbstore_total
 
@@ -294,7 +366,57 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Frontend: [codeintel] Observable: lsifstore stats (db=codeintel-db)
+### Frontend: Workerutil: lsif_indexes dbworker/store stats
+
+#### frontend: workerutil_dbworker_store_codeintel_index_total
+
+This panel indicates store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: workerutil_dbworker_store_codeintel_index_99th_percentile_duration
+
+This panel indicates 99th percentile successful store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: workerutil_dbworker_store_codeintel_index_errors_total
+
+This panel indicates store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Frontend: Codeintel: lsifstore stats
+
+#### frontend: codeintel_lsifstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_lsifstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_lsifstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### frontend: codeintel_lsifstore_total
 
@@ -320,7 +442,31 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Frontend: [codeintel] Observable: gitserver client
+### Frontend: Codeintel: gitserver client
+
+#### frontend: codeintel_gitserver_total
+
+This panel indicates aggregate client operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_gitserver_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate client operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_gitserver_errors_total
+
+This panel indicates aggregate client operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### frontend: codeintel_gitserver_total
 
@@ -346,7 +492,31 @@ This panel indicates client operation errors every 5m.
 
 <br />
 
-### Frontend: [codeintel] Observable: uploadstore stats (queries GCS/S3/MinIO)
+### Frontend: Codeintel: uploadstore stats
+
+#### frontend: codeintel_uploadstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_uploadstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### frontend: codeintel_uploadstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### frontend: codeintel_uploadstore_total
 
@@ -372,7 +542,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Frontend: [Out-of-band migrations] Observable: up migration invocation (one batch processed)
+### Frontend: Out-of-band migrations: up migration invocation (one batch processed)
 
 #### frontend: oobmigration_total
 
@@ -398,7 +568,7 @@ This panel indicates migration handler operation errors every 5m.
 
 <br />
 
-### Frontend: [Out-of-band migrations] Observable: down migration invocation (one batch processed)
+### Frontend: Out-of-band migrations: down migration invocation (one batch processed)
 
 #### frontend: oobmigration_total
 
@@ -1495,7 +1665,7 @@ This panel indicates percentage pods available.
 
 <p class="subtitle">Handles conversion of uploaded precise code intelligence bundles.</p>
 
-### Precise Code Intel Worker: [codeintel] Queue: LSIF uploads
+### Precise Code Intel Worker: Codeintel: LSIF uploads
 
 #### precise-code-intel-worker: codeintel_upload_queue_size
 
@@ -1519,7 +1689,7 @@ This value compares the rate of enqueues against the rate of finished jobs.
 
 <br />
 
-### Precise Code Intel Worker: [codeintel] Queue handler: LSIF uploads
+### Precise Code Intel Worker: Codeintel: LSIF uploads
 
 #### precise-code-intel-worker: codeintel_upload_processor_total
 
@@ -1553,7 +1723,31 @@ This panel indicates handler active handlers.
 
 <br />
 
-### Precise Code Intel Worker: [codeintel] Observable: dbstore stats (db=frontend)
+### Precise Code Intel Worker: Codeintel: dbstore stats
+
+#### precise-code-intel-worker: codeintel_dbstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_dbstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### precise-code-intel-worker: codeintel_dbstore_total
 
@@ -1579,7 +1773,31 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Precise Code Intel Worker: [codeintel] Observable: lsifstore stats (db=codeintel-db)
+### Precise Code Intel Worker: Codeintel: lsifstore stats
+
+#### precise-code-intel-worker: codeintel_lsifstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_lsifstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### precise-code-intel-worker: codeintel_lsifstore_total
 
@@ -1605,7 +1823,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Precise Code Intel Worker: [workerutil] Observable: dbworker/store stats (db=frontend, table=lsif_uploads)
+### Precise Code Intel Worker: Workerutil: lsif_uploads dbworker/store stats
 
 #### precise-code-intel-worker: workerutil_dbworker_store_codeintel_upload_total
 
@@ -1631,7 +1849,31 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Precise Code Intel Worker: [codeintel] Observable: gitserver client
+### Precise Code Intel Worker: Codeintel: gitserver client
+
+#### precise-code-intel-worker: codeintel_gitserver_total
+
+This panel indicates aggregate client operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_gitserver_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate client operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_gitserver_errors_total
+
+This panel indicates aggregate client operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### precise-code-intel-worker: codeintel_gitserver_total
 
@@ -1657,7 +1899,31 @@ This panel indicates client operation errors every 5m.
 
 <br />
 
-### Precise Code Intel Worker: [codeintel] Observable: uploadstore stats (queries GCS/S3/MinIO)
+### Precise Code Intel Worker: Codeintel: uploadstore stats
+
+#### precise-code-intel-worker: codeintel_uploadstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_uploadstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_uploadstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### precise-code-intel-worker: codeintel_uploadstore_total
 
@@ -2083,7 +2349,7 @@ This panel indicates number of worker instances running the codeintel-auto-index
 
 <br />
 
-### Worker: [codeintel] Queue: Repository with stale commit graph
+### Worker: Codeintel: Repository with stale commit graph
 
 #### worker: codeintel_commit_graph_queue_size
 
@@ -2107,7 +2373,7 @@ This value compares the rate of enqueues against the rate of finished jobs.
 
 <br />
 
-### Worker: [codeintel] Observable: Repository commit graph updates
+### Worker: Codeintel: Repository commit graph updates
 
 #### worker: codeintel_commit_graph_processor_total
 
@@ -2133,7 +2399,7 @@ This panel indicates update operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Queue: Dependency index job
+### Worker: Codeintel: Dependency index job
 
 #### worker: codeintel_dependency_index_queue_size
 
@@ -2157,7 +2423,7 @@ This value compares the rate of enqueues against the rate of finished jobs.
 
 <br />
 
-### Worker: [codeintel] Queue handler: Dependency index jobs
+### Worker: Codeintel: Dependency index jobs
 
 #### worker: codeintel_dependency_index_processor_total
 
@@ -2233,7 +2499,31 @@ Number of code intelligence janitor errors every 5m
 
 <br />
 
-### Worker: [codeintel] Observable: Auto-index scheduler
+### Worker: Codeintel: Auto-index scheduler
+
+#### worker: codeintel_index_scheduler_total
+
+This panel indicates aggregate scheduler operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_index_scheduler_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate scheduler operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_index_scheduler_errors_total
+
+This panel indicates aggregate scheduler operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### worker: codeintel_index_scheduler_total
 
@@ -2259,7 +2549,31 @@ This panel indicates scheduler operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Observable: Auto-index enqueuer
+### Worker: Codeintel: Auto-index enqueuer
+
+#### worker: codeintel_autoindex_enqueuer_total
+
+This panel indicates aggregate enqueuer operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_autoindex_enqueuer_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate enqueuer operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_autoindex_enqueuer_errors_total
+
+This panel indicates aggregate enqueuer operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### worker: codeintel_autoindex_enqueuer_total
 
@@ -2285,7 +2599,31 @@ This panel indicates enqueuer operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Observable: dbstore stats (db=frontend)
+### Worker: Codeintel: dbstore stats
+
+#### worker: codeintel_dbstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dbstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dbstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### worker: codeintel_dbstore_total
 
@@ -2311,7 +2649,31 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Observable: lsifstore stats (db=codeintel-db)
+### Worker: Codeintel: lsifstore stats
+
+#### worker: codeintel_lsifstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_lsifstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_lsifstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### worker: codeintel_lsifstore_total
 
@@ -2337,7 +2699,7 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Worker: [workerutil] Observable: dbworker/store stats (db=frontend, table=lsif_dependency_indexes)
+### Worker: Workerutil: lsif_dependency_indexes dbworker/store stats
 
 #### worker: workerutil_dbworker_store_codeintel_dependency_index_total
 
@@ -2363,7 +2725,31 @@ This panel indicates store operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Observable: gitserver client
+### Worker: Codeintel: gitserver client
+
+#### worker: codeintel_gitserver_total
+
+This panel indicates aggregate client operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_gitserver_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate client operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_gitserver_errors_total
+
+This panel indicates aggregate client operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### worker: codeintel_gitserver_total
 
@@ -2389,7 +2775,7 @@ This panel indicates client operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Queue resetter: lsif_upload record resetter
+### Worker: Codeintel: lsif_upload record resetter
 
 #### worker: codeintel_background_upload_record_resets_total
 
@@ -2415,7 +2801,7 @@ This panel indicates lsif_upload operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Queue resetter: lsif_index record resetter
+### Worker: Codeintel: lsif_index record resetter
 
 #### worker: codeintel_background_index_record_resets_total
 
@@ -2441,7 +2827,7 @@ This panel indicates lsif_index operation errors every 5m.
 
 <br />
 
-### Worker: [codeintel] Queue resetter: lsif_dependency_index record resetter
+### Worker: Codeintel: lsif_dependency_index record resetter
 
 #### worker: codeintel_background_dependency_index_record_resets_total
 
@@ -4210,274 +4596,11 @@ This panel indicates percentage pods available.
 
 <br />
 
-## Executor Queue
-
-<p class="subtitle">Coordinates the executor work queues.</p>
-
-### Executor Queue: [executor] Queue: Executor jobs
-
-#### executor-queue: executor_queue_size
-
-This panel indicates unprocessed executor job queue size.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: executor_queue_growth_rate
-
-This panel indicates unprocessed executor job queue growth rate over 30m.
-
-This value compares the rate of enqueues against the rate of finished jobs for the selected queue.
-
-	- A value < than 1 indicates that process rate > enqueue rate
-	- A value = than 1 indicates that process rate = enqueue rate
-	- A value > than 1 indicates that process rate < enqueue rate
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: [workerutil] Observable: dbworker/store stats (db=frontend, table=lsif_indexes)
-
-#### executor-queue: workerutil_dbworker_store_codeintel_index_total
-
-This panel indicates store operations every 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: workerutil_dbworker_store_codeintel_index_99th_percentile_duration
-
-This panel indicates 99th percentile successful store operation duration over 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: workerutil_dbworker_store_codeintel_index_errors_total
-
-This panel indicates store operation errors every 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Internal service requests
-
-#### executor-queue: frontend_internal_api_error_responses
-
-This panel indicates frontend-internal API error responses every 5m by route.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-frontend-internal-api-error-responses).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Database connections
-
-#### executor-queue: max_open_conns
-
-This panel indicates maximum open.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: open_conns
-
-This panel indicates established.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: in_use
-
-This panel indicates used.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: idle
-
-This panel indicates idle.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: mean_blocked_seconds_per_conn_request
-
-This panel indicates mean blocked seconds per conn request.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-mean-blocked-seconds-per-conn-request).
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: closed_max_idle
-
-This panel indicates closed by SetMaxIdleConns.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: closed_max_lifetime
-
-This panel indicates closed by SetConnMaxLifetime.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-#### executor-queue: closed_max_idle_time
-
-This panel indicates closed by SetConnMaxIdleTime.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Executor Queue: Container monitoring (not available on server)
-
-#### executor-queue: container_missing
-
-This panel indicates container missing.
-
-This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod executor-queue` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p executor-queue`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' executor-queue` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the executor-queue container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs executor-queue` (note this will include logs from the previous and currently running container).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: container_cpu_usage
-
-This panel indicates container cpu usage total (1m average) across all cores by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-container-cpu-usage).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: container_memory_usage
-
-This panel indicates container memory usage by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-container-memory-usage).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: fs_io_operations
-
-This panel indicates filesystem reads and writes rate by instance over 1h.
-
-This value indicates the number of filesystem read and write operations by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Executor Queue: Provisioning indicators (not available on server)
-
-#### executor-queue: provisioning_container_cpu_usage_long_term
-
-This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-cpu-usage-long-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: provisioning_container_memory_usage_long_term
-
-This panel indicates container memory usage (1d maximum) by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-memory-usage-long-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: provisioning_container_cpu_usage_short_term
-
-This panel indicates container cpu usage total (5m maximum) across all cores by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-cpu-usage-short-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: provisioning_container_memory_usage_short_term
-
-This panel indicates container memory usage (5m maximum) by instance.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-provisioning-container-memory-usage-short-term).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Golang runtime monitoring
-
-#### executor-queue: go_goroutines
-
-This panel indicates maximum active goroutines.
-
-A high value here indicates a possible goroutine leak.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-go-goroutines).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### executor-queue: go_gc_duration_seconds
-
-This panel indicates maximum go garbage collection duration.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-go-gc-duration-seconds).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-### Executor Queue: Kubernetes monitoring (only available on Kubernetes)
-
-#### executor-queue: pods_available_percentage
-
-This panel indicates percentage pods available.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#executor-queue-pods-available-percentage).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
 ## Executor
 
-<p class="subtitle">Executes jobs from the executor-queue.</p>
+<p class="subtitle">Executes jobs in an isolated environment.</p>
 
-### Executor: [executor] Queue: Executor jobs
+### Executor: Executor: Executor jobs
 
 #### executor: executor_queue_size
 
@@ -4501,7 +4624,7 @@ This value compares the rate of enqueues against the rate of finished jobs for t
 
 <br />
 
-### Executor: [executor] Queue handler: Executor jobs
+### Executor: Executor: Executor jobs
 
 #### executor: executor_processor_total
 
@@ -4535,7 +4658,31 @@ This panel indicates handler active handlers.
 
 <br />
 
-### Executor: [executor] Observable: Queue API client
+### Executor: Executor: Queue API client
+
+#### executor: apiworker_apiclient_total
+
+This panel indicates aggregate client operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_apiclient_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate client operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_apiclient_errors_total
+
+This panel indicates aggregate client operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### executor: apiworker_apiclient_total
 
@@ -4561,7 +4708,31 @@ This panel indicates client operation errors every 5m.
 
 <br />
 
-### Executor: [executor] Observable: Subprocess execution (for job setup)
+### Executor: Executor: Job setup
+
+#### executor: apiworker_command_total
+
+This panel indicates aggregate command operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_command_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate command operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_command_errors_total
+
+This panel indicates aggregate command operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### executor: apiworker_command_total
 
@@ -4587,7 +4758,31 @@ This panel indicates command operation errors every 5m.
 
 <br />
 
-### Executor: [executor] Observable: Subprocess execution (for job execution)
+### Executor: Executor: Job execution
+
+#### executor: apiworker_command_total
+
+This panel indicates aggregate command operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_command_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate command operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_command_errors_total
+
+This panel indicates aggregate command operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### executor: apiworker_command_total
 
@@ -4613,7 +4808,31 @@ This panel indicates command operation errors every 5m.
 
 <br />
 
-### Executor: [executor] Observable: Subprocess execution (for job teardown)
+### Executor: Executor: Job teardown
+
+#### executor: apiworker_command_total
+
+This panel indicates aggregate command operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_command_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate command operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### executor: apiworker_command_errors_total
+
+This panel indicates aggregate command operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 #### executor: apiworker_command_total
 

@@ -1,4 +1,4 @@
-package executor
+package executorqueue
 
 import (
 	"bytes"
@@ -7,70 +7,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
-	"strings"
 	"testing"
 )
-
-func init() {
-	sharedUsername = "test"
-	sharedPassword = "hunter2"
-}
-
-func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
-	ts := httptest.NewServer(basicAuthMiddleware(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusTeapot)
-		}),
-	))
-	defer ts.Close()
-
-	req, err := http.NewRequest("GET", ts.URL, nil)
-	if err != nil {
-		t.Fatalf("unexpected error creating request: %s", err)
-	}
-
-	// no auth
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusUnauthorized, resp.StatusCode)
-	}
-	if value := resp.Header.Get("WWW-Authenticate"); value != `Basic realm="Sourcegraph"` {
-		t.Errorf("unexpected www-authenticate header. want=%q have=%q", `Basic realm="Sourcegraph"`, value)
-	}
-
-	// wrong username
-	req.SetBasicAuth(strings.ToUpper(sharedUsername), sharedPassword)
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusForbidden, resp.StatusCode)
-	}
-
-	// wrong password
-	req.SetBasicAuth(sharedUsername, strings.ToUpper(sharedPassword))
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusForbidden, resp.StatusCode)
-	}
-
-	// correct token
-	req.SetBasicAuth(sharedUsername, sharedPassword)
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusTeapot {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusTeapot, resp.StatusCode)
-	}
-}
 
 func TestReverseProxySimple(t *testing.T) {
 	originServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

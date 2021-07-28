@@ -253,7 +253,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <NavLink to="/code-monitoring">Monitoring</NavLink>
                             </NavItem>
                         )}
-                        {props.batchChangesEnabled && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
+                        {/* This is the only circumstance where we show something
+                         batch-changes-related even if the instance does not have batch
+                         changes enabled, for marketing purposes on sourcegraph.com */}
+                        {(props.batchChangesEnabled || isSourcegraphDotCom) && (
+                            <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />
+                        )}
                         {codeInsights && (
                             <NavItem icon={BarChartIcon}>
                                 <NavLink to="/insights/dashboards/all">Insights</NavLink>

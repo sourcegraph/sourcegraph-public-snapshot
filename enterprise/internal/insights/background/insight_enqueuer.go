@@ -7,13 +7,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -23,7 +24,7 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, settingStore discovery.SettingStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"insights_enqueuer",
@@ -47,7 +48,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, s
 				_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 				return err
 			}
-			return discoverAndEnqueueInsights(ctx, time.Now, settingStore, insights.NewLoader(workerBaseStore.Handle().DB()), queryRunnerEnqueueJob)
+			return discoverAndEnqueueInsights(ctx, time.Now, insightStore, queryRunnerEnqueueJob)
 		},
 	), operation)
 }
@@ -59,11 +60,11 @@ const queryJobOffsetTime = 30 * time.Second
 func discoverAndEnqueueInsights(
 	ctx context.Context,
 	now func() time.Time,
-	settingStore discovery.SettingStore,
-	loader insights.Loader,
+	insightStore store.DataSeriesStore,
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error,
 ) error {
-	foundInsights, err := discovery.Discover(ctx, settingStore, loader, discovery.InsightFilterArgs{})
+	// foundInsights, err := discovery.Discover(ctx, settingStore, loader, discovery.InsightFilterArgs{})
+	dataSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
@@ -71,40 +72,43 @@ func discoverAndEnqueueInsights(
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (
-		uniqueSeries = map[string]insights.TimeSeries{}
+		uniqueSeries = map[string]types.InsightSeries{}
 		multi        error
 		offset       time.Duration
 	)
-	for _, insight := range foundInsights {
-		for _, series := range insight.Series {
-			seriesID := discovery.Encode(series)
-			if err != nil {
-				multi = multierror.Append(multi, err)
-				continue
-			}
-			_, enqueuedAlready := uniqueSeries[seriesID]
-			if enqueuedAlready {
-				continue
-			}
-			uniqueSeries[seriesID] = series
+	for _, series := range dataSeries {
+		seriesID := series.SeriesID
+		_, enqueuedAlready := uniqueSeries[seriesID]
+		if enqueuedAlready {
+			continue
+		}
+		uniqueSeries[seriesID] = series
 
-			// Enqueue jobs for each unique series, offsetting each job execution by a minute so we
-			// don't execute all queries at once and harm search performance in general.
-			processAfter := now().Add(offset)
-			offset += queryJobOffsetTime
-			err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
-				SeriesID:     seriesID,
-				SearchQuery:  withCountUnlimited(series.Query),
-				ProcessAfter: &processAfter,
-				State:        "queued",
-				Priority:     int(priority.High),
-				Cost:         int(priority.Indexed),
-			})
-			if err != nil {
-				multi = multierror.Append(multi, err)
-			}
+		// Enqueue jobs for each unique series, offsetting each job execution by a minute so we
+		// don't execute all queries at once and harm search performance in general.
+		processAfter := now().Add(offset)
+		offset += queryJobOffsetTime
+		err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
+			SeriesID:     seriesID,
+			SearchQuery:  withCountUnlimited(series.Query),
+			ProcessAfter: &processAfter,
+			State:        "queued",
+			Priority:     int(priority.High),
+			Cost:         int(priority.Indexed),
+		})
+		if err != nil {
+			multi = multierror.Append(multi, err)
+		}
+
+		// The recording timestamp update can't be transactional because this is a separate database currently, so we will use
+		// at-least-once semantics by waiting until the queue transaction is complete and without error.
+		_, err = insightStore.StampRecording(ctx, series)
+		if err != nil {
+			multi = multierror.Append(multi, err)
+			continue // might as well try the other insights and just skip this one
 		}
 	}
+
 	return multi
 }
 
