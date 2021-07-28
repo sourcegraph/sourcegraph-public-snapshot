@@ -16,9 +16,9 @@ import { useScrollToLocationHash } from '../../components/useScrollToLocationHas
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
+import { DocumentationExamples } from './DocumentationExamples'
 import { DocumentationIcons } from './DocumentationIcons'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
-import { DocumentationExamples } from './DocumentationExamples'
 
 interface Props
     extends Partial<RevisionSpec>,
@@ -89,7 +89,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             {!isExcluded(node, ['test', 'benchmark', 'example', 'license', 'owner', 'package']) &&
                 node.documentation.tags.length !== 0 && (
                     <>
-                        <span className={`h5 text-muted ml-2`}>Usage examples</span>
+                        <span className="h5 text-muted ml-2">Usage examples</span>
                         <DocumentationExamples {...props} pathID={node.pathID} />
                     </>
                 )}

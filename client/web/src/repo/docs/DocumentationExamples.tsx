@@ -1,12 +1,14 @@
 import * as H from 'history'
 import React, { useState } from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
-
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Observable } from 'rxjs'
+
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+
 import { RepositoryFields } from '../../graphql-operations'
+
 import { DocumentationExamplesList } from './DocumentationExamplesList'
 
 interface Props extends SettingsCascadeProps, VersionContextProps {
@@ -21,7 +23,7 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
 export const DocumentationExamples: React.FunctionComponent<Props> = props => {
     const [visible, setVisible] = useState(false)
     const onVisibilityChange = (isVisible: boolean): void => {
-        isVisible && setVisible(true)
+        if (isVisible) { setVisible(true) }
     }
 
     return (

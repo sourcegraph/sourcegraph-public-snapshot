@@ -203,10 +203,13 @@ export interface DocumentationReferencesVariables {
     after?: string
 }
 
+interface DocumentationReferencesResults {
+    node: GQL.IRepository
+}
 export const fetchDocumentationReferences = (
     args: DocumentationReferencesVariables
 ): Observable<GQL.ILocationConnection | null> =>
-    requestGraphQL<GQL.ILocationConnection | null, DocumentationReferencesVariables>(
+    requestGraphQL<DocumentationReferencesResults, DocumentationReferencesVariables>(
         gql`
             query DocumentationReferences(
                 $repo: ID!
@@ -280,8 +283,8 @@ export interface DocumentationBlameVariables {
 
 export const fetchDocumentationBlame = (
     args: DocumentationBlameVariables
-): Observable<GQL.ILocationConnection | null> =>
-    requestGraphQL<GQL.ILocationConnection | null, DocumentationBlameVariables>(
+): Observable<GQL.IHunk[]> =>
+    requestGraphQL<GQL.IHunk[], DocumentationBlameVariables>(
         gql`
             query DocumentationBlame(
                 $repo: String!

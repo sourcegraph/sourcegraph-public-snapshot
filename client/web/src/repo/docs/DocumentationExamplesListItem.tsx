@@ -1,22 +1,24 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-
-import { catchError, map, startWith } from 'rxjs/operators'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Observable } from 'rxjs'
-import { RepositoryFields } from '../../graphql-operations'
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { fetchDocumentationBlame } from './graphql'
-import { PersonLink } from '../../person/PersonLink'
-import { Timestamp } from '../../components/time/Timestamp'
+import { catchError, map, startWith } from 'rxjs/operators'
+
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { Timestamp } from '../../components/time/Timestamp'
+import { RepositoryFields } from '../../graphql-operations'
+import { PersonLink } from '../../person/PersonLink'
+
+import { fetchDocumentationBlame } from './graphql'
 
 interface Props extends SettingsCascadeProps, VersionContextProps {
     location: H.Location
@@ -41,8 +43,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine, isLightTheme) => {
-            return fetchHighlightedFileLineRanges(
+        (isFirst, startLine, endLine, isLightTheme) => fetchHighlightedFileLineRanges(
                 {
                     repoName: item.resource.repository.name,
                     commitID: item.resource.commit.oid,
@@ -58,13 +59,12 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
                 },
                 false
             ).pipe(
-                map(lines => {
+                map(lines =>
                     // Hack to remove newlines which cause duplicate newlines when copying/pasting code snippets.
-                    return lines[0].map(line => line.replace(/(?:\r\n|\r|\n)/g, ''))
-                })
-            )
-        },
-        [repo, commitID, item, fetchHighlightedFileLineRanges]
+                     lines[0].map(line => line.replace(/\r\n|\r|\n/g, ''))
+                )
+            ),
+        [item, fetchHighlightedFileLineRanges]
     )
 
     const blameHunks =

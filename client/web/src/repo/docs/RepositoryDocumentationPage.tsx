@@ -9,6 +9,8 @@ import { catchError, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -29,8 +31,6 @@ import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { fetchDocumentationPage, fetchDocumentationPathInfo, isExcluded, Tag } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="repository-docs-page__error alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
