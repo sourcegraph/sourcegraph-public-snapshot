@@ -9,6 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// defaultReferencesPageSize is the reference result page size when no limit is supplied in the
+// GraphQL layer. This is used as an approximation for an acceptable page size as we make multiple
+// references requests to discover references _not_ in the same file as the definition for API
+// docs.
+const defaultReferencesPageSize = 100
+
 // DocumentationReferences returns the list of source locations that reference the symbol found at
 // the given documentation path ID, if any.
 func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID string, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
@@ -46,7 +52,7 @@ func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID stri
 			)
 			for len(references) < limit {
 				var candidates []AdjustedLocation
-				candidates, rawCursor, err = r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, 10, rawCursor)
+				candidates, rawCursor, err = r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, defaultReferencesPageSize, rawCursor)
 				if err != nil {
 					return nil, rawCursor, err
 				}
