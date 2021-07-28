@@ -33,7 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
-## 3.30.2
+## 3.30.3
 
 **⚠️ Users upgrading from 3.29 are advised to upgrade directly to 3.30.3**
 
