@@ -80,10 +80,10 @@ loop:
 		now := time.Now()
 
 		for id, lastHeartbeatTimestamp := range resetIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "age", now.Sub(lastHeartbeatTimestamp))
+			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
 		}
 		for id, lastHeartbeatTimestamp := range erroredIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "age", now.Sub(lastHeartbeatTimestamp))
+			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
 		}
 
 		r.options.Metrics.RecordResets.Add(float64(len(resetIDs)))
