@@ -284,9 +284,7 @@ export interface DocumentationBlameVariables {
 interface DocumentationBlameResults {
     repository: GQL.IRepository
 }
-export const fetchDocumentationBlame = (
-    args: DocumentationBlameVariables
-): Observable<GQL.IHunk[]> =>
+export const fetchDocumentationBlame = (args: DocumentationBlameVariables): Observable<GQL.IHunk[]> =>
     requestGraphQL<DocumentationBlameResults, DocumentationBlameVariables>(
         gql`
             query DocumentationBlame(

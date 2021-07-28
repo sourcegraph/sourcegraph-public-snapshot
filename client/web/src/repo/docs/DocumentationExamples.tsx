@@ -23,7 +23,9 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
 export const DocumentationExamples: React.FunctionComponent<Props> = props => {
     const [visible, setVisible] = useState(false)
     const onVisibilityChange = (isVisible: boolean): void => {
-        if (isVisible) { setVisible(true) }
+        if (isVisible) {
+            setVisible(true)
+        }
     }
 
     return (

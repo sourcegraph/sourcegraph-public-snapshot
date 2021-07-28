@@ -43,7 +43,8 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine, isLightTheme) => fetchHighlightedFileLineRanges(
+        (isFirst, startLine, endLine, isLightTheme) =>
+            fetchHighlightedFileLineRanges(
                 {
                     repoName: item.resource.repository.name,
                     commitID: item.resource.commit.oid,
@@ -61,7 +62,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
             ).pipe(
                 map(lines =>
                     // Hack to remove newlines which cause duplicate newlines when copying/pasting code snippets.
-                     lines[0].map(line => line.replace(/\r\n|\r|\n/g, ''))
+                    lines[0].map(line => line.replace(/\r\n|\r|\n/g, ''))
                 )
             ),
         [item, fetchHighlightedFileLineRanges]
