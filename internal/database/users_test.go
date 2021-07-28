@@ -482,6 +482,52 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	}
 }
 
+func TestUsers_GetByUsername(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:           "bob@example.com",
+			Username:        "bob",
+			EmailIsVerified: true,
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users(db).Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, want := range []string{"alice", "bob", "cindy"} {
+		have, err := Users(db).GetByUsername(ctx, want)
+		if want == "cindy" {
+			// Make sure the returned err fulfils the NotFounder interface.
+			if !errcode.IsNotFound(err) {
+				t.Fatalf("invalid error, expected not found got %v", err)
+			}
+			continue
+		} else if err != nil {
+			t.Fatal(err)
+		}
+		if have.Username != want {
+			t.Errorf("got %s, but want %s", have.Username, want)
+		}
+	}
+
+}
+
 func TestUsers_GetByUsernames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
