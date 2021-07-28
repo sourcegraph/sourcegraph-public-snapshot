@@ -39,7 +39,39 @@ func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID stri
 		if len(locations) > 0 {
 			location := locations[0]
 			r.path = location.Path
-			return r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, limit, rawCursor)
+
+			var (
+				references       = make([]AdjustedLocation, 0, limit)
+				inDefinitionFile []AdjustedLocation
+			)
+			for len(references) < limit {
+				var candidates []AdjustedLocation
+				candidates, rawCursor, err = r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, 10, rawCursor)
+				if err != nil {
+					return nil, rawCursor, err
+				}
+				for _, candidate := range candidates {
+					isDefinitionFile := candidate.Dump.RepositoryID == r.repositoryID && candidate.Path == location.Path
+					isDefinition := isDefinitionFile && candidate.AdjustedRange == location.Range
+					if isDefinition {
+						// we never want the definition itself to show up as a reference.
+					} else if isDefinitionFile {
+						inDefinitionFile = append(inDefinitionFile, candidate)
+					} else {
+						references = append(references, candidate)
+					}
+				}
+				if len(candidates) == 0 || rawCursor == "" {
+					break // no more pages
+				}
+			}
+			if len(references) == 0 {
+				// If we found no references at all, we're willing to consider references in the
+				// definition file. Otherwise, we don't really want these as they make poor usage
+				// examples.
+				return inDefinitionFile, rawCursor, nil
+			}
+			return references[:limit], rawCursor, nil
 		}
 	}
 	return nil, "", nil
