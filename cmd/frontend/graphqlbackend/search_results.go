@@ -1559,22 +1559,12 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if args.ResultTypes.Has(result.TypeStructural) {
-		isDefaultStructuralSearch := args.PatternInfo.FileMatchLimit == search.DefaultMaxSearchResults
-		if isDefaultStructuralSearch {
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.DoStructuralSearch(ctx, args)
-			})
-		} else {
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.DoFilePathSearch(ctx, args)
-			})
-		}
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.DoStructuralSearch(ctx, args)
+		})
 	}
 
 	if args.ResultTypes.Has(result.TypeDiff) {
