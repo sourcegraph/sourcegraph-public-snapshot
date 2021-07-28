@@ -116,8 +116,9 @@ type Store interface {
 	// ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 	// queued state. In order to prevent input that continually crashes worker instances, records that have been reset
 	// more than `MaxNumResets` times will be marked as failed. This method returns a pair of maps from record
-	// identifiers the record's last heartbeat timestamp for each record reset to queued and failed states, respectively.
-	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Time, err error)
+	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
+	// respectively.
+	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
 }
 
 type ExecutionLogEntry workerutil.ExecutionLogEntry
@@ -689,8 +690,9 @@ RETURNING {id}
 // ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 // queued state. In order to prevent input that continually crashes worker instances, records that have been reset
 // more than `MaxNumResets` times will be marked as failed. This method returns a pair of maps from record
-// identifiers the record's last heartbeat timestamp for each record reset to queued and failed states, respectively.
-func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Time, err error) {
+// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
+// respectively.
+func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error) {
 	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -709,33 +711,37 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }
 
-func scanLastHeartbeatTimestamps(rows *sql.Rows, queryErr error) (_ map[int]time.Time, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryErr error) (_ map[int]time.Duration, err error) {
+	return func(rows *sql.Rows, queryErr error) (_ map[int]time.Duration, err error) {
+		if queryErr != nil {
+			return nil, queryErr
+		}
+		defer func() { err = basestore.CloseRows(rows, err) }()
 
-	m := map[int]time.Time{}
-	for rows.Next() {
-		var id int
-		var lastHeartbeat time.Time
-		if err := rows.Scan(&id, &lastHeartbeat); err != nil {
-			return nil, err
+		m := map[int]time.Duration{}
+		for rows.Next() {
+			var id int
+			var lastHeartbeat time.Time
+			if err := rows.Scan(&id, &lastHeartbeat); err != nil {
+				return nil, err
+			}
+
+			m[id] = now.Sub(lastHeartbeat)
 		}
 
-		m[id] = lastHeartbeat
+		return m, nil
 	}
-
-	return m, nil
 }
 
-func (s *store) resetStalled(ctx context.Context, query string) (map[int]time.Time, error) {
-	return scanLastHeartbeatTimestamps(s.Query(
+func (s *store) resetStalled(ctx context.Context, query string) (map[int]time.Duration, error) {
+	now := s.now()
+
+	return scanLastHeartbeatTimestampsFrom(now)(s.Query(
 		ctx,
 		s.formatQuery(
 			query,
 			quote(s.options.TableName),
-			s.now(),
+			now,
 			int(s.options.StalledMaxAge/time.Second),
 			s.options.MaxNumResets,
 			quote(s.options.TableName),
