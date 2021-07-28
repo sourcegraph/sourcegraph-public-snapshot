@@ -42,26 +42,7 @@ All users are automatically given read permissions to a batch change. Granular p
 
 ## Code host interactions in Batch Changes
 
-Interactions with a code host are made possible by [configuring credentials](../how-tos/configuring_credentials.md) to that code host. Different tokens are used for different types of operations, as is illustrated below.
-
-🟢 **Preferred** - Sourcegraph will prefer to use this token for this operation, if it is configured.
-
-🟡 **Fallback** - Sourcegraph will fall back to use this token for this operation, if it is configured.
-
-🔴 **Unsupported** - Sourcegraph cannot use this token for this operation.
-
-Operation | [Personal Access Token](../how-tos/configuring_credentials.md#for-yourself) | [Global Service Account Token](../how-tos/configuring_credentials.md#global-service-account) | [Code Host Connection Token](../../admin/external_service.md)
---------- | :-: | :-: | :-:
-Pushing a branch with the changes | 🟢 | 🟡 | 🔴
-Creating a changeset | 🟢 | 🟡 | 🔴
-Updating a changeset | 🟢 | 🟡 | 🔴
-Closing a changeset | 🟢 | 🟡 | 🔴
-[Importing a changeset](../how-tos/tracking_existing_changesets.md)* | 🔴 | 🟢 | 🟡
-Syncing a changeset* | 🔴 | 🟢 | 🟡
-
-When writing a commit or a changeset to the code host, the author will reflect the token used (e.g., on GitHub, the commit or pull request author will be you). It is for this reason that a personal access token is preferred for most operations.
-
-*Using the code host connection token will be deprecated in the future; therefore, we highly recommend that admins configure a [global service account](../how-tos/configuring_credentials.md#global-service-account) for importing and keeping changesets up-to-date.
+Interactions with a code host are made possible by [configuring credentials](../how-tos/configuring_credentials.md) to that code host. When writing a commit or a changeset to the code host with Batch Changes, the author and permissions will reflect the token used (e.g., on GitHub, the commit or pull request author will be you).
 
 ## Repository permissions for Batch Changes
 
