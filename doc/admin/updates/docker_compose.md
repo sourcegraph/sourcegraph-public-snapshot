@@ -12,7 +12,7 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 ## 3.29 -> 3.30.2
 
-**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.2. If you have upgraded to 3.30.0 and 3.30.1 please reach out to support@sourcegraph.com for assistance**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3. If you have upgraded to 3.30.0 and 3.30.1/3.30.2 please reach out to support@sourcegraph.com for assistance**
 
 No manual migration required.
 
