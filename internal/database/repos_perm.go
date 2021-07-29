@@ -10,6 +10,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -66,6 +67,11 @@ func WithAuthzConds(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) e
 	}
 
 	// End of copy
+
+	// If we're in dotcom mode, and we're authenticated, NEVER bypass authz.
+	if envvar.SourcegraphDotComMode() && authenticatedUserID > 0 {
+		bypassAuthz = false
+	}
 
 	_, err = tx.DB().ExecContext(ctx, fmt.Sprintf(
 		ensureAuthzCondsFmt,
