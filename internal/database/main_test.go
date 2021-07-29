@@ -177,7 +177,7 @@ log_min_duration_statement = 0
 	// We use ready to signal that postgres has started.
 	ready := make(chan bool, 1)
 	cleanup.Add(func() {
-		_ = cmd.Process.Signal(os.Interrupt)
+		_ = cmd.Process.Kill()
 		_ = cmd.Wait()
 		// make sure scanner goroutine has stopped
 		<-ready
