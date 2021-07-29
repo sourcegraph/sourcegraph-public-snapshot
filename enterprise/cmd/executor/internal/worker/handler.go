@@ -105,7 +105,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, vmNameSuffix.String())
 
 	// Before we setup a VM (and after we teardown), mark the name as in-use so that
-	// the janitor process cleaning up orphaned VMs doesn't try to stop/remvoe the one
+	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
 	// we're using for the current job.
 	h.nameSet.Add(name)
 	defer h.nameSet.Remove(name)
