@@ -112,7 +112,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     alwaysShowLabel={true}
                     data-testid="insight-save-button"
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
                     className="btn btn-primary mr-2 mb-2"

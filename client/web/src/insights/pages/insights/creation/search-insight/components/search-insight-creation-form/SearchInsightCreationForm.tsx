@@ -259,7 +259,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 <LoaderButton
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
                     data-testid="insight-save-button"
