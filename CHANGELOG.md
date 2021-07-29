@@ -35,7 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.30.3
 
-**⚠️ Users upgrading from 3.29 are advised to upgrade directly to 3.30.3**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com) for assistance.
 
 ### Fixed
 
@@ -43,13 +43,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.30.2
 
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com) for assistance.
+
 ### Fixed
 
 - Postgres database images have been reverted back to debian due to corruption caused by glibc and alpine. [23302](https://github.com/sourcegraph/sourcegraph/pull/23302)
 
 ## 3.30.1
 
-**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com) for assistance.
 
 ### Fixed
 
@@ -61,7 +63,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.30.0
 
-**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com) for assistance.
 
 ### Added
 
