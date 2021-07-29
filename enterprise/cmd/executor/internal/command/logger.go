@@ -33,18 +33,30 @@ type entryHandle struct {
 }
 
 func (h *entryHandle) Write(p []byte) (n int, err error) {
+	if h == nil {
+		return len(p), nil
+	}
+
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.buf.Write(p)
 }
 
 func (h *entryHandle) Read() string {
+	if h == nil {
+		return ""
+	}
+
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.buf.String()
 }
 
 func (h *entryHandle) Close() error {
+	if h == nil {
+		return nil
+	}
+
 	close(h.done)
 	return nil
 }
@@ -103,12 +115,20 @@ func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, rep
 // background goroutines that watch a log entry and possibly update it have
 // exited.
 func (l *Logger) Flush() {
+	if l == nil {
+		return
+	}
+
 	close(l.handles)
 	<-l.done
 }
 
 // Log redacts secrets from the given log entry and stores it.
 func (l *Logger) Log(logEntry *workerutil.ExecutionLogEntry) *entryHandle {
+	if l == nil {
+		return nil
+	}
+
 	handle := &entryHandle{logEntry: *logEntry, replacer: l.replacer, buf: &bytes.Buffer{}, done: make(chan struct{})}
 	l.handles <- handle
 	return handle
