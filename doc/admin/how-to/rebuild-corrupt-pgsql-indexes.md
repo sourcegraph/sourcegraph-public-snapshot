@@ -11,7 +11,7 @@ However, those customers that had already upgraded need assistance in fixing the
 
 ## Recovery guide
 
-### Step 1: Stop all Sourcegraph services / pods
+### Step 1: Stop all Sourcegraph services except the databases
 
 Depending on deployment type, you'll have to run different commands.
 We just need to ensure there's nothing writing or reading from/to the database before performing the next steps.
@@ -225,7 +225,7 @@ where
     and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
 order by stmt;
 
--- This is the output of the above query for the sourcegraph db.
+-- This is the output of the above query for the codeintel db.
 -- We execute each of these sequentially until the first failure, most likely
 -- due to duplicates, at which point we must delete those duplicates before
 -- trying again. You can find an example duplicate deletion query at the
