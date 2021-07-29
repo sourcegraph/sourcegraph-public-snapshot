@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -14,20 +15,35 @@ import (
 // TODO - document this file
 
 type orphanedVMJanitor struct {
-	prefix string
-	names  *NameSet
+	prefix  string
+	names   *NameSet
+	metrics *metrics
 }
 
 var _ goroutine.Handler = &orphanedVMJanitor{}
 
-func NewOrphanedVMJanitor(prefix string, names *NameSet, interval time.Duration) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, newOrphanedVMJanitor(prefix, names))
+func NewOrphanedVMJanitor(
+	prefix string,
+	names *NameSet,
+	interval time.Duration,
+	metrics *metrics,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, newOrphanedVMJanitor(
+		prefix,
+		names,
+		metrics,
+	))
 }
 
-func newOrphanedVMJanitor(prefix string, names *NameSet) *orphanedVMJanitor {
+func newOrphanedVMJanitor(
+	prefix string,
+	names *NameSet,
+	metrics *metrics,
+) *orphanedVMJanitor {
 	return &orphanedVMJanitor{
-		prefix: prefix,
-		names:  names,
+		prefix:  prefix,
+		names:   names,
+		metrics: metrics,
 	}
 }
 
@@ -43,11 +59,16 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 	}
 
 	for name, id := range runningVMs {
-		if _, ok := expectedMap[name]; !ok {
-			if err := removeVM(ctx, id); err != nil {
-				// TODO
-				log15.Error("FAILED AGAIN BOZO")
-			}
+		if _, ok := expectedMap[name]; ok {
+			continue
+		}
+
+		log15.Info("Removing orphaned vm", "id", id, "error", err)
+
+		if removeErr := removeVM(ctx, id); removeErr != nil {
+			err = multierror.Append(err, removeErr)
+		} else {
+			j.metrics.numVMsRemoved.Inc()
 		}
 	}
 
@@ -55,6 +76,7 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 }
 
 func (j *orphanedVMJanitor) HandleError(err error) {
+	j.metrics.numErrors.Inc()
 	log15.Error("Failed to clean up orphaned vms", "err", err)
 }
 

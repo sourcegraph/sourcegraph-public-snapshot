@@ -55,7 +55,12 @@ func main() {
 		worker.NewWorker(nameSet, config.APIWorkerOptions(nil), observationContext),
 	}
 	if config.UseFirecracker {
-		routines = append(routines, janitor.NewOrphanedVMJanitor(config.VMPrefix, nameSet, config.CleanupTaskInterval))
+		routines = append(routines, janitor.NewOrphanedVMJanitor(
+			config.VMPrefix,
+			nameSet,
+			config.CleanupTaskInterval,
+			janitor.NewMetrics(observationContext),
+		))
 	}
 	if !config.DisableHealthServer {
 		routines = append(routines, httpserver.NewFromAddr(fmt.Sprintf(":%d", config.HealthServerPort), &http.Server{
