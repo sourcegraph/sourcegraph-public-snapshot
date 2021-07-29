@@ -30,6 +30,13 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	}
 }
 
+func (s *Store) WithDB(other dbutil.DB) *Store {
+	return &Store{
+		Store:      s.Store.With(basestore.NewWithDB(other, sql.TxOptions{})),
+		operations: s.operations,
+	}
+}
+
 func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return s.transact(ctx)
 }
