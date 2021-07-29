@@ -3,6 +3,7 @@ package janitor
 import (
 	"context"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 
@@ -12,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-// TODO - document this file
-
 type orphanedVMJanitor struct {
 	prefix  string
 	names   *NameSet
@@ -22,6 +21,8 @@ type orphanedVMJanitor struct {
 
 var _ goroutine.Handler = &orphanedVMJanitor{}
 
+// NewOrphanedVMJanitor returns a background routine that periodically removes all VMs
+// on the host that are not known by the worker running within this executor instance.
 func NewOrphanedVMJanitor(
 	prefix string,
 	names *NameSet,
@@ -53,19 +54,10 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 		return err
 	}
 
-	expectedMap := map[string]struct{}{}
-	for _, vm := range j.names.Slice() {
-		expectedMap[vm] = struct{}{}
-	}
-
-	for name, id := range runningVMs {
-		if _, ok := expectedMap[name]; ok {
-			continue
-		}
-
+	for _, id := range findOrphanedVMs(runningVMs, j.names.Slice()) {
 		log15.Info("Removing orphaned vm", "id", id, "error", err)
 
-		if removeErr := removeVM(ctx, id); removeErr != nil {
+		if removeErr := exec.CommandContext(ctx, "ignite", "rm", "-f", id).Run(); removeErr != nil {
 			err = multierror.Append(err, removeErr)
 		} else {
 			j.metrics.numVMsRemoved.Inc()
@@ -80,27 +72,49 @@ func (j *orphanedVMJanitor) HandleError(err error) {
 	log15.Error("Failed to clean up orphaned vms", "err", err)
 }
 
-// TODO - document, test, rename
+// currentlyRunningVMs returns the set of VMs existant on the host as a map from VM names
+// to VM identifiers. VMs starting with a prefix distinct from the given prefix are ignored.
 func currentlyRunningVMs(ctx context.Context, prefix string) (map[string]string, error) {
-	// TODO - abstract
 	cmd := exec.CommandContext(ctx, "ignite", "ps", "-a", "-t", "{{ .Name }}:{{ .UID }}")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
 
+	return parseIgniteList(prefix, string(out)), nil
+}
+
+// parseIgniteList parses the output from the `ignite ps` invocation in currentlyRunningVMs.
+// VMs starting with a prefix distinct from the given prefix are ignored.
+func parseIgniteList(prefix, out string) map[string]string {
 	activeVMsMap := map[string]string{}
-	for _, line := range strings.Split(string(out), "\n") {
+	for _, line := range strings.Split(out, "\n") {
 		if parts := strings.Split(line, ":"); len(parts) == 2 && strings.HasPrefix(parts[0], prefix) {
 			activeVMsMap[parts[0]] = parts[1]
 		}
 	}
 
-	return activeVMsMap, nil
+	return activeVMsMap
 }
 
-// TODO - document, test, rename
-func removeVM(ctx context.Context, id string) error {
-	// TODO - abstract
-	return exec.CommandContext(ctx, "ignite", "rm", "-f", id).Run()
+// findOrphanedVMs returns the set of VM identifiers present in running VMs but
+// absent from expected VMs. The runningVMs argument is expected to be a map from
+// VM names to VM identifiers.
+func findOrphanedVMs(runningVMs map[string]string, expectedVMs []string) []string {
+	expectedMap := make(map[string]struct{}, len(expectedVMs))
+	for _, vm := range expectedVMs {
+		expectedMap[vm] = struct{}{}
+	}
+
+	ids := make([]string, 0, len(runningVMs))
+	for name, id := range runningVMs {
+		if _, ok := expectedMap[name]; ok {
+			continue
+		}
+
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	return ids
 }
