@@ -11,6 +11,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -48,8 +49,18 @@ func main() {
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
+	nameSet := janitor.NewNameSet()
+
 	routines := []goroutine.BackgroundRoutine{
-		worker.NewWorker(config.APIWorkerOptions(nil), observationContext),
+		worker.NewWorker(nameSet, config.APIWorkerOptions(nil), observationContext),
+	}
+	if config.UseFirecracker {
+		routines = append(routines, janitor.NewOrphanedVMJanitor(
+			config.VMPrefix,
+			nameSet,
+			config.CleanupTaskInterval,
+			janitor.NewMetrics(observationContext),
+		))
 	}
 	if !config.DisableHealthServer {
 		routines = append(routines, httpserver.NewFromAddr(fmt.Sprintf(":%d", config.HealthServerPort), &http.Server{
