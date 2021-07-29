@@ -151,13 +151,14 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
 
             const mode = getModeFromPath(filePath)
 
-            // Redirect OpenGrok-style line number hashes (#123) to query parameter (?L123)
-            const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)$/)
+            // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
+            const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
             if (objectType === 'blob' && hashLineNumberMatch) {
-                const lineNumber = parseInt(hashLineNumberMatch[1], 10)
+                const startLineNumber = parseInt(hashLineNumberMatch[1], 10)
+                const endLineNumber = hashLineNumberMatch[2] ? parseInt(hashLineNumberMatch[2].slice(1), 10) : undefined
                 const url = appendLineRangeQueryParameter(
                     window.location.pathname + window.location.search,
-                    `L${lineNumber}`
+                    `L${startLineNumber}` + (endLineNumber ? `-${endLineNumber}` : '')
                 )
                 return <Redirect to={url} />
             }

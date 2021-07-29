@@ -91,7 +91,7 @@ describe('Blob viewer', () => {
     })
 
     describe('line number redirects', () => {
-        it('should redirect from line number hash to query parameter', async () => {
+        beforeEach(() => {
             testContext.overrideGraphQL({
                 ...commonBlobGraphQlResults,
                 Blob: () => ({
@@ -128,10 +128,18 @@ describe('Blob viewer', () => {
                     },
                 }),
             })
+        })
 
+        it('should redirect from line number hash to query parameter', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#2`)
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L2`)
+        })
+
+        it('should redirect from line range hash to query parameter', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#1-3`)
+            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L1-3`)
         })
     })
 
