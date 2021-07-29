@@ -15,6 +15,8 @@ Batch Changes is compatible with the following code hosts:
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
 * Bitbucket Server 5.7 and later
 
+In order for Sourcegraph to interface with these, admins and users must first [configure credentials](../how-tos/configuring_credentials.md) for each relevant code host.
+
 ### Batch Changes effect on code host rate limits
 
 For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open batch changes, this can result in outdated changesets as they await their turn in the update queue.
