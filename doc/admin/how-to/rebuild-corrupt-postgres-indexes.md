@@ -1,0 +1,326 @@
+# How to rebuild corrupt Postgres indexes after upgrading to 3.30 or 3.30.1
+
+## Background
+
+The 3.30 release introduced a `pgsql` and `codeinteldb` base image change from debian to alpine which changed the default OS locale.
+This caused corruption in indexes that have collatable key columns (e.g. any index with a `text` column). Read more about this here: https://postgresql.verite.pro/blog/2018/08/27/glibc-upgrade.html
+
+After we found the root-cause of the [issues many customers were seeing](https://github.com/sourcegraph/sourcegraph/issues/23288), we cut [a patch release](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md#3303) that reverted the images to be based on debian, buying us time to change the alpine based version of the images to [reindex affected indexes on startup, before accepting new connections](https://github.com/sourcegraph/sourcegraph/issues/23310).
+
+However, those customers that had already upgraded need assistance in fixing their already corrupt databases. Below is a guide to do so.
+
+## Recovery guide
+
+### Step 1: Stop all Sourcegraph services except the databases
+
+Depending on deployment type, you'll have to run different commands.
+We just need to ensure there's nothing writing or reading from/to the database before performing the next steps.
+
+### Step 2: Rebuild indexes in the main sourcegraph db
+
+Connect to the db. In k8s, that can be done with port-forwarding.
+
+```
+kubectl port-forward svc/pgsql 3333:5432
+```
+
+Follow these steps:
+
+```sql
+-- This query lists all indexes in the database, including catalogue indexes,
+-- that have key columns of collatable types. In other words, it lists all indexes
+-- that need to be rebuilt. You don't need to run this query since we have done that
+-- for you, with the output below.
+select
+    distinct('reindex (verbose) index ' || i.relname || ';') as stmt
+from
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a
+where
+    t.oid = ix.indrelid
+    and i.oid = ix.indexrelid
+    and a.attrelid = t.oid
+    and a.attnum = ANY(ix.indkey)
+    and t.relkind = 'r'
+    and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
+order by stmt;
+
+-- This is the output of the above query for the sourcegraph db.
+-- We execute each of these sequentially until the first failure, most likely
+-- due to duplicates, at which point we must delete those duplicates before
+-- trying again. You can find an example duplicate deletion query at the
+-- bottom of this file. After deleting those duplicates, just resume the index
+-- rebuilding from where we left off, commenting out or deleting the previouse
+-- reindex statements.
+
+reindex (verbose) index batch_changes_site_credentials_unique;
+reindex (verbose) index batch_spec_executions_rand_id;
+reindex (verbose) index batch_specs_rand_id;
+reindex (verbose) index changeset_events_changeset_id_kind_key_unique;
+reindex (verbose) index changeset_jobs_bulk_group_idx;
+reindex (verbose) index changeset_jobs_state_idx;
+reindex (verbose) index changeset_specs_external_id;
+reindex (verbose) index changeset_specs_head_ref;
+reindex (verbose) index changeset_specs_rand_id;
+reindex (verbose) index changeset_specs_title;
+reindex (verbose) index changesets_external_state_idx;
+reindex (verbose) index changesets_external_title_idx;
+reindex (verbose) index changesets_publication_state_idx;
+reindex (verbose) index changesets_reconciler_state_idx;
+reindex (verbose) index changesets_repo_external_id_unique;
+reindex (verbose) index discussion_mail_reply_tokens_pkey;
+reindex (verbose) index discussion_threads_target_repo_repo_id_path_idx;
+reindex (verbose) index event_logs_anonymous_user_id;
+reindex (verbose) index event_logs_name;
+reindex (verbose) index event_logs_source;
+reindex (verbose) index external_service_sync_jobs_state_idx;
+reindex (verbose) index feature_flag_overrides_unique_org_flag;
+reindex (verbose) index feature_flag_overrides_unique_user_flag;
+reindex (verbose) index feature_flags_pkey;
+reindex (verbose) index gitserver_repos_last_error_idx;
+reindex (verbose) index insights_query_runner_jobs_state_btree;
+reindex (verbose) index kind_cloud_default;
+reindex (verbose) index lsif_packages_scheme_name_version_dump_id;
+reindex (verbose) index lsif_references_scheme_name_version_dump_id;
+reindex (verbose) index lsif_uploads_repository_id_commit_root_indexer;
+reindex (verbose) index lsif_uploads_state;
+reindex (verbose) index names_pkey;
+reindex (verbose) index orgs_name;
+reindex (verbose) index pg_am_name_index;
+reindex (verbose) index pg_attribute_relid_attnam_index;
+reindex (verbose) index pg_authid_rolname_index;
+reindex (verbose) index pg_class_relname_nsp_index;
+reindex (verbose) index pg_collation_name_enc_nsp_index;
+reindex (verbose) index pg_constraint_conname_nsp_index;
+reindex (verbose) index pg_constraint_conrelid_contypid_conname_index;
+reindex (verbose) index pg_conversion_name_nsp_index;
+reindex (verbose) index pg_database_datname_index;
+reindex (verbose) index pg_enum_typid_label_index;
+reindex (verbose) index pg_event_trigger_evtname_index;
+reindex (verbose) index pg_extension_name_index;
+reindex (verbose) index pg_foreign_data_wrapper_name_index;
+reindex (verbose) index pg_foreign_server_name_index;
+reindex (verbose) index pg_language_name_index;
+reindex (verbose) index pg_namespace_nspname_index;
+reindex (verbose) index pg_opclass_am_name_nsp_index;
+reindex (verbose) index pg_operator_oprname_l_r_n_index;
+reindex (verbose) index pg_opfamily_am_name_nsp_index;
+reindex (verbose) index pg_pltemplate_name_index;
+reindex (verbose) index pg_policy_polrelid_polname_index;
+reindex (verbose) index pg_proc_proname_args_nsp_index;
+reindex (verbose) index pg_publication_pubname_index;
+reindex (verbose) index pg_replication_origin_roname_index;
+reindex (verbose) index pg_rewrite_rel_rulename_index;
+reindex (verbose) index pg_seclabel_object_index;
+reindex (verbose) index pg_shseclabel_object_index;
+reindex (verbose) index pg_statistic_ext_name_index;
+reindex (verbose) index pg_subscription_subname_index;
+reindex (verbose) index pg_tablespace_spcname_index;
+reindex (verbose) index pg_trigger_tgrelid_tgname_index;
+reindex (verbose) index pg_ts_config_cfgname_index;
+reindex (verbose) index pg_ts_dict_dictname_index;
+reindex (verbose) index pg_ts_parser_prsname_index;
+reindex (verbose) index pg_ts_template_tmplname_index;
+reindex (verbose) index pg_type_typname_nsp_index;
+reindex (verbose) index phabricator_repos_repo_name_key;
+reindex (verbose) index registry_extension_releases_registry_extension_id;
+reindex (verbose) index registry_extension_releases_version;
+reindex (verbose) index registry_extensions_publisher_name;
+reindex (verbose) index repo_external_unique_idx;
+reindex (verbose) index repo_name_unique;
+reindex (verbose) index repo_pending_permissions_perm_unique;
+reindex (verbose) index repo_permissions_perm_unique;
+reindex (verbose) index repo_uri_idx;
+reindex (verbose) index search_context_repos_search_context_id_repo_id_revision_unique;
+reindex (verbose) index search_contexts_name_namespace_org_id_unique;
+reindex (verbose) index search_contexts_name_namespace_user_id_unique;
+reindex (verbose) index search_contexts_name_without_namespace_unique;
+reindex (verbose) index security_event_logs_anonymous_user_id;
+reindex (verbose) index security_event_logs_name;
+reindex (verbose) index security_event_logs_source;
+reindex (verbose) index user_credentials_domain_user_id_external_service_type_exter_key;
+reindex (verbose) index user_emails_no_duplicates_per_user;
+reindex (verbose) index user_emails_unique_verified_email;
+reindex (verbose) index user_external_accounts_account;
+reindex (verbose) index user_pending_permissions_service_perm_object_unique;
+reindex (verbose) index user_permissions_perm_object_unique;
+reindex (verbose) index users_billing_customer_id;
+reindex (verbose) index users_username;
+reindex (verbose) index versions_pkey;
+
+-- Example of a duplicate deletion query for the repo table that needs
+-- to be adapated to the specific table we need to remove duplicates in.
+--
+-- We must disable index scans before deleting so that we avoid
+-- using the corrupt indexes to find the rows to delete. The database then
+-- does a sequential scan, which is what we want in order to accomplish that.
+
+begin;
+
+set enable_indexscan = 'off';
+set enable_bitmapscan = 'off';
+
+delete from repo t1
+using repo t2
+where t1.ctid > t2.ctid
+and (
+  t1.name = t2.name or
+  (
+    t1.external_service_type = t2.external_service_type and
+    t1.external_service_id = t2.external_service_id and
+    t1.external_id = t2.external_id
+  )
+)
+
+commit;
+
+-- At the very end of the index rebuilding process, as a last sanity check,
+-- we use the amcheck extension to verify there are no corrupt indexes.
+
+create extension amcheck;
+
+select bt_index_parent_check(c.oid, true), c.relname, c.relpages
+from pg_index i
+join pg_opclass op ON i.indclass[0] = op.oid
+join pg_am am ON op.opcmethod = am.oid
+join pg_class c ON i.indexrelid = c.oid
+join pg_namespace n ON c.relnamespace = n.oid
+where am.amname = 'btree'
+-- Don't check temp tables, which may be from another session:
+and c.relpersistence != 't'
+-- Function may throw an error when this is omitted:
+and i.indisready AND i.indisvalid;
+```
+
+### Step 3: Rebuild indexes in the codeintel db
+
+Connect to the db. In k8s, that can be done with port-forwarding.
+
+```
+kubectl port-forward svc/codeintel-db 3333:5432
+```
+
+Follow these steps:
+
+```sql
+-- This query lists all indexes in the database, including catalogue indexes,
+-- that have key columns of collatable types. In other words, it lists all indexes
+-- that need to be rebuilt. You don't need to run this query since we have done that
+-- for you, with the output below.
+select
+    distinct('reindex (verbose) index ' || i.relname || ';') as stmt
+from
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a
+where
+    t.oid = ix.indrelid
+    and i.oid = ix.indexrelid
+    and a.attrelid = t.oid
+    and a.attnum = ANY(ix.indkey)
+    and t.relkind = 'r'
+    and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
+order by stmt;
+
+-- This is the output of the above query for the codeintel db.
+-- We execute each of these sequentially until the first failure, most likely
+-- due to duplicates, at which point we must delete those duplicates before
+-- trying again. You can find an example duplicate deletion query at the
+-- bottom of this file. After deleting those duplicates, just resume the index
+-- rebuilding from where we left off, commenting out or deleting the previouse
+-- reindex statements.
+
+reindex (verbose) index lsif_data_definitions_pkey;
+reindex (verbose) index lsif_data_documentation_mappings_pkey;
+reindex (verbose) index lsif_data_documentation_pages_pkey;
+reindex (verbose) index lsif_data_documentation_path_info_pkey;
+reindex (verbose) index lsif_data_documents_pkey;
+reindex (verbose) index lsif_data_references_pkey;
+reindex (verbose) index pg_am_name_index;
+reindex (verbose) index pg_attribute_relid_attnam_index;
+reindex (verbose) index pg_authid_rolname_index;
+reindex (verbose) index pg_class_relname_nsp_index;
+reindex (verbose) index pg_collation_name_enc_nsp_index;
+reindex (verbose) index pg_constraint_conname_nsp_index;
+reindex (verbose) index pg_constraint_conrelid_contypid_conname_index;
+reindex (verbose) index pg_conversion_name_nsp_index;
+reindex (verbose) index pg_database_datname_index;
+reindex (verbose) index pg_enum_typid_label_index;
+reindex (verbose) index pg_event_trigger_evtname_index;
+reindex (verbose) index pg_extension_name_index;
+reindex (verbose) index pg_foreign_data_wrapper_name_index;
+reindex (verbose) index pg_foreign_server_name_index;
+reindex (verbose) index pg_language_name_index;
+reindex (verbose) index pg_namespace_nspname_index;
+reindex (verbose) index pg_opclass_am_name_nsp_index;
+reindex (verbose) index pg_operator_oprname_l_r_n_index;
+reindex (verbose) index pg_opfamily_am_name_nsp_index;
+reindex (verbose) index pg_pltemplate_name_index;
+reindex (verbose) index pg_policy_polrelid_polname_index;
+reindex (verbose) index pg_proc_proname_args_nsp_index;
+reindex (verbose) index pg_publication_pubname_index;
+reindex (verbose) index pg_replication_origin_roname_index;
+reindex (verbose) index pg_rewrite_rel_rulename_index;
+reindex (verbose) index pg_seclabel_object_index;
+reindex (verbose) index pg_shseclabel_object_index;
+reindex (verbose) index pg_statistic_ext_name_index;
+reindex (verbose) index pg_subscription_subname_index;
+reindex (verbose) index pg_tablespace_spcname_index;
+reindex (verbose) index pg_trigger_tgrelid_tgname_index;
+reindex (verbose) index pg_ts_config_cfgname_index;
+reindex (verbose) index pg_ts_dict_dictname_index;
+reindex (verbose) index pg_ts_parser_prsname_index;
+reindex (verbose) index pg_ts_template_tmplname_index;
+reindex (verbose) index pg_type_typname_nsp_index;
+
+-- Example of a duplicate deletion query for the repo table that needs
+-- to be adapated to the specific table we need to remove duplicates in.
+--
+-- We must disable index scans before deleting so that we avoid
+-- using the corrupt indexes to find the rows to delete. The database then
+-- does a sequential scan, which is what we want in order to accomplish that.
+
+begin;
+
+set enable_indexscan = 'off';
+set enable_bitmapscan = 'off';
+
+delete from repo t1
+using repo t2
+where t1.ctid > t2.ctid
+and (
+  t1.name = t2.name or
+  (
+    t1.external_service_type = t2.external_service_type and
+    t1.external_service_id = t2.external_service_id and
+    t1.external_id = t2.external_id
+  )
+)
+
+commit;
+
+-- At the very end of the index rebuilding process, as a last sanity check,
+-- we use the amcheck extension to verify there are no corrupt indexes.
+
+create extension amcheck;
+
+select bt_index_parent_check(c.oid, true), c.relname, c.relpages
+from pg_index i
+join pg_opclass op ON i.indclass[0] = op.oid
+join pg_am am ON op.opcmethod = am.oid
+join pg_class c ON i.indexrelid = c.oid
+join pg_namespace n ON c.relnamespace = n.oid
+where am.amname = 'btree'
+-- Don't check temp tables, which may be from another session:
+and c.relpersistence != 't'
+-- Function may throw an error when this is omitted:
+and i.indisready AND i.indisvalid;
+
+```
+
+### Step 4: Start Sourcegraph services again
+
+After the indexes have been rebuilt and the index integrity query doesn't return any errors, we can start all Sourcegraph services again.
