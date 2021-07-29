@@ -323,4 +323,4 @@ and i.indisready AND i.indisvalid;
 
 ### Step 4: Start Sourcegraph services again
 
-After the indexes have been rebuilt and the index integrity query doesn't return an errors, we can start all Sourcegraph services again.
+After the indexes have been rebuilt and the index integrity query doesn't return any errors, we can start all Sourcegraph services again.
