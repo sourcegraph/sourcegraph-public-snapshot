@@ -187,7 +187,7 @@ join pg_opclass op ON i.indclass[0] = op.oid
 join pg_am am ON op.opcmethod = am.oid
 join pg_class c ON i.indexrelid = c.oid
 join pg_namespace n ON c.relnamespace = n.oid
-where am.amname = 'btree' AND (n.nspname = 'public')
+where am.amname = 'btree'
 -- Don't check temp tables, which may be from another session:
 and c.relpersistence != 't'
 -- Function may throw an error when this is omitted:
@@ -313,7 +313,7 @@ join pg_opclass op ON i.indclass[0] = op.oid
 join pg_am am ON op.opcmethod = am.oid
 join pg_class c ON i.indexrelid = c.oid
 join pg_namespace n ON c.relnamespace = n.oid
-where am.amname = 'btree' AND (n.nspname = 'public')
+where am.amname = 'btree'
 -- Don't check temp tables, which may be from another session:
 and c.relpersistence != 't'
 -- Function may throw an error when this is omitted:
