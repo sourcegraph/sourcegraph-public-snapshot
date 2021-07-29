@@ -2,8 +2,8 @@ import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ConnectionNodesState, ConnectionProps } from './ConnectionNodes'
-import { Connection } from './ConnectionType'
+import { ConnectionNodesState, ConnectionProps } from '../ConnectionNodes'
+import { Connection } from '../ConnectionType'
 
 interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = {}>
     extends Pick<
@@ -23,7 +23,11 @@ interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = 
     totalCount: number | null
 }
 
-export const ConnectionNodesSummary = <C extends Connection<N>, N, NP = {}, HP = {}>({
+/**
+ * FilteredConnection summary content.
+ * Used to configure a suitable summary from a specific connection response.
+ */
+export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>({
     noSummaryIfAllNodesVisible,
     connection,
     hasNextPage,
