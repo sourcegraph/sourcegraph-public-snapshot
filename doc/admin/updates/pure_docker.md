@@ -10,7 +10,7 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## 3.29 -> 3.30.3
 
-**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com) for assistance.
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
 
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)

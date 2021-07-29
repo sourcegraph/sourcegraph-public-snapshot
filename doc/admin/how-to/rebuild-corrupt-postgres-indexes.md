@@ -1,17 +1,6 @@
-# How to rebuild corrupt Postgres indexes after upgrading to 3.30 or 3.30.1
+# How to rebuild corrupt Postgres indexes
 
-## Background
-
-The 3.30 release introduced a `pgsql` and `codeinteldb` base image change from debian to alpine which changed the default OS locale.
-This caused corruption in indexes that have collatable key columns (e.g. any index with a `text` column). Read more about this here: https://postgresql.verite.pro/blog/2018/08/27/glibc-upgrade.html
-
-After we found the root-cause of the [issues many customers were seeing](https://github.com/sourcegraph/sourcegraph/issues/23288), we cut [a patch release](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md#3303) that reverted the images to be based on debian, buying us time to change the alpine based version of the images to [reindex affected indexes on startup, before accepting new connections](https://github.com/sourcegraph/sourcegraph/issues/23310).
-
-However, those customers that had already upgraded need assistance in fixing their already corrupt databases. Below is a guide to do so.
-
-## Recovery guide
-
-### Rebuild indexes in the main sourcegraph db
+## Rebuild indexes in the main sourcegraph db
 
 We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
 
@@ -173,7 +162,7 @@ and c.relpersistence != 't'
 and i.indisready AND i.indisvalid;
 ```
 
-### Rebuild indexes in the codeintel db
+## Rebuild indexes in the codeintel db
 
 We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
 
