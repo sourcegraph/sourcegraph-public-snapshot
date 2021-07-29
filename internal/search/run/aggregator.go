@@ -100,6 +100,13 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 		tr.Finish()
 	}()
 
+	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
+		// Service structural search via SearchFilesInRepos when we have
+		// an explicit `count` value that differs from the default value
+		// (e.g., user sets higher counts).
+		return unindexed.SearchFilesInRepos(ctx, args, a)
+	}
+
 	// For structural search with default limits we retry if we get no results.
 	fileMatches, stats, err := unindexed.SearchFilesInReposBatch(ctx, args)
 
