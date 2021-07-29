@@ -78,19 +78,19 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 		return nil, err
 	}
 
-	mapped := make(map[string][]types.InsightViewSeries)
+	mapped := make(map[string][]types.InsightViewSeries, len(viewSeries))
 	for _, series := range viewSeries {
 		mapped[series.UniqueID] = append(mapped[series.UniqueID], series)
 	}
 
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
-		var temp types.Insight
-		temp.UniqueID = seriesSet[0].UniqueID
-		temp.Title = seriesSet[0].Title
-		temp.Description = seriesSet[0].Description
-		temp.Series = seriesSet
-		results = append(results, temp)
+		results = append(results, types.Insight{
+			UniqueID:    seriesSet[0].UniqueID,
+			Title:       seriesSet[0].Title,
+			Description: seriesSet[0].Description,
+			Series:      seriesSet,
+		})
 	}
 
 	return results, nil
