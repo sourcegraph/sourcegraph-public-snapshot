@@ -94,13 +94,19 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 	}
 
-	uniqueName, err := uuid.NewRandom()
+	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
-	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, uniqueName.String())
+	
+	// Construct a unique name for the VM prefixed by something that differentiates
+	// VMs created by this executor instance and another one that happens to run on
+	// the same host (as is the case in dev).
+	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, vmNameSuffix.String())
 
-	// TODO - document
+	// Before we setup a VM (and after we teardown), mark the name as in-use so that
+	// the janitor process cleaning up orphaned VMs doesn't try to stop/remvoe the one 
+	// we're using for the current job.
 	h.nameSet.Add(name)
 	defer h.nameSet.Remove(name)
 
