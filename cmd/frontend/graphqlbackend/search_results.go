@@ -21,11 +21,13 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -1382,10 +1384,13 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, args *search.TextParameters) (_ *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, args *search.TextParameters) (res *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
+		if res != nil {
+			tr.LazyPrintf("matches=%d %s", len(res.Matches), &res.Stats)
+		}
 		tr.Finish()
 	}()
 
@@ -1443,6 +1448,21 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// search results with resolved repos.
 	if args.Mode == search.ZoektGlobalSearch {
 		argsIndexed := *args
+
+		// Get all private repos that are accessible by the current actor.
+		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+			OnlyPrivate:  true,
+			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+			OnlyForks:    args.RepoOptions.OnlyForks,
+			NoForks:      args.RepoOptions.NoForks,
+			OnlyArchived: args.RepoOptions.OnlyArchived,
+			NoArchived:   args.RepoOptions.NoArchived,
+		}); err != nil {
+			tr.LazyPrintf("error resolving private repos: %v", err)
+		} else {
+			argsIndexed.UserPrivateRepos = res
+		}
+
 		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1463,6 +1483,13 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return alert.wrapResults(), err
+		}
+		// Don't surface context errors to the user.
+		if errors.Is(err, context.Canceled) {
+			tr.LazyPrintf("context canceled during repo resolution: %v", err)
+			optionalWg.Wait()
+			requiredWg.Wait()
+			return r.toSearchResults(ctx, agg)
 		}
 		return nil, err
 	}
@@ -1507,7 +1534,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	}
 
-	if args.ResultTypes.Has(result.TypeSymbol) {
+	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
 		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		wg.Add(1)
 		goroutine.Go(func() {
@@ -1562,9 +1589,19 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	timer.Stop()
 
-	// We have to call get once all waitgroups are done since it relies on
-	// collecting from the streams.
+	return r.toSearchResults(ctx, agg)
+}
+
+// toSearchResults converts an Aggregator to SearchResults.
+//
+// toSearchResults relies on all WaitGroups being done since it relies on
+// collecting from the streams.
+func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregator) (*SearchResults, error) {
 	matches, common, aggErrs := agg.Get()
+
+	if aggErrs == nil {
+		return nil, errors.New("aggErrs should never be nil")
+	}
 
 	ao := alertObserver{
 		Inputs:     r.SearchInputs,
@@ -1574,8 +1611,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		ao.Error(ctx, err)
 	}
 	alert, err := ao.Done(&common)
-
-	tr.LazyPrintf("matches=%d %s", len(matches), &common)
 
 	r.sortResults(matches)
 

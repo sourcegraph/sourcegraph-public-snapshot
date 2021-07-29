@@ -17,14 +17,6 @@ import (
 
 var CoursierBinary = "coursier"
 
-func ListArtifactIDs(ctx context.Context, config *schema.JVMPackagesConnection, groupID string) ([]string, error) {
-	return runCoursierCommand(ctx, config, "complete", groupID+":")
-}
-
-func ListVersions(ctx context.Context, config *schema.JVMPackagesConnection, groupID, artifactID string) ([]string, error) {
-	return runCoursierCommand(ctx, config, "complete", groupID+":"+artifactID+":")
-}
-
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) ([]string, error) {
 	if dependency.IsJdk() {
 		output, err := runCoursierCommand(
@@ -52,8 +44,13 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 	return runCoursierCommand(
 		ctx,
 		config,
-		"fetch", "--intransitive",
-		dependency.CoursierSyntax(),
+		// NOTE: make sure to update the method `coursierScript` in
+		// vcs_syncer_jvm_packages_test.go if you change the arguments
+		// here. The test case assumes that the "--classifier sources"
+		// arguments appears at a specific index.
+		"fetch",
+		"--quiet", "--quiet",
+		"--intransitive", dependency.CoursierSyntax(),
 		"--classifier", "sources",
 	)
 }
@@ -62,29 +59,29 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 	return runCoursierCommand(
 		ctx,
 		config,
-		"fetch", "--intransitive",
-		dependency.CoursierSyntax(),
+		// NOTE: make sure to update the method `coursierScript` in
+		// vcs_syncer_jvm_packages_test.go if you change the arguments
+		// here. The test case assumes that the "--classifier sources"
+		// arguments appears at a specific index.
+		"fetch",
+		"--quiet", "--quiet",
+		"--intransitive", dependency.CoursierSyntax(),
 	)
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (bool, error) {
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) bool {
 	if dependency.IsJdk() {
-		lines, err := runCoursierCommand(
-			ctx,
-			config,
-			"java-home",
-			"--jvm",
-			dependency.Version,
-		)
-		return len(lines) > 0, err
+		sources, err := FetchSources(ctx, config, dependency)
+		return err == nil && len(sources) == 1
 	}
-	versions, err := runCoursierCommand(
+	_, err := runCoursierCommand(
 		ctx,
 		config,
-		"complete",
-		dependency.CoursierSyntax(),
+		"resolve",
+		"--quiet", "--quiet",
+		"--intransitive", dependency.CoursierSyntax(),
 	)
-	return len(versions) > 0, err
+	return err == nil
 }
 
 func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) ([]string, error) {

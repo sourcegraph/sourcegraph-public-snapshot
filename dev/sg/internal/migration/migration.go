@@ -17,8 +17,8 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	"github.com/jackc/pgx/v4/stdlib"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/command"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -390,7 +390,7 @@ func getMigrationFilesFromGit(database db.Database, revision string) ([]string, 
 		return nil, err
 	}
 
-	output, err := command.RunGit("ls-tree", "--name-only", "-r", revision, baseDir)
+	output, err := run.GitCmd("ls-tree", "--name-only", "-r", revision, baseDir)
 	if err != nil {
 		return nil, err
 	}

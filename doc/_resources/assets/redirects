@@ -228,3 +228,6 @@
 
 /batch_changes/how-tos/configuring_user_credentials /batch_changes/how-tos/configuring_credentials 308
 /batch-changes/references/troubleshooting /batch_changes/references/troubleshooting 308
+
+/admin/install/docker-compose/update /admin/install/docker-compose/operations#upgrade 308
+/admin/install/docker-compose/configure /admin/install/docker-compose/operations#configure 308

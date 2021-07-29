@@ -85,6 +85,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
 				durationSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(tookSeconds)
 				firstResultSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(firstResultSeconds)
+				matchCount.WithLabelValues(group, qc.Name, c.clientType()).Set(float64(m.matchCount))
 
 				go func() {
 					select {

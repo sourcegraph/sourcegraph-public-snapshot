@@ -18,7 +18,6 @@ import {
     SearchContextInputProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
@@ -44,8 +43,7 @@ interface Props
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
         SearchContextInputProps,
-        OnboardingTourProps,
-        FeatureFlagProps {
+        OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

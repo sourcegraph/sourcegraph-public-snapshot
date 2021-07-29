@@ -9,6 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// defaultReferencesPageSize is the reference result page size when no limit is supplied in the
+// GraphQL layer. This is used as an approximation for an acceptable page size as we make multiple
+// references requests to discover references _not_ in the same file as the definition for API
+// docs.
+const defaultReferencesPageSize = 100
+
 // DocumentationReferences returns the list of source locations that reference the symbol found at
 // the given documentation path ID, if any.
 func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID string, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
@@ -39,7 +45,39 @@ func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID stri
 		if len(locations) > 0 {
 			location := locations[0]
 			r.path = location.Path
-			return r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, limit, rawCursor)
+
+			var (
+				references       = make([]AdjustedLocation, 0, limit)
+				inDefinitionFile []AdjustedLocation
+			)
+			for len(references) < limit {
+				var candidates []AdjustedLocation
+				candidates, rawCursor, err = r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, defaultReferencesPageSize, rawCursor)
+				if err != nil {
+					return nil, rawCursor, err
+				}
+				for _, candidate := range candidates {
+					isDefinitionFile := candidate.Dump.RepositoryID == r.repositoryID && candidate.Path == location.Path
+					isDefinition := isDefinitionFile && candidate.AdjustedRange == location.Range
+					if isDefinition {
+						// we never want the definition itself to show up as a reference.
+					} else if isDefinitionFile {
+						inDefinitionFile = append(inDefinitionFile, candidate)
+					} else {
+						references = append(references, candidate)
+					}
+				}
+				if len(candidates) == 0 || rawCursor == "" {
+					break // no more pages
+				}
+			}
+			if len(references) == 0 {
+				// If we found no references at all, we're willing to consider references in the
+				// definition file. Otherwise, we don't really want these as they make poor usage
+				// examples.
+				return inDefinitionFile, rawCursor, nil
+			}
+			return references[:limit], rawCursor, nil
 		}
 	}
 	return nil, "", nil

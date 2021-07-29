@@ -761,7 +761,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		s := makeTestServer(ctx, reposDir, remote, nil)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
-			cmd("sh", "-c", fmt.Sprintf("rm %s/HEAD", tmpDir))
+			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
+				t.Fatal(err)
+			}
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {

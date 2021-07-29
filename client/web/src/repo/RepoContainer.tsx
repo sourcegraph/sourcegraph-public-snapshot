@@ -36,6 +36,8 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
+import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -45,8 +47,15 @@ import { ActionItemsBarProps, useWebActionItems } from '../extensions/components
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps, searchQueryForRepoRevision } from '../search'
+import {
+    CaseSensitivityProps,
+    PatternTypeProps,
+    SearchContextProps,
+    searchQueryForRepoRevision,
+    SearchStreamingProps,
+} from '../search'
 import { QueryState } from '../search/helpers'
+import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -81,7 +90,11 @@ export interface RepoContainerContext
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
+        BatchChangesProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -94,7 +107,9 @@ export interface RepoContainerContext
 
     globbing: boolean
 
-    showBatchChanges: boolean
+    showSearchNotebook: boolean
+
+    isMacPlatform: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -118,7 +133,11 @@ interface RepoContainerProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        BreadcrumbsProps {
+        BreadcrumbsProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
+        BatchChangesProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -128,7 +147,8 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
-    showBatchChanges: boolean
+    showSearchNotebook: boolean
+    isMacPlatform: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'

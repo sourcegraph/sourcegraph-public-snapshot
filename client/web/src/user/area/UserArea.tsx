@@ -12,6 +12,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
+import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -80,6 +81,7 @@ interface UserAreaProps
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        BatchChangesProps,
         Omit<PatternTypeProps, 'setPatternType'>,
         UserExternalServicesOrRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
@@ -110,6 +112,7 @@ export interface UserAreaRouteContext
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        BatchChangesProps,
         Omit<PatternTypeProps, 'setPatternType'>,
         UserExternalServicesOrRepositoriesUpdateProps {
     /** The user area main URL. */
@@ -177,7 +180,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     }
 
     if (!user) {
-        throw new Error(`User not found: ${JSON.stringify(username)}`)
+        return <NotFoundPage />
     }
 
     const context: UserAreaRouteContext = {
@@ -209,11 +212,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
                                     )
                             )}
                             <Route key="hardcoded-key">
-                                <HeroPage
-                                    icon={MapSearchIcon}
-                                    title="404: Not Found"
-                                    subtitle="Sorry, the requested user page was not found."
-                                />
+                                <NotFoundPage />
                             </Route>
                         </Switch>
                     </React.Suspense>
@@ -222,3 +221,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
         </Page>
     )
 }
+
+const NotFoundPage: React.FunctionComponent<{}> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
+)

@@ -42,7 +42,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Adopting](adopt/index.md)
 - [Administration](admin/index.md)
   - [Install](admin/install/index.md)
-  - [Upgrade](admin/updates.md)
+  - [Upgrade](admin/updates/index.md)
   - [Configuration](admin/config/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)

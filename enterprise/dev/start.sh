@@ -42,12 +42,11 @@ export DISABLE_CNCF=notonmybox
 export EXECUTOR_FRONTEND_URL=http://localhost:3080
 export EXECUTOR_FRONTEND_USERNAME=executor
 export EXECUTOR_FRONTEND_PASSWORD=hunter2
-export EXECUTOR_QUEUE_URL=http://localhost:3191
 export EXECUTOR_USE_FIRECRACKER=false
 export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
-export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-worker executor-queue executor "
+export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-worker executor "
 export ENTERPRISE_COMMANDS="frontend repo-updater worker ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
 ./dev/start.sh "$@"
