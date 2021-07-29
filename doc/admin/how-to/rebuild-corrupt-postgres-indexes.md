@@ -146,7 +146,7 @@ and (
     t1.external_service_id = t2.external_service_id and
     t1.external_id = t2.external_id
   )
-)
+);
 
 commit;
 
@@ -246,7 +246,7 @@ and (
     t1.external_service_id = t2.external_service_id and
     t1.external_id = t2.external_id
   )
-)
+);
 
 commit;
 
