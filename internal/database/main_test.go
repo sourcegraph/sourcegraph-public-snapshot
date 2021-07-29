@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -62,6 +63,26 @@ func startEphemeralDB() (dsn string, _ func(), _ error) {
 		}
 	}()
 
+	// allows us to adjust the command before running. Use case is for logging
+	// and to sudo on CI.
+	cmdPreRun := func(c *exec.Cmd) {
+		if !testing.Verbose() {
+			return
+		}
+		if c.Stdout == nil {
+			c.Stdout = os.Stdout
+		}
+		if c.Stderr == nil {
+			c.Stderr = os.Stderr
+		}
+	}
+
+	// HACK: CI doesn't have postgres on the PATH. Hardcode
+	// it in until we update our agents.
+	if os.Getenv("CI") != "" {
+		os.Setenv("PATH", os.Getenv("PATH")+":/usr/lib/postgresql/12/bin")
+	}
+
 	// This only works if postgres is on PATH.
 	if _, err := exec.LookPath("postgres"); err != nil {
 		return "", nil, err
@@ -88,9 +109,32 @@ func startEphemeralDB() (dsn string, _ func(), _ error) {
 		"PGDATABASE=postgres",
 	)
 
+	// CI runs as root but postgres can't :O
+	if os.Getenv("CI") != "" && syscall.Getuid() == 0 {
+		sudo, err := exec.LookPath("sudo")
+		if err != nil {
+			return "", nil, err
+		}
+
+		// need the tmp dir to be owned by postgres user. Easier to use
+		// exec than looking up uid.
+		if err := exec.Command("chown", "postgres", pgHost).Run(); err != nil {
+			return "", nil, err
+		}
+
+		// need to wrap commands so they run as postgres user
+		old := cmdPreRun
+		cmdPreRun = func(c *exec.Cmd) {
+			c.Args = append([]string{"sudo", "-u", "postgres", "-E", c.Path}, c.Args[1:]...)
+			c.Path = sudo
+			old(c)
+		}
+	}
+
 	// Create the database without auth and without fsync.
 	cmd := exec.Command("initdb", pgData, "--nosync", "-E", "UNICODE", "--auth=trust")
 	cmd.Env = env
+	cmdPreRun(cmd)
 	if err := cmd.Run(); err != nil {
 		return "", nil, err
 	}
@@ -113,7 +157,6 @@ log_min_duration_statement = 0
 	// message saying it is ready.
 	cmd = exec.Command("postgres", "-D", pgData)
 	cmd.Env = env
-	cmd.Stdout = os.Stdout
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return "", nil, err
@@ -126,6 +169,7 @@ log_min_duration_statement = 0
 		r = io.TeeReader(r, os.Stderr)
 	}
 
+	cmdPreRun(cmd)
 	if err := cmd.Start(); err != nil {
 		return "", nil, err
 	}
