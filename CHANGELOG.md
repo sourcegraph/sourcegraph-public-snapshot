@@ -15,12 +15,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
-- For internal use only: `-text-only` now contains detailed information about task execution. [#571](https://github.com/sourcegraph/src-cli/pull/571)
-- As part of the above: the TUI of `src batch [preview|apply]` has been reworked and should now feel snappier.
-
 ### Fixed
 
 ### Removed
+
+## 3.30.2
+
+### Changed
+
+- For internal use only: `-text-only` now contains detailed information about task execution. [#571](https://github.com/sourcegraph/src-cli/pull/571)
+- As part of the above: the TUI of `src batch [preview|apply]` has been reworked and should now feel snappier.
 
 ## 3.30.1
 
