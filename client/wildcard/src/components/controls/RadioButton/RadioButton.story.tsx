@@ -43,21 +43,21 @@ export const Simple = () => {
                 checked={selected === 'first'}
                 onChange={handleChange}
                 label="First"
-                validationMessage="Hello world!"
+                message="Hello world!"
             />
             <RadioButton
                 value="second"
                 checked={selected === 'second'}
                 onChange={handleChange}
                 label="Second"
-                validationMessage="Hello world!"
+                message="Hello world!"
             />
             <RadioButton
                 value="third"
                 checked={selected === 'third'}
                 onChange={handleChange}
                 label="Third"
-                validationMessage="Hello world!"
+                message="Hello world!"
             />
         </>
     )
