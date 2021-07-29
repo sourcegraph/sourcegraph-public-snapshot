@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -14,6 +15,25 @@ import (
 )
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+
+// ensure you use LOCAL to clear after tx
+const ensureAuthzCondsFmt = `
+	SET ROLE sg_service;
+	SET LOCAL rls.bypass = %v;
+	SET LOCAL rls.user_id = %d;
+	SET LOCAL rls.use_permissions_user_mapping = %v;
+	SET LOCAL rls.permission = read;
+`
+
+func EnsureAuthzConds(ctx context.Context, tx dbutil.DB) error {
+	_, err := tx.ExecContext(ctx, fmt.Sprintf(
+		ensureAuthzCondsFmt,
+		false,
+		1,
+		true,
+	))
+	return err
+}
 
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
@@ -56,49 +76,7 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 }
 
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
-	const queryFmtString = `(
-    %s                            -- TRUE or FALSE to indicate whether to bypass the check
-OR  (
-	NOT %s                        -- Disregard unrestricted state when permissions user mapping is enabled
-	AND (
-		NOT repo.private          -- Happy path of non-private repositories
-		OR  EXISTS (              -- Each external service defines if repositories are unrestricted
-			SELECT
-			FROM external_services AS es
-			JOIN external_service_repos AS esr ON (
-					esr.external_service_id = es.id
-				AND esr.repo_id = repo.id
-				AND es.unrestricted = TRUE
-				AND es.deleted_at IS NULL
-			)
-			LIMIT 1
-		)
-	)
-)
-OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
-  SELECT 1
-  FROM external_service_repos
-  WHERE repo_id = repo.id
-  AND user_id = %s
-)
-OR (                             -- Restricted repositories require checking permissions
-	SELECT object_ids_ints @> INTSET(repo.id)
-	FROM user_permissions
-	WHERE
-		user_id = %s
-	AND permission = %s
-	AND object_type = 'repos'
-)
-)
-`
-
-	return sqlf.Sprintf(queryFmtString,
-		bypassAuthz,
-		usePermissionsUserMapping,
-		authenticatedUserID,
-		authenticatedUserID,
-		perms.String(),
-	)
+	return sqlf.Sprintf("()")
 }
 
 // isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound

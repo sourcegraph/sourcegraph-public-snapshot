@@ -115,7 +115,7 @@ func InitDB() (*sql.DB, error) {
 		}
 
 		if !migrate {
-			return dbconn.Global, nil
+			return dbconn.Restricted, nil
 		}
 
 		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {

@@ -283,7 +283,6 @@ SELECT %s
 FROM %%s
 WHERE
 %%s       -- Populates "queryConds"
-AND (%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
 `
 
@@ -700,7 +699,14 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	tr.LogFields(trace.SQL(q))
 
-	rows, err := s.Query(ctx, q)
+	var tx = s
+	if !tx.InTransaction() {
+		// if not, open one and use it
+		tx, _ = s.Transact(ctx)
+	}
+	EnsureAuthzConds(ctx, tx.Handle().DB())
+
+	rows, err := tx.Query(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -910,17 +916,11 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
-
 	return sqlf.Sprintf(
 		fmt.Sprintf(listReposQueryFmtstr, strings.Join(columns, ",")),
 		queryPrefix,
 		fromClause,
 		queryConds,
-		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
 	), nil
 }
