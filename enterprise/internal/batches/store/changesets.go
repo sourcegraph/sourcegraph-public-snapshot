@@ -526,7 +526,6 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 			return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 		}
 		defer func() { err = done(err) }()
-
 		s = s.WithDB(tx)
 	}
 
