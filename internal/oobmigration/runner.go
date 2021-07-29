@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -43,7 +44,7 @@ func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration, observationCon
 }
 
 func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext *observation.Context) *Runner {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
 
 	return &Runner{
 		store:         store,

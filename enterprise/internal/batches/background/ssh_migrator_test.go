@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestSSHMigrator(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 	user := ct.CreateTestUser(t, db, false)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -144,12 +145,20 @@ type UserCredentialScope struct {
 	ExternalServiceID   string
 }
 
+var errUserCredentialUnauthorized = errors.New("user is not authorized to manipulate this user credential")
+
 // Create creates a new user credential based on the given scope and
 // authenticator. If the scope already has a credential, an error will be
 // returned.
 func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
 	if Mocks.UserCredentials.Create != nil {
 		return Mocks.UserCredentials.Create(ctx, scope, credential)
+	}
+
+	// 🚨 SECURITY: validate that the user ID in the scope is either the current
+	// user, or the current user is an admin or an internal actor.
+	if err := checkCurrentUserCanCreateUserCredential(ctx, s.Handle().DB(), &scope); err != nil {
+		return nil, err
 	}
 
 	id, err := keyID(ctx, s.key)
@@ -191,6 +200,11 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 
 	credential.UpdatedAt = timeutil.Now()
 
+	authzConds, err := userCredentialAuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return err
+	}
+
 	q := sqlf.Sprintf(
 		userCredentialsUpdateQueryFmtstr,
 		credential.Domain,
@@ -202,6 +216,7 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
 		credential.ID,
+		authzConds, // 🚨 SECURITY: Enforce user permissions
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -221,7 +236,16 @@ func (s *UserCredentialsStore) Delete(ctx context.Context, id int64) error {
 		return Mocks.UserCredentials.Delete(ctx, id)
 	}
 
-	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s", id)
+	authzConds, err := userCredentialAuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(
+		"DELETE FROM user_credentials WHERE id = %s AND %s",
+		id,
+		authzConds, // 🚨 SECURITY: Enforce user permissions
+	)
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
@@ -243,10 +267,16 @@ func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 		return Mocks.UserCredentials.GetByID(ctx, id)
 	}
 
+	authzConds, err := userCredentialAuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
 	q := sqlf.Sprintf(
-		"SELECT %s FROM user_credentials WHERE id = %s",
+		"SELECT %s FROM user_credentials WHERE id = %s AND %s",
 		sqlf.Join(userCredentialsColumns, ", "),
 		id,
+		authzConds, // 🚨 SECURITY: Enforce user permissions
 	)
 
 	cred := UserCredential{key: s.key}
@@ -267,6 +297,11 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		return Mocks.UserCredentials.GetByScope(ctx, scope)
 	}
 
+	authzConds, err := userCredentialAuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -274,6 +309,7 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
+		authzConds, // 🚨 SECURITY: Enforce user permissions
 	)
 
 	cred := UserCredential{key: s.key}
@@ -323,7 +359,13 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 		return Mocks.UserCredentials.List(ctx, opts)
 	}
 
-	preds := []*sqlf.Query{}
+	authzConds, err := userCredentialAuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 🚨 SECURITY: Enforce user permissions.
+	preds := []*sqlf.Query{authzConds}
 	if opts.Scope.Domain != "" {
 		preds = append(preds, sqlf.Sprintf("domain = %s", opts.Scope.Domain))
 	}
@@ -353,10 +395,6 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 			"encryption_key_id NOT IN ('', %s)",
 			UserCredentialUnmigratedEncryptionKeyID,
 		))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	forUpdate := &sqlf.Query{}
@@ -426,7 +464,8 @@ WHERE
 	domain = %s AND
 	user_id = %s AND
 	external_service_type = %s AND
-	external_service_id = %s
+	external_service_id = %s AND
+	%s				-- authz check
 `
 
 const userCredentialsListQueryFmtstr = `
@@ -481,6 +520,7 @@ SET
 	ssh_migration_applied = %s
 WHERE
 	id = %s
+	AND %s			-- authz check
 RETURNING %s
 `
 
@@ -506,6 +546,35 @@ func scanUserCredential(cred *UserCredential, s interface {
 	)
 }
 
+func checkCurrentUserCanCreateUserCredential(ctx context.Context, db dbutil.DB, scope *UserCredentialScope) error {
+	// Internal actors may always create user credentials.
+	if isInternalActor(ctx) {
+		return nil
+	}
+
+	// Unauthenticated users may never create user credentials.
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return errUserCredentialUnauthorized
+	}
+
+	// A user may always create a user credential for themself.
+	if actor.UID == scope.UserID {
+		return nil
+	}
+
+	// Otherwise, the current user must be a site admin.
+	currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return err
+	}
+	if !currentUser.SiteAdmin {
+		return errUserCredentialUnauthorized
+	}
+
+	return nil
+}
+
 func keyID(ctx context.Context, key encryption.Key) (string, error) {
 	if key != nil {
 		version, err := key.Version(ctx)
@@ -516,4 +585,31 @@ func keyID(ctx context.Context, key encryption.Key) (string, error) {
 	}
 
 	return "", nil
+}
+
+func userCredentialAuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+	if !isInternalActor(ctx) {
+		actor := actor.FromContext(ctx)
+
+		// An unauthenticated user can never access a user credential.
+		if !actor.IsAuthenticated() {
+			return sqlf.Sprintf("%s", false), nil
+		}
+
+		// Now we need to check if the user is a site admin. If not, then we
+		// must enforce a user_id check against their user ID.
+		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		if !currentUser.SiteAdmin {
+			return sqlf.Sprintf("user_id = %s", actor.UID), nil
+		}
+	}
+
+	// If we fell through, either because the user is an internal actor or a
+	// site admin, then they can always access a user credential and we'll just
+	// add a TRUE clause here.
+	return sqlf.Sprintf("%s", true), nil
 }
