@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -26,7 +27,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface, func()) {
 		// Setup the GraphQL resolver.
 		ctx := backend.WithAuthzBypass(context.Background())
-		now := time.Now().UTC().Truncate(time.Microsecond)
+		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 		postgres := dbtesting.GetDB(t)
@@ -37,17 +38,38 @@ func TestResolver_InsightSeries(t *testing.T) {
 		mockStore := store.NewMockInterfaceFrom(dbStore)
 		resolver.insightsStore = mockStore
 
+		insightMetadataStore := store.NewMockInsightMetadataStore()
+		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
+			{
+				UniqueID:    "unique1",
+				Title:       "title1",
+				Description: "desc1",
+				Series: []types.InsightViewSeries{
+					{
+						UniqueID:              "unique1",
+						SeriesID:              "1234567",
+						Title:                 "title1",
+						Description:           "desc1",
+						Query:                 "query1",
+						CreatedAt:             now,
+						OldestHistoricalAt:    now,
+						LastRecordedAt:        now,
+						NextRecordingAfter:    now,
+						RecordingIntervalDays: 1,
+						Label:                 "label1",
+						Stroke:                "color1",
+					},
+				},
+			},
+		}, nil)
+		resolver.insightMetadataStore = insightMetadataStore
+
 		// Create the insights connection resolver and query series.
 		conn, err := resolver.Insights(ctx, nil)
 		if err != nil {
 			cleanup()
 			t.Fatal(err)
 		}
-
-		// Mock the setting store to return the desired settings.
-		settingStore := discovery.NewMockSettingStore()
-		conn.(*insightConnectionResolver).settingStore = settingStore
-		settingStore.GetLatestFunc.SetDefaultReturn(testRealGlobalSettings, nil)
 
 		nodes, err := conn.Nodes(ctx)
 		if err != nil {
@@ -61,27 +83,12 @@ func TestResolver_InsightSeries(t *testing.T) {
 		return ctx, series, mockStore, cleanup
 	}
 
-	t.Run("metadata", func(t *testing.T) {
-		_, insights, _, cleanup := testSetup(t)
-		defer cleanup()
-		autogold.Want("insights length", int(2)).Equal(t, len(insights))
-
-		autogold.Want("insights[0].length", int(2)).Equal(t, len(insights[0]))
-		autogold.Want("insights[0].series[0].Label", "errors.Errorf").Equal(t, insights[0][0].Label())
-		autogold.Want("insights[0].series[1].Label", "printf").Equal(t, insights[0][1].Label())
-
-		autogold.Want("insights[1].length", int(2)).Equal(t, len(insights[1]))
-		autogold.Want("insights[1].series[0].Label", "exec").Equal(t, insights[1][0].Label())
-		autogold.Want("insights[1].series[1].Label", "close").Equal(t, insights[1][1].Label())
-	})
-
 	t.Run("Points", func(t *testing.T) {
 		ctx, insights, mock, cleanup := testSetup(t)
 		defer cleanup()
-		autogold.Want("insights length", int(2)).Equal(t, len(insights))
+		autogold.Want("insights length", int(1)).Equal(t, len(insights))
 
-		autogold.Want("insights[0].length", int(2)).Equal(t, len(insights[0]))
-		autogold.Want("insights[1].length", int(2)).Equal(t, len(insights[1]))
+		autogold.Want("insights[0].length", int(1)).Equal(t, len(insights[0]))
 
 		args := &graphqlbackend.InsightsPointsArgs{
 			From: &graphqlbackend.DateTime{Time: time.Now().Add(-7 * 24 * time.Hour)},
@@ -103,7 +110,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E","RepoID":null,"Excluded":null,"Included":null,"IncludeRepoRegex":"","ExcludeRepoRegex":"","From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
+			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"1234567","RepoID":null,"Excluded":null,"Included":null,"IncludeRepoRegex":"","ExcludeRepoRegex":"","From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
 			return []store.SeriesPoint{
 				{Time: args.From.Time, Value: 1},
 				{Time: args.From.Time, Value: 2},
