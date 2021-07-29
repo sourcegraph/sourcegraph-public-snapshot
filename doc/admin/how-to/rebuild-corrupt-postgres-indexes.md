@@ -1,123 +1,67 @@
 # How to rebuild corrupt Postgres indexes
 
-## Rebuild indexes in the main sourcegraph db
+## Rebuilding indexes
+
+There are multiple databases to rebuild indexes in. Repeat the below process for:
+
+1. `pgsql`
+2. `codeintel-db`
 
 We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
 
-In Kubernetes, you can accomplish this by deleting the database service to prevent new connections from being established, followed by a query to kill existing connections.
+In Kubernetes, you can accomplish this by deleting the database service to prevent new connections from being established, followed by a query to terminate existing connections.
 
 ```shell
-kubectl delete svc/pgsql
-kubectl port-forward deploy/pgsql 3333:5432 # doesn't use the service that we just deleted
+export DB=pgsql # change this for other databases
+kubectl delete "svc/$DB"
+kubectl port-forward "deploy/$DB" 3333:5432 # doesn't use the service that we just deleted
 psql -U sg -d sg -h localhost -p 3333
 ```
 
-Kill existing client connections first:
+Terminate existing client connections first. This will also terminate your own connection to the database, which you'll need to re-establish.
 
 ```sql
 select pg_terminate_backend(pg_stat_activity.pid)
 from pg_stat_activity where datname = 'sg'
 ```
 
-With a Postgres client connected to the database, we now start by reindexing system catalog indexes which may have been affected.
+With a Postgres client connected to the database, we now start by re-indexing system catalog indexes which may have been affected.
 
 ```sql
 reindex (verbose) system sg;
 ```
 
-Now we need to rebuild the sourcegraph db indexes. We execute each of these sequentially until the first failure, most likely due to duplicates, at which point we must delete those duplicates before trying again.
-You can find an example duplicate deletion query further down in this file. After deleting those duplicates, just resume the index rebuilding from where we left off, commenting out or deleting the previouse reindex statements.
-We prefer to reindex explicit indexes rather that the whole database in order to allow resuming where we left off after encountering a duplicates error and fixing it.
+Then we rebuild the database indexes.
 
 ```sql
-reindex (verbose) index batch_changes_site_credentials_unique;
-reindex (verbose) index batch_spec_executions_rand_id;
-reindex (verbose) index batch_specs_rand_id;
-reindex (verbose) index changeset_events_changeset_id_kind_key_unique;
-reindex (verbose) index changeset_jobs_bulk_group_idx;
-reindex (verbose) index changeset_jobs_state_idx;
-reindex (verbose) index changeset_specs_external_id;
-reindex (verbose) index changeset_specs_head_ref;
-reindex (verbose) index changeset_specs_rand_id;
-reindex (verbose) index changeset_specs_title;
-reindex (verbose) index changesets_external_state_idx;
-reindex (verbose) index changesets_external_title_idx;
-reindex (verbose) index changesets_publication_state_idx;
-reindex (verbose) index changesets_reconciler_state_idx;
-reindex (verbose) index changesets_repo_external_id_unique;
-reindex (verbose) index discussion_mail_reply_tokens_pkey;
-reindex (verbose) index discussion_threads_target_repo_repo_id_path_idx;
-reindex (verbose) index event_logs_anonymous_user_id;
-reindex (verbose) index event_logs_name;
-reindex (verbose) index event_logs_source;
-reindex (verbose) index external_service_sync_jobs_state_idx;
-reindex (verbose) index feature_flag_overrides_unique_org_flag;
-reindex (verbose) index feature_flag_overrides_unique_user_flag;
-reindex (verbose) index feature_flags_pkey;
-reindex (verbose) index gitserver_repos_last_error_idx;
-reindex (verbose) index insights_query_runner_jobs_state_btree;
-reindex (verbose) index kind_cloud_default;
-reindex (verbose) index lsif_packages_scheme_name_version_dump_id;
-reindex (verbose) index lsif_references_scheme_name_version_dump_id;
-reindex (verbose) index lsif_uploads_repository_id_commit_root_indexer;
-reindex (verbose) index lsif_uploads_state;
-reindex (verbose) index names_pkey;
-reindex (verbose) index orgs_name;
-reindex (verbose) index phabricator_repos_repo_name_key;
-reindex (verbose) index registry_extension_releases_registry_extension_id;
-reindex (verbose) index registry_extension_releases_version;
-reindex (verbose) index registry_extensions_publisher_name;
-reindex (verbose) index repo_external_unique_idx;
-reindex (verbose) index repo_name_unique;
-reindex (verbose) index repo_pending_permissions_perm_unique;
-reindex (verbose) index repo_permissions_perm_unique;
-reindex (verbose) index repo_uri_idx;
-reindex (verbose) index search_context_repos_search_context_id_repo_id_revision_unique;
-reindex (verbose) index search_contexts_name_namespace_org_id_unique;
-reindex (verbose) index search_contexts_name_namespace_user_id_unique;
-reindex (verbose) index search_contexts_name_without_namespace_unique;
-reindex (verbose) index security_event_logs_anonymous_user_id;
-reindex (verbose) index security_event_logs_name;
-reindex (verbose) index security_event_logs_source;
-reindex (verbose) index user_credentials_domain_user_id_external_service_type_exter_key;
-reindex (verbose) index user_emails_no_duplicates_per_user;
-reindex (verbose) index user_emails_unique_verified_email;
-reindex (verbose) index user_external_accounts_account;
-reindex (verbose) index user_pending_permissions_service_perm_object_unique;
-reindex (verbose) index user_permissions_perm_object_unique;
-reindex (verbose) index users_billing_customer_id;
-reindex (verbose) index users_username;
-reindex (verbose) index versions_pkey;
+reindex (verbose) database sg;
 ```
 
-The above statements were produced by this query. **No need to run this, it's just informational.**
+If any duplicate errors are reported, we must delete some rows by adapting and running the [duplicate deletion query](#duplicate-deletion-query) for each of the errors found.
+
+After deleting duplicates, just re-run the above statement. Repeat the process until there are no errors.
+
+At the end of the index rebuilding process, as a last sanity check, we use the amcheck extension to verify there are no corrupt indexes — an error is raised if there are.
 
 ```sql
--- This query lists all indexes in the database, excluding catalogue indexes,
--- that have key columns of collatable types. In other words, it lists all indexes
--- that need to be rebuilt. You don't need to run this query since we have done that
--- for you, with the output below.
-select
-    distinct('reindex (verbose) index ' || i.relname || ';') as stmt
-from
-    pg_class t,
-    pg_class i,
-    pg_index ix,
-    pg_attribute a,
-    pg_namespace n
-where
-    t.oid = ix.indrelid
-    and i.oid = ix.indexrelid
-    and n.oid = i.relnamespace
-    and a.attrelid = t.oid
-    and a.attnum = ANY(ix.indkey)
-    and t.relkind = 'r'
-    and n.nspname = 'public'
-    and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
-order by stmt;
+create extension amcheck;
+
+select bt_index_parent_check(c.oid, true), c.relname, c.relpages
+from pg_index i
+join pg_opclass op ON i.indclass[0] = op.oid
+join pg_am am ON op.opcmethod = am.oid
+join pg_class c ON i.indexrelid = c.oid
+join pg_namespace n ON c.relnamespace = n.oid
+where am.amname = 'btree'
+-- Don't check temp tables, which may be from another session:
+and c.relpersistence != 't'
+-- Function may throw an error when this is omitted:
+and i.indisready AND i.indisvalid;
 ```
 
-As for the _duplicate deletion query_, here's an example of for the `repo` table that needs to be adapated to the specific table and index we need to remove duplicates in.
+## Duplicate deletion query
+
+Here's an example for the `repo` table. The predicates that match the duplicate rows must be adjusted for your specific case, as well as the table name you want to remove duplicates from.
 
 ```sql
 begin;
@@ -144,78 +88,31 @@ and (
 commit;
 ```
 
-At the very end of the index rebuilding process, as a last sanity check, we use the amcheck extension to verify there are no corrupt indexes.
+## Selective index rebuilding
+
+In case your database is large and `reindex (verbose) database sg` takes too long to re-run multiple times as you remove duplicates, you can instead run individual index rebuilding statements, and resume where you left of.
+
+Here's a query that produces a list of such statements for all indexes that contain collatable key columns (we had corruption in these indexes in the [3.30 upgrade](../migration/3_30.md)). This is a sub-set of the indexes that gets re-indexed by `reindex database sg`.
 
 ```sql
-create extension amcheck;
-
-select bt_index_parent_check(c.oid, true), c.relname, c.relpages
-from pg_index i
-join pg_opclass op ON i.indclass[0] = op.oid
-join pg_am am ON op.opcmethod = am.oid
-join pg_class c ON i.indexrelid = c.oid
-join pg_namespace n ON c.relnamespace = n.oid
-where am.amname = 'btree'
--- Don't check temp tables, which may be from another session:
-and c.relpersistence != 't'
--- Function may throw an error when this is omitted:
-and i.indisready AND i.indisvalid;
+select
+    distinct('reindex (verbose) index ' || i.relname || ';') as stmt
+from
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a,
+    pg_namespace n
+where
+    t.oid = ix.indrelid
+    and i.oid = ix.indexrelid
+    and n.oid = i.relnamespace
+    and a.attrelid = t.oid
+    and a.attnum = ANY(ix.indkey)
+    and t.relkind = 'r'
+    and n.nspname = 'public'
+    and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
+order by stmt;
 ```
 
-## Rebuild indexes in the codeintel db
-
-We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
-
-In Kubernetes, you can accomplish this by deleting the database service to prevent new connections from being established, followed by a query to kill existing connections.
-
-```shell
-kubectl delete svc/codeintel-db
-kubectl port-forward deploy/codeintel-db 3333:5432 # doesn't use the service that we just deleted
-psql -U sg -d sg -h localhost -p 3333
-```
-
-Kill existing client connections first:
-
-```sql
-select pg_terminate_backend(pg_stat_activity.pid)
-from pg_stat_activity where datname = 'sg'
-```
-
-With a Postgres client connected to the database, we now start by reindexing system catalog indexes which may have been affected.
-
-```sql
-reindex (verbose) system sg;
-```
-
-Now we need to rebuild the codeintel db indexes. We execute each of these sequentially until the first failure, most likely due to duplicates, at which point we must delete those duplicates before trying again.
-You can find an example duplicate deletion query above in this file. After deleting those duplicates, just resume the index rebuilding from where we left off, commenting out or deleting the previouse reindex statements.
-We prefer to reindex explicit indexes rather that the whole database in order to allow resuming where we left off after encountering a duplicates error and fixing it.
-
-```sql
-reindex (verbose) index lsif_data_definitions_pkey;
-reindex (verbose) index lsif_data_documentation_mappings_pkey;
-reindex (verbose) index lsif_data_documentation_pages_pkey;
-reindex (verbose) index lsif_data_documentation_path_info_pkey;
-reindex (verbose) index lsif_data_documents_pkey;
-reindex (verbose) index lsif_data_references_pkey;
-```
-
-At the very end of the index rebuilding process, as a last sanity check, we use the amcheck extension to verify there are no corrupt indexes.
-
-```sql
-create extension amcheck;
-
-select bt_index_parent_check(c.oid, true), c.relname, c.relpages
-from pg_index i
-join pg_opclass op ON i.indclass[0] = op.oid
-join pg_am am ON op.opcmethod = am.oid
-join pg_class c ON i.indexrelid = c.oid
-join pg_namespace n ON c.relnamespace = n.oid
-where am.amname = 'btree'
--- Don't check temp tables, which may be from another session:
-and c.relpersistence != 't'
--- Function may throw an error when this is omitted:
-and i.indisready AND i.indisvalid;
-```
-
-After the indexes have been rebuilt and the index integrity query doesn't return any errors, we can start all Sourcegraph services again. The way you do this is dependent on your specific deployment.
+You'd take that output of that query and run each of the statements one by one.
