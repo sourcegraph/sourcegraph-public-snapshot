@@ -32,7 +32,7 @@ Follow these steps:
 -- that need to be rebuilt. You don't need to run this query since we have done that
 -- for you, with the output below.
 select
-    distinct('reindex verbose index ' || i.relname || ';') as stmt
+    distinct('reindex (verbose) index ' || i.relname || ';') as stmt
 from
     pg_class t,
     pg_class i,
@@ -55,100 +55,100 @@ order by stmt;
 -- rebuilding from where we left off, commenting out or deleting the previouse
 -- reindex statements.
 
-reindex verbose index batch_changes_site_credentials_unique;
-reindex verbose index batch_spec_executions_rand_id;
-reindex verbose index batch_specs_rand_id;
-reindex verbose index changeset_events_changeset_id_kind_key_unique;
-reindex verbose index changeset_jobs_bulk_group_idx;
-reindex verbose index changeset_jobs_state_idx;
-reindex verbose index changeset_specs_external_id;
-reindex verbose index changeset_specs_head_ref;
-reindex verbose index changeset_specs_rand_id;
-reindex verbose index changeset_specs_title;
-reindex verbose index changesets_external_state_idx;
-reindex verbose index changesets_external_title_idx;
-reindex verbose index changesets_publication_state_idx;
-reindex verbose index changesets_reconciler_state_idx;
-reindex verbose index changesets_repo_external_id_unique;
-reindex verbose index discussion_mail_reply_tokens_pkey;
-reindex verbose index discussion_threads_target_repo_repo_id_path_idx;
-reindex verbose index event_logs_anonymous_user_id;
-reindex verbose index event_logs_name;
-reindex verbose index event_logs_source;
-reindex verbose index external_service_sync_jobs_state_idx;
-reindex verbose index feature_flag_overrides_unique_org_flag;
-reindex verbose index feature_flag_overrides_unique_user_flag;
-reindex verbose index feature_flags_pkey;
-reindex verbose index gitserver_repos_last_error_idx;
-reindex verbose index insights_query_runner_jobs_state_btree;
-reindex verbose index kind_cloud_default;
-reindex verbose index lsif_packages_scheme_name_version_dump_id;
-reindex verbose index lsif_references_scheme_name_version_dump_id;
-reindex verbose index lsif_uploads_repository_id_commit_root_indexer;
-reindex verbose index lsif_uploads_state;
-reindex verbose index names_pkey;
-reindex verbose index orgs_name;
-reindex verbose index pg_am_name_index;
-reindex verbose index pg_attribute_relid_attnam_index;
-reindex verbose index pg_authid_rolname_index;
-reindex verbose index pg_class_relname_nsp_index;
-reindex verbose index pg_collation_name_enc_nsp_index;
-reindex verbose index pg_constraint_conname_nsp_index;
-reindex verbose index pg_constraint_conrelid_contypid_conname_index;
-reindex verbose index pg_conversion_name_nsp_index;
-reindex verbose index pg_database_datname_index;
-reindex verbose index pg_enum_typid_label_index;
-reindex verbose index pg_event_trigger_evtname_index;
-reindex verbose index pg_extension_name_index;
-reindex verbose index pg_foreign_data_wrapper_name_index;
-reindex verbose index pg_foreign_server_name_index;
-reindex verbose index pg_language_name_index;
-reindex verbose index pg_namespace_nspname_index;
-reindex verbose index pg_opclass_am_name_nsp_index;
-reindex verbose index pg_operator_oprname_l_r_n_index;
-reindex verbose index pg_opfamily_am_name_nsp_index;
-reindex verbose index pg_pltemplate_name_index;
-reindex verbose index pg_policy_polrelid_polname_index;
-reindex verbose index pg_proc_proname_args_nsp_index;
-reindex verbose index pg_publication_pubname_index;
-reindex verbose index pg_replication_origin_roname_index;
-reindex verbose index pg_rewrite_rel_rulename_index;
-reindex verbose index pg_seclabel_object_index;
-reindex verbose index pg_shseclabel_object_index;
-reindex verbose index pg_statistic_ext_name_index;
-reindex verbose index pg_subscription_subname_index;
-reindex verbose index pg_tablespace_spcname_index;
-reindex verbose index pg_trigger_tgrelid_tgname_index;
-reindex verbose index pg_ts_config_cfgname_index;
-reindex verbose index pg_ts_dict_dictname_index;
-reindex verbose index pg_ts_parser_prsname_index;
-reindex verbose index pg_ts_template_tmplname_index;
-reindex verbose index pg_type_typname_nsp_index;
-reindex verbose index phabricator_repos_repo_name_key;
-reindex verbose index registry_extension_releases_registry_extension_id;
-reindex verbose index registry_extension_releases_version;
-reindex verbose index registry_extensions_publisher_name;
-reindex verbose index repo_external_unique_idx;
-reindex verbose index repo_name_unique;
-reindex verbose index repo_pending_permissions_perm_unique;
-reindex verbose index repo_permissions_perm_unique;
-reindex verbose index repo_uri_idx;
-reindex verbose index search_context_repos_search_context_id_repo_id_revision_unique;
-reindex verbose index search_contexts_name_namespace_org_id_unique;
-reindex verbose index search_contexts_name_namespace_user_id_unique;
-reindex verbose index search_contexts_name_without_namespace_unique;
-reindex verbose index security_event_logs_anonymous_user_id;
-reindex verbose index security_event_logs_name;
-reindex verbose index security_event_logs_source;
-reindex verbose index user_credentials_domain_user_id_external_service_type_exter_key;
-reindex verbose index user_emails_no_duplicates_per_user;
-reindex verbose index user_emails_unique_verified_email;
-reindex verbose index user_external_accounts_account;
-reindex verbose index user_pending_permissions_service_perm_object_unique;
-reindex verbose index user_permissions_perm_object_unique;
-reindex verbose index users_billing_customer_id;
-reindex verbose index users_username;
-reindex verbose index versions_pkey;
+reindex (verbose) index batch_changes_site_credentials_unique;
+reindex (verbose) index batch_spec_executions_rand_id;
+reindex (verbose) index batch_specs_rand_id;
+reindex (verbose) index changeset_events_changeset_id_kind_key_unique;
+reindex (verbose) index changeset_jobs_bulk_group_idx;
+reindex (verbose) index changeset_jobs_state_idx;
+reindex (verbose) index changeset_specs_external_id;
+reindex (verbose) index changeset_specs_head_ref;
+reindex (verbose) index changeset_specs_rand_id;
+reindex (verbose) index changeset_specs_title;
+reindex (verbose) index changesets_external_state_idx;
+reindex (verbose) index changesets_external_title_idx;
+reindex (verbose) index changesets_publication_state_idx;
+reindex (verbose) index changesets_reconciler_state_idx;
+reindex (verbose) index changesets_repo_external_id_unique;
+reindex (verbose) index discussion_mail_reply_tokens_pkey;
+reindex (verbose) index discussion_threads_target_repo_repo_id_path_idx;
+reindex (verbose) index event_logs_anonymous_user_id;
+reindex (verbose) index event_logs_name;
+reindex (verbose) index event_logs_source;
+reindex (verbose) index external_service_sync_jobs_state_idx;
+reindex (verbose) index feature_flag_overrides_unique_org_flag;
+reindex (verbose) index feature_flag_overrides_unique_user_flag;
+reindex (verbose) index feature_flags_pkey;
+reindex (verbose) index gitserver_repos_last_error_idx;
+reindex (verbose) index insights_query_runner_jobs_state_btree;
+reindex (verbose) index kind_cloud_default;
+reindex (verbose) index lsif_packages_scheme_name_version_dump_id;
+reindex (verbose) index lsif_references_scheme_name_version_dump_id;
+reindex (verbose) index lsif_uploads_repository_id_commit_root_indexer;
+reindex (verbose) index lsif_uploads_state;
+reindex (verbose) index names_pkey;
+reindex (verbose) index orgs_name;
+reindex (verbose) index pg_am_name_index;
+reindex (verbose) index pg_attribute_relid_attnam_index;
+reindex (verbose) index pg_authid_rolname_index;
+reindex (verbose) index pg_class_relname_nsp_index;
+reindex (verbose) index pg_collation_name_enc_nsp_index;
+reindex (verbose) index pg_constraint_conname_nsp_index;
+reindex (verbose) index pg_constraint_conrelid_contypid_conname_index;
+reindex (verbose) index pg_conversion_name_nsp_index;
+reindex (verbose) index pg_database_datname_index;
+reindex (verbose) index pg_enum_typid_label_index;
+reindex (verbose) index pg_event_trigger_evtname_index;
+reindex (verbose) index pg_extension_name_index;
+reindex (verbose) index pg_foreign_data_wrapper_name_index;
+reindex (verbose) index pg_foreign_server_name_index;
+reindex (verbose) index pg_language_name_index;
+reindex (verbose) index pg_namespace_nspname_index;
+reindex (verbose) index pg_opclass_am_name_nsp_index;
+reindex (verbose) index pg_operator_oprname_l_r_n_index;
+reindex (verbose) index pg_opfamily_am_name_nsp_index;
+reindex (verbose) index pg_pltemplate_name_index;
+reindex (verbose) index pg_policy_polrelid_polname_index;
+reindex (verbose) index pg_proc_proname_args_nsp_index;
+reindex (verbose) index pg_publication_pubname_index;
+reindex (verbose) index pg_replication_origin_roname_index;
+reindex (verbose) index pg_rewrite_rel_rulename_index;
+reindex (verbose) index pg_seclabel_object_index;
+reindex (verbose) index pg_shseclabel_object_index;
+reindex (verbose) index pg_statistic_ext_name_index;
+reindex (verbose) index pg_subscription_subname_index;
+reindex (verbose) index pg_tablespace_spcname_index;
+reindex (verbose) index pg_trigger_tgrelid_tgname_index;
+reindex (verbose) index pg_ts_config_cfgname_index;
+reindex (verbose) index pg_ts_dict_dictname_index;
+reindex (verbose) index pg_ts_parser_prsname_index;
+reindex (verbose) index pg_ts_template_tmplname_index;
+reindex (verbose) index pg_type_typname_nsp_index;
+reindex (verbose) index phabricator_repos_repo_name_key;
+reindex (verbose) index registry_extension_releases_registry_extension_id;
+reindex (verbose) index registry_extension_releases_version;
+reindex (verbose) index registry_extensions_publisher_name;
+reindex (verbose) index repo_external_unique_idx;
+reindex (verbose) index repo_name_unique;
+reindex (verbose) index repo_pending_permissions_perm_unique;
+reindex (verbose) index repo_permissions_perm_unique;
+reindex (verbose) index repo_uri_idx;
+reindex (verbose) index search_context_repos_search_context_id_repo_id_revision_unique;
+reindex (verbose) index search_contexts_name_namespace_org_id_unique;
+reindex (verbose) index search_contexts_name_namespace_user_id_unique;
+reindex (verbose) index search_contexts_name_without_namespace_unique;
+reindex (verbose) index security_event_logs_anonymous_user_id;
+reindex (verbose) index security_event_logs_name;
+reindex (verbose) index security_event_logs_source;
+reindex (verbose) index user_credentials_domain_user_id_external_service_type_exter_key;
+reindex (verbose) index user_emails_no_duplicates_per_user;
+reindex (verbose) index user_emails_unique_verified_email;
+reindex (verbose) index user_external_accounts_account;
+reindex (verbose) index user_pending_permissions_service_perm_object_unique;
+reindex (verbose) index user_permissions_perm_object_unique;
+reindex (verbose) index users_billing_customer_id;
+reindex (verbose) index users_username;
+reindex (verbose) index versions_pkey;
 
 -- Example of a duplicate deletion query for the repo table that needs
 -- to be adapated to the specific table we need to remove duplicates in.
@@ -210,7 +210,7 @@ Follow these steps:
 -- that need to be rebuilt. You don't need to run this query since we have done that
 -- for you, with the output below.
 select
-    distinct('reindex verbose index ' || i.relname || ';') as stmt
+    distinct('reindex (verbose) index ' || i.relname || ';') as stmt
 from
     pg_class t,
     pg_class i,
@@ -233,48 +233,48 @@ order by stmt;
 -- rebuilding from where we left off, commenting out or deleting the previouse
 -- reindex statements.
 
-reindex verbose index lsif_data_definitions_pkey;
-reindex verbose index lsif_data_documentation_mappings_pkey;
-reindex verbose index lsif_data_documentation_pages_pkey;
-reindex verbose index lsif_data_documentation_path_info_pkey;
-reindex verbose index lsif_data_documents_pkey;
-reindex verbose index lsif_data_references_pkey;
-reindex verbose index pg_am_name_index;
-reindex verbose index pg_attribute_relid_attnam_index;
-reindex verbose index pg_authid_rolname_index;
-reindex verbose index pg_class_relname_nsp_index;
-reindex verbose index pg_collation_name_enc_nsp_index;
-reindex verbose index pg_constraint_conname_nsp_index;
-reindex verbose index pg_constraint_conrelid_contypid_conname_index;
-reindex verbose index pg_conversion_name_nsp_index;
-reindex verbose index pg_database_datname_index;
-reindex verbose index pg_enum_typid_label_index;
-reindex verbose index pg_event_trigger_evtname_index;
-reindex verbose index pg_extension_name_index;
-reindex verbose index pg_foreign_data_wrapper_name_index;
-reindex verbose index pg_foreign_server_name_index;
-reindex verbose index pg_language_name_index;
-reindex verbose index pg_namespace_nspname_index;
-reindex verbose index pg_opclass_am_name_nsp_index;
-reindex verbose index pg_operator_oprname_l_r_n_index;
-reindex verbose index pg_opfamily_am_name_nsp_index;
-reindex verbose index pg_pltemplate_name_index;
-reindex verbose index pg_policy_polrelid_polname_index;
-reindex verbose index pg_proc_proname_args_nsp_index;
-reindex verbose index pg_publication_pubname_index;
-reindex verbose index pg_replication_origin_roname_index;
-reindex verbose index pg_rewrite_rel_rulename_index;
-reindex verbose index pg_seclabel_object_index;
-reindex verbose index pg_shseclabel_object_index;
-reindex verbose index pg_statistic_ext_name_index;
-reindex verbose index pg_subscription_subname_index;
-reindex verbose index pg_tablespace_spcname_index;
-reindex verbose index pg_trigger_tgrelid_tgname_index;
-reindex verbose index pg_ts_config_cfgname_index;
-reindex verbose index pg_ts_dict_dictname_index;
-reindex verbose index pg_ts_parser_prsname_index;
-reindex verbose index pg_ts_template_tmplname_index;
-reindex verbose index pg_type_typname_nsp_index;
+reindex (verbose) index lsif_data_definitions_pkey;
+reindex (verbose) index lsif_data_documentation_mappings_pkey;
+reindex (verbose) index lsif_data_documentation_pages_pkey;
+reindex (verbose) index lsif_data_documentation_path_info_pkey;
+reindex (verbose) index lsif_data_documents_pkey;
+reindex (verbose) index lsif_data_references_pkey;
+reindex (verbose) index pg_am_name_index;
+reindex (verbose) index pg_attribute_relid_attnam_index;
+reindex (verbose) index pg_authid_rolname_index;
+reindex (verbose) index pg_class_relname_nsp_index;
+reindex (verbose) index pg_collation_name_enc_nsp_index;
+reindex (verbose) index pg_constraint_conname_nsp_index;
+reindex (verbose) index pg_constraint_conrelid_contypid_conname_index;
+reindex (verbose) index pg_conversion_name_nsp_index;
+reindex (verbose) index pg_database_datname_index;
+reindex (verbose) index pg_enum_typid_label_index;
+reindex (verbose) index pg_event_trigger_evtname_index;
+reindex (verbose) index pg_extension_name_index;
+reindex (verbose) index pg_foreign_data_wrapper_name_index;
+reindex (verbose) index pg_foreign_server_name_index;
+reindex (verbose) index pg_language_name_index;
+reindex (verbose) index pg_namespace_nspname_index;
+reindex (verbose) index pg_opclass_am_name_nsp_index;
+reindex (verbose) index pg_operator_oprname_l_r_n_index;
+reindex (verbose) index pg_opfamily_am_name_nsp_index;
+reindex (verbose) index pg_pltemplate_name_index;
+reindex (verbose) index pg_policy_polrelid_polname_index;
+reindex (verbose) index pg_proc_proname_args_nsp_index;
+reindex (verbose) index pg_publication_pubname_index;
+reindex (verbose) index pg_replication_origin_roname_index;
+reindex (verbose) index pg_rewrite_rel_rulename_index;
+reindex (verbose) index pg_seclabel_object_index;
+reindex (verbose) index pg_shseclabel_object_index;
+reindex (verbose) index pg_statistic_ext_name_index;
+reindex (verbose) index pg_subscription_subname_index;
+reindex (verbose) index pg_tablespace_spcname_index;
+reindex (verbose) index pg_trigger_tgrelid_tgname_index;
+reindex (verbose) index pg_ts_config_cfgname_index;
+reindex (verbose) index pg_ts_dict_dictname_index;
+reindex (verbose) index pg_ts_parser_prsname_index;
+reindex (verbose) index pg_ts_template_tmplname_index;
+reindex (verbose) index pg_type_typname_nsp_index;
 
 -- Example of a duplicate deletion query for the repo table that needs
 -- to be adapated to the specific table we need to remove duplicates in.
