@@ -16,12 +16,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type handler struct {
+	nameSet       *janitor.NameSet
 	store         workerutil.Store
 	options       Options
 	operations    *command.Operations
@@ -96,7 +98,11 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	if err != nil {
 		return err
 	}
-	name := fmt.Sprintf("%s-%s", h.options.QueueName, uniqueName.String())
+	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, uniqueName.String())
+
+	// TODO - document
+	h.nameSet.Add(name)
+	defer h.nameSet.Remove(name)
 
 	options := command.Options{
 		ExecutorName:       name,
