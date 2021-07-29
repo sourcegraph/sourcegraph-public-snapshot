@@ -327,17 +327,26 @@ func unzipJarFile(jarPath, destination string) error {
 		if err = os.MkdirAll(path.Dir(outputPath), os.ModePerm); err != nil {
 			return err
 		}
-		outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return err
 		}
 
 		_, err = io.Copy(outputFile, inputFile)
-		inputFile.Close()
-		outputFile.Close()
+		err1 := inputFile.Close()
+		err2 := outputFile.Close()
+
 		if err != nil {
 			return err
 		}
+		if err1 != nil {
+			return err1
+		}
+		if err2 != nil {
+			return err2
+		}
+		return nil
+
 	}
 
 	return nil
