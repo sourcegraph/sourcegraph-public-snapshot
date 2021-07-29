@@ -49,7 +49,7 @@ func (h *entryHandle) Close() error {
 	return nil
 }
 
-func (h *entryHandle) CurrentLogEntry() workerutil.ExecutionLogEntry {
+func (h *entryHandle) currentLogEntry() workerutil.ExecutionLogEntry {
 	logEntry := h.logEntry
 	logEntry.Out = h.Read()
 	redact(&logEntry, h.replacer)
@@ -124,7 +124,7 @@ func (l *Logger) writeEntries() {
 	for handle := range l.handles {
 		log15.Info("Writing log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, handle.CurrentLogEntry())
+		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, handle.currentLogEntry())
 		if err != nil {
 			// If there is a timeout or cancellation error we don't want to skip
 			// writing these logs as users will often want to see how far something
@@ -155,7 +155,7 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
 		case <-time.After(syncLogEntryInterval):
 		}
 
-		current := handle.CurrentLogEntry()
+		current := handle.currentLogEntry()
 		if entryWasUpdated(old, current) {
 			log15.Info("Updating executor log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "entryID", entryID)
 
