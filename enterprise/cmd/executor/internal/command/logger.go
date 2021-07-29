@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -34,35 +33,23 @@ type entryHandle struct {
 }
 
 func (h *entryHandle) Write(p []byte) (n int, err error) {
-	if h == nil {
-		return len(p), nil
-	}
-
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.buf.Write(p)
 }
 
 func (h *entryHandle) Read() string {
-	if h == nil {
-		return ""
-	}
-
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.buf.String()
 }
 
 func (h *entryHandle) Close() error {
-	if h == nil {
-		return nil
-	}
-
 	close(h.done)
 	return nil
 }
 
-func (h *entryHandle) currentLogEntry() workerutil.ExecutionLogEntry {
+func (h *entryHandle) CurrentLogEntry() workerutil.ExecutionLogEntry {
 	logEntry := h.logEntry
 	logEntry.Out = h.Read()
 	redact(&logEntry, h.replacer)
@@ -116,20 +103,12 @@ func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, rep
 // background goroutines that watch a log entry and possibly update it have
 // exited.
 func (l *Logger) Flush() {
-	if l == nil {
-		return
-	}
-
 	close(l.handles)
 	<-l.done
 }
 
 // Log redacts secrets from the given log entry and stores it.
 func (l *Logger) Log(logEntry *workerutil.ExecutionLogEntry) *entryHandle {
-	if l == nil {
-		return nil
-	}
-
 	handle := &entryHandle{logEntry: *logEntry, replacer: l.replacer, buf: &bytes.Buffer{}, done: make(chan struct{})}
 	l.handles <- handle
 	return handle
@@ -145,7 +124,7 @@ func (l *Logger) writeEntries() {
 	for handle := range l.handles {
 		log15.Info("Writing log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, handle.currentLogEntry())
+		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, handle.CurrentLogEntry())
 		if err != nil {
 			// If there is a timeout or cancellation error we don't want to skip
 			// writing these logs as users will often want to see how far something
@@ -176,7 +155,7 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
 		case <-time.After(syncLogEntryInterval):
 		}
 
-		current := handle.currentLogEntry()
+		current := handle.CurrentLogEntry()
 		if entryWasUpdated(old, current) {
 			log15.Info("Updating executor log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "entryID", entryID)
 

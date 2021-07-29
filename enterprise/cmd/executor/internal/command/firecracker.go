@@ -170,7 +170,7 @@ func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logg
 		Operation: operations.TeardownFirecrackerStop,
 	}
 	if err := runner.RunCommand(ctx, stopCommand, logger); err != nil {
-		log15.Error("Failed to stop firecracker vm", "name", name, "error", err)
+		log15.Error("Failed to stop firecracker vm", "name", name, "err", err)
 	}
 
 	removeCommand := command{
@@ -179,7 +179,7 @@ func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logg
 		Operation: operations.TeardownFirecrackerRemove,
 	}
 	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
-		log15.Error("Failed to remove firecracker vm", "name", name, "error", err)
+		log15.Error("Failed to remove firecracker vm", "name", name, "err", err)
 	}
 
 	return nil
