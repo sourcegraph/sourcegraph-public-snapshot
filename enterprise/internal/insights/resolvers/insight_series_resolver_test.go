@@ -46,7 +46,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 
 		// Mock the setting store to return the desired settings.
 		settingStore := discovery.NewMockSettingStore()
-		conn.(*insightConnectionResolver).settingStore = settingStore
 		settingStore.GetLatestFunc.SetDefaultReturn(testRealGlobalSettings, nil)
 
 		nodes, err := conn.Nodes(ctx)

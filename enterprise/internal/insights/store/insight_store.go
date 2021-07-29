@@ -72,6 +72,30 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
+func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
+	viewSeries, err := s.Get(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	mapped := make(map[string][]types.InsightViewSeries)
+	for _, series := range viewSeries {
+		mapped[series.UniqueID] = append(mapped[series.UniqueID], series)
+	}
+
+	results := make([]types.Insight, 0, len(mapped))
+	for _, seriesSet := range mapped {
+		var temp types.Insight
+		temp.UniqueID = seriesSet[0].UniqueID
+		temp.Title = seriesSet[0].Title
+		temp.Description = seriesSet[0].Description
+		temp.Series = seriesSet
+		results = append(results, temp)
+	}
+
+	return results, nil
+}
+
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
@@ -218,6 +242,11 @@ type DataSeriesStore interface {
 	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 }
+
+//
+// type InsightStore interface {
+// 	 Get
+// }
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {

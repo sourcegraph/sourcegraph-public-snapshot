@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -80,15 +83,15 @@ func TestResolver_InsightConnection(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
 
 	testSetup := func(t *testing.T) (context.Context, graphqlbackend.InsightConnectionResolver) {
 		// Setup the GraphQL resolver.
 		ctx := backend.WithAuthzBypass(context.Background())
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
-		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-		defer cleanup()
+
 		postgres := dbtesting.GetDB(t)
 		resolver := newWithClock(timescale, postgres, clock)
 
@@ -98,10 +101,37 @@ func TestResolver_InsightConnection(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Mock the setting store to return the desired settings.
-		settingStore := discovery.NewMockSettingStore()
-		conn.(*insightConnectionResolver).settingStore = settingStore
-		settingStore.GetLatestFunc.SetDefaultReturn(testRealGlobalSettings, nil)
+		insightMetadataStore := store.NewInsightStore(timescale)
+		resolver.insightMetadataStore = insightMetadataStore
+
+		view, err := insightMetadataStore.CreateView(ctx, types.InsightView{
+			Title:    "title1",
+			UniqueID: "unique1",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series, err := insightMetadataStore.CreateSeries(ctx, types.InsightSeries{
+			ID:                    0,
+			SeriesID:              "123456789",
+			Query:                 "testquery",
+			CreatedAt:             now,
+			OldestHistoricalAt:    now,
+			LastRecordedAt:        now,
+			NextRecordingAfter:    now,
+			RecordingIntervalDays: 1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = insightMetadataStore.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+			Label:  "label1",
+			Stroke: "blue",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		return ctx, conn
 	}
 
@@ -217,9 +247,6 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		settingStore := discovery.NewMockSettingStore()
-		conn.(*insightConnectionResolver).settingStore = settingStore
-		settingStore.GetLatestFunc.SetDefaultReturn(testOneGlobalSeries, nil)
 
 		return conn
 	}
@@ -278,8 +305,8 @@ func resolvePoints(ctx context.Context, conn graphqlbackend.InsightConnectionRes
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(nodes) != 1 {
-		t.Errorf("unexpected length of nodes: want: %v got: %v", 1, len(nodes))
+	if len(nodes) < 1 {
+		t.Fatalf("unexpected length of nodes: want: %v got: %v", 1, len(nodes))
 	}
 
 	expected := nodes[0]
