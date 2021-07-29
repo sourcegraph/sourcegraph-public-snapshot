@@ -691,7 +691,7 @@ func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	return rs, err
 }
 
-func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) (err error) {
 	q, err := s.listSQL(ctx, opt)
 	if err != nil {
 		return err
@@ -699,14 +699,13 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	tr.LogFields(trace.SQL(q))
 
-	var tx = s
-	if !tx.InTransaction() {
-		// if not, open one and use it
-		tx, _ = s.Transact(ctx)
+	tx, cleanup, err := WithAuthzConds(ctx, s.Handle().DB())
+	if err != nil {
+		return err
 	}
-	EnsureAuthzConds(ctx, tx.Handle().DB())
+	defer func() { err = cleanup(err) }()
 
-	rows, err := tx.Query(ctx, q)
+	rows, err := Repos(tx).Query(ctx, q)
 	if err != nil {
 		return err
 	}

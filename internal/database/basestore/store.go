@@ -50,7 +50,7 @@ type ShareableStore interface {
 
 var _ ShareableStore = &Store{}
 
-// NewHandleWithDB returns a new base store connected to the given connection.
+// NewWithDB returns a new base store connected to the given connection.
 func NewWithDB(db dbutil.DB, txOptions sql.TxOptions) *Store {
 	return NewWithHandle(NewHandleWithDB(db, txOptions))
 }

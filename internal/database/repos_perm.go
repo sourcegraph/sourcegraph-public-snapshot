@@ -2,7 +2,10 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -20,19 +23,60 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 const ensureAuthzCondsFmt = `
 	SET ROLE sg_service;
 	SET LOCAL rls.bypass = %v;
-	SET LOCAL rls.user_id = %d;
+	SET LOCAL rls.user_id = %v;
 	SET LOCAL rls.use_permissions_user_mapping = %v;
 	SET LOCAL rls.permission = read;
 `
 
-func EnsureAuthzConds(ctx context.Context, tx dbutil.DB) error {
-	_, err := tx.ExecContext(ctx, fmt.Sprintf(
+func WithAuthzConds(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) error, error) {
+	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
+	tx, err := handle.Transact(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Copied from AuthzQueryConds below
+
+	authzAllowByDefault, authzProviders := authz.GetProviders()
+	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
+
+	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
+	// provider(s) and permissions user mapping are configured.
+	if usePermissionsUserMapping {
+		if len(authzProviders) > 0 {
+			return nil, nil, errPermissionsUserMappingConflict
+		}
+		authzAllowByDefault = false
+	}
+
+	authenticatedUserID := int32(0)
+
+	// Authz is bypassed when the request is coming from an internal actor or there
+	// is no authz provider configured and access to all repositories are allowed by
+	// default. Authz can be bypassed by site admins unless
+	// conf.AuthEnforceForSiteAdmins is set to "true".
+	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
+	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
+		currentUser, err := Users(tx.DB()).GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, nil, tx.Done(err)
+		}
+		authenticatedUserID = currentUser.ID
+		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
+	}
+
+	// End of copy
+
+	_, err = tx.DB().ExecContext(ctx, fmt.Sprintf(
 		ensureAuthzCondsFmt,
-		false,
-		1,
-		true,
+		bypassAuthz,
+		authenticatedUserID,
+		usePermissionsUserMapping,
 	))
-	return err
+	if err != nil {
+		return nil, nil, tx.Done(err)
+	}
+	return tx.DB(), tx.Done, nil
 }
 
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
