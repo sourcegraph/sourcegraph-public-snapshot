@@ -49,15 +49,7 @@ func TestBulkProcessor(t *testing.T) {
 			tx:      bstore,
 			sourcer: sources.NewFakeSourcer(nil, fake),
 		}
-		job := &types.ChangesetJob{
-			JobType:     types.ChangesetJobTypeComment,
-			ChangesetID: changeset.ID,
-			UserID:      user.ID,
-		}
-		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-			t.Fatal(err)
-		}
-		job.JobType = types.ChangesetJobType("UNKNOWN")
+		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN")}
 		err := bp.process(ctx, job)
 		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
 			t.Fatalf("unexpected error returned %s", err)
@@ -74,6 +66,7 @@ func TestBulkProcessor(t *testing.T) {
 			JobType:     types.ChangesetJobTypeComment,
 			ChangesetID: changeset.ID,
 			UserID:      user.ID,
+			Payload:     &btypes.ChangesetJobCommentPayload{},
 		}
 		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
 			t.Fatal(err)
@@ -98,10 +91,9 @@ func TestBulkProcessor(t *testing.T) {
 			ChangesetID:   changeset.ID,
 			UserID:        user.ID,
 			BatchChangeID: batchChange.ID,
+			Payload:       &btypes.ChangesetJobDetachPayload{},
 		}
-		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-			t.Fatal(err)
-		}
+
 		err := bp.process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
@@ -131,12 +123,10 @@ func TestBulkProcessor(t *testing.T) {
 			JobType:     types.ChangesetJobTypeReenqueue,
 			ChangesetID: changeset.ID,
 			UserID:      user.ID,
+			Payload:     &btypes.ChangesetJobReenqueuePayload{},
 		}
 		changeset.ReconcilerState = btypes.ReconcilerStateFailed
 		if err := bstore.UpdateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
-		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
 			t.Fatal(err)
 		}
 		err := bp.process(ctx, job)
@@ -162,9 +152,7 @@ func TestBulkProcessor(t *testing.T) {
 			JobType:     types.ChangesetJobTypeMerge,
 			ChangesetID: changeset.ID,
 			UserID:      user.ID,
-		}
-		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-			t.Fatal(err)
+			Payload:     &btypes.ChangesetJobMergePayload{},
 		}
 		err := bp.process(ctx, job)
 		if err != nil {
@@ -185,9 +173,7 @@ func TestBulkProcessor(t *testing.T) {
 			JobType:     types.ChangesetJobTypeClose,
 			ChangesetID: changeset.ID,
 			UserID:      user.ID,
-		}
-		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-			t.Fatal(err)
+			Payload:     &btypes.ChangesetJobClosePayload{},
 		}
 		err := bp.process(ctx, job)
 		if err != nil {

@@ -27,7 +27,6 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { InsightsApiContext, InsightsViewGrid } from '../../insights'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
@@ -56,8 +55,7 @@ export interface SearchPageProps
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
-        ShowQueryBuilderProps,
-        FeatureFlagProps {
+        ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -79,7 +77,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const showCodeInsights =
         !isErrorLike(props.settingsCascade.final) &&
         !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-        props.settingsCascade.final['insights.displayLocation.homepage'] !== false
+        props.settingsCascade.final['insights.displayLocation.homepage'] === true
 
     const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(

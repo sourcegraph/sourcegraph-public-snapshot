@@ -91,9 +91,10 @@ func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload 
 	}
 
 	return AdjustedCodeIntelligenceRange{
-		Range:       adjustedRange,
-		Definitions: adjustedDefinitions,
-		References:  adjustedReferences,
-		HoverText:   rn.HoverText,
+		Range:               adjustedRange,
+		Definitions:         adjustedDefinitions,
+		References:          adjustedReferences,
+		HoverText:           rn.HoverText,
+		DocumentationPathID: rn.DocumentationPathID,
 	}, true, nil
 }

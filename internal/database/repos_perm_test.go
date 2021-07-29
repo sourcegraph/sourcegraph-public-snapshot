@@ -39,6 +39,10 @@ func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) (*authz.
 	return nil, nil
 }
 
+func (p *fakeProvider) FetchUserPermsByToken(context.Context, string) (*authz.ExternalUserPermissions, error) {
+	return nil, nil
+}
+
 func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return nil, nil
 }

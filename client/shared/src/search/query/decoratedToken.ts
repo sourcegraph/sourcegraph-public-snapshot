@@ -429,12 +429,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
     }
     // The AST is not necessarily traversed in increasing range. We need
     // to sort by increasing range because the ordering is significant to Monaco.
-    tokens.sort((left, right) => {
-        if (left.range.start < right.range.start) {
-            return -1
-        }
-        return 0
-    })
+    tokens.sort((left, right) => left.range.start - right.range.start)
     return coalescePatterns(tokens)
 }
 

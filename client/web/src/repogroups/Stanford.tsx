@@ -1,5 +1,8 @@
+import React from 'react'
+
 import { SearchPatternType } from '../graphql-operations'
 
+import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import { RepogroupMetadata } from './types'
 
 export const stanford: RepogroupMetadata = {
@@ -45,3 +48,7 @@ export const stanford: RepogroupMetadata = {
     homepageIcon:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Icons8_flat_graduation_cap.svg/120px-Icons8_flat_graduation_cap.svg.png',
 }
+
+export const StanfordRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
+    <RepogroupPage {...props} repogroupMetadata={stanford} />
+)

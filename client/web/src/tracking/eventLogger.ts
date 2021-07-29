@@ -116,16 +116,17 @@ export class EventLogger implements TelemetryService {
     public getReferrer(): string {
         const referrer = document.referrer
         try {
-            // 🚨 SECURITY: Return if the referrer is a valid non-Sourcegraph.com URL
-            // to avoid leaking private code URLs.
+            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+            // only send the hostname instead of the whole URL to avoid
+            // leaking private repository names and files into our data.
             const url = new URL(referrer)
-            if (url.hostname !== 'sourcegraph.com') {
-                return referrer
+            if (url.hostname === 'sourcegraph.com') {
+                return 'sourcegraph.com'
             }
+            return referrer
         } catch {
             return ''
         }
-        return ''
     }
 
     /**

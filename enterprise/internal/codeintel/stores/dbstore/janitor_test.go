@@ -84,6 +84,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
 		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
 	)
 	insertIndexes(t, db,
 		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
@@ -108,14 +109,14 @@ func TestRefreshCommitResolvability(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability")
 	}
-	if uploadsUpdated != 1 {
+	if uploadsUpdated != 2 {
 		t.Fatalf("unexpected uploads updated. want=%d have=%d", 1, uploadsUpdated)
 	}
 	if indexesUpdated != 1 {
 		t.Fatalf("unexpected indexes updated. want=%d have=%d", 1, indexesUpdated)
 	}
 
-	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5)
+	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5, 6)
 	if err != nil {
 		t.Fatalf("unexpected error fetching upload states: %s", err)
 	}
@@ -124,7 +125,8 @@ func TestRefreshCommitResolvability(t *testing.T) {
 		2: "completed",
 		3: "completed",
 		4: "completed",
-		5: "deleted",
+		5: "deleting",
+		6: "deleted",
 	}
 	if diff := cmp.Diff(expectedUploadStates, uploadStates); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
@@ -137,7 +139,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 	expectedIndexStates := map[int]string{
 		1: "completed",
 		2: "completed",
-		3: "deleted",
+		3: "deleting",
 		4: "completed",
 		5: "completed",
 	}

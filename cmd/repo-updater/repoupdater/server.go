@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -37,6 +38,9 @@ type Server struct {
 	}
 	GitLabDotComSource interface {
 		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
+	}
+	JVMPackagesSource interface {
+		GetRepo(ctx context.Context, artifactName string) (*types.Repo, error)
 	}
 	Scheduler interface {
 		UpdateOnce(id api.RepoID, name api.RepoName)
@@ -360,9 +364,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				// when a repository stored in the database is not accessible anymore, no other
 				// external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
-						r.DeletedAt = s.Now()
-					}))
+					err = s.Store.RepoStore.Delete(ctx, repo.ID)
 					if err != nil {
 						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
 					}
@@ -433,6 +435,25 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 			}
 			return nil, err
 		}
+	case extsvc.JVMPackages:
+		if s.JVMPackagesSource != nil {
+			repo, err = s.JVMPackagesSource.GetRepo(ctx, remoteName)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					return &protocol.RepoLookupResult{
+						ErrorNotFound: true,
+					}, nil
+				}
+				return nil, err
+			}
+		} else {
+			log15.Error(
+				"JVMPackagesSource is nil: doing nothing. To fix this problem, make sure that cloud_default is true for the JVM Dependencies external service type.",
+				"remoteName", remoteName)
+			return &protocol.RepoLookupResult{
+				ErrorNotFound: true,
+			}, nil
+		}
 	}
 
 	if repo.Private {
@@ -441,7 +462,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}, nil
 	}
 
-	err = s.Syncer.SyncRepo(ctx, s.Store, repo)
+	err = s.Syncer.SyncRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}

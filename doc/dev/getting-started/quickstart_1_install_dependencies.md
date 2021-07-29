@@ -56,7 +56,7 @@ The following are two recommendations for installing these dependencies:
 
 5. (with docker) Install Docker Compose
 
-    We provide a docker compose file at `dev/compose.yml` to make it easy to run Redis and PostgreSQL as docker containers. Fortunately `docker-compose` comes with Docker for Mac so no additional step is required.
+    We provide a docker compose file at `dev/redis-postgres.yml` to make it easy to run Redis and PostgreSQL as docker containers. Fortunately `docker-compose` comes with Docker for Mac so no additional step is required.
 
     See the official [docker compose documentation](https://docs.docker.com/compose/install/).
 
@@ -191,7 +191,7 @@ The following are two recommendations for installing these dependencies:
 
 3. (with docker) Install Docker Compose
 
-    We provide a docker compose file at `dev/compose.yml` to make it easy to run Redis and PostgreSQL as docker containers.
+    We provide a docker compose file at `dev/redis-postgres.yml` to make it easy to run Redis and PostgreSQL as docker containers.
 
     > NOTE: Although Ubuntu provides a `docker-compose` package, we recommend to install the latest version via `pip` so that it is compatible with our compose file.
 

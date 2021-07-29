@@ -50,7 +50,12 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
 
 const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
 
-export const ChangesetStatusUnpublished: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+interface ChangesetStatusIconProps {
+    label?: React.ReactNode
+    className?: string
+}
+
+export const ChangesetStatusUnpublished: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Unpublished</span>,
     className,
 }) => (
@@ -59,7 +64,7 @@ export const ChangesetStatusUnpublished: React.FunctionComponent<{ label?: JSX.E
         {label}
     </div>
 )
-export const ChangesetStatusClosed: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusClosed: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Closed</span>,
     className,
 }) => (
@@ -68,7 +73,7 @@ export const ChangesetStatusClosed: React.FunctionComponent<{ label?: JSX.Elemen
         {label}
     </div>
 )
-export const ChangesetStatusMerged: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusMerged: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Merged</span>,
     className,
 }) => (
@@ -77,7 +82,7 @@ export const ChangesetStatusMerged: React.FunctionComponent<{ label?: JSX.Elemen
         {label}
     </div>
 )
-export const ChangesetStatusOpen: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusOpen: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Open</span>,
     className,
 }) => (
@@ -86,7 +91,7 @@ export const ChangesetStatusOpen: React.FunctionComponent<{ label?: JSX.Element;
         {label}
     </div>
 )
-export const ChangesetStatusDraft: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusDraft: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Draft</span>,
     className,
 }) => (
@@ -95,7 +100,7 @@ export const ChangesetStatusDraft: React.FunctionComponent<{ label?: JSX.Element
         {label}
     </div>
 )
-export const ChangesetStatusDeleted: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusDeleted: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Deleted</span>,
     className,
 }) => (
@@ -104,7 +109,7 @@ export const ChangesetStatusDeleted: React.FunctionComponent<{ label?: JSX.Eleme
         {label}
     </div>
 )
-export const ChangesetStatusError: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusError: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span className="text-danger">Failed</span>,
     className,
 }) => (
@@ -113,7 +118,7 @@ export const ChangesetStatusError: React.FunctionComponent<{ label?: JSX.Element
         {label}
     </div>
 )
-export const ChangesetStatusRetrying: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusRetrying: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Retrying</span>,
     className,
 }) => (
@@ -123,7 +128,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<{ label?: JSX.Elem
     </div>
 )
 
-export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusProcessing: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Processing</span>,
     className,
 }) => (
@@ -133,7 +138,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.El
     </div>
 )
 
-export const ChangesetStatusArchived: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+export const ChangesetStatusArchived: React.FunctionComponent<ChangesetStatusIconProps> = ({
     label = <span>Archived</span>,
     className,
 }) => (

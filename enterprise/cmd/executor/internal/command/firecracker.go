@@ -22,11 +22,6 @@ type commandRunner interface {
 
 const firecrackerContainerDir = "/work"
 
-var commonFirecrackerFlags = []string{
-	"--runtime", "docker",
-	"--network-plugin", "docker-bridge",
-}
-
 // formatFirecrackerCommand constructs the command to run on the host via a Firecracker
 // virtual machine in order to invoke the given spec. If the spec specifies an image, then
 // the command will be run inside of a container inside of the VM. Otherwise, the command
@@ -119,7 +114,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		Key: "setup.firecracker.start",
 		Command: flatten(
 			"ignite", "run",
-			commonFirecrackerFlags,
+			"--runtime", "docker",
+			"--network-plugin", "docker-bridge",
 			firecrackerResourceFlags(options.ResourceOptions),
 			firecrackerCopyfileFlags(repoDir, imageKeys, options),
 			"--ssh",
@@ -170,20 +166,20 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, options Options, operations *Operations) error {
 	stopCommand := command{
 		Key:       "teardown.firecracker.stop",
-		Command:   flatten("ignite", "stop", commonFirecrackerFlags, name),
+		Command:   flatten("ignite", "stop", name),
 		Operation: operations.TeardownFirecrackerStop,
 	}
 	if err := runner.RunCommand(ctx, stopCommand, logger); err != nil {
-		log15.Warn("Failed to stop firecracker vm", "name", name, "err", err)
+		log15.Error("Failed to stop firecracker vm", "name", name, "err", err)
 	}
 
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
-		Command:   flatten("ignite", "rm", "-f", commonFirecrackerFlags, name),
+		Command:   flatten("ignite", "rm", "-f", name),
 		Operation: operations.TeardownFirecrackerRemove,
 	}
 	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
-		log15.Warn("Failed to remove firecracker vm", "name", name, "err", err)
+		log15.Error("Failed to remove firecracker vm", "name", name, "err", err)
 	}
 
 	return nil
@@ -215,6 +211,7 @@ func firecrackerCopyfileFlags(dir string, imageKeys []string, options Options) [
 	return intersperse("--copy-files", copyfiles)
 }
 
+// NOTE: The options.FirecreackerOptions.ImageArchivesPath needs to exist on the host
 func tarfilePathOnHost(key string, options Options) string {
 	return filepath.Join(options.FirecrackerOptions.ImageArchivesPath, fmt.Sprintf("%s.tar", key))
 }

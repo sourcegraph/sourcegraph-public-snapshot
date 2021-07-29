@@ -13,8 +13,10 @@ RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
 
 FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304 AS coursier
 
-RUN wget -O coursier https://github.com/coursier/coursier/releases/download/v2.0.16/cs-x86_64-pc-linux && \
-    mv coursier /usr/local/bin/coursier && \
+# TODO(code-intel): replace with official streams when musl builds are upstreamed
+RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
+    unzip coursier.zip && \
+    mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
 FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304
@@ -42,7 +44,7 @@ RUN apk update && apk add --no-cache \
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     'bash=5.0.17-r0' \
-    'redis=5.0.11-r0' \
+    'redis=5.0.13-r0' \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
     git-p4 \
@@ -57,7 +59,7 @@ RUN apk update && apk add --no-cache \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:0.18.4@sha256:b47ce282778bfea7f80d45f5ef0cc546ba0d6347baccebaf171a7866143b2593 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=docker.io/sourcegraph/syntect_server:71d2481@sha256:8854665264522a86b711c732d803395478dab30f6df6197b5d0c1c7c21cd6261 /syntect_server /usr/local/bin/
+COPY --from=docker.io/sourcegraph/syntect_server:32d880d@sha256:899661691c3a6f8d587186bed73c3224b065d1e1c3485aff2ea208c261c010f6 /syntect_server /usr/local/bin/
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)

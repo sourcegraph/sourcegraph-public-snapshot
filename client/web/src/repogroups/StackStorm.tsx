@@ -1,5 +1,8 @@
+import React from 'react'
+
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
+import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import { RepogroupMetadata } from './types'
 
 export const stackStorm: RepogroupMetadata = {
@@ -37,3 +40,7 @@ export const stackStorm: RepogroupMetadata = {
     homepageDescription: 'Search within the StackStorm and StackStorm Exchange community.',
     homepageIcon: 'https://avatars.githubusercontent.com/u/4969009?s=200&v=4',
 }
+
+export const StackStormRepogroupPage: React.FunctionComponent<
+    Omit<RepogroupPageProps, 'repogroupMetadata'>
+> = props => <RepogroupPage {...props} repogroupMetadata={stackStorm} />

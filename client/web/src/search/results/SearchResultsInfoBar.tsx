@@ -7,7 +7,6 @@ import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
@@ -23,9 +22,8 @@ import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SearchPatternType } from '../../graphql-operations'
-import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon, ExtensionRadialGradientIcon } from '../CtaIcons'
+import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../CtaIcons'
 import styles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
 import {
@@ -69,8 +67,7 @@ export interface SearchResultsInfoBarProps
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        CodeMonitoringProps,
-        FeatureFlagProps {
+        CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
@@ -114,7 +111,7 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
     }
     return (
         <ButtonLink
-            className={classNames('btn btn-sm btn-outline-secondary nav-link text-decoration-none', props.className)}
+            className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', props.className)}
             to={props.nonExperimentalLinkTo}
             onSelect={props.onNonExperimentalLinkClick}
             disabled={props.isNonExperimentalLinkDisabled}
@@ -157,10 +154,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         return globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
     }, [props.query])
 
-    const showCreateCodeMonitoringButton =
-        props.enableCodeMonitoring &&
-        !!props.query &&
-        (!!props.authenticatedUser || !!props.featureFlags.get('w0-signup-optimisation'))
+    const showCreateCodeMonitoringButton = props.enableCodeMonitoring && !!props.query
 
     const [hasSeenSearchContextsFeatureTour] = useLocalStorage(HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, false)
     const tour = useFeatureTour(
@@ -189,8 +183,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         tour.cancel()
     }, [props.telemetryService, tour])
 
-    const showActionButtonExperimentalVersion =
-        !props.authenticatedUser && !!props.featureFlags.get('w0-signup-optimisation')
+    const showActionButtonExperimentalVersion = !props.authenticatedUser
 
     const codeInsightsButton = useMemo(
         () => (
@@ -213,7 +206,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
             <li
-                className="nav-item mr-2"
+                className="mr-2"
                 data-tooltip={
                     props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
@@ -237,6 +230,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     copyText="Create a monitor and get notified when your code changes. Free for registered users."
                     telemetryService={props.telemetryService}
                     source="Monitor"
+                    viewEventName="SearchResultMonitorCTAShown"
                     returnTo={toURL}
                     onToggle={onCreateCodeMonitorButtonSelect}
                 />
@@ -254,14 +248,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         onCreateCodeMonitorButtonSelect,
     ])
 
-    const saveSearchButton = useMemo(() => {
-        // We do not want to show the save search button to unaunthenticated users without the `w0-signup-optimisation` flag enabled
-        // because unauthenticated users cannot save a search.
-        if (!props.authenticatedUser && !props.featureFlags.get('w0-signup-optimisation')) {
-            return null
-        }
-        return (
-            <li className="nav-item mr-2">
+    const saveSearchButton = useMemo(
+        () => (
+            <li className="mr-2">
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     onNonExperimentalLinkClick={props.onSaveQueryClick}
@@ -276,44 +265,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
+                    viewEventName="SearchResultSavedSeachCTAShown"
                     returnTo={props.location.pathname + props.location.search}
                     telemetryService={props.telemetryService}
                 />
             </li>
-        )
-    }, [
-        props.location,
-        props.authenticatedUser,
-        props.featureFlags,
-        showActionButtonExperimentalVersion,
-        props.onSaveQueryClick,
-        props.telemetryService,
-    ])
-
-    const extendButton = useMemo(
-        () =>
-            // Only show extend button to signed out users that have the feature flag enabled
-            showActionButtonExperimentalVersion ? (
-                <li className="nav-item mr-2">
-                    <ExperimentalActionButton
-                        showExperimentalVersion={showActionButtonExperimentalVersion}
-                        nonExperimentalLinkTo="/extensions"
-                        button={
-                            <>
-                                <PuzzleOutlineIcon className="icon-inline mr-1" />
-                                Extend
-                            </>
-                        }
-                        icon={<ExtensionRadialGradientIcon />}
-                        title="Extend your search experience"
-                        copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
-                        source="Extend"
-                        returnTo="/extensions"
-                        telemetryService={props.telemetryService}
-                    />
-                </li>
-            ) : null,
-        [showActionButtonExperimentalVersion, props.telemetryService]
+        ),
+        [props.location, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService]
     )
 
     const extraContext = useMemo(
@@ -359,10 +317,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}
-                        actionItemClass="btn nav-link btn-outline-secondary mr-2 text-decoration-none btn-sm"
+                        actionItemClass="btn btn-outline-secondary mr-2 text-decoration-none btn-sm"
                     />
-
-                    {extendButton}
 
                     {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
@@ -379,7 +335,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 <button
                                     type="button"
                                     onClick={props.onExpandAllResultsToggle}
-                                    className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
+                                    className="btn btn-sm btn-outline-secondary text-decoration-none"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                 >
                                     {props.allExpanded ? (

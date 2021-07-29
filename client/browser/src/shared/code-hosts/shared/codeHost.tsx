@@ -30,6 +30,7 @@ import {
     distinctUntilChanged,
     retryWhen,
     mapTo,
+    take,
 } from 'rxjs/operators'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 
@@ -48,10 +49,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
-import {
-    isPrivateRepoPublicSourcegraphComErrorLike,
-    isRepoNotFoundErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
+import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import {
     CommandListClassProps,
@@ -91,7 +89,7 @@ import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { observeSourcegraphURL } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -104,12 +102,7 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import {
-    createPrivateCodeHoverAlert,
-    getActiveHoverAlerts,
-    onHoverAlertDismissed,
-    userNeedsToSetupPrivateInstance,
-} from './hoverAlerts'
+import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -351,10 +344,12 @@ function initCodeIntelligence({
     render,
     telemetryService,
     hoverAlerts,
+    privateCloudErrors,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
+    privateCloudErrors: Observable<boolean>
 }): {
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
@@ -398,19 +393,25 @@ function initCodeIntelligence({
                 [{ isLoading: true, result: null }],
                 combineLatest([
                     from(extensionsController.extHostAPI).pipe(
-                        switchMap(extensionHost =>
-                            wrapRemoteObservable(
-                                extensionHost.getHover(
-                                    toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                                )
-                            )
+                        withLatestFrom(privateCloudErrors),
+                        switchMap(([extensionHost, hasPrivateCloudError]) =>
+                            // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
+                            hasPrivateCloudError
+                                ? of({ isLoading: true, result: null })
+                                : wrapRemoteObservable(
+                                      extensionHost.getHover(
+                                          toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                                      )
+                                  )
                         )
                     ),
                     getActiveHoverAlerts([
                         ...hoverAlerts,
-                        ...(userNeedsToSetupPrivateInstance(codeHost, platformContext.sourcegraphURL)
-                            ? [of(createPrivateCodeHoverAlert(codeHost))]
-                            : []),
+                        privateCloudErrors.pipe(
+                            distinctUntilChanged(),
+                            map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
+                            filter(isDefined)
+                        ),
                     ]),
                 ]).pipe(
                     map(
@@ -423,15 +424,26 @@ function initCodeIntelligence({
             ),
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
             from(extensionsController.extHostAPI).pipe(
-                switchMap(extensionHost =>
-                    wrapRemoteObservable(
-                        extensionHost.getDocumentHighlights(
-                            toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                        )
-                    )
+                withLatestFrom(privateCloudErrors),
+                switchMap(([extensionHost, hasPrivateCloudError]) =>
+                    // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
+                    hasPrivateCloudError
+                        ? of([])
+                        : wrapRemoteObservable(
+                              extensionHost.getDocumentHighlights(
+                                  toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                              )
+                          )
                 )
             ),
-        getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+        getActions: context =>
+            // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
+            privateCloudErrors.pipe(
+                take(1),
+                switchMap(hasPrivateCloudError =>
+                    hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
+                )
+            ),
         pinningEnabled: true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
@@ -595,7 +607,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     render: typeof reactDOMRender
     minimalUI: boolean
     hideActions?: boolean
-    background: Pick<BackgroundPageApi, 'notifyPrivateRepository' | 'openOptionsPage'>
+    background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
 }
 
 export function handleCodeHost({
@@ -615,16 +627,6 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    if (isExtension) {
-        // Notify the background page that we are on a private repository
-        // This information will be used to alert the user when using Sourcegraph Cloud
-        // while on a private repository.
-        const isPrivateRepo = !codeHost.getContext || codeHost.getContext().privateRepository
-        background.notifyPrivateRepository(isPrivateRepo).catch(error => {
-            console.error('Error notifying background page of private repository:', error)
-        })
-    }
-
     const addedElements = mutations.pipe(
         concatAll(),
         concatMap(mutation => mutation.addedNodes),
@@ -637,12 +639,35 @@ export function handleCodeHost({
 
     const hoverAlerts: Observable<HoverAlert>[] = []
 
+    /**
+     * A stream that emits a boolean that signifies
+     * whether any request for the current repository has failed on the basis
+     * that it is a private repository that has not been added to Sourcegraph Cloud
+     * (only emits `true` when the Sourcegraph instance is Cloud).
+     * If the current state is `true`, we can short circuit subsequent requests.
+     * */
+    const privateCloudErrors = new BehaviorSubject<boolean>(false)
+    // Set by `ViewOnSourcegraphButton` (cleans up and sets to `false` whenever it is unmounted).
+    const setPrivateCloudError = privateCloudErrors.next.bind(privateCloudErrors)
+
+    /**
+     * Checks whether the error occured because the repository
+     * is a private repository that hasn't been added to Sourcegraph Cloud
+     * (no side effects, doesn't notify `privateCloudErrors`)
+     * */
+    const checkPrivateCloudError = (error: any): boolean =>
+        !!(
+            isRepoNotFoundErrorLike(error) &&
+            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
+            codeHost.getContext?.().privateRepository
+        )
+
     if (codeHost.nativeTooltipResolvers) {
         const { subscription, nativeTooltipsAlert } = handleNativeTooltips(
             mutations,
             nativeTooltipsEnabled,
             codeHost,
-            platformContext.sourcegraphURL
+            privateCloudErrors
         )
         subscriptions.add(subscription)
         hoverAlerts.push(nativeTooltipsAlert)
@@ -657,6 +682,7 @@ export function handleCodeHost({
         render,
         hoverAlerts,
         mutations,
+        privateCloudErrors,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
@@ -741,6 +767,14 @@ export function handleCodeHost({
                 await background.openOptionsPage()
             }
         }
+        const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
+            setPrivateCloudError(hasPrivateCloudError)
+            if (isExtension) {
+                background.notifyPrivateCloudError(hasPrivateCloudError).catch(error => {
+                    console.error('Error notifying background page of private cloud error:', error)
+                })
+            }
+        }
 
         subscriptions.add(
             combineLatest([
@@ -764,6 +798,7 @@ export function handleCodeHost({
                         // The bound function is constant
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
+                        onPrivateCloudError={onPrivateCloudError}
                     />,
                     mount
                 )
@@ -786,10 +821,18 @@ export function handleCodeHost({
                 codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL)
             ).pipe(
                 mergeMap(diffOrBlobInfo =>
-                    resolveRepoNamesForDiffOrFileInfo(diffOrBlobInfo, platformContext.requestGraphQL)
+                    resolveRepoNamesForDiffOrFileInfo(
+                        diffOrBlobInfo,
+                        checkPrivateCloudError,
+                        platformContext.requestGraphQL
+                    )
                 ),
                 mergeMap(diffOrBlobInfo =>
-                    fetchFileContentForDiffOrFileInfo(diffOrBlobInfo, platformContext.requestGraphQL).pipe(
+                    fetchFileContentForDiffOrFileInfo(
+                        diffOrBlobInfo,
+                        checkPrivateCloudError,
+                        platformContext.requestGraphQL
+                    ).pipe(
                         map(diffOrBlobInfo => ({
                             diffOrBlobInfo,
                             ...codeViewEvent,
@@ -797,8 +840,8 @@ export function handleCodeHost({
                     )
                 ),
                 catchError(error => {
-                    // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
+                    // Ignore private Cloud RepoNotFound errors (don't initialize those code views)
+                    if (checkPrivateCloudError(error)) {
                         return EMPTY
                     }
                     throw error

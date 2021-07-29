@@ -6,7 +6,6 @@ import (
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -52,7 +51,7 @@ type Resolver struct {
 	SearchableReposFunc searchableReposFunc
 }
 
-func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
+func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
@@ -314,73 +313,6 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		ExcludedRepos:   excluded,
 		OverLimit:       overLimit,
 	}, err
-}
-
-type Options struct {
-	RepoFilters        []string
-	MinusRepoFilters   []string
-	RepoGroupFilters   []string
-	SearchContextSpec  string
-	VersionContextName string
-	UserSettings       *schema.Settings
-	NoForks            bool
-	OnlyForks          bool
-	NoArchived         bool
-	OnlyArchived       bool
-	CommitAfter        string
-	OnlyPrivate        bool
-	OnlyPublic         bool
-	Ranked             bool // Return results ordered by rank
-	Limit              int
-	CacheLookup        bool
-	Query              query.Q
-}
-
-func (op *Options) String() string {
-	var b strings.Builder
-	if len(op.RepoFilters) == 0 {
-		b.WriteString("r=[]")
-	}
-	for i, r := range op.RepoFilters {
-		if i != 0 {
-			b.WriteByte(' ')
-		}
-		b.WriteString(strconv.Quote(r))
-	}
-
-	if len(op.MinusRepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
-	}
-	if len(op.RepoGroupFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " groups=%v", op.RepoGroupFilters)
-	}
-	if op.VersionContextName != "" {
-		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.VersionContextName)
-	}
-	if op.CommitAfter != "" {
-		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
-	}
-
-	if op.NoForks {
-		b.WriteString(" NoForks")
-	}
-	if op.OnlyForks {
-		b.WriteString(" OnlyForks")
-	}
-	if op.NoArchived {
-		b.WriteString(" NoArchived")
-	}
-	if op.OnlyArchived {
-		b.WriteString(" OnlyArchived")
-	}
-	if op.OnlyPrivate {
-		b.WriteString(" OnlyPrivate")
-	}
-	if op.OnlyPublic {
-		b.WriteString(" OnlyPublic")
-	}
-
-	return b.String()
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and

@@ -195,6 +195,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		repoMetadata := h.getEventRepoMetadata(ctx, event)
 		for _, match := range event.Results {
+			// Don't send matches which we cannot map to a repo the actor has access to. This
+			// check is expected to always pass. Missing metadata is a sign that we have
+			// searched repos that user shouldn't have access to.
+			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+				continue
+			}
 			matchesAppend(fromMatch(match, repoMetadata))
 		}
 
@@ -420,10 +426,36 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamh
 }
 
 func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
-	if syms := fm.Symbols; len(syms) > 0 {
+	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
+	} else if len(fm.LineMatches) > 0 {
+		return fromContentMatch(fm, repoCache)
+	}
+	return fromPathMatch(fm, repoCache)
+}
+
+func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventPathMatch {
+	var branches []string
+	if fm.InputRev != nil {
+		branches = []string{*fm.InputRev}
 	}
 
+	var stars int
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		stars = r.Stars
+	}
+
+	return &streamhttp.EventPathMatch{
+		Type:       streamhttp.PathMatchType,
+		Path:       fm.Path,
+		Repository: string(fm.Repo.Name),
+		RepoStars:  stars,
+		Branches:   branches,
+		Version:    string(fm.CommitID),
+	}
+}
+
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventContentMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -443,8 +475,8 @@ func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) s
 		stars = r.Stars
 	}
 
-	return &streamhttp.EventFileMatch{
-		Type:        streamhttp.FileMatchType,
+	return &streamhttp.EventContentMatch{
+		Type:        streamhttp.ContentMatchType,
 		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
 		RepoStars:   stars,

@@ -1,5 +1,8 @@
+import React from 'react'
+
 import { SearchPatternType } from '../graphql-operations'
 
+import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import { RepogroupMetadata } from './types'
 
 export const golang: RepogroupMetadata = {
@@ -42,3 +45,7 @@ export const golang: RepogroupMetadata = {
     homepageDescription: 'Find code examples in top Go repositories.',
     homepageIcon: 'https://code.benco.io/icon-collection/logos/go-lang.svg',
 }
+
+export const GolangRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
+    <RepogroupPage {...props} repogroupMetadata={golang} />
+)

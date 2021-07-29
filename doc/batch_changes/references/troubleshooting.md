@@ -140,8 +140,26 @@ docker run --rm --init --workdir /work \
 
 Make sure that you put your `steps.run` command in `/tmp-script` (or any other location), replace `<IMAGE>` with the name of the Docker image, and `/unzipped-archive-locally` (or any other location) with a local copy of the repository in which you want to execute the steps.
 
+### Does it work if you switch to using the workspace mode using Docker volumes?
+
+If executing the `steps` in the batch spec fails with a message that looks similar to this one (i.e. permission error)
+
+```
+/bin/sh: can't open '/tmp/tmp.IbdkiA': Permission denied
+```
+
+or you're using SELinux or are in a locked-down environment it's possible that Docker bind mounts won't work.
+
+Try using the `-workspace volume` flag (see [`src batch apply`](../../cli/references/batch/apply.md#flags) for a list of all flags) to make `src` use Docker volumes instead:
+
+```
+src batch apply -workspace volume -f my-spec.yaml
+# or:
+src batch preview -workspace volume -f my-spec.yaml
+```
+
 ## Publishing changesets
 
 ### Do you have the right credentials?
 
-When publishing changesets fails, make sure that the credentials you use have the correct credentials to create changesets on the code host: "[Configuring credentials](../how-tos/configuring_credentials.md)"
+When publishing changesets fails, make sure that you have [configured credentials](../how-tos/configuring_credentials.md) with all of the required scopes and from an account with write access to the changeset's repository on the code host.

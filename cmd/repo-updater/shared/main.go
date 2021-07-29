@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -196,7 +195,11 @@ func Main(enterpriseInit EnterpriseInit) {
 			// cloud_default flag has been set.
 			NoNamespace:      true,
 			OnlyCloudDefault: true,
-			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
+			Kinds: []string{
+				extsvc.KindGitHub,
+				extsvc.KindGitLab,
+				extsvc.KindJVMPackages,
+			},
 		})
 		if err != nil {
 			log.Fatalf("failed to list external services: %v", err)
@@ -217,6 +220,8 @@ func Main(enterpriseInit EnterpriseInit) {
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
+			case *schema.JVMPackagesConnection:
+				server.JVMPackagesSource, err = repos.NewJVMPackagesSource(e)
 			}
 
 			if err != nil {
@@ -242,21 +247,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
-		Streaming:  os.Getenv("ENABLE_STREAMING_REPOS_SYNCER") == "true",
-	}
-
-	if syncer.Streaming {
-		log15.Info("Running syncer in streaming mode because ENABLE_STREAMING_REPOS_SYNCER is set to true ")
 	}
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
-
-		// WARNING: This enables the streaming inserter which allows it to sync private repos. If
-		// this is ever enabled for sourcegraph.com, we want to be sure we are not unintentionally
-		// syncing private repos.
-		syncer.SingleRepoSynced = make(chan repos.Diff)
 	}
 
 	go watchSyncer(ctx, syncer, scheduler, gps)
@@ -443,11 +438,6 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
 				}
 			}()
-
-		case diff := <-syncer.SingleRepoSynced:
-			if !conf.Get().DisableAutoGitUpdates {
-				sched.UpdateFromDiff(diff)
-			}
 		}
 	}
 }

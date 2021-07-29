@@ -318,6 +318,7 @@ Referenced by:
  trigger_event     | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -437,6 +438,7 @@ Foreign-key constraints:
  num_results       | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -770,13 +772,21 @@ Indexes:
  record_time       | timestamp with time zone |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ priority          | integer                  |           | not null | 1
+ cost              | integer                  |           | not null | 500
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
+    "insights_query_runner_jobs_cost_idx" btree (cost)
+    "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_state_btree" btree (state)
 
 ```
 
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+
+**cost**: Integer representing a cost approximation of executing this search query.
+
+**priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
@@ -1075,6 +1085,7 @@ Stores the retention policy of code intellience data for a repository.
  commit_last_checked_at | timestamp with time zone |           |          | 
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
+ execution_logs         | json[]                   |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2045,7 +2056,7 @@ Triggers:
     u.associated_index_id,
     u.finished_at AS processed_at
    FROM lsif_uploads u
-  WHERE (u.state = 'completed'::text);
+  WHERE ((u.state = 'completed'::text) OR (u.state = 'deleting'::text));
 ```
 
 # View "public.lsif_dumps_with_repository_name"

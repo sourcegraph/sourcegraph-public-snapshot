@@ -1,4 +1,11 @@
 env:
+  PGPORT: 5432
+  PGHOST: localhost
+  PGUSER: sourcegraph
+  PGPASSWORD: sourcegraph
+  PGDATABASE: sourcegraph
+  PGSSLMODE: disable
+
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
@@ -40,7 +47,6 @@ env:
       { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
-      { "Name": "executor-queue", "Host": "127.0.0.1:6091" },
       { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
       { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-indexserver-0", "Host": "127.0.0.1:6072" },
@@ -83,7 +89,6 @@ env:
   EXECUTOR_FRONTEND_URL: http://localhost:3080
   EXECUTOR_FRONTEND_USERNAME: executor
   EXECUTOR_FRONTEND_PASSWORD: hunter2
-  EXECUTOR_QUEUE_URL: http://localhost:3191
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
@@ -103,7 +108,7 @@ env:
 
 commands:
   frontend:
-    cmd: ulimit -n 10000 && .bin/frontend
+    cmd: .bin/frontend
     install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
@@ -118,7 +123,6 @@ commands:
 
   enterprise-frontend:
     cmd: |
-      ulimit -n 10000
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/enterprise-frontend
@@ -162,7 +166,7 @@ commands:
       - cmd/github-proxy
 
   worker:
-    cmd: ulimit -n 10000 && .bin/worker
+    cmd: .bin/worker
     install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
@@ -170,7 +174,7 @@ commands:
       - cmd/worker
 
   enterprise-worker:
-    cmd: ulimit -n 10000 && .bin/worker
+    cmd: .bin/worker
     install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
     watch:
       - lib
@@ -319,7 +323,7 @@ commands:
     cmd: |
       docker run --name=syntect_server --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntect_server:71d2481@sha256:8854665264522a86b711c732d803395478dab30f6df6197b5d0c1c7c21cd6261
+      sourcegraph/syntect_server:32d880d@sha256:899661691c3a6f8d587186bed73c3224b065d1e1c3485aff2ea208c261c010f6
     install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
     env:
       # This is not needed actually
@@ -393,23 +397,13 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-queue:
-    cmd: .bin/executor-queue
-    install: |
-      go build -o .bin/executor-queue github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
-    checkBinary: .bin/executor-queue
-    watch:
-      - lib
-      - internal
-      - enterprise/internal
-      - enterprise/cmd/executor-queue
-
   executor-template: &executor_template
     # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
-      go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
+      go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
+      mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
     checkBinary: .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: TEMPLATE
@@ -433,6 +427,20 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_HEALTH_SERVER_PORT: "3193"
+      SRC_PROF_HTTP: ":6093"
+
+  # If you want to use this, either start it with `sg run batches-executor-firecracker` or
+  # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
+  batches-executor-firecracker:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_HEALTH_SERVER_PORT,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_USERNAME,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+          .bin/executor
+    env:
+      EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_HEALTH_SERVER_PORT: "3193"
       SRC_PROF_HTTP: ":6093"
@@ -483,82 +491,107 @@ commands:
       CONTAINER: codeinsights-db
       PORT: 5435
 
+  redis-postgres:
+    # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
+    # database:
+    #
+    #   env:
+    #       POSTGRES_HOST: localhost
+    #       PGPASSWORD: sourcegraph
+    #       PGUSER: sourcegraph
+    #
+    # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
+    cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
+
 checks:
   docker:
     cmd: docker version
     failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
 
   redis:
-    cmd: redis-cli -p 6379 PING
+    cmd: (command -v redis-cli && redis-cli -p 6379 PING) || docker-compose -f dev/redis-postgres.yml exec -T redis redis-cli PING
     failMessage: 'Failed to connect to Redis on port 6379. Please make sure Redis is running.'
 
   postgres:
-    cmd: psql -c 'SELECT 1;'
+    cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
 
 commandsets:
   # TODO: Should we be able to define "env" vars _per set_?
 
   oss:
-    - frontend
-    - worker
-    - repo-updater
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - web
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - web
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
 
   enterprise: &enterprise_set
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - executor-queue
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
 
   default: *enterprise_set
 
   enterprise-codeintel:
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - minio
-    - executor-queue
-    - precise-code-intel-worker
-    - codeintel-executor
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - minio
+      - precise-code-intel-worker
+      - codeintel-executor
 
   enterprise-codeinsights:
     # Add the following overwrites to your sg.config.overwrite.yaml to get
@@ -568,56 +601,83 @@ commandsets:
     #     DISABLE_CODE_INSIGHTS_HISTORICAL: false
     #     DISABLE_CODE_INSIGHTS: false
     #
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - codeinsights-db
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - codeinsights-db
 
   api-only:
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - gitserver
-    - searcher
-    - symbols
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - gitserver
+      - searcher
+      - symbols
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
 
   batches:
-    - enterprise-frontend
-    - enterprise-worker
-    - enterprise-repo-updater
-    - enterprise-web
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-indexserver-1
-    - zoekt-webserver-0
-    - zoekt-webserver-1
-    - executor-queue
-    - batches-executor
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-worker
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - searcher
+      - symbols
+      - query-runner
+      - caddy
+      - docsite
+      - syntect_server
+      - github-proxy
+      - zoekt-indexserver-0
+      - zoekt-indexserver-1
+      - zoekt-webserver-0
+      - zoekt-webserver-1
+      - batches-executor
+
+  core-app:
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - enterprise-frontend
+      - enterprise-repo-updater
+      - enterprise-web
+      - gitserver
+      - caddy
+      - github-proxy
 
 tests:
   # These can be run with `sg test [name]`
@@ -633,6 +693,10 @@ tests:
       BASE_URL: 'http://localhost:3080'
       EMAIL: 'joe@sourcegraph.com'
       PASSWORD: '12345'
+
+  web-integration:
+    cmd: yarn test-integration
+    install: ENTERPRISE=1 yarn build-web
 
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook

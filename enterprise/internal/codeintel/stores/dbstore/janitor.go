@@ -112,7 +112,7 @@ SELECT
 FROM %s
 WHERE
 	-- Ignore records already marked as deleted
-	state != 'deleted' AND
+	state NOT IN ('deleted', 'deleting') AND
 	-- Ignore records that have been checked recently. Note this condition is
 	-- true for a null commit_last_checked_at (which has never been checked).
 	(%s - commit_last_checked_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
@@ -136,7 +136,7 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 		sqlf.Sprintf("commit_last_checked_at = %s", now),
 	}
 	if delete {
-		assignmentExpressions = append(assignmentExpressions, sqlf.Sprintf("state = 'deleted'"))
+		assignmentExpressions = append(assignmentExpressions, sqlf.Sprintf("state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END"))
 	}
 	assignmentExpression := sqlf.Join(assignmentExpressions, ", ")
 

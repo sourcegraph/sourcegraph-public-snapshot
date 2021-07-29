@@ -11,9 +11,13 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -27,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -117,7 +122,48 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 		return nil, &RepoNotFoundErr{ID: id}
 	}
 
-	return repos[0], repos[0].IsBlocked()
+	repo := repos[0]
+	if repo.Private {
+		counterAccessGranted.Inc()
+		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), []api.RepoID{repo.ID})
+	}
+
+	return repo, repo.IsBlocked()
+}
+
+var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_access_granted_private_repo",
+	Help: "metric to measure the impact of logging access granted to private repos",
+})
+
+func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.RepoID) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Resource string       `json:"resource"`
+		Repos    []api.RepoID `json:"repo_ids"`
+	}{
+		Resource: "db.repo",
+		Repos:    ids,
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccessGranted,
+		URL:             "",
+		UserID:          uint32(a.UID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	// If this event was triggered by an internal actor we need to ensure that at
+	// least the UserID or AnonymousUserID field are set so that we don't trigger
+	// the security_event_logs_check_has_user constraint
+	if a.Internal {
+		event.AnonymousUserID = "internal"
+	}
+
+	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -280,8 +326,9 @@ var repoColumns = []string{
 	getSourcesByRepoQueryStr,
 }
 
+// id, name, private
 func minimalColumns(columns []string) []string {
-	return columns[:2]
+	return columns[:3]
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -342,6 +389,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
 	if !ok {
+		log15.Warn("scanRepo - failed to parse service type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
 		return nil
 	}
 	switch typ {
@@ -363,7 +411,10 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(phabricator.Repo)
 	case extsvc.TypeOther:
 		r.Metadata = new(extsvc.OtherRepoMetadata)
+	case extsvc.TypeJVMPackages:
+		r.Metadata = new(jvmpackages.Metadata)
 	default:
+		log15.Warn("scanRepo - unknown service type", "typ", typ)
 		return nil
 	}
 
@@ -589,32 +640,56 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	}
 
 	var repos []types.RepoName
+	var privateIDs []api.RepoID
+
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
-		err := rows.Scan(&r.ID, &r.Name)
+		var private bool
+		err := rows.Scan(&r.ID, &r.Name, &private)
 		if err != nil {
 			return err
 		}
 
 		repos = append(repos, r)
+
+		if private {
+			privateIDs = append(privateIDs, r.ID)
+		}
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: Actually log event here
+	counterAccessGranted.Add(float64(len(privateIDs)))
+
 	return repos, nil
 }
 
 func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
-	return rs, s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+	var privateIDs []api.RepoID
+	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
 		if err := scanRepo(rows, &r); err != nil {
 			return err
 		}
 
 		rs = append(rs, &r)
+		if r.Private {
+			privateIDs = append(privateIDs, r.ID)
+		}
+
 		return nil
 	})
+
+	if len(privateIDs) > 0 {
+		// TODO: Actually log event here
+		counterAccessGranted.Add(float64(len(privateIDs)))
+	}
+
+	return rs, err
 }
 
 func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
@@ -925,7 +1000,7 @@ const listIndexableReposQuery = `
 WITH s AS (
 	SELECT id as repo_id
 	FROM repo
-	WHERE stars >= 12
+	WHERE stars >= 13
 
 	UNION ALL
 

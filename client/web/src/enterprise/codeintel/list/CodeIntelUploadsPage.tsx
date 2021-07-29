@@ -77,6 +77,12 @@ const filters: FilteredConnectionFilter[] = [
                 tooltip: 'Show uploading uploads only',
                 args: { state: LSIFUploadState.UPLOADING },
             },
+            {
+                label: 'Deleting',
+                value: 'deleting',
+                tooltip: 'Show uploads queued for deletion',
+                args: { state: LSIFUploadState.DELETING },
+            },
         ],
     },
 ]
@@ -131,7 +137,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
-                        listClassName="codeintel-uploads__grid"
+                        listClassName="codeintel-uploads__grid mb-3"
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}
@@ -141,7 +147,6 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
-                        defaultFilter="current"
                         emptyElement={<EmptyLSIFUploadsElement />}
                     />
                 </div>

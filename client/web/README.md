@@ -2,7 +2,7 @@
 
 ## Local development
 
-Use `sg` CLI tool to configure and start local development server. For more information checkout `sg` [README]('../../dev/sg/README.md').
+Use `sg` CLI tool to configure and start local development server. For more information checkout `sg` [README](../../dev/sg/README.md).
 
 ### Configuration
 

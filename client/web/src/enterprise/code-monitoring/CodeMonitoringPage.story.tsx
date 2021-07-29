@@ -49,14 +49,7 @@ add(
 
 add('Code monitoring list page - unauthenticated', () => (
     <EnterpriseWebStory initialEntries={['/code-monitoring']}>
-        {props => (
-            <CodeMonitoringPage
-                {...props}
-                {...additionalProps}
-                authenticatedUser={null}
-                featureFlags={new Map([['w1-signup-optimisation', true]])}
-            />
-        )}
+        {props => <CodeMonitoringPage {...props} {...additionalProps} authenticatedUser={null} />}
     </EnterpriseWebStory>
 ))
 
@@ -86,7 +79,6 @@ add(
                     {...additionalProps}
                     showGettingStarted={true}
                     authenticatedUser={null}
-                    featureFlags={new Map([['w1-signup-optimisation', true]])}
                 />
             )}
         </EnterpriseWebStory>

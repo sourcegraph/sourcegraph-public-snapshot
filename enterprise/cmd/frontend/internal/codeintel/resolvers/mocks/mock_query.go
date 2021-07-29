@@ -22,12 +22,21 @@ type MockQueryResolver struct {
 	// DiagnosticsFunc is an instance of a mock function object controlling
 	// the behavior of the method Diagnostics.
 	DiagnosticsFunc *QueryResolverDiagnosticsFunc
+	// DocumentationFunc is an instance of a mock function object
+	// controlling the behavior of the method Documentation.
+	DocumentationFunc *QueryResolverDocumentationFunc
+	// DocumentationDefinitionsFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationDefinitions.
+	DocumentationDefinitionsFunc *QueryResolverDocumentationDefinitionsFunc
 	// DocumentationPageFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationPage.
 	DocumentationPageFunc *QueryResolverDocumentationPageFunc
 	// DocumentationPathInfoFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationPathInfo.
 	DocumentationPathInfoFunc *QueryResolverDocumentationPathInfoFunc
+	// DocumentationReferencesFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationReferences.
+	DocumentationReferencesFunc *QueryResolverDocumentationReferencesFunc
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *QueryResolverHoverFunc
@@ -53,6 +62,16 @@ func NewMockQueryResolver() *MockQueryResolver {
 				return nil, 0, nil
 			},
 		},
+		DocumentationFunc: &QueryResolverDocumentationFunc{
+			defaultHook: func(context.Context, int, int) ([]*resolvers.Documentation, error) {
+				return nil, nil
+			},
+		},
+		DocumentationDefinitionsFunc: &QueryResolverDocumentationDefinitionsFunc{
+			defaultHook: func(context.Context, string) ([]resolvers.AdjustedLocation, error) {
+				return nil, nil
+			},
+		},
 		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
 			defaultHook: func(context.Context, string) (*semantic.DocumentationPageData, error) {
 				return nil, nil
@@ -61,6 +80,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 		DocumentationPathInfoFunc: &QueryResolverDocumentationPathInfoFunc{
 			defaultHook: func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
 				return nil, nil
+			},
+		},
+		DocumentationReferencesFunc: &QueryResolverDocumentationReferencesFunc{
+			defaultHook: func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error) {
+				return nil, "", nil
 			},
 		},
 		HoverFunc: &QueryResolverHoverFunc{
@@ -92,11 +116,20 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 		DiagnosticsFunc: &QueryResolverDiagnosticsFunc{
 			defaultHook: i.Diagnostics,
 		},
+		DocumentationFunc: &QueryResolverDocumentationFunc{
+			defaultHook: i.Documentation,
+		},
+		DocumentationDefinitionsFunc: &QueryResolverDocumentationDefinitionsFunc{
+			defaultHook: i.DocumentationDefinitions,
+		},
 		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
 			defaultHook: i.DocumentationPage,
 		},
 		DocumentationPathInfoFunc: &QueryResolverDocumentationPathInfoFunc{
 			defaultHook: i.DocumentationPathInfo,
+		},
+		DocumentationReferencesFunc: &QueryResolverDocumentationReferencesFunc{
+			defaultHook: i.DocumentationReferences,
 		},
 		HoverFunc: &QueryResolverHoverFunc{
 			defaultHook: i.Hover,
@@ -334,6 +367,231 @@ func (c QueryResolverDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// QueryResolverDocumentationFunc describes the behavior when the
+// Documentation method of the parent MockQueryResolver instance is invoked.
+type QueryResolverDocumentationFunc struct {
+	defaultHook func(context.Context, int, int) ([]*resolvers.Documentation, error)
+	hooks       []func(context.Context, int, int) ([]*resolvers.Documentation, error)
+	history     []QueryResolverDocumentationFuncCall
+	mutex       sync.Mutex
+}
+
+// Documentation delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockQueryResolver) Documentation(v0 context.Context, v1 int, v2 int) ([]*resolvers.Documentation, error) {
+	r0, r1 := m.DocumentationFunc.nextHook()(v0, v1, v2)
+	m.DocumentationFunc.appendCall(QueryResolverDocumentationFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Documentation method
+// of the parent MockQueryResolver instance is invoked and the hook queue is
+// empty.
+func (f *QueryResolverDocumentationFunc) SetDefaultHook(hook func(context.Context, int, int) ([]*resolvers.Documentation, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Documentation method of the parent MockQueryResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *QueryResolverDocumentationFunc) PushHook(hook func(context.Context, int, int) ([]*resolvers.Documentation, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverDocumentationFunc) SetDefaultReturn(r0 []*resolvers.Documentation, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]*resolvers.Documentation, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverDocumentationFunc) PushReturn(r0 []*resolvers.Documentation, r1 error) {
+	f.PushHook(func(context.Context, int, int) ([]*resolvers.Documentation, error) {
+		return r0, r1
+	})
+}
+
+func (f *QueryResolverDocumentationFunc) nextHook() func(context.Context, int, int) ([]*resolvers.Documentation, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverDocumentationFunc) appendCall(r0 QueryResolverDocumentationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverDocumentationFuncCall objects
+// describing the invocations of this function.
+func (f *QueryResolverDocumentationFunc) History() []QueryResolverDocumentationFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverDocumentationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverDocumentationFuncCall is an object that describes an
+// invocation of method Documentation on an instance of MockQueryResolver.
+type QueryResolverDocumentationFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*resolvers.Documentation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverDocumentationFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverDocumentationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// QueryResolverDocumentationDefinitionsFunc describes the behavior when the
+// DocumentationDefinitions method of the parent MockQueryResolver instance
+// is invoked.
+type QueryResolverDocumentationDefinitionsFunc struct {
+	defaultHook func(context.Context, string) ([]resolvers.AdjustedLocation, error)
+	hooks       []func(context.Context, string) ([]resolvers.AdjustedLocation, error)
+	history     []QueryResolverDocumentationDefinitionsFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationDefinitions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockQueryResolver) DocumentationDefinitions(v0 context.Context, v1 string) ([]resolvers.AdjustedLocation, error) {
+	r0, r1 := m.DocumentationDefinitionsFunc.nextHook()(v0, v1)
+	m.DocumentationDefinitionsFunc.appendCall(QueryResolverDocumentationDefinitionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DocumentationDefinitions method of the parent MockQueryResolver instance
+// is invoked and the hook queue is empty.
+func (f *QueryResolverDocumentationDefinitionsFunc) SetDefaultHook(hook func(context.Context, string) ([]resolvers.AdjustedLocation, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationDefinitions method of the parent MockQueryResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *QueryResolverDocumentationDefinitionsFunc) PushHook(hook func(context.Context, string) ([]resolvers.AdjustedLocation, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverDocumentationDefinitionsFunc) SetDefaultReturn(r0 []resolvers.AdjustedLocation, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]resolvers.AdjustedLocation, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverDocumentationDefinitionsFunc) PushReturn(r0 []resolvers.AdjustedLocation, r1 error) {
+	f.PushHook(func(context.Context, string) ([]resolvers.AdjustedLocation, error) {
+		return r0, r1
+	})
+}
+
+func (f *QueryResolverDocumentationDefinitionsFunc) nextHook() func(context.Context, string) ([]resolvers.AdjustedLocation, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverDocumentationDefinitionsFunc) appendCall(r0 QueryResolverDocumentationDefinitionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// QueryResolverDocumentationDefinitionsFuncCall objects describing the
+// invocations of this function.
+func (f *QueryResolverDocumentationDefinitionsFunc) History() []QueryResolverDocumentationDefinitionsFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverDocumentationDefinitionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverDocumentationDefinitionsFuncCall is an object that describes
+// an invocation of method DocumentationDefinitions on an instance of
+// MockQueryResolver.
+type QueryResolverDocumentationDefinitionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []resolvers.AdjustedLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverDocumentationDefinitionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverDocumentationDefinitionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // QueryResolverDocumentationPageFunc describes the behavior when the
 // DocumentationPage method of the parent MockQueryResolver instance is
 // invoked.
@@ -555,6 +813,128 @@ func (c QueryResolverDocumentationPathInfoFuncCall) Args() []interface{} {
 // invocation.
 func (c QueryResolverDocumentationPathInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// QueryResolverDocumentationReferencesFunc describes the behavior when the
+// DocumentationReferences method of the parent MockQueryResolver instance
+// is invoked.
+type QueryResolverDocumentationReferencesFunc struct {
+	defaultHook func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error)
+	hooks       []func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error)
+	history     []QueryResolverDocumentationReferencesFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationReferences delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockQueryResolver) DocumentationReferences(v0 context.Context, v1 string, v2 int, v3 string) ([]resolvers.AdjustedLocation, string, error) {
+	r0, r1, r2 := m.DocumentationReferencesFunc.nextHook()(v0, v1, v2, v3)
+	m.DocumentationReferencesFunc.appendCall(QueryResolverDocumentationReferencesFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// DocumentationReferences method of the parent MockQueryResolver instance
+// is invoked and the hook queue is empty.
+func (f *QueryResolverDocumentationReferencesFunc) SetDefaultHook(hook func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationReferences method of the parent MockQueryResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *QueryResolverDocumentationReferencesFunc) PushHook(hook func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverDocumentationReferencesFunc) SetDefaultReturn(r0 []resolvers.AdjustedLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverDocumentationReferencesFunc) PushReturn(r0 []resolvers.AdjustedLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *QueryResolverDocumentationReferencesFunc) nextHook() func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverDocumentationReferencesFunc) appendCall(r0 QueryResolverDocumentationReferencesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// QueryResolverDocumentationReferencesFuncCall objects describing the
+// invocations of this function.
+func (f *QueryResolverDocumentationReferencesFunc) History() []QueryResolverDocumentationReferencesFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverDocumentationReferencesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverDocumentationReferencesFuncCall is an object that describes
+// an invocation of method DocumentationReferences on an instance of
+// MockQueryResolver.
+type QueryResolverDocumentationReferencesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []resolvers.AdjustedLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverDocumentationReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverDocumentationReferencesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // QueryResolverHoverFunc describes the behavior when the Hover method of

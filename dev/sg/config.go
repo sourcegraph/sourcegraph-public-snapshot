@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,6 +21,10 @@ func ParseConfigFile(name string) (*Config, error) {
 		return nil, errors.Wrap(err, "reading configuration file")
 	}
 
+	return ParseConfig(data)
+}
+
+func ParseConfig(data []byte) (*Config, error) {
 	var conf Config
 	if err := yaml.Unmarshal(data, &conf); err != nil {
 		return nil, err
@@ -28,6 +33,11 @@ func ParseConfigFile(name string) (*Config, error) {
 	for name, cmd := range conf.Commands {
 		cmd.Name = name
 		conf.Commands[name] = cmd
+	}
+
+	for name, cmd := range conf.Commandsets {
+		cmd.Name = name
+		conf.Commandsets[name] = cmd
 	}
 
 	for name, cmd := range conf.Tests {
@@ -43,88 +53,38 @@ func ParseConfigFile(name string) (*Config, error) {
 	return &conf, nil
 }
 
-type Command struct {
-	Name             string
-	Cmd              string            `yaml:"cmd"`
-	Install          string            `yaml:"install"`
-	CheckBinary      string            `yaml:"checkBinary"`
-	Env              map[string]string `yaml:"env"`
-	Watch            []string          `yaml:"watch"`
-	InstallDocDarwin string            `yaml:"installDoc.darwin"`
-	InstallDocLinux  string            `yaml:"installDoc.linux"`
-	IgnoreStdout     bool              `yaml:"ignoreStdout"`
-	IgnoreStderr     bool              `yaml:"ignoreStderr"`
-	DefaultArgs      string            `yaml:"defaultArgs"`
-
-	// ATTENTION: If you add a new field here, be sure to also handle that
-	// field in `Merge` (below).
+type Commandset struct {
+	Name     string   `yaml:"-"`
+	Commands []string `yaml:"commands"`
+	Checks   []string `yaml:"checks"`
 }
 
-func (c Command) Merge(other Command) Command {
-	merged := c
-
-	if other.Name != merged.Name && other.Name != "" {
-		merged.Name = other.Name
-	}
-	if other.Cmd != merged.Cmd && other.Cmd != "" {
-		merged.Cmd = other.Cmd
-	}
-	if other.Install != merged.Install && other.Install != "" {
-		merged.Install = other.Install
-	}
-	if other.InstallDocDarwin != merged.InstallDocDarwin && other.InstallDocDarwin != "" {
-		merged.InstallDocDarwin = other.InstallDocDarwin
-	}
-	if other.InstallDocLinux != merged.InstallDocLinux && other.InstallDocLinux != "" {
-		merged.InstallDocLinux = other.InstallDocLinux
-	}
-	if other.IgnoreStdout != merged.IgnoreStdout && !merged.IgnoreStdout {
-		merged.IgnoreStdout = other.IgnoreStdout
-	}
-	if other.IgnoreStderr != merged.IgnoreStderr && !merged.IgnoreStderr {
-		merged.IgnoreStderr = other.IgnoreStderr
-	}
-	if other.DefaultArgs != merged.DefaultArgs && other.DefaultArgs != "" {
-		merged.DefaultArgs = other.DefaultArgs
+// UnmarshalYAML implements the Unmarshaler interface.
+func (c *Commandset) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// To be backwards compatible we first try to unmarshal as a simple list.
+	var list []string
+	if err := unmarshal(&list); err == nil {
+		c.Commands = list
+		return nil
 	}
 
-	for k, v := range other.Env {
-		merged.Env[k] = v
+	// If it's not a list we try to unmarshal it as a Commandset. In order to
+	// not recurse infinitely (calling UnmarshalYAML over and over) we create a
+	// temporary type alias.
+	type rawCommandset Commandset
+	if err := unmarshal((*rawCommandset)(c)); err != nil {
+		return err
 	}
 
-	if !equal(merged.Watch, other.Watch) {
-		merged.Watch = other.Watch
-	}
-
-	return merged
-}
-
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
-type Check struct {
-	Name        string `yaml:"-"`
-	Cmd         string `yaml:"cmd"`
-	FailMessage string `yaml:"failMessage"`
+	return nil
 }
 
 type Config struct {
-	Env         map[string]string   `yaml:"env"`
-	Commands    map[string]Command  `yaml:"commands"`
-	Commandsets map[string][]string `yaml:"commandsets"`
-	Tests       map[string]Command  `yaml:"tests"`
-	Checks      map[string]Check    `yaml:"checks"`
+	Env         map[string]string      `yaml:"env"`
+	Commands    map[string]run.Command `yaml:"commands"`
+	Commandsets map[string]*Commandset `yaml:"commandsets"`
+	Tests       map[string]run.Command `yaml:"tests"`
+	Checks      map[string]run.Check   `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver

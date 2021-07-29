@@ -1,5 +1,8 @@
+import React from 'react'
+
 import { SearchPatternType } from '../graphql-operations'
 
+import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import { RepogroupMetadata } from './types'
 
 export const android: RepogroupMetadata = {
@@ -37,3 +40,7 @@ export const android: RepogroupMetadata = {
     homepageDescription: 'Explore popular Android repositories.',
     homepageIcon: 'https://code.benco.io/icon-collection/logos/android-1.svg',
 }
+
+export const AndroidRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
+    <RepogroupPage {...props} repogroupMetadata={android} />
+)

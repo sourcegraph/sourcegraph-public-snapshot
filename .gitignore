@@ -141,3 +141,6 @@ storybook-static/
 
 # sg command specific things, see ./dev/sg
 sg.config.overwrite.yaml
+# sg Google Cloud API OAuth token
+.sg.token.json
+

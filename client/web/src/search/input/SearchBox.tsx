@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -7,7 +8,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContext } from '../../schema/site.schema'
 import { QueryState, submitSearch } from '../helpers'
@@ -20,7 +20,6 @@ import { Toggles, TogglesProps } from './toggles/Toggles'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
-        FeatureFlagProps,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -49,13 +48,16 @@ export interface SearchBoxProps
 
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
+
+    /** Don't show search help button */
+    hideHelpButton?: boolean
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
-    const { queryState, featureFlags } = props
+    const { queryState } = props
 
     return (
-        <div className={styles.searchBox}>
+        <div className={classNames(styles.searchBox, props.hideHelpButton ? styles.searchBoxShadow : null)}>
             {!props.hideVersionContexts && (
                 <VersionContextDropdown
                     history={props.history}
@@ -86,7 +88,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>
             </div>
-            <SearchButton noHelp={featureFlags.get('search-reference')} className={styles.searchBoxButton} />
+            <SearchButton hideHelpButton={props.hideHelpButton} className={styles.searchBoxButton} />
         </div>
     )
 }

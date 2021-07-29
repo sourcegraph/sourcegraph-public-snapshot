@@ -721,7 +721,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 	// Ensure record was deleted
 	if states, err := getUploadStates(db, 1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
+	} else if diff := cmp.Diff(map[int]string{1: "deleting"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }

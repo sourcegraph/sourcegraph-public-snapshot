@@ -9,7 +9,7 @@ export interface UserProps {
 }
 
 export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public' | 'all' | 'unknown' =>
-    externalServiceUserModeFromTags(props.user.tags)
+    externalServiceUserModeFromTags(props.user.tags || [])
 
 export const userExternalServicesEnabled = (props: UserProps): boolean => modeEnabled(externalServiceUserMode(props))
 

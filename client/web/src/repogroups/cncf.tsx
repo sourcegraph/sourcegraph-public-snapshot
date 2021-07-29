@@ -1,5 +1,6 @@
-import * as React from 'react'
+import React from 'react'
 
+import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import { RepogroupMetadata } from './types'
 
 export const cncf: RepogroupMetadata = {
@@ -19,3 +20,7 @@ export const cncf: RepogroupMetadata = {
     homepageIcon: 'https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png',
     lowProfile: true,
 }
+
+export const CncfRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
+    <RepogroupPage {...props} repogroupMetadata={cncf} />
+)

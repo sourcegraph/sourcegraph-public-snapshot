@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
 	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	insightsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -52,7 +51,6 @@ func enterpriseInit(
 	ctx := actor.WithInternalActor(context.Background())
 
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
-	insightsBackground.StartBackgroundJobs(ctx, db)
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.

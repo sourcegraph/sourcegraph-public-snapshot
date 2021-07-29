@@ -1,6 +1,6 @@
 # Install Sourcegraph with Docker
 
-> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
+> WARNING: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
 
 ---
 
@@ -12,7 +12,7 @@ It takes less than a minute to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.29.1</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.30.3</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -28,6 +28,17 @@ TODO(ryan): Replace with updated screencast
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@sourcegraph)](https://twitter.com/sourcegraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+
+<span class="virtual-br"></span>
+
+> NOTE: If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled, sVirt doesn't allow the Docker process
+> to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message:
+
+> `Failed to setup nginx:failed to generate nginx configuration to /etc/sourcegraph: open /etc/sourcegraph/nginx.conf: permission denied`.
+
+> To fix this, run:
+
+> `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chown -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
 ## Cloud installation guides
 
@@ -56,7 +67,7 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 1. [Install Docker for Windows](https://docs.docker.com/docker-for-windows/install/)
 2. Using a command prompt, follow the same [installation steps provided above](#install-sourcegraph-with-docker) but remove the `--volume` arguments. For example by pasting this:
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.29.1</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.30.3</code></pre>
 
 ## Low resource environments
 
@@ -88,5 +99,5 @@ To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull i
 ## Next steps
 
 - [Configuring Sourcegraph](../../config/index.md)
-- [Upgrading Sourcegraph](../../updates.md)
+- [Upgrading Sourcegraph](../../updates/index.md)
 - [Site administration documentation](../../index.md)

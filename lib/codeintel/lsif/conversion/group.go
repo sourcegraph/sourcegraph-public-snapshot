@@ -114,14 +114,15 @@ func serializeDocument(state *State, documentID int) semantic.DocumentData {
 		})
 
 		document.Ranges[toID(rangeID)] = semantic.RangeData{
-			StartLine:          rangeData.Start.Line,
-			StartCharacter:     rangeData.Start.Character,
-			EndLine:            rangeData.End.Line,
-			EndCharacter:       rangeData.End.Character,
-			DefinitionResultID: toID(rangeData.DefinitionResultID),
-			ReferenceResultID:  toID(rangeData.ReferenceResultID),
-			HoverResultID:      toID(rangeData.HoverResultID),
-			MonikerIDs:         monikerIDs,
+			StartLine:             rangeData.Start.Line,
+			StartCharacter:        rangeData.Start.Character,
+			EndLine:               rangeData.End.Line,
+			EndCharacter:          rangeData.End.Character,
+			DefinitionResultID:    toID(rangeData.DefinitionResultID),
+			ReferenceResultID:     toID(rangeData.ReferenceResultID),
+			HoverResultID:         toID(rangeData.HoverResultID),
+			DocumentationResultID: toID(rangeData.DocumentationResultID),
+			MonikerIDs:            monikerIDs,
 		}
 
 		if rangeData.HoverResultID != 0 {

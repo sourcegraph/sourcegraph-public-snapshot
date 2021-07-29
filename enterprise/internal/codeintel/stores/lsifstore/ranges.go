@@ -15,7 +15,7 @@ import (
 // Ranges request.
 const MaximumRangesDefinitionLocations = 10000
 
-// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+// Ranges returns definition, reference, hover, and documentation data for each range within the given span of lines.
 func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
 	ctx, traceLog, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -46,13 +46,20 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 		return nil, err
 	}
 
+	documentationResultIDs := extractResultIDs(ranges, func(r semantic.RangeData) semantic.ID { return r.DocumentationResultID })
+	documentationPathIDs, err := s.documentationIDsToPathIDs(ctx, bundleID, documentationResultIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	codeintelRanges := make([]CodeIntelligenceRange, 0, len(ranges))
 	for _, r := range ranges {
 		codeintelRanges = append(codeintelRanges, CodeIntelligenceRange{
-			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
-			Definitions: definitionLocations[r.DefinitionResultID],
-			References:  referenceLocations[r.ReferenceResultID],
-			HoverText:   documentData.Document.HoverResults[r.HoverResultID],
+			Range:               newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+			Definitions:         definitionLocations[r.DefinitionResultID],
+			References:          referenceLocations[r.ReferenceResultID],
+			HoverText:           documentData.Document.HoverResults[r.HoverResultID],
+			DocumentationPathID: documentationPathIDs[r.DocumentationResultID],
 		})
 	}
 	sort.Slice(codeintelRanges, func(i, j int) bool {
@@ -60,6 +67,38 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 	})
 
 	return codeintelRanges, nil
+}
+
+// DocumentationAtPosition returns documentation path IDs found at the given position.
+func (s *Store) DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) (_ []string, err error) {
+	ctx, traceLog, endObservation := s.operations.documentationAtPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("line", line),
+		log.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(rangesDocumentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, err
+	}
+
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	ranges := semantic.FindRanges(documentData.Document.Ranges, line, character)
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+
+	documentationResultIDs := extractResultIDs(ranges, func(r semantic.RangeData) semantic.ID { return r.DocumentationResultID })
+	documentationPathIDs, err := s.documentationIDsToPathIDs(ctx, bundleID, documentationResultIDs)
+	if err != nil {
+		return nil, err
+	}
+	var pathIDs []string
+	for _, pathID := range documentationPathIDs {
+		pathIDs = append(pathIDs, pathID)
+	}
+	sort.Strings(pathIDs)
+	return pathIDs, nil
 }
 
 const rangesDocumentQuery = `

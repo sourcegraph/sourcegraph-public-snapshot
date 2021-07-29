@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 
-import { SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
 import {
     isGlobalSubject,
@@ -106,6 +106,8 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                 description="visible to everyone on your Sourcegraph instance"
                 checked={value === globalSubject.id}
                 disabled={!canGlobalSubjectBeEdited}
+                labelTooltipText={getGlobalSubjectTooltipText(globalSubject)}
+                labelTooltipPosition="bottom"
                 className="mr-3 w-100"
                 onChange={handleChange}
             />
@@ -121,4 +123,21 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
 export function getUserSubject(subjects: SupportedInsightSubject[]): SettingsUserSubject {
     // We always have user subject in our settings cascade
     return subjects.find(isUserSubject)!
+}
+
+/**
+ * Returns tooltip text for global subject visibility option.
+ */
+export function getGlobalSubjectTooltipText(globalSubject: SettingsSiteSubject | undefined): string | undefined {
+    if (!globalSubject) {
+        return
+    }
+
+    const globalSubjectAdminCheckMessage = globalSubject.viewerCanAdminister
+        ? undefined
+        : 'Only site admins can create global insights'
+
+    return globalSubject.allowSiteSettingsEdits
+        ? globalSubjectAdminCheckMessage
+        : 'The global subject cannot be edited since your Sourcegraph instance is using a separate settings file'
 }

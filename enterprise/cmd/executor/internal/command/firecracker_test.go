@@ -172,8 +172,8 @@ func TestTeardownFirecracker(t *testing.T) {
 	}
 
 	expected := []string{
-		"ignite stop --runtime docker --network-plugin docker-bridge deadbeef",
-		"ignite rm -f --runtime docker --network-plugin docker-bridge deadbeef",
+		"ignite stop deadbeef",
+		"ignite rm -f deadbeef",
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)

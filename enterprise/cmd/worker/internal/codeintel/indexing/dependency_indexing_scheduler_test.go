@@ -13,12 +13,10 @@ import (
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
-	dependencyIndexingRepositoryIDs = []int{50}
-
 	mockDBStore := NewMockDBStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
 	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v2.2.0"}}, true, nil)
@@ -82,12 +80,10 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
-	dependencyIndexingRepositoryIDs = []int{50}
-
 	mockDBStore := NewMockDBStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "lsif-tsc"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()

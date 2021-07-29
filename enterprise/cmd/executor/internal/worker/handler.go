@@ -16,13 +16,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type handler struct {
-	idSet         *IDSet
+	nameSet       *janitor.NameSet
 	store         workerutil.Store
 	options       Options
 	operations    *command.Operations
@@ -30,9 +31,6 @@ type handler struct {
 }
 
 var _ workerutil.Handler = &handler{}
-
-// ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
-var ErrJobAlreadyExists = errors.New("job already exists")
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
@@ -56,31 +54,14 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 	}()
 
-	if !h.idSet.Add(job.ID, cancel) {
-		return ErrJobAlreadyExists
-	}
-	defer h.idSet.Remove(job.ID)
-
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
 	// in a command constructed and run in the following function. Note that the command and
 	// its output may both contain sensitive values, but only values which we directly
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	logger := command.NewLogger(union(h.options.RedactedValues, job.RedactedValues))
-
-	defer func() {
-		log15.Info("Writing log entries", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
-
-		for _, entry := range logger.Entries() {
-			// Perform this outside of the task execution context. If there is a timeout or
-			// cancellation error we don't want to skip uploading these logs as users will
-			// often want to see how far something progressed prior to a timeout.
-			if err := h.store.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
-				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "repositoryName", job.RepositoryName, "commit", job.Commit, "error", err)
-			}
-		}
-	}()
+	logger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
+	defer logger.Flush()
 
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
@@ -113,13 +94,24 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 	}
 
-	name, err := uuid.NewRandom()
+	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
 
+	// Construct a unique name for the VM prefixed by something that differentiates
+	// VMs created by this executor instance and another one that happens to run on
+	// the same host (as is the case in dev).
+	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, vmNameSuffix.String())
+
+	// Before we setup a VM (and after we teardown), mark the name as in-use so that
+	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
+	// we're using for the current job.
+	h.nameSet.Add(name)
+	defer h.nameSet.Remove(name)
+
 	options := command.Options{
-		ExecutorName:       name.String(),
+		ExecutorName:       name,
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
@@ -187,10 +179,9 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		log15.Info(fmt.Sprintf("Running src-cli step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 		cliStepCommand := command.CommandSpec{
-			Key:     fmt.Sprintf("step.src.%d", i),
-			Command: append([]string{"src"}, cliStep.Commands...),
-			Dir:     cliStep.Dir,
-			// TODO: We need $HOME/$PATH from the machine on which this is executed
+			Key:       fmt.Sprintf("step.src.%d", i),
+			Command:   append([]string{"src"}, cliStep.Commands...),
+			Dir:       cliStep.Dir,
 			Env:       cliStep.Env,
 			Operation: h.operations.Exec,
 		}

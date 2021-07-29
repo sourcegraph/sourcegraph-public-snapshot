@@ -31,52 +31,54 @@ import (
 )
 
 const (
-	routeHome           = "home"
-	routeSearch         = "search"
-	routeSearchBadge    = "search-badge"
-	routeRepo           = "repo"
-	routeRepoSettings   = "repo-settings"
-	routeRepoCommit     = "repo-commit"
-	routeRepoBranches   = "repo-branches"
-	routeRepoDocs       = "repo-docs"
-	routeRepoCommits    = "repo-commits"
-	routeRepoTags       = "repo-tags"
-	routeRepoCompare    = "repo-compare"
-	routeRepoStats      = "repo-stats"
-	routeInsights       = "insights"
-	routeBatchChanges   = "batch-changes"
-	routeCodeMonitoring = "code-monitoring"
-	routeContexts       = "contexts"
-	routeThreads        = "threads"
-	routeTree           = "tree"
-	routeBlob           = "blob"
-	routeRaw            = "raw"
-	routeOrganizations  = "org"
-	routeSettings       = "settings"
-	routeSiteAdmin      = "site-admin"
-	routeAPIConsole     = "api-console"
-	routeUser           = "user"
-	routeUserSettings   = "user-settings"
-	routeUserRedirect   = "user-redirect"
-	routeAboutSubdomain = "about-subdomain"
-	aboutRedirectScheme = "https"
-	aboutRedirectHost   = "about.sourcegraph.com"
-	routeSurvey         = "survey"
-	routeSurveyScore    = "survey-score"
-	routeRegistry       = "registry"
-	routeExtensions     = "extensions"
-	routeHelp           = "help"
-	routeRepoGroups     = "repo-groups"
-	routeCncf           = "repo-groups.cncf"
-	routeSnippets       = "snippets"
-	routeSubscriptions  = "subscriptions"
-	routeStats          = "stats"
-	routeViews          = "views"
-	routeDevToolTime    = "devtooltime"
+	routeHome             = "home"
+	routeSearch           = "search"
+	routeSearchBadge      = "search-badge"
+	routeRepo             = "repo"
+	routeRepoSettings     = "repo-settings"
+	routeRepoCommit       = "repo-commit"
+	routeRepoBranches     = "repo-branches"
+	routeRepoBatchChanges = "repo-batch-changes"
+	routeRepoDocs         = "repo-docs"
+	routeRepoCommits      = "repo-commits"
+	routeRepoTags         = "repo-tags"
+	routeRepoCompare      = "repo-compare"
+	routeRepoStats        = "repo-stats"
+	routeInsights         = "insights"
+	routeBatchChanges     = "batch-changes"
+	routeCodeMonitoring   = "code-monitoring"
+	routeContexts         = "contexts"
+	routeThreads          = "threads"
+	routeTree             = "tree"
+	routeBlob             = "blob"
+	routeRaw              = "raw"
+	routeOrganizations    = "org"
+	routeSettings         = "settings"
+	routeSiteAdmin        = "site-admin"
+	routeAPIConsole       = "api-console"
+	routeUser             = "user"
+	routeUserSettings     = "user-settings"
+	routeUserRedirect     = "user-redirect"
+	routeAboutSubdomain   = "about-subdomain"
+	aboutRedirectScheme   = "https"
+	aboutRedirectHost     = "about.sourcegraph.com"
+	routeSurvey           = "survey"
+	routeSurveyScore      = "survey-score"
+	routeRegistry         = "registry"
+	routeExtensions       = "extensions"
+	routeHelp             = "help"
+	routeRepoGroups       = "repo-groups"
+	routeCncf             = "repo-groups.cncf"
+	routeSnippets         = "snippets"
+	routeSubscriptions    = "subscriptions"
+	routeStats            = "stats"
+	routeViews            = "views"
+	routeDevToolTime      = "devtooltime"
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
 	routeSearchConsole      = "search.console"
+	routeSearchNotebook     = "search.notebook"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -134,6 +136,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
+	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
@@ -163,7 +166,7 @@ func newRouter() *mux.Router {
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm", "temporal"}
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm", "temporal", "o3de"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
@@ -194,6 +197,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
 	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
+	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
@@ -242,6 +246,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil)))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
 	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
+	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
 	router.Get(routeRepoDocs).Handler(handler(serveBrandedPageString("API docs", nil)))
 	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil)))
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
@@ -265,6 +270,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	}, nil)))
 	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil)))
 	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil)))
+	router.Get(routeSearchNotebook).Handler(handler(serveBrandedPageString("Search Notebook", nil)))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {

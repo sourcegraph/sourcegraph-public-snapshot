@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -72,4 +73,55 @@ func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string
 		}
 	}
 	return nil, err
+}
+
+const slowDocumentationRequestThreshold = time.Second
+
+// Documentation returns documentation for the symbol at the given position.
+func (r *queryResolver) Documentation(ctx context.Context, line, character int) (_ []*Documentation, err error) {
+	ctx, _, endObservation := observeResolver(ctx, &err, "Documentation", r.operations.documentation, slowDocumentationRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.Int("numUploads", len(r.uploads)),
+			log.String("uploads", uploadIDsToString(r.uploads)),
+			log.Int("line", line),
+			log.Int("character", character),
+		},
+	})
+	defer endObservation()
+
+	// First, perform a definitions request. This handles all the complex logic of finding the
+	// symbol, doing cross-repo moniker lookups, etc. for us.
+	adjustedLocations, err := r.Definitions(ctx, line, character)
+	if err != nil {
+		return nil, err
+	}
+	if len(adjustedLocations) == 0 {
+		return nil, nil
+	}
+
+	// Now that we have locations resolved to specific dumps, lookup the documentation info.
+	documentation := make([]*Documentation, 0, len(adjustedLocations))
+	for _, location := range adjustedLocations {
+		target := location.AdjustedRange
+		pathIDs, err := r.lsifStore.DocumentationAtPosition(
+			ctx,
+			location.Dump.ID,
+			location.Path,
+			target.Start.Line,
+			target.Start.Character,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "lsifStore.DocumentationAtPosition")
+		}
+		if len(pathIDs) == 0 {
+			continue
+		}
+		for _, pathID := range pathIDs {
+			documentation = append(documentation, &Documentation{PathID: pathID})
+		}
+	}
+	return documentation, nil
 }

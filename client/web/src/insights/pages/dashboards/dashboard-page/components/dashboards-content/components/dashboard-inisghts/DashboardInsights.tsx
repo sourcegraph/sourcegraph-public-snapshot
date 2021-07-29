@@ -12,27 +12,43 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGrid } from '../../../../../../../components'
 import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
-import { useDeleteInsight } from '../../../../../../insights/insights-page/hooks/use-delete-insight'
+import { InsightDashboard } from '../../../../../../../core/types'
+import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
+
+import { useBackendInsightIds } from './hooks/use-backend-insight-ids'
+import { useDeleteInsight } from './hooks/use-delete-insight'
+
+const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps
     extends ExtensionsControllerProps,
         TelemetryProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps<'updateSettings'> {
-    /**
-     * Dashboard specific insight ids.
-     */
-    insightIds?: string[]
+    dashboard: InsightDashboard
+    onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, extensionsController, insightIds = [], settingsCascade, platformContext } = props
+    const {
+        telemetryService,
+        extensionsController,
+        dashboard,
+        settingsCascade,
+        platformContext,
+        onAddInsightRequest,
+    } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
+    const allInsightIds = useDistinctValue(dashboard.insightIds) ?? DEFAULT_INSIGHT_IDS
+    const finalSettings = useDistinctValue(settingsCascade.final)
+    const backendInsightIds = useBackendInsightIds({ insightIds: allInsightIds, finalSettings })
+
     const views = useObservable(
-        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, insightIds), [
-            insightIds,
+        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, allInsightIds, backendInsightIds), [
+            allInsightIds,
+            backendInsightIds,
             extensionsController,
             getInsightCombinedViews,
         ])
@@ -49,7 +65,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
         return (
             <div className="d-flex justify-content-center align-items-center pt-5">
                 <LoadingSpinner />
-                <span className="mx-2">Loading Sourcegraph extensions</span>
+                <span className="mx-2">Loading code insights</span>
                 <PuzzleIcon className="icon-inline" />
             </div>
         )
@@ -67,7 +83,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <div>
-            {insightIds.length > 0 && views.length > 0 ? (
+            {allInsightIds.length > 0 && views.length > 0 ? (
                 <InsightsViewGrid
                     views={views}
                     hasContextMenu={true}
@@ -75,7 +91,11 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                     onDelete={handleDelete}
                 />
             ) : (
-                <EmptyInsightDashboard />
+                <EmptyInsightDashboard
+                    dashboard={dashboard}
+                    settingsCascade={settingsCascade}
+                    onAddInsight={onAddInsightRequest}
+                />
             )}
         </div>
     )

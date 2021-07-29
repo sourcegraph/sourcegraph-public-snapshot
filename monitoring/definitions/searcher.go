@@ -8,6 +8,8 @@ import (
 )
 
 func Searcher() *monitoring.Container {
+	const containerName = "searcher"
+
 	return &monitoring.Container{
 		Name:        "searcher",
 		Title:       "Searcher",
@@ -35,56 +37,15 @@ func Searcher() *monitoring.Container {
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
-						shared.FrontendInternalAPIErrorResponses("searcher", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerMemoryUsage("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ContainerMissing("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.GoGcDuration("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("searcher", monitoring.ObservableOwnerSearch).Observable(),
-					},
-				},
-			},
+
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
 		},
 	}
 }

@@ -13,7 +13,7 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 ## Requirements
 
 - You are a Sourcegraph enterprise customer. (Want code insights but aren't enterprise? [Let us know](mailto:feedback@sourcegraph.com).)
-- Your Sourcegraph instance has at least 1 repository. (See "[Quickstart](../../index.md#quickstart)" on how to setup a Sourcegraph instance.)
+- Your Sourcegraph instance has at least 1 repository. (See "[Quickstart](../index.md#quick-install)" on how to setup a Sourcegraph instance.)
 - You are running Sourcegraph version 3.28 (May 2021 release) or later.
     - Note: If you're on Sourcegraph version 3.24 or later, you can instead follow [this gist](https://gist.github.com/Joelkw/f0582b164578aabc3ac936dee43f23e0) to create an insight. Due to the early stage of the product, it's more likely you'll run into trouble, though, so we recommend that you either upgrade your Sourcegraph or reach out to your Sourcegraph reps for help.
 
@@ -59,7 +59,7 @@ Enter a descriptive **Title** for the chart, like `Count of TODOs in [repository
 
 This controls who else can see your insight. 
 
-Anything set to "Personal" won't be visible by anyone else. Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](#1-enable-the-experimental-feature-flag)).
+Anything set to "Private" won't be visible by anyone else. Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](#1-enable-the-experimental-feature-flag)).
 
 ### 8. Set the distance between data points to 1 month
 

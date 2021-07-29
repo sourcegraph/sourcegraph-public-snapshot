@@ -17,10 +17,19 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = FileLineMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
 
-export interface FileLineMatch {
-    type: 'file'
+export interface PathMatch {
+    type: 'path'
+    name: string
+    repository: string
+    repoStars?: number
+    branches?: string[]
+    version?: string
+}
+
+export interface ContentMatch {
+    type: 'content'
     name: string
     repository: string
     repoStars?: number
@@ -36,17 +45,17 @@ interface LineMatch {
     aggregableBadges?: AggregableBadge[]
 }
 
-export interface FileSymbolMatch {
+export interface SymbolMatch {
     type: 'symbol'
     name: string
     repository: string
     repoStars?: number
     branches?: string[]
     version?: string
-    symbols: SymbolMatch[]
+    symbols: MatchedSymbol[]
 }
 
-interface SymbolMatch {
+interface MatchedSymbol {
     url: string
     name: string
     containerName: string
@@ -198,7 +207,7 @@ interface ErrorAggregateResults extends BaseAggregateResults {
 
 export type AggregateStreamingSearchResults = SuccessfulAggregateResults | ErrorAggregateResults
 
-const emptyAggregateResults: AggregateStreamingSearchResults = {
+export const emptyAggregateResults: AggregateStreamingSearchResults = {
     state: 'loading',
     results: [],
     filters: [],
@@ -431,7 +440,7 @@ export function getRevision(branches?: string[], version?: string): string {
     return revision
 }
 
-export function getFileMatchUrl(fileMatch: FileLineMatch | FileSymbolMatch): string {
+export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.version)
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`
 }
@@ -449,7 +458,8 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
 
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
-        case 'file':
+        case 'path':
+        case 'content':
         case 'symbol':
             return getFileMatchUrl(match)
         case 'commit':

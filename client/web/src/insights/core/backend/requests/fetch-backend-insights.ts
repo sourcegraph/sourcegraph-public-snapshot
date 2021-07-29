@@ -1,3 +1,4 @@
+import { uniqBy } from 'lodash'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -40,7 +41,8 @@ export function fetchBackendInsights(insightsIds: string[]): Observable<InsightF
         { ids: insightsIds }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.insights?.nodes ?? [])
+        map(data => data.insights?.nodes ?? []),
+        map(data => uniqBy(data, 'id'))
     )
 }
 

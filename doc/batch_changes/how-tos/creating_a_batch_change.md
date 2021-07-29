@@ -4,7 +4,7 @@ Batch changes are created by writing a [batch spec](../references/batch_spec_yam
 
 ## Requirements
 
-- Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quickstart)" guide on how to setup a Sourcegraph instance.
+- Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.
 - Installed and configured [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) (see "[Install the Sourcegraph CLI](../quickstart.md#install-the-sourcegraph-cli)" in the Batch Changes quickstart for detailed instructions).
 - Configured credentials for the code host(s) that you'll be creating changesets on. See "[Configuring user credentials](configuring_credentials.md)" for a guide on how to add and manage credentials.
 

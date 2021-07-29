@@ -4,7 +4,6 @@ import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
-import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
@@ -34,6 +33,8 @@ import {
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { client } from './backend/graphql'
+import { BatchChangesProps } from './batches'
+import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'
@@ -99,7 +100,7 @@ import {
     experimentalFeaturesFromSettings,
 } from './util/settings'
 
-export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
+export interface SourcegraphWebAppProps extends CodeIntelligenceProps, BatchChangesProps, KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -119,7 +120,6 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
-    showBatchChanges: boolean
 }
 
 interface SourcegraphWebAppState extends SettingsCascadeProps {
@@ -200,6 +200,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showMultilineSearchConsole: boolean
 
     /**
+     * Whether we show the search notebook.
+     */
+    showSearchNotebook: boolean
+
+    /**
      * Whether we show the mulitiline editor at /search/query-builder
      */
     showQueryBuilder: boolean
@@ -259,11 +264,8 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
 
 /**
  * The root component.
- *
- * This is the non-hot-reload component. It is wrapped in `hot(...)` below to make it
- * hot-reloadable in development.
  */
-class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
@@ -310,6 +312,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
+            showSearchNotebook: false,
             showQueryBuilder: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
@@ -514,7 +517,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                             authenticatedUser={authenticatedUser}
                                             viewerSubject={this.state.viewerSubject}
                                             settingsCascade={this.state.settingsCascade}
-                                            showBatchChanges={this.props.showBatchChanges}
+                                            batchChangesEnabled={this.props.batchChangesEnabled}
                                             // Theme
                                             isLightTheme={this.isLightTheme()}
                                             themePreference={this.state.themePreference}
@@ -559,6 +562,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                             showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                             globbing={this.state.globbing}
                                             showMultilineSearchConsole={this.state.showMultilineSearchConsole}
+                                            showSearchNotebook={this.state.showSearchNotebook}
                                             showQueryBuilder={this.state.showQueryBuilder}
                                             enableCodeMonitoring={this.state.enableCodeMonitoring}
                                             fetchSavedSearches={fetchSavedSearches}
@@ -671,5 +675,3 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         await extensionHostAPI.setSearchContext(spec)
     }
 }
-
-export const SourcegraphWebApp = hot(ColdSourcegraphWebApp)

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,6 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
+
+var testConfig = Config{
+	MaximumRepositoriesInspectedPerSecond:    rate.Inf,
+	MaximumIndexJobsPerInferredConfiguration: 50,
+}
 
 func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
 	indexConfiguration := store.IndexConfiguration{
@@ -63,13 +69,7 @@ func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
 		return fmt.Sprintf("c%d", repositoryID), true, nil
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
-
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 	_ = scheduler.QueueIndexesForRepository(context.Background(), 42)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
@@ -188,12 +188,7 @@ func TestQueueIndexesForRepositoryInRepository(t *testing.T) {
 	})
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 
 	if err := scheduler.QueueIndexesForRepository(context.Background(), 42); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
@@ -283,12 +278,7 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 		}
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 
 	for _, id := range []int{41, 42, 43, 44} {
 		if err := scheduler.QueueIndexesForRepository(context.Background(), id); err != nil {
@@ -350,12 +340,9 @@ func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
 		return nil, nil
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: 20,
-		operations:       newOperations(&observation.TestContext),
-	}
+	config := testConfig
+	config.MaximumIndexJobsPerInferredConfiguration = 20
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &config, &observation.TestContext)
 
 	if err := scheduler.QueueIndexesForRepository(context.Background(), 42); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
@@ -390,13 +377,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		return &protocol.RepoUpdateResponse{ID: 42}, nil
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		repoUpdater:      mockRepoUpdater,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, mockRepoUpdater, &testConfig, &observation.TestContext)
 
 	_ = scheduler.QueueIndexesForPackage(context.Background(), semantic.Package{
 		Scheme:  "gomod",
