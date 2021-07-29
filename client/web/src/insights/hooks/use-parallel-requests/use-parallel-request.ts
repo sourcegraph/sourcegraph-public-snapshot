@@ -1,17 +1,6 @@
 import { useEffect, useState } from 'react'
-import { of, from, Subject, ObservableInput, Observable, asyncScheduler } from 'rxjs'
-import {
-    mergeMap,
-    map,
-    takeUntil,
-    take,
-    catchError,
-    takeWhile,
-    switchMap,
-    publish,
-    refCount,
-    observeOn,
-} from 'rxjs/operators'
+import { of, from, Subject, ObservableInput, Observable, asyncScheduler, scheduled } from 'rxjs'
+import { mergeMap, map, takeUntil, take, catchError, takeWhile, switchMap, publish, refCount } from 'rxjs/operators'
 
 import { ErrorLike, asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -58,10 +47,9 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
             mergeMap(event => {
                 const { request, onComplete, cancel } = event
 
-                return of(null).pipe(
-                    // Makes this stream async to be able stop further execution in takeWhile
-                    // by add event to the cancelledRequests set.
-                    observeOn(asyncScheduler),
+                // Makes this stream async to be able to stop further execution in takeWhile
+                // by add event to the cancelledRequests set.
+                return scheduled([null], asyncScheduler).pipe(
                     takeWhile(() => {
                         if (cancelledRequests.has(event)) {
                             // Make sure we do not have a memory leak in cancelledRequests set.
