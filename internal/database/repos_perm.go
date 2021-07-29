@@ -111,6 +111,8 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 	}
 
+	// TODO: if we're in dotcom mode, and we're authenticated, NEVER bypass authz.
+
 	q := authzQuery(bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
