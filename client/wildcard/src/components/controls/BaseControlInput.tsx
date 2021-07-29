@@ -3,6 +3,8 @@ import React from 'react'
 
 import { getMessageStyle, getValidStyle } from './utils'
 
+export const BASE_CONTROL_TYPES = ['radio', 'checkbox'] as const
+
 export interface BaseControlInputProps
     extends React.InputHTMLAttributes<HTMLInputElement>,
         React.RefAttributes<HTMLInputElement> {
@@ -10,6 +12,7 @@ export interface BaseControlInputProps
     isValid?: boolean
     label: React.ReactNode
     message?: React.ReactNode
+    type?: typeof BASE_CONTROL_TYPES[number]
 }
 
 export const BaseControlInput: React.FunctionComponent<BaseControlInputProps> = React.forwardRef(

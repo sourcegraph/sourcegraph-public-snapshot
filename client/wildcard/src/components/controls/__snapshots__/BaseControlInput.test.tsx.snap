@@ -1,0 +1,159 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BaseControlInput Input type: checkbox renders input with message correctly 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input"
+      type="checkbox"
+    />
+    Hello world
+  </label>
+  <small
+    class="field-message"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput Input type: checkbox renders simple input correctly 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input"
+      type="checkbox"
+    />
+    Hello world
+  </label>
+</div>
+`;
+
+exports[`BaseControlInput Input type: checkbox renders with correct styles when invalid 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input is-invalid"
+      type="checkbox"
+    />
+    Hello world
+  </label>
+  <small
+    class="invalid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput Input type: checkbox renders with correct styles when valid 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input is-valid"
+      type="checkbox"
+    />
+    Hello world
+  </label>
+  <small
+    class="valid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput Input type: radio renders input with message correctly 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input"
+      type="radio"
+    />
+    Hello world
+  </label>
+  <small
+    class="field-message"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput Input type: radio renders simple input correctly 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input"
+      type="radio"
+    />
+    Hello world
+  </label>
+</div>
+`;
+
+exports[`BaseControlInput Input type: radio renders with correct styles when invalid 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input is-invalid"
+      type="radio"
+    />
+    Hello world
+  </label>
+  <small
+    class="invalid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput Input type: radio renders with correct styles when valid 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input is-valid"
+      type="radio"
+    />
+    Hello world
+  </label>
+  <small
+    class="valid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
