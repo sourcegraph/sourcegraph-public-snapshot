@@ -11,60 +11,36 @@ However, those customers that had already upgraded need assistance in fixing the
 
 ## Recovery guide
 
-### Step 1: Stop all Sourcegraph services except the databases
+### Rebuild indexes in the main sourcegraph db
 
-Depending on deployment type, you'll have to run different commands.
-We just need to ensure there's nothing writing or reading from/to the database before performing the next steps.
+We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
 
-### Step 2: Rebuild indexes in the main sourcegraph db
+In Kubernetes, you can accomplish this by deleting the database service to prevent new connections from being established, followed by a query to kill existing connections.
 
-Connect to the db. In k8s, that can be done with port-forwarding.
-
+```shell
+kubectl delete svc/pgsql
+kubectl port-forward deploy/pgsql 3333:5432 # doesn't use the service that we just deleted
+psql -U sg -d sg -h localhost -p 3333
 ```
-kubectl port-forward svc/pgsql 3333:5432
-```
 
-Follow these steps:
+Kill existing client connections first:
 
 ```sql
--- This query lists all indexes in the database, excluding catalogue indexes,
--- that have key columns of collatable types. In other words, it lists all indexes
--- that need to be rebuilt. You don't need to run this query since we have done that
--- for you, with the output below.
-select
-    distinct('reindex (verbose) index ' || i.relname || ';') as stmt
-from
-    pg_class t,
-    pg_class i,
-    pg_index ix,
-    pg_attribute a,
-    pg_namespace n
-where
-    t.oid = ix.indrelid
-    and i.oid = ix.indexrelid
-    and n.oid = i.relnamespace
-    and a.attrelid = t.oid
-    and a.attnum = ANY(ix.indkey)
-    and t.relkind = 'r'
-    and n.nspname = 'public'
-    and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
-order by stmt;
+select pg_terminate_backend(pg_stat_activity.pid)
+from pg_stat_activity where datname = 'sg'
+```
 
--- We want to start by reindexing system catalog indexes which may have been affected.
+With a Postgres client connected to the database, we now start by reindexing system catalog indexes which may have been affected.
+
+```sql
 reindex (verbose) system sg;
+```
 
--- This is the output of the above index listing query for the sourcegraph db.
--- We execute each of these sequentially until the first failure, most likely
--- due to duplicates, at which point we must delete those duplicates before
--- trying again. You can find an example duplicate deletion query at the
--- bottom of this file. After deleting those duplicates, just resume the index
--- rebuilding from where we left off, commenting out or deleting the previouse
--- reindex statements.
---
--- We prefer to reindex explicit indexes rather that the whole database in order
--- to allow resuming where we left off after encountering a duplicates error and
--- fixing it.
+Now we need to rebuild the sourcegraph db indexes. We execute each of these sequentially until the first failure, most likely due to duplicates, at which point we must delete those duplicates before trying again.
+You can find an example duplicate deletion query further down in this file. After deleting those duplicates, just resume the index rebuilding from where we left off, commenting out or deleting the previouse reindex statements.
+We prefer to reindex explicit indexes rather that the whole database in order to allow resuming where we left off after encountering a duplicates error and fixing it.
 
+```sql
 reindex (verbose) index batch_changes_site_credentials_unique;
 reindex (verbose) index batch_spec_executions_rand_id;
 reindex (verbose) index batch_specs_rand_id;
@@ -123,60 +99,9 @@ reindex (verbose) index user_permissions_perm_object_unique;
 reindex (verbose) index users_billing_customer_id;
 reindex (verbose) index users_username;
 reindex (verbose) index versions_pkey;
-
--- Example of a duplicate deletion query for the repo table that needs
--- to be adapated to the specific table we need to remove duplicates in.
---
--- We must disable index scans before deleting so that we avoid
--- using the corrupt indexes to find the rows to delete. The database then
--- does a sequential scan, which is what we want in order to accomplish that.
-
-begin;
-
-set enable_indexscan = 'off';
-set enable_bitmapscan = 'off';
-
-delete from repo t1
-using repo t2
-where t1.ctid > t2.ctid
-and (
-  t1.name = t2.name or
-  (
-    t1.external_service_type = t2.external_service_type and
-    t1.external_service_id = t2.external_service_id and
-    t1.external_id = t2.external_id
-  )
-)
-
-commit;
-
--- At the very end of the index rebuilding process, as a last sanity check,
--- we use the amcheck extension to verify there are no corrupt indexes.
-
-create extension amcheck;
-
-select bt_index_parent_check(c.oid, true), c.relname, c.relpages
-from pg_index i
-join pg_opclass op ON i.indclass[0] = op.oid
-join pg_am am ON op.opcmethod = am.oid
-join pg_class c ON i.indexrelid = c.oid
-join pg_namespace n ON c.relnamespace = n.oid
-where am.amname = 'btree'
--- Don't check temp tables, which may be from another session:
-and c.relpersistence != 't'
--- Function may throw an error when this is omitted:
-and i.indisready AND i.indisvalid;
 ```
 
-### Step 3: Rebuild indexes in the codeintel db
-
-Connect to the db. In k8s, that can be done with port-forwarding.
-
-```
-kubectl port-forward svc/codeintel-db 3333:5432
-```
-
-Follow these steps:
+The above statements were produced by this query. **No need to run this, it's just informational.**
 
 ```sql
 -- This query lists all indexes in the database, excluding catalogue indexes,
@@ -201,37 +126,16 @@ where
     and n.nspname = 'public'
     and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
 order by stmt;
+```
 
--- We want to start by reindexing system catalog indexes which may have been affected.
-reindex (verbose) system sg;
+As for the _duplicate deletion query_, here's an example of for the `repo` table that needs to be adapated to the specific table and index we need to remove duplicates in.
 
--- This is the output of the above index listing query for the codeintel db.
--- We execute each of these sequentially until the first failure, most likely
--- due to duplicates, at which point we must delete those duplicates before
--- trying again. You can find an example duplicate deletion query at the
--- bottom of this file. After deleting those duplicates, just resume the index
--- rebuilding from where we left off, commenting out or deleting the previouse
--- reindex statements.
---
--- We prefer to reindex explicit indexes rather that the whole database in order
--- to allow resuming where we left off after encountering a duplicates error and
--- fixing it.
+```sql
+begin;
 
-reindex (verbose) index lsif_data_definitions_pkey;
-reindex (verbose) index lsif_data_documentation_mappings_pkey;
-reindex (verbose) index lsif_data_documentation_pages_pkey;
-reindex (verbose) index lsif_data_documentation_path_info_pkey;
-reindex (verbose) index lsif_data_documents_pkey;
-reindex (verbose) index lsif_data_references_pkey;
-
--- Example of a duplicate deletion query for the repo table that needs
--- to be adapated to the specific table we need to remove duplicates in.
---
 -- We must disable index scans before deleting so that we avoid
 -- using the corrupt indexes to find the rows to delete. The database then
 -- does a sequential scan, which is what we want in order to accomplish that.
-
-begin;
 
 set enable_indexscan = 'off';
 set enable_bitmapscan = 'off';
@@ -246,13 +150,14 @@ and (
     t1.external_service_id = t2.external_service_id and
     t1.external_id = t2.external_id
   )
-)
+);
 
 commit;
+```
 
--- At the very end of the index rebuilding process, as a last sanity check,
--- we use the amcheck extension to verify there are no corrupt indexes.
+At the very end of the index rebuilding process, as a last sanity check, we use the amcheck extension to verify there are no corrupt indexes.
 
+```sql
 create extension amcheck;
 
 select bt_index_parent_check(c.oid, true), c.relname, c.relpages
@@ -266,9 +171,62 @@ where am.amname = 'btree'
 and c.relpersistence != 't'
 -- Function may throw an error when this is omitted:
 and i.indisready AND i.indisvalid;
-
 ```
 
-### Step 4: Start Sourcegraph services again
+### Rebuild indexes in the codeintel db
 
-After the indexes have been rebuilt and the index integrity query doesn't return any errors, we can start all Sourcegraph services again.
+We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
+
+In Kubernetes, you can accomplish this by deleting the database service to prevent new connections from being established, followed by a query to kill existing connections.
+
+```shell
+kubectl delete svc/codeintel-db
+kubectl port-forward deploy/codeintel-db 3333:5432 # doesn't use the service that we just deleted
+psql -U sg -d sg -h localhost -p 3333
+```
+
+Kill existing client connections first:
+
+```sql
+select pg_terminate_backend(pg_stat_activity.pid)
+from pg_stat_activity where datname = 'sg'
+```
+
+With a Postgres client connected to the database, we now start by reindexing system catalog indexes which may have been affected.
+
+```sql
+reindex (verbose) system sg;
+```
+
+Now we need to rebuild the codeintel db indexes. We execute each of these sequentially until the first failure, most likely due to duplicates, at which point we must delete those duplicates before trying again.
+You can find an example duplicate deletion query above in this file. After deleting those duplicates, just resume the index rebuilding from where we left off, commenting out or deleting the previouse reindex statements.
+We prefer to reindex explicit indexes rather that the whole database in order to allow resuming where we left off after encountering a duplicates error and fixing it.
+
+```sql
+reindex (verbose) index lsif_data_definitions_pkey;
+reindex (verbose) index lsif_data_documentation_mappings_pkey;
+reindex (verbose) index lsif_data_documentation_pages_pkey;
+reindex (verbose) index lsif_data_documentation_path_info_pkey;
+reindex (verbose) index lsif_data_documents_pkey;
+reindex (verbose) index lsif_data_references_pkey;
+```
+
+At the very end of the index rebuilding process, as a last sanity check, we use the amcheck extension to verify there are no corrupt indexes.
+
+```sql
+create extension amcheck;
+
+select bt_index_parent_check(c.oid, true), c.relname, c.relpages
+from pg_index i
+join pg_opclass op ON i.indclass[0] = op.oid
+join pg_am am ON op.opcmethod = am.oid
+join pg_class c ON i.indexrelid = c.oid
+join pg_namespace n ON c.relnamespace = n.oid
+where am.amname = 'btree'
+-- Don't check temp tables, which may be from another session:
+and c.relpersistence != 't'
+-- Function may throw an error when this is omitted:
+and i.indisready AND i.indisvalid;
+```
+
+After the indexes have been rebuilt and the index integrity query doesn't return any errors, we can start all Sourcegraph services again. The way you do this is dependent on your specific deployment.
