@@ -23,7 +23,7 @@ To upgrade, please perform the changes in the following diff:
 
 ## 3.29 -> 3.30.0
 
-**⚠️ Prefer upgrading to the 3.30.1 release see CHANGELOG for more info**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3. If you have upgraded to 3.30.0 and 3.30.1/3.30.2 please reach out to support@sourcegraph.com for assistance**
 
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)

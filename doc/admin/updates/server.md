@@ -13,7 +13,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-## 3.29 -> 3.30.1
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3. If you have upgraded to 3.30.0 and 3.30.1/3.30.2 please reach out to support@sourcegraph.com for assistance**
 
 ## Standard upgrade procedure
 

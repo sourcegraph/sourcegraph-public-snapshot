@@ -20,13 +20,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 No manual migration required.
 
-Please upgrade to the [`v3.30.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/5d48fde63b2a60f46cd12bbc321a92ccdca79575) by following the [standard upgrade procedure](#standard-upgrade-procedure).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
-
-## 3.29 -> 3.30.1
-
-**⚠️ Prefer upgrading to the 3.30.1 release over 3.30.0 release, see the CHANGELOG for more info**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3. If you have upgraded to 3.30.0 and 3.30.1/3.30.2 please reach out to support@sourcegraph.com for assistance**
 
 No manual migration required.
 

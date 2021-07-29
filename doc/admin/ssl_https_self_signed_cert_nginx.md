@@ -12,6 +12,7 @@ Configuring NGINX with a self-signed certificate to support SSL requires:
   - [3. Adding SSL support to NGINX](#3-adding-ssl-support-to-nginx)
   - [4. Changing the Sourcegraph container to listen on port 443](#4-changing-the-sourcegraph-container-to-listen-on-port-443)
   - [5. Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
+    - [Getting the self-signed cert trusted on other developer machines](#getting-the-self-signed-cert-trusted-on-other-developer-machines)
   - [Next steps](#next-steps)
 
 ## 1. Installing mkcert
@@ -91,7 +92,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.30.1
+  sourcegraph/server:3.30.3
 ```
 
 > NOTE: We recommend removing `--publish 7080:7080` as it's not needed and traffic sent to that port is un-encrypted.
