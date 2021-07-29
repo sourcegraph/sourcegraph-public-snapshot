@@ -10,11 +10,11 @@
  */
 {
     // Captain information
-    "captainSlackUsername": "geoffrey",
-    "captainGitHubUsername": "ggilmore",
+    "captainSlackUsername": "dax",
+    "captainGitHubUsername": "daxmc99",
     // Release versions
-    "previousRelease": "3.30.2",
-    "upcomingRelease": "3.30.3",
+    "previousRelease": "3.30.3",
+    "upcomingRelease": "3.31.0",
     // Release dates
     "oneWorkingDayBeforeRelease": "19 August 2021 10:00 PST",
     "releaseDate": "20 August 2021 10:00 PST",
