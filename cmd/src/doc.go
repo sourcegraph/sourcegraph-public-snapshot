@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
 func init() {
@@ -42,7 +43,7 @@ Examples:
 		if *outputFlag == "" {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "output directory must be set via -o"))
 			flagSet.Usage()
-			return &exitCodeError{exitCode: 1}
+			return cmderrors.ExitCode(1, nil)
 		}
 
 		dr, err := newDocRenderer()

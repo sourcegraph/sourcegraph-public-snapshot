@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -11,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
 func init() {
@@ -50,7 +50,7 @@ Examples:
 			endpoint = flagSet.Arg(0)
 		}
 		if endpoint == "" {
-			return &usageError{errors.New("expected exactly one argument: the Sourcegraph URL, or SRC_ENDPOINT to be set")}
+			return cmderrors.Usage("expected exactly one argument: the Sourcegraph URL, or SRC_ENDPOINT to be set")
 		}
 
 		client := cfg.apiClient(apiFlags, ioutil.Discard)
@@ -64,8 +64,6 @@ Examples:
 		usageFunc: usageFunc,
 	})
 }
-
-var exitCode1 = &exitCodeError{exitCode: 1}
 
 func loginCmd(ctx context.Context, cfg *config, client api.Client, endpointArg string, out io.Writer) error {
 	endpointArg = cleanEndpoint(endpointArg)
@@ -98,7 +96,7 @@ func loginCmd(ctx context.Context, cfg *config, client api.Client, endpointArg s
 			printProblem(fmt.Sprintf("The configured endpoint is %s, not %s.", cfg.Endpoint, endpointArg))
 		}
 		fmt.Fprintln(out, createAccessTokenMessage)
-		return exitCode1
+		return cmderrors.ExitCode1
 	}
 
 	// See if the user is already authenticated.
@@ -114,14 +112,14 @@ func loginCmd(ctx context.Context, cfg *config, client api.Client, endpointArg s
 		}
 		fmt.Fprintln(out, createAccessTokenMessage)
 		fmt.Fprintln(out, "   (If you need to supply custom HTTP request headers, see information about SRC_HEADER_* env vars at https://github.com/sourcegraph/src-cli/blob/main/AUTH_PROXY.md.)")
-		return exitCode1
+		return cmderrors.ExitCode1
 	}
 
 	if result.CurrentUser == nil {
 		// This should never happen; we verified there is an access token, so there should always be
 		// a user.
 		printProblem(fmt.Sprintf("Unable to determine user on %s.", endpointArg))
-		return exitCode1
+		return cmderrors.ExitCode1
 	}
 	fmt.Fprintln(out)
 	fmt.Fprintf(out, "✔️  Authenticated as %s on %s\n", result.CurrentUser.Username, endpointArg)

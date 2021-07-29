@@ -274,7 +274,6 @@ func TestCoordinator_Execute(t *testing.T) {
 			logManager := mock.LogNoOpManager{}
 
 			cache := newInMemoryExecutionCache()
-			noopPrinter := func([]*TaskStatus) {}
 			coord := Coordinator{
 				cache:      cache,
 				exec:       tc.executor,
@@ -286,7 +285,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			// the batch spec. We'll run this multiple times to cover both the
 			// cache and non-cache code paths.
 			execute := func(t *testing.T) {
-				specs, _, err := coord.Execute(ctx, tc.tasks, tc.batchSpec, noopPrinter)
+				specs, _, err := coord.Execute(ctx, tc.tasks, tc.batchSpec, newDummyTaskExecutionUI())
 				if tc.wantErrInclude == "" {
 					if err != nil {
 						t.Fatalf("execution failed: %s", err)
@@ -432,8 +431,6 @@ func execAndEnsure(t *testing.T, coord *Coordinator, exec *dummyExecutor, task *
 	t.Helper()
 
 	batchSpec := &batches.BatchSpec{ChangesetTemplate: testChangesetTemplate}
-	noopPrinter := func([]*TaskStatus) {}
-
 	// Set the ChangesetTemplate on Task
 	task.Template = batchSpec.ChangesetTemplate
 
@@ -441,7 +438,7 @@ func execAndEnsure(t *testing.T, coord *Coordinator, exec *dummyExecutor, task *
 	exec.startCb = cb
 
 	// Execute
-	specs, _, err := coord.Execute(context.Background(), []*Task{task}, batchSpec, noopPrinter)
+	specs, _, err := coord.Execute(context.Background(), []*Task{task}, batchSpec, newDummyTaskExecutionUI())
 	if err != nil {
 		t.Fatalf("execution of task failed: %s", err)
 	}
@@ -470,8 +467,8 @@ func assertCacheSize(t *testing.T, cache *inMemoryExecutionCache, want int) {
 // assertCachedResultForStep returns a function that can be used as a
 // startCallback on dummyExecutor to assert that the first Task has a cached
 // result for the given step.
-func assertCachedResultForStep(t *testing.T, step int) func(context.Context, []*Task, taskStatusHandler) {
-	return func(c context.Context, tasks []*Task, tsh taskStatusHandler) {
+func assertCachedResultForStep(t *testing.T, step int) func(context.Context, []*Task, TaskExecutionUI) {
+	return func(c context.Context, tasks []*Task, ui TaskExecutionUI) {
 		t.Helper()
 
 		task := tasks[0]
@@ -487,8 +484,8 @@ func assertCachedResultForStep(t *testing.T, step int) func(context.Context, []*
 
 // expectCachedResultForStep returns a function that can be used as a
 // startCallback on dummyExecutor to assert that the first Task has no cached results.
-func assertNoCachedResult(t *testing.T) func(context.Context, []*Task, taskStatusHandler) {
-	return func(c context.Context, tasks []*Task, tsh taskStatusHandler) {
+func assertNoCachedResult(t *testing.T) func(context.Context, []*Task, TaskExecutionUI) {
+	return func(c context.Context, tasks []*Task, ui TaskExecutionUI) {
 		t.Helper()
 
 		task := tasks[0]
@@ -498,7 +495,59 @@ func assertNoCachedResult(t *testing.T) func(context.Context, []*Task, taskStatu
 	}
 }
 
-type startCallback func(context.Context, []*Task, taskStatusHandler)
+type startCallback func(context.Context, []*Task, TaskExecutionUI)
+
+var _ TaskExecutionUI = &dummyTaskExecutionUI{}
+
+func newDummyTaskExecutionUI() *dummyTaskExecutionUI {
+	return &dummyTaskExecutionUI{
+		started:         map[*Task]struct{}{},
+		finished:        map[*Task]struct{}{},
+		finishedWithErr: map[*Task]struct{}{},
+		specs:           map[*Task][]*batches.ChangesetSpec{},
+	}
+}
+
+type dummyTaskExecutionUI struct {
+	mu sync.Mutex
+
+	started         map[*Task]struct{}
+	finished        map[*Task]struct{}
+	finishedWithErr map[*Task]struct{}
+	specs           map[*Task][]*batches.ChangesetSpec
+}
+
+func (d *dummyTaskExecutionUI) Start([]*Task) {}
+func (d *dummyTaskExecutionUI) Success()      {}
+func (d *dummyTaskExecutionUI) TaskStarted(t *Task) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	d.started[t] = struct{}{}
+}
+func (d *dummyTaskExecutionUI) TaskFinished(t *Task, err error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if _, ok := d.started[t]; ok {
+		delete(d.started, t)
+	}
+	if err != nil {
+		d.finishedWithErr[t] = struct{}{}
+	} else {
+		d.finished[t] = struct{}{}
+	}
+}
+func (d *dummyTaskExecutionUI) TaskChangesetSpecsBuilt(t *Task, specs []*batches.ChangesetSpec) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	d.specs[t] = specs
+}
+
+func (d *dummyTaskExecutionUI) TaskCurrentlyExecuting(*Task, string) {}
+
+var _ taskExecutor = &dummyExecutor{}
 
 type dummyExecutor struct {
 	startCb       startCallback
@@ -508,9 +557,9 @@ type dummyExecutor struct {
 	waitErr error
 }
 
-func (d *dummyExecutor) Start(ctx context.Context, ts []*Task, status taskStatusHandler) {
+func (d *dummyExecutor) Start(ctx context.Context, ts []*Task, ui TaskExecutionUI) {
 	if d.startCb != nil {
-		d.startCb(ctx, ts, status)
+		d.startCb(ctx, ts, ui)
 		d.startCbCalled = true
 	}
 	// "noop noop noop", the crowd screams

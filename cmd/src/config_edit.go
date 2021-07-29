@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
 func init() {
@@ -64,7 +64,7 @@ Examples:
 		if *propertyFlag != "" {
 			keyPath = []KeyPath{{Property: *propertyFlag}}
 		} else if !*overwriteFlag {
-			return &usageError{errors.New("either -property or -overwrite must be used")}
+			return cmderrors.Usage("either -property or -overwrite must be used")
 		}
 
 		var value string
@@ -77,7 +77,7 @@ Examples:
 			}
 			value = string(data)
 		} else {
-			return &usageError{errors.New("either -value or -value-file must be used")}
+			return cmderrors.Usage("either -value or -value-file must be used")
 		}
 
 		ctx := context.Background()

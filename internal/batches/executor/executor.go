@@ -79,13 +79,9 @@ func newExecutor(opts newExecutorOpts) *executor {
 	}
 }
 
-type taskStatusHandler interface {
-	Update(task *Task, callback func(status *TaskStatus))
-}
-
 // Start starts the execution of the given Tasks in goroutines, calling the
 // given taskStatusHandler to update the progress of the tasks.
-func (x *executor) Start(ctx context.Context, tasks []*Task, status taskStatusHandler) {
+func (x *executor) Start(ctx context.Context, tasks []*Task, ui TaskExecutionUI) {
 	defer func() { close(x.doneEnqueuing) }()
 
 	for _, task := range tasks {
@@ -97,19 +93,19 @@ func (x *executor) Start(ctx context.Context, tasks []*Task, status taskStatusHa
 
 		x.par.Acquire()
 
-		go func(task *Task, status taskStatusHandler) {
+		go func(task *Task, ui TaskExecutionUI) {
 			defer x.par.Release()
 
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				err := x.do(ctx, task, status)
+				err := x.do(ctx, task, ui)
 				if err != nil {
 					x.par.Error(err)
 				}
 			}
-		}(task, status)
+		}(task, ui)
 	}
 }
 
@@ -136,20 +132,14 @@ func (x *executor) Wait(ctx context.Context) ([]taskResult, error) {
 	return x.results, nil
 }
 
-func (x *executor) do(ctx context.Context, task *Task, status taskStatusHandler) (err error) {
+func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err error) {
 	// Ensure that the status is updated when we're done.
 	defer func() {
-		status.Update(task, func(status *TaskStatus) {
-			status.FinishedAt = time.Now()
-			status.CurrentlyExecuting = ""
-			status.Err = err
-		})
+		ui.TaskFinished(task, err)
 	}()
 
 	// We're away!
-	status.Update(task, func(status *TaskStatus) {
-		status.StartedAt = time.Now()
-	})
+	ui.TaskStarted(task)
 
 	// Let's set up our logging.
 	log, err := x.opts.Logger.AddTask(task.Repository.SlugForPath(task.Path))
@@ -182,9 +172,7 @@ func (x *executor) do(ctx context.Context, task *Task, status taskStatusHandler)
 		wc:      x.opts.Creator,
 		tempDir: x.opts.TempDir,
 		reportProgress: func(currentlyExecuting string) {
-			status.Update(task, func(status *TaskStatus) {
-				status.CurrentlyExecuting = currentlyExecuting
-			})
+			ui.TaskCurrentlyExecuting(task, currentlyExecuting)
 		},
 	}
 

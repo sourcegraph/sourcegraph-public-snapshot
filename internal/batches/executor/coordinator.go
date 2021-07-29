@@ -16,7 +16,7 @@ import (
 )
 
 type taskExecutor interface {
-	Start(context.Context, []*Task, taskStatusHandler)
+	Start(context.Context, []*Task, TaskExecutionUI)
 	Wait(context.Context) ([]taskResult, error)
 }
 
@@ -169,15 +169,7 @@ func (c *Coordinator) setCachedStepResults(ctx context.Context, task *Task) erro
 	return nil
 }
 
-func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, status taskStatusHandler) (specs []*batches.ChangesetSpec, err error) {
-	defer func() {
-		// Set these two fields in any case
-		status.Update(taskResult.task, func(status *TaskStatus) {
-			status.ChangesetSpecsDone = true
-			status.ChangesetSpecs = specs
-		})
-	}()
-
+func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, ui TaskExecutionUI) ([]*batches.ChangesetSpec, error) {
 	// Add to the cache, even if no diff was produced.
 	cacheKey := taskResult.task.cacheKey()
 	if err := c.cache.Set(ctx, cacheKey, taskResult.result); err != nil {
@@ -199,47 +191,36 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 	}
 
 	// Build the changeset specs.
-	specs, err = createChangesetSpecs(taskResult.task, taskResult.result, c.opts.Features)
+	specs, err := createChangesetSpecs(taskResult.task, taskResult.result, c.opts.Features)
 	if err != nil {
-		return specs, err
+		return nil, err
 	}
 
+	ui.TaskChangesetSpecsBuilt(taskResult.task, specs)
 	return specs, nil
 }
 
-type executionProgressPrinter func([]*TaskStatus)
+type TaskExecutionUI interface {
+	Start([]*Task)
+	Success()
+
+	TaskStarted(*Task)
+	TaskFinished(*Task, error)
+
+	TaskChangesetSpecsBuilt(*Task, []*batches.ChangesetSpec)
+
+	// TODO: This should be split up into methods that are more specific.
+	TaskCurrentlyExecuting(*Task, string)
+}
 
 // Execute executes the given Tasks and the importChangeset statements in the
 // given spec. It regularly calls the executionProgressPrinter with the
 // current TaskStatuses.
-func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.BatchSpec, printer executionProgressPrinter) ([]*batches.ChangesetSpec, []string, error) {
+func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.BatchSpec, ui TaskExecutionUI) ([]*batches.ChangesetSpec, []string, error) {
 	var (
 		specs []*batches.ChangesetSpec
 		errs  *multierror.Error
 	)
-
-	// Start the goroutine that updates the UI
-	status := NewTaskStatusCollection(tasks)
-
-	done := make(chan struct{})
-	if printer != nil {
-		go func() {
-			status.CopyStatuses(printer)
-
-			ticker := time.NewTicker(1 * time.Second)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-ticker.C:
-					status.CopyStatuses(printer)
-
-				case <-done:
-					return
-				}
-			}
-		}()
-	}
 
 	// If we are here, that means we didn't find anything in the cache for the
 	// complete task. So, what if we have cached results for the steps?
@@ -249,8 +230,10 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.
 		}
 	}
 
+	ui.Start(tasks)
+
 	// Run executor
-	c.exec.Start(ctx, tasks, status)
+	c.exec.Start(ctx, tasks, ui)
 	results, err := c.exec.Wait(ctx)
 	if err != nil {
 		if c.opts.SkipErrors {
@@ -262,18 +245,12 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.
 
 	// Write results to cache, build ChangesetSpecs if possible and add to list.
 	for _, taskResult := range results {
-		taskSpecs, err := c.cacheAndBuildSpec(ctx, taskResult, status)
+		taskSpecs, err := c.cacheAndBuildSpec(ctx, taskResult, ui)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		specs = append(specs, taskSpecs...)
-	}
-
-	// Now that we've built the specs too we can mark the progress as done
-	if printer != nil {
-		status.CopyStatuses(printer)
-		done <- struct{}{}
 	}
 
 	// Add external changeset specs.

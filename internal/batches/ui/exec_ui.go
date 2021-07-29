@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
-type batchExecUI interface {
+type ExecUI interface {
 	ParsingBatchSpec()
 	ParsingBatchSpecSuccess()
 	ParsingBatchSpecFailure(error)
@@ -31,9 +31,8 @@ type batchExecUI interface {
 	CheckingCache()
 	CheckingCacheSuccess(cachedSpecsFound int, tasksToExecute int)
 
-	ExecutingTasks(verbose bool, parallelism int) func(ts []*executor.TaskStatus)
+	ExecutingTasks(verbose bool, parallelism int) executor.TaskExecutionUI
 	ExecutingTasksSkippingErrors(err error)
-	ExecutingTasksSuccess()
 
 	LogFilesKept(files []string)
 

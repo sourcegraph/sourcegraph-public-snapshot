@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/mattn/go-isatty"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
+
+	"github.com/mattn/go-isatty"
 )
 
 func init() {
@@ -65,7 +66,7 @@ Examples:
 		if query == "" {
 			// Read query from stdin instead.
 			if isatty.IsTerminal(os.Stdin.Fd()) {
-				return &usageError{errors.New("expected query to be piped into 'src api' or -query flag to be specified")}
+				return cmderrors.Usage("expected query to be piped into 'src api' or -query flag to be specified")
 			}
 			data, err := ioutil.ReadAll(os.Stdin)
 			if err != nil {
@@ -84,7 +85,7 @@ Examples:
 		for _, arg := range flagSet.Args() {
 			idx := strings.Index(arg, "=")
 			if idx == -1 {
-				return &usageError{fmt.Errorf("parsing argument %q expected 'variable=value' syntax (missing equals)", arg)}
+				return cmderrors.Usagef("parsing argument %q expected 'variable=value' syntax (missing equals)", arg)
 			}
 			key := arg[:idx]
 			value := arg[idx+1:]

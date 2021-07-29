@@ -17,6 +17,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattn/go-isatty"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -668,10 +669,10 @@ func (c *vdClient) graphQL(token, query string, variables map[string]interface{}
 	}
 
 	if result.Errors != nil {
-		return &exitCodeError{
-			error:    fmt.Errorf("GraphQL errors:\n%s", &graphqlError{result.Errors}),
-			exitCode: graphqlErrorsExitCode,
-		}
+		return cmderrors.ExitCode(
+			cmderrors.GraphqlErrorsExitCode,
+			fmt.Errorf("GraphQL errors:\n%s", &graphqlError{result.Errors}),
+		)
 	}
 	if err := jsonCopy(target, result.Data); err != nil {
 		return err

@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 	"github.com/sourcegraph/src-cli/internal/servegit"
 )
 
@@ -50,7 +50,7 @@ Documentation at https://docs.sourcegraph.com/admin/external_service/src_serve_g
 			repoDir = args[0]
 
 		default:
-			return &usageError{errors.New("requires zero or one arguments")}
+			return cmderrors.Usage("requires zero or one arguments")
 		}
 
 		dbug := log.New(ioutil.Discard, "", log.LstdFlags)

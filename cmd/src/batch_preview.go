@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/src-cli/internal/batches/ui"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
 func init() {
@@ -33,18 +34,18 @@ Examples:
 		}
 
 		if len(flagSet.Args()) != 0 {
-			return &usageError{errors.New("additional arguments not allowed")}
+			return cmderrors.Usage("additional arguments not allowed")
 		}
 
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		var ui batchExecUI
+		var execUI ui.ExecUI
 		if flags.textOnly {
-			ui = &batchExecJSONLinesUI{}
+			execUI = &ui.JSONLines{}
 		} else {
 			out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-			ui = &batchExecTUI{out: out}
+			execUI = &ui.TUI{Out: out}
 		}
 
 		err := executeBatchSpec(ctx, executeBatchSpecOpts{
@@ -54,10 +55,10 @@ Examples:
 			// Do not apply the uploaded batch spec
 			applyBatchSpec: false,
 
-			ui: ui,
+			ui: execUI,
 		})
 		if err != nil {
-			return &exitCodeError{nil, 1}
+			return cmderrors.ExitCode(1, nil)
 		}
 
 		return nil

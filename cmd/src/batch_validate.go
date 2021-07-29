@@ -1,12 +1,13 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
+	"github.com/sourcegraph/src-cli/internal/batches/ui"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
 func init() {
@@ -32,14 +33,14 @@ Examples:
 		}
 
 		if len(flagSet.Args()) != 0 {
-			return &usageError{errors.New("additional arguments not allowed")}
+			return cmderrors.Usage("additional arguments not allowed")
 		}
 
 		svc := service.New(&service.Opts{})
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
 		if _, _, err := batchParseSpec(fileFlag, svc); err != nil {
-			(&batchExecTUI{out: out}).ParsingBatchSpecFailure(err)
+			(&ui.TUI{Out: out}).ParsingBatchSpecFailure(err)
 			return err
 		}
 

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"html"
@@ -17,6 +16,7 @@ import (
 
 	isatty "github.com/mattn/go-isatty"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 	"github.com/sourcegraph/src-cli/internal/streaming"
 	"jaytaylor.com/html2text"
 )
@@ -80,7 +80,7 @@ Other tips:
 		}
 
 		if flagSet.NArg() != 1 {
-			return &usageError{errors.New("expected exactly one argument: the search query")}
+			return cmderrors.Usage("expected exactly one argument: the search query")
 		}
 		queryString := flagSet.Arg(0)
 

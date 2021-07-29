@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
 // command is a subcommand handler and its flag set.
@@ -92,16 +94,16 @@ func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []
 
 		// Execute the subcommand.
 		if err := cmd.handler(flagSet.Args()[1:]); err != nil {
-			if _, ok := err.(*usageError); ok {
+			if _, ok := err.(*cmderrors.UsageError); ok {
 				log.Printf("error: %s\n\n", err)
 				cmd.flagSet.Usage()
 				os.Exit(2)
 			}
-			if e, ok := err.(*exitCodeError); ok {
-				if e.error != nil {
-					log.Println(e.error)
+			if e, ok := err.(*cmderrors.ExitCodeError); ok {
+				if e.HasError() {
+					log.Println(e)
 				}
-				os.Exit(e.exitCode)
+				os.Exit(e.Code())
 			}
 			log.Fatal(err)
 		}
@@ -110,30 +112,6 @@ func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []
 	log.Printf("%s: unknown subcommand %q", cmdName, name)
 	log.Fatalf("Run '%s help' for usage.", cmdName)
 }
-
-// usageError is an error type that subcommands can return in order to signal
-// that a usage error has occurred.
-type usageError struct {
-	error
-}
-
-// exitCodeError is an error type that subcommands can return in order to
-// specify the exact exit code.
-type exitCodeError struct {
-	error
-	exitCode int
-}
-
-func (e *exitCodeError) Error() string {
-	if e.error != nil {
-		return fmt.Sprintf("%s (exit code: %d)", e.error, e.exitCode)
-	}
-	return fmt.Sprintf("exit code: %d", e.exitCode)
-}
-
-const (
-	graphqlErrorsExitCode = 2
-)
 
 func didYouMeanOtherCommand(actual string, suggested []string) *command {
 	fullSuggestions := make([]string, len(suggested))

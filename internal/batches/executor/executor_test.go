@@ -59,6 +59,9 @@ func TestExecutor_Integration(t *testing.T) {
 		wantAuthorEmail   string
 
 		wantErrInclude string
+
+		wantFinished        int
+		wantFinishedWithErr int
 	}{
 		{
 			name: "success",
@@ -87,6 +90,7 @@ func TestExecutor_Integration(t *testing.T) {
 					rootPath: []string{"README.md"},
 				},
 			},
+			wantFinished: 2,
 		},
 		{
 			name: "empty",
@@ -109,6 +113,7 @@ func TestExecutor_Integration(t *testing.T) {
 					rootPath: []string{},
 				},
 			},
+			wantFinished: 1,
 		},
 		{
 			name: "timeout",
@@ -126,8 +131,9 @@ func TestExecutor_Integration(t *testing.T) {
 			tasks: []*Task{
 				{Repository: testRepo1},
 			},
-			executorTimeout: 100 * time.Millisecond,
-			wantErrInclude:  "execution in github.com/sourcegraph/src-cli failed: Timeout reached. Execution took longer than 100ms.",
+			executorTimeout:     100 * time.Millisecond,
+			wantErrInclude:      "execution in github.com/sourcegraph/src-cli failed: Timeout reached. Execution took longer than 100ms.",
+			wantFinishedWithErr: 1,
 		},
 		{
 			name: "templated steps",
@@ -165,6 +171,7 @@ func TestExecutor_Integration(t *testing.T) {
 					},
 				},
 			},
+			wantFinished: 1,
 		},
 		{
 			name: "workspaces",
@@ -219,6 +226,7 @@ func TestExecutor_Integration(t *testing.T) {
 					"a/b":    []string{"a/b/hello.txt", "a/b/gitignore-exists", "a/b/gitignore-exists-in-a"},
 				},
 			},
+			wantFinished: 3,
 		},
 		{
 			name: "step condition",
@@ -253,6 +261,7 @@ func TestExecutor_Integration(t *testing.T) {
 					"sub/directory/of/repo": []string{"README.md", "hello.txt", "in-path.txt"},
 				},
 			},
+			wantFinished: 2,
 		},
 		{
 			name: "skips errors",
@@ -281,7 +290,9 @@ func TestExecutor_Integration(t *testing.T) {
 				},
 				testRepo2.ID: {},
 			},
-			wantErrInclude: "execution in github.com/sourcegraph/sourcegraph failed: run: exit 1",
+			wantErrInclude:      "execution in github.com/sourcegraph/sourcegraph failed: run: exit 1",
+			wantFinished:        1,
+			wantFinishedWithErr: 1,
 		},
 	}
 
@@ -340,12 +351,11 @@ func TestExecutor_Integration(t *testing.T) {
 				opts.Timeout = 30 * time.Second
 			}
 
+			dummyUI := newDummyTaskExecutionUI()
 			executor := newExecutor(opts)
 
-			statusHandler := NewTaskStatusCollection(tc.tasks)
-
 			// Run executor
-			executor.Start(context.Background(), tc.tasks, statusHandler)
+			executor.Start(context.Background(), tc.tasks, dummyUI)
 
 			results, err := executor.Wait(context.Background())
 			if tc.wantErrInclude == "" {
@@ -356,12 +366,8 @@ func TestExecutor_Integration(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected error to include %q, but got no error", tc.wantErrInclude)
 				} else {
-					if err == nil {
-						t.Fatalf("expected error to include %q, but got no error", tc.wantErrInclude)
-					} else {
-						if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.wantErrInclude)) {
-							t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
-						}
+					if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.wantErrInclude)) {
+						t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
 					}
 				}
 			}
@@ -429,20 +435,13 @@ func TestExecutor_Integration(t *testing.T) {
 				}
 			}
 
-			// Make sure that all the TaskStatus have been updated correctly
-			statusHandler.CopyStatuses(func(statuses []*TaskStatus) {
-				for i, status := range statuses {
-					if status.StartedAt.IsZero() {
-						t.Fatalf("status %d: StartedAt is zero", i)
-					}
-					if status.FinishedAt.IsZero() {
-						t.Fatalf("status %d: FinishedAt is zero", i)
-					}
-					if status.CurrentlyExecuting != "" {
-						t.Fatalf("status %d: CurrentlyExecuting not reset", i)
-					}
-				}
-			})
+			// Make sure that all the Tasks have been updated correctly
+			if have, want := len(dummyUI.finished), tc.wantFinished; have != want {
+				t.Fatalf("wrong number of finished tasks. want=%d, have=%d", want, have)
+			}
+			if have, want := len(dummyUI.finishedWithErr), tc.wantFinishedWithErr; have != want {
+				t.Fatalf("wrong number of finished-with-err tasks. want=%d, have=%d", want, have)
+			}
 		})
 	}
 }
@@ -701,6 +700,6 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 		Timeout:     30 * time.Second,
 	})
 
-	executor.Start(context.Background(), tasks, NewTaskStatusCollection(tasks))
+	executor.Start(context.Background(), tasks, newDummyTaskExecutionUI())
 	return executor.Wait(context.Background())
 }

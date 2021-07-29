@@ -13,6 +13,7 @@ import (
 	isatty "github.com/mattn/go-isatty"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
 func init() {
@@ -56,7 +57,7 @@ Examples:
 
 		// Determine ID of external service we will edit.
 		if *nameFlag == "" && *idFlag == "" {
-			return &usageError{errors.New("one of -name or -id flag must be specified")}
+			return cmderrors.Usage("one of -name or -id flag must be specified")
 		}
 		id := *idFlag
 		if id == "" {

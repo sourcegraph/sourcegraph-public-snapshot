@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"context"
@@ -14,29 +14,36 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
+	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
-var _ batchExecUI = &batchExecTUI{}
+var (
+	batchPendingColor = output.StylePending
+	batchSuccessColor = output.StyleSuccess
+	batchSuccessEmoji = output.EmojiSuccess
+)
 
-type batchExecTUI struct {
-	out *output.Output
+var _ ExecUI = &TUI{}
+
+type TUI struct {
+	Out *output.Output
 
 	pending  output.Pending
 	progress output.Progress
 
-	progressPrinter *batchProgressPrinter
+	progressPrinter *taskExecTUI
 }
 
-func (ui *batchExecTUI) ParsingBatchSpec() {
-	ui.pending = batchCreatePending(ui.out, "Parsing batch spec")
+func (ui *TUI) ParsingBatchSpec() {
+	ui.pending = batchCreatePending(ui.Out, "Parsing batch spec")
 }
-func (ui *batchExecTUI) ParsingBatchSpecSuccess() {
+func (ui *TUI) ParsingBatchSpecSuccess() {
 	batchCompletePending(ui.pending, "Parsing batch spec")
 }
 
-func (ui *batchExecTUI) ParsingBatchSpecFailure(err error) {
+func (ui *TUI) ParsingBatchSpecFailure(err error) {
 	if merr, ok := err.(*multierror.Error); ok {
-		block := ui.out.Block(output.Line("\u274c", output.StyleWarning, "Batch spec failed validation."))
+		block := ui.Out.Block(output.Line("\u274c", output.StyleWarning, "Batch spec failed validation."))
 		defer block.Close()
 
 		for i, err := range merr.Errors {
@@ -45,34 +52,34 @@ func (ui *batchExecTUI) ParsingBatchSpecFailure(err error) {
 	}
 }
 
-func (ui *batchExecTUI) ResolvingNamespace() {
-	ui.pending = batchCreatePending(ui.out, "Resolving namespace")
+func (ui *TUI) ResolvingNamespace() {
+	ui.pending = batchCreatePending(ui.Out, "Resolving namespace")
 }
 
-func (ui *batchExecTUI) ResolvingNamespaceSuccess(_namespace string) {
+func (ui *TUI) ResolvingNamespaceSuccess(_namespace string) {
 	batchCompletePending(ui.pending, "Resolving namesapce")
 }
 
-func (ui *batchExecTUI) PreparingContainerImages() {
-	ui.progress = ui.out.Progress([]output.ProgressBar{{
+func (ui *TUI) PreparingContainerImages() {
+	ui.progress = ui.Out.Progress([]output.ProgressBar{{
 		Label: "Preparing container images",
 		Max:   1.0,
 	}}, nil)
 }
 
-func (ui *batchExecTUI) PreparingContainerImagesProgress(percent float64) {
+func (ui *TUI) PreparingContainerImagesProgress(percent float64) {
 	ui.progress.SetValue(0, percent)
 }
 
-func (ui *batchExecTUI) PreparingContainerImagesSuccess() {
+func (ui *TUI) PreparingContainerImagesSuccess() {
 	ui.progress.Complete()
 }
 
-func (ui *batchExecTUI) DeterminingWorkspaceCreatorType() {
-	ui.pending = batchCreatePending(ui.out, "Determining workspace type")
+func (ui *TUI) DeterminingWorkspaceCreatorType() {
+	ui.pending = batchCreatePending(ui.Out, "Determining workspace type")
 }
 
-func (ui *batchExecTUI) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.CreatorType) {
+func (ui *TUI) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.CreatorType) {
 	switch wt {
 	case workspace.CreatorTypeBind:
 		ui.pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: bind"))
@@ -83,20 +90,20 @@ func (ui *batchExecTUI) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.Crea
 	batchCompletePending(ui.pending, "Set workspace type")
 }
 
-func (ui *batchExecTUI) ResolvingRepositories() {
-	ui.pending = batchCreatePending(ui.out, "Resolving repositories")
+func (ui *TUI) ResolvingRepositories() {
+	ui.pending = batchCreatePending(ui.Out, "Resolving repositories")
 }
-func (ui *batchExecTUI) ResolvingRepositoriesDone(repos []*graphql.Repository, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
+func (ui *TUI) ResolvingRepositoriesDone(repos []*graphql.Repository, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
 	batchCompletePending(ui.pending, fmt.Sprintf("Resolved %d repositories", len(repos)))
 
 	if unsupported != nil && len(unsupported) != 0 {
-		block := ui.out.Block(output.Line(" ", output.StyleWarning, "Some repositories are hosted on unsupported code hosts and will be skipped. Use the -allow-unsupported flag to avoid skipping them."))
+		block := ui.Out.Block(output.Line(" ", output.StyleWarning, "Some repositories are hosted on unsupported code hosts and will be skipped. Use the -allow-unsupported flag to avoid skipping them."))
 		for repo := range unsupported {
 			block.Write(repo.Name)
 		}
 		block.Close()
 	} else if ignored != nil && len(ignored) != 0 {
-		block := ui.out.Block(output.Line(" ", output.StyleWarning, "The repositories listed below contain .batchignore files and will be skipped. Use the -force-override-ignore flag to avoid skipping them."))
+		block := ui.Out.Block(output.Line(" ", output.StyleWarning, "The repositories listed below contain .batchignore files and will be skipped. Use the -force-override-ignore flag to avoid skipping them."))
 		for repo := range ignored {
 			block.Write(repo.Name)
 		}
@@ -104,19 +111,19 @@ func (ui *batchExecTUI) ResolvingRepositoriesDone(repos []*graphql.Repository, u
 	}
 }
 
-func (ui *batchExecTUI) DeterminingWorkspaces() {
-	ui.pending = batchCreatePending(ui.out, "Determining workspaces")
+func (ui *TUI) DeterminingWorkspaces() {
+	ui.pending = batchCreatePending(ui.Out, "Determining workspaces")
 }
 
-func (ui *batchExecTUI) DeterminingWorkspacesSuccess(num int) {
+func (ui *TUI) DeterminingWorkspacesSuccess(num int) {
 	batchCompletePending(ui.pending, fmt.Sprintf("Found %d workspaces with steps to execute", num))
 }
 
-func (ui *batchExecTUI) CheckingCache() {
-	ui.pending = batchCreatePending(ui.out, "Checking cache for changeset specs")
+func (ui *TUI) CheckingCache() {
+	ui.pending = batchCreatePending(ui.Out, "Checking cache for changeset specs")
 }
 
-func (ui *batchExecTUI) CheckingCacheSuccess(cachedSpecsFound int, uncachedTasks int) {
+func (ui *TUI) CheckingCacheSuccess(cachedSpecsFound int, uncachedTasks int) {
 	var specsFoundMessage string
 	if cachedSpecsFound == 1 {
 		specsFoundMessage = "Found 1 cached changeset spec"
@@ -133,21 +140,18 @@ func (ui *batchExecTUI) CheckingCacheSuccess(cachedSpecsFound int, uncachedTasks
 	}
 }
 
-func (ui *batchExecTUI) ExecutingTasks(verbose bool, parallelism int) func(ts []*executor.TaskStatus) {
-	ui.progressPrinter = newBatchProgressPrinter(ui.out, verbose, parallelism)
-	return ui.progressPrinter.PrintStatuses
+func (ui *TUI) ExecutingTasks(verbose bool, parallelism int) executor.TaskExecutionUI {
+	ui.progressPrinter = newTaskExecTUI(ui.Out, verbose, parallelism)
+	return ui.progressPrinter
 }
 
-func (ui *batchExecTUI) ExecutingTasksSuccess() {
-	ui.progressPrinter.Complete()
-}
-func (ui *batchExecTUI) ExecutingTasksSkippingErrors(err error) {
-	printExecutionError(ui.out, err)
-	ui.out.WriteLine(output.Line(output.EmojiWarning, output.StyleWarning, "Skipping errors because -skip-errors was used."))
+func (ui *TUI) ExecutingTasksSkippingErrors(err error) {
+	printExecutionError(ui.Out, err)
+	ui.Out.WriteLine(output.Line(output.EmojiWarning, output.StyleWarning, "Skipping errors because -skip-errors was used."))
 }
 
-func (ui *batchExecTUI) LogFilesKept(files []string) {
-	block := ui.out.Block(output.Line("", batchSuccessColor, "Preserving log files:"))
+func (ui *TUI) LogFilesKept(files []string) {
+	block := ui.Out.Block(output.Line("", batchSuccessColor, "Preserving log files:"))
 	defer block.Close()
 
 	for _, file := range files {
@@ -155,11 +159,11 @@ func (ui *batchExecTUI) LogFilesKept(files []string) {
 	}
 }
 
-func (ui *batchExecTUI) NoChangesetSpecs() {
-	ui.out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning, `No changeset specs created`))
+func (ui *TUI) NoChangesetSpecs() {
+	ui.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning, `No changeset specs created`))
 }
 
-func (ui *batchExecTUI) UploadingChangesetSpecs(num int) {
+func (ui *TUI) UploadingChangesetSpecs(num int) {
 	var label string
 	if num == 1 {
 		label = "Sending changeset spec"
@@ -167,57 +171,57 @@ func (ui *batchExecTUI) UploadingChangesetSpecs(num int) {
 		label = fmt.Sprintf("Sending %d changeset specs", num)
 	}
 
-	ui.progress = ui.out.Progress([]output.ProgressBar{
+	ui.progress = ui.Out.Progress([]output.ProgressBar{
 		{Label: label, Max: float64(num)},
 	}, nil)
 }
 
-func (ui *batchExecTUI) UploadingChangesetSpecsProgress(done, total int) {
+func (ui *TUI) UploadingChangesetSpecsProgress(done, total int) {
 	ui.progress.SetValue(0, float64(done))
 }
 
-func (ui *batchExecTUI) UploadingChangesetSpecsSuccess() {
+func (ui *TUI) UploadingChangesetSpecsSuccess() {
 	ui.progress.Complete()
 }
 
-func (ui *batchExecTUI) CreatingBatchSpec() {
-	ui.pending = batchCreatePending(ui.out, "Creating batch spec on Sourcegraph")
+func (ui *TUI) CreatingBatchSpec() {
+	ui.pending = batchCreatePending(ui.Out, "Creating batch spec on Sourcegraph")
 }
 
-func (ui *batchExecTUI) CreatingBatchSpecSuccess() {
+func (ui *TUI) CreatingBatchSpecSuccess() {
 	batchCompletePending(ui.pending, "Creating batch spec on Sourcegraph")
 }
 
-func (ui *batchExecTUI) CreatingBatchSpecError(err error) error {
-	return prettyPrintBatchUnlicensedError(ui.out, err)
+func (ui *TUI) CreatingBatchSpecError(err error) error {
+	return prettyPrintBatchUnlicensedError(ui.Out, err)
 }
 
-func (ui *batchExecTUI) PreviewBatchSpec(batchSpecURL string) {
-	ui.out.Write("")
-	block := ui.out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "To preview or apply the batch spec, go to:"))
+func (ui *TUI) PreviewBatchSpec(batchSpecURL string) {
+	ui.Out.Write("")
+	block := ui.Out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "To preview or apply the batch spec, go to:"))
 	defer block.Close()
 
 	block.Writef("%s", batchSpecURL)
 
 }
 
-func (ui *batchExecTUI) ApplyingBatchSpec() {
-	ui.pending = batchCreatePending(ui.out, "Applying batch spec")
+func (ui *TUI) ApplyingBatchSpec() {
+	ui.pending = batchCreatePending(ui.Out, "Applying batch spec")
 }
 
-func (ui *batchExecTUI) ApplyingBatchSpecSuccess(batchChangeURL string) {
+func (ui *TUI) ApplyingBatchSpecSuccess(batchChangeURL string) {
 	batchCompletePending(ui.pending, "Applying batch spec")
 
-	ui.out.Write("")
-	block := ui.out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "Batch change applied!"))
+	ui.Out.Write("")
+	block := ui.Out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "Batch change applied!"))
 	defer block.Close()
 
 	block.Write("To view the batch change, go to:")
 	block.Writef("%s", batchChangeURL)
 }
 
-func (ui *batchExecTUI) ExecutionError(err error) {
-	printExecutionError(ui.out, err)
+func (ui *TUI) ExecutionError(err error) {
+	printExecutionError(ui.Out, err)
 }
 
 // prettyPrintBatchUnlicensedError introspects the given error returned when
@@ -255,7 +259,7 @@ func prettyPrintBatchUnlicensedError(out *output.Output, err error) error {
 				block.WriteLine(output.Linef("", output.StyleWarning, "%srepositoriesMatchingQuery%s search, or reduce the number of changesets in", output.StyleReset, output.StyleWarning))
 				block.WriteLine(output.Linef("", output.StyleWarning, "%simportChangesets%s.", output.StyleReset, output.StyleWarning))
 				block.Close()
-				return &exitCodeError{exitCode: graphqlErrorsExitCode}
+				return cmderrors.ExitCode(cmderrors.GraphqlErrorsExitCode, nil)
 			}
 		}
 	}
@@ -269,7 +273,7 @@ func prettyPrintBatchUnlicensedError(out *output.Output, err error) error {
 func printExecutionError(out *output.Output, err error) {
 	// exitCodeError shouldn't generate any specific output, since it indicates
 	// that this was done deeper in the call stack.
-	if _, ok := err.(*exitCodeError); ok {
+	if _, ok := err.(*cmderrors.ExitCodeError); ok {
 		return
 	}
 
@@ -358,4 +362,12 @@ func formatTaskExecutionErr(err executor.TaskExecutionErr) string {
 		err.Err,
 		err.Logfile,
 	)
+}
+
+func batchCreatePending(out *output.Output, message string) output.Pending {
+	return out.Pending(output.Line("", batchPendingColor, message))
+}
+
+func batchCompletePending(p output.Pending, message string) {
+	p.Complete(output.Line(batchSuccessEmoji, batchSuccessColor, message))
 }
