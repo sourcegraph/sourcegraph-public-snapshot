@@ -572,12 +572,16 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
-	// Fallback to literal search for searching repos and files if
-	// the structural search pattern is empty.
-	if r.PatternType == query.SearchTypeStructural && p.Pattern == "" {
-		r.PatternType = query.SearchTypeLiteral
-		p.IsStructuralPat = false
-		forceResultTypes = result.Types(0)
+	if r.PatternType == query.SearchTypeStructural {
+		if p.Pattern == "" {
+			// Fallback to literal search for searching repos and files if
+			// the structural search pattern is empty.
+			r.PatternType = query.SearchTypeLiteral
+			p.IsStructuralPat = false
+			forceResultTypes = result.Types(0)
+		} else {
+			forceResultTypes = result.TypeStructural
+		}
 	}
 
 	args := search.TextParameters{
@@ -1545,6 +1549,25 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 		if args.Mode != search.SkipContentAndPathSearch {
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoFilePathSearch(ctx, args)
+			})
+		}
+	}
+
+	if args.ResultTypes.Has(result.TypeStructural) {
+		isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == search.DefaultMaxSearchResults
+		if isDefaultStructuralSearch {
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoStructuralSearch(ctx, args)
+			})
+		} else {
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
