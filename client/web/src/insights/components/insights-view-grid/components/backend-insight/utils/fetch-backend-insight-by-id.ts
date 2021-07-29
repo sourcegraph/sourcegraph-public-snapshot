@@ -22,7 +22,7 @@ export function getBackendInsightById(id: string): Observable<BackendInsightData
     return fetchBackendInsights([id]).pipe(
         switchMap(backendInsights => {
             if (backendInsights.length === 0) {
-                return throwError(new Error('We couldn;t find insight'))
+                return throwError(new Error("We couldn't find insight"))
             }
 
             return of(backendInsights[0])
