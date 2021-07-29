@@ -19,11 +19,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { QueryChangeSource, QueryState } from '../../helpers'
-import {
-    createFilterExampleFromString,
-    updateQueryWithFilterAndExample,
-    QueryExample,
-} from '../../helpers/examplevalue'
+import { createQueryExampleFromString, updateQueryWithFilterAndExample, QueryExample } from '../../helpers/queryExample'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
@@ -46,7 +42,7 @@ type FilterInfo = QueryExample & {
     examples?: string[]
 }
 
-type  OperatorInfo  = QueryExample & {
+type OperatorInfo = QueryExample & {
     operator: string
     description: string
     alias?: string
@@ -67,7 +63,7 @@ function augmentFilterInfo(searchReference: FilterInfo): void {
 
 const filterInfos: FilterInfo[] = [
     {
-        ...createFilterExampleFromString('"{last week}"'),
+        ...createQueryExampleFromString('"{last week}"'),
         field: FilterType.after,
         description:
             'Only include results from diffs or commits which have a commit date after the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
@@ -75,14 +71,14 @@ const filterInfos: FilterInfo[] = [
         examples: ['after:"6 weeks ago"', 'after:"november 1 2019"'],
     },
     {
-        ...createFilterExampleFromString('{yes/only}'),
+        ...createQueryExampleFromString('{yes/only}'),
         field: FilterType.archived,
         description:
             'The "yes" option includes archived repositories. The "only" option filters results to only archived repositories. Results in archived repositories are excluded by default.',
         examples: ['repo:sourcegraph/ archived:only'],
     },
     {
-        ...createFilterExampleFromString('{name}'),
+        ...createQueryExampleFromString('{name}'),
         field: FilterType.author,
         description: `Only include results from diffs or commits authored by the user. Regexps are supported. Note that they match the whole author string of the form \`Full Name <user@example.com>\`, so to include only authors from a specific domain, use \`author:example.com>$\`.
 
@@ -92,7 +88,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['type:diff author:nick'],
     },
     {
-        ...createFilterExampleFromString('"{last thursday}"'),
+        ...createQueryExampleFromString('"{last thursday}"'),
         field: FilterType.before,
         description:
             'Only include results from diffs or commits which have a commit date before the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
@@ -100,13 +96,13 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['before:"last thursday"', 'before:"november 1 2019"'],
     },
     {
-        ...createFilterExampleFromString('{yes}'),
+        ...createQueryExampleFromString('{yes}'),
         field: FilterType.case,
         description: 'Perform a case sensitive query. Without this, everything is matched case insensitively.',
         examples: ['OPEN_FILE case:yes'],
     },
     {
-        ...createFilterExampleFromString('"{pattern}"'),
+        ...createQueryExampleFromString('"{pattern}"'),
         field: FilterType.content,
         description:
             'Set the search pattern with a dedicated parameter. Useful when searching literally for a string that may conflict with the search pattern syntax. In between the quotes, the `\\` character will need to be escaped (`\\\\` to evaluate for `\\`).',
@@ -114,7 +110,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['repo:sourcegraph content:"repo:sourcegraph"', 'file:Dockerfile alpine -content:alpine:latest'],
     },
     {
-        ...createFilterExampleFromString('{N/all}'),
+        ...createQueryExampleFromString('{N/all}'),
         field: FilterType.count,
         description:
             'Retrieve *N* results. By default, Sourcegraph stops searching early and returns if it finds a full page of results. This is desirable for most interactive searches. To wait for all results, use **count:all**.',
@@ -122,20 +118,20 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['count:1000 function', 'count:all err'],
     },
     {
-        ...createFilterExampleFromString('{regexp-pattern}'),
+        ...createQueryExampleFromString('{regexp-pattern}'),
         field: FilterType.file,
         commonRank: 30,
         description: 'Only include results in files whose full path matches the regexp.',
         examples: ['file:.js$ httptest', 'file:internal/ httptest', 'file:.js$ -file:test http'],
     },
     {
-        ...createFilterExampleFromString('contains.content({regexp-pattern})'),
+        ...createQueryExampleFromString('contains.content({regexp-pattern})'),
         field: FilterType.file,
         description: 'Search only inside files that contain content matching the provided regexp pattern.',
         examples: ['file:contains.content(github.com/sourcegraph/sourcegraph)'],
     },
     {
-        ...createFilterExampleFromString('{yes/only}'),
+        ...createQueryExampleFromString('{yes/only}'),
         field: FilterType.fork,
         description:
             'Include results from repository forks or filter results to only repository forks. Results in repository forks are exluded by default.',
@@ -143,14 +139,14 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['fork:yes repo:sourcegraph'],
     },
     {
-        ...createFilterExampleFromString('{language-name}'),
+        ...createQueryExampleFromString('{language-name}'),
         field: FilterType.lang,
         description: 'Only include results from files in the specified programming language.',
         commonRank: 40,
         examples: ['lang:typescript encoding', '-lang:typescript encoding'],
     },
     {
-        ...createFilterExampleFromString('"{any string}"'),
+        ...createQueryExampleFromString('"{any string}"'),
         field: FilterType.message,
         description: `Only include results from diffs or commits which have commit messages containing the string.
 
@@ -158,7 +154,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['type:commit message:"testing"', 'type:diff message:"testing"'],
     },
     {
-        ...createFilterExampleFromString('{regexp-pattern}'),
+        ...createQueryExampleFromString('{regexp-pattern}'),
         field: FilterType.repo,
         description:
             'Only include results from repositories whose path matches the regexp-pattern. A repository’s path is a string such as *github.com/myteam/abc* or *code.example.com/xyz* that depends on your organization’s repository host. If the regexp ends in `@rev`, that revision is searched instead of the default branch (usually `master`). `repo:regexp-pattern@rev` is equivalent to `repo:regexp-pattern rev:rev`.',
@@ -171,27 +167,27 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ],
     },
     {
-        ...createFilterExampleFromString('{group-name}'),
+        ...createQueryExampleFromString('{group-name}'),
         field: FilterType.repogroup,
         description:
             'Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group’s repositories. Use repo: unless you know that the group exists.',
     },
     {
-        ...createFilterExampleFromString('contains.file({path})'),
+        ...createQueryExampleFromString('contains.file({path})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain a file path matching the regular expression.',
         examples: ['repo:contains.file(README)'],
         showSuggestions: false,
     },
     {
-        ...createFilterExampleFromString('contains.content({content})'),
+        ...createQueryExampleFromString('contains.content({content})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain file content matching the regular expression.',
         examples: ['repo:contains.content(TODO)'],
         showSuggestions: false,
     },
     {
-        ...createFilterExampleFromString('contains({file:path content:content})'),
+        ...createQueryExampleFromString('contains({file:path content:content})'),
         field: FilterType.repo,
         description:
             'Search only inside repositories that contain a file matching the `file:` with `content:` filters.',
@@ -199,7 +195,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
-        ...createFilterExampleFromString('contains.commit.after({date})'),
+        ...createQueryExampleFromString('contains.commit.after({date})'),
         field: FilterType.repo,
         description:
             'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
@@ -207,14 +203,14 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
-        ...createFilterExampleFromString('{revision}'),
+        ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,
         description:
             'Search a revision instead of the default branch. `rev:` can only be used in conjunction with `repo:` and may not be used more than once. See our [revision syntax documentation](https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions) to learn more.',
     },
     {
-        ...createFilterExampleFromString('{result-types}'),
+        ...createQueryExampleFromString('{result-types}'),
         field: FilterType.select,
         commonRank: 50,
         description:
@@ -222,7 +218,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['fmt.Errorf select:repo'],
     },
     {
-        ...createFilterExampleFromString('{diff/commit/...}'),
+        ...createQueryExampleFromString('{diff/commit/...}'),
         field: FilterType.type,
         commonRank: 1,
         description:
@@ -230,14 +226,14 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['type:symbol path', 'type:diff func', 'type:commit test'],
     },
     {
-        ...createFilterExampleFromString('{golang-duration-value}'),
+        ...createQueryExampleFromString('{golang-duration-value}'),
         field: FilterType.timeout,
         description:
             'Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package’s `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 10 seconds, and the search will optimize for returning results as soon as possible. The timeout value cannot be set longer than 1 minute. When provided, the search is given the full timeout to complete.',
         examples: ['repo:^github.com/sourcegraph timeout:15s func count:10000'],
     },
     {
-        ...createFilterExampleFromString('{any/private/public}'),
+        ...createQueryExampleFromString('{any/private/public}'),
         field: FilterType.visibility,
         description:
             'Filter results to only public or private repositories. The default is to include both private and public repositories.',
@@ -256,7 +252,7 @@ const commonFilters = filterInfos
 
 const operatorInfo: OperatorInfo[] = [
     {
-        ...createFilterExampleFromString('{expr} AND {expr}'),
+        ...createQueryExampleFromString('{expr} AND {expr}'),
         operator: 'AND',
         alias: 'and',
         description:
@@ -264,7 +260,7 @@ const operatorInfo: OperatorInfo[] = [
         examples: ['conf.Get( and log15.Error(', 'conf.Get( AND log15.Error( AND after'],
     },
     {
-        ...createFilterExampleFromString('({expr} OR {expr})'),
+        ...createQueryExampleFromString('({expr} OR {expr})'),
         operator: 'OR',
         alias: 'or',
         description:
@@ -272,7 +268,7 @@ const operatorInfo: OperatorInfo[] = [
         examples: ['conf.Get( or log15.Error(', 'conf.Get( OR log15.Error( OR after'],
     },
     {
-        ... createFilterExampleFromString('NOT {expr}'),
+        ...createQueryExampleFromString('NOT {expr}'),
         operator: 'NOT',
         alias: 'not',
         description:

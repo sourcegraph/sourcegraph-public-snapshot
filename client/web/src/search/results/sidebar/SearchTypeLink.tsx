@@ -10,7 +10,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { QueryChangeSource, QueryState } from '../../helpers'
-import { createFilterExampleFromString, updateQueryWithFilterAndExample } from '../../helpers/examplevalue'
+import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '../../helpers/queryExample'
 import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
@@ -107,7 +107,7 @@ const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> =
     return <SearchTypeButton onClick={setSymbolSearch}>{props.children}</SearchTypeButton>
 }
 
-const repoExample = createFilterExampleFromString('{regexp-pattern}')
+const repoExample = createQueryExampleFromString('{regexp-pattern}')
 
 export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
     function updateQueryWithRepoExample(): void {
@@ -131,7 +131,6 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
     }
 
     return [
-        // TODO: Implement repo button
         <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo">
             Search repos by org or name
         </SearchTypeButton>,

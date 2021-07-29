@@ -4,9 +4,9 @@ import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 
 /**
- * A FilterExample is a structured representation of a filter with an example
- * value that possibly includes a placeholder. The token ranges are "adjusted":
- * the meta-characters to indicate the placeholder positions are ignored.
+ * A QueryExample is a structured representation of a query fragment possibly
+ * including a placeholder. The token ranges are "adjusted": the meta-characters
+ * to indicate the placeholder positions are ignored.
  */
 export interface QueryExample {
     tokens: { type: 'text' | 'placeholder'; value: string; start: number; end: number }[]
@@ -15,13 +15,11 @@ export interface QueryExample {
 }
 
 /**
- * Parses the provided example string into a FilterExample. The section enclosed
+ * Parses the provided example string into a QueryExample. The section enclosed
  * by {...} is interpreted as the placeholder value.
  */
-export function createFilterExampleFromString(value: string): QueryExample {
-    return {
-        ...parseValue(value),
-    }
+export function createQueryExampleFromString(value: string): QueryExample {
+    return parse(value);
 }
 
 /**
@@ -108,7 +106,7 @@ export function updateQueryWithFilterAndExample(
 }
 
 /**
- * Given a FilterExample object, this function returns the range of the
+ * Given a QueryExample object, this function returns the range of the
  * placeholder in the string.
  */
 function getPlaceholderRange(example: QueryExample): { start: number; end: number } {
@@ -135,7 +133,7 @@ function consumeTillCharacter(input: string, char: string, start: number): numbe
  * Parse an example value into a sequence of tokens. {...} indicate a placeholder
  * sequence.
  */
-function parseValue(value: string): { tokens: QueryExample['tokens']; value: string } {
+function parse(value: string): { tokens: QueryExample['tokens']; value: string } {
     const tokens: QueryExample['tokens'] = []
     let index = 0
     let positionOffset = 0

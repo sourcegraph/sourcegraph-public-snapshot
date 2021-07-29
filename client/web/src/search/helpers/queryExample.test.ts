@@ -1,11 +1,11 @@
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 
-import { createFilterExampleFromString, updateQueryWithFilterAndExample } from './examplevalue'
+import { createQueryExampleFromString, updateQueryWithFilterAndExample } from './queryExample'
 
 describe('example helpers', () => {
     describe('createExampleFromString', () => {
         it('parses examples without placeholder', () => {
-            expect(createFilterExampleFromString('foo bar')).toMatchInlineSnapshot(`
+            expect(createQueryExampleFromString('foo bar')).toMatchInlineSnapshot(`
                 Object {
                   "tokens": Array [
                     Object {
@@ -21,7 +21,7 @@ describe('example helpers', () => {
         })
 
         it('parses examples with placeholder', () => {
-            expect(createFilterExampleFromString('{foo}')).toMatchInlineSnapshot(`
+            expect(createQueryExampleFromString('{foo}')).toMatchInlineSnapshot(`
                 Object {
                   "tokens": Array [
                     Object {
@@ -40,7 +40,7 @@ describe('example helpers', () => {
                   "value": "foo",
                 }
             `)
-            expect(createFilterExampleFromString('({foo})')).toMatchInlineSnapshot(`
+            expect(createQueryExampleFromString('({foo})')).toMatchInlineSnapshot(`
                 Object {
                   "tokens": Array [
                     Object {
@@ -72,7 +72,7 @@ describe('example helpers', () => {
         describe('repeatable filters', () => {
             it('appends placeholder filter and selects placeholder', () => {
                 expect(
-                    updateQueryWithFilterAndExample('foo', FilterType.after, createFilterExampleFromString('({test})'))
+                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'))
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {
@@ -93,7 +93,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         'foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         {
                             emptyValue: true,
                         }
@@ -118,7 +118,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         'foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         {
                             negate: true,
                         }
@@ -145,7 +145,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         'foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         {
                             singular: true,
                         }
@@ -170,7 +170,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         'after:value foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         { singular: true }
                     )
                 ).toMatchInlineSnapshot(`
@@ -193,7 +193,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         'after:value foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         { singular: true, emptyValue: true }
                     )
                 ).toMatchInlineSnapshot(`
@@ -216,7 +216,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         'after: foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         { singular: true, emptyValue: true }
                     )
                 ).toMatchInlineSnapshot(`
@@ -239,7 +239,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         '-after:value foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         { singular: true, negate: true }
                     )
                 ).toMatchInlineSnapshot(`
@@ -262,7 +262,7 @@ describe('example helpers', () => {
                     updateQueryWithFilterAndExample(
                         '-after:value foo',
                         FilterType.after,
-                        createFilterExampleFromString('({test})'),
+                        createQueryExampleFromString('({test})'),
                         { singular: true, negate: true, emptyValue: true }
                     )
                 ).toMatchInlineSnapshot(`

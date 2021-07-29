@@ -4,7 +4,7 @@ import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
+import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -84,17 +84,6 @@ const hasKeybindingService = (
     hasProperty('_standaloneKeybindingService')(editor) &&
     typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
         .addDynamicKeybinding === 'function'
-
-const toMonacoRange = ({ start, end }: CharacterRange, textModel: Monaco.editor.ITextModel): Monaco.IRange => {
-    const startPosition = textModel.getPositionAt(start)
-    const endPosition = textModel.getPositionAt(end)
-    return {
-        startLineNumber: startPosition.lineNumber,
-        endLineNumber: endPosition.lineNumber,
-        startColumn: startPosition.column,
-        endColumn: endPosition.column,
-    }
-}
 
 const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
     selectionStartLineNumber: range.startLineNumber,
