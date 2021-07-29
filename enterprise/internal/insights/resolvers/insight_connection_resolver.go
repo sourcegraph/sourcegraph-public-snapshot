@@ -18,7 +18,7 @@ var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 type insightConnectionResolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
-	insightMetadataStore *store.InsightStore
+	insightMetadataStore store.InsightMetadataStore
 
 	// arguments from query
 	ids []string

@@ -20,7 +20,7 @@ var _ graphqlbackend.InsightsResolver = &Resolver{}
 type Resolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
-	insightMetadataStore *store.InsightStore
+	insightMetadataStore store.InsightMetadataStore
 }
 
 // New returns a new Resolver whose store uses the given Timescale and Postgres DBs.

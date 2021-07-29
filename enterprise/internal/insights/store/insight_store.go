@@ -243,10 +243,9 @@ type DataSeriesStore interface {
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 }
 
-//
-// type InsightStore interface {
-// 	 Get
-// }
+type InsightMetadataStore interface {
+	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
+}
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
