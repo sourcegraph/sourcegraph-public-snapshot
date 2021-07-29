@@ -27,7 +27,7 @@ kubectl port-forward svc/pgsql 3333:5432
 Follow these steps:
 
 ```sql
--- This query lists all indexes in the database, including catalogue indexes,
+-- This query lists all indexes in the database, excluding catalogue indexes,
 -- that have key columns of collatable types. In other words, it lists all indexes
 -- that need to be rebuilt. You don't need to run this query since we have done that
 -- for you, with the output below.
@@ -37,23 +37,33 @@ from
     pg_class t,
     pg_class i,
     pg_index ix,
-    pg_attribute a
+    pg_attribute a,
+    pg_namespace n
 where
     t.oid = ix.indrelid
     and i.oid = ix.indexrelid
+    and n.oid = i.relnamespace
     and a.attrelid = t.oid
     and a.attnum = ANY(ix.indkey)
     and t.relkind = 'r'
+    and n.nspname = 'public'
     and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
 order by stmt;
 
--- This is the output of the above query for the sourcegraph db.
+-- We want to start by reindexing system catalog indexes which may have been affected.
+reindex (verbose) system sg;
+
+-- This is the output of the above index listing query for the sourcegraph db.
 -- We execute each of these sequentially until the first failure, most likely
 -- due to duplicates, at which point we must delete those duplicates before
 -- trying again. You can find an example duplicate deletion query at the
 -- bottom of this file. After deleting those duplicates, just resume the index
 -- rebuilding from where we left off, commenting out or deleting the previouse
 -- reindex statements.
+--
+-- We prefer to reindex explicit indexes rather that the whole database in order
+-- to allow resuming where we left off after encountering a duplicates error and
+-- fixing it.
 
 reindex (verbose) index batch_changes_site_credentials_unique;
 reindex (verbose) index batch_spec_executions_rand_id;
@@ -88,42 +98,6 @@ reindex (verbose) index lsif_uploads_repository_id_commit_root_indexer;
 reindex (verbose) index lsif_uploads_state;
 reindex (verbose) index names_pkey;
 reindex (verbose) index orgs_name;
-reindex (verbose) index pg_am_name_index;
-reindex (verbose) index pg_attribute_relid_attnam_index;
-reindex (verbose) index pg_authid_rolname_index;
-reindex (verbose) index pg_class_relname_nsp_index;
-reindex (verbose) index pg_collation_name_enc_nsp_index;
-reindex (verbose) index pg_constraint_conname_nsp_index;
-reindex (verbose) index pg_constraint_conrelid_contypid_conname_index;
-reindex (verbose) index pg_conversion_name_nsp_index;
-reindex (verbose) index pg_database_datname_index;
-reindex (verbose) index pg_enum_typid_label_index;
-reindex (verbose) index pg_event_trigger_evtname_index;
-reindex (verbose) index pg_extension_name_index;
-reindex (verbose) index pg_foreign_data_wrapper_name_index;
-reindex (verbose) index pg_foreign_server_name_index;
-reindex (verbose) index pg_language_name_index;
-reindex (verbose) index pg_namespace_nspname_index;
-reindex (verbose) index pg_opclass_am_name_nsp_index;
-reindex (verbose) index pg_operator_oprname_l_r_n_index;
-reindex (verbose) index pg_opfamily_am_name_nsp_index;
-reindex (verbose) index pg_pltemplate_name_index;
-reindex (verbose) index pg_policy_polrelid_polname_index;
-reindex (verbose) index pg_proc_proname_args_nsp_index;
-reindex (verbose) index pg_publication_pubname_index;
-reindex (verbose) index pg_replication_origin_roname_index;
-reindex (verbose) index pg_rewrite_rel_rulename_index;
-reindex (verbose) index pg_seclabel_object_index;
-reindex (verbose) index pg_shseclabel_object_index;
-reindex (verbose) index pg_statistic_ext_name_index;
-reindex (verbose) index pg_subscription_subname_index;
-reindex (verbose) index pg_tablespace_spcname_index;
-reindex (verbose) index pg_trigger_tgrelid_tgname_index;
-reindex (verbose) index pg_ts_config_cfgname_index;
-reindex (verbose) index pg_ts_dict_dictname_index;
-reindex (verbose) index pg_ts_parser_prsname_index;
-reindex (verbose) index pg_ts_template_tmplname_index;
-reindex (verbose) index pg_type_typname_nsp_index;
 reindex (verbose) index phabricator_repos_repo_name_key;
 reindex (verbose) index registry_extension_releases_registry_extension_id;
 reindex (verbose) index registry_extension_releases_version;
@@ -205,7 +179,7 @@ kubectl port-forward svc/codeintel-db 3333:5432
 Follow these steps:
 
 ```sql
--- This query lists all indexes in the database, including catalogue indexes,
+-- This query lists all indexes in the database, excluding catalogue indexes,
 -- that have key columns of collatable types. In other words, it lists all indexes
 -- that need to be rebuilt. You don't need to run this query since we have done that
 -- for you, with the output below.
@@ -215,23 +189,33 @@ from
     pg_class t,
     pg_class i,
     pg_index ix,
-    pg_attribute a
+    pg_attribute a,
+    pg_namespace n
 where
     t.oid = ix.indrelid
     and i.oid = ix.indexrelid
+    and n.oid = i.relnamespace
     and a.attrelid = t.oid
     and a.attnum = ANY(ix.indkey)
     and t.relkind = 'r'
+    and n.nspname = 'public'
     and ix.indcollation != oidvectorin(repeat('0 ', ix.indnkeyatts)::cstring)
 order by stmt;
 
--- This is the output of the above query for the codeintel db.
+-- We want to start by reindexing system catalog indexes which may have been affected.
+reindex (verbose) system sg;
+
+-- This is the output of the above index listing query for the codeintel db.
 -- We execute each of these sequentially until the first failure, most likely
 -- due to duplicates, at which point we must delete those duplicates before
 -- trying again. You can find an example duplicate deletion query at the
 -- bottom of this file. After deleting those duplicates, just resume the index
 -- rebuilding from where we left off, commenting out or deleting the previouse
 -- reindex statements.
+--
+-- We prefer to reindex explicit indexes rather that the whole database in order
+-- to allow resuming where we left off after encountering a duplicates error and
+-- fixing it.
 
 reindex (verbose) index lsif_data_definitions_pkey;
 reindex (verbose) index lsif_data_documentation_mappings_pkey;
@@ -239,42 +223,6 @@ reindex (verbose) index lsif_data_documentation_pages_pkey;
 reindex (verbose) index lsif_data_documentation_path_info_pkey;
 reindex (verbose) index lsif_data_documents_pkey;
 reindex (verbose) index lsif_data_references_pkey;
-reindex (verbose) index pg_am_name_index;
-reindex (verbose) index pg_attribute_relid_attnam_index;
-reindex (verbose) index pg_authid_rolname_index;
-reindex (verbose) index pg_class_relname_nsp_index;
-reindex (verbose) index pg_collation_name_enc_nsp_index;
-reindex (verbose) index pg_constraint_conname_nsp_index;
-reindex (verbose) index pg_constraint_conrelid_contypid_conname_index;
-reindex (verbose) index pg_conversion_name_nsp_index;
-reindex (verbose) index pg_database_datname_index;
-reindex (verbose) index pg_enum_typid_label_index;
-reindex (verbose) index pg_event_trigger_evtname_index;
-reindex (verbose) index pg_extension_name_index;
-reindex (verbose) index pg_foreign_data_wrapper_name_index;
-reindex (verbose) index pg_foreign_server_name_index;
-reindex (verbose) index pg_language_name_index;
-reindex (verbose) index pg_namespace_nspname_index;
-reindex (verbose) index pg_opclass_am_name_nsp_index;
-reindex (verbose) index pg_operator_oprname_l_r_n_index;
-reindex (verbose) index pg_opfamily_am_name_nsp_index;
-reindex (verbose) index pg_pltemplate_name_index;
-reindex (verbose) index pg_policy_polrelid_polname_index;
-reindex (verbose) index pg_proc_proname_args_nsp_index;
-reindex (verbose) index pg_publication_pubname_index;
-reindex (verbose) index pg_replication_origin_roname_index;
-reindex (verbose) index pg_rewrite_rel_rulename_index;
-reindex (verbose) index pg_seclabel_object_index;
-reindex (verbose) index pg_shseclabel_object_index;
-reindex (verbose) index pg_statistic_ext_name_index;
-reindex (verbose) index pg_subscription_subname_index;
-reindex (verbose) index pg_tablespace_spcname_index;
-reindex (verbose) index pg_trigger_tgrelid_tgname_index;
-reindex (verbose) index pg_ts_config_cfgname_index;
-reindex (verbose) index pg_ts_dict_dictname_index;
-reindex (verbose) index pg_ts_parser_prsname_index;
-reindex (verbose) index pg_ts_template_tmplname_index;
-reindex (verbose) index pg_type_typname_nsp_index;
 
 -- Example of a duplicate deletion query for the repo table that needs
 -- to be adapated to the specific table we need to remove duplicates in.
