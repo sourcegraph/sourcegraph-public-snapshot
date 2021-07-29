@@ -92,13 +92,14 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 	}
 
-	name, err := uuid.NewRandom()
+	uniqueName, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
+	name := fmt.Sprintf("%s-%s", h.options.QueueName, uniqueName.String())
 
 	options := command.Options{
-		ExecutorName:       name.String(),
+		ExecutorName:       name,
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
