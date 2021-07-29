@@ -9,7 +9,7 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 ## 3.29 -> 3.30.3
 
-**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com) for assistance.
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
 
 ## Standard upgrade procedure
 
