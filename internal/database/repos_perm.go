@@ -21,7 +21,7 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 
 // ensure you use LOCAL to clear after tx
 const ensureAuthzCondsFmt = `
-	SET ROLE sg_service;
+	SET LOCAL ROLE sg_service;
 	SET LOCAL rls.bypass = %v;
 	SET LOCAL rls.user_id = %v;
 	SET LOCAL rls.use_permissions_user_mapping = %v;
