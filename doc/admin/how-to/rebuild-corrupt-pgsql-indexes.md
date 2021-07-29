@@ -1,4 +1,4 @@
-# How to rebuild corrupt Postgres indexes
+# How to rebuild corrupt Postgres indexes after upgrading to 3.30 or 3.30.1
 
 ## Background
 
