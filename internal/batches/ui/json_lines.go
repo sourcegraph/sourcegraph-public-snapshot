@@ -201,7 +201,10 @@ func logOperationProgress(op, msg string) {
 
 func logEvent(e batchesLogEvent) {
 	e.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
-	json.NewEncoder(os.Stdout).Encode(e)
+	err := json.NewEncoder(os.Stdout).Encode(e)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
 }
 
 // TODO: Until we've figured out what exactly we want to expose, we create
@@ -223,18 +226,21 @@ type taskExecutionJSONLines struct {
 
 func (ui *taskExecutionJSONLines) Start(tasks []*executor.Task) {
 	ui.linesTasks = make(map[*executor.Task]jsonLinesTask, len(tasks))
+	var linesTasks []jsonLinesTask
 	for _, t := range tasks {
-		ui.linesTasks[t] = jsonLinesTask{
+		linesTask := jsonLinesTask{
 			Repository:             t.Repository.Name,
 			Workspace:              t.Path,
 			Steps:                  t.Steps,
 			CachedStepResultsFound: t.CachedResultFound,
 			StartStep:              t.CachedResult.StepIndex,
 		}
+		ui.linesTasks[t] = linesTask
+		linesTasks = append(linesTasks, linesTask)
 	}
 
 	logEvent(batchesLogEvent{Operation: "EXECUTING_TASKS", Status: "STARTED", Metadata: map[string]interface{}{
-		"tasks": ui.linesTasks,
+		"tasks": linesTasks,
 	}})
 }
 

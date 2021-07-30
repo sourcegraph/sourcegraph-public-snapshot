@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- For internal use only: `-text-only` silently ignored an error when trying to print log messages and did not print a `EXECUTING_TASKS` message.
+
 ### Removed
 
 ## 3.30.2
