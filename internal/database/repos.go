@@ -639,8 +639,10 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
-	var repos []types.RepoName
-	var privateIDs []api.RepoID
+	var (
+		repos      []types.RepoName
+		hasPrivate bool
+	)
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
@@ -651,10 +653,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		}
 
 		repos = append(repos, r)
-
-		if private {
-			privateIDs = append(privateIDs, r.ID)
-		}
+		hasPrivate = hasPrivate || private
 
 		return nil
 	})
@@ -662,14 +661,16 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		return nil, err
 	}
 
-	// TODO: Actually log event here
-	counterAccessGranted.Inc()
+	if hasPrivate {
+		// TODO: Actually log event here
+		counterAccessGranted.Inc()
+	}
 
 	return repos, nil
 }
 
 func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
-	var privateIDs []api.RepoID
+	hasPrivate := false
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
 		if err := scanRepo(rows, &r); err != nil {
@@ -677,14 +678,11 @@ func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 		}
 
 		rs = append(rs, &r)
-		if r.Private {
-			privateIDs = append(privateIDs, r.ID)
-		}
-
+		hasPrivate = hasPrivate || r.Private
 		return nil
 	})
 
-	if len(privateIDs) > 0 {
+	if hasPrivate {
 		// TODO: Actually log event here
 		counterAccessGranted.Inc()
 	}
