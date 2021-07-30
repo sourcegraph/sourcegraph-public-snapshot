@@ -16,12 +16,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type handler struct {
+	nameSet       *janitor.NameSet
 	store         workerutil.Store
 	options       Options
 	operations    *command.Operations
@@ -92,13 +94,24 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 	}
 
-	name, err := uuid.NewRandom()
+	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
 
+	// Construct a unique name for the VM prefixed by something that differentiates
+	// VMs created by this executor instance and another one that happens to run on
+	// the same host (as is the case in dev).
+	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, vmNameSuffix.String())
+
+	// Before we setup a VM (and after we teardown), mark the name as in-use so that
+	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
+	// we're using for the current job.
+	h.nameSet.Add(name)
+	defer h.nameSet.Remove(name)
+
 	options := command.Options{
-		ExecutorName:       name.String(),
+		ExecutorName:       name,
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}

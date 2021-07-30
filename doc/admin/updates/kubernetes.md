@@ -1,27 +1,18 @@
 # Updating a Kubernetes Sourcegraph instance
 
 This document describes the exact changes needed to update a Kubernetes Sourcegraph instance. Follow
-the [recommended method](../install/kubernetes/update.md) of upgrading a Kubernetes cluster.
-
-A new version of Sourcegraph is released every month on the **20th** (with patch releases in between, released as
-needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about
-updates. We actively maintain the two most recent monthly releases of Sourcegraph.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
-> <br>Patches, e.g. vX.X.4 vs. vX.X.5, do not have to be adopted when moving between vX.X versions.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
-
-**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade,
+the [recommended method](../install/kubernetes/update.md) of upgrading a Kubernetes cluster. **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade,
 and any manual migration steps you must perform.
+
+1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
+2. Find the relevant entry for your update in the update notes on this page.
+3. After checking the relevant update notes, refer to the [Sourcegraph with Kubernetes upgrade guide](../install/kubernetes/update.md) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.29 -> 3.30.1
+## 3.29 -> 3.30.3
 
-**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
 
 This upgrade removes the `non-root` overlay, in favor of using only the `non-privileged` overlay for deploying Sourcegraph in secure environments. If you were
 previously deploying using the `non-root` overlay, you should now generate overlays using the `non-privileged` overlay.

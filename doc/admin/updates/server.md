@@ -1,21 +1,15 @@
 # Updating a single-image Sourcegraph instance (`sourcegraph/server`)
 
 This document describes the exact changes needed to update a single-node Sourcegraph instance.
-
-A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
-> <br>Patches, e.g. vX.X.4 vs. vX.X.5, do not have to be adopted when moving between vX.X versions.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
-
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-## 3.29 -> 3.30.1
+1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
+2. Find the relevant entry for your update in the update notes on this page.
+3. After checking the relevant update notes, refer to the [standard upgrade procedure](../install/docker-compose/operations.md#standard-upgrade-procedure) to upgrade your instance.
 
-**⚠️ Users are advised to wait on upgrading to any 3.30 release until [#23288](https://github.com/sourcegraph/sourcegraph/issues/23288) is resolved **
+## 3.29 -> 3.30.3
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
 
 ## Standard upgrade procedure
 

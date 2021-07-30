@@ -5,11 +5,10 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -17,16 +16,16 @@ import (
 var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 
 type insightConnectionResolver struct {
-	insightsStore   store.Interface
-	workerBaseStore *basestore.Store
-	settingStore    discovery.SettingStore
+	insightsStore        store.Interface
+	workerBaseStore      *basestore.Store
+	insightMetadataStore store.InsightMetadataStore
 
 	// arguments from query
 	ids []string
 
 	// cache results because they are used by multiple fields
 	once     sync.Once
-	insights []insights.SearchInsight
+	insights []types.Insight
 	next     int64
 	err      error
 }
@@ -63,9 +62,14 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *insightConnectionResolver) compute(ctx context.Context) ([]insights.SearchInsight, int64, error) {
+func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insight, int64, error) {
 	r.once.Do(func() {
-		r.insights, r.err = discovery.Discover(ctx, r.settingStore, insights.NewLoader(r.workerBaseStore.Handle().DB()), discovery.InsightFilterArgs{Ids: r.ids})
+		mapped, err := r.insightMetadataStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: r.ids})
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.insights = mapped
 	})
 	return r.insights, r.next, r.err
 }
@@ -77,11 +81,11 @@ var _ graphqlbackend.InsightResolver = &insightResolver{}
 type insightResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
-	insight         insights.SearchInsight
+	insight         types.Insight
 }
 
 func (r *insightResolver) ID() string {
-	return r.insight.ID
+	return r.insight.UniqueID
 }
 
 func (r *insightResolver) Title() string { return r.insight.Title }

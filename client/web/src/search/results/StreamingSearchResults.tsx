@@ -223,6 +223,14 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
     const showSignUpCta = !authenticatedUser && resultsFound && isValidSignUpCtaCadence
 
+    // Log view event when signup CTA is shown
+    useEffect(() => {
+        if (showSignUpCta) {
+            telemetryService.log('SearchResultResultsCTAShown')
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showSignUpCta])
+
     return (
         <div className={styles.streamingSearchResults}>
             <PageTitle key="page-title" title={query} />
