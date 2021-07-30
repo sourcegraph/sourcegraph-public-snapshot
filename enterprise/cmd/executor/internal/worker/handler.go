@@ -45,16 +45,16 @@ func (h *handler) PreDequeue(ctx context.Context) (dequeueable bool, extraDequeu
 		return true, nil, nil
 	}
 
-	currentVMs, err := ignite.CurrentlyRunningVMs(context.Background(), h.options.VMPrefix)
+	runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), h.options.VMPrefix, false)
 	if err != nil {
 		return false, nil, err
 	}
 
-	if len(currentVMs) < h.options.WorkerOptions.NumHandlers {
+	if len(runningVMsByName) < h.options.WorkerOptions.NumHandlers {
 		return true, nil, nil
 	}
 
-	log15.Warn("Orphaned VMs detected - refusing to dequeue a new job until it's cleaned up", "numCurrentVMs", len(currentVMs), "numHandlers", h.options.WorkerOptions.NumHandlers)
+	log15.Warn("Orphaned VMs detected - refusing to dequeue a new job until it's cleaned up", "numRunningVMs", len(runningVMsByName), "numHandlers", h.options.WorkerOptions.NumHandlers)
 	return false, nil, nil
 }
 

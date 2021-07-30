@@ -50,13 +50,13 @@ func newOrphanedVMJanitor(
 }
 
 func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
-	runningVMs, err := ignite.CurrentlyRunningVMs(ctx, j.prefix)
+	vmsByName, err := ignite.ActiveVMsByName(ctx, j.prefix, true)
 	if err != nil {
 		return err
 	}
 
-	for _, id := range findOrphanedVMs(runningVMs, j.names.Slice()) {
-		log15.Info("Removing orphaned vm", "id", id, "error", err)
+	for _, id := range findOrphanedVMs(vmsByName, j.names.Slice()) {
+		log15.Info("Removing orphaned VM", "id", id)
 
 		if removeErr := exec.CommandContext(ctx, "ignite", "rm", "-f", id).Run(); removeErr != nil {
 			err = multierror.Append(err, removeErr)
@@ -70,7 +70,7 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 
 func (j *orphanedVMJanitor) HandleError(err error) {
 	j.metrics.numErrors.Inc()
-	log15.Error("Failed to clean up orphaned vms", "err", err)
+	log15.Error("Failed to remove up orphaned vms", "error", err)
 }
 
 // findOrphanedVMs returns the set of VM identifiers present in running VMs but
