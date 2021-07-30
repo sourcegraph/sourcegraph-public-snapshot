@@ -47,9 +47,16 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 	return results, nil
 }
 
+// All non deleted repos will have at least one entry in external_service_repos.
+// We join against the repo table so that our permissions checking on that table
+// kicks in and any joins that don't match indicate a repo we don't have access
+// to.
 const fetchUnauthorizedReposSql = `
 -- source: enterprise/internal/insights/resolver/permissions.go:FetchUnauthorizedRepos
-	SELECT id FROM repo`
+	SELECT distinct(repo_id) FROM external_service_repos esr
+    LEFT JOIN repo r on r.id = esr.repo_id
+    WHERE r.id IS NULL
+`
 
 func NewInsightPermissionStore(db dbutil.DB) *InsightPermStore {
 	return &InsightPermStore{

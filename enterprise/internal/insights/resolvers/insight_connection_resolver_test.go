@@ -145,6 +145,16 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 			(2, 'test-repo2', 'description', false, current_timestamp, current_timestamp, 2, 'github', 1, false, 'github.com/test-repo/test-repo2', null, '{}', false, true, 1),
 			(3, 'test-repo3', 'description', false, current_timestamp, current_timestamp, 3, 'github', 1, false, 'github.com/test-repo/test-repo3', null, '{}', false, true, 1);
 
+		INSERT INTO external_services (id, kind, display_name, config)
+		VALUES
+			(1, 'GITHUB', 'GITHUB 1', '{}');
+
+		INSERT INTO external_service_repos (repo_id, external_service_id, clone_url, user_id)
+		VALUES
+			(1, 1, 'example.com', 1),
+			(2, 1, 'example.com', 1),
+			(3, 1, 'example.com', 1);
+
 		INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at, object_ids_ints)
 		VALUES
 		       (1, 'read', 'repos', '', current_timestamp, current_timestamp, ARRAY[1]);
