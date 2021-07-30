@@ -1,9 +1,9 @@
 import * as H from 'history'
-import { IRange } from 'monaco-editor'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -180,6 +180,7 @@ export enum QueryChangeSource {
      */
     userInput,
     searchReference,
+    searchTypes,
 }
 
 /**
@@ -194,14 +195,14 @@ export type QueryState =
           query: string
       }
     | {
-          /** Changes from the search reference side bar */
-          changeSource: QueryChangeSource.searchReference
+          /** Changes from the search side bar */
+          changeSource: QueryChangeSource.searchReference | QueryChangeSource.searchTypes
           query: string
           /** The query input will apply this selection */
-          selection: IRange
+          selectionRange: CharacterRange
           /** Ensure that newly added or updated filters are completely visible in
            * the query input. */
-          revealRange: IRange
+          revealRange: CharacterRange
           /** Whether or not to trigger the completion popover. The popover is
            * triggered at the end of the selection. */
           showSuggestions?: boolean
