@@ -90,14 +90,9 @@ describe('example helpers', () => {
 
             it('appends filter with empty value', () => {
                 expect(
-                    updateQueryWithFilterAndExample(
-                        'foo',
-                        FilterType.after,
-                        createQueryExampleFromString('({test})'),
-                        {
-                            emptyValue: true,
-                        }
-                    )
+                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'), {
+                        emptyValue: true,
+                    })
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {
@@ -115,14 +110,9 @@ describe('example helpers', () => {
 
             it('appends negated filter', () => {
                 expect(
-                    updateQueryWithFilterAndExample(
-                        'foo',
-                        FilterType.after,
-                        createQueryExampleFromString('({test})'),
-                        {
-                            negate: true,
-                        }
-                    )
+                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'), {
+                        negate: true,
+                    })
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {
@@ -142,14 +132,9 @@ describe('example helpers', () => {
         describe('unique filters', () => {
             it('appends placeholder filter and selects placeholder', () => {
                 expect(
-                    updateQueryWithFilterAndExample(
-                        'foo',
-                        FilterType.after,
-                        createQueryExampleFromString('({test})'),
-                        {
-                            singular: true,
-                        }
-                    )
+                    updateQueryWithFilterAndExample('foo', FilterType.after, createQueryExampleFromString('({test})'), {
+                        singular: true,
+                    })
                 ).toMatchInlineSnapshot(`
                     Object {
                       "filterRange": Object {

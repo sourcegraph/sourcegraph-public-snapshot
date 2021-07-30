@@ -19,7 +19,7 @@ export interface QueryExample {
  * by {...} is interpreted as the placeholder value.
  */
 export function createQueryExampleFromString(value: string): QueryExample {
-    return parse(value);
+    return parse(value)
 }
 
 /**
