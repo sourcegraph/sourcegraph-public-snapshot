@@ -32,6 +32,8 @@ func (e unknownJobTypeErr) NonRetryable() bool {
 	return true
 }
 
+var changesetIsProcessingErr = errors.New("cannot update a changeset that is currently being processed; will retry")
+
 type bulkProcessor struct {
 	tx      *store.Store
 	sourcer sources.Sourcer
@@ -49,6 +51,11 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 	b.ch, err = b.tx.GetChangeset(ctx, store.GetChangesetOpts{ID: job.ChangesetID})
 	if err != nil {
 		return errors.Wrap(err, "loading changeset")
+	}
+
+	// Changesets that are currently processing should be retried at a later stage.
+	if b.ch.ReconcilerState == btypes.ReconcilerStateProcessing {
+		return changesetIsProcessingErr
 	}
 
 	// Load repo.
@@ -221,11 +228,6 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 
 	if !spec.Spec.Published.Nil() {
 		return errcode.MakeNonRetryable(errors.New("cannot publish a changeset that has a published value set in its changesetTemplate"))
-	}
-
-	// Changesets that are currently processing should be retried at a later stage.
-	if b.ch.ReconcilerState == btypes.ReconcilerStateProcessing {
-		return errors.New("cannot update a changeset that is currently being processed; will retry")
 	}
 
 	// Set the desired UI publication state.
