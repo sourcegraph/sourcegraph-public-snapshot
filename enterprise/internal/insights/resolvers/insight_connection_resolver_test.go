@@ -19,7 +19,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
@@ -38,7 +37,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 
 	testSetup := func(t *testing.T) (context.Context, graphqlbackend.InsightConnectionResolver) {
 		// Setup the GraphQL resolver.
-		ctx := backend.WithAuthzBypass(context.Background())
+		ctx := actor.WithInternalActor(context.Background())
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 
