@@ -6,7 +6,7 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
@@ -189,8 +189,6 @@ describe('GitHub', () => {
                 response.type('application/javascript; charset=utf-8').send(extensionBundleString)
             })
 
-        await driver.page.setBypassCSP(true)
-
         await driver.page.goto(
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         )
@@ -216,10 +214,5 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
-
-        // Give time for hover overlay to become opaque.
-        await driver.page.waitForTimeout(1000)
-
-        await percySnapshot(driver.page, 'Hover tooltip on GitHub')
     })
 })
