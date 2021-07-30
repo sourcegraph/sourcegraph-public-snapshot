@@ -106,7 +106,11 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
                         </div>
 
                         {hasMenu && (
-                            <InsightCardMenu className="mr-n2 d-inline-flex" insightID={id} onDelete={handleDelete} />
+                            <InsightCardMenu
+                                menuButtonClassName="mr-n2 d-inline-flex"
+                                insightID={id}
+                                onDelete={handleDelete}
+                            />
                         )}
                     </header>
 
