@@ -9,7 +9,7 @@ Sourcegraph uses several PostgreSQL databases to support various functionality. 
 
 We support any version **starting from 12**.
 
-> NOTE: ⚠️ Version **3.26** required only Postgres 9.6. You should check the [upgrade docs for your deployment type](https://docs.sourcegraph.com/admin/updates) as well as the [database upgrade docs](https://docs.sourcegraph.com/admin/postgres#upgrading-postgresql) below prior to upgrading to 3.27.
+> NOTE: ⚠️ Version **3.26** required only Postgres 9.6. You should check the [upgrade docs for your deployment type](../admin/updates/index.md) as well as the [database upgrade docs](#upgrading-postgresql) below prior to upgrading to 3.27.
 
 ## Role requirements
 

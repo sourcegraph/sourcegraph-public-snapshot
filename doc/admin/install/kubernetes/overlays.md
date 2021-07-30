@@ -13,6 +13,10 @@
     - [Upgrading Sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
   - [Troubleshooting](#troubleshooting)
 
+## Customizing your Sourcegraph Deployment
+
+The configuration provided in the `deploy-sourcegraph` repository contains all the defaults to deploy and run Sourcegraph. However, should you require changes to the manifests provided, 
+we support the use of [Kustomize](https://kustomize.io/) to create overlays. If you're unfamiliar with overlays, read on to find out more about how to use overlays. 
 
 ## Overlay basic principles
 
@@ -84,8 +88,9 @@ One benefit of generating manifest from base instead of modifying base directly 
 1. Create a new branch for the customizations from the current release branch
 
   ```
-  git checkout 3.26
-  git checkout -b 3.26-kustomize   
+  export SOURCEGRAPH_VERSION="v3.30.3"
+  git checkout $SOURCEGRAPH_VERSION
+  git checkout -b $SOURCEGRAPH_VERSION-kustomize   
   ```
   
 1. Create and customize the overlays for your deployment
@@ -120,8 +125,9 @@ This overlay adds a namespace declaration to all the manifests.
 
     ```
     # EXAMPLE
-    git checkout 3.26
-    git checkout -b 3.26-kustomize   
+    export SOURCEGRAPH_VERSION="v3.30.3"
+    git checkout $SOURCEGRAPH_VERSION
+    git checkout -b $SOURCEGRAPH_VERSION-kustomize   
     ```
 
 1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice everywhere within the
@@ -241,7 +247,7 @@ minikube stop
 1. Create a new branch from the origin branch to the version upgrading to
 
     ```
-    export SOURCEGRAPH_VERSION="v3.29.1"
+    export SOURCEGRAPH_VERSION="v3.30.3"
     git checkout $SOURCEGRAPH_VERSION
     ```
 
