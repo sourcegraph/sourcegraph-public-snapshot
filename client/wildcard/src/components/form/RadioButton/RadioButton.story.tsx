@@ -4,6 +4,8 @@ import React, { useCallback } from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Grid } from '../../Grid/Grid'
+
 import { RadioButton } from './RadioButton'
 
 const Story: Meta = {
@@ -37,10 +39,11 @@ export const Simple = () => {
     }, [])
 
     return (
-        <>
+        <Grid>
             <RadioButton
                 value="first"
                 checked={selected === 'first'}
+                name="storybook-example"
                 onChange={handleChange}
                 label="First"
                 message="Hello world!"
@@ -48,6 +51,7 @@ export const Simple = () => {
             <RadioButton
                 value="second"
                 checked={selected === 'second'}
+                name="storybook-example"
                 onChange={handleChange}
                 label="Second"
                 message="Hello world!"
@@ -55,10 +59,11 @@ export const Simple = () => {
             <RadioButton
                 value="third"
                 checked={selected === 'third'}
+                name="storybook-example"
                 onChange={handleChange}
                 label="Third"
                 message="Hello world!"
             />
-        </>
+        </Grid>
     )
 }

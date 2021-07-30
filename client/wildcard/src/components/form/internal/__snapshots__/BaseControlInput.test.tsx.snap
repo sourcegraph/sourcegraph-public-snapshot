@@ -1,27 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`BaseControlInput Input type: checkbox renders input with message correctly 1`] = `
-<div
-  class="form-check"
->
-  <label
-    class="form-check-label"
-  >
-    <input
-      class="form-check-input"
-      type="checkbox"
-    />
-    Hello world
-  </label>
-  <small
-    class="field-message"
-  >
-    Additional message
-  </small>
-</div>
-`;
-
-exports[`BaseControlInput Input type: checkbox renders simple input correctly 1`] = `
+exports[`BaseControlInput checkbox input renders correctly 1`] = `
 <div
   class="form-check"
 >
@@ -37,7 +16,7 @@ exports[`BaseControlInput Input type: checkbox renders simple input correctly 1`
 </div>
 `;
 
-exports[`BaseControlInput Input type: checkbox renders with correct styles when invalid 1`] = `
+exports[`BaseControlInput checkbox input renders with correct styles when invalid 1`] = `
 <div
   class="form-check"
 >
@@ -58,7 +37,7 @@ exports[`BaseControlInput Input type: checkbox renders with correct styles when 
 </div>
 `;
 
-exports[`BaseControlInput Input type: checkbox renders with correct styles when valid 1`] = `
+exports[`BaseControlInput checkbox input renders with correct styles when valid 1`] = `
 <div
   class="form-check"
 >
@@ -79,7 +58,7 @@ exports[`BaseControlInput Input type: checkbox renders with correct styles when 
 </div>
 `;
 
-exports[`BaseControlInput Input type: radio renders input with message correctly 1`] = `
+exports[`BaseControlInput checkbox input renders with message correctly 1`] = `
 <div
   class="form-check"
 >
@@ -88,7 +67,7 @@ exports[`BaseControlInput Input type: radio renders input with message correctly
   >
     <input
       class="form-check-input"
-      type="radio"
+      type="checkbox"
     />
     Hello world
   </label>
@@ -100,7 +79,7 @@ exports[`BaseControlInput Input type: radio renders input with message correctly
 </div>
 `;
 
-exports[`BaseControlInput Input type: radio renders simple input correctly 1`] = `
+exports[`BaseControlInput radio input renders correctly 1`] = `
 <div
   class="form-check"
 >
@@ -116,7 +95,7 @@ exports[`BaseControlInput Input type: radio renders simple input correctly 1`] =
 </div>
 `;
 
-exports[`BaseControlInput Input type: radio renders with correct styles when invalid 1`] = `
+exports[`BaseControlInput radio input renders with correct styles when invalid 1`] = `
 <div
   class="form-check"
 >
@@ -137,7 +116,7 @@ exports[`BaseControlInput Input type: radio renders with correct styles when inv
 </div>
 `;
 
-exports[`BaseControlInput Input type: radio renders with correct styles when valid 1`] = `
+exports[`BaseControlInput radio input renders with correct styles when valid 1`] = `
 <div
   class="form-check"
 >
@@ -152,6 +131,27 @@ exports[`BaseControlInput Input type: radio renders with correct styles when val
   </label>
   <small
     class="valid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput radio input renders with message correctly 1`] = `
+<div
+  class="form-check"
+>
+  <label
+    class="form-check-label"
+  >
+    <input
+      class="form-check-input"
+      type="radio"
+    />
+    Hello world
+  </label>
+  <small
+    class="field-message"
   >
     Additional message
   </small>
