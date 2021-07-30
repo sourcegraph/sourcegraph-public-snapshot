@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { getMessageStyle, getValidStyle } from './utils'
+import { FormFieldMessage } from './FormFieldMessage'
 
 export const BASE_CONTROL_TYPES = ['radio', 'checkbox'] as const
 
@@ -13,6 +13,18 @@ export interface BaseControlInputProps
     label: React.ReactNode
     message?: React.ReactNode
     type?: typeof BASE_CONTROL_TYPES[number]
+}
+
+const getValidStyle = (isValid?: boolean): string => {
+    if (isValid === undefined) {
+        return ''
+    }
+
+    if (isValid) {
+        return 'is-valid'
+    }
+
+    return 'is-invalid'
 }
 
 export const BaseControlInput: React.FunctionComponent<BaseControlInputProps> = React.forwardRef(
@@ -27,7 +39,7 @@ export const BaseControlInput: React.FunctionComponent<BaseControlInputProps> = 
                 />
                 {label}
             </label>
-            {message && <small className={getMessageStyle(isValid)}>{message}</small>}
+            {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
         </div>
     )
 )

@@ -1,10 +1,11 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { FormFieldMessage } from '../internal/FormFieldMessage'
+
 export interface SelectProps
     extends React.SelectHTMLAttributes<HTMLSelectElement>,
-        React.RefAttributes<HTMLSelectElement>,
-        Omit<FormFieldLabelProps, 'children' | 'className'> {
+        React.RefAttributes<HTMLSelectElement> {
     className?: string
     /**
      * Used to control the styling of the <select> and surrounding elements.
@@ -12,6 +13,10 @@ export interface SelectProps
      * Set this value to `true` to show valid styling.
      */
     isValid?: boolean
+    /**
+     * Descriptive text rendered within a <label> element.
+     */
+    label: React.ReactNode
     /**
      * Optional message to display below the <select>.
      * This should typically be used to display additional information (perhap error/success states) to the user.
@@ -33,9 +38,9 @@ export const getSelectStyles = (isCustomStyle?: boolean): string => {
 }
 
 export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
-    ({ children, className, label, displayLabel, message, isValid, isCustomStyle, ...selectProps }, reference) => (
+    ({ children, className, label, message, isValid, isCustomStyle, ...selectProps }, reference) => (
         <div className="form-group">
-            <FormFieldLabel label={label} displayLabel={displayLabel}>
+            <label>
                 <select
                     ref={reference}
                     className={classNames(getSelectStyles(isCustomStyle), className)}
@@ -43,37 +48,9 @@ export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
                 >
                     {children}
                 </select>
-            </FormFieldLabel>
-            {message && <small className="field-message">{message}</small>}
+                {label}
+            </label>
+            {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
         </div>
     )
 )
-
-interface FormFieldLabelProps {
-    displayLabel?: boolean
-    /**
-     * Descriptive text for the form control.
-     * Uses <label> if `displayLabel` is `true`.
-     * Uses 'aria-label` if `displayLabel` is `false`.
-     */
-    label: string
-    /**
-     * Styles to apply to the <label>
-     */
-    className?: string
-
-    children: React.ReactElement
-}
-
-const FormFieldLabel: React.FunctionComponent<FormFieldLabelProps> = ({ children, label, displayLabel, className }) => {
-    if (displayLabel) {
-        return (
-            <label className={className}>
-                {children}
-                {label}
-            </label>
-        )
-    }
-
-    return React.cloneElement(children, { 'aria-label': label })
-}

@@ -57,11 +57,6 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
         <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" />
         <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={false} />
         <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={true} />
-
-        <h3>With visual label</h3>
-        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" displayLabel={true} />
-        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" displayLabel={true} isValid={false} />
-        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" displayLabel={true} isValid={true} />
     </>
 )
 
