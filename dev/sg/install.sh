@@ -18,12 +18,12 @@ go install -mod=mod .
 # So we use what the Go documentation recommends here
 #   https://golang.org/doc/tutorial/compile-install
 # and find the install target
-target=$(go list -f '{{.Target}}')
+target="$(go list -f '{{.Target}}')"
 
 # Let's make sure that there's actually a binary there before we make
 # suggestions. (Unfortunately, there's no easy way to get this out of `go
 # install`, so we have to figure it out after the fact.)
-if [ ! -x $target ]; then
+if [ ! -x "$target" ]; then
   echo "We expected to find sg at $target, but we can't find it!"
   echo
   echo "Useful debugging information:"
@@ -80,7 +80,7 @@ if [ "$sg_in_path" != "$target" ]; then
     echo "  running sg will run '$sg_in_path' instead."
   fi
   echo
-  echo "  Consider adding $(dirname $target) to your \$PATH for easier"
+  echo "  Consider adding $(dirname "$target") to your \$PATH for easier"
   echo "  sg-ing!"
 fi
 
