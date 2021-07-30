@@ -23,8 +23,8 @@ grafana: ./dev/grafana.sh
 postgres_exporter: ./dev/postgres_exporter.sh
 
 # Enterprise executor services
-codeintel-executor: test "$ENTERPRISE" != 1 || env EXECUTOR_QUEUE_NAME=codeintel EXECUTOR_HEALTH_SERVER_PORT=3192 SRC_PROF_HTTP=":6092" TMPDIR=$HOME/.sourcegraph/indexer-temp executor
-batches-executor: test "$ENTERPRISE" != 1 || env EXECUTOR_QUEUE_NAME=batches EXECUTOR_HEALTH_SERVER_PORT=3193 SRC_PROF_HTTP=":6093" TMPDIR=$HOME/.sourcegraph/batches-executor-temp executor
+codeintel-executor: test "$ENTERPRISE" != 1 || env EXECUTOR_QUEUE_NAME=codeintel SRC_PROF_HTTP=":6092" TMPDIR=$HOME/.sourcegraph/indexer-temp executor
+batches-executor: test "$ENTERPRISE" != 1 || env EXECUTOR_QUEUE_NAME=batches SRC_PROF_HTTP=":6093" TMPDIR=$HOME/.sourcegraph/batches-executor-temp executor
 
 # Enterprise code intelligence services
 precise-code-intel-worker: test "$ENTERPRISE" != 1 || precise-code-intel-worker
