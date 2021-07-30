@@ -60,6 +60,8 @@ You can always find the version number of the latest release at [docs.sourcegrap
 
 ## 3.20 -> 3.21
 
+- A [bug](https://github.com/sourcegraph/customer/issues/144) exists in the version requiring upgrade from a patch release. **When upgrading please upgrade from v3.20.0 -> v3.20.1 -> v3.21.x**
+
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
 ### If you wish to keep existing LSIF data

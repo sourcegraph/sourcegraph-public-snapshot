@@ -2,10 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"net/http"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -17,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -65,14 +61,6 @@ func main() {
 
 		mustRegisterVMCountMetric(observationContext, config.VMPrefix)
 	}
-	if !config.DisableHealthServer {
-		routines = append(routines, httpserver.NewFromAddr(fmt.Sprintf(":%d", config.HealthServerPort), &http.Server{
-			ReadTimeout:  75 * time.Second,
-			WriteTimeout: 10 * time.Minute,
-			Handler:      httpserver.NewHandler(nil),
-		}))
-	}
-
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
