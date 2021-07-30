@@ -265,7 +265,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 		}
 		defer func() { err = done(err) }()
 
-		s = s.WithDB(tx)
+		return s.WithDB(tx).queryCount(ctx, countChangesetsQuery(&opts))
 	}
 
 	return s.queryCount(ctx, countChangesetsQuery(&opts))
