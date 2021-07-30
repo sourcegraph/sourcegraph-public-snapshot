@@ -44,6 +44,7 @@ func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration, observationCon
 }
 
 func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext *observation.Context) *Runner {
+    // IMPORTANT: actor.WithInternalActor prevents issues caused by database-level authz checks: migration tasks should always be privileged.
 	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
 
 	return &Runner{
