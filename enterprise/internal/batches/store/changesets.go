@@ -727,7 +727,7 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 	cs.UpdatedAt = s.now()
 
 	vars := []interface{}{
-		sqlf.Join([]*sqlf.Query{sqlf.Sprintf("updated_at"), sqlf.Sprintf(name)}, ", "),
+		sqlf.Sprintf(name),
 		cs.UpdatedAt,
 		val,
 		cs.ID,
@@ -744,7 +744,7 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 var updateChangesetColumnQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:updateChangesetColumn
 UPDATE changesets
-SET (%s) = (%s, %s)
+SET (updated_at, %s) = (%s, %s)
 WHERE id = %s
 RETURNING
   %s
