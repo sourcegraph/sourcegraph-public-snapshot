@@ -69,7 +69,7 @@ interface SearchTypeButtonProps {
  */
 const SearchTypeButton: React.FunctionComponent<SearchTypeButtonProps> = ({ children, onClick }) => (
     <button
-        className={classNames(styles.sidebarSectionListItem, 'btn btn-link flex-1')}
+        className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'btn btn-link flex-1')}
         type="button"
         value={children}
         onClick={onClick}
