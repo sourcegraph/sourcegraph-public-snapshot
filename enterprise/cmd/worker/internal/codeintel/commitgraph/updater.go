@@ -29,6 +29,7 @@ type Updater struct {
 }
 
 var _ goroutine.Handler = &Updater{}
+var _ goroutine.ErrorHandler = &Updater{}
 
 // NewUpdater returns a background routine that periodically updates the commit graph
 // and visible uploads for each repository marked as dirty.

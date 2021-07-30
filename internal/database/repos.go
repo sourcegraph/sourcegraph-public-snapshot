@@ -662,7 +662,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	}
 
 	// TODO: Actually log event here
-	counterAccessGranted.Add(float64(len(privateIDs)))
+	counterAccessGranted.Inc()
 
 	return repos, nil
 }
@@ -685,7 +685,7 @@ func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 
 	if len(privateIDs) > 0 {
 		// TODO: Actually log event here
-		counterAccessGranted.Add(float64(len(privateIDs)))
+		counterAccessGranted.Inc()
 	}
 
 	return rs, err

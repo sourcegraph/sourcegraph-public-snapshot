@@ -25,6 +25,7 @@ type unknownCommitJanitor struct {
 }
 
 var _ goroutine.Handler = &unknownCommitJanitor{}
+var _ goroutine.ErrorHandler = &unknownCommitJanitor{}
 
 // NewUnknownCommitJanitor returns a background routine that periodically resolves each
 // commit known by code intelligence data via gitserver to ensure that it has not been

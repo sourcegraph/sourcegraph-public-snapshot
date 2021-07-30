@@ -37,6 +37,7 @@ const gqlSearchQuery = `query Search(
 				... on FileMatch {
 					repository {
 						id
+						name
 					}
 					lineMatches {
 						offsetAndLengths
@@ -54,11 +55,13 @@ const gqlSearchQuery = `query Search(
 					commit {
 						repository {
 							id
+							name
 						}
 					}
 				}
 				... on Repository {
 					id
+					name
 				}
 			}
 			alert {
