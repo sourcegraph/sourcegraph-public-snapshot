@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -67,15 +67,11 @@ var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
 func Test_discoverAndEnqueueInsights(t *testing.T) {
 	// Setup the setting store and job enqueuer mocks.
 	ctx := context.Background()
-	settingStore := discovery.NewMockSettingStore()
-	settingStore.GetLatestFunc.SetDefaultReturn(testRealGlobalSettings, nil)
 	var enqueued []*queryrunner.Job
 	enqueueQueryRunnerJob := func(ctx context.Context, job *queryrunner.Job) error {
 		enqueued = append(enqueued, job)
 		return nil
 	}
-
-	loader := insights.NewMockLoader()
 
 	// Create a fake clock so the times reported in our test data do not change and can be easily verified.
 	now, err := time.Parse(time.RFC3339, "2020-03-01T00:00:00Z")
@@ -84,7 +80,26 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	}
 	clock := func() time.Time { return now }
 
-	if err := discoverAndEnqueueInsights(ctx, clock, settingStore, loader, enqueueQueryRunnerJob); err != nil {
+	dataSeriesStore := store.NewMockDataSeriesStore()
+
+	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]types.InsightSeries{
+		{
+			ID:                    1,
+			SeriesID:              "series1",
+			Query:                 "query1",
+			NextRecordingAfter:    now.Add(-1 * time.Hour),
+			RecordingIntervalDays: 1,
+		},
+		{
+			ID:                    2,
+			SeriesID:              "series2",
+			Query:                 "query2",
+			NextRecordingAfter:    now.Add(1 * time.Hour),
+			RecordingIntervalDays: 1,
+		},
+	}, nil)
+
+	if err := discoverAndEnqueueInsights(ctx, clock, dataSeriesStore, enqueueQueryRunnerJob); err != nil {
 		t.Fatal(err)
 	}
 
@@ -95,8 +110,8 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	}
 	autogold.Want("0", `[
   {
-    "SeriesID": "s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E",
-    "SearchQuery": "errorf count:9999999",
+    "SeriesID": "series1",
+    "SearchQuery": "query1 count:9999999",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,
@@ -111,8 +126,8 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
     "ExecutionLogs": null
   },
   {
-    "SeriesID": "s:7FBD292BF97936C4B6397688CFFB05DEA95E650C3D5B653AAEA8F77BBD25CE93",
-    "SearchQuery": "fmt.Printf count:9999999",
+    "SeriesID": "series2",
+    "SearchQuery": "query2 count:9999999",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,
@@ -122,38 +137,6 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
     "StartedAt": null,
     "FinishedAt": null,
     "ProcessAfter": "2020-03-01T00:00:30Z",
-    "NumResets": 0,
-    "NumFailures": 0,
-    "ExecutionLogs": null
-  },
-  {
-    "SeriesID": "s:FB8CFBB7C7C28834957FBE1B830EDD79C5E710FD55B0ACF246C0D7267C5462B4",
-    "SearchQuery": "gitserver.Exec count:9999999",
-    "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
-    "ID": 0,
-    "State": "queued",
-    "FailureMessage": null,
-    "StartedAt": null,
-    "FinishedAt": null,
-    "ProcessAfter": "2020-03-01T00:01:00Z",
-    "NumResets": 0,
-    "NumFailures": 0,
-    "ExecutionLogs": null
-  },
-  {
-    "SeriesID": "s:2B55C7CE2EB30BFFAF1F0276E525B36BB71908E3893A27F416F62A3E23542566",
-    "SearchQuery": "gitserver.Close count:9999999",
-    "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
-    "ID": 0,
-    "State": "queued",
-    "FailureMessage": null,
-    "StartedAt": null,
-    "FinishedAt": null,
-    "ProcessAfter": "2020-03-01T00:01:30Z",
     "NumResets": 0,
     "NumFailures": 0,
     "ExecutionLogs": null

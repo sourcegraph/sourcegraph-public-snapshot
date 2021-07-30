@@ -42,28 +42,7 @@ All users are automatically given read permissions to a batch change. Granular p
 
 ## Code host interactions in Batch Changes
 
-Interactions with the code host are performed by Sourcegraph with your personal access token for that code host. These operations include:
-
-- Pushing a branch with the changes (the Git author and committer will be you, and the Git push will be authenticated with your credentials)
-- Creating a changeset (e.g., on GitHub, the pull request author will be you)
-- Updating a changeset
-- Closing a changeset
-
-For instructions on adding and managing your code host access tokens, please refer to "[Configuring credentials](../how-tos/configuring_credentials.md)".
-
-See these code host specific pages for which permissions and scopes the tokens require:
-
-- [GitHub](../../../admin/external_service/github.md#github-api-token-and-access) (requires `repo`, `read:org`, `user:email`, and `read:discussion`scope)
-- [GitLab](../../../admin/external_service/gitlab.md#access-token-scopes) (requires `api`, `read_repository`, and `write_repository` scope)
-- [Bitbucket Server](../../../admin/external_service/bitbucket_server.md#access-token-permissions) (requires write permissions on the project and repository level)
-
-### Site admins
-
-Site admins will fall back to using the Sourcegraph token for the code host if they have not added a personal access token. This makes it easier to try out Batch Changes, but be aware that this may result in changesets being created or changed with different permissions to your normal code host user.
-
-Non-admin users are unable to apply batch changes without configuring access tokens.
-
-> WARNING: This fallback has been deprecated in Sourcegraph 3.27 and is due to be removed in Sourcegraph 3.29.
+Interactions with a code host are made possible by [configuring credentials](../how-tos/configuring_credentials.md) for that code host. When writing a commit or a changeset to the code host with Batch Changes, the author and permissions will reflect the token used (e.g., on GitHub, the commit or pull request author will be you).
 
 ## Repository permissions for Batch Changes
 

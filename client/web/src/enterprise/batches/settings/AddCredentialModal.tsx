@@ -169,7 +169,8 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                                 <input
                                     id="token"
                                     name="token"
-                                    type="text"
+                                    type="password"
+                                    autoComplete="off"
                                     className="form-control test-add-credential-modal-input"
                                     required={true}
                                     spellCheck="false"

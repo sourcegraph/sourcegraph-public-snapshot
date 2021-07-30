@@ -18,6 +18,7 @@ type recordExpirer struct {
 }
 
 var _ goroutine.Handler = &recordExpirer{}
+var _ goroutine.ErrorHandler = &recordExpirer{}
 
 // NewRecordExpirer returns a background routine that periodically removes upload
 // and index records that are older than the given TTL. Upload records which have

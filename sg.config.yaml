@@ -323,7 +323,7 @@ commands:
     cmd: |
       docker run --name=syntect_server --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntect_server:71d2481@sha256:8854665264522a86b711c732d803395478dab30f6df6197b5d0c1c7c21cd6261
+      sourcegraph/syntect_server:32d880d@sha256:899661691c3a6f8d587186bed73c3224b065d1e1c3485aff2ea208c261c010f6
     install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
     env:
       # This is not needed actually
@@ -419,7 +419,6 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      EXECUTOR_HEALTH_SERVER_PORT: "3192"
       SRC_PROF_HTTP: ":6092"
 
   batches-executor:
@@ -428,7 +427,6 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: batches
-      EXECUTOR_HEALTH_SERVER_PORT: "3193"
       SRC_PROF_HTTP: ":6093"
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
@@ -437,12 +435,11 @@ commands:
     <<: *executor_template
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_HEALTH_SERVER_PORT,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_USERNAME,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_USERNAME,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
-      EXECUTOR_HEALTH_SERVER_PORT: "3193"
       SRC_PROF_HTTP: ":6093"
 
   minio:

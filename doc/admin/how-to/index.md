@@ -13,3 +13,4 @@
 - [How to configure submodules](submodule-configuration.md)
 - [How to remove users with GraphQL API](remove-user-api.md)
 - [How to setup HTTPS connection with Ingress controller on your Kubernetes instance](setup-https.md)
+- [How to rebuild corrupt Postgres indexes after upgrading to 3.30 or 3.30.1](rebuild-corrupt-postgres-indexes.md)

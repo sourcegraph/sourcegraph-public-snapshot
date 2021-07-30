@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -78,6 +78,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearchOnSearchContextChange = true,
         isSearchOnboardingTourVisible,
         className,
+        telemetryService,
     } = props
 
     const tour = useFeatureTour(
@@ -138,6 +139,14 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         [submitSearchOnSearchContextChange, submitOnToggle, setSelectedSearchContextSpec]
     )
 
+    // Log CTA view event whenver dropdown is opened, if user is not authenticated
+    useEffect(() => {
+        if (isOpen && !authenticatedUser) {
+            telemetryService.log('SearchResultContextsCTAShown')
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
+
     return (
         <Dropdown
             isOpen={isOpen}
@@ -173,7 +182,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
                 {isSourcegraphDotCom && !hasUserAddedRepositories ? (
                     <SearchContextCtaPrompt
-                        telemetryService={props.telemetryService}
+                        telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
                     />

@@ -13,7 +13,7 @@ var Standard standardConstructor
 type standardConstructor struct{}
 
 // Count creates an observable from the given options backed by the counter specifying
-// the number of operatons. The legend name supplied to the outermost function will be
+// the number of operations. The legend name supplied to the outermost function will be
 // used as the panel's dataset legend. Note that the legend is also supplemented by label
 // values if By is also assigned.
 //
@@ -40,7 +40,7 @@ func (standardConstructor) Count(legend string) observableConstructor {
 }
 
 // Duration creates an observable from the given options backed by the histogram specifying
-// the duration of operatons. The legend name supplied to the outermost function will be
+// the duration of operations. The legend name supplied to the outermost function will be
 // used as the panel's dataset legend. Note that the legend is also supplemented by label
 // values if By is also assigned.
 //
@@ -68,7 +68,7 @@ func (standardConstructor) Duration(legend string) observableConstructor {
 }
 
 // Errors creates an observable from the given options backed by the counter specifying
-// the number of operatons that resulted in an error. The legend name supplied to the
+// the number of operations that resulted in an error. The legend name supplied to the
 // outermost function will be used as the panel's dataset legend. Note that the legend
 // is also supplemented by label values if By is also assigned.
 //
@@ -88,6 +88,35 @@ func (standardConstructor) Errors(legend string) observableConstructor {
 				Description: fmt.Sprintf("%s%s errors every 5m", options.MetricDescriptionRoot, legend),
 				Query:       fmt.Sprintf(`sum%s(increase(src_%s_errors_total{%s}[5m]))`, by, options.MetricNameRoot, filters),
 				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData()),
+				Owner:       owner,
+			}
+		}
+	}
+}
+
+// ErrorRate creates an observable from the given options backed by the counters specifying
+// the number of operations that resulted in success and error, respectively. The legend name
+// supplied to the outermost function will be used as the panel's dataset legend. Note that
+// the legend is also supplemented by label values if By is also assigned.
+//
+// Requires a:
+//   - counter of the format `src_{options.MetricNameRoot}_total`
+//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
+func (standardConstructor) ErrorRate(legend string) observableConstructor {
+	if legend != "" {
+		legend = " " + legend
+	}
+
+	return func(options ObservableConstructorOptions) sharedObservable {
+		return func(containerName string, owner monitoring.ObservableOwner) Observable {
+			filters := makeFilters(containerName, options.Filters...)
+			by, legendPrefix := makeBy(options.By...)
+
+			return Observable{
+				Name:        fmt.Sprintf("%s_error_rate", options.MetricNameRoot),
+				Description: fmt.Sprintf("%s%s error rate over 5m", options.MetricDescriptionRoot, legend),
+				Query:       fmt.Sprintf(`sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m])) / (sum%[1]s(increase(src_%[2]s_total{%[3]s}[5m])) + sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m]))) * 100`, by, options.MetricNameRoot, filters),
+				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s error rate", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData()).Unit(monitoring.Percentage),
 				Owner:       owner,
 			}
 		}

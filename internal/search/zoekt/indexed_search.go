@@ -208,7 +208,23 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 
 const maxUnindexedRepoRevSearchesPerQuery = 200
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, stream streaming.Sender) (_ *IndexedSearchRequest, err error) {
+type OnMissingRepoRevs func([]*search.RepositoryRevisions)
+
+func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
+	return func(repoRevs []*search.RepositoryRevisions) {
+		var status search.RepoStatusMap
+		for _, r := range repoRevs {
+			status.Update(r.Repo.ID, search.RepoStatusMissing)
+		}
+		stream.Send(streaming.SearchEvent{
+			Stats: streaming.Stats{
+				Status: status,
+			},
+		})
+	}
+}
+
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, onMissing OnMissingRepoRevs) (_ *IndexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -227,7 +243,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
+			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -238,14 +254,14 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, errors.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
+			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
 		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
+			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		}, nil
 	}
 
@@ -272,7 +288,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
+			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
@@ -289,7 +305,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 	// Disable unindexed search
 	if args.PatternInfo.Index == query.Only {
-		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
+		searcherRepos = limitUnindexedRepos(searcherRepos, 0, onMissing)
 	}
 
 	q, err := search.QueryToZoektQuery(args.PatternInfo, typ == SymbolRequest)
@@ -302,7 +318,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		Query: q,
 		Typ:   typ,
 
-		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, stream),
+		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		RepoRevs:  indexed,
 
 		DisableUnindexedSearch: args.PatternInfo.Index == query.Only,
@@ -368,7 +384,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.PatternInfo.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
+	searchOpts := SearchOpts(ctx, k, args.PatternInfo.FileMatchLimit)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -411,12 +427,12 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextP
 	}
 
 	return args.Zoekt.Client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
+		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
 			repo := types.RepoName{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
-			return repo, []string{""}, true
+			return repo, []string{""}
 		}, typ, c)
 	}))
 }
@@ -441,7 +457,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
 
 	k := ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
+	searchOpts := SearchOpts(ctx, k, args.PatternInfo.FileMatchLimit)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -478,10 +494,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, q zoektquery.
 	foundResults := atomic.Bool{}
 	err := args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string, bool) {
-			repo, inputRevs := repos.getRepoInputRev(file)
-			return repo, inputRevs, true
-		}, typ, c)
+		sendMatches(event, repos.getRepoInputRev, typ, c)
 	}))
 	if err != nil {
 		return err
@@ -514,10 +527,7 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ Ind
 
 	matches := make([]result.Match, 0, len(files))
 	for _, file := range files {
-		repo, inputRevs, ok := getRepoInputRev(&file)
-		if !ok {
-			continue
-		}
+		repo, inputRevs := getRepoInputRev(&file)
 
 		var lines []*result.LineMatch
 		if typ != SymbolRequest {
@@ -774,7 +784,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 // excluded.
 //
 // A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, stream streaming.Sender) []*search.RepositoryRevisions {
+func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) []*search.RepositoryRevisions {
 	var missing []*search.RepositoryRevisions
 
 	for i, repoRevs := range unindexed {
@@ -787,15 +797,7 @@ func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, str
 	}
 
 	if len(missing) > 0 {
-		var status search.RepoStatusMap
-		for _, r := range missing {
-			status.Update(r.Repo.ID, search.RepoStatusMissing)
-		}
-		stream.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{
-				Status: status,
-			},
-		})
+		onMissing(missing)
 	}
 
 	return unindexed

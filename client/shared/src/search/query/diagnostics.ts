@@ -2,8 +2,8 @@ import * as Monaco from 'monaco-editor'
 
 import { SearchPatternType } from '../../graphql-operations'
 
-import { toMonacoRange } from './decoratedToken'
 import { validateFilter } from './filters'
+import { toMonacoSingleLineRange } from './monaco'
 import { Token } from './token'
 
 /**
@@ -21,7 +21,7 @@ export function getDiagnostics(tokens: Token[], patternType: SearchPatternType):
             diagnostics.push({
                 severity: Monaco.MarkerSeverity.Error,
                 message: validationResult.reason,
-                ...toMonacoRange(field.range),
+                ...toMonacoSingleLineRange(field.range),
             })
         }
     }

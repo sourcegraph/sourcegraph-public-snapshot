@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+
 	"golang.org/x/time/rate"
 
 	"github.com/cockroachdb/errors"
@@ -13,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -107,39 +108,40 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	// Figure out how many matches we got for every unique repository returned in the search
 	// results.
 	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
+	repoNames := make(map[string]string, len(matchesPerRepo))
 	for _, result := range results.Data.Search.Results.Results {
 		decoded, err := decodeResult(result)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
+		repoNames[decoded.repoID()] = decoded.repoName()
 		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + decoded.matchCount()
 	}
 
 	// Record the number of results we got, one data point per-repository.
-	repoStore := database.Repos(r.workerBaseStore.Handle().DB())
 	for graphQLRepoID, matchCount := range matchesPerRepo {
-		dbRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
-		if err != nil {
-			return errors.Wrap(err, "UnmarshalRepositoryID")
+		dbRepoID, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
+		if idErr != nil {
+			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryID"))
+			continue
 		}
-		repo, err := repoStore.Get(ctx, dbRepoID)
-		if err != nil {
-			return errors.Wrap(err, "RepoStore.GetByID")
+		repoName := repoNames[graphQLRepoID]
+		if len(repoName) == 0 {
+			// this really should never happen, expect if for some reason the gql response is broken
+			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
+			continue
 		}
-
-		repoName := string(repo.Name)
-		err = r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
+		if recordErr := r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
 			SeriesID: job.SeriesID,
 			Point: store.SeriesPoint{
 				Time:  recordTime,
 				Value: float64(matchCount),
 			},
 			RepoName: &repoName,
-			RepoID:   &repo.ID,
-		})
-		if err != nil {
-			return errors.Wrap(err, "RecordSeriesPoint")
+			RepoID:   &dbRepoID,
+		}); recordErr != nil {
+			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoint"))
 		}
 	}
-	return nil
+	return err
 }
