@@ -96,6 +96,8 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [persistToggleState, props.telemetryService]
     )
 
+    const repoFilterLinks = getRepoFilterLinks(props.filters, onDynamicFilterClicked)
+
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
@@ -122,8 +124,14 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     open={openSections[SectionID.REPOSITORIES] ?? true}
                     onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
                     showSearch={true}
+                    noResultText={
+                        <span>
+                            None of the top {repoFilterLinks.length} repositories in your results match this filter. Try
+                            a <code>repo:</code> search in the main search bar instead.
+                        </span>
+                    }
                 >
-                    {getRepoFilterLinks(props.filters, onDynamicFilterClicked)}
+                    {repoFilterLinks}
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
