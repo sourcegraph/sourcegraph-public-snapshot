@@ -29,6 +29,9 @@ const ensureAuthzCondsFmt = `
 	SET LOCAL rls.permission = read;
 `
 
+// WithEnforcedAuthz sets up role based permission checking. It returns a new
+// dbutil.DB that has role based permissions enabled and a function that should
+// be called when you are finished using it.
 func WithEnforcedAuthz(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) error, error) {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 	inTransaction := handle.InTransaction()
