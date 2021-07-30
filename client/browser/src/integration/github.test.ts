@@ -198,7 +198,7 @@ describe('GitHub', () => {
 
         // Pause to give codeintellify time to register listeners for
         // tokenization (only necessary in CI, not sure why).
-        await driver.page.waitFor(1000)
+        await driver.page.waitForTimeout(1000)
 
         const lineSelector = '.js-file-line-container tr'
 
@@ -216,6 +216,9 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
+
+        // Give time for hover overlay to become opaque.
+        await driver.page.waitForTimeout(1000)
 
         await percySnapshot(driver.page, 'Hover tooltip on GitHub')
     })
