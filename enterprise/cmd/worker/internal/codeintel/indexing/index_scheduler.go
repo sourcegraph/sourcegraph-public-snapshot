@@ -26,6 +26,7 @@ type IndexScheduler struct {
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
+var _ goroutine.ErrorHandler = &IndexScheduler{}
 
 func NewIndexScheduler(
 	dbStore DBStore,

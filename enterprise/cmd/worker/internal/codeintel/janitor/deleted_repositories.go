@@ -17,6 +17,7 @@ type deletedRepositoryJanitor struct {
 }
 
 var _ goroutine.Handler = &deletedRepositoryJanitor{}
+var _ goroutine.ErrorHandler = &deletedRepositoryJanitor{}
 
 // NewDeletedRepositoryJanitor returns a background routine that periodically
 // deletes upload and index records for repositories that have been soft-deleted.

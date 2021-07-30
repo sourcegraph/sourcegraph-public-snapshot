@@ -19,6 +19,7 @@ type hardDeleter struct {
 }
 
 var _ goroutine.Handler = &hardDeleter{}
+var _ goroutine.ErrorHandler = &hardDeleter{}
 
 // NewHardDeleter returns a background routine that periodically hard-deletes all
 // soft-deleted upload records. Each upload record marked as soft-deleted in the
