@@ -20,7 +20,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Observability](observability.md)
 - [Repository permissions](repo/permissions.md)
   - [Row-level security](repo/row_level_security.md)
-- [PostgreSQL configuration](postgres-conf.md)
+- [PostgreSQL configuration](config/postgres-conf.md)
 - [Upgrading PostgreSQL](postgres.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - [User data deletion](user_data_deletion.md)
