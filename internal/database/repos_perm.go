@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
@@ -15,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
