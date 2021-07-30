@@ -294,10 +294,6 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				return nil
 			}
 		}
-
-		// when we create an insight, queue up the work for it's backfill
-		// in this thing, we will join insights to their backfill intervals
-
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
