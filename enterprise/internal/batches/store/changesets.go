@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -129,12 +130,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		return nil, err
 	}
 
-	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))
-	for _, assoc := range c.BatchChanges {
-		assocsAsMap[assoc.BatchChangeID] = assoc
-	}
-
-	batchChanges, err := json.Marshal(assocsAsMap)
+	batchChanges, err := batchChangesColumn(c)
 	if err != nil {
 		return nil, err
 	}
@@ -147,10 +143,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 	// Not being able to find a title is fine, we just have a NULL in the database then.
 	title, _ := c.Title()
 
-	var uiPublicationState *string
-	if state := c.UiPublicationState; state != nil {
-		uiPublicationState = nullStringColumn(string(*state))
-	}
+	uiPublicationState := uiPublicationStateColumn(c)
 
 	vars := []interface{}{
 		sqlf.Join(changesetInsertColumns, ", "),
@@ -710,6 +703,53 @@ RETURNING
   %s
 `
 
+// UpdateChangesetBatchChanges updates only the `batch_changes` & `updated_at`
+// columns of the given Changeset.
+func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Changeset) error {
+	batchChanges, err := batchChangesColumn(cs)
+	if err != nil {
+		return err
+	}
+
+	return s.updateChangesetColumn(ctx, cs, "batch_change_ids", batchChanges)
+}
+
+// UpdateChangesetUiPublicationState updates only the `ui_publication_state` &
+// `updated_at` columns of the given Changeset.
+func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btypes.Changeset) error {
+	uiPublicationState := uiPublicationStateColumn(cs)
+	return s.updateChangesetColumn(ctx, cs, "ui_publication_state", uiPublicationState)
+}
+
+// updateChangesetColumn updates the column with the given name, setting it to
+// the given value, and updating the updated_at column.
+func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset, name string, val interface{}) error {
+	cs.UpdatedAt = s.now()
+
+	vars := []interface{}{
+		sqlf.Join([]*sqlf.Query{sqlf.Sprintf("updated_at"), sqlf.Sprintf(name)}, ", "),
+		cs.UpdatedAt,
+		val,
+		cs.ID,
+		sqlf.Join(ChangesetColumns, ", "),
+	}
+
+	q := sqlf.Sprintf(updateChangesetColumnQueryFmtstr, vars...)
+
+	return s.query(ctx, q, func(sc scanner) (err error) {
+		return scanChangeset(cs, sc)
+	})
+}
+
+var updateChangesetColumnQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:updateChangesetColumn
+UPDATE changesets
+SET (%s) = (%s, %s)
+WHERE id = %s
+RETURNING
+  %s
+`
+
 // UpdateChangesetCodeHostState updates only the columns of the given Changeset
 // that relate to the state of the changeset on the code host, e.g.
 // external_branch, external_state, etc.
@@ -999,6 +1039,10 @@ func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
 		assoc.BatchChangeID = id
 		*n.Assocs = append(*n.Assocs, assoc)
 	}
+
+	sort.Slice(*n.Assocs, func(i, j int) bool {
+		return (*n.Assocs)[i].BatchChangeID < (*n.Assocs)[j].BatchChangeID
+	})
 
 	return nil
 }
@@ -1315,3 +1359,20 @@ FROM (
 		AND %s
 ) AS fcs;
 `
+
+func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
+	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))
+	for _, assoc := range c.BatchChanges {
+		assocsAsMap[assoc.BatchChangeID] = assoc
+	}
+
+	return json.Marshal(assocsAsMap)
+}
+
+func uiPublicationStateColumn(c *btypes.Changeset) *string {
+	var uiPublicationState *string
+	if state := c.UiPublicationState; state != nil {
+		uiPublicationState = nullStringColumn(string(*state))
+	}
+	return uiPublicationState
+}
