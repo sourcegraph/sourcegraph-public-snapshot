@@ -68,6 +68,12 @@
     p > code {
         white-space: break-spaces;
     }
+
+    ul {
+        margin-bottom: 1rem;
+        padding-left: 1rem;
+        list-style-type: square;
+    }
 }
 
 .placeholder {
