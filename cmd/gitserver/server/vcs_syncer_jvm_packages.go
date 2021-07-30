@@ -223,6 +223,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 		return err
 	}
 
+	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 	cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", "--tags")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
@@ -233,6 +234,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 		if err != nil {
 			return err
 		}
+		// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 		cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", strings.TrimSpace(defaultBranch)+":latest", dependency.GitTagFromVersion())
 		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 			return err
@@ -280,6 +282,7 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 		return err
 	}
 
+	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
