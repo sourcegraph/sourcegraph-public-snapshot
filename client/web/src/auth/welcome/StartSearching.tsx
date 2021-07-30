@@ -15,11 +15,13 @@ interface StartSearching {
     repoSelectionMode: RepoSelectionMode
 }
 
+const SIXTY_SECONDS = 60000
+
 export const useShowAlert = (isDoneCloning: boolean): { showAlert: boolean } => {
     const [showAlert, setShowAlert] = useState(false)
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowAlert(true), 10000)
+        const timer = setTimeout(() => setShowAlert(true), SIXTY_SECONDS)
 
         if (isDoneCloning) {
             clearTimeout(timer)
@@ -136,8 +138,8 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
                 <div className="alert alert-warning mt-4">
                     Cloning your repositories is taking a long time. You can wait for cloning to finish, or{' '}
                     <Link to="/search">continue to Sourcegraph now</Link> while cloning continues in the background.
-                    Note that you can only search repos that have finished cloning. Check status at any time in Settings
-                    → Your repositories.
+                    Note that you can only search repos that have finished cloning. Check status at any time in{' '}
+                    <Link to="user/settings/repositories">Settings → Repositories</Link>.
                 </div>
             )}
         </>
