@@ -31,6 +31,8 @@ const ensureAuthzCondsFmt = `
 
 func WithAuthzConds(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) error, error) {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
+	inTransaction := handle.InTransaction()
+
 	tx, err := handle.Transact(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -82,7 +84,22 @@ func WithAuthzConds(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) e
 	if err != nil {
 		return nil, nil, tx.Done(err)
 	}
-	return tx.DB(), tx.Done, nil
+
+	done := tx.Done
+
+	// When we're already in a transaction, handle.Transact creates a savepoint, not
+	// a new transaction. Our cleanup function therefore needs to reset the role as
+	// releasing a savepoint does NOT reset any "LOCAL" variables defined in the
+	// transaction.
+	if inTransaction {
+		done = func(err error) error {
+			// TODO: How to handle an error returned by ExecContext
+			tx.DB().ExecContext(ctx, "RESET ROLE")
+			return err
+		}
+	}
+
+	return tx.DB(), done, nil
 }
 
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
