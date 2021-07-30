@@ -1164,10 +1164,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	r := newTestResolver(t, nil)
 
-	userID := 1
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
 
-	ctx = actor.WithActor(ctx, actor.FromUser(int32(userID)))
 	_, err := r.TriggerTestEmailAction(ctx, &graphqlbackend.TriggerTestEmailActionArgs{
 		Namespace:   namespaceID,
 		Description: "A code monitor name",
