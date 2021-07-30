@@ -8,9 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 
 	"github.com/cockroachdb/errors"
 
@@ -35,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -69,7 +70,7 @@ import (
 // insights across all user settings, and determine for which dates they do not have data and attempt
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
-func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, settingStore discovery.SettingStore, insightsStore *store.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"insights_historical_enqueuer",
@@ -116,12 +117,11 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	maxTime := time.Now().Add(-time.Duration(framesToBackfill()) * frameLength())
 
 	historicalEnqueuer := &historicalEnqueuer{
-		now:           time.Now,
-		settingStore:  settingStore,
-		insightsStore: insightsStore,
-		loader:        insights.NewLoader(repoStore.Handle().DB()),
-		repoStore:     database.Repos(workerBaseStore.Handle().DB()),
-		limiter:       limiter,
+		now:             time.Now,
+		insightsStore:   insightsStore,
+		repoStore:       database.Repos(workerBaseStore.Handle().DB()),
+		dataSeriesStore: dataSeriesStore,
+		limiter:         limiter,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
@@ -214,9 +214,8 @@ type RepoStore interface {
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
-	settingStore          discovery.SettingStore
 	insightsStore         store.Interface
-	loader                insights.Loader
+	dataSeriesStore       store.DataSeriesStore
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
@@ -236,7 +235,7 @@ type historicalEnqueuer struct {
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Discover all insights on the instance.
-	foundInsights, err := discovery.Discover(ctx, h.settingStore, h.loader, discovery.InsightFilterArgs{})
+	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: h.now()})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
@@ -244,24 +243,19 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (
-		uniqueSeries    = map[string]insights.TimeSeries{}
+		uniqueSeries    = map[string]itypes.InsightSeries{}
 		sortedSeriesIDs []string
 		multi           error
 	)
-	for _, insight := range foundInsights {
-		for _, series := range insight.Series {
-			seriesID := discovery.Encode(series)
-			if err != nil {
-				multi = multierror.Append(multi, err)
-				continue
-			}
-			_, exists := uniqueSeries[seriesID]
-			if exists {
-				continue
-			}
-			uniqueSeries[seriesID] = series
-			sortedSeriesIDs = append(sortedSeriesIDs, seriesID)
+	for _, series := range foundInsights {
+		seriesID := series.SeriesID
+		log15.Info("Loaded insight data series for historical processing", "series_id", seriesID)
+
+		if _, exists := uniqueSeries[seriesID]; exists {
+			continue
 		}
+		uniqueSeries[seriesID] = series
+		sortedSeriesIDs = append(sortedSeriesIDs, seriesID)
 	}
 	if err := h.buildFrames(ctx, uniqueSeries, sortedSeriesIDs); err != nil {
 		return multierror.Append(multi, err)
@@ -275,7 +269,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 // It is only called if there is at least one insights series defined.
 //
 // It will return instantly if there are no unique series.
-func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]insights.TimeSeries, sortedSeriesIDs []string) error {
+func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string) error {
 	if len(uniqueSeries) == 0 {
 		return nil // nothing to do.
 	}
@@ -287,7 +281,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 	return hardErr
 }
 
-func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]insights.TimeSeries, sortedSeriesIDs []string, frames []compression.Frame, softErr error) func(repoName string) error {
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, frames []compression.Frame, softErr error) func(repoName string) error {
 	return func(repoName string) error {
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
@@ -383,7 +377,7 @@ type buildSeriesContext struct {
 
 	// The series we're building historical data for.
 	seriesID string
-	series   insights.TimeSeries
+	series   itypes.InsightSeries
 }
 
 func Frames(numFrames int, frameLength time.Duration, current time.Time) []compression.Frame {

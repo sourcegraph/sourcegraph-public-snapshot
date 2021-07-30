@@ -86,13 +86,15 @@ git merge upstream v$SOURCEGRAPH_VERSION
 
 Address any merge conflicts you might have.
 
-If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**. Then run:
+If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**.
+Then, ensure that the current Sourcegraph instance is completely stopped:
 
-**Please note: You must fully stop the Docker Compose instance of Sourcegraph currently running:**
 ```bash
 docker-compose down --remove-orphans
 ```
-Then start Docker Compose again, now using the latest contents of the Sourcegraph configuration:
+
+**Once the instance has fully stopped**, you can then start Docker Compose again, now using the latest contents of the Sourcegraph configuration:
+
 ```bash
 docker-compose up -d
 ```

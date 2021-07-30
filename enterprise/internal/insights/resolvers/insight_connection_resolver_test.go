@@ -5,6 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,80 +23,53 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 // Note: You can `go test ./resolvers -update` to update the expected `want` values in these tests.
 // See https://github.com/hexops/autogold for more information.
-
-var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
-	"insights": [
-		{
-		  "title": "fmt usage",
-		  "description": "errors.Errorf/fmt.Printf usage",
-		  "series": [
-			{
-			  "label": "errors.Errorf",
-			  "search": "errorf",
-			},
-			{
-			  "label": "printf",
-			  "search": "fmt.Printf",
-			}
-		  ]
-		},
-		{
-			"title": "gitserver usage",
-			"description": "gitserver exec & close usage",
-			"series": [
-			  {
-				"label": "exec",
-				"search": "gitserver.Exec",
-			  },
-			  {
-				"label": "close",
-				"search": "gitserver.Close",
-			  }
-			]
-		  }
-		]
-	}
-`}
-
-var testOneGlobalSeries = &api.Settings{ID: 1, Contents: `{
-	"insights": [
-		{
-		  "title": "fmt usage",
-		  "description": "errors.Errorf",
-		  "series": [
-			{
-			  "label": "errors.Errorf",
-			  "search": "errorf",
-			}
-		  ]
-		},
-    ]
-  }
-`}
 
 // TestResolver_InsightConnection tests that the InsightConnection GraphQL resolver works.
 func TestResolver_InsightConnection(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
 
 	testSetup := func(t *testing.T) (context.Context, graphqlbackend.InsightConnectionResolver) {
 		// Setup the GraphQL resolver.
 		ctx := backend.WithAuthzBypass(context.Background())
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
-		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-		defer cleanup()
-		postgres := dbtesting.GetDB(t)
+
+		postgres := dbtest.NewDB(t, "")
 		resolver := newWithClock(timescale, postgres, clock)
+
+		insightMetadataStore := store.NewMockInsightMetadataStore()
+		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
+			{
+				UniqueID:    "unique1",
+				Title:       "title1",
+				Description: "desc1",
+				Series: []types.InsightViewSeries{
+					{
+						UniqueID:              "unique1",
+						SeriesID:              "1234567",
+						Title:                 "title1",
+						Description:           "desc1",
+						Query:                 "query1",
+						CreatedAt:             now,
+						OldestHistoricalAt:    now,
+						LastRecordedAt:        now,
+						NextRecordingAfter:    now,
+						RecordingIntervalDays: 1,
+						Label:                 "label1",
+						Stroke:                "color1",
+					},
+				},
+			},
+		}, nil)
+		resolver.insightMetadataStore = insightMetadataStore
 
 		// Create the insights connection resolver.
 		conn, err := resolver.Insights(ctx, nil)
@@ -98,21 +77,18 @@ func TestResolver_InsightConnection(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Mock the setting store to return the desired settings.
-		settingStore := discovery.NewMockSettingStore()
-		conn.(*insightConnectionResolver).settingStore = settingStore
-		settingStore.GetLatestFunc.SetDefaultReturn(testRealGlobalSettings, nil)
 		return ctx, conn
 	}
 
 	t.Run("TotalCount", func(t *testing.T) {
 		ctx, conn := testSetup(t)
-		totalCount, err := conn.TotalCount(ctx)
+		got, err := conn.TotalCount(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if totalCount != 2 {
-			t.Fatal("incorrect length")
+		want := int32(1)
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("incorrect number of insights (want/got): %v", diff)
 		}
 	})
 
@@ -133,21 +109,15 @@ func TestResolver_InsightConnection(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(nodes) != 2 {
+		if len(nodes) != 1 {
 			t.Fatal("incorrect length")
 		}
-		autogold.Want("first insight", map[string]interface{}{"description": "errors.Errorf/fmt.Printf usage", "title": "fmt usage"}).Equal(t, map[string]interface{}{
+		autogold.Want("first insight", map[string]interface{}{"description": "desc1", "title": "title1"}).Equal(t, map[string]interface{}{
 			"title":       nodes[0].Title(),
 			"description": nodes[0].Description(),
 		})
 		// TODO(slimsag): put series length into map (autogold bug, omits the field for some reason?)
-		autogold.Want("first insight: series length", int(2)).Equal(t, len(nodes[0].Series()))
-
-		autogold.Want("second insight", map[string]interface{}{"description": "gitserver exec & close usage", "title": "gitserver usage"}).Equal(t, map[string]interface{}{
-			"title":       nodes[1].Title(),
-			"description": nodes[1].Description(),
-		})
-		autogold.Want("second insight: series length", int(2)).Equal(t, len(nodes[1].Series()))
+		autogold.Want("first insight: series length", int(1)).Equal(t, len(nodes[0].Series()))
 	})
 }
 
@@ -155,10 +125,9 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtesting.GetDB(t)
+	postgres := dbtest.NewDB(t, "")
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
@@ -213,13 +182,35 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	setUpTest := func(ctx context.Context, t *testing.T) graphqlbackend.InsightConnectionResolver {
 
 		resolver := newWithClock(timescale, postgres, clock)
+		insightMetadataStore := store.NewMockInsightMetadataStore()
+		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
+			{
+				UniqueID:    "unique1",
+				Title:       "title1",
+				Description: "desc1",
+				Series: []types.InsightViewSeries{
+					{
+						UniqueID:              "unique1",
+						SeriesID:              "s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E",
+						Title:                 "title1",
+						Description:           "desc1",
+						Query:                 "query1",
+						CreatedAt:             now,
+						OldestHistoricalAt:    now,
+						LastRecordedAt:        now,
+						NextRecordingAfter:    now,
+						RecordingIntervalDays: 1,
+						Label:                 "label1",
+						Stroke:                "color1",
+					},
+				},
+			},
+		}, nil)
+		resolver.insightMetadataStore = insightMetadataStore
 		conn, err := resolver.Insights(ctx, &graphqlbackend.InsightsArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		settingStore := discovery.NewMockSettingStore()
-		conn.(*insightConnectionResolver).settingStore = settingStore
-		settingStore.GetLatestFunc.SetDefaultReturn(testOneGlobalSeries, nil)
 
 		return conn
 	}
@@ -278,8 +269,8 @@ func resolvePoints(ctx context.Context, conn graphqlbackend.InsightConnectionRes
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(nodes) != 1 {
-		t.Errorf("unexpected length of nodes: want: %v got: %v", 1, len(nodes))
+	if len(nodes) < 1 {
+		t.Fatalf("unexpected length of nodes: want: %v got: %v", 1, len(nodes))
 	}
 
 	expected := nodes[0]
