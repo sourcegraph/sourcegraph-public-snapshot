@@ -89,7 +89,7 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other), key: s.key, now: s.now}
 }
 
-// With creates a new Store with the given dbutil.DB handle.
+// WithDB creates a new Store with the given dbutil.DB handle.
 func (s *Store) WithDB(other dbutil.DB) *Store {
 	return &Store{Store: basestore.NewWithDB(other, sql.TxOptions{}), key: s.key, now: s.now}
 }
