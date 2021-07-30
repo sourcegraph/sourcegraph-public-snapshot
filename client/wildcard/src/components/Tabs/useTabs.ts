@@ -3,7 +3,7 @@ import { useReducer, useMemo } from 'react'
 import { TabsContext } from './context'
 import { reducer } from './reducer'
 
-export interface TabsApi {
+export interface TabsState {
     /* Tab component font size */
     size: 'small' | 'medium' | 'large'
     /* true: only load the initial tab when tab component mounts
@@ -22,7 +22,7 @@ interface UseTabs {
     contextValue: TabsContext
 }
 
-export const useTabs = ({ lazy, size, behavior }: TabsApi): UseTabs => {
+export const useTabs = ({ lazy, size, behavior }: TabsState): UseTabs => {
     const [state, dispatch] = useReducer(reducer, { lazy, size, behavior, current: 1, tabs: {} })
     const contextValue = useMemo(() => ({ state, dispatch }), [state, dispatch])
 

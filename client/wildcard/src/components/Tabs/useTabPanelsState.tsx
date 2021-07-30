@@ -18,21 +18,22 @@ interface UseTabPanelsState {
 export const useTabPanelsState = (children: React.ReactNode): UseTabPanelsState => {
     const { dispatch } = useTabsContext()
     const tabPanelArray = React.Children.toArray(children)
-    const renderTogo = useRef(false)
+    const show = useRef(false)
 
-    const tabCollection: MutableRefObject<() => Tabs> = useRef(() =>
-        tabPanelArray.reduce((accumulator: Tabs, _current, index) => {
+    useEffect(() => {
+        const tabCollection = tabPanelArray.reduce((accumulator: Tabs, _current, index) => {
             accumulator[index] = {
                 index,
                 mounted: false,
             }
             return accumulator
         }, {})
-    )
 
-    useEffect(() => {
-        dispatch({ type: 'SET_TABS', payload: { tabs: tabCollection.current() } })
-        renderTogo.current = true
+        dispatch({ type: 'SET_TABS', payload: { tabs: tabCollection } })
+        //  don't render children before tabs state is set
+        show.current = true
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch])
 
     const element = useMemo(
@@ -43,5 +44,5 @@ export const useTabPanelsState = (children: React.ReactNode): UseTabPanelsState 
         [children]
     )
 
-    return { show: renderTogo.current, element }
+    return { show: show.current, element }
 }

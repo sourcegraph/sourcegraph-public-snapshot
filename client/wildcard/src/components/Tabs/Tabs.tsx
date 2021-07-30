@@ -16,9 +16,9 @@ import { TabsContext, useTabsContext } from './context'
 import styles from './Tabs.module.scss'
 import { useTabPanelBehavior } from './useTabPanelBehavior'
 import { useTabPanelsState } from './useTabPanelsState'
-import { TabsApi, useTabs } from './useTabs'
+import { TabsState, useTabs } from './useTabs'
 
-interface TabsProps extends ReachTabsProps, TabsApi {}
+interface TabsProps extends ReachTabsProps, TabsState {}
 
 interface TabListProps extends ReachTabListProps {
     /*
@@ -71,7 +71,13 @@ export const Tab: React.FunctionComponent<TabProps> = props => {
     const { size = 'small' } = state
     const styleSize = styles[size] as keyof typeof styles
 
-    return <ReachTab className={styleSize} data-testid="wildcard-tab" {...props} />
+    return (
+        <>
+            <ReachTab className={styleSize} data-testid="wildcard-tab" {...props}>
+                <span className={styles.tabLabel}>{props.children}</span>
+            </ReachTab>
+        </>
+    )
 }
 
 export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children }) => {
@@ -80,6 +86,6 @@ export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children })
 }
 
 export const TabPanel: React.FunctionComponent = ({ children }) => {
-    const isMounted = useTabPanelBehavior()
+    const { isMounted } = useTabPanelBehavior()
     return <ReachTabPanel data-testid="wildcard-tab-panel">{isMounted ? children : null}</ReachTabPanel>
 }

@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react'
 
 import { useTabsContext, useTabsIndexContext } from './context'
 
-export const useTabPanelBehavior = (): boolean => {
+export const useTabPanelBehavior = (): { isMounted: boolean } => {
     const index = useTabsIndexContext()
     const { selectedIndex } = useReachTabsContext()
     const { state, dispatch } = useTabsContext()
@@ -43,5 +43,5 @@ export const useTabPanelBehavior = (): boolean => {
         }
     }, [behavior, currentTab.index, currentTab.mounted, lazy, selectedIndex, setMountedTab])
 
-    return currentTab.mounted
+    return { isMounted: currentTab.mounted }
 }

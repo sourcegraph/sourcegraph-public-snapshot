@@ -1,4 +1,4 @@
-import { TabsApi } from './useTabs'
+import { TabsState } from './useTabs'
 
 interface Tab {
     /* if true, Tab component is rendered */
@@ -11,7 +11,7 @@ export interface Tabs {
     [key: number]: Tab
 }
 
-export interface State extends TabsApi {
+export interface State extends TabsState {
     /* The selected tab index */
     current: number
     /* Collection of Tabs */
