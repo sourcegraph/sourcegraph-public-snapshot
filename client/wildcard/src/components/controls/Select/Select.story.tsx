@@ -4,7 +4,7 @@ import React, { useCallback } from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Select } from './Select'
+import { Select, SelectProps } from './Select'
 
 const Story: Meta = {
     title: 'wildcard/Select',
@@ -29,7 +29,7 @@ const Story: Meta = {
 // eslint-disable-next-line import/no-default-export
 export default Story
 
-export const Simple = () => {
+const BaseSelect = (props: Partial<SelectProps>) => {
     const [selected, setSelected] = React.useState('')
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
@@ -37,11 +37,40 @@ export const Simple = () => {
     }, [])
 
     return (
-        <Select label="What is your favorite fruit?" message="Hello world" value={selected} onChange={handleChange}>
-            <option value="">Select a value</option>
+        <Select label="What is your favorite fruit?" value={selected} onChange={handleChange} {...props}>
+            <option value="">Favorite fruit</option>
             <option value="apples">Apples</option>
             <option value="bananas">Bananas</option>
             <option value="oranges">Oranges</option>
         </Select>
     )
 }
+
+const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) => (
+    <>
+        <h3>Simple</h3>
+        <BaseSelect isCustomStyle={isCustomStyle} />
+        <BaseSelect isCustomStyle={isCustomStyle} isValid={false} />
+        <BaseSelect isCustomStyle={isCustomStyle} isValid={true} />
+
+        <h3>With message</h3>
+        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" />
+        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={false} />
+        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={true} />
+
+        <h3>With visual label</h3>
+        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" displayLabel={true} />
+        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" displayLabel={true} isValid={false} />
+        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" displayLabel={true} isValid={true} />
+    </>
+)
+
+export const SelectExamples: React.FunctionComponent = () => (
+    <>
+        <h1>Select</h1>
+        <h2>Native select</h2>
+        <SelectVariants />
+        <h2>Custom select</h2>
+        <SelectVariants isCustomStyle={true} />
+    </>
+)
