@@ -520,19 +520,20 @@ type ListChangesetsOpts struct {
 
 // ListChangesets lists Changesets with the given filters.
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs btypes.Changesets, next int64, err error) {
+	stx := s
 	if opts.EnforceAuthz {
 		tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 		if err != nil {
 			return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 		}
 		defer func() { err = done(err) }()
-		s = s.WithDB(tx)
+		stx = s.WithDB(tx)
 	}
 
 	q := listChangesetsQuery(&opts)
 
 	cs = make([]*btypes.Changeset, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = stx.query(ctx, q, func(sc scanner) (err error) {
 		var c btypes.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return err
