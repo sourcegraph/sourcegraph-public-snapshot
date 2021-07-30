@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -55,6 +57,8 @@ func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
 //
 // If the forEach function returns an error, pagination is stopped and the error returned.
 func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string) error) error {
+	// 🚨 SECURITY: this context will ensure that this iterator goes over all repositories
+	globalCtx := actor.WithInternalActor(ctx)
 	if a.SourcegraphDotComMode {
 		// Has the cache expired or empty? If so, refresh it.
 		if a.timeSince(a.cachedRepoNamesAge) > a.RepositoryListCacheTime || a.cachedRepoNames == nil {
@@ -63,7 +67,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
 			// forever. Instead, we use the same list of indexable repositories used when you do a global
 			// search on Sourcegraph.com.
-			res, err := a.IndexableReposLister.List(ctx)
+			res, err := a.IndexableReposLister.List(globalCtx)
 			if err != nil {
 				return errors.Wrap(err, "IndexableReposLister.List")
 			}
@@ -122,9 +126,9 @@ func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page databas
 		return cacheEntry.results, nil
 	}
 
+	trueP := true
 	repos, err := a.RepoStore.List(ctx, database.ReposListOptions{
-		// No point in trying to search uncloned repositories.
-		OnlyCloned: true,
+		Index: &trueP,
 
 		// Order by repository name.
 		OrderBy: database.RepoListOrderBy{{Field: database.RepoListName}},

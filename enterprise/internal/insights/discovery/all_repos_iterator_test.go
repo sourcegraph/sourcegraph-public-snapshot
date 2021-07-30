@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/hexops/valast"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -59,31 +60,31 @@ func TestAllReposIterator(t *testing.T) {
 	// Were the RepoStore.List calls as we expected?
 	autogold.Want("repoStoreListCalls0", []database.ReposListOptions{
 		{
-			OnlyCloned: true,
+			Index: valast.Addr(true).(*bool),
 			OrderBy: database.RepoListOrderBy{database.RepoListSort{
 				Field: database.RepoListColumn("name"),
 			}},
 			LimitOffset: &database.LimitOffset{Limit: 1000},
 		},
 		{
-			OnlyCloned: true,
-			OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
+			Index:   valast.Addr(true).(*bool),
+			OrderBy: database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 			LimitOffset: &database.LimitOffset{
 				Limit:  1000,
 				Offset: 3,
 			},
 		},
 		{
-			OnlyCloned: true,
-			OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
+			Index:   valast.Addr(true).(*bool),
+			OrderBy: database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 			LimitOffset: &database.LimitOffset{
 				Limit:  1000,
 				Offset: 6,
 			},
 		},
 		{
-			OnlyCloned: true,
-			OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
+			Index:   valast.Addr(true).(*bool),
+			OrderBy: database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 			LimitOffset: &database.LimitOffset{
 				Limit:  1000,
 				Offset: 9,
