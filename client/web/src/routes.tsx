@@ -137,7 +137,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
 
             !!props.authenticatedUser &&
             window.context.sourcegraphDotComMode &&
-            ((props.authenticatedUser && window.context.experimentalFeatures.enablePostSignupFlow) ||
+            (window.context.experimentalFeatures.enablePostSignupFlow ||
                 props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
                 <PostSignUpPage
                     authenticatedUser={props.authenticatedUser}
