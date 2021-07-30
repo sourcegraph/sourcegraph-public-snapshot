@@ -7,26 +7,20 @@ available code search and code intelligence.
 
 Not sure if Kubernetes is the right choice for you? Learn more about the various [Sourcegraph installation options](../index.md).
 
-<div class="cta-group">
-<a class="btn btn-primary" href="#installation">★ Installation</a>
-<a class="btn" href="operations">Operations guides</a>
-<a class="btn" href="../../../#get-help">Get help</a>
-</div>
-
 ## About
 
 ### Kubernetes
 
-Kubernetes is a portable, extensible, open-source platform for managing containerized workloads and services, that facilitates both declarative configuration and automation. Applications are deployed via set a of YAML files to configure the various components (storage, networking, containers). Learn more about Kubernetes [here](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/). 
+Kubernetes is a portable, extensible, open-source platform for managing containerized workloads and services, that facilitates both declarative configuration and automation. Applications are deployed via set a of YAML files to configure the various components (storage, networking, containers). Learn more about Kubernetes [here](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/).
 
 Installing Sourcgraph on Kubernetes has the following requirements:
 
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
 - [Kubernetes](https://kubernetes.io/) v1.15
   - Verify that you have enough capacity by following our [resource allocation guidelines](scale.md)
-  - Sourcegraph requires an SSD backed [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/) for [persistent storage](https://kubernetes.io/docs/concepts/storage/persistent-volumes/). See 
+  - Sourcegraph requires an SSD backed [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/) for [persistent storage](https://kubernetes.io/docs/concepts/storage/persistent-volumes/). See
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
-- [PostgreSQL Database](https://www.postgresql.org/) 
+- [PostgreSQL Database](https://www.postgresql.org/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later (run `kubectl version` for version info)
   - [Configure cluster access](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) for `kubectl`
 
@@ -45,17 +39,17 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
  ### Configuration
 
-Before proceeding with the install steps, we recommend reading [configuration guide](configuration.md) ensuring you have the following items prepared for installation.
+Before proceeding with the install steps, we recommend reading [configuration guide](configure.md) ensuring you have the following items prepared for installation.
 
  - [Customizations](./overlays.md)
  - [Storage class](./configure.md#configure-a-storage-class)
  - [Network Acess](./configure.md#security-configure-network-access)
- - [PostgreSQL Database](./configure#sourcegraph-databases)
- - [Scaling services](./scale#tuning-replica-counts-for-horizontal-scalability)
- 
+ - [PostgreSQL Database](./configure.md#sourcegraph-databases)
+ - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
+
 ## Steps
 
-1) After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`. 
+1) After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 
 ```bash
 # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes.
@@ -101,7 +95,7 @@ kubectl port-forward svc/sourcegraph-frontend 3080:30080
 
 Run the following command, and ensure an IP address has been assigned to your ingress resource. Then browse to the IP or configured URL.
 ```
-kubectl get ingress sourcegraph-frontend 
+kubectl get ingress sourcegraph-frontend
 
 NAME                   CLASS    HOSTS             ADDRESS     PORTS     AGE
 sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
