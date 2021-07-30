@@ -25,6 +25,7 @@ type Config struct {
 	QueuePollInterval    time.Duration
 	MaximumNumJobs       int
 	FirecrackerImage     string
+	VMPrefix             string
 	UseFirecracker       bool
 	FirecrackerNumCPUs   int
 	FirecrackerMemory    string
@@ -33,6 +34,7 @@ type Config struct {
 	DisableHealthServer  bool
 	HealthServerPort     int
 	MaximumRuntimePerJob time.Duration
+	CleanupTaskInterval  time.Duration
 }
 
 func (c *Config) Load() {
@@ -44,6 +46,7 @@ func (c *Config) Load() {
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", "true", "Whether to isolate commands in virtual machines.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
+	c.VMPrefix = c.Get("EXECUTOR_VM_PREFIX", "executor", "A name prefix for virtual machines controlled by this instance.")
 	c.FirecrackerNumCPUs = c.GetInt("EXECUTOR_FIRECRACKER_NUM_CPUS", "4", "How many CPUs to allocate to each virtual machine or container.")
 	c.FirecrackerMemory = c.Get("EXECUTOR_FIRECRACKER_MEMORY", "12G", "How much memory to allocate to each virtual machine or container.")
 	c.FirecrackerDiskSpace = c.Get("EXECUTOR_FIRECRACKER_DISK_SPACE", "20G", "How much disk space to allocate to each virtual machine or container.")
@@ -51,6 +54,7 @@ func (c *Config) Load() {
 	c.DisableHealthServer = c.GetBool("EXECUTOR_DISABLE_HEALTHSERVER", "false", "Whether or not to disable the health server.")
 	c.HealthServerPort = c.GetInt("EXECUTOR_HEALTH_SERVER_PORT", "3192", "The port to listen on for the health server.")
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
+	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 }
 
 func (c *Config) Validate() error {
@@ -64,6 +68,7 @@ func (c *Config) Validate() error {
 
 func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options {
 	return apiworker.Options{
+		VMPrefix:             c.VMPrefix,
 		QueueName:            c.QueueName,
 		WorkerOptions:        c.WorkerOptions(),
 		FirecrackerOptions:   c.FirecrackerOptions(),
