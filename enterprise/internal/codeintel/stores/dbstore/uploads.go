@@ -137,7 +137,7 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return Upload{}, false, err
 	}
@@ -198,7 +198,7 @@ func (s *Store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []Upload, er
 		return nil, nil
 	}
 
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +306,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, 0, err
 	}

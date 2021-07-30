@@ -29,7 +29,7 @@ const ensureAuthzCondsFmt = `
 	SET LOCAL rls.permission = read;
 `
 
-func WithAuthzConds(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) error, error) {
+func WithEnforcedAuthz(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) error, error) {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 	inTransaction := handle.InTransaction()
 

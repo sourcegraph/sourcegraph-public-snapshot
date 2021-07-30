@@ -259,7 +259,7 @@ type CountChangesetsOpts struct {
 // CountChangesets returns the number of changesets in the database.
 func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (count int, err error) {
 	if opts.EnforceAuthz {
-		tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+		tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 		if err != nil {
 			return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
 		}
@@ -521,7 +521,7 @@ type ListChangesetsOpts struct {
 // ListChangesets lists Changesets with the given filters.
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs btypes.Changesets, next int64, err error) {
 	if opts.EnforceAuthz {
-		tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+		tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 		if err != nil {
 			return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 		}
@@ -1149,7 +1149,7 @@ WHERE
 
 // GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
 func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (rstats *btypes.RepoChangesetsStats, err error) {
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
 	}

@@ -118,7 +118,7 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return Index{}, false, err
 	}
@@ -184,7 +184,7 @@ func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err
 		return nil, nil
 	}
 
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +248,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, 0, err
 	}

@@ -699,7 +699,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	tr.LogFields(trace.SQL(q))
 
-	tx, cleanup, err := WithAuthzConds(ctx, s.Handle().DB())
+	tx, cleanup, err := WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return err
 	}

@@ -284,7 +284,7 @@ type GetBatchChangeDiffStatOpts struct {
 }
 
 func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (stat *diff.Stat, err error) {
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}
@@ -322,7 +322,7 @@ func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts) *sqlf.Query {
 }
 
 func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *diff.Stat, err error) {
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
 	}
@@ -376,7 +376,7 @@ type ListBatchChangesOpts struct {
 
 // ListBatchChanges lists batch changes with the given filters.
 func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*btypes.BatchChange, next int64, err error) {
-	tx, done, err := database.WithAuthzConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
 	}
