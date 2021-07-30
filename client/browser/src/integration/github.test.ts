@@ -1,12 +1,10 @@
 import assert from 'assert'
 
-import delay from 'delay'
 import expect from 'expect'
-import type * as sourcegraph from 'sourcegraph'
 
-import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
@@ -17,9 +15,6 @@ describe('GitHub', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest({ loadExtension: true })
-        // TODO(tj): Add retries in case this delay isn't large enough in CI
-        // If RECORD=false, we may be able to skip this!
-        await delay(1000)
         await closeInstallPageTab(driver.browser)
         if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
@@ -103,16 +98,14 @@ describe('GitHub', () => {
     })
 
     it('shows hover tooltips when hovering a token', async () => {
-        const userSettings: Settings = {
-            extensions: {
-                'test/test': true,
-            },
-        }
-        const extensionManifest: ExtensionManifest = {
-            url: new URL('/-/static/extension/0001-test-test.js?hash--test-test', driver.sourcegraphBaseUrl).href,
-            activationEvents: ['*'],
-        }
+        const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
+            pollyServer: testContext.server,
+            sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
+        })
 
+        const userSettings: Settings = {
+            extensions: extensionSettings,
+        }
         testContext.overrideGraphQL({
             ViewerConfiguration: () => ({
                 viewerConfiguration: {
@@ -133,61 +126,14 @@ describe('GitHub', () => {
                     merged: { contents: JSON.stringify(userSettings), messages: [] },
                 },
             }),
-            Extensions: () => ({
-                extensionRegistry: {
-                    extensions: {
-                        nodes: [
-                            {
-                                id: 'TestExtensionID',
-                                extensionID: 'test/test',
-                                manifest: {
-                                    raw: JSON.stringify(extensionManifest),
-                                },
-                                url: '/extensions/test/test',
-                                viewerCanAdminister: false,
-                            },
-                        ],
-                    },
-                },
-            }),
+            Extensions,
         })
 
-        // Serve a mock extension bundle with a simple hover provider
-        testContext.server
-            .get(new URL(extensionManifest.url, driver.sourcegraphBaseUrl).href)
-            .intercept((request, response) => {
-                function extensionBundle(): void {
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-                    const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
-
-                    function activate(context: sourcegraph.ExtensionContext): void {
-                        context.subscriptions.add(
-                            sourcegraph.languages.registerHoverProvider(['*'], {
-                                // Ensure that the correct token info reaches the extension
-                                provideHover: (document, position) => {
-                                    const range = document.getWordRangeAtPosition(position)
-                                    const token = document.getText(range)
-                                    if (!token) {
-                                        return null
-                                    }
-                                    return {
-                                        contents: {
-                                            value: `User is hovering over ${token}`,
-                                            kind: sourcegraph.MarkupKind.Markdown,
-                                        },
-                                        range,
-                                    }
-                                },
-                            })
-                        )
-                    }
-
-                    exports.activate = activate
-                }
-                // Create an immediately-invoked function expression for the extensionBundle function
-                const extensionBundleString = `(${extensionBundle.toString()})()`
-                response.type('application/javascript; charset=utf-8').send(extensionBundleString)
-            })
+        // Serve a mock extension with a simple hover provider
+        mockExtension({
+            id: 'simple/hover',
+            bundle: simpleHoverProvider,
+        })
 
         await driver.page.goto(
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
@@ -195,7 +141,6 @@ describe('GitHub', () => {
         await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
 
         // Pause to give codeintellify time to register listeners for
-        // tokenization (only necessary in CI, not sure why).
         await driver.page.waitForTimeout(1000)
 
         const lineSelector = '.js-file-line-container tr'

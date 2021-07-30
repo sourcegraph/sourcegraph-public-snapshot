@@ -9,9 +9,17 @@ import puppeteer from 'puppeteer'
  * start the browser (with the browser extension loaded).
  */
 export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<void> {
-    const pages = await browser.pages()
-    const installPage = pages.find(page => page.url().endsWith('/after_install.html'))
-    if (installPage) {
-        await installPage.close()
+    // Sometimes the install page isn't open by the time we try to close it.
+    // Try to close the install page as quickly as possible, retry until it's open.
+    let tries = 0
+    while (tries < 5) {
+        const pages = await browser.pages()
+        const installPage = pages.find(page => page.url().endsWith('/after_install.html'))
+        if (installPage) {
+            await installPage.close()
+            return
+        }
+        await new Promise(resolve => setTimeout(resolve, 200))
+        tries++
     }
 }
