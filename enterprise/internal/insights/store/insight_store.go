@@ -218,7 +218,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 365)
+		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 7 * 26)
 	}
 	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightSeriesSql,
 		series.SeriesID,
