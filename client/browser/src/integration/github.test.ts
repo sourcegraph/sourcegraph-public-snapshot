@@ -1,7 +1,5 @@
 import assert from 'assert'
 
-import expect from 'expect'
-
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
@@ -30,13 +28,11 @@ describe('GitHub', () => {
             directory: __dirname,
         })
 
+        // Requests to other origins that we need to ignore to prevent breaking tests.
         testContext.server.get('https://collector.githubapp.com/*').intercept((request, response) => {
             response.sendStatus(200)
         })
         testContext.server.any('https://api.github.com/_private/browser/*').intercept((request, response) => {
-            response.sendStatus(200)
-        })
-        testContext.server.any('http://localhost:8890/*').intercept((request, response) => {
             response.sendStatus(200)
         })
 
@@ -85,7 +81,7 @@ describe('GitHub', () => {
         )
 
         await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
-        expect(await driver.page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
+        assert.strictEqual((await driver.page.$$('.code-view-toolbar .open-on-sourcegraph')).length, 1)
 
         await retry(async () => {
             assert.strictEqual(
@@ -141,6 +137,7 @@ describe('GitHub', () => {
         await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
 
         // Pause to give codeintellify time to register listeners for
+        // tokenization (only necessary in CI, not sure why).
         await driver.page.waitForTimeout(1000)
 
         const lineSelector = '.js-file-line-container tr'
@@ -160,4 +157,6 @@ describe('GitHub', () => {
             },
         })
     })
+
+    // TODO(tj): simple test for pull request pages.
 })

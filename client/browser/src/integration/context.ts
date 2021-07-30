@@ -47,6 +47,10 @@ export const createBrowserIntegrationTestContext = async ({
 
     sharedTestContext.server.any(`chrome-extension://${host ?? 'bmfbcejdknlknpncfpeloejonjoledha'}/*rest`).passthrough()
 
+    sharedTestContext.server.any('http://localhost:8890/*').intercept((request, response) => {
+        response.sendStatus(200)
+    })
+
     return {
         ...sharedTestContext,
     }
