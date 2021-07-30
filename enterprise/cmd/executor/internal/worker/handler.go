@@ -16,6 +16,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -31,6 +32,31 @@ type handler struct {
 }
 
 var _ workerutil.Handler = &handler{}
+var _ workerutil.WithPreDequeue = &handler{}
+
+// PreDequeue determines if the number of VMs with the current instance's VM Prefix is less than
+// the maximum number of concurrent handlers. If so, then a new job can be dequeued. Otherwise,
+// we have an orphaned VM somewhere on the host that will be cleaned up by the background janitor
+// process - refuse to dequeue a job for now so that we do not over-commit on VMs and cause issues
+// with keeping our heartbeats due to machine load. We'll continue to check this condition on the
+// polling interval
+func (h *handler) PreDequeue(ctx context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error) {
+	if !h.options.FirecrackerOptions.Enabled {
+		return true, nil, nil
+	}
+
+	currentVMs, err := ignite.CurrentlyRunningVMs(context.Background(), h.options.VMPrefix)
+	if err != nil {
+		return false, nil, err
+	}
+
+	if len(currentVMs) < h.options.WorkerOptions.NumHandlers {
+		return true, nil, nil
+	}
+
+	log15.Warn("Orphaned VMs detected - refusing to dequeue a new job until it's cleaned up", "numCurrentVMs", len(currentVMs), "numHandlers", h.options.WorkerOptions.NumHandlers)
+	return false, nil, nil
+}
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
@@ -101,7 +127,8 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 
 	// Construct a unique name for the VM prefixed by something that differentiates
 	// VMs created by this executor instance and another one that happens to run on
-	// the same host (as is the case in dev).
+	// the same host (as is the case in dev). This prefix is expected to match the
+	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
 	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, vmNameSuffix.String())
 
 	// Before we setup a VM (and after we teardown), mark the name as in-use so that
