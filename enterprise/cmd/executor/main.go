@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -57,6 +58,8 @@ func main() {
 			config.CleanupTaskInterval,
 			janitor.NewMetrics(observationContext),
 		))
+
+		mustRegisterVMCountMetric(observationContext, config.VMPrefix)
 	}
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
@@ -71,4 +74,18 @@ func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
 	return workerutil.NewMetrics(observationContext, "executor_processor", map[string]string{
 		"queue": queueName,
 	})
+}
+
+func mustRegisterVMCountMetric(observationContext *observation.Context, prefix string) {
+	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_executor_vms_total",
+		Help: "Total number of running VMs.",
+	}, func() float64 {
+		runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), prefix, false)
+		if err != nil {
+			log15.Error("Failed to determine number of running VMs", "error", err)
+		}
+
+		return float64(len(runningVMsByName))
+	}))
 }
