@@ -4,6 +4,8 @@ import React, { useCallback } from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Grid } from '../../Grid/Grid'
+
 import { Select, SelectProps } from './Select'
 
 const Story: Meta = {
@@ -49,14 +51,18 @@ const BaseSelect = (props: Partial<SelectProps>) => {
 const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) => (
     <>
         <h3>Simple</h3>
-        <BaseSelect isCustomStyle={isCustomStyle} />
-        <BaseSelect isCustomStyle={isCustomStyle} isValid={false} />
-        <BaseSelect isCustomStyle={isCustomStyle} isValid={true} />
+        <Grid columnCount={3}>
+            <BaseSelect isCustomStyle={isCustomStyle} />
+            <BaseSelect isCustomStyle={isCustomStyle} isValid={false} />
+            <BaseSelect isCustomStyle={isCustomStyle} isValid={true} />
+        </Grid>
 
         <h3>With message</h3>
-        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" />
-        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={false} />
-        <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={true} />
+        <Grid columnCount={3}>
+            <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" />
+            <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={false} />
+            <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={true} />
+        </Grid>
     </>
 )
 
