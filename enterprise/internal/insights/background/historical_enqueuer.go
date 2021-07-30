@@ -235,7 +235,7 @@ type historicalEnqueuer struct {
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Discover all insights on the instance.
-	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: h.now()})
+	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
