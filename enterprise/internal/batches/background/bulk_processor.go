@@ -238,13 +238,20 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 		b.ch.UiPublicationState = &btypes.ChangesetUiPublicationStatePublished
 	}
 
-	// Reset the reconciler state.
-	b.ch.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
-
-	// And finally update the changeset record.
-	if err := b.tx.UpdateChangeset(ctx, b.ch); err != nil {
-		log15.Error("UpdateChangeset", "err", err)
+	// We do two UPDATE queries here:
+	// 1. Update only the changeset's UiPublicationState in the database, trying not
+	//    to overwrite any other data.
+	// 2. Updates only the worker/reconciler-related columns to enqueue the
+	//    changeset.
+	if err := b.tx.UpdateChangesetUiPublicationState(ctx, b.ch); err != nil {
+		log15.Error("UpdateChangesetUiPublicationState", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
+
+	if err := b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), ""); err != nil {
+		log15.Error("EnqueueChangeset", "err", err)
+		return errcode.MakeNonRetryable(err)
+	}
+
 	return nil
 }
