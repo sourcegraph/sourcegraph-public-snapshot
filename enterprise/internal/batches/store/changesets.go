@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -129,12 +130,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		return nil, err
 	}
 
-	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))
-	for _, assoc := range c.BatchChanges {
-		assocsAsMap[assoc.BatchChangeID] = assoc
-	}
-
-	batchChanges, err := json.Marshal(assocsAsMap)
+	batchChanges, err := batchChangesColumn(c)
 	if err != nil {
 		return nil, err
 	}
@@ -710,6 +706,47 @@ RETURNING
   %s
 `
 
+// UpdateChangesetBatchChanges updates only the `batch_changes` column of the
+// given Changeset.
+func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Changeset) error {
+	cs.UpdatedAt = s.now()
+
+	q, err := updateChangesetBatchChangesQuery(cs)
+	if err != nil {
+		return err
+	}
+
+	return s.query(ctx, q, func(sc scanner) (err error) {
+		return scanChangeset(cs, sc)
+	})
+}
+
+func updateChangesetBatchChangesQuery(c *btypes.Changeset) (*sqlf.Query, error) {
+	batchChanges, err := batchChangesColumn(c)
+	if err != nil {
+		return nil, err
+	}
+
+	vars := []interface{}{
+		sqlf.Sprintf("updated_at, batch_change_ids"),
+		c.UpdatedAt,
+		batchChanges,
+		c.ID,
+		sqlf.Join(ChangesetColumns, ", "),
+	}
+
+	return sqlf.Sprintf(updateChangesetBatchChangesQueryFmtstr, vars...), nil
+}
+
+var updateChangesetBatchChangesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:UpdateChangesetBatchChanges
+UPDATE changesets
+SET (%s) = (%s, %s)
+WHERE id = %s
+RETURNING
+  %s
+`
+
 // UpdateChangesetCodeHostState updates only the columns of the given Changeset
 // that relate to the state of the changeset on the code host, e.g.
 // external_branch, external_state, etc.
@@ -999,6 +1036,10 @@ func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
 		assoc.BatchChangeID = id
 		*n.Assocs = append(*n.Assocs, assoc)
 	}
+
+	sort.Slice(*n.Assocs, func(i, j int) bool {
+		return (*n.Assocs)[i].BatchChangeID < (*n.Assocs)[j].BatchChangeID
+	})
 
 	return nil
 }
@@ -1315,3 +1356,12 @@ FROM (
 		AND %s
 ) AS fcs;
 `
+
+func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
+	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))
+	for _, assoc := range c.BatchChanges {
+		assocsAsMap[assoc.BatchChangeID] = assoc
+	}
+
+	return json.Marshal(assocsAsMap)
+}

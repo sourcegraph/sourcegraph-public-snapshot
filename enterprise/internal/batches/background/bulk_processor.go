@@ -124,13 +124,14 @@ func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) er
 		return nil
 	}
 
-	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
-
-	// We do two `UPDATE` queries here: first we update all of the changesets
-	// columns to refelct the changes made here in the bulkProcessor. Then,
-	// with `EnqueueChangeset`, we do a second UPDATE that only updates the
-	// worker/reconciler-related columns.
-	if err := b.tx.UpdateChangeset(ctx, b.ch); err != nil {
+	// If we successfully marked the record as to-be-detached, we save the
+	// updated associations and trigger a reconciler run with two `UPDATE`
+	// queries:
+	// 1. Update only the changeset's BatchChanges in the database, trying not
+	//    to overwrite any other data.
+	// 2. Updates only the worker/reconciler-related columns to enqueue the
+	//    changeset.
+	if err := b.tx.UpdateChangesetBatchChanges(ctx, b.ch); err != nil {
 		return err
 	}
 
