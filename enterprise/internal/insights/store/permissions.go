@@ -4,9 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/keegancsmith/sqlf"
-
 	"github.com/cockroachdb/errors"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
