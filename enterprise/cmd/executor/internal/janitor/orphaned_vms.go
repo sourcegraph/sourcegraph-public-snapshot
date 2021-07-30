@@ -20,6 +20,7 @@ type orphanedVMJanitor struct {
 }
 
 var _ goroutine.Handler = &orphanedVMJanitor{}
+var _ goroutine.ErrorHandler = &orphanedVMJanitor{}
 
 // NewOrphanedVMJanitor returns a background routine that periodically removes all VMs
 // on the host that are not known by the worker running within this executor instance.
