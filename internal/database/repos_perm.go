@@ -18,7 +18,8 @@ import (
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
 
-// ensure you use LOCAL to clear after tx
+// Using LOCAL ensures that these settings are applied only within the context
+// of a transaction. If used outside one, Postgres will return an error.
 const ensureAuthzCondsFmt = `
 	SET LOCAL ROLE sg_service;
 	SET LOCAL rls.bypass = %v;
@@ -27,9 +28,11 @@ const ensureAuthzCondsFmt = `
 	SET LOCAL rls.permission = read;
 `
 
-// WithEnforcedAuthz sets up role based permission checking. It returns a new
-// dbutil.DB that has role based permissions enabled and a function that should
-// be called when you are finished using it.
+// WithEnforcedAuthz lowers the privileges of the current transaction by adopting
+// a different role that is subject to row-level security policies.
+//
+// It returns a new dbutil.DB with row-level security settings configured, and a
+// function that should be called when you are finished using it.
 func WithEnforcedAuthz(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error) error, error) {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 	inTransaction := handle.InTransaction()
@@ -38,8 +41,6 @@ func WithEnforcedAuthz(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error
 	if err != nil {
 		return nil, nil, err
 	}
-
-	// Copied from AuthzQueryConds below
 
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
@@ -68,8 +69,6 @@ func WithEnforcedAuthz(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error
 		authenticatedUserID = currentUser.ID
 		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 	}
-
-	// End of copy
 
 	// If we're in dotcom mode, and we're authenticated, NEVER bypass authz.
 	if envvar.SourcegraphDotComMode() && authenticatedUserID > 0 {
