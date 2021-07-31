@@ -80,7 +80,7 @@ func (l *Locker) Lock(ctx context.Context, key int32, blocking bool) (locked boo
 		return false, nil, err
 	}
 
-	return true, func(err error) error { return tx.Done(err) }, nil
+	return true, tx.Done, nil
 }
 
 // ErrNoTransaction occurs when LockInTransaction is called outside of a transaction.
