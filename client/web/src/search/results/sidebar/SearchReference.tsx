@@ -214,7 +214,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         field: FilterType.select,
         commonRank: 50,
         description:
-            'Shows only query results for a given type. For example, `select:repo` displays only distinct reopsitory paths from search results. See [language definition](https://docs.sourcegraph.com/code_search/reference/language#select) for possible values.',
+            'Shows only query results for a given type. For example, `select:repo` displays only distinct repository paths from search results. See [language definition](https://docs.sourcegraph.com/code_search/reference/language#select) for possible values.',
         examples: ['fmt.Errorf select:repo'],
     },
     {
