@@ -10,7 +10,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { eventLogger } from '../../tracking/eventLogger'
 import styles from '../FeatureTour.module.scss'
 import { SubmitSearchParameters } from '../helpers'
 import { getTourOptions, HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, useFeatureTour } from '../useFeatureTour'
