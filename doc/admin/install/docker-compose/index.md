@@ -51,6 +51,9 @@ To get started, [configure Sourcegraph with Docker Compose](./operations.md#conf
 ```bash
 # Move into configuration directory
 cd deploy-sourcegraph-docker/docker-compose
+# Check out the latest Sourcegraph release
+export SOURCEGRAPH_VERSION="v3.31.0"
+git checkout $SOURCEGRAPH_VERSION
 # Spin up Sourcegraph!
 docker-compose up -d
 ```

@@ -29,7 +29,7 @@
     // instead of pushing them to GitHub.
     "dryRun": {
         "tags": false,
-        "changesets": false,
+        "changesets": true,
         "trackingIssues": false,
         "calendar": false
     }
