@@ -56,7 +56,7 @@ export function releaseTrackingBatchChange(version: string, cliConfig: Sourcegra
  * Does not ensure the batch change exists.
  */
 export function batchChangeURL(options: BatchChangeOptions): string {
-    return `${options.cliConfig.SRC_ENDPOINT}/organizations/${options.namespace}/batch changes/${options.name}`
+    return `${options.cliConfig.SRC_ENDPOINT}/organizations/${options.namespace}/batch-changes/${options.name}`
 }
 
 /**
