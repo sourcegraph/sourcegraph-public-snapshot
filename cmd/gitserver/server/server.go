@@ -1400,7 +1400,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 		// Update the DB with the last fetched time
 		if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-			return err
+			return errors.Wrap(err, "update last fetched time")
 		}
 
 		// Set gitattributes
@@ -1714,7 +1714,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 
 	// Update the DB with the last fetched time
 	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-		return err
+		return errors.Wrap(err, "update last fetched time")
 	}
 
 	return nil
