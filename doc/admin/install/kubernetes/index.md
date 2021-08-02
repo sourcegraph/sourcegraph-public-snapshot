@@ -49,7 +49,7 @@ Before proceeding with the install steps, we recommend reading [configuration gu
 
 ## Steps
 
-1) After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
+1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 
 ```bash
 # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes.
