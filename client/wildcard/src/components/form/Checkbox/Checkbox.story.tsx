@@ -4,9 +4,12 @@ import React, { useCallback } from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Grid } from '../../Grid'
+import { BaseControlInputProps } from '../internal/BaseControlInput'
+
 import { Checkbox } from './Checkbox'
 
-const Story: Meta = {
+const config: Meta = {
     title: 'wildcard/Checkbox',
 
     decorators: [
@@ -27,38 +30,48 @@ const Story: Meta = {
 }
 
 // eslint-disable-next-line import/no-default-export
-export default Story
+export default config
 
-export const Simple = () => {
-    const [selected, setSelected] = React.useState('')
+const BaseCheckbox = (props: Pick<BaseControlInputProps, 'id' | 'isValid' | 'disabled'>) => {
+    const [isChecked, setChecked] = React.useState(false)
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setSelected(event.target.value)
+        setChecked(event.target.checked)
     }, [])
 
     return (
-        <>
-            <Checkbox
-                value="first"
-                checked={selected === 'first'}
-                onChange={handleChange}
-                label="First"
-                message="Hello world!"
-            />
-            <Checkbox
-                value="second"
-                checked={selected === 'second'}
-                onChange={handleChange}
-                label="Second"
-                message="Hello world!"
-            />
-            <Checkbox
-                value="third"
-                checked={selected === 'third'}
-                onChange={handleChange}
-                label="Third"
-                message="Hello world!"
-            />
-        </>
+        <Checkbox
+            name="example-1"
+            value="first"
+            checked={isChecked}
+            onChange={handleChange}
+            label="First"
+            message="Hello world!"
+            {...props}
+        />
     )
 }
+
+export const CheckboxExamples: React.FunctionComponent = () => (
+    <>
+        <h1>Checkbox</h1>
+        <Grid columnCount={4}>
+            <div>
+                <h2>Standard</h2>
+                <BaseCheckbox id="standard-example" />
+            </div>
+            <div>
+                <h2>Valid</h2>
+                <BaseCheckbox id="valid-example" isValid={true} />
+            </div>
+            <div>
+                <h2>Invalid</h2>
+                <BaseCheckbox id="invalid-example" isValid={false} />
+            </div>
+            <div>
+                <h2>Disabled</h2>
+                <BaseCheckbox id="disabled-example" disabled={true} />
+            </div>
+        </Grid>
+    </>
+)

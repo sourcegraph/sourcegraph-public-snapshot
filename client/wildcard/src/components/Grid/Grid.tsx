@@ -16,6 +16,9 @@ export interface GridProps {
     spacing?: number
 }
 
+/**
+ * Dynamically generate the <Grid> style from provided props
+ */
 const getGridStyle = (columnCount: number, spacing: number): CSSProperties => ({
     display: 'grid',
     gap: `${spacing}rem`,
@@ -23,7 +26,7 @@ const getGridStyle = (columnCount: number, spacing: number): CSSProperties => ({
     marginBottom: `${spacing}rem`,
 })
 
-/** A container wrapper. Used for grouping content together. */
+/** A simple Grid component. Can be configured to display a number of columns with different gutter spacing. */
 export const Grid: React.FunctionComponent<GridProps> = ({ children, columnCount = 3, spacing = 1, className }) => (
     <div
         // We use `style` here to dynamically generate the grid styles.

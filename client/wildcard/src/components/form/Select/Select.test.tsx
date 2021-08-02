@@ -6,7 +6,7 @@ import { Select, SelectProps } from './Select'
 describe('Select', () => {
     const renderSelect = (selectProps?: Partial<SelectProps>) =>
         render(
-            <Select label="What is your favorite fruit?" {...selectProps}>
+            <Select id="test" label="What is your favorite fruit?" {...selectProps}>
                 <option value="">Select a value</option>
                 <option value="apples">Apples</option>
                 <option value="bananas">Bananas</option>

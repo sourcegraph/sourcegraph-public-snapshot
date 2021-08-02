@@ -31,7 +31,7 @@ const Story: Meta = {
 // eslint-disable-next-line import/no-default-export
 export default Story
 
-const BaseSelect = (props: Partial<SelectProps>) => {
+const BaseSelect = (props: Pick<SelectProps, 'id' | 'isCustomStyle' | 'isValid' | 'disabled'>) => {
     const [selected, setSelected] = React.useState('')
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
@@ -39,7 +39,13 @@ const BaseSelect = (props: Partial<SelectProps>) => {
     }, [])
 
     return (
-        <Select label="What is your favorite fruit?" value={selected} onChange={handleChange} {...props}>
+        <Select
+            label="What is your favorite fruit?"
+            message="I am a message"
+            value={selected}
+            onChange={handleChange}
+            {...props}
+        >
             <option value="">Favorite fruit</option>
             <option value="apples">Apples</option>
             <option value="bananas">Bananas</option>
@@ -48,30 +54,36 @@ const BaseSelect = (props: Partial<SelectProps>) => {
     )
 }
 
-const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) => (
-    <>
-        <h3>Simple</h3>
-        <Grid columnCount={3}>
-            <BaseSelect isCustomStyle={isCustomStyle} />
-            <BaseSelect isCustomStyle={isCustomStyle} isValid={false} />
-            <BaseSelect isCustomStyle={isCustomStyle} isValid={true} />
+const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) => {
+    const idPrefix = isCustomStyle ? 'custom' : 'native'
+    return (
+        <Grid columnCount={4}>
+            <div>
+                <h2>Standard</h2>
+                <BaseSelect id={`${idPrefix}-standard`} isCustomStyle={isCustomStyle} />
+            </div>
+            <div>
+                <h2>Valid</h2>
+                <BaseSelect id={`${idPrefix}-valid`} isCustomStyle={isCustomStyle} isValid={false} />
+            </div>
+            <div>
+                <h2>Invalid</h2>
+                <BaseSelect id={`${idPrefix}-invalid`} isCustomStyle={isCustomStyle} isValid={true} />
+            </div>
+            <div>
+                <h2>Disabled</h2>
+                <BaseSelect id={`${idPrefix}-disabled`} isCustomStyle={isCustomStyle} disabled={true} />
+            </div>
         </Grid>
-
-        <h3>With message</h3>
-        <Grid columnCount={3}>
-            <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" />
-            <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={false} />
-            <BaseSelect isCustomStyle={isCustomStyle} message="I am a message" isValid={true} />
-        </Grid>
-    </>
-)
+    )
+}
 
 export const SelectExamples: React.FunctionComponent = () => (
     <>
         <h1>Select</h1>
-        <h2>Native select</h2>
+        <h2>Native</h2>
         <SelectVariants />
-        <h2>Custom select</h2>
+        <h2>Custom</h2>
         <SelectVariants isCustomStyle={true} />
     </>
 )

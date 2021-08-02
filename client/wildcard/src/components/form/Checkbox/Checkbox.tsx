@@ -1,7 +1,19 @@
 import React from 'react'
 
-import { BaseControlInput } from '../internal/BaseControlInput'
+import { BaseControlInput, BaseControlInputProps } from '../internal/BaseControlInput'
 
-export const Checkbox: typeof BaseControlInput = React.forwardRef((props, reference) => (
+export interface CheckboxProps extends BaseControlInputProps {}
+
+/**
+ * Renders a single checkbox.
+ *
+ * Checkboxes should be used when a user can select any number of choices from a list of options.
+ * They can often be used stand-alone, for a single option that a user can turn on or off.
+ *
+ * Grouped checkboxes should be visually presented together.
+ *
+ * Useful article comparing checkboxes to radio buttons: https://www.nngroup.com/articles/checkboxes-vs-radio-buttons/
+ */
+export const Checkbox: React.FunctionComponent<CheckboxProps> = React.forwardRef((props, reference) => (
     <BaseControlInput {...props} type="checkbox" ref={reference} />
 ))
