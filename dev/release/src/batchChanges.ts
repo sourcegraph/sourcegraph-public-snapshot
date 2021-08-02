@@ -141,7 +141,7 @@ async function applyBatchChange(batchChange: BatchChangeSpec, options: BatchChan
     console.log(`Rendered batch change spec:\n\n${batchChangeYAML}`)
 
     // apply the batch change
-    await execa('src', ['batch change', 'apply', '-namespace', options.namespace, '-f', '-'], {
+    await execa('src', ['batch', 'apply', '-namespace', options.namespace, '-f', '-'], {
         stdout: 'inherit',
         input: batchChangeYAML,
         env: options.cliConfig,

@@ -642,7 +642,7 @@ Batch change: ${batchChangeURL}`,
         id: '_test:batchchange-create-from-changes',
         description: 'Test batch changes integration',
         argNames: ['batchchangeConfigJSON'],
-        // Example: yarn run release _test:batchchange-create-from-changes "$(cat ./.secrets/import.json)"
+        // Example: yarn run release _test:batchchange-create-from-changes "$(cat ./.secrets/test-batch-change-import.json)"
         run: async (_config, batchchangeConfigJSON) => {
             const batchChangeConfig = JSON.parse(batchchangeConfigJSON) as {
                 changes: CreatedChangeset[]
