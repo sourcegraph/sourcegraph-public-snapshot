@@ -41,7 +41,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
 
     return (
         <>
-            <div className="mb-4">
+            <div className="mb-4 mt-5">
                 <h3>Connect with code hosts</h3>
                 <p className="text-muted">
                     Connect with providers where your source code is hosted. Then, choose the repositories you’d like to

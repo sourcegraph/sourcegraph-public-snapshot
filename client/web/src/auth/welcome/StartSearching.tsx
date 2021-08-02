@@ -41,7 +41,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
     const { externalServices } = useExternalServices(user.id)
     const saveSelectedRepos = useSaveSelectedRepos()
 
-    const { repos: cloningStatusLines, loading: cloningStatusLoading, isDoneCloning } = useRepoCloningStatus({
+    const {
+        repos: cloningStatusLines,
+        statusSummary,
+        loading: cloningStatusLoading,
+        isDoneCloning,
+    } = useRepoCloningStatus({
         userId: user.id,
         pollInterval: 2000,
         selectedReposVar,
@@ -87,14 +92,17 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
     }, [currentIndex, setComplete, showAlert, isDoneCloning])
 
     return (
-        <>
+        <div className="mt-5">
             <h3>Start searching...</h3>
-            <p className="text-muted">
+            <p className="text-muted mb-4">
                 We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
             </p>
             <div className="border overflow-hidden rounded">
                 <header>
-                    <h3 className="m-0 pl-4 py-3">Activity log</h3>
+                    <div className="py-3 px-4">
+                        <h3 className="d-inline-block m-0">Activity log</h3>
+                        <span className="float-right m-0">{statusSummary}</span>
+                    </div>
                 </header>
                 <Terminal>
                     {!isDoneCloning && (
@@ -142,6 +150,6 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
                     <Link to="user/settings/repositories">Settings → Repositories</Link>.
                 </div>
             )}
-        </>
+        </div>
     )
 }

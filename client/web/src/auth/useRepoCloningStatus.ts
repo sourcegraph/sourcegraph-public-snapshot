@@ -25,6 +25,7 @@ export interface RepoCloningStatus {
     loading: boolean
     isDoneCloning: boolean
     error: ApolloError | undefined
+    statusSummary: string
 }
 
 interface RepoFields {
@@ -91,7 +92,7 @@ export const useRepoCloningStatus = ({
     pollInterval = 5000,
     selectedReposVar,
 }: UseRepoCloningStatusArguments): RepoCloningStatus => {
-    let areAllRepoCloned = true
+    let clonedReposCount = 0
 
     const { called, data, loading, error, stopPolling } = useQuery<CloneProgressResult, UserRepositoriesVariables>(
         USER_AFFILIATED_REPOS_MIRROR_INFO,
@@ -121,6 +122,7 @@ export const useRepoCloningStatus = ({
             isDoneCloning: false,
             loading,
             error,
+            statusSummary: '',
         }
     }
 
@@ -130,8 +132,8 @@ export const useRepoCloningStatus = ({
     const repoLines: RepoLine[] = repos.reduce((lines, { id, name, mirrorInfo }) => {
         const { details, progress, cloned } = parseMirrorInfo(id, mirrorInfo)
 
-        if (!cloned) {
-            areAllRepoCloned = false
+        if (cloned) {
+            clonedReposCount++
         }
 
         lines.push({
@@ -152,7 +154,7 @@ export const useRepoCloningStatus = ({
         return nameA < nameB ? -1 : nameA > nameB ? 1 : 0
     })
 
-    const isDoneCloning = didReceiveAllRepoStatuses && areAllRepoCloned
+    const isDoneCloning = didReceiveAllRepoStatuses && clonedReposCount === repoLines.length
 
     // stop polling and cleanup memory when all repos are done cloning
     if (called && isDoneCloning) {
@@ -160,7 +162,13 @@ export const useRepoCloningStatus = ({
         previousPercentage = {}
     }
 
-    return { repos: repoLines, isDoneCloning, loading, error }
+    return {
+        repos: repoLines,
+        isDoneCloning,
+        loading,
+        error,
+        statusSummary: `${clonedReposCount}/${repoLines.length} done`,
+    }
 }
 
 const parseMirrorInfo = (

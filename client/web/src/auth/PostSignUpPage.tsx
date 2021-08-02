@@ -135,9 +135,9 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             )}
                                         </StepPanel>
                                         <StepPanel>
-                                            <>
+                                            <div className="mt-5">
                                                 <h3>Add repositories</h3>
-                                                <p className="text-muted">
+                                                <p className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts
                                                     to search with Sourcegraph. We’ll sync and index these repositories
                                                     so you can search your code all in one place.
@@ -147,7 +147,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     onRepoSelectionModeChange={setRepoSelectionMode}
                                                     telemetryService={telemetryService}
                                                 />
-                                            </>
+                                            </div>
                                         </StepPanel>
                                         <StepPanel>
                                             <StartSearching user={user} repoSelectionMode={repoSelectionMode} />
