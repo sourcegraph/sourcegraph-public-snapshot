@@ -21,6 +21,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
@@ -33,6 +34,7 @@ export const SearchContextMenuItem: React.FunctionComponent<{
     searchFilter: string
 }> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter }) => {
     const setContext = useCallback(() => {
+        eventLogger.log('SearchContextSelected')
         selectSearchContextSpec(spec)
     }, [selectSearchContextSpec, spec])
     return (
