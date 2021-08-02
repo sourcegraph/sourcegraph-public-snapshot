@@ -66,7 +66,7 @@ Here are some examples of what your site config might look like:
 
 Then, confirm there are no error messages in:
 
-- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): the `sourcegraph-frontend` deployment logs
+- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../../install/kubernetes/index.md): the `sourcegraph-frontend` deployment logs
 - [Single-container](../../install/docker/index.md): the `sourcegraph/server` container logs
 
 The most likely error message indicating a problem is `Error prefetching SAML service provider metadata`. See [SAML troubleshooting](#troubleshooting) for more tips.
@@ -75,5 +75,5 @@ The most likely error message indicating a problem is `Error prefetching SAML se
 
 Set the env var `INSECURE_SAML_LOG_TRACES=1` to log all SAML requests and responses on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
-- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
+- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container

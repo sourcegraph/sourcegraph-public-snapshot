@@ -20,8 +20,8 @@ Loading configuration in this manner has two significant drawbacks:
 
 Set `SITE_CONFIG_FILE=site.json` on:
 
-- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
-- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
 Where `site.json` is a file that contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
 
@@ -33,8 +33,8 @@ If you want to _allow_ edits to be made through the web UI (which will be overwr
 
 Set `EXTSVC_CONFIG_FILE=extsvc.json` on:
 
-- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
-- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
 Where `extsvc.json` contains a JSON object that specifies _all_ of your code hosts in a single JSONC file:
 
@@ -78,8 +78,8 @@ If you want to _allow_ edits to be made through the web UI (which will be overwr
 
 Set `GLOBAL_SETTINGS_FILE=global-settings.json` on:
 
-- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
-- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
 Where `global-settings.json` contains the global settings, which you would otherwise edit through the in-app global settings editor.
 
