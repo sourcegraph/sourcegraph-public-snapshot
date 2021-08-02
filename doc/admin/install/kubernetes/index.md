@@ -23,7 +23,7 @@ ensuring you have prepared the items below to ensure you're ready to start your 
 
 ### Steps
 
-1) After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
+1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 
 ```bash
 kubectl version
