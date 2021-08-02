@@ -322,37 +322,43 @@ func unzipJarFile(jarPath, destination string) error {
 			continue
 		}
 
-		inputFile, err := reader.Open(file.Name)
+		err := copyZipFileEntry(reader, file, outputPath)
 		if err != nil {
 			return err
 		}
-
-		if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
-			return err
-		}
-		outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(outputFile, inputFile)
-		err1 := inputFile.Close()
-		err2 := outputFile.Close()
-
-		if err != nil {
-			return err
-		}
-		if err1 != nil {
-			return err1
-		}
-		if err2 != nil {
-			return err2
-		}
-		return nil
-
 	}
 
 	return nil
+}
+
+func copyZipFileEntry(reader *zip.ReadCloser, entry *zip.File, outputPath string) (err error) {
+	inputFile, err := reader.Open(entry.Name)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err1 := inputFile.Close()
+		if err == nil {
+			err = err1
+		}
+	}()
+
+	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
+		return err
+	}
+	outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err1 := outputFile.Close()
+		if err == nil {
+			err = err1
+		}
+	}()
+
+	_, err = io.Copy(outputFile, inputFile)
+	return err
 }
 
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile

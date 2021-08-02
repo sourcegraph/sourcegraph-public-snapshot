@@ -143,7 +143,8 @@ function parse(value: string): { tokens: QueryExample['tokens']; value: string }
             case 'text': {
                 const start = index
                 index = consumeTillCharacter(value, '{', index)
-                if (value.length > 0) {
+                if (index > start) {
+                    // exclude empty strings
                     tokens.push({
                         type: 'text',
                         value: value.slice(start, index),
