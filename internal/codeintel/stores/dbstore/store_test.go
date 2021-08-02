@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "enterprise-codeintel"
+	dbtesting.DBNameSuffix = "oss-codeintel"
 }
 
 func testStore(db dbutil.DB) *Store {
-	return NewWithDB(db, &observation.TestContext)
+	return NewWithDB(db, &observation.TestContext, nil)
 }
