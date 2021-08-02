@@ -8,6 +8,18 @@
 
 Follow the instructions below to generate profiling data. We will use the Sourcegraph frontend and a memory profile as an example (the instructions are easily adapted to any of the Sourcegraph backends and any profiling kind).
 
+### Sourcegraph with Docker Compose
+
+If you're using the [Docker Compose deployment](install/docker-compose/index.md), [configure your deployment](install/docker-compose/operations.md#configure) to expose port 6060 on one of your frontend containers, for example:
+
+```diff
+  sourcegraph-frontend-0:
+    container_name: sourcegraph-frontend-0
+    # ...
++   ports:
++     - '0.0.0.0:6060:6060'
+```
+
 ### Sourcegraph with Kubernetes
 
 If you're using the [Kubernetes cluster deployment](install/kubernetes/index.md),  

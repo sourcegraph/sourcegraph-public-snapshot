@@ -62,7 +62,7 @@ Many of Sourcegraph's [installation methods](install/index.md) come with interna
 
 #### Sourcegraph with Docker Compose
 
-Generally, no additional steps are required to upgrade the databases shipped alongside [Sourcegraph with Docker Compose installations](install/docker/index.md).
+Generally, no additional steps are required to upgrade the databases shipped alongside [Sourcegraph with Docker Compose installations](install/docker-compose/index.md).
 
 #### Sourcegraph with Kubernetes
 
