@@ -74,7 +74,9 @@ func (p *progressAggregator) Final() api.Progress {
 
 	// We only send RepositoriesCount at the end because the number is
 	// confusing to users to see while searching.
-	s.RepositoriesCount = intPtr(len(p.Stats.Repos))
+	if c := len(p.Stats.Repos); c > 0 {
+		s.RepositoriesCount = intPtr(c)
+	}
 
 	event := api.BuildProgressEvent(s)
 	event.Done = true

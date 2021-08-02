@@ -119,7 +119,7 @@ func InitGitRepository(t testing.TB, cmds ...string) string {
 func GitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = append(c.Env, "GIT_CONFIG="+path.Join(dir, ".git", "config"))
+	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"))
 	return c
 }
 

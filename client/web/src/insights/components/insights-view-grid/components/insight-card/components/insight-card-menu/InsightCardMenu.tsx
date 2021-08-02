@@ -9,7 +9,7 @@ import { positionRight } from '../../../../../context-menu/utils'
 import styles from './InsightCardMenu.module.scss'
 
 export interface InsightCardMenuProps {
-    className?: string
+    menuButtonClassName?: string
     onDelete: (insightID: string) => void
     insightID: string
 }
@@ -18,7 +18,7 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insightID, className, onDelete } = props
+    const { insightID, menuButtonClassName, onDelete } = props
     const history = useHistory()
 
     const handleEditClick = (event: MouseEvent): void => {
@@ -28,7 +28,10 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
 
     return (
         <Menu>
-            <MenuButton data-testid="InsightContextMenuButton" className={classnames(className, 'btn btn-outline p-1')}>
+            <MenuButton
+                data-testid="InsightContextMenuButton"
+                className={classnames(menuButtonClassName, 'btn btn-outline p-1')}
+            >
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover portal={true} position={positionRight}>

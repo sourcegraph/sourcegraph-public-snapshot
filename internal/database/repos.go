@@ -663,7 +663,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	}
 
 	if len(privateIDs) > 0 {
-		counterAccessGranted.Add(float64(len(privateIDs)))
+		counterAccessGranted.Inc()
 		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
 	}
 
@@ -687,7 +687,7 @@ func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	})
 
 	if len(privateIDs) > 0 {
-		counterAccessGranted.Add(float64(len(privateIDs)))
+		counterAccessGranted.Inc()
 		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
 	}
 

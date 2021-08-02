@@ -147,7 +147,6 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
-                        defaultFilter="current"
                         emptyElement={<EmptyLSIFUploadsElement />}
                     />
                 </div>

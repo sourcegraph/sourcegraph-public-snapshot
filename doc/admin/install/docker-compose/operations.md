@@ -36,7 +36,7 @@ Migrating from another [deployment type](../index.md)? Refer to our [migrating t
 
 We **strongly** recommend that you create and run Sourcegraph from your own fork of the [reference repository](./index.md#reference-repository) to track customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make [upgrades](#upgrade) far easier.**
 
-- [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) repository.
+- [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](./index.md#reference-repository).
 
     > WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
 
@@ -46,7 +46,9 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
   git clone $FORK_URL
   ```
 
-- Add the reference repository as an `upstream` remote so that you can [get updates](#upgrade).
+    > INFO: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
+
+- Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](#upgrade).
 
   ```bash
   git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
@@ -84,16 +86,28 @@ git merge upstream v$SOURCEGRAPH_VERSION
 
 Address any merge conflicts you might have.
 
-If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**. Then run:
+If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**.
+Then, ensure that the current Sourcegraph instance is completely stopped:
 
 ```bash
-# Fully stop the Docker Compose instance of Sourcegraph currently running
 docker-compose down --remove-orphans
-# Start Docker Compose again, now using the latest contents of the Sourcegraph configuration
+```
+
+**Once the instance has fully stopped**, you can then start Docker Compose again, now using the latest contents of the Sourcegraph configuration:
+
+```bash
 docker-compose up -d
 ```
 
 You can see what's changed in the [Sourcegraph changelog](../../../CHANGELOG.md).
+
+## Monitoring
+
+You can monitor the health of a deployment in several ways:
+
+- Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
+- Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
+  - This requires direct access to your instance's host machine.
 
 ## Use an external database
 

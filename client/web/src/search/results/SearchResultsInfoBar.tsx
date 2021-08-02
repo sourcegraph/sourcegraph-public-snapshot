@@ -230,6 +230,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     copyText="Create a monitor and get notified when your code changes. Free for registered users."
                     telemetryService={props.telemetryService}
                     source="Monitor"
+                    viewEventName="SearchResultMonitorCTAShown"
                     returnTo={toURL}
                     onToggle={onCreateCodeMonitorButtonSelect}
                 />
@@ -264,6 +265,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
+                    viewEventName="SearchResultSavedSeachCTAShown"
                     returnTo={props.location.pathname + props.location.search}
                     telemetryService={props.telemetryService}
                 />

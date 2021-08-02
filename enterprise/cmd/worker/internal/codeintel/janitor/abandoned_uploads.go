@@ -17,6 +17,7 @@ type abandonedUploadJanitor struct {
 }
 
 var _ goroutine.Handler = &abandonedUploadJanitor{}
+var _ goroutine.ErrorHandler = &abandonedUploadJanitor{}
 
 // NewAbandonedUploadJanitor returns a background routine that periodically removes
 // upload records which have not left the uploading state within the given TTL.

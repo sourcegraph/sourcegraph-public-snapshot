@@ -8,15 +8,15 @@ import (
 )
 
 func Executor() *monitoring.Container {
-	const (
-		containerName      = "(executor|sourcegraph-code-intel-indexers|executor-batches)"
-		queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|executor-queue)"
-	)
+	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches)"
+
+	// frontend is sometimes called sourcegraph-frontend in various contexts
+	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend)"
 
 	return &monitoring.Container{
 		Name:        "executor",
 		Title:       "Executor",
-		Description: `Executes jobs from the executor-queue.`,
+		Description: `Executes jobs in an isolated environment.`,
 		Templates: []sdk.TemplateVar{
 			{
 				Label:      "Queue name",

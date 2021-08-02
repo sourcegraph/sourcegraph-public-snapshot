@@ -17,15 +17,17 @@ const (
 	TypePath
 	TypeDiff
 	TypeCommit
+	TypeStructural
 )
 
 var TypeFromString = map[string]Types{
-	"repo":   TypeRepo,
-	"symbol": TypeSymbol,
-	"file":   TypeFile,
-	"path":   TypePath,
-	"diff":   TypeDiff,
-	"commit": TypeCommit,
+	"repo":       TypeRepo,
+	"symbol":     TypeSymbol,
+	"file":       TypeFile,
+	"path":       TypePath,
+	"diff":       TypeDiff,
+	"commit":     TypeCommit,
+	"structural": TypeStructural,
 }
 
 func (r Types) Has(t Types) bool {

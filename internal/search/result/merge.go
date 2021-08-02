@@ -28,8 +28,12 @@ func Intersect(left, right []Match) []Match {
 		if r == nil {
 			continue
 		}
-		if leftFileMatch, ok := l.(*FileMatch); ok {
-			leftFileMatch.AppendMatches(r.(*FileMatch)) // key matches, so we know it's a file match
+		switch leftMatch := l.(type) {
+		// key matches, so we know to convert to respective type
+		case *FileMatch:
+			leftMatch.AppendMatches(r.(*FileMatch))
+		case *CommitMatch:
+			leftMatch.AppendMatches(r.(*CommitMatch))
 		}
 		merged = append(merged, l)
 	}

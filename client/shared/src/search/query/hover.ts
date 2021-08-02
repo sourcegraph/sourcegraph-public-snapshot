@@ -15,7 +15,8 @@ import {
     MetaPredicate,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
-import { CharacterRange, Token } from './token'
+import { toMonacoRange } from './monaco'
+import { Token } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {
@@ -192,21 +193,6 @@ const toHover = (token: DecoratedToken): string => {
     return ''
 }
 
-/**
- * Converts a zero-indexed offset {@link CharacterRange} to a {@link Monaco.IRange} line-and-column range.
- * This ensures hover tooltips happen at correct line and column offsets, and for ranges that span multiple lines.
- */
-const toMonacoHoverRange = ({ start, end }: CharacterRange, textModel: Monaco.editor.ITextModel): Monaco.IRange => {
-    const startPosition = textModel.getPositionAt(start)
-    const endPosition = textModel.getPositionAt(end)
-    return {
-        startLineNumber: startPosition.lineNumber,
-        endLineNumber: endPosition.lineNumber,
-        startColumn: startPosition.column,
-        endColumn: endPosition.column,
-    }
-}
-
 const inside = (offset: number) => ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
     range.start <= offset && range.end > offset
 
@@ -235,7 +221,7 @@ export const getHoverResult = (
                             : resolvedFilter.definition.description
                     )
                     // Add 1 to end of range to include the ':'.
-                    range = toMonacoHoverRange({ start: token.range.start, end: token.range.end + 1 }, textModel)
+                    range = toMonacoRange({ start: token.range.start, end: token.range.end + 1 }, textModel)
                 }
                 break
             }
@@ -244,13 +230,13 @@ export const getHoverResult = (
             case 'metaRepoRevisionSeparator':
             case 'metaSelector':
                 values.push(toHover(token))
-                range = toMonacoHoverRange(token.range, textModel)
+                range = toMonacoRange(token.range, textModel)
                 break
             case 'metaRegexp':
             case 'metaStructural':
             case 'metaPredicate':
                 values.push(toHover(token))
-                range = toMonacoHoverRange(token.groupRange ? token.groupRange : token.range, textModel)
+                range = toMonacoRange(token.groupRange ? token.groupRange : token.range, textModel)
                 break
         }
     })

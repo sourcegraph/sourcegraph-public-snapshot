@@ -110,7 +110,7 @@ func (w *Worker) Start() {
 			ids := w.runningIDSet.Slice()
 			knownIDs, err := w.store.Heartbeat(w.ctx, ids)
 			if err != nil {
-				log15.Error("Failed to refresh heartbeats", "name", w.options.Name, "error", err)
+				log15.Error("Failed to refresh heartbeats", "name", w.options.Name, "ids", ids, "error", err)
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
@@ -119,6 +119,7 @@ func (w *Worker) Start() {
 
 			for _, id := range ids {
 				if _, ok := knownIDsMap[id]; !ok {
+					log15.Error("Removed unknown job from running set", "id", id)
 					w.runningIDSet.Remove(id)
 				}
 			}
