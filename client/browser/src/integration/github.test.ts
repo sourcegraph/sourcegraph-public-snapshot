@@ -306,7 +306,7 @@ describe('GitHub', () => {
             },
         }
 
-        it('provides hover tooltips for pull requests (unified view)', async () => {
+        it('provides hover tooltips for pull requests in unified mode', async () => {
             await driver.page.goto('https://github.com/gorilla/mux/pull/117/files?diff=unified')
 
             // The browser extension takes a bit to initialize and register all event listeners.
@@ -393,7 +393,7 @@ describe('GitHub', () => {
             }
         })
 
-        it('provides hover tooltips for pull requests (split view)', async () => {
+        it('provides hover tooltips for pull requests in split mode', async () => {
             await driver.page.goto('https://github.com/gorilla/mux/pull/117/files?diff=split')
 
             // The browser extension takes a bit to initialize and register all event listeners.
