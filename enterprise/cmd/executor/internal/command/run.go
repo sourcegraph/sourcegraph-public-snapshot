@@ -29,6 +29,9 @@ type command struct {
 // runCommand invokes the given command on the host machine. The standard output and
 // standard error streams of the invoked command are written to the given logger.
 func runCommand(ctx context.Context, command command, logger *Logger) (err error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	ctx, endObservation := command.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
