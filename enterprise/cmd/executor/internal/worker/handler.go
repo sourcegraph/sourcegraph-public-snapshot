@@ -259,10 +259,6 @@ func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration
 	if err != nil {
 		fields["error"] = err.Error()
 	}
-	// Currently disabled as the import pulls in conf packages
-	// if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
-	// 	fields["trace"] = spanURL
-	// }
 
 	return honey.EventWithFields("executor", fields)
 }

@@ -142,7 +142,9 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
 
-		traceURL := SpanURL(span)
+		traceID := IDFromSpan(span)
+		traceURL := URL(traceID)
+
 		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
@@ -195,11 +197,6 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			}
 			return !gqlErr
 		})
-
-		traceID := ""
-		if n := strings.LastIndex(strings.TrimSuffix(traceURL, "/"), "/"); n != -1 {
-			traceID = traceURL[n+1:]
-		}
 
 		log15.Debug("http request",
 			"method", r.Method,
