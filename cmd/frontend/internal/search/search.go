@@ -182,7 +182,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			display = match.Limit(display)
 		}
 
-		repoMetadata := h.getEventRepoMetadata(ctx, event)
+		repoMetadata := getEventRepoMetadata(ctx, h.db, event)
 		for _, match := range event.Results {
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
@@ -280,7 +280,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
+func getEventRepoMetadata(ctx context.Context, db dbutil.DB, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
 	ids := repoIDs(event.Results)
 	if len(ids) == 0 {
 		// Return early if there are no repos in the event
@@ -289,7 +289,7 @@ func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streamin
 
 	repoMetadata := make(map[api.RepoID]*types.Repo, len(ids))
 
-	metadataList, err := database.Repos(h.db).GetByIDs(ctx, ids...)
+	metadataList, err := database.Repos(db).GetByIDs(ctx, ids...)
 	if err != nil {
 		log15.Error("streaming: failed to retrieve repo metadata", "error", err)
 	}
