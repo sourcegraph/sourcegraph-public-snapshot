@@ -37,7 +37,7 @@ In addition to the requirements above, Sourcegrpah utilizes a number of other Ku
 The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the repository
  [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph).
 
- ### Configuration
+### Configuration
 
 Before proceeding with the install steps, we recommend reading [configuration guide](configure.md) ensuring you have the following items prepared for installation.
 
