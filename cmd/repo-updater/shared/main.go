@@ -400,7 +400,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(authzBypass(handler)),
+		Handler:      trace.HTTPTraceMiddleware(ot.Middleware(authzBypass(handler))),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }

@@ -65,7 +65,8 @@ func main() {
 		Log: log15.Root(),
 	}
 	service.Store.Start()
-	handler := ot.Middleware(service)
+
+	handler := trace.HTTPTraceMiddleware(ot.Middleware(service))
 
 	host := ""
 	if env.InsecureDev {
