@@ -68,17 +68,17 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler
 		Scan:              scanSingleJob,
 		OrderByExpression: sqlf.Sprintf("next_sync_at"),
 		ColumnExpressions: syncJobColumns,
-		HeartbeatInterval: 15 * time.Second,
 		StalledMaxAge:     30 * time.Second,
 		MaxNumResets:      5,
 		MaxNumRetries:     0,
 	})
 
 	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
-		Name:        "repo_sync_worker",
-		NumHandlers: opts.NumHandlers,
-		Interval:    opts.WorkerInterval,
-		Metrics:     newWorkerMetrics(opts.PrometheusRegisterer),
+		Name:              "repo_sync_worker",
+		NumHandlers:       opts.NumHandlers,
+		Interval:          opts.WorkerInterval,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
 	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{

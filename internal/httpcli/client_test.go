@@ -14,11 +14,13 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func TestHeadersMiddleware(t *testing.T) {
@@ -273,6 +275,44 @@ func TestNewTimeoutOpt(t *testing.T) {
 
 	if have, want := cli.Timeout, timeout; have != want {
 		t.Errorf("have Timeout %s, want %s", have, want)
+	}
+}
+
+func TestExternalHTTPClientErrorResilience(t *testing.T) {
+	failures := int64(5)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status := 0
+		switch n := atomic.AddInt64(&failures, -1); n {
+		case 4:
+			status = 429
+		case 3:
+			status = 500
+		case 2:
+			status = 900
+		case 1:
+			status = 302
+			w.Header().Set("Location", "/")
+		case 0:
+			status = 404
+		}
+		w.WriteHeader(status)
+	}))
+
+	rcache.SetupForTest(t)
+	t.Cleanup(srv.Close)
+
+	req, err := http.NewRequest("GET", srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := ExternalDoer().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.StatusCode != 404 {
+		t.Fatalf("want status code 404, got: %d", res.StatusCode)
 	}
 }
 

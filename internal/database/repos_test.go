@@ -71,17 +71,23 @@ func TestParseIncludePattern(t *testing.T) {
 		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/20389
-		`^github\.com/sourcegraph/(sourcegraph-atom|sourcegraph)$`: {exact: []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/sourcegraph-atom"}},
+		`^github\.com/sourcegraph/(sourcegraph-atom|sourcegraph)$`: {
+			exact: []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/sourcegraph-atom"},
+		},
 
-		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
+		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {
+			exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"},
+		},
 
 		// Avoid DoS when there are too many possible matches to enumerate.
 		`^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`: {regexp: `^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`},
 		`^[0-a]$`:                               {regexp: `^[0-a]$`},
 		`sourcegraph|^github\.com/foo/bar$`: {
-			like:    []string{`%sourcegraph%`},
-			exact:   []string{"github.com/foo/bar"},
-			pattern: []*sqlf.Query{sqlf.Sprintf(`(name IN (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%")},
+			like:  []string{`%sourcegraph%`},
+			exact: []string{"github.com/foo/bar"},
+			pattern: []*sqlf.Query{
+				sqlf.Sprintf(`(name IN (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%"),
+			},
 		},
 	}
 	for pattern, want := range tests {
@@ -406,7 +412,7 @@ func TestListIndexableRepos(t *testing.T) {
 		{
 			ID:    api.RepoID(4),
 			Name:  "github.com/foo/bar4",
-			Stars: 10, // Not enough stars
+			Stars: 1, // Not enough stars
 		},
 		{
 			ID:    api.RepoID(5),
@@ -421,7 +427,10 @@ func TestListIndexableRepos(t *testing.T) {
 
 	ctx := context.Background()
 	// Add an external service
-	_, err := db.ExecContext(ctx, `INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (1, 'github', 'github', '{}', true);`)
+	_, err := db.ExecContext(
+		ctx,
+		`INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (1, 'github', 'github', '{}', true);`,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

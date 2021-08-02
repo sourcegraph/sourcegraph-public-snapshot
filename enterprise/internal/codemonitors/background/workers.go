@@ -24,10 +24,11 @@ const (
 
 func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
-		Name:        "code_monitors_trigger_jobs_worker",
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     metrics.workerMetrics,
+		Name:              "code_monitors_trigger_jobs_worker",
+		NumHandlers:       1,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           metrics.workerMetrics,
 	}
 	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(s), &queryRunner{s}, options)
 	return worker
@@ -78,10 +79,11 @@ func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.Ba
 
 func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
-		Name:        "code_monitors_action_jobs_worker",
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     metrics.workerMetrics,
+		Name:              "code_monitors_action_jobs_worker",
+		NumHandlers:       1,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           metrics.workerMetrics,
 	}
 	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
 	return worker
@@ -108,7 +110,6 @@ func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
 		TableName:         "cm_trigger_jobs",
 		ColumnExpressions: cm.TriggerJobsColumns,
 		Scan:              cm.ScanTriggerJobs,
-		HeartbeatInterval: 15 * time.Second,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -122,7 +123,6 @@ func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
 		TableName:         "cm_action_jobs",
 		ColumnExpressions: cm.ActionJobsColumns,
 		Scan:              cm.ScanActionJobs,
-		HeartbeatInterval: 15 * time.Second,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,

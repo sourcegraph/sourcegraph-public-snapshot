@@ -101,7 +101,7 @@ const commonProps = () =>
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',
         authRequired: false,
-        showBatchChanges: false,
+        batchChangesEnabled: false,
         authenticatedUser: authUser,
         repogroupMetadata: python2To3Metadata,
         globbing: false,
@@ -112,7 +112,6 @@ const commonProps = () =>
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-        featureFlags: new Map(),
     })
 
 add('Refactor Python 2 to 3', () => (

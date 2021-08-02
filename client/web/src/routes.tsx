@@ -3,10 +3,12 @@ import { Redirect, RouteComponentProps } from 'react-router'
 
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { BatchChangesProps } from './batches'
+import { CodeIntelligenceProps } from './codeintel'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
-import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
@@ -40,9 +42,12 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
+        CodeIntelligenceProps,
+        BatchChangesProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
     isRedesignEnabled: boolean
+    isMacPlatform: boolean
 }
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
@@ -99,21 +104,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/search/console',
         render: props =>
-            props.showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} isMacPlatform={isMacPlatform} />
-            ) : (
-                <Redirect to="/search" />
-            ),
+            props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
         exact: true,
     },
     {
         path: '/search/notebook',
-        render: props =>
-            props.showSearchNotebook ? (
-                <SearchNotebookPage {...props} isMacPlatform={isMacPlatform} />
-            ) : (
-                <Redirect to="/search" />
-            ),
+        render: props => (props.showSearchNotebook ? <SearchNotebookPage {...props} /> : <Redirect to="/search" />),
         exact: true,
     },
     {

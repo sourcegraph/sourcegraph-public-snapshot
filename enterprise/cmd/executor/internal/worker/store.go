@@ -16,10 +16,12 @@ type storeShim struct {
 
 type QueueStore interface {
 	Dequeue(ctx context.Context, queueName string, payload *executor.Job) (bool, error)
-	AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (int, error)
+	UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) error
 	MarkComplete(ctx context.Context, queueName string, jobID int) error
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
+	Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error)
 }
 
 var _ workerutil.Store = &storeShim{}
@@ -28,18 +30,26 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 	return 0, errors.New("unimplemented")
 }
 
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
 	var job executor.Job
 	dequeued, err := s.queueStore.Dequeue(ctx, s.queueName, &job)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 
-	return job, func() {}, dequeued, nil
+	return job, dequeued, nil
 }
 
-func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {
+func (s *storeShim) Heartbeat(ctx context.Context, ids []int) (knownIDs []int, err error) {
+	return s.queueStore.Heartbeat(ctx, s.queueName, ids)
+}
+
+func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (int, error) {
 	return s.queueStore.AddExecutionLogEntry(ctx, s.queueName, id, entry)
+}
+
+func (s *storeShim) UpdateExecutionLogEntry(ctx context.Context, jobID, entryID int, entry workerutil.ExecutionLogEntry) error {
+	return s.queueStore.UpdateExecutionLogEntry(ctx, s.queueName, jobID, entryID, entry)
 }
 
 func (s *storeShim) MarkComplete(ctx context.Context, id int) (bool, error) {

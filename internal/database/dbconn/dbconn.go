@@ -368,7 +368,7 @@ func (h *hook) After(ctx context.Context, query string, args ...interface{}) (co
 	return ctx, nil
 }
 
-// After implements sqlhooks.OnErroer
+// OnError implements sqlhooks.OnError
 func (h *hook) OnError(ctx context.Context, err error, query string, args ...interface{}) error {
 	if tr := trace.TraceFromContext(ctx); tr != nil {
 		tr.SetError(err)

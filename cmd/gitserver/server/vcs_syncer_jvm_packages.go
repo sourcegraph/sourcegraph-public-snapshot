@@ -6,9 +6,11 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -38,6 +40,13 @@ type JVMPackagesSyncer struct {
 
 var _ VCSSyncer = &JVMPackagesSyncer{}
 
+func (s *JVMPackagesSyncer) MavenDependencies() []string {
+	if s.Config == nil || s.Config.Maven == nil || s.Config.Maven.Dependencies == nil {
+		return nil
+	}
+	return s.Config.Maven.Dependencies
+}
+
 func (s *JVMPackagesSyncer) Type() string {
 	return "jvm_packages"
 }
@@ -45,7 +54,7 @@ func (s *JVMPackagesSyncer) Type() string {
 // IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 // error indicates there is a problem.
 func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	dependencies, err := s.packageDependencies(remoteURL.Path)
+	dependencies, err := s.packageDependencies(ctx, remoteURL.Path)
 	if err != nil {
 		return err
 	}
@@ -56,7 +65,7 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 			return err
 		}
 		if len(sources) == 0 {
-			return errors.Errorf("no sources.jar for dependency %s", dependency)
+			return errors.Errorf("no sources for dependency %s", dependency)
 		}
 	}
 	return nil
@@ -88,14 +97,15 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-// Fetch does nothing for Maven packages because they are immutable and cannot be updated after publishing.
+// Fetch adds git tags for newly added dependency versions and removes git tags
+// for deleted deleted versions.
 func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
-	dependencies, err := s.packageDependencies(remoteURL.Path)
+	dependencies, err := s.packageDependencies(ctx, remoteURL.Path)
 	if err != nil {
 		return err
 	}
 
-	tags := make(map[string]bool)
+	tags := map[string]bool{}
 
 	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir))
 	if err != nil {
@@ -119,7 +129,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		}
 	}
 
-	dependencyTags := make(map[string]struct{})
+	dependencyTags := make(map[string]struct{}, len(dependencies))
 	for _, dependency := range dependencies {
 		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
 	}
@@ -145,23 +155,32 @@ func (s *JVMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 // packageDependencies returns the list of JVM dependencies that belong to the given URL path.
 // The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s *JVMPackagesSyncer) packageDependencies(repoUrlPath string) (dependencies []reposource.MavenDependency, err error) {
+func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (dependencies []reposource.MavenDependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
 	}
-	for _, dependency := range s.Config.Maven.Dependencies {
+
+	for _, dependency := range s.MavenDependencies() {
 		if module.MatchesDependencyString(dependency) {
 			dependency, err := reposource.ParseMavenDependency(dependency)
 			if err != nil {
 				return nil, err
 			}
-			dependencies = append(dependencies, dependency)
+
+			if coursier.Exists(ctx, s.Config, dependency) {
+				dependencies = append(dependencies, dependency)
+			}
+			// Silently ignore non-existent dependencies because
+			// they are already logged out in the `GetRepo` method
+			// in internal/repos/jvm_packages.go.
 		}
 	}
+
 	if len(dependencies) == 0 {
-		return nil, errors.Errorf("no tracked dependencies for URL path %s", repoUrlPath)
+		return nil, errors.Errorf("no JVM dependencies for URL path %s", repoUrlPath)
 	}
+
 	reposource.SortDependencies(dependencies)
 	return dependencies, nil
 }
@@ -184,28 +203,17 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 
 	if len(sourceCodePaths) == 0 {
-		return errors.Errorf("no sources.jar for dependency %s", dependency)
+		return errors.Errorf("no sources for dependency %s", dependency)
 	}
 
 	sourceCodePath := sourceCodePaths[0]
-
-	byteCodePaths, err := coursier.FetchByteCode(ctx, s.Config, dependency)
-	if err != nil {
-		return err
-	}
-
-	if len(byteCodePaths) == 0 {
-		return errors.Errorf("no bytecode jar for dependency %s", dependency)
-	}
-
-	byteCodePath := byteCodePaths[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
 
-	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodePath, byteCodePath)
+	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodePath, s.Config)
 	if err != nil {
 		return err
 	}
@@ -215,7 +223,8 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "push", "--force", "origin", "--tags")
+	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
+	cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", "--tags")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
@@ -225,7 +234,8 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 		if err != nil {
 			return err
 		}
-		cmd = exec.CommandContext(ctx, "git", "push", "--force", "origin", strings.TrimSpace(defaultBranch)+":latest", dependency.GitTagFromVersion())
+		// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
+		cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", strings.TrimSpace(defaultBranch)+":latest", dependency.GitTagFromVersion())
 		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 			return err
 		}
@@ -237,10 +247,9 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
 func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
-	workingDirectory, sourceCodeJarPath, byteCodeJarPath string) error {
-	cmd := exec.CommandContext(ctx, "unzip", sourceCodeJarPath)
-	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
-		return err
+	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
+	if err := unzipJarFile(sourceCodeJarPath, workingDirectory); err != nil {
+		return errors.Wrapf(err, "failed to unzip jar file %v", sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(workingDirectory, "lsif-java.json"))
@@ -249,15 +258,15 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 	defer file.Close()
 
-	jvmVersion, err := inferJVMVersionFromByteCode(byteCodeJarPath)
+	jvmVersion, err := inferJVMVersionFromByteCode(ctx, connection, dependency)
 	if err != nil {
 		return err
 	}
 
 	jsonContents, err := json.Marshal(&lsifJavaJSON{
-		Kind:         "maven",
+		Kind:         dependency.MavenModule.LsifJavaKind(),
 		JVM:          jvmVersion,
-		Dependencies: []string{dependency.CoursierSyntax()},
+		Dependencies: dependency.LsifJavaDependencies(),
 	})
 	if err != nil {
 		return err
@@ -268,12 +277,13 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "add", ".")
+	cmd := exec.CommandContext(ctx, "git", "add", ".")
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "commit", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
+	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
+	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
@@ -286,10 +296,90 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	return nil
 }
 
+func unzipJarFile(jarPath, destination string) error {
+	reader, err := zip.OpenReader(jarPath)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
+	for _, file := range reader.File {
+		if strings.HasPrefix(file.Name, ".git/") {
+			// For security reasons, don't unzip files under the `.git/`
+			// directory. See https://github.com/sourcegraph/security-issues/issues/163
+			continue
+		}
+		if strings.HasSuffix(file.Name, "/") {
+			// Skip directory entries. Directory entries must end
+			// with a forward slash (even on Windows) according to
+			// `file.Name` docstring.
+			continue
+		}
+		outputPath := path.Join(destination, file.Name)
+		if !strings.HasPrefix(outputPath, destinationDirectory) {
+			// For security reasons, skip file if it's not a child
+			// of the target directory. See "Zip Slip Vulnerability".
+			continue
+		}
+
+		err := copyZipFileEntry(reader, file, outputPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyZipFileEntry(reader *zip.ReadCloser, entry *zip.File, outputPath string) (err error) {
+	inputFile, err := reader.Open(entry.Name)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err1 := inputFile.Close()
+		if err == nil {
+			err = err1
+		}
+	}()
+
+	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
+		return err
+	}
+	outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err1 := outputFile.Close()
+		if err == nil {
+			err = err1
+		}
+	}()
+
+	_, err = io.Copy(outputFile, inputFile)
+	return err
+}
+
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
 // the bytecode in the given jar file.
-func inferJVMVersionFromByteCode(byteCodeJarPath string) (string, error) {
-	majorVersionString, err := classFileMajorVersion(byteCodeJarPath)
+func inferJVMVersionFromByteCode(ctx context.Context, connection *schema.JVMPackagesConnection,
+	dependency reposource.MavenDependency) (string, error) {
+	if dependency.IsJdk() {
+		return dependency.Version, nil
+	}
+
+	byteCodePaths, err := coursier.FetchByteCode(ctx, connection, dependency)
+	if err != nil {
+		return "", err
+	}
+
+	if len(byteCodePaths) == 0 {
+		return "", errors.Errorf("no bytecode jar for dependency %s", dependency)
+	}
+
+	byteCodePath := byteCodePaths[0]
+	majorVersionString, err := classFileMajorVersion(byteCodePath)
 	if err != nil {
 		return "", err
 	}

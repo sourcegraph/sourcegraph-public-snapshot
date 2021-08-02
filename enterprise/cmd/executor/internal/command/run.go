@@ -2,10 +2,10 @@ package command
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -69,18 +69,18 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 	}()
 
 	startTime := time.Now()
-	pipeContents, pipeReaderWaitGroup := readProcessPipes(stdout, stderr)
-	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
-	duration := time.Since(startTime)
-
-	logger.Log(workerutil.ExecutionLogEntry{
-		Key:        command.Key,
-		Command:    command.Command,
-		StartTime:  startTime,
-		ExitCode:   exitCode,
-		Out:        pipeContents.String(),
-		DurationMs: int(duration / time.Millisecond),
+	handle := logger.Log(&workerutil.ExecutionLogEntry{
+		Key:       command.Key,
+		Command:   command.Command,
+		StartTime: startTime,
 	})
+	defer handle.Close()
+
+	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
+	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
+
+	handle.logEntry.ExitCode = exitCode
+	handle.logEntry.DurationMs = int(time.Since(startTime) / time.Millisecond)
 
 	if err != nil {
 		return err
@@ -121,7 +121,13 @@ func validateCommand(command []string) error {
 func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {
 	cmd = exec.CommandContext(ctx, command.Command[0], command.Command[1:]...)
 	cmd.Dir = command.Dir
-	cmd.Env = command.Env
+
+	env := command.Env
+	for _, k := range forwardedHostEnvVars {
+		env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
+	}
+
+	cmd.Env = env
 
 	stdout, err = cmd.StdoutPipe()
 	if err != nil {
@@ -136,9 +142,12 @@ func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, s
 	return cmd, stdout, stderr, nil
 }
 
-func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup) {
-	var m sync.Mutex
-	out := &bytes.Buffer{}
+// forwardedHostEnvVars is a list of environment variable names that are inherited
+// when executing a command on the host. These are commonly required by programs
+// we shell out to, such a docker.
+var forwardedHostEnvVars = []string{"HOME", "PATH"}
+
+func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *sync.WaitGroup {
 	wg := &sync.WaitGroup{}
 
 	readIntoBuf := func(prefix string, r io.Reader) {
@@ -146,9 +155,7 @@ func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup)
 
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
-			m.Lock()
-			fmt.Fprintf(out, "%s: %s\n", prefix, scanner.Text())
-			m.Unlock()
+			fmt.Fprintf(logWriter, "%s: %s\n", prefix, scanner.Text())
 		}
 	}
 
@@ -156,7 +163,7 @@ func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup)
 	go readIntoBuf("stdout", stdout)
 	go readIntoBuf("stderr", stderr)
 
-	return out, wg
+	return wg
 }
 
 // monitorCommand starts the given command and waits for the given wait group to complete.

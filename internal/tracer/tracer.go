@@ -8,6 +8,7 @@ package tracer
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -166,8 +167,11 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span
 		return nil, nil, nil, errors.Wrap(err, "jaegercfg.NewTracer failed")
 	}
 
-	// We proxy jaeger so we can construct URLs to traces.
-	jaegerURL := strings.TrimSuffix(opts.ExternalURL, "/") + "/-/debug/jaeger/trace/"
+	traceBaseURL := os.Getenv("TRACE_BASE_URL")
+	if traceBaseURL == "" {
+		// We proxy jaeger so we can construct URLs to traces.
+		traceBaseURL = strings.TrimSuffix(opts.ExternalURL, "/") + "/-/debug/jaeger/trace/"
+	}
 
 	spanURL := func(span opentracing.Span) string {
 		if span == nil {
@@ -177,7 +181,7 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span
 		if !ok {
 			return tracingNotEnabledURL
 		}
-		return jaegerURL + spanCtx.TraceID().String()
+		return traceBaseURL + spanCtx.TraceID().String()
 	}
 
 	return tracer, spanURL, closer, nil

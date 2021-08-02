@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
@@ -332,20 +331,14 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				// We have no authz provider configured for this external service or service
 				continue
 			}
-			config, configErr := v.Configuration()
-			if configErr != nil {
-				log15.Error("extracting external service config", "error", configErr)
+			token, err := extsvc.ExtractToken(v.Config, v.Kind)
+			if err != nil {
+				log15.Warn("Extracting token from external service config", "error", err, "id", v.ID)
 				continue
 			}
-			// TODO: Move token extraction into extsvc package
-			var token string
-			switch c := config.(type) {
-			case *schema.GitHubConnection:
-				token = c.Token
-			case *schema.GitLabConnection:
-				token = c.Token
-			default:
-				log15.Warn("External service kind %q not supported", "kind", v.Kind)
+			if token == "" {
+				log15.Warn("Empty token for external service", "id", v.ID)
+				continue
 			}
 
 			if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {

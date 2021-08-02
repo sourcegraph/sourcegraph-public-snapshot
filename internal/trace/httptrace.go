@@ -141,7 +141,9 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
-		rw.Header().Set("X-Trace", SpanURL(span))
+
+		traceURL := SpanURL(span)
+		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
 		routeName := "unknown"
@@ -194,11 +196,17 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		log15.Debug("TRACE HTTP",
+		traceID := ""
+		if n := strings.LastIndex(strings.TrimSuffix(traceURL, "/"), "/"); n != -1 {
+			traceID = traceURL[n+1:]
+		}
+
+		log15.Debug("http request",
 			"method", r.Method,
 			"url", r.URL.String(),
 			"route_name", routeName,
-			"trace", SpanURL(span),
+			"trace", traceURL,
+			"traceid", traceID,
 			"user_agent", r.UserAgent(),
 			"user", userID,
 			"x_forwarded_for", r.Header.Get("X-Forwarded-For"),
@@ -225,6 +233,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				"written":         strconv.FormatInt(m.Written, 10),
 				"duration":        m.Duration.String(),
 				"graphql_error":   strconv.FormatBool(gqlErr),
+				"trace":           traceURL,
 			})
 		}
 	}))
