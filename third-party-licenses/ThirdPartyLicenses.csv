@@ -396,7 +396,7 @@ Go,github.com/mattermost/xml-roundtrip-validator,v0.0.0-20201208211235-fe770d50d
 Go,github.com/mattn/go-colorable,v0.1.8,MIT,"",Approved
 Go,github.com/mattn/go-isatty,v0.0.12,MIT,"",Approved
 Go,github.com/mattn/go-runewidth,v0.0.12,MIT,"",Approved
-Go,github.com/mattn/go-sqlite3,v2.0.3,MIT,"",Approved
+Go,github.com/mattn/go-sqlite3,v1.14.8,MIT,"",Approved
 Go,github.com/matttproud/golang_protobuf_extensions,v1.0.1,Apache 2.0,"",Approved
 Go,github.com/mcuadros/go-version,v0.0.0-20190830083331-035f6764e8d2,MIT,"",Approved
 Go,github.com/microcosm-cc/bluemonday,v1.0.4,New BSD,"",Approved
