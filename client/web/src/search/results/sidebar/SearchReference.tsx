@@ -213,7 +213,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ...createQueryExampleFromString('{result-types}'),
         field: FilterType.select,
         commonRank: 50,
-        description: `Shows only query results for a given type. For example, \`select:repo\` displays only distinct reopsitory paths from search results. The following values are available:
+        description: `Shows only query results for a given type. For example, \`select:repo\` displays only distinct repository paths from search results. The following values are available:
 
 - \`select:repo\`
 - \`select:commit.diff.added\`
