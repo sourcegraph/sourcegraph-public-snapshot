@@ -29,8 +29,9 @@ type command struct {
 // runCommand invokes the given command on the host machine. The standard output and
 // standard error streams of the invoked command are written to the given logger.
 func runCommand(ctx context.Context, command command, logger *Logger) (err error) {
-    // The `ctx` here is used below as a guard against the command finishing before we close the stdout and 
-// stderr pipes. This context may be very slow to cancel, so we enforce a cancellation of a child context at function exit.
+	// The `ctx` here is used below as a guard against the command finishing before we close the stdout and 
+	// stderr pipes. This context may be very slow to cancel, so we enforce a cancellation of a child context 
+	// at function exit to clean the goroutine up eagerly.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
