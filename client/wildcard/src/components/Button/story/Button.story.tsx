@@ -12,7 +12,7 @@ import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
 import { ButtonVariants } from './ButtonVariants'
 
 const Story: Meta = {
-    title: 'wildcard/Buttons/Button',
+    title: 'wildcard/Button',
 
     decorators: [
         story => (

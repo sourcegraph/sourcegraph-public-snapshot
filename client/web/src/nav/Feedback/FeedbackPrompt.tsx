@@ -11,7 +11,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
-import { Button, LoadingButton } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
@@ -146,16 +146,15 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                     {error && (
                         <ErrorAlert error={error} icon={false} className="mt-3" prefix="Error submitting feedback" />
                     )}
-                    <LoadingButton
-                        loading={loading}
+                    <Button
                         disabled={!rating || !text || loading}
                         role="menuitem"
                         type="submit"
                         variant="secondary"
                         className="btn-block feedback-prompt__button"
                     >
-                        Send
-                    </LoadingButton>
+                        {loading ? <LoadingSpinner inline={true} /> : 'Send'}
+                    </Button>
                 </Form>
             )}
         </>
