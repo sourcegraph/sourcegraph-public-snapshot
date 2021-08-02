@@ -198,7 +198,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		log15.Info("http request",
+		log15.Debug("http request",
 			"method", r.Method,
 			"url", r.URL.String(),
 			"route_name", routeName,
