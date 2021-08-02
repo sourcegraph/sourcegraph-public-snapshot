@@ -8,7 +8,7 @@ import { Grid } from '../../Grid'
 
 import { RadioButton, RadioButtonProps } from './RadioButton'
 
-const Story: Meta = {
+const config: Meta = {
     title: 'wildcard/RadioButton',
 
     decorators: [
@@ -29,9 +29,9 @@ const Story: Meta = {
 }
 
 // eslint-disable-next-line import/no-default-export
-export default Story
+export default config
 
-const BaseRadio = ({ id, name, ...props }: Pick<RadioButtonProps, 'id' | 'isValid' | 'disabled' | 'name'>) => {
+const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid' | 'disabled'>) => {
     const [selected, setSelected] = React.useState('')
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
@@ -41,7 +41,7 @@ const BaseRadio = ({ id, name, ...props }: Pick<RadioButtonProps, 'id' | 'isVali
     return (
         <>
             <RadioButton
-                id={`${id}-1`}
+                id={`${name}-1`}
                 name={name}
                 value="first"
                 checked={selected === 'first'}
@@ -51,7 +51,7 @@ const BaseRadio = ({ id, name, ...props }: Pick<RadioButtonProps, 'id' | 'isVali
                 {...props}
             />
             <RadioButton
-                id={`${id}-2`}
+                id={`${name}-2`}
                 name={name}
                 value="second"
                 checked={selected === 'second'}
@@ -61,7 +61,7 @@ const BaseRadio = ({ id, name, ...props }: Pick<RadioButtonProps, 'id' | 'isVali
                 {...props}
             />
             <RadioButton
-                id={`${id}-3`}
+                id={`${name}-3`}
                 name={name}
                 value="third"
                 checked={selected === 'third'}
@@ -80,19 +80,19 @@ export const RadioExamples: React.FunctionComponent = () => (
         <Grid columnCount={4}>
             <div>
                 <h2>Standard</h2>
-                <BaseRadio id="standard-example" name="standard-example" />
+                <BaseRadio name="standard-example" />
             </div>
             <div>
                 <h2>Valid</h2>
-                <BaseRadio id="valid-example" name="valid-example" isValid={true} />
+                <BaseRadio name="valid-example" isValid={true} />
             </div>
             <div>
                 <h2>Invalid</h2>
-                <BaseRadio id="invalid-example" name="invalid-example" isValid={false} />
+                <BaseRadio name="invalid-example" isValid={false} />
             </div>
             <div>
                 <h2>Disabled</h2>
-                <BaseRadio id="disabled-example" name="disabled-example" disabled={true} />
+                <BaseRadio name="disabled-example" disabled={true} />
             </div>
         </Grid>
     </>

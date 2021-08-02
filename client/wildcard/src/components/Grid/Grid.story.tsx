@@ -9,14 +9,6 @@ const config: Meta = {
     parameters: {
         component: Grid,
     },
-    argTypes: {
-        columnCount: {
-            type: 'number',
-        },
-        spacing: {
-            type: 'number',
-        },
-    },
 }
 
 // eslint-disable-next-line import/no-default-export

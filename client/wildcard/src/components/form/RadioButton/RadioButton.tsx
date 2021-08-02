@@ -1,14 +1,14 @@
 import React from 'react'
 
-import { BaseControlInput, BaseControlInputProps } from '../internal/BaseControlInput'
+import { BaseControlInput, ControlInputProps } from '../internal/BaseControlInput'
 
-export interface RadioButtonProps extends BaseControlInputProps {
+export type RadioButtonProps = {
     /**
      * The name of the radio group. Used to group radio controls together to ensure mutual exclusivity.
      * If you do not need this prop, consider if a checkbox is better suited for your use case.
      */
     name: string
-}
+} & ControlInputProps
 
 /**
  * Renders a single radio button.

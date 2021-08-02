@@ -8,7 +8,7 @@ import { Grid } from '../../Grid/Grid'
 
 import { Select, SelectProps } from './Select'
 
-const Story: Meta = {
+const config: Meta = {
     title: 'wildcard/Select',
 
     decorators: [
@@ -29,9 +29,9 @@ const Story: Meta = {
 }
 
 // eslint-disable-next-line import/no-default-export
-export default Story
+export default config
 
-const BaseSelect = (props: Pick<SelectProps, 'id' | 'isCustomStyle' | 'isValid' | 'disabled'>) => {
+const BaseSelect = (props: { id: string } & Pick<SelectProps, 'isCustomStyle' | 'isValid' | 'disabled'>) => {
     const [selected, setSelected] = React.useState('')
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {

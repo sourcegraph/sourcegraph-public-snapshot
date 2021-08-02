@@ -4,13 +4,16 @@ exports[`BaseControlInput checkbox input renders correctly 1`] = `
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input"
-      type="checkbox"
-    />
     Hello world
   </label>
 </div>
@@ -20,13 +23,16 @@ exports[`BaseControlInput checkbox input renders with correct styles when invali
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input is-invalid"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input is-invalid"
-      type="checkbox"
-    />
     Hello world
   </label>
   <small
@@ -41,13 +47,16 @@ exports[`BaseControlInput checkbox input renders with correct styles when valid 
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input is-valid"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input is-valid"
-      type="checkbox"
-    />
     Hello world
   </label>
   <small
@@ -62,13 +71,16 @@ exports[`BaseControlInput checkbox input renders with message correctly 1`] = `
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input"
-      type="checkbox"
-    />
     Hello world
   </label>
   <small
@@ -83,13 +95,16 @@ exports[`BaseControlInput radio input renders correctly 1`] = `
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input"
-      type="radio"
-    />
     Hello world
   </label>
 </div>
@@ -99,13 +114,16 @@ exports[`BaseControlInput radio input renders with correct styles when invalid 1
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input is-invalid"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input is-invalid"
-      type="radio"
-    />
     Hello world
   </label>
   <small
@@ -120,13 +138,16 @@ exports[`BaseControlInput radio input renders with correct styles when valid 1`]
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input is-valid"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input is-valid"
-      type="radio"
-    />
     Hello world
   </label>
   <small
@@ -141,13 +162,16 @@ exports[`BaseControlInput radio input renders with message correctly 1`] = `
 <div
   class="form-check"
 >
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
   <label
     class="form-check-label"
+    for="test"
   >
-    <input
-      class="form-check-input"
-      type="radio"
-    />
     Hello world
   </label>
   <small

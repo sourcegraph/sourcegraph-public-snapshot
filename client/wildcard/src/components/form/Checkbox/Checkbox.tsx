@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { BaseControlInput, BaseControlInputProps } from '../internal/BaseControlInput'
+import { BaseControlInput, ControlInputProps } from '../internal/BaseControlInput'
 
-export interface CheckboxProps extends BaseControlInputProps {}
+export type CheckboxProps = ControlInputProps
 
 /**
  * Renders a single checkbox.

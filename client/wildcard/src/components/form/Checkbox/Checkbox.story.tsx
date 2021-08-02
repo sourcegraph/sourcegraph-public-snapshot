@@ -5,9 +5,8 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Grid } from '../../Grid'
-import { BaseControlInputProps } from '../internal/BaseControlInput'
 
-import { Checkbox } from './Checkbox'
+import { Checkbox, CheckboxProps } from './Checkbox'
 
 const config: Meta = {
     title: 'wildcard/Checkbox',
@@ -32,7 +31,7 @@ const config: Meta = {
 // eslint-disable-next-line import/no-default-export
 export default config
 
-const BaseCheckbox = (props: Pick<BaseControlInputProps, 'id' | 'isValid' | 'disabled'>) => {
+const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps, 'isValid' | 'disabled'>) => {
     const [isChecked, setChecked] = React.useState(false)
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
@@ -41,11 +40,12 @@ const BaseCheckbox = (props: Pick<BaseControlInputProps, 'id' | 'isValid' | 'dis
 
     return (
         <Checkbox
-            name="example-1"
+            name={name}
+            id={name}
             value="first"
             checked={isChecked}
             onChange={handleChange}
-            label="First"
+            label="Check me!"
             message="Hello world!"
             {...props}
         />
@@ -58,19 +58,19 @@ export const CheckboxExamples: React.FunctionComponent = () => (
         <Grid columnCount={4}>
             <div>
                 <h2>Standard</h2>
-                <BaseCheckbox id="standard-example" />
+                <BaseCheckbox name="standard-example" />
             </div>
             <div>
                 <h2>Valid</h2>
-                <BaseCheckbox id="valid-example" isValid={true} />
+                <BaseCheckbox name="valid-example" isValid={true} />
             </div>
             <div>
                 <h2>Invalid</h2>
-                <BaseCheckbox id="invalid-example" isValid={false} />
+                <BaseCheckbox name="invalid-example" isValid={false} />
             </div>
             <div>
                 <h2>Disabled</h2>
-                <BaseCheckbox id="disabled-example" disabled={true} />
+                <BaseCheckbox name="disabled-example" disabled={true} />
             </div>
         </Grid>
     </>

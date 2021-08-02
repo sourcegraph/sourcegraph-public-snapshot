@@ -1,70 +1,78 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Select custom select renders correctly 1`] = `
+exports[`Select custom variant renders correctly 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="custom-select"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="custom-select"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
 </div>
 `;
 
-exports[`Select custom select renders with correct styles when invalid 1`] = `
+exports[`Select custom variant renders with correct styles when invalid 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="custom-select"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="custom-select is-invalid"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
   <small
     class="invalid-feedback"
   >
@@ -73,37 +81,41 @@ exports[`Select custom select renders with correct styles when invalid 1`] = `
 </div>
 `;
 
-exports[`Select custom select renders with correct styles when valid 1`] = `
+exports[`Select custom variant renders with correct styles when valid 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="custom-select"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="custom-select is-valid"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
   <small
     class="valid-feedback"
   >
@@ -112,37 +124,41 @@ exports[`Select custom select renders with correct styles when valid 1`] = `
 </div>
 `;
 
-exports[`Select custom select renders with message correctly 1`] = `
+exports[`Select custom variant renders with message correctly 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="custom-select"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="custom-select"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
   <small
     class="field-message"
   >
@@ -151,71 +167,79 @@ exports[`Select custom select renders with message correctly 1`] = `
 </div>
 `;
 
-exports[`Select native select renders correctly 1`] = `
+exports[`Select native variant renders correctly 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="form-control"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="form-control"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
 </div>
 `;
 
-exports[`Select native select renders with correct styles when invalid 1`] = `
+exports[`Select native variant renders with correct styles when invalid 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="form-control"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="form-control is-invalid"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
   <small
     class="invalid-feedback"
   >
@@ -224,37 +248,41 @@ exports[`Select native select renders with correct styles when invalid 1`] = `
 </div>
 `;
 
-exports[`Select native select renders with correct styles when valid 1`] = `
+exports[`Select native variant renders with correct styles when valid 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="form-control"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="form-control is-valid"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
   <small
     class="valid-feedback"
   >
@@ -263,37 +291,41 @@ exports[`Select native select renders with correct styles when valid 1`] = `
 </div>
 `;
 
-exports[`Select native select renders with message correctly 1`] = `
+exports[`Select native variant renders with message correctly 1`] = `
 <div
   class="form-group"
 >
-  <label>
-    <select
-      class="form-control"
-    >
-      <option
-        value=""
-      >
-        Select a value
-      </option>
-      <option
-        value="apples"
-      >
-        Apples
-      </option>
-      <option
-        value="bananas"
-      >
-        Bananas
-      </option>
-      <option
-        value="oranges"
-      >
-        Oranges
-      </option>
-    </select>
+  <label
+    for="test"
+  >
     What is your favorite fruit?
   </label>
+  <select
+    class="form-control"
+    id="test"
+    label="What is your favorite fruit?"
+  >
+    <option
+      value=""
+    >
+      Select a value
+    </option>
+    <option
+      value="apples"
+    >
+      Apples
+    </option>
+    <option
+      value="bananas"
+    >
+      Bananas
+    </option>
+    <option
+      value="oranges"
+    >
+      Oranges
+    </option>
+  </select>
   <small
     class="field-message"
   >
