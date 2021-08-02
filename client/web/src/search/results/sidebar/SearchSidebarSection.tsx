@@ -18,7 +18,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
      * Shown when the built-in search doesn't find any results.
      */
     noResultText?: React.ReactElement | string
-}> = ({ header, children = [], className, showSearch = false, onToggle, open, noResultText = 'No result' }) => {
+}> = ({ header, children = [], className, showSearch = false, onToggle, open, noResultText = 'No results' }) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change

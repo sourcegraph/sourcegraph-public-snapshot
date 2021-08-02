@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 
@@ -96,7 +96,10 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [persistToggleState, props.telemetryService]
     )
 
-    const repoFilterLinks = getRepoFilterLinks(props.filters, onDynamicFilterClicked)
+    const repoFilterLinks = useMemo(() => getRepoFilterLinks(props.filters, onDynamicFilterClicked), [
+        props.filters,
+        onDynamicFilterClicked,
+    ])
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
