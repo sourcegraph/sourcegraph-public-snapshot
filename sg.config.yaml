@@ -500,6 +500,88 @@ commands:
     # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
     cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
 
+  jaeger:
+    cmd: |
+      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL} >> "${JAEGER_LOGS}"/jaeger.log 2>&1
+    install: |
+      mkdir -p "${JAEGER_DISK}"
+      mkdir -p "${JAEGER_LOGS}"
+
+      suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
+      target="$PWD/.bin/jaeger-all-in-one-${suffix}"
+      url="https://github.com/jaegertracing/jaeger/releases/download/v${version}/jaeger-${suffix}.tar.gz"
+
+      if [ ! -f "${target}" ]; then
+        echo "downloading ${url}" 1>&2
+        curl -sS -L -f "${url}" | tar -xz --to-stdout "jaeger-${suffix}/jaeger-all-in-one" >"${target}.tmp"
+        mv "${target}.tmp" "${target}"
+      fi
+
+      chmod +x "${target}"
+    env:
+      JAEGER_VERSION: 1.18.1
+      JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
+      JAEGER_LOGS: $HOME/.sourcegraph-dev/logs/jaeger
+      JAEGER_LOG_LEVEL: info
+      QUERY_BASE_PATH: /-/debug/jaeger
+
+  grafana:
+    cmd: |
+      echo "Grafana: serving on http://localhost:${PORT}"
+      echo "Grafana: note that logs are piped to ${GRAFANA_LOG_FILE}"
+      docker run --rm ${DOCKER_USER} \
+        --name=${CONTAINER} \
+        --cpus=1 \
+        --memory=1g \
+        -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
+        -v "${GRAFANA_DISK}":/var/lib/grafana \
+        -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
+        -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
+        -e DISABLE_SOURCEGRAPH_CONFIG \
+        ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
+
+      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
+        # to the prometheus backend.
+        ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
+
+        # Docker users on Linux will generally be using direct user mapping, which
+        # means that they'll want the data in the volume mount to be owned by the
+        # same user as is running this script. Fortunately, the Grafana container
+        # doesn't really care what user it runs as, so long as it can write to
+        # /var/lib/grafana.
+        DOCKER_USER="--user=$UID"
+      fi
+
+      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+      CACHE=true ./docker-images/grafana/build.sh
+    env:
+      GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
+      # Log file location: since we log outside of the Docker container, we should
+      # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
+      # volume mounted into the container and therefore has its own ownership
+      # semantics.
+      GRAFANA_LOGS: $HOME/.sourcegraph-dev/logs/grafana
+      # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
+      # We want to capture that output, but because it's fairly noisy, don't want to
+      # display it in the normal case.
+      GRAFANA_LOG_FILE: $GRAFANA_LOGS/grafana.log
+      IMAGE: sourcegraph/grafana:dev
+      CONTAINER: grafana
+      PORT: 3370
+      # docker containers must access things via docker host on non-linux platforms
+      DOCKER_USER: ""
+      ADD_HOST_FLAG: ""
+      DISABLE_SOURCEGRAPH_CONFIG: false
+
+  prometheus:
+    cmd: ./dev/prometheus.sh
+
+  postgres_exporter:
+    cmd: ./dev/postgres_exporter.sh
+
 checks:
   docker:
     cmd: docker version
@@ -675,6 +757,13 @@ commandsets:
       - gitserver
       - caddy
       - github-proxy
+
+  monitoring:
+    commands:
+      - jaeger
+      - prometheus
+      - grafana
+      - postgres_exporter
 
 tests:
   # These can be run with `sg test [name]`
