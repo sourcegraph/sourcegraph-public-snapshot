@@ -24,7 +24,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -849,13 +848,10 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
 					ev.AddField("fetch_duration_ms", fetchDuration.Milliseconds())
 				}
-				if span := opentracing.SpanFromContext(ctx); span != nil {
-					spanURL := trace.SpanURL(span)
-					// URLs starting with # don't have a trace. eg
-					// "#tracer-not-enabled"
-					if !strings.HasPrefix(spanURL, "#") {
-						ev.AddField("trace", spanURL)
-					}
+
+				if traceID := trace.ID(ctx); traceID != "" {
+					ev.AddField("traceid", traceID)
+					ev.AddField("trace", trace.URL(traceID))
 				}
 
 				if honey.Enabled() {
@@ -1085,13 +1081,10 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				if !cmdStart.IsZero() {
 					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
 				}
-				if span := opentracing.SpanFromContext(ctx); span != nil {
-					spanURL := trace.SpanURL(span)
-					// URLs starting with # don't have a trace. eg
-					// "#tracer-not-enabled"
-					if !strings.HasPrefix(spanURL, "#") {
-						ev.AddField("trace", spanURL)
-					}
+
+				if traceID := trace.ID(ctx); traceID != "" {
+					ev.AddField("traceid", traceID)
+					ev.AddField("trace", trace.URL(traceID))
 				}
 
 				if honey.Enabled() {

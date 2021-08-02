@@ -8,9 +8,7 @@ package tracer
 import (
 	"fmt"
 	"io"
-	"os"
 	"reflect"
-	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -19,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/opentracing/opentracing-go"
@@ -129,28 +126,27 @@ func initTracer(serviceName string) {
 
 		oldOpts = opts
 
-		tracer, urlFunc, closer, err := newTracer(&opts)
+		tracer, closer, err := newTracer(&opts)
 		if err != nil {
 			log15.Warn("Could not initialize jaeger tracer", "error", err.Error())
 			return
 		}
 
 		globalTracer.set(tracer, closer, opts.Debug)
-		trace.SetSpanURLFunc(urlFunc)
 	})
 }
 
-func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span) string, io.Closer, error) {
+func newTracer(opts *jaegerOpts) (opentracing.Tracer, io.Closer, error) {
 	if !opts.Enabled {
 		log15.Info("opentracing: Jaeger disabled")
-		return opentracing.NoopTracer{}, nil, nil, nil
+		return opentracing.NoopTracer{}, nil, nil
 	}
 
 	log15.Info("opentracing: Jaeger enabled")
 	cfg, err := jaegercfg.FromEnv()
 	cfg.ServiceName = opts.ServiceName
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
+		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
 	}
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
@@ -164,27 +160,10 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span
 		jaegercfg.Metrics(jaegermetrics.NullFactory),
 	)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "jaegercfg.NewTracer failed")
+		return nil, nil, errors.Wrap(err, "jaegercfg.NewTracer failed")
 	}
 
-	traceBaseURL := os.Getenv("TRACE_BASE_URL")
-	if traceBaseURL == "" {
-		// We proxy jaeger so we can construct URLs to traces.
-		traceBaseURL = strings.TrimSuffix(opts.ExternalURL, "/") + "/-/debug/jaeger/trace/"
-	}
-
-	spanURL := func(span opentracing.Span) string {
-		if span == nil {
-			return tracingNotEnabledURL
-		}
-		spanCtx, ok := span.Context().(jaeger.SpanContext)
-		if !ok {
-			return tracingNotEnabledURL
-		}
-		return traceBaseURL + spanCtx.TraceID().String()
-	}
-
-	return tracer, spanURL, closer, nil
+	return tracer, closer, nil
 }
 
 // switchableTracer implements opentracing.Tracer. The underlying tracer used is switchable (set via
@@ -239,5 +218,3 @@ func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer
 	t.tracer = tracer
 	t.log = log
 }
-
-const tracingNotEnabledURL = "#tracing_not_enabled_for_this_request_add_?trace=1_to_url_to_enable"
