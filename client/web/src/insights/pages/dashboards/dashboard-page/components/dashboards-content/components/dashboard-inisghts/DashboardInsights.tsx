@@ -37,7 +37,8 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
         onAddInsightRequest,
     } = props
 
-    const insightIds = useDistinctValue(dashboard.insightIds) ?? DEFAULT_INSIGHT_IDS
+    const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
+    const insightIds = useDistinctValue(dashboardInsightIds)
     const insights = useInsights({ insightIds, settingsCascade })
 
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
