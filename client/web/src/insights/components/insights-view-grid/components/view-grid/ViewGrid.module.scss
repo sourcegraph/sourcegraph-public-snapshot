@@ -1,9 +1,5 @@
-@import '../insight-view-content/InsightViewContent';
-@import 'react-grid-layout/css/styles';
-@import 'react-resizable/css/styles';
-
-.insights-view-grid {
-    .react-resizable-handle {
+.view-grid {
+    :global(.react-resizable-handle) {
         background: none;
         cursor: nwse-resize;
         width: 1rem;
@@ -18,12 +14,5 @@
             border-right: 2px solid var(--card-border-color);
             border-bottom: 2px solid var(--card-border-color);
         }
-    }
-
-    &__item {
-        display: flex;
-        flex-direction: column;
-        padding: 0.5rem 1rem;
-        cursor: default;
     }
 }

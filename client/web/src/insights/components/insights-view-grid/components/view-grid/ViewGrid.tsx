@@ -1,13 +1,11 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo } from 'react'
+import React, { PropsWithChildren, useCallback, useMemo } from 'react'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
-import { ViewInsightProviderResult } from '../../core/backend/types'
-
-import { InsightContentCard } from './components/insight-card/InsightContentCard'
+import styles from './ViewGrid.module.scss'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -24,14 +22,14 @@ const defaultItemsPerRow: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2
 const minWidths: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
 const defaultHeight = 3
 
-const viewsToReactGridLayouts = (views: ViewInsightProviderResult[]): ReactGridLayouts => {
+const viewsToReactGridLayouts = (viewIds: string[]): ReactGridLayouts => {
     const reactGridLayouts = Object.fromEntries(
         breakpointNames.map(
             breakpointName =>
                 [
                     breakpointName,
-                    views.map(
-                        ({ id }, index): ReactGridLayout => {
+                    viewIds.map(
+                        (id, index): ReactGridLayout => {
                             const width = columns[breakpointName] / defaultItemsPerRow[breakpointName]
                             return {
                                 i: id,
@@ -50,33 +48,22 @@ const viewsToReactGridLayouts = (views: ViewInsightProviderResult[]): ReactGridL
     return reactGridLayouts
 }
 
-export interface InsightsViewGridProps extends TelemetryProps {
+export interface ViewGridProps extends TelemetryProps {
     /**
-     * All insights to display in a grid.
+     * All view ids withing the grid component. Used to calculate
+     * layout for each grid element.
      */
-    views: ViewInsightProviderResult[]
+    viewIds: string[]
 
     /** Custom classname for root element of the grid. */
     className?: string
-
-    /** Delete handler which calls when a user clicks delete item in a insight menu. */
-    onDelete?: (id: string) => Promise<void>
-
-    /**
-     * Prop for enabling and disabling insight context menu.
-     * Now only insight page has insights with context menu but
-     * there are other place like Home page, Directory and Global
-     * pages
-     * */
-    hasContextMenu?: boolean
 }
 
 /**
- * Renders insights drag and drop grid with all type of insights
- * (backend, search based, lang stats)
+ * Renders drag and drop and resizable views grid.
  */
-export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = props => {
-    const { hasContextMenu, telemetryService, onDelete = () => Promise.resolve() } = props
+export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps>> = props => {
+    const { viewIds, telemetryService, children, className } = props
 
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
@@ -99,10 +86,10 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
     const useCSSTransforms = useMemo(() => !isFirefox(), [])
 
     return (
-        <div className={classNames(props.className, 'insights-view-grid')}>
+        <div className={classNames(className, styles.viewGrid)}>
             <ResponsiveGridLayout
                 breakpoints={breakpoints}
-                layouts={viewsToReactGridLayouts(props.views)}
+                layouts={viewsToReactGridLayouts(viewIds)}
                 cols={columns}
                 autoSize={true}
                 rowHeight={6 * 16}
@@ -112,23 +99,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                 onResizeStart={onResizeOrDragStart}
                 onDragStart={onResizeOrDragStart}
             >
-                {props.views.map(view => (
-                    // Since ResponsiveGridLayout relies on fact that children components must be
-                    // native elements we can't use custom react component here explicitly.
-                    <section
-                        key={view.id}
-                        data-testid={`insight-card.${view.id}`}
-                        className="card insights-view-grid__item"
-                    >
-                        <InsightContentCard
-                            telemetryService={telemetryService}
-                            hasContextMenu={hasContextMenu}
-                            insight={view}
-                            containerClassName="insights-view-grid__item"
-                            onDelete={onDelete}
-                        />
-                    </section>
-                ))}
+                {children}
             </ResponsiveGridLayout>
         </div>
     )

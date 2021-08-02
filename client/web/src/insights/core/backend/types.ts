@@ -14,8 +14,14 @@ export enum ViewInsightProviderSourceType {
     Extension = 'Extension',
 }
 
+/**
+ * Unified insight data interface.
+ */
 export interface ViewInsightProviderResult extends ViewProviderResult {
-    /** The source of view provider to distinguish between data from extension and data from backend */
+    /**
+     * The source of view provider to distinguish between data from extension
+     * and data from backend
+     */
     source: ViewInsightProviderSourceType
 }
 
@@ -57,19 +63,19 @@ export interface ApiService {
         backendInsightsIds?: string[]
     ) => Observable<ViewInsightProviderResult[]>
 
-    /**
-     * Returns insights list (backend and extension based) for the insights page.
-     *
-     * @param extensionApi - extension API for getting extension insights.
-     * @param insightsIds - specific insight ids for loading. Used by dashboard
-     * pages that have only sub-set of all insights.
-     * @param backendInsightsIds - specific dashboard subset of BE-like insight ids.
-     */
     getInsightCombinedViews: (
         extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
         allInsightsIds?: string[],
         backendInsightsIds?: string[]
     ) => Observable<ViewInsightProviderResult[]>
+
+    /**
+     * Returns resolved extension provider result by extension view id.
+     */
+    getExtensionViewById: (
+        id: string,
+        extensionApi: Promise<Remote<FlatExtensionHostAPI>>
+    ) => Observable<ViewInsightProviderResult>
 
     /**
      * Finds and returns the subject settings by the subject id.
