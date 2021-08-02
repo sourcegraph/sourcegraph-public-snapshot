@@ -42,11 +42,11 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
 - Clone your fork using the repository's URL.
 
+    > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
+
   ```bash
   git clone $FORK_URL
   ```
-
-    > INFO: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
 
 - Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](#upgrade).
 
