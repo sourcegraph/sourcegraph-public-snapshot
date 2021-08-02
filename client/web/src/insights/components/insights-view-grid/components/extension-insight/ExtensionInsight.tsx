@@ -44,7 +44,7 @@ export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = 
         <InsightContentCard
             telemetryService={telemetryService}
             hasContextMenu={true}
-            insight={{ id: viewId, view: data?.view, source: ViewInsightProviderSourceType.Backend }}
+            insight={{ id: viewId, view: data?.view }}
             onDelete={handleDelete}
             {...otherProps}
             className={classnames('extension-insight-card', otherProps.className)}
@@ -53,13 +53,13 @@ export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = 
                 <InsightLoadingContent
                     text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
                     subTitle={viewId}
-                    icon={getInsightViewIcon(ViewInsightProviderSourceType.Backend)}
+                    icon={getInsightViewIcon(ViewInsightProviderSourceType.Extension)}
                 />
             ) : isErrorLike(data.view) ? (
                 <InsightErrorContent
                     error={data.view}
                     title={viewId}
-                    icon={getInsightViewIcon(ViewInsightProviderSourceType.Backend)}
+                    icon={getInsightViewIcon(ViewInsightProviderSourceType.Extension)}
                 />
             ) : (
                 data.view && (

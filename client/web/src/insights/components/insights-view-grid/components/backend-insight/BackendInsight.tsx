@@ -45,7 +45,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         <InsightContentCard
             telemetryService={telemetryService}
             hasContextMenu={true}
-            insight={{ id: '', view: undefined, source: ViewInsightProviderSourceType.Backend }}
+            insight={{ id: insight.id, view: data?.view }}
             onDelete={handleDelete}
             {...otherProps}
             className={classnames('be-insight-card', otherProps.className)}

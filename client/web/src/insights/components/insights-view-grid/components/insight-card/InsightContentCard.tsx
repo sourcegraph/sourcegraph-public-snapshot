@@ -5,11 +5,12 @@ import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { PropsWithChildren } from 'react'
 import { useLocation } from 'react-router-dom'
 
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
-import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../../../core/backend/types'
+import { ViewInsightProviderSourceType } from '../../../../core/backend/types'
 import { InsightTypePrefix } from '../../../../core/types'
 
 import { InsightCardMenu } from './components/insight-card-menu/InsightCardMenu'
@@ -21,7 +22,7 @@ export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<H
     /**
      * Insight data (title, chart content)
      */
-    insight: ViewInsightProviderResult
+    insight: ViewProviderResult
 
     /**
      * Deleting handler fires when the user clicks delete in the insight menu.
