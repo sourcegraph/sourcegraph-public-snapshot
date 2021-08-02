@@ -381,7 +381,7 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
+func fromMatch(match result.Match, repoCache map[api.RepoID]types.RepoMetadata) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
 		return fromFileMatch(v, repoCache)
@@ -394,7 +394,7 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamh
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
+func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
 	} else if len(fm.LineMatches) > 0 {
@@ -403,28 +403,27 @@ func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) s
 	return fromPathMatch(fm, repoCache)
 }
 
-func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventPathMatch {
-	var branches []string
-	if fm.InputRev != nil {
-		branches = []string{*fm.InputRev}
-	}
-
-	var stars int
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		stars = r.Stars
-	}
-
-	return &streamhttp.EventPathMatch{
+func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventPathMatch {
+	pathEvent := &streamhttp.EventPathMatch{
 		Type:       streamhttp.PathMatchType,
 		Path:       fm.Path,
 		Repository: string(fm.Repo.Name),
-		RepoStars:  stars,
-		Branches:   branches,
 		Version:    string(fm.CommitID),
 	}
+
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		pathEvent.RepoStars = r.Stars
+		pathEvent.RepoLastFetched = r.LastFetched
+	}
+
+	if fm.InputRev != nil {
+		pathEvent.Branches = []string{*fm.InputRev}
+	}
+
+	return pathEvent
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventContentMatch {
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventContentMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -434,28 +433,27 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo
 		})
 	}
 
-	var branches []string
-	if fm.InputRev != nil {
-		branches = []string{*fm.InputRev}
-	}
-
-	var stars int
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		stars = r.Stars
-	}
-
-	return &streamhttp.EventContentMatch{
+	contentEvent := &streamhttp.EventContentMatch{
 		Type:        streamhttp.ContentMatchType,
 		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
-		RepoStars:   stars,
-		Branches:    branches,
 		Version:     string(fm.CommitID),
 		LineMatches: lineMatches,
 	}
+
+	if fm.InputRev != nil {
+		contentEvent.Branches = []string{*fm.InputRev}
+	}
+
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		contentEvent.RepoStars = r.Stars
+		contentEvent.RepoLastFetched = r.LastFetched
+	}
+
+	return contentEvent
 }
 
-func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventSymbolMatch {
 	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
 	for _, sym := range fm.Symbols {
 		kind := sym.Symbol.LSPKind()
@@ -472,28 +470,27 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo)
 		})
 	}
 
-	var branches []string
-	if fm.InputRev != nil {
-		branches = []string{*fm.InputRev}
-	}
-
-	var stars int
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		stars = r.Stars
-	}
-
-	return &streamhttp.EventSymbolMatch{
+	symbolMatch := &streamhttp.EventSymbolMatch{
 		Type:       streamhttp.SymbolMatchType,
 		Path:       fm.Path,
 		Repository: string(fm.Repo.Name),
-		RepoStars:  stars,
-		Branches:   branches,
 		Version:    string(fm.CommitID),
 		Symbols:    symbols,
 	}
+
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		symbolMatch.RepoStars = r.Stars
+		symbolMatch.RepoLastFetched = r.LastFetched
+	}
+
+	if fm.InputRev != nil {
+		symbolMatch.Branches = []string{*fm.InputRev}
+	}
+
+	return symbolMatch
 }
 
-func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventRepoMatch {
+func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
@@ -507,6 +504,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Repo) 
 
 	if r, ok := repoCache[rm.ID]; ok {
 		repoEvent.RepoStars = r.Stars
+		repoEvent.RepoLastFetched = r.LastFetched
 		repoEvent.Description = r.Description
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
@@ -515,7 +513,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Repo) 
 	return repoEvent
 }
 
-func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventCommitMatch {
+func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventCommitMatch {
 	content := commit.Body.Value
 
 	highlights := commit.Body.Highlights
@@ -524,21 +522,22 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Repo
 		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
 
-	var stars int
-	if r, ok := repoCache[commit.Repo.ID]; ok {
-		stars = r.Stars
-	}
-
-	return &streamhttp.EventCommitMatch{
+	commitEvent := &streamhttp.EventCommitMatch{
 		Type:       streamhttp.CommitMatchType,
 		Label:      commit.Label(),
 		URL:        commit.URL().String(),
 		Detail:     commit.Detail(),
 		Repository: string(commit.Repo.Name),
-		RepoStars:  stars,
 		Content:    content,
 		Ranges:     ranges,
 	}
+
+	if r, ok := repoCache[commit.Repo.ID]; ok {
+		commitEvent.RepoStars = r.Stars
+		commitEvent.RepoLastFetched = r.LastFetched
+	}
+
+	return commitEvent
 }
 
 // eventStreamOTHook returns a StatHook which logs to log.

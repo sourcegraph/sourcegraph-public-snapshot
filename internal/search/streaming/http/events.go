@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"time"
 
 	"github.com/cockroachdb/errors"
 )
@@ -18,11 +19,12 @@ type EventContentMatch struct {
 	// Type is always FileMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path       string   `json:"name"`
-	Repository string   `json:"repository"`
-	RepoStars  int      `json:"repoStars,omitempty"`
-	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
+	Path            string     `json:"name"`
+	Repository      string     `json:"repository"`
+	RepoStars       int        `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
+	Branches        []string   `json:"branches,omitempty"`
+	Version         string     `json:"version,omitempty"`
 
 	LineMatches []EventLineMatch `json:"lineMatches"`
 }
@@ -37,11 +39,12 @@ type EventPathMatch struct {
 	// Type is always PathMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path       string   `json:"name"`
-	Repository string   `json:"repository"`
-	RepoStars  int      `json:"repoStars,omitempty"`
-	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
+	Path            string     `json:"name"`
+	Repository      string     `json:"repository"`
+	RepoStars       int        `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
+	Branches        []string   `json:"branches,omitempty"`
+	Version         string     `json:"version,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
@@ -58,12 +61,13 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Repository  string   `json:"repository"`
-	Branches    []string `json:"branches,omitempty"`
-	RepoStars   int      `json:"repoStars,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Fork        bool     `json:"fork,omitempty"`
-	Archived    bool     `json:"archived,omitempty"`
+	Repository      string     `json:"repository"`
+	Branches        []string   `json:"branches,omitempty"`
+	RepoStars       int        `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
+	Description     string     `json:"description,omitempty"`
+	Fork            bool       `json:"fork,omitempty"`
+	Archived        bool       `json:"archived,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}
@@ -73,11 +77,12 @@ type EventSymbolMatch struct {
 	// Type is always SymbolMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path       string   `json:"name"`
-	Repository string   `json:"repository"`
-	RepoStars  int      `json:"repoStars,omitempty"`
-	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
+	Path            string     `json:"name"`
+	Repository      string     `json:"repository"`
+	RepoStars       int        `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
+	Branches        []string   `json:"branches,omitempty"`
+	Version         string     `json:"version,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }
@@ -99,12 +104,13 @@ type EventCommitMatch struct {
 	// Type is always CommitMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Label      string `json:"label"`
-	URL        string `json:"url"`
-	Detail     string `json:"detail"`
-	Repository string `json:"repository"`
-	RepoStars  int    `json:"repoStars,omitempty"`
-	Content    string `json:"content"`
+	Label           string     `json:"label"`
+	URL             string     `json:"url"`
+	Detail          string     `json:"detail"`
+	Repository      string     `json:"repository"`
+	RepoStars       int        `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
+	Content         string     `json:"content"`
 	// [line, character, length]
 	Ranges [][3]int32 `json:"ranges"`
 }
