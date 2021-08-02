@@ -527,21 +527,6 @@ commands:
 
   grafana:
     cmd: |
-      echo "Grafana: serving on http://localhost:${PORT}"
-      echo "Grafana: note that logs are piped to ${GRAFANA_LOG_FILE}"
-      docker run --rm ${DOCKER_USER} \
-        --name=${CONTAINER} \
-        --cpus=1 \
-        --memory=1g \
-        -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
-        -v "${GRAFANA_DISK}":/var/lib/grafana \
-        -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
-        -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
-        -e DISABLE_SOURCEGRAPH_CONFIG \
-        ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1
-    install: |
-      mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-
       if [[ "$OSTYPE" == "linux-gnu" ]]; then
         # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
         # to the prometheus backend.
@@ -555,6 +540,22 @@ commands:
         DOCKER_USER="--user=$UID"
       fi
 
+      echo "Grafana: serving on http://localhost:${PORT}"
+      echo "Grafana: note that logs are piped to ${GRAFANA_LOG_FILE}"
+      docker run --rm ${DOCKER_USER} \
+        --name=${CONTAINER} \
+        --cpus=1 \
+        --memory=1g \
+        -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
+        -v "${GRAFANA_DISK}":/var/lib/grafana \
+        -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
+        -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
+        -e DISABLE_SOURCEGRAPH_CONFIG \
+        ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "${GRAFANA_DISK}"
+      mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
+
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       CACHE=true ./docker-images/grafana/build.sh
     env:
@@ -563,11 +564,10 @@ commands:
       # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
       # volume mounted into the container and therefore has its own ownership
       # semantics.
-      GRAFANA_LOGS: $HOME/.sourcegraph-dev/logs/grafana
       # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
       # We want to capture that output, but because it's fairly noisy, don't want to
       # display it in the normal case.
-      GRAFANA_LOG_FILE: $GRAFANA_LOGS/grafana.log
+      GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
       IMAGE: sourcegraph/grafana:dev
       CONTAINER: grafana
       PORT: 3370
@@ -577,7 +577,56 @@ commands:
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   prometheus:
-    cmd: ./dev/prometheus.sh
+    cmd: |
+      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        DOCKER_USER="--user=$UID"
+
+        # Frontend generally runs outside of Docker, so to access it we need to be
+        # able to access ports on the host. --net=host is a very dirty way of
+        # enabling this.
+        DOCKER_NET="--net=host"
+        SRC_FRONTEND_INTERNAL="localhost:3090"
+      fi
+
+      echo "Prometheus: serving on http://localhost:${PORT}"
+      echo "Prometheus: note that logs are piped to ${PROMETHEUS_LOG_FILE}"
+      docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
+        --name=${CONTAINER} \
+        --cpus=1 \
+        --memory=4g \
+        -p 0.0.0.0:9090:9090 \
+        -v "${PROMETHEUS_DISK}":/prometheus \
+        -v "$(pwd)/${CONFIG_DIR}":/sg_prometheus_add_ons \
+        -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
+        -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-""}" \
+        -e DISABLE_ALERTMANAGER="${DISABLE_ALERTMANAGER:-""}" \
+        ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "${PROMETHEUS_DISK}"
+      mkdir -p "$(dirname ${PROMETHEUS_LOG_FILE})"
+
+      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+
+      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
+      fi
+
+      cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
+      CACHE=true ./docker-images/prometheus/build.sh
+    env:
+      PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
+      # See comment above for `grafana`
+      PROMETHEUS_LOG_FILE: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
+      IMAGE: sourcegraph/prometheus:dev
+      CONTAINER: prometheus
+      PORT: 9090
+      CONFIG_DIR: docker-images/prometheus/config
+      DOCKER_USER: ""
+      DOCKER_NET: ""
+      PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
+      SRC_FRONTEND_INTERNAL: host.docker.internal:3090
+      ADD_HOST_FLAG: ""
+      DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
     cmd: ./dev/postgres_exporter.sh
