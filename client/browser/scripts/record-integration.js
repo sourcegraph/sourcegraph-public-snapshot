@@ -15,9 +15,6 @@ const shelljs = require('shelljs')
     .filter(Boolean)
     .map(matchArray => matchArray[2])
 
-  console.log(testFiles)
-  console.log(testNames)
-
   for (const testName of testNames) {
     shelljs.exec(
       `RECORD=true SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep='${testName}'`,
