@@ -79,8 +79,9 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
 	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
 
-	handle.logEntry.ExitCode = exitCode
-	handle.logEntry.DurationMs = int(time.Since(startTime) / time.Millisecond)
+	handle.logEntry.ExitCode = &exitCode
+	duration := int(time.Since(startTime) / time.Millisecond)
+	handle.logEntry.DurationMs = &duration
 
 	if err != nil {
 		return err
