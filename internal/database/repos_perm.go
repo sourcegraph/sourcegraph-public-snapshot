@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -93,9 +94,8 @@ func WithEnforcedAuthz(ctx context.Context, db dbutil.DB) (dbutil.DB, func(error
 	// transaction.
 	if inTransaction {
 		done = func(err error) error {
-			// TODO: How to handle an error returned by ExecContext
-			tx.DB().ExecContext(ctx, "RESET ROLE")
-			return err
+			_, resetErr := tx.DB().ExecContext(ctx, "RESET ROLE")
+			return multierror.Append(err, resetErr).ErrorOrNil()
 		}
 	}
 
