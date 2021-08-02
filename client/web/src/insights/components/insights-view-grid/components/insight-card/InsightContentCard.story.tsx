@@ -1,5 +1,5 @@
 import { storiesOf } from '@storybook/react'
-import PuzzleIcon from 'mdi-react/PuzzleIcon';
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -7,8 +7,8 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../components/WebStory'
 import { ViewInsightProviderSourceType } from '../../../../core/backend/types'
 
-import { InsightErrorContent } from './components/insight-error-content/InsightErrorContent';
-import { InsightLoadingContent } from './components/insight-loading-content/InsightLoadingContent';
+import { InsightErrorContent } from './components/insight-error-content/InsightErrorContent'
+import { InsightLoadingContent } from './components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from './InsightContentCard'
 
 const { add } = storiesOf('web/insights/InsightContentCard', module).addDecorator(story => (
@@ -23,11 +23,7 @@ add('Loading insight', () => (
         hasContextMenu={true}
         telemetryService={NOOP_TELEMETRY_SERVICE}
     >
-        <InsightLoadingContent
-            text='Loading insight'
-            subTitle='searchInsights.insight.id'
-            icon={PuzzleIcon}
-        />
+        <InsightLoadingContent text="Loading insight" subTitle="searchInsights.insight.id" icon={PuzzleIcon} />
     </InsightContentCard>
 ))
 
@@ -43,7 +39,7 @@ add('Errored insight', () => (
         telemetryService={NOOP_TELEMETRY_SERVICE}
     >
         <InsightErrorContent
-            title='searchInsights.insight.id'
+            title="searchInsights.insight.id"
             error={new Error("We couldn't find code insight")}
             icon={PuzzleIcon}
         />
