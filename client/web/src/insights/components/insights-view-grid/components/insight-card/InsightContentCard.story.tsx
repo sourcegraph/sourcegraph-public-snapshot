@@ -5,7 +5,6 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { ViewInsightProviderSourceType } from '../../../../core/backend/types'
 
 import { InsightErrorContent } from './components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from './components/insight-loading-content/InsightLoadingContent'
@@ -18,7 +17,7 @@ const { add } = storiesOf('web/insights/InsightContentCard', module).addDecorato
 add('Loading insight', () => (
     <InsightContentCard
         style={{ width: '400px', height: '400px' }}
-        insight={{ id: 'searchInsights.insight.id', source: ViewInsightProviderSourceType.Extension, view: undefined }}
+        insight={{ id: 'searchInsights.insight.id', view: undefined }}
         onDelete={() => Promise.resolve()}
         hasContextMenu={true}
         telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -32,7 +31,6 @@ add('Errored insight', () => (
         style={{ width: '400px', height: '400px' }}
         insight={{
             id: 'searchInsights.insight.id',
-            source: ViewInsightProviderSourceType.Extension,
             view: new Error("BE couldn't load this Insight"),
         }}
         hasContextMenu={true}
