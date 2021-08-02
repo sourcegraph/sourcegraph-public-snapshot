@@ -218,5 +218,3 @@ func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer
 	t.tracer = tracer
 	t.log = log
 }
-
-const tracingNotEnabledURL = "#tracing_not_enabled_for_this_request_add_?trace=1_to_url_to_enable"
