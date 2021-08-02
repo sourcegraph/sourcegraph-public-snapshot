@@ -173,7 +173,7 @@ func main() {
 
 	// Create Handler now since it also initializes state
 
-	handler := trace.HTTPTraceMiddleware(ot.Middleware(gitserver.Handler()))
+	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
 
 	// Ready immediately
 	ready := make(chan struct{})

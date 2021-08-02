@@ -81,22 +81,23 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 
 	var h http.Handler = sm
 
-	// Wrap in middleware.
+	// Wrap in middleware, first line is last to run.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
 	// OverrideAuthMiddleware allows us to inject an authentication token via an
 	// environment variable, for testing. This is true only when a site-config
 	// change is explicitly made, to enable this token.
-	h = internalauth.OverrideAuthMiddleware(db, h)
-	h = internalauth.ForbidAllRequestsMiddleware(h)
-	h = ot.Middleware(h)
-	h = tracepkg.HTTPTraceMiddleware(h)
-	h = middleware.SourcegraphComGoGetHandler(h)
-	h = middleware.BlackHole(h)
-	h = secureHeadersMiddleware(h)
-	h = healthCheckMiddleware(h)
-	h = gcontext.ClearHandler(h)
 	h = middleware.Trace(h)
+	h = gcontext.ClearHandler(h)
+	h = healthCheckMiddleware(h)
+	h = secureHeadersMiddleware(h)
+	h = middleware.BlackHole(h)
+	h = middleware.SourcegraphComGoGetHandler(h)
+	h = internalauth.ForbidAllRequestsMiddleware(h)
+	h = internalauth.OverrideAuthMiddleware(db, h)
+	h = tracepkg.HTTPTraceMiddleware(h)
+	h = ot.Middleware(h)
+
 	return h, nil
 }
 
@@ -127,8 +128,9 @@ func newInternalHTTPHandler(schema *graphql.Schema, db dbutil.DB, newCodeIntelUp
 		),
 	))
 	h := http.Handler(internalMux)
-	h = tracepkg.HTTPTraceMiddleware(h)
 	h = gcontext.ClearHandler(h)
+	h = tracepkg.HTTPTraceMiddleware(h)
+	h = ot.Middleware(h)
 	return h
 }
 
