@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 	regexpsyntax "regexp/syntax"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -137,6 +139,10 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.RepoID) {
+	if disabled, _ := strconv.ParseBool(os.Getenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS")); disabled {
+		return
+	}
+
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Resource string       `json:"resource"`
