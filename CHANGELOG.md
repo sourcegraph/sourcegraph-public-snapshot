@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.30.4
+
+### Added
+
+- Releases are now built for `arm64` architectures too.
+
 ## 3.30.3
 
 ### Fixed
