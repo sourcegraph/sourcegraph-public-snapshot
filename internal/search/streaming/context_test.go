@@ -1,0 +1,84 @@
+package streaming
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/cockroachdb/errors"
+)
+
+func TestCancelWithReason(t *testing.T) {
+	parentCtx, cancel := context.WithCancel(context.Background())
+	mutCtx := WithMutableValue(parentCtx)
+	childCtx, cancelChildCtx := PickyContext(mutCtx, CanceledLimitHit)
+	defer cancelChildCtx()
+
+	// Cancel with reason.
+	mutCtx.Set(CanceledLimitHit, true)
+	cancel()
+
+	select {
+	case <-parentCtx.Done():
+	case <-time.After(10 * time.Millisecond):
+		t.Fatalf("parent context should have been canceled")
+	}
+
+	select {
+	case <-childCtx.Done():
+		t.Fatalf("child context should NOT have been canceled")
+	case <-time.After(10 * time.Millisecond):
+	}
+}
+
+func TestCancelWithoutReason(t *testing.T) {
+	parentCtx, cancel := context.WithCancel(context.Background())
+	mutCtx := WithMutableValue(parentCtx)
+	childCtx, cancelChildCtx := PickyContext(mutCtx, CanceledLimitHit)
+	defer cancelChildCtx()
+	// Check propagation to children.
+	type tmpType string
+	grandchildCtx := context.WithValue(childCtx, tmpType("foo"), "bar")
+
+	// We cancel without giving a reason and expect childCtx to be canceled.
+	cancel()
+
+	select {
+	case <-childCtx.Done():
+	case <-time.After(10 * time.Millisecond):
+		t.Fatalf("child context should have been canceled")
+	}
+
+	select {
+	case <-grandchildCtx.Done():
+	case <-time.After(10 * time.Millisecond):
+		t.Fatalf("child context should have been canceled")
+	}
+
+	if !errors.Is(childCtx.Err(), context.Canceled) {
+		t.Fatalf("got %v, want %v", childCtx.Err(), context.Canceled)
+	}
+
+	if !errors.Is(grandchildCtx.Err(), context.Canceled) {
+		t.Fatalf("got %v, want %v", grandchildCtx.Err(), context.Canceled)
+	}
+}
+
+func TestDeadlineExceeded(t *testing.T) {
+	parentCtx, cancel := context.WithDeadline(context.Background(), time.Now())
+	defer cancel()
+	mutCtx := WithMutableValue(parentCtx)
+	childCtx, cleanup := PickyContext(mutCtx, CanceledLimitHit)
+	defer cleanup()
+
+	select {
+	case <-childCtx.Done():
+	case <-time.After(10 * time.Millisecond):
+		t.Fatalf("child context should have been canceled")
+	}
+
+	if !errors.Is(childCtx.Err(), context.DeadlineExceeded) {
+		t.Fatalf("got %v, want %v", childCtx.Err(), context.DeadlineExceeded)
+	}
+
+}
