@@ -2,7 +2,7 @@
 
 Operations guides specific to managing [Sourcegraph with Docker Compose](./index.md) installations.
 
-Trying to deploy Sourcegraph? Refer to our [installation guide](./index.md#installation).
+Trying to deploy Sourcegraph with Docker Compose? Refer to our [installation guide](./index.md#installation).
 
 ## Featured guides
 
