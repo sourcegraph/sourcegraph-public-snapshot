@@ -30,7 +30,7 @@ type command struct {
 // standard error streams of the invoked command are written to the given logger.
 func runCommand(ctx context.Context, command command, logger *Logger) (err error) {
     // The `ctx` here is used below as a guard against the command finishing before we close the stdout and 
-    // stderr pipes. This context may never be canceled, so we enforce a cancellation of a child context at function exit.
+// stderr pipes. This context may be very slow to cancel, so we enforce a cancellation of a child context at function exit.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
