@@ -3,6 +3,7 @@ package locker
 import (
 	"context"
 	"database/sql"
+	"math"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -11,6 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
+
+// StringKey returns an int32 key based on s that can be used in Locker methods.
+func StringKey(s string) int32 {
+	return int32(fnv1.HashString32(s) % math.MaxInt32)
+}
 
 // Locker is a wrapper around a base store with methods that control advisory locks.
 // A locker should be used when work needs to be coordinated with other remote services.
@@ -26,7 +32,7 @@ type Locker struct {
 func NewWithDB(db dbutil.DB, namespace string) *Locker {
 	return &Locker{
 		Store:     basestore.NewWithDB(db, sql.TxOptions{}),
-		namespace: int32(fnv1.HashString32(namespace)),
+		namespace: StringKey(namespace),
 	}
 }
 
