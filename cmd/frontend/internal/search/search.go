@@ -508,6 +508,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]types.RepoMet
 		repoEvent.Description = r.Description
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
+		repoEvent.Private = r.Private
 	}
 
 	return repoEvent

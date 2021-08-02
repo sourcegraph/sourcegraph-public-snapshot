@@ -68,6 +68,7 @@ type EventRepoMatch struct {
 	Description     string     `json:"description,omitempty"`
 	Fork            bool       `json:"fork,omitempty"`
 	Archived        bool       `json:"archived,omitempty"`
+	Private         bool       `json:"private,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}

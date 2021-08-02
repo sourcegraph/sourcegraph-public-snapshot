@@ -306,6 +306,7 @@ func (s *RepoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []types.
 			"repo.description",
 			"repo.fork",
 			"repo.archived",
+			"repo.private",
 			"repo.stars",
 			"gr.last_fetched",
 		},
@@ -322,6 +323,7 @@ func (s *RepoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []types.
 			&dbutil.NullString{S: &m.Description},
 			&m.Fork,
 			&m.Archived,
+			&m.Private,
 			&dbutil.NullInt{N: &m.Stars},
 			&m.LastFetched,
 		); err != nil {

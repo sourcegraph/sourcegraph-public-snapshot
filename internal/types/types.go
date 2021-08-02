@@ -81,6 +81,8 @@ type RepoMetadata struct {
 	Fork bool
 	// Archived is whether the repository has been archived.
 	Archived bool
+	// Private is whether the repository is private.
+	Private bool
 	// Stars is the star count the repository has in the code host.
 	Stars int
 	// LastFetched is the time of the last fetch of new commits from the code host.
