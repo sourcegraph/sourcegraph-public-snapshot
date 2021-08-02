@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -278,25 +277,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
-}
-
-func getEventRepoMetadata(ctx context.Context, db dbutil.DB, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
-	ids := repoIDs(event.Results)
-	if len(ids) == 0 {
-		// Return early if there are no repos in the event
-		return nil
-	}
-
-	repoMetadata := make(map[api.RepoID]*types.Repo, len(ids))
-
-	metadataList, err := database.Repos(db).GetByIDs(ctx, ids...)
-	if err != nil {
-		log15.Error("streaming: failed to retrieve repo metadata", "error", err)
-	}
-	for _, repo := range metadataList {
-		repoMetadata[repo.ID] = repo
-	}
-	return repoMetadata
 }
 
 // startSearch will start a search. It returns the events channel which
