@@ -36,7 +36,7 @@ disablePublicRepoRedirects
 
 If you are having trouble accessing the web UI, you can make edits to your site configuration by editing the configuration directly.
 
-### Sourcegraph with Docker Compose and Single-server Sourcegraph with Docker
+### Sourcegraph with Docker Compose and single-server Sourcegraph with Docker
 
 Set `FRONTEND_CONTAINER` to:
 

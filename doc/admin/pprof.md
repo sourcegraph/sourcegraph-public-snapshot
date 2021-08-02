@@ -3,14 +3,14 @@
 ## pprof
 
 [pprof](https://github.com/google/pprof) is a visualization tool for profiling data and all the backend services in a Sourcegraph instance have the ability to generate pprof profiling data.
- 
+
 ## Exposing the debug port to generate profiling data
 
 Follow the instructions below to generate profiling data. We will use the Sourcegraph frontend and a memory profile as an example (the instructions are easily adapted to any of the Sourcegraph backends and any profiling kind).
 
-### Kubernetes
+### Sourcegraph with Kubernetes
 
-If you're using the [Kubernetes cluster deployment](https://github.com/sourcegraph/deploy-sourcegraph),  
+If you're using the [Kubernetes cluster deployment](install/kubernetes/index.md),  
 you need to port-forward 6060 from the frontend pod (if you have more than one, choose one):
 
 ```bash script
@@ -18,9 +18,9 @@ kubectl get pods
 kubectl port-forward sourcegraph-frontend-xxxx 6060:6060
 ```
 
-### Single-container server deployments
+### Single-container Sourcegraph
 
-The docker run command for the single-container server needs an additional publish flag to expose the debug port:
+The docker run command for single-container Sourcegraph needs an additional publish flag to expose the debug port:
 
 ```bash script
 docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.30.3

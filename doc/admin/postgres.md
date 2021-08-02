@@ -103,7 +103,7 @@ However, you should take some steps before the migration. For the `3.27` release
 
    You can use `kubctl exec -it $DB_POD_NAME -- df -h`. By default, the database will be mounted under `/data/`.
 
-#### Single-container Sourcegraph with Docker
+#### Single-container Sourcegraph
 
 When running a new version of Sourcegraph, [single-container Sourcegraph with Docker instances](./install/kubernetes/index.md) will check if the PostgreSQL data needs upgrading upon initialization.
 

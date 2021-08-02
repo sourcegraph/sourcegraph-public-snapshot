@@ -2,14 +2,15 @@
 
 Sourcegraph supports customising [git-config](https://git-scm.com/docs/git-config) and [ssh_config](https://linux.die.net/man/5/ssh_config) for adjusting the behaviour of git. Sourcegraph will read these from the standard locations. This guide documents how to do it for each target environment and common use cases.
 
-## Cluster Environments
+## Sourcegraph with Docker Compose
 
-For cluster environments, we have guides for configuring SSH cloning. These can be adapted to additionally set `/etc/gitconfig`:
+TODO
 
-- Kubernetes guide to [configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh).
-- Pure Docker guide to [configure SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md#configuring-ssh-cloning)
+## Sourcegraph with Kubernetes
 
-## Single-container Sourcegraph with Docker
+Please refer to the Kubernetes guide to [configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh), which can be adapted to additionally set `/etc/gitconfig`.
+
+## Single-container Sourcegraph
 
 For single-container environments, upon the Sourcegraph Docker image container start, it copies all files from `/etc/sourcegraph/{ssh,gitconfig,netrc}` into its own `$HOME` directory, via the `--volume /mnt/sourcegraph/config:/etc/sourcegraph` in the `docker run` command.
 
@@ -33,6 +34,10 @@ RUN	find /root/.ssh -type d -exec chmod 700 '{}' ';'
 ```
 
 This approach can also be used for `sourcegraph/gitserver` images in cluster environments.
+
+## Pure-Docker Sourcegraph
+
+Please refer to the Pure-Docker guide to [configure SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker/README.md#configuring-ssh-cloning), which can be adapted to additionally set `/etc/gitconfig`.
 
 ## Example: alternate clone URL for repos
 
