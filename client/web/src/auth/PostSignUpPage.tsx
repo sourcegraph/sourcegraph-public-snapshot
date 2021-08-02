@@ -93,7 +93,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
         <>
             <LinkOrSpan to={getReturnTo(location)} className="post-signup-page__logo-link">
                 <BrandLogo
-                    className="position-absolute ml-3 mt-3 post-signup-page__logo"
+                    className="ml-3 mt-3 post-signup-page__logo"
                     isLightTheme={true}
                     variant="symbol"
                     onClick={finishWelcomeFlow}

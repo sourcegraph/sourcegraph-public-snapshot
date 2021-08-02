@@ -39,6 +39,8 @@
 .post-signup-page {
     margin-top: 7rem;
     margin-bottom: 5rem;
+    align-self: flex-start;
+
     &__logo {
         height: 1.75rem;
         width: 1.75rem;
@@ -49,6 +51,12 @@
         display: flex;
         width: fit-content;
         text-decoration: none;
+        position: absolute;
+    }
+    @media screen and (max-width: 800px) {
+        &__logo-link {
+            position: relative;
+        }
     }
     &__link-disabled {
         color: var(--hl-gray-5);
