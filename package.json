@@ -39,7 +39,8 @@
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser",
-    "build-browser-extension": "yarn --cwd client/browser run build"
+    "build-browser-extension": "yarn --cwd client/browser run build",
+    "postinstall": "patch-package"
   },
   "browserslist": [
     "last 1 version",
@@ -263,10 +264,12 @@
     "open": "^7.0.4",
     "p-retry": "^4.2.0",
     "p-timeout": "^4.1.0",
+    "patch-package": "^6.4.7",
     "postcss": "^8.3.5",
     "postcss-custom-media": "^8.0.0",
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^6.1.1",
+    "postinstall-postinstall": "^2.1.0",
     "prettier": "^2.2.1",
     "process": "^0.11.10",
     "puppeteer": "5.5.0",

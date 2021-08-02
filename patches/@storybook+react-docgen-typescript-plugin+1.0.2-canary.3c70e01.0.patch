@@ -1,0 +1,25 @@
+diff --git a/node_modules/@storybook/react-docgen-typescript-plugin/dist/dependency.js b/node_modules/@storybook/react-docgen-typescript-plugin/dist/dependency.js
+index 0865750..ca94c3f 100644
+--- a/node_modules/@storybook/react-docgen-typescript-plugin/dist/dependency.js
++++ b/node_modules/@storybook/react-docgen-typescript-plugin/dist/dependency.js
+@@ -15,9 +15,20 @@ class DocGenDependency extends NullDependency_js_1.default {
+         };
+         this.codeBlock = codeBlock;
+     }
++    get type() {
++        return "docgen";
++    }
+     getModuleEvaluationSideEffectsState() {
+         return false;
+     }
++    serialize(context) {
++        const { write } = context;
++        write(this.codeBlock);
++    }
++    deserialize(context) {
++        const { read } = context;
++        this.codeBlock = read();
++    }
+ }
+ exports.DocGenDependency = DocGenDependency;
+ makeSerializable_js_1.default(DocGenDependency, "react-docgen-typescript-plugin/dist/dependency");
