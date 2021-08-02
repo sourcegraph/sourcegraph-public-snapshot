@@ -18,11 +18,12 @@ import (
 )
 
 type IndexScheduler struct {
-	dbStore       DBStore
-	settingStore  IndexingSettingStore
-	repoStore     IndexingRepoStore
-	indexEnqueuer IndexEnqueuer
-	operations    *operations
+	dbStore               DBStore
+	settingStore          IndexingSettingStore
+	repoStore             IndexingRepoStore
+	indexEnqueuer         IndexEnqueuer
+	enabledRepoGroupNames []string
+	operations            *operations
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
@@ -33,15 +34,17 @@ func NewIndexScheduler(
 	settingStore IndexingSettingStore,
 	repoStore IndexingRepoStore,
 	indexEnqueuer IndexEnqueuer,
+	enabledRepoGroupNames []string,
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	scheduler := &IndexScheduler{
-		dbStore:       dbStore,
-		settingStore:  settingStore,
-		repoStore:     repoStore,
-		indexEnqueuer: indexEnqueuer,
-		operations:    newOperations(observationContext),
+		dbStore:               dbStore,
+		settingStore:          settingStore,
+		repoStore:             repoStore,
+		indexEnqueuer:         indexEnqueuer,
+		enabledRepoGroupNames: enabledRepoGroupNames,
+		operations:            newOperations(observationContext),
 	}
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(
@@ -54,9 +57,6 @@ func NewIndexScheduler(
 
 // For mocking in tests
 var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
-
-// Used to filter the valid repo group names
-var enabledRepoGroupNames = []string{"cncf"}
 
 func (s *IndexScheduler) Handle(ctx context.Context) error {
 	if !indexSchedulerEnabled() {
@@ -78,7 +78,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
 	//    https://github.com/sourcegraph/sourcegraph/issues/22130
 	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
-	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(enabledRepoGroupNames, groupsByName)
+	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(s.enabledRepoGroupNames, groupsByName)
 
 	options := database.ReposListOptions{
 		IncludePatterns: []string{includePatterns},

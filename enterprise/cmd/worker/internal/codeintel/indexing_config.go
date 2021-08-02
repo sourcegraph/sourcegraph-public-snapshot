@@ -1,6 +1,7 @@
 package codeintel
 
 import (
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
@@ -11,6 +12,7 @@ type indexingConfig struct {
 	env.BaseConfig
 
 	AutoIndexEnqueuerConfig                *enqueuer.Config
+	AutoIndexingEnabledRepoGroups          []string
 	AutoIndexingTaskInterval               time.Duration
 	DependencyIndexerSchedulerPollInterval time.Duration
 	DependencyIndexerSchedulerConcurrency  int
@@ -23,6 +25,7 @@ func (c *indexingConfig) Load() {
 	enqueuerConfig.Load()
 	indexingConfigInst.AutoIndexEnqueuerConfig = enqueuerConfig
 
+	c.AutoIndexingEnabledRepoGroups = strings.Split(c.GetOptional("PRECISE_CODE_INTEL_AUTO_INDEXING_ENABLED_REPO_GROUPS", "A comma-separated list of repo groups that auto-indexing is enabled for."), ",")
 	c.AutoIndexingTaskInterval = c.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL", "10m", "The frequency with which to run periodic codeintel auto-indexing tasks.")
 	c.DependencyIndexerSchedulerPollInterval = c.GetInterval("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_POLL_INTERVAL", "1s", "Interval between queries to the dependency indexing job queue.")
 	c.DependencyIndexerSchedulerConcurrency = c.GetInt("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_CONCURRENCY", "1", "The maximum number of dependency graphs that can be processed concurrently.")
