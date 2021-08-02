@@ -8,7 +8,6 @@ package tracer
 import (
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"sync"
 
