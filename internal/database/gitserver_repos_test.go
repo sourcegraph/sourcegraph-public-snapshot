@@ -231,7 +231,7 @@ func TestSetCloneStatus(t *testing.T) {
 		ShardID:     shardID,
 		CloneStatus: types.CloneStatusCloned,
 	}
-	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched")); diff != "" {
 		t.Fatal(diff)
 	}
 
