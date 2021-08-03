@@ -205,6 +205,7 @@ add('Completed', () => (
                 {...props}
                 executionID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
+                expandStage="srcPreview"
             />
         )}
     </EnterpriseWebStory>
@@ -217,6 +218,7 @@ add('Errored', () => (
                 {...props}
                 executionID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionErrored())}
+                expandStage="srcPreview"
             />
         )}
     </EnterpriseWebStory>
