@@ -59,7 +59,7 @@ var ChangesetJobColumns = SQLColumns{
 // CreateChangesetJob creates the given changeset jobs.
 func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) (err error) {
 	ctx, endObservation := s.operations.createChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("Count", len(cs)),
+		log.Int("count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
 

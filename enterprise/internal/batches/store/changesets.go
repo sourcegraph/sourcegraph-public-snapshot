@@ -904,7 +904,7 @@ var CanceledChangesetFailureMessage = "Canceled"
 func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChangeID int64) (err error) {
 	var iterations int
 	ctx, endObservation := s.operations.cancelQueuedBatchChangeChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("BatchChangeID", int(batchChangeID)),
+		log.Int("batchChangeID", int(batchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
 
@@ -981,7 +981,7 @@ WHERE
 func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) (err error) {
 	var iterations int
 	ctx, endObservation := s.operations.enqueueChangesetsToClose.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("BatchChangeID", int(batchChangeID)),
+		log.Int("batchChangeID", int(batchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
 
@@ -1206,7 +1206,7 @@ func scanChangeset(t *btypes.Changeset, s scanner) error {
 // or all changesets across the instance.
 func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (stats btypes.ChangesetsStats, err error) {
 	ctx, endObservation := s.operations.getChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("BatchChangeID", int(batchChangeID)),
+		log.Int("batchChangeID", int(batchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1260,7 +1260,7 @@ WHERE
 // GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
 func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (stats *btypes.RepoChangesetsStats, err error) {
 	ctx, endObservation := s.operations.getRepoChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("RepoID", int(repoID)),
+		log.Int("repoID", int(repoID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

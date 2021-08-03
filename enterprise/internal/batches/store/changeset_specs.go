@@ -220,7 +220,7 @@ type CountChangesetSpecsOpts struct {
 // CountChangesetSpecs returns the number of changeset specs in the database.
 func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (count int, err error) {
 	ctx, endObservation := s.operations.countChangesetSpecs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("BatchSpecID", int(opts.BatchSpecID)),
+		log.Int("batchSpecID", int(opts.BatchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -262,7 +262,7 @@ type GetChangesetSpecOpts struct {
 func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (spec *btypes.ChangesetSpec, err error) {
 	ctx, endObservation := s.operations.getChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
-		log.String("RandID", opts.RandID),
+		log.String("randID", opts.RandID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -530,8 +530,8 @@ type GetRewirerMappingsOpts struct {
 // Changeset 3 doesn't have a matching spec and should be detached from the batch change (and closed) (ChangesetSpec == 0, Changeset = 3).
 func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings btypes.RewirerMappings, err error) {
 	ctx, endObservation := s.operations.getRewirerMappings.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("BatchSpecID", int(opts.BatchSpecID)),
-		log.Int("BatchChangeID", int(opts.BatchChangeID)),
+		log.Int("batchSpecID", int(opts.BatchSpecID)),
+		log.Int("batchChangeID", int(opts.BatchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

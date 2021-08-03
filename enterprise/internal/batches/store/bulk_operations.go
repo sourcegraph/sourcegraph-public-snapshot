@@ -182,7 +182,7 @@ type CountBulkOperationsOpts struct {
 // CountBulkOperations gets the count of BulkOperations in the given batch change.
 func (s *Store) CountBulkOperations(ctx context.Context, opts CountBulkOperationsOpts) (count int, err error) {
 	ctx, endObservation := s.operations.countBulkOperations.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("BatchChangeID", int(opts.BatchChangeID)),
+		log.Int("batchChangeID", int(opts.BatchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -225,7 +225,7 @@ type ListBulkOperationErrorsOpts struct {
 // ListBulkOperationErrors gets a list of BulkOperationErrors in a given BulkOperation.
 func (s *Store) ListBulkOperationErrors(ctx context.Context, opts ListBulkOperationErrorsOpts) (es []*btypes.BulkOperationError, err error) {
 	ctx, endObservation := s.operations.listBulkOperationErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("BulkOperationID", opts.BulkOperationID),
+		log.String("bulkOperationID", opts.BulkOperationID),
 	}})
 	defer endObservation(1, observation.Args{})
 

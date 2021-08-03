@@ -99,7 +99,7 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 // UpdateBatchChange updates the given bach change.
 func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
 	ctx, endObservation := s.operations.updateBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(c.ID)),
+		log.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -141,7 +141,7 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 // DeleteBatchChange deletes the batch change with the given ID.
 func (s *Store) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 	ctx, endObservation := s.operations.deleteBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(id)),
+		log.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -236,7 +236,7 @@ type GetBatchChangeOpts struct {
 // GetBatchChange gets a batch change matching the given options.
 func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc *btypes.BatchChange, err error) {
 	ctx, endObservation := s.operations.getBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(opts.ID)),
+		log.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

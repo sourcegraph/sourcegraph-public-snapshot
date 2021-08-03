@@ -106,7 +106,7 @@ type GetBatchSpecExecutionOpts struct {
 func (s *Store) GetBatchSpecExecution(ctx context.Context, opts GetBatchSpecExecutionOpts) (exec *btypes.BatchSpecExecution, err error) {
 	ctx, endObservation := s.operations.getBatchSpecExecution.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
-		log.String("RandID", opts.RandID),
+		log.String("randID", opts.RandID),
 	}})
 	defer endObservation(1, observation.Args{})
 
