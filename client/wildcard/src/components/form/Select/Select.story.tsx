@@ -64,11 +64,11 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
             </div>
             <div>
                 <h2>Valid</h2>
-                <BaseSelect id={`${idPrefix}-valid`} isCustomStyle={isCustomStyle} isValid={false} />
+                <BaseSelect id={`${idPrefix}-valid`} isCustomStyle={isCustomStyle} isValid={true} />
             </div>
             <div>
                 <h2>Invalid</h2>
-                <BaseSelect id={`${idPrefix}-invalid`} isCustomStyle={isCustomStyle} isValid={true} />
+                <BaseSelect id={`${idPrefix}-invalid`} isCustomStyle={isCustomStyle} isValid={false} />
             </div>
             <div>
                 <h2>Disabled</h2>
