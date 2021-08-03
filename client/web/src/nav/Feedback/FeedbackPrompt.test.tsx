@@ -1,5 +1,5 @@
 import { MockedProvider, MockedResponse } from '@apollo/client/testing'
-import { render, RenderResult, fireEvent, act } from '@testing-library/react'
+import { render, RenderResult, fireEvent } from '@testing-library/react'
 import { GraphQLError } from 'graphql'
 import React from 'react'
 

@@ -1,10 +1,11 @@
-import { MockedProvider } from '@apollo/client/testing'
+import { MockedResponse } from '@apollo/client/testing'
 import React, { useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { MockedStoryProvider } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
 import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 
@@ -17,6 +18,7 @@ export interface WebStoryProps extends MemoryRouterProps {
         ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
     additionalWebStyles?: string
+    mocks?: readonly MockedResponse[]
 }
 
 /**
@@ -26,6 +28,7 @@ export interface WebStoryProps extends MemoryRouterProps {
 export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
     additionalWebStyles,
+    mocks,
     ...memoryRouterProps
 }) => {
     const isLightTheme = useTheme()
@@ -36,7 +39,7 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     usePrependStyles('web-styles', webStyles)
 
     return (
-        <MockedProvider>
+        <MockedStoryProvider mocks={mocks}>
             <MemoryRouter {...memoryRouterProps}>
                 <Tooltip />
                 <Children
@@ -45,6 +48,6 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             </MemoryRouter>
-        </MockedProvider>
+        </MockedStoryProvider>
     )
 }
