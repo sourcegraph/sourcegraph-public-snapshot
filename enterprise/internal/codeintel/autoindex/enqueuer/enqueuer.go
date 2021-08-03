@@ -180,9 +180,7 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 	return s.queueIndexes(ctx, repositoryID, commit, indexes)
 }
 
-// queueIndexes inserts a set of index records into the database. It is assumed that the given repository id an
-// commit are the same for each given index record. In the same transaction as the insert, the repository's row
-// is updated in the lsif_indexable_repositories table as a crude form of rate limiting.
+// queueIndexes inserts a set of index records into the database.
 func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, commit string, indexes []store.Index) (err error) {
 	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {
