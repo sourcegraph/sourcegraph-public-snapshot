@@ -130,9 +130,9 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 	shouldLog := func(r *http.Request) bool {
 		switch r.URL.Path {
 		case "/.internal/configuration",
-			 "/.internal/saved-queries/list-all",
-			 "/.api/graphql?SiteProductVersion",
-			 "/.internal/search/configuration": // Exclude super noisy logs
+			"/.internal/saved-queries/list-all",
+			"/.api/graphql?SiteProductVersion",
+			"/.internal/search/configuration": // Exclude super noisy logs
 			return false
 		}
 		return true
