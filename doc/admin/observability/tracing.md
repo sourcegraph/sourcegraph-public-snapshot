@@ -79,3 +79,12 @@ alternative when Jaeger is not available or as a supplement to Jaeger.
 
 Site admins can access `net/trace` information at https://sourcegraph.example.com/-/debug/. From
 there, click **Requests** to view the traces for that service.
+
+## Troubleshooting
+
+### Jaeger returns "404 of trace id not found" in a Docker Compose instance
+
+This is most likely due to a missing environment variable for the jaeger service. Adding SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json to the [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file under jaeger should resolve the issue.
+![image](https://user-images.githubusercontent.com/68532117/127942512-34a29217-3c44-4ed8-aa5b-ee161d55a8f5.png)
+
+
