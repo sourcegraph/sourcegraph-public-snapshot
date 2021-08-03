@@ -1,7 +1,6 @@
 import { render } from '@testing-library/react'
 import React from 'react'
 
-import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { Input } from './Input'
 
 const STATUS = ['loading', 'error', 'valid'] as const
