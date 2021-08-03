@@ -30,6 +30,9 @@ describe('GitLab', () => {
 
         // Requests to other origins that we need to ignore to prevent breaking tests.
         testContext.server.any('https://snowplow.trx.gitlab.net/*').intercept((request, response) => {
+            response.setHeader('Access-Control-Allow-Origin', 'https://gitlab.com')
+            response.setHeader('Access-Control-Allow-Credentials', 'true')
+            response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
             response.sendStatus(200)
         })
 
@@ -73,7 +76,7 @@ describe('GitLab', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it('adds "view on Sourcegraph" buttons to files', async () => {
+    it.only('adds "view on Sourcegraph" buttons to files', async () => {
         const repoName = 'gitlab.com/sourcegraph/jsonrpc2'
 
         const url = 'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
