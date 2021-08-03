@@ -19,7 +19,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -59,8 +58,6 @@ func (e *RepoNotFoundErr) Error() string {
 func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
-
-var IoTimeout = errors.New("I/O timeout")
 
 // RepoStore handles access to the repo table
 type RepoStore struct {
@@ -714,7 +711,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		if e, ok := err.(*net.OpError); ok && e.Timeout() {
-			return errors.Wrap(IoTimeout, err.Error())
+			return errors.Wrapf(context.DeadlineExceeded, "RepoStore.list: %s", err.Error())
 		}
 		return err
 	}
