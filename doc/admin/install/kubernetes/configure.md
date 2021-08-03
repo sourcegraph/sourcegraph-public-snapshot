@@ -48,7 +48,6 @@ kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Re
 ```
 
 See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
-<<<<<<< HEAD
 
 ### Google Cloud Platform (GCP)
 
@@ -109,68 +108,6 @@ allowVolumeExpansion: true
 
 ### Other cloud providers
 
-=======
-
-### Google Cloud Platform (GCP)
-
-```yaml
-# base/sourcegraph.StorageClass.yaml
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: sourcegraph
-  labels:
-    deploy: sourcegraph
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd # This configures SSDs (recommended).
-reclaimPolicy: Retain
-allowVolumeExpansion: true
-```
-
-[Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#gce-pd).
-
-### Amazon Web Services (AWS)
-
-```yaml
-# base/sourcegraph.StorageClass.yaml
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: sourcegraph
-  labels:
-    deploy: sourcegraph
-provisioner: kubernetes.io/aws-ebs
-parameters:
-  type: gp2 # This configures SSDs (recommended).
-reclaimPolicy: Retain
-allowVolumeExpansion: true
-```
-
-[Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
-
-### Azure
-
-```yaml
-# base/sourcegraph.StorageClass.yaml
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: sourcegraph
-  labels:
-    deploy: sourcegraph
-provisioner: kubernetes.io/azure-disk
-parameters:
-  storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
-reclaimPolicy: Retain
-allowVolumeExpansion: true
-```
-
-[Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk).
-
-### Other cloud providers
-
->>>>>>> cb085380e87be2004b7c85c4138c05a137f96533
 ```yaml
 # base/sourcegraph.StorageClass.yaml
 kind: StorageClass
@@ -442,15 +379,6 @@ Mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration
 **WARNING:** Do NOT commit the actual `id_rsa` and `known_hosts` files to your fork (unless
 your fork is private **and** you are okay with storing secrets in it).
 
-<<<<<<< HEAD
-## Configure Git repository cloning via HTTP(S) authentication
-
-The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
-
-Otherwise, follow the steps above for mounting SSH configuration to mount a host directory containing the desired `.netrc` file to `/home/sourcegraph/` in the `gitserver` container.
-
-=======
->>>>>>> cb085380e87be2004b7c85c4138c05a137f96533
 ## Configure custom Redis
 
 Sourcegraph supports specifying a custom Redis server for:
