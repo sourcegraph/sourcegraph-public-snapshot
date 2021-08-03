@@ -430,7 +430,7 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	}
 }
 
-var currentBuildTimestamp = time.Now().UTC().Format(time.RFC3339)
+var currentBuildTimestamp = strconv.Itoa(int(time.Now().UTC().Unix()))
 
 func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
