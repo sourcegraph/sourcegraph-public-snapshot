@@ -241,7 +241,6 @@ func (d Diff) Len() int {
 }
 
 // SyncRepo syncs a single repository with the first cloud default external service found for its type.
-// This method will eventually replace SyncRepo. For now it's feature flagged by Syncer.Streaming.
 func (s *Syncer) SyncRepo(ctx context.Context, sourced *types.Repo) (err error) {
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncRepo", string(sourced.Name))
@@ -268,7 +267,6 @@ func (s *Syncer) SyncRepo(ctx context.Context, sourced *types.Repo) (err error) 
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
-// This method will eventually replace SyncExternalService. For now it's feature flagged by Syncer.Streaming.
 func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	s.log().Debug("Syncing external service", "serviceID", externalServiceID)
 
