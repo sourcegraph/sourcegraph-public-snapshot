@@ -34,6 +34,7 @@ steps:
   - name: index.docker.io/hashicorp/packer:1.6.6
     env:
       - 'VERSION=$(git log -n1 --pretty=format:%h)'
+      - 'BUILD_TIMESTAMP=$BUILD_TIMESTAMP'
       - 'SRC_CLI_VERSION=$SRC_CLI_VERSION'
     args: ['build', 'executor.json']
 EOF
