@@ -12,7 +12,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
-	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -77,8 +76,9 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	addTag("service", filepath.Base(os.Args[0]))
 
 	// Add appdash span ID.
-	if span := opentracing.SpanFromContext(r.Context()); span != nil {
-		pkt.Extra["trace"] = trace.SpanURL(span)
+	if traceID := trace.ID(r.Context()); traceID != "" {
+		pkt.Extra["trace"] = trace.URL(traceID)
+		pkt.Extra["traceid"] = traceID
 	}
 
 	// Add request context tags.

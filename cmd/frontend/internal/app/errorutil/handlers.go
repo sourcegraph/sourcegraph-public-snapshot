@@ -22,13 +22,28 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		Handler: h,
 		Error: func(w http.ResponseWriter, req *http.Request, status int, err error) {
 			if status < 200 || status >= 400 {
-				var spanURL string
+				var traceURL, traceID string
 				if span := opentracing.SpanFromContext(req.Context()); span != nil {
 					ext.Error.Set(span, true)
 					span.SetTag("err", err)
-					spanURL = trace.SpanURL(span)
+					traceID = trace.IDFromSpan(span)
+					traceURL = trace.URL(traceID)
 				}
-				log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
+				log15.Error(
+					"App HTTP handler error response",
+					"method",
+					req.Method,
+					"request_uri",
+					req.URL.RequestURI(),
+					"status_code",
+					status,
+					"error",
+					err,
+					"trace",
+					traceURL,
+					"traceid",
+					traceID,
+				)
 			}
 
 			trace.SetRequestErrorCause(req.Context(), err)

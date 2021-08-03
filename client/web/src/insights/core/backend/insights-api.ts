@@ -1,6 +1,7 @@
 import { of, throwError } from 'rxjs'
 
 import { getCombinedViews, getInsightCombinedViews } from './api/get-combined-views'
+import { getExtensionViewById } from './api/get-extension-view-by-id'
 import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
 import { getRepositorySuggestions } from './api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from './api/get-resolved-search-repositories'
@@ -13,15 +14,24 @@ import { ApiService } from './types'
  *
  * See {@link ApiService} for full description of each method.
  * */
-export const createInsightAPI = (): ApiService => ({
+export const createInsightAPI = (overrides: Partial<ApiService> = {}): ApiService => ({
+    // Insights loading
     getCombinedViews,
     getInsightCombinedViews,
+    getExtensionViewById,
+
+    // Subject operations
     getSubjectSettings,
     updateSubjectSettings,
+
+    // Live preview fetchers
     getSearchInsightContent,
     getLangStatsInsightContent,
+
+    // Repositories API
     getRepositorySuggestions,
     getResolvedSearchRepositories,
+    ...overrides,
 })
 
 /**
@@ -31,6 +41,7 @@ export const createInsightAPI = (): ApiService => ({
 export const createMockInsightAPI = (overrideRequests: Partial<ApiService>): ApiService => ({
     getCombinedViews: () => of([]),
     getInsightCombinedViews: () => of([]),
+    getExtensionViewById: () => throwError(new Error('Implement getExtensionViewById handler first')),
     getSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
     updateSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
     getSearchInsightContent: () => Promise.reject(new Error('Implement getSubjectSettings handler first')),

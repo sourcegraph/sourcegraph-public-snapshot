@@ -3,14 +3,14 @@ import { get } from 'lodash'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../../../../../schema/settings.schema'
+import { Settings } from '../../../schema/settings.schema'
 import {
     RemoveInsight,
     RemoveInsightFromDashboard,
     SettingsOperation,
     SettingsOperationType,
-} from '../../../../../../../../core/settings-action/edits'
-import { INSIGHTS_ALL_REPOS_SETTINGS_KEY, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../../../../../../../core/types'
+} from '../../core/settings-action/edits'
+import { INSIGHTS_ALL_REPOS_SETTINGS_KEY, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../core/types'
 
 interface Props extends SettingsCascadeProps<Settings> {
     insightId: string

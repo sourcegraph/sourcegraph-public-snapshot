@@ -89,8 +89,8 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	// change is explicitly made, to enable this token.
 	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
-	h = tracepkg.HTTPTraceMiddleware(h)
 	h = ot.Middleware(h)
+	h = tracepkg.HTTPTraceMiddleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
 	h = secureHeadersMiddleware(h)

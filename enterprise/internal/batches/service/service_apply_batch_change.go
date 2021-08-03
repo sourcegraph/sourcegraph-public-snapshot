@@ -48,7 +48,10 @@ func (o ApplyBatchChangeOpts) String() string {
 }
 
 // ApplyBatchChange creates the BatchChange.
-func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
+func (s *Service) ApplyBatchChange(
+	ctx context.Context,
+	opts ApplyBatchChangeOpts,
+) (batchChange *btypes.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.ApplyBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -95,23 +98,20 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	// codehost while we're applying a new batch spec.
 	// This is blocking, because the changeset rows currently being processed by the
 	// reconciler are locked.
-	l := locker.NewWithDB(s.store.DB(), "batches_apply")
-	locked, unlock, err := l.Lock(ctx, int(batchChange.ID), false)
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	l := locker.NewWithDB(nil, "batches_apply").With(tx)
+	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
 	if err != nil {
 		return nil, err
 	}
 	if !locked {
 		return nil, errors.New("batch change locked by other user applying batch spec")
 	}
-	defer func() {
-		err = unlock(err)
-	}()
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
 
 	if err := tx.CancelQueuedBatchChangeChangesets(ctx, batchChange.ID); err != nil {
 		return batchChange, nil
@@ -166,7 +166,10 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	return batchChange, nil
 }
 
-func (s *Service) ReconcileBatchChange(ctx context.Context, batchSpec *btypes.BatchSpec) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
+func (s *Service) ReconcileBatchChange(
+	ctx context.Context,
+	batchSpec *btypes.BatchSpec,
+) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 	if err != nil {
 		return nil, 0, err

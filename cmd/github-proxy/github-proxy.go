@@ -19,11 +19,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -124,6 +124,8 @@ func main() {
 		log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
 		_, _ = io.Copy(w, bytes.NewReader(b))
 	})
+	h = ot.Middleware(h)
+	h = trace.HTTPTraceMiddleware(h)
 	if logRequests {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}

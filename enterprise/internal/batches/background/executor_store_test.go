@@ -40,7 +40,7 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 				Command:    []string{"ignite", "run"},
 				StartTime:  time.Now().Add(-5 * time.Second),
 				Out:        `stdout: cool`,
-				DurationMs: 200,
+				DurationMs: intptr(200),
 			},
 			{
 				Key:       "step.src.0",
@@ -51,7 +51,7 @@ stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z"
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.528Z","status":"STARTED"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z","status":"SUCCESS","message":"http://USERNAME_REMOVED:PASSWORD_REMOVED@localhost:3080/users/mrnugget/batch-changes/apply/QmF0Y2hTcGVjOiJBZFBMTDU5SXJmWCI="}
 `,
-				DurationMs: 200,
+				DurationMs: intptr(200),
 			},
 		}
 
@@ -226,3 +226,5 @@ stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-12T12:26:01.165Z
 	}
 
 }
+
+func intptr(v int) *int { return &v }
