@@ -3,6 +3,10 @@ import { MockedProvider, MockedProviderProps, MockedResponse, MockLink } from '@
 import { getOperationName } from '@apollo/client/utilities'
 import React from 'react'
 
+/**
+ * Intercept each mocked Apollo request and ensure that any request variables match the specified mock.
+ * This effectively means we are mocking agains the operationName of the query being fired.
+ */
 const forceMockVariablesLink = (mocks: readonly MockedResponse[]): ApolloLink =>
     new ApolloLink((operation, forward) => {
         const mock = mocks.find(mock => getOperationName(mock.request.query) === operation.operationName)
