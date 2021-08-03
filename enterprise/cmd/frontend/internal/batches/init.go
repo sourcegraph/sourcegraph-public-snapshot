@@ -21,10 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// InitFrontend initializes the given enterpriseServices to include the required
-// resolvers for batch changes and sets up webhook handlers for changeset
+// Init initializes the given enterpriseServices to include the required
+// resolvers for Batch Changes and sets up webhook handlers for changeset
 // events.
-func InitFrontend(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
+func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	// Validate site configuration.
 	conf.ContributeValidator(func(c conf.Unified) (problems conf.Problems) {
 		if _, err := window.NewConfiguration(c.BatchChangesRolloutWindows); err != nil {
@@ -40,12 +40,15 @@ func InitFrontend(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *o
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	// Initialize store.
 	cstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
 
+	// Register enterprise services.
 	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
 
+	// Register Batch Changes OOB migrations.
 	return background.RegisterMigrations(cstore, outOfBandMigrationRunner)
 }
