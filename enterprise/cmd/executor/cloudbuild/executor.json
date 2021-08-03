@@ -1,6 +1,7 @@
 {
   "variables": {
     "version": "{{env `VERSION`}}",
+    "build_timestamp": "{{env `BUILD_TIMESTAMP`}}",
     "SRC_CLI_VERSION": "{{env `SRC_CLI_VERSION`}}"
   },
   "builders": [
@@ -14,7 +15,7 @@
       "zone": "us-central1-c",
       "image_licenses": ["projects/vm-options/global/licenses/enable-vmx"],
       "disk_type": "pd-ssd",
-      "image_name": "executor-{{user `version`}}-{{isotime | clean_resource_name}}",
+      "image_name": "executor-{{user `version`}}-{{user `build_timestamp`}}",
       "tags": ["packer"],
       "account_file": "/workspace/builder-sa-key.json"
     }

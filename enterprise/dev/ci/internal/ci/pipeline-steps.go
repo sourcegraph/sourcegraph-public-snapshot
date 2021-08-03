@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -429,15 +430,35 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	}
 }
 
-func addExecutorPackerStep(c Config) func(*bk.Pipeline) {
+var currentBuildTimestamp = time.Now().UTC().Format(time.RFC3339)
+
+func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(`echo "Building executor cloud image..."`),
-			bk.Env("VERSION", c.version),
-			bk.Cmd("./enterprise/cmd/executor/build.sh"),
+		if !c.isMainBranch() && !c.isMainDryRun {
+			return
 		}
 
-		pipeline.AddStep(":packer: :construction: executor image", cmds...)
+		if final {
+			if !c.isMainDryRun {
+				cmds := []bk.StepOpt{
+					bk.Cmd(`echo "Releasing executor cloud image..."`),
+					bk.Env("VERSION", c.version),
+					bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
+					bk.Cmd("./enterprise/cmd/executor/release.sh"),
+				}
+
+				pipeline.AddStep(":packer: :construction: executor image", cmds...)
+			}
+		} else {
+			cmds := []bk.StepOpt{
+				bk.Cmd(`echo "Building executor cloud image..."`),
+				bk.Env("VERSION", c.version),
+				bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
+				bk.Cmd("./enterprise/cmd/executor/build.sh"),
+			}
+
+			pipeline.AddStep(":packer: :construction: executor image", cmds...)
+		}
 	}
 }
 
