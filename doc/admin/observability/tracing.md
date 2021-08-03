@@ -8,7 +8,7 @@
 * **Docker Compose:** Jaeger is deployed if you use the provided `docker-compose.yaml`. Access it at
   port 16686 on the Sourcegraph node. One way to do this is to add an Ingress rule exposing port
   16686 to public Internet traffic from your IP, then navigate to `http://${NODE_IP}:16686` in your
-  browser.
+  browser. You must also [enable tracing](../install/docker-compose/operations.md#enable-tracing).
 * **Kubernetes:** Jaeger is already deployed, unless you explicitly removed it from the Sourcegraph
   manifest. Jaeger can be accessed from the admin UI under Maintenance/Tracing. Or by running `kubectl port-forward svc/jaeger-query 16686` and going to
   `http://localhost:16686` in your browser. 
@@ -79,12 +79,3 @@ alternative when Jaeger is not available or as a supplement to Jaeger.
 
 Site admins can access `net/trace` information at https://sourcegraph.example.com/-/debug/. From
 there, click **Requests** to view the traces for that service.
-
-## Troubleshooting
-
-### Jaeger returns "404 of trace id not found" in a Docker Compose instance
-
-This is most likely due to a missing environment variable for the jaeger service. Adding SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json to the [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file under jaeger should resolve the issue.
-![image](https://user-images.githubusercontent.com/68532117/127942512-34a29217-3c44-4ed8-aa5b-ee161d55a8f5.png)
-
-
