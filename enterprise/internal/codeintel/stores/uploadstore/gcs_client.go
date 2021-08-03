@@ -71,21 +71,13 @@ func (s *gcsStore) Init(ctx context.Context) error {
 
 	if _, err := bucket.Attrs(ctx); err != nil {
 		if err == storage.ErrBucketNotExist {
-			if err := s.create(ctx, bucket); err != nil {
-				return errors.Wrap(err, "failed to create bucket")
-			}
-
-			return nil
+			return errors.Wrap(s.create(ctx, bucket), "failed to create bucket")
 		}
 
 		return errors.Wrap(err, "failed to get bucket attributes")
 	}
 
-	if err := s.update(ctx, bucket); err != nil {
-		return errors.Wrap(err, "failed to update bucket attributes")
-	}
-
-	return nil
+	return errors.Wrap(s.update(ctx, bucket), "failed to update bucket attributes")
 }
 
 func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
@@ -199,11 +191,7 @@ func (s *gcsStore) lifecycle() storage.Lifecycle {
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
 	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
-		if err := bucket.Object(source).Delete(ctx); err != nil {
-			return errors.Wrap(err, "failed to delete source object")
-		}
-
-		return nil
+		return errors.Wrap(bucket.Object(source).Delete(ctx), "failed to delete source object")
 	})
 }
 

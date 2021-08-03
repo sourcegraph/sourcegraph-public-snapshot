@@ -44,11 +44,7 @@ func (s *Serve) Start() error {
 		return errors.Wrap(err, "configuring server")
 	}
 
-	if err := (&http.Server{Handler: h}).Serve(ln); err != nil {
-		return errors.Wrap(err, "serving")
-	}
-
-	return nil
+	return errors.Wrap((&http.Server{Handler: h}).Serve(ln), "serving")
 }
 
 var indexHTML = template.Must(template.New("").Parse(`<html>
@@ -270,11 +266,7 @@ func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
 	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
 		return errors.Wrap(err, "create git hooks dir")
 	}
-	if err := os.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
-		return errors.Wrap(err, "setting post-update hook")
-	}
-
-	return nil
+	return errors.Wrap(os.WriteFile(postUpdatePath, postUpdateHook, 0755), "setting post-update hook")
 }
 
 func updateServerInfo(gitDir string) error {

@@ -354,11 +354,7 @@ func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.
 			})
 		}
 
-		if err := json.NewEncoder(w).Encode(queries); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-
-		return nil
+		return errors.Wrap(json.NewEncoder(w).Encode(queries), "Encode")
 	}
 }
 
@@ -373,10 +369,7 @@ func serveSavedQueriesGetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.
 		if err != nil {
 			return errors.Wrap(err, "SavedQueries.Get")
 		}
-		if err := json.NewEncoder(w).Encode(info); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
+		return errors.Wrap(json.NewEncoder(w).Encode(info), "Encode")
 	}
 }
 
@@ -429,10 +422,7 @@ func serveSettingsGetForSubject(db dbutil.DB) func(w http.ResponseWriter, r *htt
 		if err != nil {
 			return errors.Wrap(err, "Settings.GetLatest")
 		}
-		if err := json.NewEncoder(w).Encode(settings); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
+		return errors.Wrap(json.NewEncoder(w).Encode(settings), "Encode")
 	}
 }
 
@@ -451,10 +441,7 @@ func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 		for _, member := range orgMembers {
 			users = append(users, member.UserID)
 		}
-		if err := json.NewEncoder(w).Encode(users); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
+		return errors.Wrap(json.NewEncoder(w).Encode(users), "Encode")
 	}
 }
 
@@ -469,10 +456,7 @@ func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 		if err != nil {
 			return errors.Wrap(err, "Orgs.GetByName")
 		}
-		if err := json.NewEncoder(w).Encode(org.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
+		return errors.Wrap(json.NewEncoder(w).Encode(org.ID), "Encode")
 	}
 }
 
@@ -486,10 +470,7 @@ func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Users.GetByUsername")
 	}
-	if err := json.NewEncoder(w).Encode(user.ID); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
+	return errors.Wrap(json.NewEncoder(w).Encode(user.ID), "Encode")
 }
 
 func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
@@ -502,24 +483,15 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "UserEmails.GetEmail")
 	}
-	if err := json.NewEncoder(w).Encode(email); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
+	return errors.Wrap(json.NewEncoder(w).Encode(email), "Encode")
 }
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
+	return errors.Wrap(json.NewEncoder(w).Encode(globals.ExternalURL().String()), "Encode")
 }
 
 func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.CanSendEmail()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
+	return errors.Wrap(json.NewEncoder(w).Encode(conf.CanSendEmail()), "Encode")
 }
 
 func serveSendEmail(w http.ResponseWriter, r *http.Request) error {

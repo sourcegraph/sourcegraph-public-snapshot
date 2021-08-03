@@ -222,11 +222,7 @@ func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID 
 		return errors.Wrap(err, "getting changeset")
 	}
 
-	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{c.ID}); err != nil {
-		return errors.Wrap(err, "enqueuing changeset sync")
-	}
-
-	return nil
+	return errors.Wrap(repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{c.ID}), "enqueuing changeset sync")
 }
 
 func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, event *webhooks.PipelineEvent) error {
@@ -242,10 +238,7 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	}
 
 	pr := gitlabToPR(&event.Project, event.MergeRequest)
-	if err := h.upsertChangesetEvent(ctx, esID, pr, &event.Pipeline); err != nil {
-		return errors.Wrap(err, "upserting changeset event")
-	}
-	return nil
+	return errors.Wrap(h.upsertChangesetEvent(ctx, esID, pr, &event.Pipeline), "upserting changeset event")
 }
 
 func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *store.Store, pr *PR, repo *types.Repo) (*btypes.Changeset, error) {

@@ -1706,11 +1706,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	}
 
 	// Update the DB with the last fetched time
-	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-		return errors.Wrap(err, "update last fetched time")
-	}
-
-	return nil
+	return errors.Wrap(s.setLastFetched(ctx, repo, time.Now()), "update last fetched time")
 }
 
 var (

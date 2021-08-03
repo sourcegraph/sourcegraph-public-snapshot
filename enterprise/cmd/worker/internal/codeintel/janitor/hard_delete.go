@@ -88,11 +88,7 @@ func (d *hardDeleter) deleteBatch(ctx context.Context, ids []int) (err error) {
 		return errors.Wrap(err, "Clear")
 	}
 
-	if err := tx.HardDeleteUploadByID(ctx, ids...); err != nil {
-		return errors.Wrap(err, "HardDeleteUploadByID")
-	}
-
-	return nil
+	return errors.Wrap(tx.HardDeleteUploadByID(ctx, ids...), "HardDeleteUploadByID")
 }
 
 func uploadIDs(uploads []store.Upload) []int {

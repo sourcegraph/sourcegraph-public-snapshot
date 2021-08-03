@@ -161,11 +161,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// the entire set of data from scratch and we want to be able to coalesce requests for the same
 			// repository rather than having a set of uploads for the same repo re-calculate nearly identical
 			// data multiple times.
-			if err := tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
-				return errors.Wrap(err, "store.MarkRepositoryDirty")
-			}
-
-			return nil
+			return errors.Wrap(tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID), "store.MarkRepositoryDirty")
 		})
 	})
 }
@@ -267,11 +263,7 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	if err := tx.WriteDocumentationPathInfo(ctx, id, groupedBundleData.DocumentationPathInfo); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
 	}
-	if err := tx.WriteDocumentationMappings(ctx, id, groupedBundleData.DocumentationMappings); err != nil {
-		return errors.Wrap(err, "store.WriteDocumentationMappings")
-	}
-
-	return nil
+	return errors.Wrap(tx.WriteDocumentationMappings(ctx, id, groupedBundleData.DocumentationMappings), "store.WriteDocumentationMappings")
 }
 
 func isUniqueConstraintViolation(err error) bool {

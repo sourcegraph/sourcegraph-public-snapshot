@@ -83,11 +83,7 @@ func (s *s3Store) Init(ctx context.Context) error {
 		return errors.Wrap(err, "failed to create bucket")
 	}
 
-	if err := s.update(ctx); err != nil {
-		return errors.Wrap(err, "failed to update bucket attributes")
-	}
-
-	return nil
+	return errors.Wrap(s.update(ctx), "failed to update bucket attributes")
 }
 
 // maxZeroReads is the maximum number of no-progress iterations (due to connection reset errors)

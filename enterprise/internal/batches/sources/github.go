@@ -198,11 +198,7 @@ func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		return err
 	}
 
-	if err := cs.SetMetadata(pr); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
-	}
-
-	return nil
+	return errors.Wrap(cs.SetMetadata(pr), "setting changeset metadata")
 }
 
 // UpdateChangeset updates the given *Changeset in the code host.

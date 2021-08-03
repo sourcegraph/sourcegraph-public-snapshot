@@ -18,10 +18,7 @@ func newSpecExpireWorker(ctx context.Context, cstore *store.Store) goroutine.Bac
 		}
 		// ... and then the BatchSpecs, due to the batch_spec_id
 		// foreign key on changeset_specs.
-		if err := cstore.DeleteExpiredBatchSpecs(ctx); err != nil {
-			return errors.Wrap(err, "DeleteExpiredBatchSpecs")
-		}
-		return nil
+		return errors.Wrap(cstore.DeleteExpiredBatchSpecs(ctx), "DeleteExpiredBatchSpecs")
 	})
 	return goroutine.NewPeriodicGoroutine(ctx, 2*time.Minute, expireSpecs)
 }

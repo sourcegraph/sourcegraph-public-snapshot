@@ -93,11 +93,7 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 	}
 
 	// Mark repository as dirty so the commit graph is recalculated with fresh data
-	if err := tx.MarkRepositoryAsDirty(ctx, sourcedCommits.RepositoryID); err != nil {
-		return errors.Wrap(err, "dbstore.MarkRepositoryAsDirty")
-	}
-
-	return nil
+	return errors.Wrap(tx.MarkRepositoryAsDirty(ctx, sourcedCommits.RepositoryID), "dbstore.MarkRepositoryAsDirty")
 
 }
 

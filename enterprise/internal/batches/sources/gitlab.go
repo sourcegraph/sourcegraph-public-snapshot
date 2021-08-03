@@ -185,10 +185,7 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
-	if err := c.SetMetadata(updated); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
-	}
-	return nil
+	return errors.Wrap(c.SetMetadata(updated), "setting changeset metadata")
 }
 
 // LoadChangeset loads the given merge request from GitLab and updates it.
@@ -244,10 +241,7 @@ func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error 
 		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
-	if err := c.SetMetadata(updated); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
-	}
-	return nil
+	return errors.Wrap(c.SetMetadata(updated), "setting changeset metadata")
 }
 
 func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) error {

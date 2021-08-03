@@ -264,20 +264,13 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
-	if err := e.css.UpdateChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "updating changeset")
-	}
-
-	return nil
+	return errors.Wrap(e.css.UpdateChangeset(ctx, &cs), "updating changeset")
 }
 
 // reopenChangeset reopens the given changeset attribute on the code host.
 func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 	cs := sources.Changeset{Repo: e.repo, Changeset: e.ch}
-	if err := e.css.ReopenChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "updating changeset")
-	}
-	return nil
+	return errors.Wrap(e.css.ReopenChangeset(ctx, &cs), "updating changeset")
 }
 
 func (e *executor) detachChangeset() {
@@ -308,10 +301,7 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 
 	cs := &sources.Changeset{Changeset: e.ch, Repo: e.repo}
 
-	if err := e.css.CloseChangeset(ctx, cs); err != nil {
-		return errors.Wrap(err, "closing changeset")
-	}
-	return nil
+	return errors.Wrap(e.css.CloseChangeset(ctx, cs), "closing changeset")
 }
 
 // undraftChangeset marks the given changeset on its code host as ready for review.
@@ -330,10 +320,7 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 		Changeset: e.ch,
 	}
 
-	if err := draftCss.UndraftChangeset(ctx, cs); err != nil {
-		return errors.Wrap(err, "undrafting changeset")
-	}
-	return nil
+	return errors.Wrap(draftCss.UndraftChangeset(ctx, cs), "undrafting changeset")
 }
 
 // sleep sleeps for 3 seconds.
