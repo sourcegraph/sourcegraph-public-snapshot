@@ -57,7 +57,7 @@ func (ui *TUI) ResolvingNamespace() {
 }
 
 func (ui *TUI) ResolvingNamespaceSuccess(_namespace string) {
-	batchCompletePending(ui.pending, "Resolving namesapce")
+	batchCompletePending(ui.pending, "Resolving namespace")
 }
 
 func (ui *TUI) PreparingContainerImages() {
