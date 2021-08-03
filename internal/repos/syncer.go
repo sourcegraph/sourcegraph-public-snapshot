@@ -241,7 +241,6 @@ func (d Diff) Len() int {
 }
 
 // SyncRepo syncs a single repository with the first cloud default external service found for its type.
-// This method will eventually replace SyncRepo. For now it's feature flagged by Syncer.Streaming.
 func (s *Syncer) SyncRepo(ctx context.Context, sourced *types.Repo) (err error) {
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncRepo", string(sourced.Name))
@@ -268,7 +267,6 @@ func (s *Syncer) SyncRepo(ctx context.Context, sourced *types.Repo) (err error) 
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
-// This method will eventually replace SyncExternalService. For now it's feature flagged by Syncer.Streaming.
 func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	s.log().Debug("Syncing external service", "serviceID", externalServiceID)
 
@@ -312,6 +310,11 @@ func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int6
 	modified := false
 	seen := make(map[api.RepoID]struct{})
 	errs := new(multierror.Error)
+	fatal := func(err error) bool {
+		return errcode.IsUnauthorized(err) ||
+			errcode.IsForbidden(err) ||
+			errcode.IsAccountSuspended(err)
+	}
 
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
@@ -321,7 +324,8 @@ func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int6
 				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
 
 			multierror.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
-			if errcode.IsUnauthorized(errs) || errcode.IsForbidden(errs) || errcode.IsAccountSuspended(errs) {
+
+			if fatal(err) {
 				// Delete all external service repos of this external service
 				seen = map[api.RepoID]struct{}{}
 				break
@@ -335,8 +339,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int6
 			continue
 		}
 
-		diff, err := s.sync(ctx, svc, sourced)
-		if err != nil {
+		var diff Diff
+		if diff, err = s.sync(ctx, svc, sourced); err != nil {
+			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
 			multierror.Append(errs, err)
 			continue
 		}
@@ -348,10 +353,17 @@ func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int6
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 	}
 
-	// Remove associations and any repos that are no longer associated with any external service.
-	deleted, err := s.delete(ctx, svc, seen)
-	if err != nil {
-		multierror.Append(errs, errors.Wrap(err, "some repos couldn't be deleted"))
+	deleted := 0
+	if err = errs.ErrorOrNil(); err == nil || fatal(err) {
+		// Remove associations and any repos that are no longer associated with any external service.
+		//
+		// We don't want to delete all repos that weren't seen if we had a lot of spurious errors since that could
+		// cause lots of repos to be deleted, only to be added the next sync. We delete only if we had no errors or we
+		// had one of the fatal errors.
+		deleted, err = s.delete(ctx, svc, seen)
+		if err != nil {
+			multierror.Append(errs, errors.Wrap(err, "some repos couldn't be deleted"))
+		}
 	}
 
 	now := s.Now()
@@ -390,7 +402,19 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	if err != nil {
 		return Diff{}, errors.Wrap(err, "syncer: opening transaction")
 	}
-	defer func() { tx.Done(err) }()
+
+	defer func() {
+		// We must commit the transaction before publishing to s.Synced
+		// so that gitserver finds the repo in the database.
+		if txerr := tx.Done(err); txerr != nil {
+			err = multierror.Append(txerr, err)
+		} else if s.Synced != nil && d.Len() > 0 {
+			select {
+			case <-ctx.Done():
+			case s.Synced <- d:
+			}
+		}
+	}()
 
 	stored, err := tx.RepoStore.List(ctx, database.ReposListOptions{
 		Names:          []string{string(sourced.Name)},
@@ -465,13 +489,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		d.Added = append(d.Added, sourced)
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
-	}
-
-	if s.Synced != nil && d.Len() > 0 {
-		select {
-		case <-ctx.Done():
-		case s.Synced <- d:
-		}
 	}
 
 	return d, nil

@@ -19,6 +19,7 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
+import { CodeIntelligenceProps } from './codeintel'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -92,6 +93,7 @@ export interface LayoutProps
         CodeMonitoringProps,
         SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
+        CodeIntelligenceProps,
         BatchChangesProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]

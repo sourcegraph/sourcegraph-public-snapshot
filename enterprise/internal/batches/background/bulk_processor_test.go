@@ -56,6 +56,33 @@ func TestBulkProcessor(t *testing.T) {
 		}
 	})
 
+	t.Run("changeset is processing", func(t *testing.T) {
+		processingChangeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
+			Repo:                repo.ID,
+			BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+			Metadata:            &github.PullRequest{},
+			ExternalServiceType: extsvc.TypeGitHub,
+			CurrentSpec:         changesetSpec.ID,
+			ReconcilerState:     btypes.ReconcilerStateProcessing,
+		})
+
+		job := &types.ChangesetJob{
+			// JobType doesn't matter but we need one for database validation
+			JobType:     types.ChangesetJobTypeComment,
+			ChangesetID: processingChangeset.ID,
+			UserID:      user.ID,
+		}
+		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		bp := &bulkProcessor{tx: bstore}
+		err := bp.process(ctx, job)
+		if err != changesetIsProcessingErr {
+			t.Fatalf("unexpected error. want=%s, got=%s", changesetIsProcessingErr, err)
+		}
+	})
+
 	t.Run("Comment job", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
 		bp := &bulkProcessor{
@@ -231,20 +258,6 @@ func TestBulkProcessor(t *testing.T) {
 						ReconcilerState: btypes.ReconcilerStateCompleted,
 					},
 					wantRetryable: false,
-				},
-				"processing": {
-					spec: &ct.TestSpecOpts{
-						User:      user.ID,
-						Repo:      repo.ID,
-						BatchSpec: batchSpec.ID,
-						HeadRef:   "main",
-					},
-					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						ReconcilerState: btypes.ReconcilerStateProcessing,
-					},
-					wantRetryable: true,
 				},
 			} {
 				t.Run(name, func(t *testing.T) {

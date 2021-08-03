@@ -18,7 +18,7 @@ const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
-            viewports: [320, 576, 978, 1440],
+            viewports: [576, 1440],
         },
     })
 

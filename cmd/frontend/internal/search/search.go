@@ -17,7 +17,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -90,16 +89,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	events, inputs, results := h.startSearch(ctx, args)
 	events = batchEvents(events, 50*time.Millisecond)
 
-	traceURL := ""
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		spanURL := trace.SpanURL(span)
-		// URLs starting with # don't have a trace. eg
-		// "#tracer-not-enabled"
-		if !strings.HasPrefix(spanURL, "#") {
-			traceURL = spanURL
-		}
-	}
-
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
 	// can only send up to limit results.
@@ -118,7 +107,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
-		Trace:        traceURL,
+		Trace:        trace.URL(trace.ID(ctx)),
 		DisplayLimit: displayLimit,
 	}
 
@@ -195,6 +184,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		repoMetadata := h.getEventRepoMetadata(ctx, event)
 		for _, match := range event.Results {
+			// Don't send matches which we cannot map to a repo the actor has access to. This
+			// check is expected to always pass. Missing metadata is a sign that we have
+			// searched repos that user shouldn't have access to.
+			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+				continue
+			}
 			matchesAppend(fromMatch(match, repoMetadata))
 		}
 

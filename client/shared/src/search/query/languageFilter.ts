@@ -40,9 +40,11 @@ export const POPULAR_LANGUAGES: string[] = [
     'Scala',
     'SQL',
     'Swift',
+    'Terraform',
     'TypeScript',
     'VBA',
     'XML',
+    'YAML',
     'Zig',
 ]
 

@@ -92,6 +92,9 @@ type SeriesPointsOpts struct {
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
+	IncludeRepoRegex string
+	ExcludeRepoRegex string
+
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
 
@@ -99,7 +102,7 @@ type SeriesPointsOpts struct {
 	Limit int
 }
 
-//SeriesPoints queries data points over time for a specific insights' series.
+// SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
 
@@ -142,7 +145,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 // this query is too expensive to run in real-time and should be moved to a materialized view.
 const lastObservationCarriedPointsSql = `select sub.series_id, sub.interval_time, sum(value) as value, null as metadata from (WITH target_times AS (SELECT *
 FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '26 weeks', CURRENT_TIMESTAMP::date, '2 weeks') as interval_time)
-SELECT sub.series_id, sub.repo_id, sub.value, interval_time
+SELECT sub.series_id, sub.repo_id, sub.value, interval_time, repo_name_id
 FROM (select distinct repo_id, series_id from series_points) as r
 cross join target_times tt
 join LATERAL (
@@ -152,6 +155,7 @@ join LATERAL (
     limit 1
     ) sub on sub.repo_id = r.repo_id and r.series_id = sub.series_id
 order by interval_time, repo_id) as sub
+join repo_names rn on sub.repo_name_id = rn.id
 where %s
 group by sub.series_id, sub.interval_time
 order by interval_time desc
@@ -202,6 +206,12 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if len(opts.Excluded) > 0 {
 		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
 		preds = append(preds, sqlf.Sprintf(s))
+	}
+	if len(opts.IncludeRepoRegex) > 0 {
+		preds = append(preds, sqlf.Sprintf("rn.name ~ %s", opts.IncludeRepoRegex))
+	}
+	if len(opts.ExcludeRepoRegex) > 0 {
+		preds = append(preds, sqlf.Sprintf("rn.name !~ %s", opts.ExcludeRepoRegex))
 	}
 
 	if len(preds) == 0 {

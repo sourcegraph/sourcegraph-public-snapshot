@@ -7,7 +7,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -23,13 +22,11 @@ type IndexScheduler struct {
 	settingStore  IndexingSettingStore
 	repoStore     IndexingRepoStore
 	indexEnqueuer IndexEnqueuer
-	limiter       *rate.Limiter
 	operations    *operations
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
-
-const defaultRepositoriesQueuedPerSecond = 25
+var _ goroutine.ErrorHandler = &IndexScheduler{}
 
 func NewIndexScheduler(
 	dbStore DBStore,
@@ -44,7 +41,6 @@ func NewIndexScheduler(
 		settingStore:  settingStore,
 		repoStore:     repoStore,
 		indexEnqueuer: indexEnqueuer,
-		limiter:       rate.NewLimiter(defaultRepositoriesQueuedPerSecond, 1),
 		operations:    newOperations(observationContext),
 	}
 
@@ -58,9 +54,6 @@ func NewIndexScheduler(
 
 // For mocking in tests
 var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
-
-// Used to filter the valid repo group names
-var enabledRepoGroupNames = []string{"cncf"}
 
 func (s *IndexScheduler) Handle(ctx context.Context) error {
 	if !indexSchedulerEnabled() {
@@ -82,7 +75,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
 	//    https://github.com/sourcegraph/sourcegraph/issues/22130
 	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
-	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(enabledRepoGroupNames, groupsByName)
+	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(settings.CodeIntelligenceAutoIndexRepositoryGroups, groupsByName)
 
 	options := database.ReposListOptions{
 		IncludePatterns: []string{includePatterns},
@@ -117,10 +110,6 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	var queueErr error
 	for _, repositoryID := range deduplicateRepositoryIDs(configuredRepositoryIDs, indexableRepositoryIDs) {
-		if err := s.limiter.Wait(ctx); err != nil {
-			return err
-		}
-
 		if err := s.indexEnqueuer.QueueIndexesForRepository(ctx, repositoryID); err != nil {
 			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 				continue

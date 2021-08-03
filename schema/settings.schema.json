@@ -267,6 +267,13 @@
         }
       }
     },
+    "codeIntelligence.autoIndexRepositoryGroups": {
+      "description": "A list of search.repositoryGroups that have auto-indexing enabled.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",

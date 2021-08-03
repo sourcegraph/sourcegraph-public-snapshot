@@ -32,7 +32,6 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -77,8 +76,7 @@ interface Props
         SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps,
-        BatchChangesProps,
-        FeatureFlagProps {
+        BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
@@ -255,7 +253,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <NavLink to="/code-monitoring">Monitoring</NavLink>
                             </NavItem>
                         )}
-                        {props.batchChangesEnabled && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
+                        {/* This is the only circumstance where we show something
+                         batch-changes-related even if the instance does not have batch
+                         changes enabled, for marketing purposes on sourcegraph.com */}
+                        {(props.batchChangesEnabled || isSourcegraphDotCom) && (
+                            <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />
+                        )}
                         {codeInsights && (
                             <NavItem icon={BarChartIcon}>
                                 <NavLink to="/insights/dashboards/all">Insights</NavLink>

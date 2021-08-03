@@ -203,7 +203,9 @@ export class SettingsArea extends React.Component<Props, State> {
             ),
         ]).pipe(
             map(([registryExtensions, sideloadedExtension]) =>
-                [...registryExtensions, sideloadedExtension].filter(isDefined)
+                // Ensure that sideloaded extension settings keys have precedence over
+                // the same keys from its registry extension counterpart
+                [sideloadedExtension, ...registryExtensions].filter(isDefined)
             ),
             map(extensions => ({
                 $id: 'mergedSettings.schema.json#',

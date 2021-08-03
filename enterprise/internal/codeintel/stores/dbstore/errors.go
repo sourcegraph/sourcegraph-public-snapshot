@@ -18,8 +18,5 @@ var ErrDequeueRace = errors.New("dequeue race")
 // ErrNoSavepoint occurs when there is no savepont to rollback to.
 var ErrNoSavepoint = errors.New("no savepoint defined")
 
-// ErrUnknownRepository occurs when a repository does not exist.
-var ErrUnknownRepository = errors.New("unknown repository")
-
 // ErrIllegalLimit occurs when a limit is not strictly positive.
 var ErrIllegalLimit = errors.New("illegal limit")

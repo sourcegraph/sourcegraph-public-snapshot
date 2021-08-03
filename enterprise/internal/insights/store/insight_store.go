@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -68,6 +70,82 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 
 	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
 	return scanInsightViewSeries(s.Query(ctx, q))
+}
+
+func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
+	viewSeries, err := s.Get(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	mapped := make(map[string][]types.InsightViewSeries, len(viewSeries))
+	for _, series := range viewSeries {
+		mapped[series.UniqueID] = append(mapped[series.UniqueID], series)
+	}
+
+	results := make([]types.Insight, 0, len(mapped))
+	for _, seriesSet := range mapped {
+		results = append(results, types.Insight{
+			UniqueID:    seriesSet[0].UniqueID,
+			Title:       seriesSet[0].Title,
+			Description: seriesSet[0].Description,
+			Series:      seriesSet,
+		})
+	}
+
+	return results, nil
+}
+
+type GetDataSeriesArgs struct {
+	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
+	NextRecordingBefore time.Time
+	Deleted             bool
+}
+
+func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
+	preds := make([]*sqlf.Query, 0, 1)
+
+	if !args.NextRecordingBefore.IsZero() {
+		preds = append(preds, sqlf.Sprintf("next_recording_after < %s", args.NextRecordingBefore))
+	}
+	if args.Deleted {
+		preds = append(preds, sqlf.Sprintf("deleted_at IS NOT NULL"))
+	} else {
+		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+	}
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
+	return scanDataSeries(s.Query(ctx, q))
+}
+
+func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]types.InsightSeries, 0)
+	for rows.Next() {
+		var temp types.InsightSeries
+		if err := rows.Scan(
+			&temp.ID,
+			&temp.SeriesID,
+			&temp.Query,
+			&temp.CreatedAt,
+			&temp.OldestHistoricalAt,
+			&temp.LastRecordedAt,
+			&temp.NextRecordingAfter,
+			&temp.RecordingIntervalDays,
+		); err != nil {
+			return []types.InsightSeries{}, err
+		}
+		log15.Info("temp", "temp", temp)
+		results = append(results, temp)
+	}
+	return results, nil
 }
 
 func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightViewSeries, err error) {
@@ -140,7 +218,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 365)
+		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 7 * 26)
 	}
 	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightSeriesSql,
 		series.SeriesID,
@@ -159,6 +237,35 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	series.ID = id
 	return series, nil
 }
+
+type DataSeriesStore interface {
+	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
+	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+}
+
+type InsightMetadataStore interface {
+	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
+}
+
+// StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
+func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	current := s.Now()
+	next := current.Add(time.Hour * 24 * time.Duration(series.RecordingIntervalDays))
+	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.LastRecordedAt = current
+	series.NextRecordingAfter = next
+	return series, nil
+}
+
+const stampRecordingSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StampRecording
+UPDATE insight_series
+SET last_recorded_at = %s,
+    next_recording_after = %s
+WHERE id = %s;
+`
 
 const attachSeriesToViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AttachSeriesToView
@@ -189,4 +296,10 @@ FROM insight_view iv
          JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE %s
 ORDER BY iv.unique_id, i.series_id
+`
+
+const getInsightDataSeriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days from insight_series
+WHERE %s
 `

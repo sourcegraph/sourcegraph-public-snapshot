@@ -41,6 +41,11 @@ func (a *Actor) IsAuthenticated() bool {
 	return a != nil && a.UID != 0
 }
 
+// IsInternal returns true if the Actor is an internal actor.
+func (a *Actor) IsInternal() bool {
+	return a != nil && a.Internal
+}
+
 type key int
 
 const actorKey key = iota
@@ -54,6 +59,7 @@ func FromContext(ctx context.Context) *Actor {
 	return a
 }
 
+// WithActor returns a new context with the given Actor instance.
 func WithActor(ctx context.Context, a *Actor) context.Context {
 	if a != nil && a.UID != 0 {
 		trace.User(ctx, a.UID)
@@ -61,6 +67,10 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
+// WithInternalActor returns a new context with its actor set to be internal.
+//
+// 🚨 SECURITY: The caller MUST ensure that it performs its own access controls
+// or removal of sensitive data.
 func WithInternalActor(ctx context.Context) context.Context {
 	return context.WithValue(ctx, actorKey, &Actor{Internal: true})
 }

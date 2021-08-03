@@ -63,9 +63,9 @@ docker cp prometheus:/tmp/sourcegraph-metrics-dump.tgz sourcegraph-metrics-dump.
 
 Please then upload the `sourcegraph-metrics-dump.tgz` file to Sourcegraph support so we can inspect it.
 
-#### Single-container `sourcegraph/server` deployments
+#### Single-container Sourcegraph deployments
 
-To create a metrics dump from a single-container `sourcegraph/server` deployment, follow these steps:
+To create a metrics dump from a [single-container `sourcegraph/server` deployment](install/docker/index.md), follow these steps:
 
 * Open a shell to the running container:
     1. Run `docker ps` to get the name of the Sourcegraph server container.

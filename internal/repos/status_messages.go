@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/cockroachdb/errors"
 
@@ -43,6 +44,10 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 				ExternalServiceId: id,
 			},
 		})
+	}
+
+	if os.Getenv("DISABLE_STATUS_MESSAGES_REPOS_COUNTING") == "true" {
+		return messages, nil
 	}
 
 	extsvcIDs := make([]int64, 0, len(externalServiceSyncErrors))

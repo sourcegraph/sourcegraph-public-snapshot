@@ -457,15 +457,15 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
-	// Determine span URl and log the error.
-	var spanURL string
+	// Determine trace URL and log the error.
+	var traceURL string
 	if span := opentracing.SpanFromContext(r.Context()); span != nil {
 		ext.Error.Set(span, true)
 		span.SetTag("err", err)
 		span.SetTag("error-id", errorID)
-		spanURL = trace.SpanURL(span)
+		traceURL = trace.URL(trace.IDFromSpan(span))
 	}
-	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", spanURL)
+	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it
