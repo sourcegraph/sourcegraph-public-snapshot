@@ -11,7 +11,7 @@ import { createViewContent } from '../utils/create-view-content'
  * Returns list of backend insights via gql API request.
  */
 export function getBackendInsights(insightIds?: string[]): Observable<ViewInsightProviderResult[]> {
-    // Ids field wasn't specified returns all insights
+    // If Ids field wasn't specified then return all insights
     if (!insightIds) {
         return getRawBackendInsights([]).pipe(
             startWith([
