@@ -66,6 +66,9 @@ describe('GitLab', () => {
                 },
             }),
         })
+
+        // Ensure that the same assets are requested in all environments.
+        await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
