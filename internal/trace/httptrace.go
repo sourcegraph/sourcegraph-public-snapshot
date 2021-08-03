@@ -129,7 +129,10 @@ func RequestSource(ctx context.Context) SourceType {
 func HTTPTraceMiddleware(next http.Handler) http.Handler {
 	shouldLog := func(r *http.Request) bool {
 		switch r.URL.Path {
-		case "/.internal/configuration", "/.internal/saved-queries/list-all": // Exclude super noisy logs
+		case "/.internal/configuration",
+			"/.internal/saved-queries/list-all",
+			"/.api/graphql?SiteProductVersion",
+			"/.internal/search/configuration": // Exclude super noisy logs
 			return false
 		}
 		return true
@@ -217,15 +220,8 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				"duration", m.Duration,
 			)
 
-			if routeName != "unknown" {
-				kvs = append(kvs, "route", routeName)
-			}
-
 			if traceID != "" {
-				kvs = append(kvs,
-					"trace", traceURL,
-					"traceid", traceID,
-				)
+				kvs = append(kvs, "traceid", traceID)
 			}
 
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {
