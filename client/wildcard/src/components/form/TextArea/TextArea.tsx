@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React, { forwardRef, ForwardRefExoticComponent, InputHTMLAttributes, ReactNode, RefAttributes } from 'react'
 
-import styles from './TextArea.module.scss'
+// import styles from './TextArea.module.scss'
 
 export interface FormTextAreaProps extends InputHTMLAttributes<HTMLTextAreaElement> {
     /** Title of input. */
@@ -55,3 +55,5 @@ export const TextArea: ForwardRefExoticComponent<FormTextAreaProps & RefAttribut
         )
     }
 )
+
+TextArea.displayName = 'TextArea'
