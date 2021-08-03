@@ -127,17 +127,6 @@ func RequestSource(ctx context.Context) SourceType {
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
 func HTTPTraceMiddleware(next http.Handler) http.Handler {
-	shouldLog := func(r *http.Request) bool {
-		switch r.URL.Path {
-		case "/.internal/configuration",
-			"/.internal/saved-queries/list-all",
-			"/.api/graphql?SiteProductVersion",
-			"/.internal/search/configuration": // Exclude super noisy logs
-			return false
-		}
-		return true
-	}
-
 	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -211,7 +200,17 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		if shouldLog(r) {
+		minCode, _ := strconv.Atoi(os.Getenv("SRC_HTTP_LOG_MIN_CODE"))
+		if minCode == 0 {
+			minCode = 500
+		}
+
+		minDuration, _ := time.ParseDuration(os.Getenv("SRC_HTTP_LOG_MIN_DURATION"))
+		if minDuration == 0 {
+			minDuration = time.Second
+		}
+
+		if m.Duration >= minDuration || m.Code >= minCode {
 			kvs := make([]interface{}, 0, 20)
 			kvs = append(kvs,
 				"method", r.Method,
@@ -236,7 +235,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				kvs = append(kvs, "graphql_error", gqlErr)
 			}
 
-			log15.Info("HTTP", kvs...)
+			log15.Info("http", kvs...)
 		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
