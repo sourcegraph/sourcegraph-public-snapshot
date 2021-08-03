@@ -8,8 +8,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/window"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
