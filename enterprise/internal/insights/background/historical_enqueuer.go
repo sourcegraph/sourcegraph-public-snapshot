@@ -467,7 +467,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		hardErr = errors.Wrap(err, "FindNearestCommit")
 		return
 	}
-	if nearestCommit == nil {
+	if nearestCommit == nil || nearestCommit.Committer == nil {
 		return // repository has no commits / is empty. Maybe not yet pushed to code host.
 	}
 
@@ -478,7 +478,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	hardErr = h.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 		SeriesID:    bctx.seriesID,
 		SearchQuery: query,
-		RecordTime:  &frameMidpoint,
+		RecordTime:  &nearestCommit.Committer.Date,
 		State:       "queued",
 		Priority:    int(priority.FromTimeInterval(frameMidpoint, time.Now())), // eventually we will use the end of the historical range, for now current time works fine
 		Cost:        int(priority.Unindexed),
