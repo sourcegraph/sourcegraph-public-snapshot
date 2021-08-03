@@ -10,15 +10,7 @@ Follow the instructions below to generate profiling data. We will use the Source
 
 ### Sourcegraph with Docker Compose
 
-If you're using the [Docker Compose deployment](install/docker-compose/index.md), [configure your deployment](install/docker-compose/operations.md#configure) to expose port 6060 on one of your frontend containers, for example:
-
-```diff
-  sourcegraph-frontend-0:
-    container_name: sourcegraph-frontend-0
-    # ...
-+   ports:
-+     - '0.0.0.0:6060:6060'
-```
+See [expose debug port in Docker Compose](install/docker-compose/operations.md#expose-debug-port).
 
 ### Sourcegraph with Kubernetes
 
@@ -32,19 +24,7 @@ kubectl port-forward sourcegraph-frontend-xxxx 6060:6060
 
 ### Single-container Sourcegraph
 
-The docker run command for single-container Sourcegraph needs an additional publish flag to expose the debug port:
-
-```bash script
-docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.30.3
-```
-
-If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
-such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection.
-To access the remote server using `sshuttle` from your local machine:
-
-```bash script
-sshuttle -r user@host 0/0
-```
+See [expose debug port in single-container Sourcegraph](install/docker/operations.md#expose-debug-port).
 
 ## Generating profiling data
 

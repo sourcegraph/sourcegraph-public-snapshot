@@ -98,6 +98,24 @@ The easiest way to specify HTTP(S) authentication for repositories is to include
 
 Otherwise, follow the steps above for mounting SSH configuration to mount a host directory containing the desired `.netrc` file to `/home/sourcegraph/` in the `gitserver` container.
 
+### Expose debug port
+
+To [generate pprof profiling data](../../pprof.md), you must [configure your deployment](#configure) to expose port 6060 on one of your frontend containers, for example:
+
+```diff
+  sourcegraph-frontend-0:
+    container_name: sourcegraph-frontend-0
+    # ...
++   ports:
++     - '0.0.0.0:6060:6060'
+```
+
+Also see [debug ports](../../pprof.md#debug-ports) for specific ports that can be exposed.
+
+### Use an external database
+
+The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence.
+
 ## Upgrade
 
 This requires you to have [set up configuration for Docker Compose](#configure).
@@ -136,10 +154,6 @@ You can monitor the health of a deployment in several ways:
 - Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
 - Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
   - This requires direct access to your instance's host machine.
-
-## Use an external database
-
-The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence.
 
 ## Manage storage
 
