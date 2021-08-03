@@ -101,6 +101,6 @@ func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) 
 
 	if err := s.Insert(ctx, e); err != nil {
 		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "trace", trace.ID(ctx), "err", err)
+		log15.Error(string(e.Name), "event", string(j), "traceid", trace.ID(ctx), "err", err)
 	}
 }
