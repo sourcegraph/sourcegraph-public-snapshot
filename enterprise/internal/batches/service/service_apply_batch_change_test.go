@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -36,7 +37,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := store.NewWithClock(db, nil, clock)
+	store := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	svc := New(store)
 
 	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {

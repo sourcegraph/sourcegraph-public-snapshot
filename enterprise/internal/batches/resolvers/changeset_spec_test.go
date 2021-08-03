@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -30,7 +31,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 	esStore := database.ExternalServicesWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestCodeHostConnectionResolver(t *testing.T) {
@@ -33,7 +34,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, db, true).ID
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	ghRepos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	ghRepo := ghRepos[0]
