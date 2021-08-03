@@ -112,7 +112,9 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
                     )}
                     {cloningStatusLoading && (
                         <TerminalLine>
-                            <TerminalTitle>Loading...</TerminalTitle>
+                            <TerminalTitle>
+                                <code>Loading...</code>
+                            </TerminalTitle>
                         </TerminalLine>
                     )}
                     {!cloningStatusLoading &&

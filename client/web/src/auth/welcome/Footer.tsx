@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
 
 import { useSteps } from '../Steps/context'
@@ -13,6 +14,16 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
 
     return (
         <div className="mt-4">
+            {!currentStep.isLastStep && (
+                <Link
+                    to="https://docs.sourcegraph.com/code_search/explanations/code_visibility_on_sourcegraph_cloud"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Who can see my code on Sourcegraph?{' '}
+                </Link>
+            )}
+
             <LoaderButton
                 type="button"
                 alwaysShowLabel={true}
