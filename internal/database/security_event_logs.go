@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"runtime"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -101,6 +102,11 @@ func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) 
 
 	if err := s.Insert(ctx, e); err != nil {
 		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceid", trace.ID(ctx), "err", err)
+
+		// Temporary: Log the stack so we can track this down
+		buf := make([]byte, 2048)
+		runtime.Stack(buf, false)
+
+		log15.Error(string(e.Name), "event", string(j), "traceid", trace.ID(ctx), "stack", string(buf), "err", err)
 	}
 }
