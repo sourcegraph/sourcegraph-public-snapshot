@@ -9,12 +9,57 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
  * An Observable wrapper around ResizeObserver
  */
 export const observeResize = (target: HTMLElement): Observable<ResizeObserverEntry | undefined> =>
-    new Observable(observer => {
+    new Observable(function subscribe(observer) {
         const resizeObserver = new ResizeObserver(entries => {
             observer.next(head(entries))
         })
         resizeObserver.observe(target)
-        return () => resizeObserver.disconnect()
+
+        return function unsubscribe() {
+            resizeObserver.disconnect()
+        }
+    })
+
+interface ObserveQuerySelectorInit {
+    selector: string
+    timeoutMs: number
+    target?: HTMLElement
+}
+
+class ElementNotFoundError extends Error {
+    public readonly name = 'ElementNotFoundError'
+    constructor({ selector, timeoutMs }: ObserveQuerySelectorInit) {
+        super(`Could not find element with selector ${selector} within ${timeoutMs}ms.`)
+    }
+}
+
+/**
+ * Returns an observable that emits when an element that matches `selector` is found.
+ * Errors out if the selector doesn't yield an element by `timeoutMs`
+ */
+export const observeQuerySelector = ({ selector, timeoutMs, target }: ObserveQuerySelectorInit): Observable<Element> =>
+    new Observable(function subscribe(observer) {
+        const targetElement = target ?? document
+        const intervalId = setInterval(
+            () => {
+                const element = targetElement.querySelector(selector)
+                if (element) {
+                    observer.next(element)
+                    observer.complete()
+                }
+            },
+            timeoutMs > 100 ? 100 : timeoutMs
+        )
+        const timeoutId = setTimeout(() => {
+            clearInterval(intervalId)
+            // If the element still hasn't appeared, call error handler.
+            observer.error(ElementNotFoundError)
+        }, timeoutMs)
+
+        return function unsubscribe() {
+            clearTimeout(timeoutId)
+            clearInterval(intervalId)
+        }
     })
 
 /** Media breakpoints */
