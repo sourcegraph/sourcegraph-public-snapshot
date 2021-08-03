@@ -19,6 +19,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [Use a custom domain](../url.md)
 - [Update Sourcegraph](../updates/index.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](../external_services/index.md)
+- [PostgreSQL Config](./postgres-conf.md)
 
 ## Advanced tasks
 

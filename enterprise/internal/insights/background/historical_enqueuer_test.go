@@ -59,6 +59,8 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 			SeriesID:              "series1",
 			Query:                 "query1",
 			NextRecordingAfter:    clock().Add(-1 * time.Hour),
+			CreatedAt:             clock(),
+			OldestHistoricalAt:    clock().Add(-time.Hour * 24 * 365),
 			RecordingIntervalDays: 1,
 		},
 		{
@@ -66,6 +68,8 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 			SeriesID:              "series2",
 			Query:                 "query2",
 			NextRecordingAfter:    clock().Add(1 * time.Hour),
+			CreatedAt:             clock(),
+			OldestHistoricalAt:    clock().Add(-time.Hour * 24 * 365),
 			RecordingIntervalDays: 1,
 		},
 	}, nil)
@@ -189,14 +193,14 @@ func Test_historicalEnqueuer(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{
 			allReposIteratorCalls: 1, reposGetByName: 2,
 			operations: []string{
-				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-12-21T12:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-12-21T12:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
-				`recordSeriesPoint(point=SeriesPoint{Time: "2020-12-21 12:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
-				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
-				`recordSeriesPoint(point=SeriesPoint{Time: "2020-12-21 12:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
+				`enqueueQueryRunnerJob("2020-10-01T18:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-04-02T06:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-10-01T18:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-04-02T06:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-10-01T18:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
+				`recordSeriesPoint(point=SeriesPoint{Time: "2020-04-02 06:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
+				`enqueueQueryRunnerJob("2020-10-01T18:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
+				`recordSeriesPoint(point=SeriesPoint{Time: "2020-04-02 06:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
 			},
 		})
 		want.Equal(t, testHistoricalEnqueuer(t, &testParams{

@@ -11,9 +11,9 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
-import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { useMutation, useRoutesMatch } from '../../hooks'
 import { LayoutRouteProps } from '../../routes'
@@ -101,9 +101,9 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
 
     return (
         <>
-            <button type="button" className="feedback-prompt__close" onClick={closePrompt}>
+            <Button className="feedback-prompt__close" onClick={closePrompt}>
                 <CloseIcon className="feedback-prompt__icon" />
-            </button>
+            </Button>
             {data?.submitHappinessFeedback ? (
                 <div className="feedback-prompt__success">
                     <TickIcon className="feedback-prompt__success--tick" />
@@ -146,14 +146,15 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                     {error && (
                         <ErrorAlert error={error} icon={false} className="mt-3" prefix="Error submitting feedback" />
                     )}
-                    <LoaderButton
+                    <Button
+                        disabled={!rating || !text || loading}
                         role="menuitem"
                         type="submit"
-                        className="btn btn-block btn-secondary feedback-prompt__button"
-                        loading={loading}
-                        label="Send"
-                        disabled={!rating || !text || loading}
-                    />
+                        variant="secondary"
+                        className="btn-block feedback-prompt__button"
+                    >
+                        {loading ? <LoadingSpinner inline={true} /> : 'Send'}
+                    </Button>
                 </Form>
             )}
         </>

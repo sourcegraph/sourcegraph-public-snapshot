@@ -11,7 +11,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
@@ -32,7 +31,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	r := newTestResolver(t, db)
 
@@ -89,7 +88,7 @@ func TestListCodeMonitors(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	r := newTestResolver(t, db)
 
@@ -311,7 +310,7 @@ func TestQueryMonitor(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	r := newTestResolver(t, db)
 
@@ -583,7 +582,7 @@ func TestEditCodeMonitor(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	r := newTestResolver(t, db)
 
@@ -1162,13 +1161,11 @@ func TestTriggerTestEmailAction(t *testing.T) {
 		return nil
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	r := newTestResolver(t, nil)
 
-	userID := 1
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
 
-	ctx = actor.WithActor(ctx, actor.FromUser(int32(userID)))
 	_, err := r.TriggerTestEmailAction(ctx, &graphqlbackend.TriggerTestEmailActionArgs{
 		Namespace:   namespaceID,
 		Description: "A code monitor name",

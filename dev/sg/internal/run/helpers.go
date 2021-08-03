@@ -34,7 +34,7 @@ func InRoot(cmd *exec.Cmd) (string, error) {
 	cmd.Dir = repoRoot
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.Wrapf(err, "'%s' failed: %s", strings.Join(cmd.Args, " "), out)
+		return string(out), errors.Wrapf(err, "'%s' failed: %s", strings.Join(cmd.Args, " "), out)
 	}
 
 	return string(out), nil

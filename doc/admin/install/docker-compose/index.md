@@ -1,7 +1,7 @@
 # Sourcegraph with Docker Compose
 
 <p class="lead">
-Sourcegraph with <a href="#docker-compose">Docker Compose</a> is an ideal choice for many Sourcegraph customers who want a simplified single-machine deployment of Sourcegraph with simplified configuration and low cost of effort to maintain.
+Sourcegraph with <a href="#docker-compose">Docker Compose</a> is an ideal choice for many Sourcegraph customers who want a simplified single-machine deployment of Sourcegraph with easy configuration and low cost of effort to maintain.
 </p>
 
 Not sure if Docker Compose is the right choice for you? Learn more about the various [Sourcegraph installation options](../index.md).

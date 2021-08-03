@@ -279,6 +279,16 @@ func makeEnv(envs ...map[string]string) []string {
 
 	for _, env := range envs {
 		for k, v := range env {
+			if _, ok := os.LookupEnv(k); ok {
+				// If the key is already set in the process env, we don't
+				// overwrite it. That way we can do something like:
+				//
+				//	SRC_LOG_LEVEL=debug sg run enterprise-frontend
+				//
+				// to overwrite the default value in sg.config.yaml
+				continue
+			}
+
 			// Expand env vars and keep track of previously set env vars
 			// so they can be used when expanding too.
 			// TODO: using range to iterate over the env is not stable and thus

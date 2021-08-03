@@ -25,8 +25,7 @@ Once the application is created, look for a tiny link called **export metadata**
 
 ## 2. Configure SAML authentication provider in Sourcegraph
 
-1. Ensure `externalURL` in [site configuration](../../config/site_config.md) is set to the base URL (no trailing slash) of **ACS URL** you used in the JumpCloud application configuration.
-1. Add an entry to `auth.providers` with type `saml`, **SP Entity ID**, and `identityProviderMetadata` set to the content of the metadata you saved in the previous section. Here is an example of what your site configuration should look like:
+[Add a SAML auth provider](./index.md#add-a-saml-provider) with `configID` set to the **SP Entity ID**, and `identityProviderMetadata` set to the content of the metadata you saved in the previous section. Here is an example of what your site configuration should look like:
 
 ```json
 {
@@ -45,5 +44,3 @@ Once the application is created, look for a tiny link called **export metadata**
  ]
 }
 ```
-
-Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata`. See [SAML troubleshooting](../saml.md#saml-troubleshooting) for more tips.

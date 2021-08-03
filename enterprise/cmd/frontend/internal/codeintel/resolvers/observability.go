@@ -109,7 +109,13 @@ func lowSlowRequest(name string, duration time.Duration, err *error, observation
 	log15.Warn("Slow codeintel request", pairs...)
 }
 
-func createHoneyEvent(ctx context.Context, name string, observationArgs observation.Args, err *error, duration time.Duration) *libhoney.Event {
+func createHoneyEvent(
+	ctx context.Context,
+	name string,
+	observationArgs observation.Args,
+	err *error,
+	duration time.Duration,
+) *libhoney.Event {
 	fields := map[string]interface{}{
 		"type":        name,
 		"duration_ms": duration.Milliseconds(),
@@ -121,8 +127,9 @@ func createHoneyEvent(ctx context.Context, name string, observationArgs observat
 	for key, value := range observationArgs.LogFieldMap() {
 		fields[key] = value
 	}
-	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
-		fields["trace"] = spanURL
+	if traceID := trace.ID(ctx); traceID != "" {
+		fields["trace"] = trace.URL(traceID)
+		fields["traceid"] = traceID
 	}
 
 	return honey.EventWithFields("codeintel", fields)
