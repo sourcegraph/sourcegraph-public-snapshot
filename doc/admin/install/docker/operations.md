@@ -36,6 +36,30 @@ SELECT * FROM users;
 
 ## Git configuration and authentication
 
+For single-container environments, upon the Sourcegraph Docker image container start, it copies all files from `/etc/sourcegraph/{ssh,gitconfig,netrc}` into its own `$HOME` directory, via the `--volume /mnt/sourcegraph/config:/etc/sourcegraph` in the `docker run` command.
+
+For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/gitconfig` on your host containing your configuration:
+
+```
+# example .gitconfig
+
+[url "example.url.com:"]
+  insteadOf = "ssh://example.url.com"
+```
+
+Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
+
+```dockerfile
+FROM sourcegraph/server:3.30.3
+
+COPY gitconfig /etc/gitconfig
+COPY ssh /root/.ssh
+RUN	find /root/.ssh -type f -exec chmod 600 '{}' ';'
+RUN	find /root/.ssh -type d -exec chmod 700 '{}' ';'
+```
+
+This approach can also be used for `sourcegraph/gitserver` images in cluster environments.
+
 Learn more about Git [configuration](../../repo/git_config.md) and [authentication](../../repo/auth.md).
 
 ### SSH authentication (config, keys, `known_hosts`)

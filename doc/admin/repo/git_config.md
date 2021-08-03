@@ -4,42 +4,10 @@ Sourcegraph supports customising [git-config](https://git-scm.com/docs/git-confi
 
 This guide documents how to configure git-config. To set up SSH and authentication for repositories, see [Repository authentication](auth.md).
 
-## Sourcegraph with Docker Compose
-
-Please refer to the Docker Compose guide to [set up custom Git configuration and authentication](../install/docker-compose/operations.md#git-configuration), which can be adapted to additionally set `/etc/gitconfig`. 
-
-## Sourcegraph with Kubernetes
-
-Please refer to the Kubernetes guide to [configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh), which can be adapted to additionally set `/etc/gitconfig`.
-
-## Single-container Sourcegraph
-
-For single-container environments, upon the Sourcegraph Docker image container start, it copies all files from `/etc/sourcegraph/{ssh,gitconfig,netrc}` into its own `$HOME` directory, via the `--volume /mnt/sourcegraph/config:/etc/sourcegraph` in the `docker run` command.
-
-For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/gitconfig` on your host containing your configuration:
-```
-# example .gitconfig
-
-[url "example.url.com:"]
-  insteadOf = "ssh://example.url.com"
-```
-
-Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
-
-``` dockerfile
-FROM sourcegraph/server:3.30.3
-
-COPY gitconfig /etc/gitconfig
-COPY ssh /root/.ssh
-RUN	find /root/.ssh -type f -exec chmod 600 '{}' ';'
-RUN	find /root/.ssh -type d -exec chmod 700 '{}' ';'
-```
-
-This approach can also be used for `sourcegraph/gitserver` images in cluster environments.
-
-## Pure-Docker Sourcegraph
-
-Please refer to the Pure-Docker guide to [configure SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker/README.md#configuring-ssh-cloning), which can be adapted to additionally set `/etc/gitconfig`.
+- [Sourcegraph with Docker Compose](../install/docker-compose/index.md): refer to the Docker Compose guide to [set up custom Git configuration and authentication](../install/docker-compose/operations.md#git-configuration-and-authentication), which can be adapted to additionally set `/etc/gitconfig`.
+- [Sourcegraph with Kubernetes](../install/docker-compose/index.md): refer to the Kubernetes guide to [configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh), which can be adapted to additionally set `/etc/gitconfig`.
+- [Single-container Sourcegraph](../install/docker-compose/index.md): refer to the single-container guide to [set up custom Git configuration and authentication](../install/docker-compose/operations.md#git-configuration-and-authentication).
+- [Pure-docker Sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker): refer to the Pure-Docker guide to [configure SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker/README.md#configuring-ssh-cloning), which can be adapted to additionally set `/etc/gitconfig`.
 
 ## Example: alternate clone URL for repos
 
