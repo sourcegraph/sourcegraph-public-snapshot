@@ -3,51 +3,56 @@ package trace
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"os"
 	"strconv"
 	"strings"
-	"sync/atomic"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/uber/jaeger-client-go"
 	nettrace "golang.org/x/net/trace"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var spanURL atomic.Value
-
-// SpanURL returns the URL to the tracing UI for the given span. The span must be non-nil.
-func SpanURL(span opentracing.Span) string {
-	v := spanURL.Load()
-	if v == nil {
-		return "#tracer-not-enabled"
+// ID returns a trace ID, if any, found in the given context.
+func ID(ctx context.Context) string {
+	span := opentracing.SpanFromContext(ctx)
+	if span == nil {
+		return ""
 	}
-	f := v.(func(span opentracing.Span) string)
-	if f == nil {
-		return "#tracer-not-enabled"
-	}
-	return f(span)
+	return IDFromSpan(span)
 }
 
-// SpanURLFromContext returns the URL to the tracing UI for the span attached to the given
-// context. An empty string is returned if there is no span associated with the given context.
-func SpanURLFromContext(ctx context.Context) string {
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		// URLs starting with # don't have a trace. eg "#tracer-not-enabled"
-		if spanURL := SpanURL(span); !strings.HasPrefix(spanURL, "#") {
-			return spanURL
-		}
+// IDFromSpan returns a trace ID, if any, found in the given span.
+func IDFromSpan(span opentracing.Span) string {
+	spanCtx, ok := span.Context().(jaeger.SpanContext)
+	if !ok {
+		return ""
 	}
-
-	return ""
+	return spanCtx.TraceID().String()
 }
 
-// SetSpanURLFunc sets the function that SpanURL sets.
-func SetSpanURLFunc(f func(span opentracing.Span) string) {
-	spanURL.Store(f)
+// URL returns a trace URL for the given trace ID
+func URL(traceID string) string {
+	if traceID == "" {
+		return ""
+	}
+
+	if os.Getenv("ENABLE_GRAFANA_CLOUD_TRACE_URL") != "true" {
+		// We proxy jaeger so we can construct URLs to traces.
+		return strings.TrimSuffix(conf.Get().ExternalURL, "/") + "/-/debug/jaeger/trace/" + traceID
+	}
+
+	return "https://sourcegraph.grafana.net/explore?orgId=1&left=" + url.QueryEscape(fmt.Sprintf(
+		`["now-1h","now","grafanacloud-sourcegraph-traces",{"query":"%s","queryType":"traceId"}]`,
+		traceID,
+	))
 }
 
 // New returns a new Trace with the specified family and title.
@@ -270,21 +275,27 @@ func (e *encoder) EmitInt(key string, value int) {
 func (e *encoder) EmitInt32(key string, value int32) {
 	e.EmitString(key, strconv.FormatInt(int64(value), 10))
 }
+
 func (e *encoder) EmitInt64(key string, value int64) {
 	e.EmitString(key, strconv.FormatInt(value, 10))
 }
+
 func (e *encoder) EmitUint32(key string, value uint32) {
 	e.EmitString(key, strconv.FormatUint(uint64(value), 10))
 }
+
 func (e *encoder) EmitUint64(key string, value uint64) {
 	e.EmitString(key, strconv.FormatUint(value, 10))
 }
+
 func (e *encoder) EmitFloat32(key string, value float32) {
 	e.EmitString(key, strconv.FormatFloat(float64(value), 'E', -1, 64))
 }
+
 func (e *encoder) EmitFloat64(key string, value float64) {
 	e.EmitString(key, strconv.FormatFloat(value, 'E', -1, 64))
 }
+
 func (e *encoder) EmitObject(key string, value interface{}) {
 	e.EmitString(key, fmt.Sprintf("%+v", value))
 }

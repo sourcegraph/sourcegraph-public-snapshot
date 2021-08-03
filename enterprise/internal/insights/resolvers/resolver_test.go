@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -22,7 +22,7 @@ func TestResolver_Insights(t *testing.T) {
 	}
 	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)

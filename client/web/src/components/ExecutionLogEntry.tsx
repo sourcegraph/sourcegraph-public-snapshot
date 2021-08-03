@@ -3,9 +3,11 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import React from 'react'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { Collapsible } from './Collapsible'
+import styles from './ExecutionLogEntry.module.scss'
 import { Timestamp } from './time/Timestamp'
 
 interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
@@ -13,9 +15,9 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
         key: string
         command: string[]
         startTime: string
-        exitCode: number
+        exitCode: number | null
         out: string
-        durationMilliseconds: number
+        durationMilliseconds: number | null
     }
     now?: () => Date
 }
@@ -26,17 +28,24 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
             <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
 
             <div>
-                {logEntry.exitCode === 0 ? (
-                    <CheckCircleIcon className="text-success" />
-                ) : (
-                    <ErrorIcon className="text-danger" />
+                {logEntry.exitCode === null && <LoadingSpinner className="icon-inline mr-1" />}
+                {logEntry.exitCode !== null && (
+                    <>
+                        {logEntry.exitCode === 0 ? (
+                            <CheckCircleIcon className="text-success mr-1" />
+                        ) : (
+                            <ErrorIcon className="text-danger mr-1" />
+                        )}
+                    </>
                 )}
-
-                <span className="ml-2">
-                    <span className="text-muted">Started</span>{' '}
-                    <Timestamp date={logEntry.startTime} now={now} noAbout={true} />
-                    <span className="text-muted">, ran for</span> {formatMilliseconds(logEntry.durationMilliseconds)}
-                </span>
+                <span className="text-muted">Started</span>{' '}
+                <Timestamp date={logEntry.startTime} now={now} noAbout={true} />
+                {logEntry.exitCode !== null && logEntry.durationMilliseconds !== null && (
+                    <>
+                        <span className="text-muted">, ran for</span>{' '}
+                        {formatMilliseconds(logEntry.durationMilliseconds)}
+                    </>
+                )}
             </div>
 
             {children}
@@ -62,7 +71,7 @@ interface LogOutputProps {
 }
 
 const LogOutput: React.FunctionComponent<LogOutputProps> = React.memo(({ text, className }) => (
-    <pre className={classNames('bg-code rounded p-3 mb-0', className)}>
+    <pre className={classNames(styles.logs, 'rounded p-3 mb-0', className)}>
         {
             // Use index as key because log lines may not be unique. This is OK
             // here because this list will not be updated during this component's

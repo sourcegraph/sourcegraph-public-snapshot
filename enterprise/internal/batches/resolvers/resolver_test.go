@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/batch-change-utils/overridable"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -44,7 +43,7 @@ func TestNullIDResilience(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 
 	ids := []graphql.ID{
 		marshalBatchChangeID(0),

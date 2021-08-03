@@ -53,7 +53,8 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		// results to TimescaleDB.
 		queryrunner.NewWorker(ctx, workerBaseStore, insightsStore, queryRunnerWorkerMetrics),
 		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
-		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
+		// disabling the cleaner job while we debug mismatched results from historical insights
+		// queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}

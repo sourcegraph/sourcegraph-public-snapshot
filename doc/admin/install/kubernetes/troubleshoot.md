@@ -64,6 +64,32 @@ Restarting Sourcegraph Instance:
 kubectl rollout restart deployment sourcegraph-frontend
 ```
 
+### How do I access the Sourcegraph database? >  Kubernetes cluster deployments 
+
+Get the id of one `pgsql` Pod:
+
+```bash
+kubectl get pods -l app=pgsql
+NAME                     READY     STATUS    RESTARTS   AGE
+pgsql-76a4bfcd64-rt4cn   2/2       Running   0          19m
+```
+
+Make sure you are operating under the correct namespace (i.e. add `-n prod` if your pod is under the `prod` namespace).
+
+Open a PostgreSQL interactive terminal:
+
+```bash
+kubectl exec -it pgsql-76a4bfcd64-rt4cn -- psql -U sg
+```
+
+Run your SQL query:
+
+```sql
+SELECT * FROM users;
+```
+
+> NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the docker container exec command.
+
 ## Common errors
 
 

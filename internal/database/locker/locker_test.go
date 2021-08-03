@@ -16,7 +16,7 @@ func TestLock(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	locker := NewWithDB(db, "test")
 
-	key := rand.Intn(1000)
+	key := rand.Int31n(1000)
 
 	// Start txn before acquiring locks outside of txn
 	tx, err := locker.Transact(context.Background())
@@ -32,7 +32,7 @@ func TestLock(t *testing.T) {
 		t.Errorf("expected lock to be acquired")
 	}
 
-	acquired, _, err = tx.LockInTransaction(context.Background(), key, false)
+	acquired, err = tx.LockInTransaction(context.Background(), key, false)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}
@@ -42,7 +42,7 @@ func TestLock(t *testing.T) {
 
 	unlock(nil)
 
-	acquired, _, err = tx.LockInTransaction(context.Background(), key, false)
+	acquired, err = tx.LockInTransaction(context.Background(), key, false)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}
@@ -58,7 +58,7 @@ func TestLockBlockingAcquire(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	locker := NewWithDB(db, "test")
 
-	key := rand.Intn(1000)
+	key := rand.Int31n(1000)
 
 	// Start txn before acquiring locks outside of txn
 	tx, err := locker.Transact(context.Background())
@@ -79,12 +79,12 @@ func TestLockBlockingAcquire(t *testing.T) {
 	go func() {
 		defer close(sync)
 
-		acquired, unlock, err := tx.LockInTransaction(context.Background(), key, true)
+		acquired, err := tx.LockInTransaction(context.Background(), key, true)
 		if err != nil {
 			t.Errorf("unexpected error attempting to acquire lock: %s", err)
 			return
 		}
-		defer unlock(nil)
+		defer tx.Done(nil)
 
 		if !acquired {
 			t.Errorf("expected lock to be acquired")
@@ -114,7 +114,7 @@ func TestLockBadTransactionState(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	locker := NewWithDB(db, "test")
 
-	key := rand.Intn(1000)
+	key := rand.Int31n(1000)
 
 	// Start txn before acquiring locks outside of txn
 	tx, err := locker.Transact(context.Background())
@@ -122,7 +122,7 @@ func TestLockBadTransactionState(t *testing.T) {
 		t.Fatalf("unexpected error starting transaction: %s", err)
 	}
 
-	if _, _, err := locker.LockInTransaction(context.Background(), key, true); err == nil {
+	if _, err := locker.LockInTransaction(context.Background(), key, true); err == nil {
 		t.Fatalf("expected an error calling LockInTransaction outside of transaction")
 	}
 

@@ -30,8 +30,8 @@ var (
 	runFlagSet = flag.NewFlagSet("sg run", flag.ExitOnError)
 	runCommand = &ffcli.Command{
 		Name:       "run",
-		ShortUsage: "sg run <command>",
-		ShortHelp:  "Run the given command.",
+		ShortUsage: "sg run <command>...",
+		ShortHelp:  "Run the given commands.",
 		FlagSet:    runFlagSet,
 		Exec:       runExec,
 		UsageFunc:  printRunUsage,
@@ -405,18 +405,17 @@ func runExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
-		return flag.ErrHelp
+	var cmds []run.Command
+	for _, arg := range args {
+		cmd, ok := globalConf.Commands[arg]
+		if !ok {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", arg))
+			return flag.ErrHelp
+		}
+		cmds = append(cmds, cmd)
 	}
 
-	cmd, ok := globalConf.Commands[args[0]]
-	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", args[0]))
-		return flag.ErrHelp
-	}
-
-	return run.Commands(ctx, globalConf.Env, cmd)
+	return run.Commands(ctx, globalConf.Env, cmds...)
 }
 
 func doctorExec(ctx context.Context, args []string) error {
@@ -581,7 +580,9 @@ func printRunUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
+	fmt.Fprintf(&out, "  sg %s <command>...\n", c.Name)
+	fmt.Fprintln(&out, "")
+	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
 	// Attempt to parse config to list available commands, but don't fail on
 	// error, because we should never error when the user wants --help output.

@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -201,13 +200,11 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 		displayErrBody = errBody
 	}
 	http.Error(w, displayErrBody, status)
-	traceSpan := opentracing.SpanFromContext(r.Context())
-	var spanURL string
-	if traceSpan != nil {
-		spanURL = trace.SpanURL(traceSpan)
-	}
+	traceID := trace.ID(r.Context())
+	traceURL := trace.URL(traceID)
+
 	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceid", traceID)
 	}
 }
 

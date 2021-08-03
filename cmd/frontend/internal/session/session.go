@@ -340,9 +340,9 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 	// authenticated actor with the actor (if any) derived from the session cookie.
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() && a.FromSessionCookie {
 		if hasSessionCookie(r) {
-			// Delete the session cookie to avoid confusion. (This occurs most often when switching
-			// the auth provider to http-header; in that case, we want to rely on the http-header
-			// auth provider for auth, not the user's old session.
+			// Delete the session cookie to avoid confusion. This occurs most often when
+			// switching the auth provider to http-header; in that case, we want to rely on
+			// the http-header auth provider for auth, not the user's old session.
 			_ = deleteSession(w, r)
 		}
 		return r.Context() // unchanged

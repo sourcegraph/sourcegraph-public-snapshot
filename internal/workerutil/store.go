@@ -53,7 +53,7 @@ type ExecutionLogEntry struct {
 	Key        string    `json:"key"`
 	Command    []string  `json:"command"`
 	StartTime  time.Time `json:"startTime"`
-	ExitCode   int       `json:"exitCode"`
-	Out        string    `json:"out"`
-	DurationMs int       `json:"durationMs"`
+	ExitCode   *int      `json:"exitCode,omitempty"`
+	Out        string    `json:"out,omitempty"`
+	DurationMs *int      `json:"durationMs,omitempty"`
 }

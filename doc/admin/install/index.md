@@ -18,7 +18,7 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 | ----------------------------------------------------------- | ------------------------------------------------------- | ----------------- | :----------------: | :----------: | :-----------: |
 | [**★ Docker Compose**](../install/docker-compose/index.md) | **Small & medium** production deployments               | 🟢 5 minutes     |         ✅         |      ✅      |      ❌       |
 | [**★ Kubernetes**](../install/kubernetes/index.md)         | **Medium & large** highly-available cluster deployments | 🟠 30-90 minutes |         ✅         |      ✅      |      ✅       |
-| [Single-container server](../install/docker/index.md)       | Local testing                                           | 🟢 1 minute      |         ❌         |      ❌      |      ❌       |
+| [Single-container](../install/docker/index.md)              | Local testing                                           | 🟢 1 minute      |         ❌         |      ❌      |      ❌       |
 
 <span class="virtual-br"></span>
 

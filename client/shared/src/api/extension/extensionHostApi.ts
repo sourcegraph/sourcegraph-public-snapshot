@@ -1,6 +1,6 @@
 import { proxy } from 'comlink'
 import { castArray, groupBy, identity, isEqual } from 'lodash'
-import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable } from 'rxjs'
+import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable, throwError } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -425,10 +425,40 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
+        // Insight page
+        getInsightViewById: (id, context) =>
+            proxySubscribable(
+                state.insightsPageViewProviders.pipe(
+                    switchMap(providers => {
+                        const provider = providers.find(provider => {
+                            // Get everything until last dot according to extension id naming convention
+                            // <type>.<name>.<view type = directory|insightPage|homePage>
+                            const providerId = provider.id.split('.').slice(0, -1).join('.')
+
+                            return providerId === id
+                        })
+
+                        if (!provider) {
+                            return throwError(new Error(`Couldn't find view with id ${id}`))
+                        }
+
+                        return providerResultToObservable(provider.viewProvider.provideView(context))
+                    }),
+                    catchError((error: unknown) => {
+                        console.error('View provider errored:', error)
+                        // Pass only primitive copied values because Error object is not
+                        // cloneable in Firefox and Safari
+                        const { message, name, stack } = asError(error)
+                        return of({ message, name, stack } as ErrorLike)
+                    }),
+                    map(view => ({ id, view }))
+                )
+            ),
+
         getInsightsViews: (context, insightIds) =>
             getInsightsViews(context, state.insightsPageViewProviders, insightIds),
+
         getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
-        getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
         getDirectoryViews: context =>
             proxySubscribable(
                 callViewProviders(
@@ -445,6 +475,8 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                     state.directoryViewProviders
                 )
             ),
+
+        getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
 
         getStatusBarItems: ({ viewerId }) => {
             const viewer = getViewer(viewerId)
