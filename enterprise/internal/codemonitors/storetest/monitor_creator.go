@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -65,7 +64,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 }
 
 func NewTestStoreWithStore(t *testing.T, store *codemonitors.Store) (context.Context, *TestStore) {
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, &TestStore{codemonitors.NewStoreWithClock(db, func() time.Time { return now })}
