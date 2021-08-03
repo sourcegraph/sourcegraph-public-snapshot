@@ -1,4 +1,4 @@
-package background
+package migrations
 
 import (
 	"os"
@@ -24,9 +24,9 @@ const (
 	BatchChangesSiteCredentialMigrationID = 10
 )
 
-// RegisterMigrations registers all currently implemented out of band migrations
+// Register registers all currently implemented out of band migrations
 // by batch changes with the migration runner.
-func RegisterMigrations(cstore *store.Store, outOfBandMigrationRunner *oobmigration.Runner) error {
+func Register(cstore *store.Store, outOfBandMigrationRunner *oobmigration.Runner) error {
 	allowDecrypt := os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 
 	migrations := map[int]oobmigration.Migrator{

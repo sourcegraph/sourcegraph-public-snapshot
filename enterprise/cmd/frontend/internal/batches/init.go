@@ -8,9 +8,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/window"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -50,5 +50,5 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
 
 	// Register Batch Changes OOB migrations.
-	return background.RegisterMigrations(cstore, outOfBandMigrationRunner)
+	return migrations.Register(cstore, outOfBandMigrationRunner)
 }
