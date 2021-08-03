@@ -8,7 +8,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -24,7 +23,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
 	admin := ct.CreateTestUser(t, db, true)
@@ -682,7 +681,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			ct.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
-			// NOTE: We cannot use a context that has authz bypassed.
+			// NOTE: We cannot use a context with an internal actor.
 			batchSpec := ct.CreateBatchSpec(t, userCtx, store, "missing-permissions", user.ID)
 
 			ct.CreateChangesetSpec(t, userCtx, store, ct.TestSpecOpts{

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/query"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -146,9 +147,11 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Resource string       `json:"resource"`
+		Service  string       `json:"service"`
 		Repos    []api.RepoID `json:"repo_ids"`
 	}{
 		Resource: "db.repo",
+		Service:  env.MyName,
 		Repos:    ids,
 	})
 
