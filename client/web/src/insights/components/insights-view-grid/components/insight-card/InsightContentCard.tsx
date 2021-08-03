@@ -1,132 +1,114 @@
+import classnames from 'classnames'
 import { MdiReactIconComponentType } from 'mdi-react'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useState } from 'react'
+import React, { PropsWithChildren } from 'react'
 import { useLocation } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../../../../../components/alerts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
-import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../../../core/backend/types'
+import { ViewInsightProviderSourceType } from '../../../../core/backend/types'
 import { InsightTypePrefix } from '../../../../core/types'
-import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 
-import { InsightDescription } from './components/insight-card-description/InsightCardDescription'
 import { InsightCardMenu } from './components/insight-card-menu/InsightCardMenu'
 import styles from './InsightCard.module.scss'
 
-export interface InsightCardProps extends TelemetryProps {
-    /** Insight data (title, chart content) */
-    insight: ViewInsightProviderResult
+const ASYNC_NOOP = (): Promise<void> => Promise.resolve()
 
-    /** Deleting handler fires when the user clicks delete in the insight menu. */
-    onDelete: (id: string) => Promise<void>
+export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
+    /**
+     * Insight data (title, chart content)
+     */
+    insight: ViewProviderResult
+
+    /**
+     * Deleting handler fires when the user clicks delete in the insight menu.
+     */
+    onDelete?: (id: string) => void
 
     /**
      * Prop for enabling and disabling insight context menu.
      * Now only insight page has insights with context menu.
-     * */
+     */
     hasContextMenu?: boolean
 
-    /** To get container to track hovers for pings */
+    /**
+     * To get container to track hovers for pings
+     */
     containerClassName?: string
 }
 
 /**
  * Renders insight card content. Loading state, error state and insight itself.
  */
-export const InsightContentCard: React.FunctionComponent<InsightCardProps> = props => {
+export const InsightContentCard: React.FunctionComponent<PropsWithChildren<InsightCardProps>> = props => {
     const {
-        insight: { id, view, source },
+        insight: { id, view },
         containerClassName,
         hasContextMenu,
-        onDelete,
+        onDelete = ASYNC_NOOP,
         telemetryService,
+        children,
+        ...otherProps
     } = props
 
     const location = useLocation()
-
-    // We should disable delete and any other actions if we already have started
-    // operation over some insight.
-    const [isDeleting, setDeletingState] = useState(false)
 
     // We support actions only over search and lang insights and not able to edit or delete
     // custom insight or backend insight.
     const hasMenu =
         hasContextMenu && (id.startsWith(InsightTypePrefix.search) || id.startsWith(InsightTypePrefix.langStats))
 
-    const handleDelete = async (): Promise<void> => {
-        setDeletingState(true)
+    const title = !isErrorLike(view) ? view?.title : null
+    const subtitle = !isErrorLike(view) ? view?.subtitle : null
 
-        await onDelete(id)
-
-        setDeletingState(false)
-    }
+    // In case if we don't have a content for the header component
+    // we should render nothing
+    const hasHeader = title || subtitle || hasMenu
 
     return (
-        <ErrorBoundary
-            location={location}
-            extraContext={
-                <>
-                    <p>ID: {id}</p>
-                    <pre>View: {JSON.stringify(view, null, 2)}</pre>
-                </>
-            }
-            className="pt-0"
+        <section
+            {...otherProps}
+            data-testid={`insight-card.${id}`}
+            className={classnames('card', otherProps.className, styles.insightCard)}
         >
-            {view === undefined || isDeleting ? (
-                <>
-                    <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-                        <LoadingSpinner /> {isDeleting ? 'Deleting code insight' : 'Loading code insight'}
-                    </div>
-                    <InsightDescription
-                        className={styles.insightCardDescription}
-                        title={id}
-                        icon={getInsightViewIcon(source)}
-                    />
-                </>
-            ) : isErrorLike(view) ? (
-                <>
-                    <ErrorAlert data-testid={`${id} insight error`} className="m-0" error={view} />
-                    <InsightDescription
-                        className={styles.insightCardDescription}
-                        title={id}
-                        icon={getInsightViewIcon(source)}
-                    />
-                </>
-            ) : (
-                <>
+            <ErrorBoundary
+                className="pt-0"
+                location={location}
+                extraContext={
+                    <>
+                        <p>ID: {id}</p>
+                        <pre>View: {JSON.stringify(view, null, 2)}</pre>
+                    </>
+                }
+            >
+                {hasHeader && (
                     <header className={styles.insightCardHeader}>
                         <div className={styles.insightCardHeaderContent}>
-                            <h4 className={styles.insightCardTitle}>{view.title}</h4>
-                            {view.subtitle && <div className={styles.insightCardSubtitle}>{view.subtitle}</div>}
+                            <h4 className={styles.insightCardTitle}>{title}</h4>
+                            {subtitle && <div className={styles.insightCardSubtitle}>{subtitle}</div>}
                         </div>
 
                         {hasMenu && (
                             <InsightCardMenu
                                 menuButtonClassName="mr-n2 d-inline-flex"
                                 insightID={id}
-                                onDelete={handleDelete}
+                                onDelete={onDelete}
                             />
                         )}
                     </header>
+                )}
 
-                    <InsightViewContent
-                        telemetryService={telemetryService}
-                        viewContent={view.content}
-                        viewID={id}
-                        containerClassName={containerClassName}
-                    />
-                </>
-            )}
-        </ErrorBoundary>
+                {children}
+            </ErrorBoundary>
+        </section>
     )
 }
 
-const getInsightViewIcon = (source: ViewInsightProviderSourceType): MdiReactIconComponentType => {
+export const getInsightViewIcon = (source: ViewInsightProviderSourceType): MdiReactIconComponentType => {
     switch (source) {
         case ViewInsightProviderSourceType.Backend:
             return DatabaseIcon

@@ -12,9 +12,9 @@ type ExecutionLogEntryResolver interface {
 	Key() string
 	Command() []string
 	StartTime() DateTime
-	ExitCode() int32
+	ExitCode() *int32
 	Out(ctx context.Context) (string, error)
-	DurationMilliseconds() int32
+	DurationMilliseconds() *int32
 }
 
 func NewExecutionLogEntryResolver(db dbutil.DB, entry workerutil.ExecutionLogEntry) *executionLogEntryResolver {
@@ -33,14 +33,25 @@ var _ ExecutionLogEntryResolver = &executionLogEntryResolver{}
 
 func (r *executionLogEntryResolver) Key() string       { return r.entry.Key }
 func (r *executionLogEntryResolver) Command() []string { return r.entry.Command }
-func (r *executionLogEntryResolver) ExitCode() int32   { return int32(r.entry.ExitCode) }
+
+func (r *executionLogEntryResolver) ExitCode() *int32 {
+	if r.entry.ExitCode == nil {
+		return nil
+	}
+	val := int32(*r.entry.ExitCode)
+	return &val
+}
 
 func (r *executionLogEntryResolver) StartTime() DateTime {
 	return DateTime{Time: r.entry.StartTime}
 }
 
-func (r *executionLogEntryResolver) DurationMilliseconds() int32 {
-	return int32(r.entry.DurationMs)
+func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
+	if r.entry.DurationMs == nil {
+		return nil
+	}
+	val := int32(*r.entry.DurationMs)
+	return &val
 }
 
 func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {

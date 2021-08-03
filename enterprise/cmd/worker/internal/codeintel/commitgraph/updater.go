@@ -28,8 +28,10 @@ type Updater struct {
 	operations                *operations
 }
 
-var _ goroutine.Handler = &Updater{}
-var _ goroutine.ErrorHandler = &Updater{}
+var (
+	_ goroutine.Handler      = &Updater{}
+	_ goroutine.ErrorHandler = &Updater{}
+)
 
 // NewUpdater returns a background routine that periodically updates the commit graph
 // and visible uploads for each repository marked as dirty.
@@ -81,7 +83,7 @@ func (u *Updater) HandleError(err error) {
 // update procedure for this repository. If the lock is already held, this method will simply
 // do nothing.
 func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
-	ok, unlock, err := u.locker.Lock(ctx, repositoryID, false)
+	ok, unlock, err := u.locker.Lock(ctx, int32(repositoryID), false)
 	if err != nil || !ok {
 		return errors.Wrap(err, "locker.Lock")
 	}

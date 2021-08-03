@@ -2,24 +2,27 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Store struct {
-	*basestore.Store
+	*dbstore.Store
 	operations *operations
 }
 
 func NewWithDB(db dbutil.DB, observationContext *observation.Context) *Store {
+	// Use same prometheus metric created by the OSS layer
+	operationsMetrics := dbstore.NewOperationsMetrics(observationContext)
+
 	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: newOperations(observationContext),
+		Store:      dbstore.NewWithDB(db, observationContext, operationsMetrics),
+		operations: newOperations(observationContext, operationsMetrics),
 	}
 }
 

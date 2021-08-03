@@ -31,9 +31,19 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
     const triggerQuery = useMemo(() => new URLSearchParams(location.search).get('trigger-query') ?? undefined, [
         location.search,
     ])
-    useEffect(() => eventLogger.logViewEvent('CreateCodeMonitorPage', { hasTriggerQuery: !!triggerQuery }), [
-        triggerQuery,
+
+    const description = useMemo(() => new URLSearchParams(location.search).get('description') ?? undefined, [
+        location.search,
     ])
+
+    useEffect(
+        () =>
+            eventLogger.logViewEvent('CreateCodeMonitorPage', {
+                hasTriggerQuery: !!triggerQuery,
+                hasDescription: !!description,
+            }),
+        [triggerQuery, description]
+    )
 
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>
@@ -81,6 +91,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 authenticatedUser={authenticatedUser}
                 onSubmit={createMonitorRequest}
                 triggerQuery={triggerQuery}
+                description={description}
                 submitButtonLabel="Create code monitor"
             />
         </div>

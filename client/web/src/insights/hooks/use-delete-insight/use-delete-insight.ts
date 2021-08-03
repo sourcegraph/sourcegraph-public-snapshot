@@ -1,17 +1,20 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { InsightTypePrefix } from '../../../../../../../../core/types'
-import { usePersistEditOperations } from '../../../../../../../../hooks/use-persist-edit-operations'
+import { InsightTypePrefix } from '../../core/types'
+import { usePersistEditOperations } from '../use-persist-edit-operations'
 
 import { getDeleteInsightEditOperations } from './delete-helpers'
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
 
 export interface UseDeleteInsightAPI {
-    handleDelete: (insightID: string) => Promise<void>
+    delete: (insightID: string) => Promise<void>
+    loading: boolean
+    error: ErrorLike | undefined
 }
 
 /**
@@ -22,8 +25,19 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
     const { settingsCascade, platformContext } = props
     const { persist } = usePersistEditOperations({ platformContext })
 
+    const [loading, setLoading] = useState<boolean>(false)
+    const [error, setError] = useState<ErrorLike | undefined>()
+
     const handleDelete = useCallback(
         async (insightID: string) => {
+            // Prevent double call if we already have ongoing request
+            if (loading) {
+                return
+            }
+
+            setLoading(true)
+            setError(undefined)
+
             // For backward compatibility with old code stats insight api we have to delete
             // this insight in a special way. See link below for more information.
             // https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts#L33
@@ -44,10 +58,13 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
             } catch (error) {
                 // TODO [VK] Improve error UI for deleting
                 console.error(error)
+                setError(error)
             }
+
+            setLoading(false)
         },
-        [persist, settingsCascade]
+        [persist, settingsCascade, loading]
     )
 
-    return { handleDelete }
+    return { delete: handleDelete, loading, error }
 }

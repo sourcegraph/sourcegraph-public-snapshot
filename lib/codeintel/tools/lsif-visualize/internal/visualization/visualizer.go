@@ -32,6 +32,7 @@ func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int, e
 
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
 	_ = v.Context.Stasher.Vertices(func(lineContext reader.LineContext) bool {
 		if _, ok := vertices[lineContext.Element.ID]; !ok {
 			return true

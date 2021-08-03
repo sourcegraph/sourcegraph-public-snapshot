@@ -10,6 +10,8 @@ import {
     SettingsBasedInsightDashboard,
     InsightDashboardOwner,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
+    isSearchBasedInsightId,
+    SearchBasedInsightSettings,
 } from '../../core/types'
 import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects'
 
@@ -18,13 +20,28 @@ import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/t
  */
 export function getInsightIdsFromSettings(settings: Settings): string[] {
     // On top level of settings we store extension based insights only
-    const extensionBasedInsightIds = Object.keys(settings).filter(isInsightSettingKey)
+    const extensionBasedInsightIds = Object.keys(settings)
+        .filter(isInsightSettingKey)
+        .filter(id => {
+            if (isSearchBasedInsightId(id)) {
+                const searchBasedInsightRepositories = (settings[id] as SearchBasedInsightSettings)?.repositories
+
+                // Since dashboards currently work only with the insights page
+                // Filter out all insights that are not supposed to be on insights page
+                // by checking the repositories property.
+                // See details https://github.com/sourcegraph/sourcegraph-search-insights/blob/1b204a579160bab4208a1266cf4ad6e735cdd774/package.json#L77
+                return Array.isArray(searchBasedInsightRepositories)
+            }
+
+            return true
+        })
+
     // BE insights live in the 'insights.allrepos' map
     const backendBasedInsightIds = Object.keys((settings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as object) ?? {}).filter(
         isInsightSettingKey
     )
 
-    return [...extensionBasedInsightIds, ...backendBasedInsightIds]
+    return [...backendBasedInsightIds, ...extensionBasedInsightIds]
 }
 
 /**
