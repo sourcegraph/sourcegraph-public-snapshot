@@ -3,8 +3,7 @@ import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
-import { Container } from '..'
+import { Container } from '@sourcegraph/wildcard'
 
 import { Steps, Step, StepList, StepPanels, StepPanel, StepActions, useSteps } from '.'
 
