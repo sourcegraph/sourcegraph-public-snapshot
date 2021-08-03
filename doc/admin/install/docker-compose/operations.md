@@ -70,6 +70,34 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 - The version argument in the YAML file must be the same as in the standard deployment
 - Users should only alter the YAML file to adjust resource limits, or duplicate container entries to add more container replicas
 
+### Git configuration and authentication
+
+Learn more about Git [configuration](../../repo/git_config.md) and [authentication](../../repo/auth.md).
+
+#### SSH configuration
+
+Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/config`, `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`--but you can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
+
+For example, in the `gitserver-0` container configuration in your docker-compose.yaml file, add the second volume listed below, replacing `~/path/on/host/` with the path on the host machine to the `.ssh` directory:
+
+```yaml
+gitserver-0:
+  container_name: gitserver-0
+  ...
+  volumes:
+    - 'gitserver-0:/data/repos'
+    - '~/path/on/host/.ssh:/home/sourcegraph/.ssh'
+  ...
+```
+
+> WARNING: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. For example, run `chmod -v -R 600 ~/path/to/.ssh` in the folder on the host machine.
+
+#### HTTP(S) authentication
+
+The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
+
+Otherwise, follow the steps above for mounting SSH configuration to mount a host directory containing the desired `.netrc` file to `/home/sourcegraph/` in the `gitserver` container.
+
 ## Upgrade
 
 This requires you to have [set up configuration for Docker Compose](#configure).

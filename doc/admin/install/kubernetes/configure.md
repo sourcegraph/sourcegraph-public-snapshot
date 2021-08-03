@@ -379,6 +379,12 @@ Mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration
 **WARNING:** Do NOT commit the actual `id_rsa` and `known_hosts` files to your fork (unless
 your fork is private **and** you are okay with storing secrets in it).
 
+## Configure Git repository cloning via HTTP(S) authentication
+
+The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
+
+Otherwise, follow the steps above for mounting SSH configuration to mount a host directory containing the desired `.netrc` file to `/home/sourcegraph/` in the `gitserver` container.
+
 ## Configure custom Redis
 
 Sourcegraph supports specifying a custom Redis server for:

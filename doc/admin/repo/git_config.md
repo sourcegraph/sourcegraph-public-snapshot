@@ -1,10 +1,12 @@
-# Custom git or ssh config
+# Custom git config
 
-Sourcegraph supports customising [git-config](https://git-scm.com/docs/git-config) and [ssh_config](https://linux.die.net/man/5/ssh_config) for adjusting the behaviour of git. Sourcegraph will read these from the standard locations. This guide documents how to do it for each target environment and common use cases.
+Sourcegraph supports customising [git-config](https://git-scm.com/docs/git-config) and [ssh_config](https://linux.die.net/man/5/ssh_config) for adjusting the behaviour of git. Sourcegraph will read these from the standard locations.
+
+This guide documents how to configure git-config. To set up SSH and authentication for repositories, see [Repository authentication](auth.md).
 
 ## Sourcegraph with Docker Compose
 
-TODO
+Please refer to the Docker Compose guide to [set up custom Git configuration and authentication](../install/docker-compose/operations.md#git-configuration), which can be adapted to additionally set `/etc/gitconfig`. 
 
 ## Sourcegraph with Kubernetes
 
@@ -51,7 +53,7 @@ For example, I have a GitHub repo `github.com/foo/bar`. I want Sourcegraph to cl
   insteadOf = https://github.com
 ```
 
-If you are cloning via SSH, you can also achieve this with an SSH configuration:
+If you are [cloning via SSH](./auth.md), you can also achieve this with an SSH configuration:
 
 ```
 # ~/.ssh/config
