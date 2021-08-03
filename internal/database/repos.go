@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	regexpsyntax "regexp/syntax"
 	"strconv"
@@ -18,7 +19,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -713,6 +713,9 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
+		if e, ok := err.(*net.OpError); ok && e.Timeout() {
+			return errors.Wrapf(context.DeadlineExceeded, "RepoStore.list: %s", err.Error())
+		}
 		return err
 	}
 	defer rows.Close()
