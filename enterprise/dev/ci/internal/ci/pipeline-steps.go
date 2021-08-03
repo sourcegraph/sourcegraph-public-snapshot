@@ -430,7 +430,7 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	}
 }
 
-var currentBuildTimestamp = time.Now().UTC().Format(time.RFC3339)
+var currentBuildTimestamp = strconv.Itoa(int(time.Now().UTC().Unix()))
 
 func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
@@ -447,7 +447,7 @@ func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
 					bk.Cmd("./enterprise/cmd/executor/release.sh"),
 				}
 
-				pipeline.AddStep(":packer: :construction: executor image", cmds...)
+				pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
 			}
 		} else {
 			cmds := []bk.StepOpt{
