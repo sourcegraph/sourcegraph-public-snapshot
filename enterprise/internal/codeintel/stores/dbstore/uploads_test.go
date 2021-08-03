@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -904,19 +904,19 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 14, 15)
 	insertVisibleAtTipNonDefaultBranch(t, db, 50, 16)
 
-	packages := map[int][]semantic.Package{
+	packages := map[int][]precise.Package{
 		20: {{Scheme: "s0", Name: "n0", Version: "v0"}},
 		21: {{Scheme: "s1", Name: "n1", Version: "v1"}},
 		22: {{Scheme: "s2", Name: "n2", Version: "v2"}},
 		23: {{Scheme: "s3", Name: "n3", Version: "v3"}},
 		24: {{Scheme: "s4", Name: "n4", Version: "v4"}},
 	}
-	references := map[int][]semantic.PackageReference{
-		13: {{Package: semantic.Package{Scheme: "s1", Name: "n1", Version: "v1"}}},
-		14: {{Package: semantic.Package{Scheme: "s2", Name: "n2", Version: "v2"}}},
-		16: {{Package: semantic.Package{Scheme: "s3", Name: "n3", Version: "v3"}}},
-		19: {{Package: semantic.Package{Scheme: "s0", Name: "n0", Version: "v0"}}},
-		23: {{Package: semantic.Package{Scheme: "s4", Name: "n4", Version: "v4"}}},
+	references := map[int][]precise.PackageReference{
+		13: {{Package: precise.Package{Scheme: "s1", Name: "n1", Version: "v1"}}},
+		14: {{Package: precise.Package{Scheme: "s2", Name: "n2", Version: "v2"}}},
+		16: {{Package: precise.Package{Scheme: "s3", Name: "n3", Version: "v3"}}},
+		19: {{Package: precise.Package{Scheme: "s0", Name: "n0", Version: "v0"}}},
+		23: {{Package: precise.Package{Scheme: "s4", Name: "n4", Version: "v4"}}},
 	}
 
 	for id, packages := range packages {

@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 var dumpPath = "./testdata/project1/dump.lsif"
@@ -34,10 +35,8 @@ func TestNoDiffOnPermutedDumps(t *testing.T) {
 		t.Fatalf("Unexpected error reading dump path: %v", err)
 	}
 
-	diff := Diff(semantic.GroupedBundleDataChansToMaps(bundle1), semantic.GroupedBundleDataChansToMaps(bundle2))
-
-	if diff != "" {
-		t.Fatalf("Expected semantic.Diff to compute that dumps %v and %v are semantically equal, got:\n%v", dumpPath, dumpPermutedPath, diff)
+	if diff := Diff(precise.GroupedBundleDataChansToMaps(bundle1), precise.GroupedBundleDataChansToMaps(bundle2)); diff != "" {
+		t.Fatalf("Dumps %v and %v are not semantically equal:\n%v", dumpPath, dumpPermutedPath, diff)
 	}
 }
 
@@ -61,8 +60,8 @@ func TestDiffOnEditedDumps(t *testing.T) {
 	}
 
 	computedDiff := Diff(
-		semantic.GroupedBundleDataChansToMaps(bundle1),
-		semantic.GroupedBundleDataChansToMaps(bundle2),
+		precise.GroupedBundleDataChansToMaps(bundle1),
+		precise.GroupedBundleDataChansToMaps(bundle2),
 	)
 
 	autogold.Equal(t, autogold.Raw(computedDiff))

@@ -9,11 +9,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // WriteDocumentationPages is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, documentationPages chan *semantic.DocumentationPageData) (err error) {
+func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, documentationPages chan *precise.DocumentationPageData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -80,7 +80,7 @@ FROM t_lsif_data_documentation_pages source
 `
 
 // WriteDocumentationPathInfo is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *semantic.DocumentationPathInfoData) (err error) {
+func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -147,7 +147,7 @@ FROM t_lsif_data_documentation_path_info source
 `
 
 // WriteDocumentationMappings is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan semantic.DocumentationMapping) (err error) {
+func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationMappings.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})

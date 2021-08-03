@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type IndexEnqueuer struct {
@@ -87,7 +87,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code intelligence
 // index. Currently we only support recognition of "gomod" import monikers.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) (err error) {
+func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
 	ctx, traceLog, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("scheme", pkg.Scheme),

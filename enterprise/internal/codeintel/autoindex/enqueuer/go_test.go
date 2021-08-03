@@ -3,17 +3,17 @@ package enqueuer
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestInferGoRepositoryAndRevision(t *testing.T) {
 	testCases := []struct {
-		pkg      semantic.Package
+		pkg      precise.Package
 		repoName string
 		revision string
 	}{
 		{
-			pkg: semantic.Package{
+			pkg: precise.Package{
 				Scheme:  "gomod",
 				Name:    "https://github.com/sourcegraph/sourcegraph",
 				Version: "v2.3.2",
@@ -22,7 +22,7 @@ func TestInferGoRepositoryAndRevision(t *testing.T) {
 			revision: "v2.3.2",
 		},
 		{
-			pkg: semantic.Package{
+			pkg: precise.Package{
 				Scheme:  "gomod",
 				Name:    "https://github.com/aws/aws-sdk-go-v2/credentials",
 				Version: "v0.1.0",
@@ -31,7 +31,7 @@ func TestInferGoRepositoryAndRevision(t *testing.T) {
 			revision: "v0.1.0",
 		},
 		{
-			pkg: semantic.Package{
+			pkg: precise.Package{
 				Scheme:  "gomod",
 				Name:    "https://github.com/sourcegraph/sourcegraph",
 				Version: "v0.0.0-de0123456789",

@@ -1,8 +1,6 @@
 package lsifstore
 
-import (
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
-)
+import "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 
 // Package pairs a package name and the dump that provides it.
 type Package struct {
@@ -42,7 +40,7 @@ type Position struct {
 type Diagnostic struct {
 	DumpID int
 	Path   string
-	semantic.DiagnosticData
+	precise.DiagnosticData
 }
 
 // CodeIntelligenceRange pairs a range with its definitions, reference, hover text, and documentation.

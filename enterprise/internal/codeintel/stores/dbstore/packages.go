@@ -8,11 +8,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // UpdatePackages upserts package data tied to the given upload.
-func (s *Store) UpdatePackages(ctx context.Context, dumpID int, packages []semantic.Package) (err error) {
+func (s *Store) UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error) {
 	ctx, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackages", len(packages)),
 	}})
@@ -65,7 +65,7 @@ SELECT %s, source.scheme, source.name, source.version
 FROM t_lsif_packages source
 `
 
-func loadPackagesChannel(packages []semantic.Package) <-chan []interface{} {
+func loadPackagesChannel(packages []precise.Package) <-chan []interface{} {
 	ch := make(chan []interface{}, len(packages))
 
 	go func() {

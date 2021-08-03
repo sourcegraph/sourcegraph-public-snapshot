@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // resultsPerResultChunk is the number of target keys in a single result chunk. This may
@@ -23,11 +23,11 @@ import (
 const resultsPerResultChunk = 512
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundleDataChans, error) {
+func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleDataChans, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
 	numResultChunks := int(math.Max(1, math.Floor(float64(numResults)/resultsPerResultChunk)))
 
-	meta := semantic.MetaData{NumResultChunks: numResultChunks}
+	meta := precise.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, func(r Range) int { return r.DefinitionResultID })
@@ -39,7 +39,7 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 		return nil, err
 	}
 
-	return &semantic.GroupedBundleDataChans{
+	return &precise.GroupedBundleDataChans{
 		Meta:                  meta,
 		Documents:             documents,
 		ResultChunks:          resultChunks,
@@ -53,8 +53,8 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 	}, nil
 }
 
-func serializeBundleDocuments(ctx context.Context, state *State) chan semantic.KeyedDocumentData {
-	ch := make(chan semantic.KeyedDocumentData)
+func serializeBundleDocuments(ctx context.Context, state *State) chan precise.KeyedDocumentData {
+	ch := make(chan precise.KeyedDocumentData)
 
 	go func() {
 		defer close(ch)
@@ -64,7 +64,7 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan semantic.K
 				continue
 			}
 
-			data := semantic.KeyedDocumentData{
+			data := precise.KeyedDocumentData{
 				Path:     uri,
 				Document: serializeDocument(state, documentID),
 			}
@@ -80,24 +80,24 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan semantic.K
 	return ch
 }
 
-func serializeDocument(state *State, documentID int) semantic.DocumentData {
-	document := semantic.DocumentData{
-		Ranges:             make(map[semantic.ID]semantic.RangeData, state.Contains.SetLen(documentID)),
-		HoverResults:       map[semantic.ID]string{},
-		Monikers:           map[semantic.ID]semantic.MonikerData{},
-		PackageInformation: map[semantic.ID]semantic.PackageInformationData{},
-		Diagnostics:        make([]semantic.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
+func serializeDocument(state *State, documentID int) precise.DocumentData {
+	document := precise.DocumentData{
+		Ranges:             make(map[precise.ID]precise.RangeData, state.Contains.SetLen(documentID)),
+		HoverResults:       map[precise.ID]string{},
+		Monikers:           map[precise.ID]precise.MonikerData{},
+		PackageInformation: map[precise.ID]precise.PackageInformationData{},
+		Diagnostics:        make([]precise.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
 	}
 
 	state.Contains.SetEach(documentID, func(rangeID int) {
 		rangeData := state.RangeData[rangeID]
 
-		monikerIDs := make([]semantic.ID, 0, state.Monikers.SetLen(rangeID))
+		monikerIDs := make([]precise.ID, 0, state.Monikers.SetLen(rangeID))
 		state.Monikers.SetEach(rangeID, func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
 			monikerIDs = append(monikerIDs, toID(monikerID))
 
-			document.Monikers[toID(monikerID)] = semantic.MonikerData{
+			document.Monikers[toID(monikerID)] = precise.MonikerData{
 				Kind:                 moniker.Kind,
 				Scheme:               moniker.Scheme,
 				Identifier:           moniker.Identifier,
@@ -106,14 +106,14 @@ func serializeDocument(state *State, documentID int) semantic.DocumentData {
 
 			if moniker.PackageInformationID != 0 {
 				packageInformation := state.PackageInformationData[moniker.PackageInformationID]
-				document.PackageInformation[toID(moniker.PackageInformationID)] = semantic.PackageInformationData{
+				document.PackageInformation[toID(moniker.PackageInformationID)] = precise.PackageInformationData{
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
 				}
 			}
 		})
 
-		document.Ranges[toID(rangeID)] = semantic.RangeData{
+		document.Ranges[toID(rangeID)] = precise.RangeData{
 			StartLine:             rangeData.Start.Line,
 			StartCharacter:        rangeData.Start.Character,
 			EndLine:               rangeData.End.Line,
@@ -133,7 +133,7 @@ func serializeDocument(state *State, documentID int) semantic.DocumentData {
 
 	state.Diagnostics.SetEach(documentID, func(diagnosticID int) {
 		for _, diagnostic := range state.DiagnosticResults[diagnosticID] {
-			document.Diagnostics = append(document.Diagnostics, semantic.DiagnosticData{
+			document.Diagnostics = append(document.Diagnostics, precise.DiagnosticData{
 				Severity:       diagnostic.Severity,
 				Code:           diagnostic.Code,
 				Message:        diagnostic.Message,
@@ -149,18 +149,18 @@ func serializeDocument(state *State, documentID int) semantic.DocumentData {
 	return document
 }
 
-func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan semantic.IndexedResultChunkData {
+func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan precise.IndexedResultChunkData {
 	chunkAssignments := make(map[int][]int, numResultChunks)
 	for id := range state.DefinitionData {
-		index := semantic.HashKey(toID(id), numResultChunks)
+		index := precise.HashKey(toID(id), numResultChunks)
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 	for id := range state.ReferenceData {
-		index := semantic.HashKey(toID(id), numResultChunks)
+		index := precise.HashKey(toID(id), numResultChunks)
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 
-	ch := make(chan semantic.IndexedResultChunkData)
+	ch := make(chan precise.IndexedResultChunkData)
 
 	go func() {
 		defer close(ch)
@@ -170,8 +170,8 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 				continue
 			}
 
-			documentPaths := map[semantic.ID]string{}
-			rangeIDsByResultID := make(map[semantic.ID][]semantic.DocumentIDRangeID, len(resultIDs))
+			documentPaths := map[precise.ID]string{}
+			rangeIDsByResultID := make(map[precise.ID][]precise.DocumentIDRangeID, len(resultIDs))
 
 			for _, resultID := range resultIDs {
 				documentRanges, ok := state.DefinitionData[resultID]
@@ -179,8 +179,8 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 					documentRanges = state.ReferenceData[resultID]
 				}
 
-				rangeIDMap := map[semantic.ID]int{}
-				var documentIDRangeIDs []semantic.DocumentIDRangeID
+				rangeIDMap := map[precise.ID]int{}
+				var documentIDRangeIDs []precise.DocumentIDRangeID
 
 				documentRanges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 					docID := toID(documentID)
@@ -189,7 +189,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 					rangeIDs.Each(func(rangeID int) {
 						rangeIDMap[toID(rangeID)] = rangeID
 
-						documentIDRangeIDs = append(documentIDRangeIDs, semantic.DocumentIDRangeID{
+						documentIDRangeIDs = append(documentIDRangeIDs, precise.DocumentIDRangeID{
 							DocumentID: docID,
 							RangeID:    toID(rangeID),
 						})
@@ -210,9 +210,9 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 				rangeIDsByResultID[toID(resultID)] = documentIDRangeIDs
 			}
 
-			data := semantic.IndexedResultChunkData{
+			data := precise.IndexedResultChunkData{
 				Index: index,
-				ResultChunk: semantic.ResultChunkData{
+				ResultChunk: precise.ResultChunkData{
 					DocumentPaths:      documentPaths,
 					DocumentIDRangeIDs: rangeIDsByResultID,
 				},
@@ -232,9 +232,9 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 // sortableDocumentIDRangeIDs implements sort.Interface for document/range id pairs.
 type sortableDocumentIDRangeIDs struct {
 	state         *State
-	documentPaths map[semantic.ID]string
-	rangeIDMap    map[semantic.ID]int
-	s             []semantic.DocumentIDRangeID
+	documentPaths map[precise.ID]string
+	rangeIDMap    map[precise.ID]int
+	s             []precise.DocumentIDRangeID
 }
 
 func (s sortableDocumentIDRangeIDs) Len() int      { return len(s.s) }
@@ -256,7 +256,7 @@ func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
 	return iRange.Start.Character-jRange.Start.Character < 0
 }
 
-func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r Range) int) chan semantic.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r Range) int) chan precise.MonikerLocations {
 	monikers := datastructures.NewDefaultIDSetMap()
 	for rangeID, r := range state.RangeData {
 		if resultID := getResultID(r); resultID != 0 {
@@ -282,14 +282,14 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 		})
 	}
 
-	ch := make(chan semantic.MonikerLocations)
+	ch := make(chan precise.MonikerLocations)
 
 	go func() {
 		defer close(ch)
 
 		for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
 			for identifier, ids := range idsByIdentifier {
-				var locations []semantic.LocationData
+				var locations []precise.LocationData
 				for _, id := range ids {
 					data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 						uri := state.DocumentData[documentID]
@@ -300,7 +300,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 						rangeIDs.Each(func(id int) {
 							r := state.RangeData[id]
 
-							locations = append(locations, semantic.LocationData{
+							locations = append(locations, precise.LocationData{
 								URI:            uri,
 								StartLine:      r.Start.Line,
 								StartCharacter: r.Start.Character,
@@ -321,7 +321,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 
 				sort.Sort(sortableLocations(locations))
 
-				data := semantic.MonikerLocations{
+				data := precise.MonikerLocations{
 					Scheme:     scheme,
 					Identifier: identifier,
 					Locations:  locations,
@@ -340,7 +340,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 }
 
 // sortableLocations implements sort.Interface for locations.
-type sortableLocations []semantic.LocationData
+type sortableLocations []precise.LocationData
 
 func (s sortableLocations) Len() int      { return len(s) }
 func (s sortableLocations) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -356,20 +356,20 @@ func (s sortableLocations) Less(i, j int) bool {
 	return s[i].StartCharacter < s[j].StartCharacter
 }
 
-func gatherPackages(state *State) []semantic.Package {
-	uniques := make(map[string]semantic.Package, state.ExportedMonikers.Len())
+func gatherPackages(state *State) []precise.Package {
+	uniques := make(map[string]precise.Package, state.ExportedMonikers.Len())
 	state.ExportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
 
-		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = semantic.Package{
+		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = precise.Package{
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
 		}
 	})
 
-	packages := make([]semantic.Package, 0, len(uniques))
+	packages := make([]precise.Package, 0, len(uniques))
 	for _, v := range uniques {
 		packages = append(packages, v)
 	}
@@ -377,7 +377,7 @@ func gatherPackages(state *State) []semantic.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State, packageDefinitions []semantic.Package) ([]semantic.PackageReference, error) {
+func gatherPackageReferences(state *State, packageDefinitions []precise.Package) ([]precise.PackageReference, error) {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
@@ -412,15 +412,15 @@ func gatherPackageReferences(state *State, packageDefinitions []semantic.Package
 		}
 	})
 
-	packageReferences := make([]semantic.PackageReference, 0, len(uniques))
+	packageReferences := make([]precise.PackageReference, 0, len(uniques))
 	for _, v := range uniques {
 		filter, err := bloomfilter.CreateFilter(v.Identifiers)
 		if err != nil {
 			return nil, errors.Wrap(err, "bloomfilter.CreateFilter")
 		}
 
-		packageReferences = append(packageReferences, semantic.PackageReference{
-			Package: semantic.Package{
+		packageReferences = append(packageReferences, precise.PackageReference{
+			Package: precise.Package{
 				Scheme:  v.Scheme,
 				Name:    v.Name,
 				Version: v.Version,

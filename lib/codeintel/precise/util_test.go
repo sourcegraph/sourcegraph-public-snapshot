@@ -1,4 +1,4 @@
-package semantic
+package precise
 
 import (
 	"strconv"
