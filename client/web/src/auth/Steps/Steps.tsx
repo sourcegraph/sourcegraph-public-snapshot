@@ -77,8 +77,8 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
 
     const childrenArray = React.Children.toArray(children)
 
-    const stepsCollection: MutableRefObject<() => StepsInterface> = useRef(() =>
-        childrenArray.reduce((accumulator: StepsInterface, _current, index) => {
+    useEffect(() => {
+        const steps = childrenArray.reduce((accumulator: StepsInterface, _current, index) => {
             const value = {
                 index: index + 1,
                 isFirstStep: index === 0,
@@ -90,11 +90,10 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
             accumulator[index + 1] = value
             return accumulator
         }, {})
-    )
 
-    useEffect(() => {
-        dispatch({ type: 'SET_STEPS', payload: { steps: stepsCollection.current() } })
-    }, [dispatch, stepsCollection])
+        dispatch({ type: 'SET_STEPS', payload: { steps } })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dispatch])
 
     const element = React.Children.map(children, (child: React.ReactElement<StepProps>, index) => {
         const setCurrent = (): void => {
