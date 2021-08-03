@@ -33,7 +33,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
 	s := store.New(db, nil)
@@ -175,7 +175,7 @@ func TestService(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
 	admin := ct.CreateTestUser(t, db, true)
@@ -288,12 +288,12 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
-		spec := testBatchSpec(admin.ID)
+		spec := testBatchSpec(user.ID)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		batchChange := testBatchChange(admin.ID, spec)
+		batchChange := testBatchChange(user.ID, spec)
 		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
@@ -313,7 +313,7 @@ func TestService(t *testing.T) {
 		}
 		t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
 
-		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); err != nil {
+		if err := svc.EnqueueChangesetSync(userCtx, changeset.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -325,18 +325,18 @@ func TestService(t *testing.T) {
 		ct.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 		// should result in a not found error
-		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
+		if err := svc.EnqueueChangesetSync(userCtx, changeset.ID); !errcode.IsNotFound(err) {
 			t.Fatalf("expected not-found error but got %v", err)
 		}
 	})
 
 	t.Run("ReenqueueChangeset", func(t *testing.T) {
-		spec := testBatchSpec(admin.ID)
+		spec := testBatchSpec(user.ID)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		batchChange := testBatchChange(admin.ID, spec)
+		batchChange := testBatchChange(user.ID, spec)
 		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
@@ -348,7 +348,7 @@ func TestService(t *testing.T) {
 
 		ct.SetChangesetFailed(t, ctx, s, changeset)
 
-		if _, _, err := svc.ReenqueueChangeset(ctx, changeset.ID); err != nil {
+		if _, _, err := svc.ReenqueueChangeset(userCtx, changeset.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -369,7 +369,7 @@ func TestService(t *testing.T) {
 		ct.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 		// should result in a not found error
-		if _, _, err := svc.ReenqueueChangeset(ctx, changeset.ID); !errcode.IsNotFound(err) {
+		if _, _, err := svc.ReenqueueChangeset(userCtx, changeset.ID); !errcode.IsNotFound(err) {
 			t.Fatalf("expected not-found error but got %v", err)
 		}
 	})
@@ -596,7 +596,7 @@ func TestService(t *testing.T) {
 		t.Run("missing repository permissions", func(t *testing.T) {
 			ct.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
-			_, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
+			_, err := svc.CreateChangesetSpec(userCtx, rawSpec, admin.ID)
 			if !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %v", err)
 			}
