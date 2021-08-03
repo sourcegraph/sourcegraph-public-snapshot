@@ -19,6 +19,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -952,6 +953,8 @@ type ListIndexableReposOptions struct {
 	OnlyUncloned bool
 	// If true, we include user added private repos
 	IncludePrivate bool
+
+	*LimitOffset
 }
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
@@ -988,6 +991,7 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		listIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(where, "\nAND "),
+		opts.LimitOffset.SQL(),
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -1036,6 +1040,7 @@ WHERE deleted_at IS NULL
 AND blocked IS NULL
 AND %s
 ORDER BY stars DESC NULLS LAST
+%s
 `
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

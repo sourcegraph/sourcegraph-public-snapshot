@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type IndexScheduler struct {
@@ -100,8 +101,18 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		disabledRepoGroups[v] = struct{}{}
 	}
 
+	var additionalRepoIDs []types.RepoName
+	if settings.CodeIntelligenceAutoIndexPopularRepoLimit > 0 {
+		additionalRepoIDs, err = s.repoStore.ListIndexableRepos(ctx, database.ListIndexableReposOptions{
+			LimitOffset: &database.LimitOffset{Limit: settings.CodeIntelligenceAutoIndexPopularRepoLimit},
+		})
+		if err != nil {
+			return errors.Wrap(err, "IndexingRepoStore.ListIndexableRepos")
+		}
+	}
+
 	var indexableRepositoryIDs []int
-	for _, indexableRepository := range repoGroupRepositoryIDs {
+	for _, indexableRepository := range append(repoGroupRepositoryIDs, additionalRepoIDs...) {
 		repoID := int(indexableRepository.ID)
 		if _, disabled := disabledRepoGroups[repoID]; !disabled {
 			indexableRepositoryIDs = append(indexableRepositoryIDs, repoID)

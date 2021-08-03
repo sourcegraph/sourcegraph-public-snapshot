@@ -485,6 +485,11 @@ func TestListIndexableRepos(t *testing.T) {
 			opts: ListIndexableReposOptions{IncludePrivate: true},
 			want: []api.RepoID{2, 1, 3},
 		},
+		{
+			name: "limit 1",
+			opts: ListIndexableReposOptions{LimitOffset: &LimitOffset{Limit: 1}},
+			want: []api.RepoID{2},
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
