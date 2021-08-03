@@ -294,29 +294,30 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				return nil
 			}
 		}
-
-		log15.Info("insights: starting frames", "starting_frames", frames)
-
-		filtered := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
-		log15.Info("insights: sampling historical data frames", "repo_id", repo.ID, "frames", frames)
-
-		// Find the first commit made to the repository on the default branch.
-		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
-		if err != nil {
-			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
-				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
-			}
-			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
-				return nil // repository is empty
-			}
-			// soft error, repo may be in a bad state but others might be OK.
-			softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
-			return nil
-		}
-
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
+
+			duration := h.now().Sub(series.OldestHistoricalAt) / time.Duration(h.framesToBackfill())
+			frames := Frames(h.framesToBackfill(), duration, series.CreatedAt)
+
+			log15.Info("insights: starting frames", "series_id", series.SeriesID, "starting_frames", frames)
+			filtered := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
+			log15.Info("insights: sampling historical data frames", "series_id", series.SeriesID, "repo_id", repo.ID, "frames", frames)
+
+			// Find the first commit made to the repository on the default branch.
+			firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
+			if err != nil {
+				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+					return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
+				}
+				if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+					return nil // repository is empty
+				}
+				// soft error, repo may be in a bad state but others might be OK.
+				softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
+				return nil
+			}
 
 			for i := len(filtered) - 1; i >= 0; i-- {
 				currentFrame := filtered[i]
