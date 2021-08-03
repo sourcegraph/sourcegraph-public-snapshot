@@ -1,4 +1,4 @@
-import React, { MutableRefObject, useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import { useTabsContext, TabsIndexContext } from './context'
 import { Tabs } from './reducer'

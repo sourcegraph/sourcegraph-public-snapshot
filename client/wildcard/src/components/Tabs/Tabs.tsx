@@ -69,7 +69,7 @@ export const Tab: React.FunctionComponent<TabProps> = props => {
     const { state } = useTabsContext()
 
     const { size = 'small' } = state
-    const styleSize = styles[size] as keyof typeof styles
+    const styleSize = styles[size]
 
     return (
         <ReachTab className={styleSize} data-testid="wildcard-tab" {...props}>

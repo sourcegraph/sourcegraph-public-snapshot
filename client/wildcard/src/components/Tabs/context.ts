@@ -8,8 +8,10 @@ export interface TabsContext {
 }
 
 export const TabsContext = React.createContext<TabsContext | null>(null)
+TabsContext.displayName = 'TabsContext'
 
 export const TabsIndexContext = React.createContext<number>(0)
+TabsIndexContext.displayName = 'TabsIndexContext'
 
 export const useTabsContext = (): TabsContext => {
     const context = React.useContext(TabsContext)
