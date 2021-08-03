@@ -200,7 +200,17 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		if m.Duration >= time.Second || m.Code >= 500 {
+		minCode, _ := strconv.Atoi(os.Getenv("SRC_HTTP_LOG_MIN_CODE"))
+		if minCode == 0 {
+			minCode = 500
+		}
+
+		minDuration, _ := time.ParseDuration(os.Getenv("SRC_HTTP_LOG_MIN_DURATION"))
+		if minDuration == 0 {
+			minDuration = time.Second
+		}
+
+		if m.Duration >= minDuration || m.Code >= minCode {
 			kvs := make([]interface{}, 0, 20)
 			kvs = append(kvs,
 				"method", r.Method,
