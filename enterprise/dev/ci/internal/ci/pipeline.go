@@ -157,6 +157,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			triggerAsync(c),               // triggers a slow pipeline, so do it first.
 			addBackendIntegrationTests(c), // ~11m
 			addDockerImages(c, false),     // ~8m (candidate images)
+			addExecutorPackerStep(c),      // very long
 			addLint,                       // ~4.5m
 			addSharedTests(c),             // ~4.5m
 			addWebApp,                     // ~3m

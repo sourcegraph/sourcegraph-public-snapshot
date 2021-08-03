@@ -429,6 +429,18 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	}
 }
 
+func addExecutorPackerStep(c Config) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.Cmd(`echo "Building executor cloud image..."`),
+			bk.Env("VERSION", c.version),
+			bk.Cmd("./enterprise/cmd/executor/build.sh"),
+		}
+
+		pipeline.AddStep(":packer: :construction: executor image", cmds...)
+	}
+}
+
 // Tag and push final Docker image for the service defined by `app`
 // after the e2e tests pass.
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
