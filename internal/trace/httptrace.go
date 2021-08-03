@@ -235,7 +235,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				kvs = append(kvs, "graphql_error", gqlErr)
 			}
 
-			log15.Info("http", kvs...)
+			log15.Warn("http", kvs...)
 		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
