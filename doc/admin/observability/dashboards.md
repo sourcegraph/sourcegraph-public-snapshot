@@ -646,6 +646,72 @@ This panel indicates store operation error rate over 5m.
 
 <br />
 
+### Frontend: Batches: dbstore stats
+
+#### frontend: batches_dbstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_dbstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_dbstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_dbstore_error_rate
+
+This panel indicates aggregate store operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_dbstore_total
+
+This panel indicates store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_dbstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_dbstore_errors_total
+
+This panel indicates store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_dbstore_error_rate
+
+This panel indicates store operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
 ### Frontend: Out-of-band migrations: up migration invocation (one batch processed)
 
 #### frontend: oobmigration_total
@@ -3725,6 +3791,72 @@ This panel indicates time spent waiting for the GitLab rest API rate limiter.
 Indicates how long we`re waiting on the rate limit once it has been exceeded
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+### Repo Updater: Batches: dbstore stats
+
+#### repo-updater: batches_dbstore_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### repo-updater: batches_dbstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### repo-updater: batches_dbstore_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### repo-updater: batches_dbstore_error_rate
+
+This panel indicates aggregate store operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### repo-updater: batches_dbstore_total
+
+This panel indicates store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### repo-updater: batches_dbstore_99th_percentile_duration
+
+This panel indicates 99th percentile successful store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### repo-updater: batches_dbstore_errors_total
+
+This panel indicates store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### repo-updater: batches_dbstore_error_rate
+
+This panel indicates store operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
 
 <br />
 
