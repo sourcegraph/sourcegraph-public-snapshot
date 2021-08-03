@@ -55,8 +55,8 @@ const checkChromeExtensionInstalled = (): Observable<boolean> => {
 }
 
 /**
- * Indicates if the current user has the browser extension installed. It waits 500ms for the browser
- * extension to fire a registration event, and if it doesn't, emits false
+ * Indicates if the current user has the browser extension installed. It waits 1000ms for the browser
+ * extension to inject a DOM marker element, and if it doesn't, emits false
  */
 export const browserExtensionInstalled: Observable<boolean> = concat(
     checkChromeExtensionInstalled().pipe(filter(isInstalled => isInstalled)),
