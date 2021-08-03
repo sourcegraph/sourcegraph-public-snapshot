@@ -1,11 +1,12 @@
-import { MockedProvider } from '@apollo/client/testing'
+import { MockedProvider, MockedResponse } from '@apollo/client/testing'
 import { render, RenderResult, fireEvent, act } from '@testing-library/react'
 import { GraphQLError } from 'graphql'
 import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
-import { SubmitHappinessFeedbackVariables } from '../../graphql-operations'
+import { SubmitHappinessFeedbackVariables, SubmitHappinessFeedbackResult } from '../../graphql-operations'
 import { routes } from '../../routes'
 
 import { FeedbackPrompt, HAPPINESS_FEEDBACK_OPTIONS, SUBMIT_HAPPINESS_FEEDBACK_QUERY } from './FeedbackPrompt'
@@ -87,21 +88,24 @@ describe('FeedbackPrompt', () => {
             fireEvent.click(sendButton)
 
             // Wait next tick to skip loading state
-            await act(() => new Promise(resolve => setTimeout(resolve, 0)))
+            await waitForNextApolloResponse()
         }
 
         describe('Success', () => {
-            const mockResponse = {
-                data: {
-                    submitHappinessFeedback: {
-                        alwaysNill: null,
+            const successMock: MockedResponse<SubmitHappinessFeedbackResult> = {
+                request: mockRequest,
+                result: {
+                    data: {
+                        submitHappinessFeedback: {
+                            alwaysNil: null,
+                        },
                     },
                 },
             }
 
             beforeEach(async () => {
                 queries = render(
-                    <MockedProvider mocks={[{ request: mockRequest, result: mockResponse }]}>
+                    <MockedProvider mocks={[successMock]}>
                         <FeedbackPrompt routes={routes} />
                     </MockedProvider>
                 )
@@ -116,18 +120,16 @@ describe('FeedbackPrompt', () => {
 
         describe('Error', () => {
             const mockError = new GraphQLError('Something went really wrong')
-            const mockResponse = {
-                errors: [mockError],
+            const errorMock: MockedResponse<SubmitHappinessFeedbackResult> = {
+                request: mockRequest,
+                result: {
+                    errors: [mockError],
+                },
             }
             beforeEach(async () => {
                 queries = render(
                     <MockedProvider
-                        mocks={[
-                            {
-                                request: mockRequest,
-                                result: mockResponse,
-                            },
-                        ]}
+                        mocks={[errorMock]}
                         defaultOptions={{
                             mutate: {
                                 // Fix errors being thrown globally https://github.com/apollographql/apollo-client/issues/7167
