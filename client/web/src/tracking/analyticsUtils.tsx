@@ -1,10 +1,9 @@
 import { fromEvent, concat, Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
-import { catchError, filter, map, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
-
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { catchError, filter, map, mapTo, publishReplay, refCount, take } from 'rxjs/operators'
 
 import { IS_CHROME } from '../marketing/util'
+import { observeQuerySelector } from '../util/dom'
 
 import { eventLogger } from './eventLogger'
 import { stripURLParameters } from './util'
@@ -56,20 +55,13 @@ const checkChromeExtensionInstalled = (): Observable<boolean> => {
 }
 
 /**
- * Indicates if the current user has the browser extension installed. It waits 500ms for the browser
- * extension to fire a registration event, and if it doesn't, emits false
+ * Indicates if the current user has the browser extension installed. It waits 1000ms for the browser
+ * extension to inject a DOM marker element, and if it doesn't, emits false
  */
 export const browserExtensionInstalled: Observable<boolean> = concat(
     checkChromeExtensionInstalled().pipe(filter(isInstalled => isInstalled)),
-    browserExtensionMessageReceived.pipe(
+    observeQuerySelector({ selector: '#sourcegraph-app-background', timeoutMs: 1000 }).pipe(
         mapTo(true),
-        timeout(500),
-        catchError(error => {
-            if (asError(error).name === 'TimeoutError') {
-                return [false]
-            }
-            throw error
-        }),
         catchError(() => [false])
     )
 ).pipe(
