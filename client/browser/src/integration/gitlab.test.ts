@@ -76,7 +76,7 @@ describe('GitLab', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it.only('adds "view on Sourcegraph" buttons to files', async () => {
+    it('adds "view on Sourcegraph" buttons to files', async () => {
         const repoName = 'gitlab.com/sourcegraph/jsonrpc2'
 
         const url = 'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
