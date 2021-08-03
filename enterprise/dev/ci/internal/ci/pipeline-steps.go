@@ -447,7 +447,7 @@ func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
 					bk.Cmd("./enterprise/cmd/executor/release.sh"),
 				}
 
-				pipeline.AddStep(":packer: :construction: executor image", cmds...)
+				pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
 			}
 		} else {
 			cmds := []bk.StepOpt{
