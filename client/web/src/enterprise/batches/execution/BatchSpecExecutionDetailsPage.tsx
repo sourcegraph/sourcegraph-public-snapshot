@@ -256,16 +256,28 @@ enum JSONLogLineStatus {
     FAILED = 'FAILED',
 }
 
-interface JSONLogLine {
-    operation: JSONLogLineOperation
+interface ExecutingTaskJSONLogLine {
+    operation: JSONLogLineOperation.EXECUTING_TASK
     timestamp: string
     status: JSONLogLineStatus
     message?: string
     metadata: {
-        task?: Task
-        tasks?: Task[]
+        task: Task
     }
 }
+
+type JSONLogLine =
+    | {
+          operation: JSONLogLineOperation
+          timestamp: string
+          status: JSONLogLineStatus
+          message?: string
+          metadata: {
+              task?: Task
+              tasks?: Task[]
+          }
+      }
+    | ExecutingTaskJSONLogLine
 
 interface Step {
     run: string
@@ -296,8 +308,11 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
         [out]
     )
 
-    const parsedExecutingTaskLines = useMemo<JSONLogLine[]>(
-        () => parsed.filter(line => line.operation === JSONLogLineOperation.EXECUTING_TASK),
+    const parsedExecutingTaskLines = useMemo<ExecutingTaskJSONLogLine[]>(
+        () =>
+            parsed.filter(
+                (line): line is ExecutingTaskJSONLogLine => line.operation === JSONLogLineOperation.EXECUTING_TASK
+            ),
         [parsed]
     )
 
@@ -342,11 +357,11 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
     )
 }
 
-const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: JSONLogLine[] }> = ({ lines }) => (
+const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: ExecutingTaskJSONLogLine[] }> = ({ lines }) => (
     <ul className="list-group w-100 mt-3">
         {lines.map((line, index) => {
-            const repo = line.metadata?.task?.Repository
-            const key = `${repo || 'horse'}-${index}`
+            const repo = line.metadata.task.Repository
+            const key = `${repo}-${index}`
 
             if (line.status === JSONLogLineStatus.STARTED) {
                 return (
