@@ -71,6 +71,11 @@ export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = 
                     />
                 )
             )}
+            {
+                // Passing children props explicitly to render any top-level content like
+                // resize-handler from the react-grid-layout library
+                otherProps.children
+            }
         </InsightContentCard>
     )
 }
