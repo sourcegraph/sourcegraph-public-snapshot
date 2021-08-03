@@ -2,8 +2,8 @@
 
 Sourcegraph uses several PostgreSQL databases to support various functionality. These databases are:
 
-- pgsql or primary: responsible for user data and account information
-- codeintel-db: provides support for lsif data and part of the code-intelligence
+- `pgsql` or `primary`: responsible for user data and account information
+- `codeintel-db`: provides support for lsif data and part of the code-intelligence
 
 ## Version requirements
 
@@ -24,21 +24,49 @@ pg_stat_statements
 pg_trgm
 ```
 
-# Upgrading PostgreSQL
+## [Configuring PostgreSQL](./config/postgres-conf.md)
 
-Sourcegraph uses PostgreSQL as its main internal database and this documentation describes how to upgrade PostgreSQL
-between major versions.
+## Upgrading PostgreSQL
 
-> NOTE: ⚠️ Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
+Sourcegraph uses PostgreSQL as its main database and this documentation describes how to upgrade PostgreSQL between major versions.
 
-## Upgrading Kubernetes PostgreSQL instances
+> WARNING: Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
 
-The upgrade process is different
-for [Sourcegraph cluster deployments](https://github.com/sourcegraph/deploy-sourcegraph)
-because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12.6/build.sh#L10), it
-uses `sourcegraph/postgres-12.6:21-03-26_5d7084279` which can
-be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql)
-.
+<span class="virtual-br"></span>
+
+> NOTE: If you running PostgreSQL externally, see [Upgrading external PostgreSQL instances](postgres.md#upgrading-external-postgresql-instances)
+
+### Upgrading external PostgreSQL instances
+
+When running an [external PostgreSQL instance](external_services/postgres.md), please do the following:
+
+1. Back up the Postgres DB so that you can restore to the old version should anything go wrong.
+2. Turn off Sourcegraph entirely (bring down all containers and pods so they cannot talk to Postgres.)
+3. Upgrade Postgres to the latest version following your provider's instruction or your preferred method:
+  - [AWS RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.html)
+  - [AWS Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_UpgradeDBInstance.Upgrading.html)
+  - [GCP CloudSQL](https://cloud.google.com/sql/docs/postgres/db-versions)
+  - [Azure DB](https://docs.microsoft.com/en-us/azure/postgresql/concepts-supported-versions#managing-updates-and-upgrades)
+  - [Heroku](https://devcenter.heroku.com/articles/upgrading-heroku-postgres-databases)
+  - [EnterpriseDB](https://www.enterprisedb.com/docs/en/9.6/pg/upgrading.html)
+  - [Citus](http://docs.citusdata.com/en/v8.1/admin_guide/upgrading_citus.html)
+  - [Aiven PostgreSQL](https://help.aiven.io/postgresql/operations/how-to-perform-a-postgresql-in-place-major-version-upgrade)
+  - [Your own PostgreSQL](https://www.postgresql.org/docs/11/pgupgrade.html)
+4. Turn Sourcegraph back on connecting to the now-upgraded database.
+
+> WARNING: **Do not allow Sourcegraph to run/connect to the new Postgres database until it has been fully populated with your data.** Doing so could result in Sourcegraph trying to create e.g. a new DB schema and partially migrating. If this happens to you, restore from the backup you previously took or contact us (support@sourcegraph.com)
+
+### Upgrading internal PostgreSQL instances
+
+Many of Sourcegraph's [installation methods](install/index.md) come with internal PostgreSQL instances that can be deployed as part of a Sourcegraph installation. This section outlines how to upgrade these databases.
+
+#### Sourcegraph with Docker Compose
+
+Generally, no additional steps are required to upgrade the databases shipped alongside [Sourcegraph with Docker Compose installations](install/docker-compose/index.md).
+
+#### Sourcegraph with Kubernetes
+
+**The upgrade process is different for [Sourcegraph Kubernetes deployments](./install/kubernetes/index.md)** because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12.6/build.sh#L10), it uses `sourcegraph/postgres-12.6:21-03-26_5d7084279` which can be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql).
 
 If you have changed `PGUSER`, `PGDATABASE` or `PGDATA`, then the `PG*OLD` and `PG*NEW` environment variables are
 required. Below are the defaults and documentation on what each variable is used for:
@@ -59,17 +87,15 @@ required. Below are the defaults and documentation on what each variable is used
 
 Additionally, the upgrade process assumes it can write to the parent directory of `PGDATAOLD`.
 
-### (For Sourcegraph version: 3.27) Requirements for upgrading from Postgres 11 to 12 for Kubernetes
+##### Requirements for upgrading from Postgres 11 to 12 for Kubernetes
 
-The migration to Postgres 12 using the Sourcegraph provided Postgres images is largely automated. However, you should
-take some steps before the migration. For the `3.27` release, these apply to the `pgsql` & `codeintel-db` deployments.
+**This guide is for the Sourcegraph 3.27 release.** The migration to Postgres 12 using the Sourcegraph provided Postgres images is largely automated.
+However, you should take some steps before the migration. For the `3.27` release, these apply to the `pgsql` & `codeintel-db` deployments.
 
 1. Inform your users prior to starting the upgrade that Sourcegraph will take downtime. This downtime scales with the
    size and resources allocated to the Postgres database instances.
-
 1. Take snapshots of all Sourcegraph Postgres databases. You can find the backing disk in your cloud by describing the
    relevant `PersistentVolumes`.
-
 1. Ensure that the size of the disks backing the databases are under 50% utilization. (You will need *up-to* 2x the size
    of your current database to do the migration). In most cases Kubernetes can expand the size of the volume for you,
    see the relevant kubernetes
@@ -77,15 +103,11 @@ take some steps before the migration. For the `3.27` release, these apply to the
 
    You can use `kubctl exec -it $DB_POD_NAME -- df -h`. By default, the database will be mounted under `/data/`.
 
-## Upgrading single node Docker deployments
+#### Single-container Sourcegraph
 
-> NOTE: If you running PostgreSQL externally, see [Upgrading external PostgreSQL instances](postgres.md#upgrading-external-postgresql-instances)
+When running a new version of Sourcegraph, [single-container Sourcegraph with Docker instances](./install/kubernetes/index.md) will check if the PostgreSQL data needs upgrading upon initialization.
 
-When running a new version of Sourcegraph, it will check if the PostgreSQL data needs upgrading upon initialization.
-
-See the following steps to upgrade between major postgresql versions
-
-### Upgrade the postgresql db using an external postgres upgrade container
+See the following steps to upgrade between major postgresql versions:
 
 **1.** Stop the `sourcegraph/server` container.
 
@@ -126,25 +148,3 @@ docker run \
 **3.** Execute the script.
 
 **4.** Start the `sourcegraph/server` container.
-
-
-
-## Upgrading external PostgreSQL instances
-
-When running an external PostgreSQL instance, please do the following:
-
-1. Back up the Postgres DB so that you can restore to the old version should anything go wrong.
-2. Turn off Sourcegraph entirely (bring down all containers and pods so they cannot talk to Postgres.)
-3. Upgrade Postgres to the latest version following your provider's instruction or your preferred method:
-  - [AWS RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.html)
-  - [AWS Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_UpgradeDBInstance.Upgrading.html)
-  - [GCP CloudSQL](https://cloud.google.com/sql/docs/postgres/db-versions)
-  - [Azure DB](https://docs.microsoft.com/en-us/azure/postgresql/concepts-supported-versions#managing-updates-and-upgrades)
-  - [Heroku](https://devcenter.heroku.com/articles/upgrading-heroku-postgres-databases)
-  - [EnterpriseDB](https://www.enterprisedb.com/docs/en/9.6/pg/upgrading.html)
-  - [Citus](http://docs.citusdata.com/en/v8.1/admin_guide/upgrading_citus.html)
-  - [Aiven PostgreSQL](https://help.aiven.io/postgresql/operations/how-to-perform-a-postgresql-in-place-major-version-upgrade)
-  - [Your own PostgreSQL](https://www.postgresql.org/docs/11/pgupgrade.html)
-4. Turn Sourcegraph back on connecting to the now-upgraded database.
-
-> IMPORTANT: Do not allow Sourcegraph to run/connect to the new Postgres database until it has been fully populated with your data. Doing so could result in Sourcegraph trying to create e.g. a new DB schema and partially migrating. If this happens to you, restore from the backup you previously took or contact us (support@sourcegraph.com)
