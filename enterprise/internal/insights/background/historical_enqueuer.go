@@ -467,7 +467,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		hardErr = errors.Wrap(err, "FindNearestCommit")
 		return
 	}
-	if nearestCommit == nil {
+	if nearestCommit == nil || nearestCommit.Committer == nil {
 		return // repository has no commits / is empty. Maybe not yet pushed to code host.
 	}
 
