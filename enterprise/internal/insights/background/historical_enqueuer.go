@@ -126,8 +126,10 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
-		gitFirstEverCommit:   (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
-		gitFindNearestCommit: git.FindNearestCommit,
+		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
+		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*git.Commit, error) {
+			return git.Commits(ctx, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true})
+		},
 
 		// Fill e.g. the last 52 weeks of data, recording 1 point per week.
 		framesToBackfill: framesToBackfill,
@@ -219,7 +221,7 @@ type historicalEnqueuer struct {
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
-	gitFindNearestCommit  func(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*git.Commit, error)
+	gitFindRecentCommit   func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*git.Commit, error)
 	frameFilter           compression.DataFrameFilter
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
@@ -417,19 +419,15 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		return nil, nil
 	}
 
-	// We're trying to find the # of search results at the middle of the timeframe, ideally.
-	frameDuration := bctx.to.Sub(bctx.from)
-	frameMidpoint := bctx.from.Add(frameDuration / 2)
-
-	// Optimization: If the timeframe we're building data for ends before the first commit in the
+	// Optimization: If the timeframe we're building data for starts (or ends) before the first commit in the
 	// repository, then we know there are no results (the repository didn't have any commits at all
 	// at that point in time.)
 	repoName := string(bctx.repo.Name)
-	if bctx.to.Before(bctx.firstHEADCommit.Author.Date) {
+	if bctx.from.Before(bctx.firstHEADCommit.Author.Date) {
 		if err := h.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
 			SeriesID: bctx.seriesID,
 			Point: store.SeriesPoint{
-				Time:  frameMidpoint,
+				Time:  bctx.from,
 				Value: 0, // no matches
 			},
 			RepoName: &repoName,
@@ -457,15 +455,19 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	//    whatever commit is closest) and perform a live/unindexed search for that `repo:<repo>@commit`
 	//    which will effectively search the repo at that point in time.
 	//
-	// We do the 2nd, and start by trying to locate the commit nearest to the middle of the
+	// We do the 2nd, and start by trying to locate the commit most recent to the start of the
 	// timeframe we're trying to fill in historical data for.
-	nearestCommit, err := h.gitFindNearestCommit(ctx, bctx.repo.Name, "HEAD", frameMidpoint)
+	recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repo.Name, bctx.from)
 	if err != nil {
 		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
 		hardErr = errors.Wrap(err, "FindNearestCommit")
 		return
+	}
+	var nearestCommit *git.Commit
+	if len(recentCommits) > 0 {
+		nearestCommit = recentCommits[0]
 	}
 	if nearestCommit == nil || nearestCommit.Committer == nil {
 		return // repository has no commits / is empty. Maybe not yet pushed to code host.
@@ -480,7 +482,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		SearchQuery: query,
 		RecordTime:  &nearestCommit.Committer.Date,
 		State:       "queued",
-		Priority:    int(priority.FromTimeInterval(frameMidpoint, bctx.series.CreatedAt)),
+		Priority:    int(priority.FromTimeInterval(bctx.from, bctx.series.CreatedAt)), // eventually we will use the end of the historical range, for now current time works fine
 		Cost:        int(priority.Unindexed),
 	})
 	return
