@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -30,7 +31,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,

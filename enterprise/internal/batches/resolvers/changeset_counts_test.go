@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -121,7 +122,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 	sourcer := sources.NewSourcer(cf)
 
 	spec := &btypes.BatchSpec{

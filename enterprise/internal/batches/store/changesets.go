@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // ChangesetColumns are used by by the changeset related Store methods and by
@@ -199,7 +201,10 @@ func (s *Store) UpsertChangeset(ctx context.Context, c *btypes.Changeset) error 
 }
 
 // CreateChangeset creates the given Changeset.
-func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) error {
+func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err error) {
+	ctx, endObservation := s.operations.createChangeset.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -224,7 +229,12 @@ RETURNING %s
 `
 
 // DeleteChangeset deletes the Changeset with the given ID.
-func (s *Store) DeleteChangeset(ctx context.Context, id int64) error {
+func (s *Store) DeleteChangeset(ctx context.Context, id int64) (err error) {
+	ctx, endObservation := s.operations.deleteChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteChangesetQueryFmtstr, id))
 }
 
@@ -250,7 +260,10 @@ type CountChangesetsOpts struct {
 }
 
 // CountChangesets returns the number of changesets in the database.
-func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (int, error) {
+func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (count int, err error) {
+	ctx, endObservation := s.operations.countChangesets.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
@@ -351,11 +364,16 @@ type GetChangesetOpts struct {
 }
 
 // GetChangeset gets a changeset matching the given options.
-func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*btypes.Changeset, error) {
+func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *btypes.Changeset, err error) {
+	ctx, endObservation := s.operations.getChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getChangesetQuery(&opts)
 
 	var c btypes.Changeset
-	err := s.query(ctx, q, func(sc scanner) error { return scanChangeset(&c, sc) })
+	err = s.query(ctx, q, func(sc scanner) error { return scanChangeset(&c, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -419,10 +437,13 @@ type ListChangesetSyncDataOpts struct {
 
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
 // that are part of at least one open batch change.
-func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error) {
+func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) (sd []*btypes.ChangesetSyncData, err error) {
+	ctx, endObservation := s.operations.listChangesetSyncData.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := listChangesetSyncDataQuery(opts)
 	results := make([]*btypes.ChangesetSyncData, 0)
-	err := s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var h btypes.ChangesetSyncData
 		if err := scanChangesetSyncData(&h, sc); err != nil {
 			return err
@@ -510,6 +531,9 @@ type ListChangesetsOpts struct {
 
 // ListChangesets lists Changesets with the given filters.
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs btypes.Changesets, next int64, err error) {
+	ctx, endObservation := s.operations.listChangesets.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
@@ -632,7 +656,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 // worker-related columns and setting its reconciler_state column to the
 // `resetState` argument but *only if* the `currentState` matches its current
 // `reconciler_state`.
-func (s *Store) EnqueueChangeset(ctx context.Context, cs *btypes.Changeset, resetState, currentState btypes.ReconcilerState) error {
+func (s *Store) EnqueueChangeset(ctx context.Context, cs *btypes.Changeset, resetState, currentState btypes.ReconcilerState) (err error) {
+	ctx, endObservation := s.operations.enqueueChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(cs.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	_, ok, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		s.enqueueChangesetQuery(cs, resetState, currentState),
@@ -681,7 +710,12 @@ func (s *Store) enqueueChangesetQuery(cs *btypes.Changeset, resetState, currentS
 }
 
 // UpdateChangeset updates the given Changeset.
-func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) error {
+func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err error) {
+	ctx, endObservation := s.operations.updateChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(cs.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	cs.UpdatedAt = s.now()
 
 	q, err := s.changesetWriteQuery(updateChangesetQueryFmtstr, true, cs)
@@ -705,7 +739,12 @@ RETURNING
 
 // UpdateChangesetBatchChanges updates only the `batch_changes` & `updated_at`
 // columns of the given Changeset.
-func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Changeset) error {
+func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Changeset) (err error) {
+	ctx, endObservation := s.operations.updateChangesetBatchChanges.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(cs.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	batchChanges, err := batchChangesColumn(cs)
 	if err != nil {
 		return err
@@ -716,7 +755,12 @@ func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Chan
 
 // UpdateChangesetUiPublicationState updates only the `ui_publication_state` &
 // `updated_at` columns of the given Changeset.
-func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btypes.Changeset) error {
+func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btypes.Changeset) (err error) {
+	ctx, endObservation := s.operations.updateChangesetUIPublicationState.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(cs.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	uiPublicationState := uiPublicationStateColumn(cs)
 	return s.updateChangesetColumn(ctx, cs, "ui_publication_state", uiPublicationState)
 }
@@ -753,7 +797,12 @@ RETURNING
 // UpdateChangesetCodeHostState updates only the columns of the given Changeset
 // that relate to the state of the changeset on the code host, e.g.
 // external_branch, external_state, etc.
-func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) error {
+func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) (err error) {
+	ctx, endObservation := s.operations.updateChangesetCodeHostState.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(cs.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	cs.UpdatedAt = s.now()
 
 	q, err := updateChangesetCodeHostStateQuery(cs)
@@ -815,7 +864,10 @@ RETURNING
 // GetChangesetExternalIDs allows us to find the external ids for pull requests based on
 // a slice of head refs. We need this in order to match incoming webhooks to pull requests as
 // the only information they provide is the remote branch
-func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRepoSpec, refs []string) ([]string, error) {
+func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRepoSpec, refs []string) (externalIDs []string, err error) {
+	ctx, endObservation := s.operations.getChangesetExternalIDs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	queryFmtString := `
 	SELECT cs.external_id FROM changesets cs
 	JOIN repo r ON cs.repo_id = r.id
@@ -849,7 +901,13 @@ var CanceledChangesetFailureMessage = "Canceled"
 // CancelQueuedBatchChangeChangesets cancels all scheduled, queued, or errored
 // changesets that are owned by the given batch change. It blocks until all
 // currently processing changesets have finished executing.
-func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChangeID int64) error {
+func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChangeID int64) (err error) {
+	var iterations int
+	ctx, endObservation := s.operations.cancelQueuedBatchChangeChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchChangeID", int(batchChangeID)),
+	}})
+	defer endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
+
 	// Just for safety, so we don't end up with stray cancel requests bombarding
 	// the DB with 10 requests a second forever:
 	ctx, cancel := context.WithDeadline(ctx, s.now().Add(2*time.Minute))
@@ -880,6 +938,7 @@ func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChan
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+		iterations++
 	}
 	return nil
 }
@@ -919,7 +978,13 @@ WHERE
 //
 // This will loop until there are no processing rows anymore, or until 2 minutes
 // passed.
-func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) error {
+func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) (err error) {
+	var iterations int
+	ctx, endObservation := s.operations.enqueueChangesetsToClose.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchChangeID", int(batchChangeID)),
+	}})
+	defer endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
+
 	// Just for safety, so we don't end up with stray cancel requests bombarding
 	// the DB with 10 requests a second forever:
 	ctx, cancel := context.WithDeadline(ctx, s.now().Add(2*time.Minute))
@@ -945,6 +1010,7 @@ func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int6
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+		iterations++
 	}
 	return nil
 }
@@ -1139,6 +1205,11 @@ func scanChangeset(t *btypes.Changeset, s scanner) error {
 // GetChangesetsStats returns statistics on all the changesets associated to the given batch change,
 // or all changesets across the instance.
 func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (stats btypes.ChangesetsStats, err error) {
+	ctx, endObservation := s.operations.getChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchChangeID", int(batchChangeID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getChangesetsStatsQuery(batchChangeID)
 	err = s.query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(
@@ -1187,14 +1258,19 @@ WHERE
 `
 
 // GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
-func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (*btypes.RepoChangesetsStats, error) {
+func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (stats *btypes.RepoChangesetsStats, err error) {
+	ctx, endObservation := s.operations.getRepoChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", int(repoID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
 	}
 	q := getRepoChangesetsStatsQuery(int64(repoID), authzConds)
 
-	var stats btypes.RepoChangesetsStats
+	stats = &btypes.RepoChangesetsStats{}
 	err = s.query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
@@ -1209,12 +1285,15 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 		return err
 	})
 	if err != nil {
-		return &stats, err
+		return stats, err
 	}
-	return &stats, nil
+	return stats, nil
 }
 
-func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
+func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.Changeset, err error) {
+	ctx, endObservation := s.operations.enqueueNextScheduledChangeset.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := sqlf.Sprintf(
 		enqueueNextScheduledChangesetFmtstr,
 		btypes.ReconcilerStateScheduled.ToDB(),
@@ -1223,7 +1302,7 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (*btypes.Chan
 	)
 
 	var c btypes.Changeset
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return scanChangeset(&c, sc)
 	})
 	if err != nil {
@@ -1253,7 +1332,12 @@ WHERE c.id = changesets.id
 RETURNING %s
 `
 
-func (s *Store) GetChangesetPlaceInSchedulerQueue(ctx context.Context, id int64) (int, error) {
+func (s *Store) GetChangesetPlaceInSchedulerQueue(ctx context.Context, id int64) (place int, err error) {
+	ctx, endObservation := s.operations.getChangesetPlaceInSchedulerQueue.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := sqlf.Sprintf(
 		getChangesetPlaceInSchedulerQueueFmtstr,
 		btypes.ReconcilerStateScheduled.ToDB(),
@@ -1261,7 +1345,6 @@ func (s *Store) GetChangesetPlaceInSchedulerQueue(ctx context.Context, id int64)
 	)
 
 	row := s.QueryRow(ctx, q)
-	var place int
 	if err := row.Scan(&place); err == sql.ErrNoRows {
 		return 0, ErrNoResults
 	} else if err != nil {

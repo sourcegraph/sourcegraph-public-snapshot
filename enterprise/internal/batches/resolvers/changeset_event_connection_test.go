@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -32,7 +33,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, nil, clock)
+	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 

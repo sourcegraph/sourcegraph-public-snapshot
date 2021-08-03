@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -2138,7 +2139,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 
-	s := New(db, nil)
+	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
@@ -2273,7 +2274,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 
-	s := New(db, nil)
+	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
