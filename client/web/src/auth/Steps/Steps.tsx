@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import React, { useEffect, useMemo, useReducer, useRef, MutableRefObject } from 'react'
+import React, { useEffect, useMemo, useReducer } from 'react'
 
 import { StepsContext, useStepsContext, StepListContext, useStepListContext, Steps as StepsInterface } from './context'
 import { initialState, reducer } from './reducer'
