@@ -1,6 +1,5 @@
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
-import CheckIcon from 'mdi-react/CheckIcon'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -53,9 +52,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                                 <a href="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</a>
                             </div>
                         ) : (
-                            <div className="site-admin-updates-page__alert alert alert-success">
-                                <CheckIcon className="icon-inline" /> Up to date.
-                            </div>
+                            <div className="site-admin-updates-page__alert alert alert-success">Up to date.</div>
                         ))}
                     {updateCheck.errorMessage && (
                         <ErrorAlert

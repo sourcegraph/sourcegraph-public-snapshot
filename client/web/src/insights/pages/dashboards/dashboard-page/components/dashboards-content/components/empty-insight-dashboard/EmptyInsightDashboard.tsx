@@ -76,7 +76,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 </div>
             </button>
             <span className="d-flex justify-content-center mt-3">
-                <Link to="/insights/create">...or create a new insight</Link>
+                <Link to="/insights/create">...or create new insight</Link>
             </span>
         </section>
     )

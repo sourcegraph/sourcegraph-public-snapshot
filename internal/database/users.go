@@ -686,8 +686,6 @@ func (u *UserStore) GetByID(ctx context.Context, id int32) (*types.User, error) 
 	if Mocks.Users.GetByID != nil {
 		return Mocks.Users.GetByID(ctx, id)
 	}
-	u.ensureStore()
-
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE id=%s AND deleted_at IS NULL LIMIT 1", id))
 }
 
@@ -698,7 +696,6 @@ func (u *UserStore) GetByVerifiedEmail(ctx context.Context, email string) (*type
 	if Mocks.Users.GetByVerifiedEmail != nil {
 		return Mocks.Users.GetByVerifiedEmail(ctx, email)
 	}
-	u.ensureStore()
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE id=(SELECT user_id FROM user_emails WHERE email=%s AND verified_at IS NOT NULL) AND deleted_at IS NULL LIMIT 1", email))
 }
 
@@ -706,8 +703,7 @@ func (u *UserStore) GetByUsername(ctx context.Context, username string) (*types.
 	if Mocks.Users.GetByUsername != nil {
 		return Mocks.Users.GetByUsername(ctx, username)
 	}
-	u.ensureStore()
-	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE username=%s AND deleted_at IS NULL LIMIT 1", username))
+	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE u.username=%s AND u.deleted_at IS NULL LIMIT 1", username))
 }
 
 // GetByUsernames returns a list of users by given usernames. The number of results list could be less
@@ -716,7 +712,6 @@ func (u *UserStore) GetByUsernames(ctx context.Context, usernames ...string) ([]
 	if Mocks.Users.GetByUsernames != nil {
 		return Mocks.Users.GetByUsernames(ctx, usernames...)
 	}
-	u.ensureStore()
 
 	if len(usernames) == 0 {
 		return []*types.User{}, nil
@@ -892,8 +887,6 @@ func (*UserStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 }
 
 func (u *UserStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User, error) {
-	u.ensureStore()
-
 	users, err := u.getBySQL(ctx, q)
 	if err != nil {
 		return nil, err

@@ -326,6 +326,9 @@ var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
 // specifically so we resort to matching on the error string.
 var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
 
+// A regular expression to match a DNSError no such host.
+var noSuchHostErrorRe = lazyregexp.New(`no such host`)
+
 // DefaultRetryPolicy is the retry policy used in any Doer or Client returned
 // by NewExternalHTTPClientFactory.
 func DefaultRetryPolicy(a rehttp.Attempt) (retry bool) {
@@ -360,13 +363,21 @@ func DefaultRetryPolicy(a rehttp.Attempt) (retry bool) {
 		return false
 	default:
 		if v, ok := a.Error.(*url.Error); ok {
+			e := v.Error()
 			// Don't retry if the error was due to too many redirects.
-			if redirectsErrorRe.MatchString(v.Error()) {
+			if redirectsErrorRe.MatchString(e) {
 				return false
 			}
 
 			// Don't retry if the error was due to an invalid protocol scheme.
-			if schemeErrorRe.MatchString(v.Error()) {
+			if schemeErrorRe.MatchString(e) {
+				return false
+			}
+
+			// Don't retry more than 3 times for no such host errors.
+			// This affords some resilience to dns unreliability while
+			// preventing 20 attempts with a non existing name.
+			if noSuchHostErrorRe.MatchString(e) && a.Index >= 3 {
 				return false
 			}
 
@@ -374,6 +385,7 @@ func DefaultRetryPolicy(a rehttp.Attempt) (retry bool) {
 			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
 				return false
 			}
+
 		}
 		// The error is likely recoverable so retry.
 		return true

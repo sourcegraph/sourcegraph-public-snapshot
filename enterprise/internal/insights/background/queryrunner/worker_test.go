@@ -8,7 +8,7 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -25,7 +25,7 @@ func TestJobQueue(t *testing.T) {
 	}
 	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 
 	mainAppDB := dbtesting.GetDB(t)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})

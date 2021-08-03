@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "codeintel"
+	dbtesting.DBNameSuffix = "enterprise-codeintel"
 }
 
 func testStore(db dbutil.DB) *Store {

@@ -106,6 +106,9 @@ sg run-set enterprise
 sg run gitserver
 sg run frontend
 
+# Run multiple commands:
+sg run gitserver frontend repo-updater
+
 # List available commands:
 sg run -help
 

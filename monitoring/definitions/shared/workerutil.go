@@ -72,18 +72,7 @@ func (workerutilConstructor) Handlers(options ObservableConstructorOptions) shar
 
 type WorkerutilGroupOptions struct {
 	GroupConstructorOptions
-
-	// Total transforms the default observable used to construct the processor operation count panel.
-	Total ObservableOption
-
-	// Duration transforms the default observable used to construct the processor duration histogram panel.
-	Duration ObservableOption
-
-	// Errors transforms the default observable used to construct the processor error count panel.
-	Errors ObservableOption
-
-	// ErrorRate transforms the default observable used to construct the processor error rate panel.
-	ErrorRate ObservableOption
+	SharedObservationGroupOptions
 
 	// Handlers transforms the default observable used to construct the processor count panel.
 	Handlers ObservableOption
@@ -104,18 +93,37 @@ type WorkerutilGroupOptions struct {
 // metrics for the worker and the queue that backs the worker while still using the same metric name
 // root.
 func (workerutilConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options WorkerutilGroupOptions) monitoring.Group {
+	row := make(monitoring.Row, 0, 5)
+	if options.Handlers != nil {
+		row = append(row, options.Handlers(Workerutil.Handlers(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.Total != nil {
+		row = append(row, options.Total(Workerutil.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.Duration != nil {
+		row = append(row, options.Duration(Workerutil.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.Errors != nil {
+		row = append(row, options.Errors(Workerutil.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.ErrorRate != nil {
+		row = append(row, options.ErrorRate(Workerutil.ErrorRate(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+
+	if len(row) == 0 {
+		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+	}
+
+	rows := []monitoring.Row{row}
+	if len(row) == 5 {
+		// If we have all 5 metrics, put handlers on a row by itself first,
+		// followed by the standard observation group panels.
+		rows = []monitoring.Row{row[:1], row[1:]}
+	}
+
 	return monitoring.Group{
 		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
 		Hidden: options.Hidden,
-		Rows: []monitoring.Row{
-			{
-				options.Handlers.safeApply(Workerutil.Handlers(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-			}, {
-				options.Total.safeApply(Workerutil.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Duration.safeApply(Workerutil.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Errors.safeApply(Workerutil.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.ErrorRate.safeApply(Workerutil.ErrorRate(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-			},
-		},
+		Rows:   rows,
 	}
 }

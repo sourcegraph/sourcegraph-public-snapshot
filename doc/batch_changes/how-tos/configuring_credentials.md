@@ -2,54 +2,146 @@
 
 > NOTE: This page describes functionality added in Sourcegraph 3.22. Older Sourcegraph versions only allow batch changes to be applied and managed by site admins.
 
-In order to [publish changesets with Batch Changes](publishing_changesets.md), you need to add a personal access token for each code host that your batch change interacts with. These tokens are used by Sourcegraph to create and manage changesets on behalf of yourself, and with your specific permissions, on the code host. Since Sourcegraph 3.27, it is also possible to configure a global service account per code host to be used when the user doesn't have credentials configured.
+Interacting with a code host (such as creating, updating, or syncing changesets) is made possible by configuring an access token for that code host. Sourcegraph uses these tokens to manage changesets on your behalf, and with your specific permissions.
 
 ## Requirements
 
 - Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.
+- Account on the code host with access to the repositories you wish to target with your batch changes.
 
-## Adding a personal access token
+## Types of access tokens used by Batch Changes
 
-Access tokens can be configured either for your user account, or globally, if you're a site admin of the Sourcegraph instance.
+There are three types of access token that can be configured for use with Batch Changes:
 
-### For yourself
+1. [**Personal access token**](#personal-access-tokens) - A token set by an individual Batch Changes user for their personal code host user account.
+1. [**Global service account token**](#global-service-account-tokens) (*Admins only*) - A token that can be used by any Batch Changes user who does not have a personal access token configured.
+1. [**Sourcegraph code host connection token**](#code-host-connection-tokens) (*Admins only*) - A token that is typically set when connecting Sourcegraph to a code host for the first time and is used across the entire Sourcegraph instance. **Using the code host connection token with Batch Changes will be deprecated in the future.**
 
-Adding personal access tokens is done through the Batch Changes section of your user settings:
+Different tokens are used for different types of operations, as is illustrated in the hierarchy table below.
+
+🟢  **Preferred** - Sourcegraph will prefer to use this token for this operation, if it is configured.
+
+🟡  **Fallback** - Sourcegraph will fall back to use this token for this operation, if it is configured.
+
+🔴  **Unsupported** - Sourcegraph cannot use this token for this operation.
+
+Operation | [Personal Access Token](#personal-access-tokens) | [Global Service Account Token](#global-service-account-tokens) | [Code Host Connection Token](#code-host-connection-tokens)
+--------- | :-: | :-: | :-:
+Pushing a branch with the changes | 🟢 | 🟡 | 🔴
+[Publishing a changeset](./publishing_changesets.md) | 🟢 | 🟡 | 🔴
+Updating a changeset | 🟢 | 🟡 | 🔴
+Closing a changeset | 🟢 | 🟡 | 🔴
+[Importing a changeset](./tracking_existing_changesets.md) | 🔴 | 🟢 | 🟡
+Syncing a changeset | 🔴 | 🟢 | 🟡
+
+When writing a commit or a changeset to the code host, the author will reflect the token used (e.g., on GitHub, the commit or pull request author will be you). It is for this reason that a personal access token is preferred for most operations.
+
+> WARNING: Using the code host connection token with Batch Changes will be deprecated in the future; therefore, we highly recommend that admins configure a global service account token for Batch Changes instead.
+
+## Personal access tokens
+
+### Do I need to add a personal access token?
+
+Personal access tokens are not required if a global access token has also been configured, but users should add one if they want Sourcegraph to create commits and changesets under their name.
+
+### Adding a token
+
+Adding a personal access token is done through the Batch Changes section of your user settings:
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
 1. Select **Settings** from the dropdown menu.
 1. Click **Batch Changes** on the sidebar menu.
-
-You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them. If a global access token has been configured, it is not required (but you can still do it, to create the changesets under your name) to do this. The UI will inform you if that's the case.
-
-### Global service account
-
-Configuring a global service account is done through the Batch Changes section of the site admin area: _(Site admins only)_
-
-1. From any Sourcegraph page, click on your avatar at the top right of the page.
-1. Select **Site admin** from the dropdown menu.
-1. Click **Batch Changes** on the sidebar menu.
-
-You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them. Credentials that are configured here will be usable by all users of the Sourcegraph instance for publishing and updating changesets on the code host.
-
-### Configuring a code host
+1. Click **Add credentials** and follow the steps to [create a new token](#creating-a-code-host-token) for the code host
 
 <video width="1920" height="1080" autoplay loop muted playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/user-tokens.webm" type="video/webm">
   <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/user-tokens.mp4" type="video/mp4">
 </video>
 
-To add a token for a code host, click on the **Add token** button next to its name. This will display an input modal like the following:
+Code hosts with tokens configured are indicated by a green tick to the left of the code host name, while code hosts without tokens have an empty red circle next to them.
 
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/user-token-input.png" alt="An input dialog, titled &quot;Github Batch Changes token for https://github.com&quot;, with an input box to type or paste a token and a list of scopes that must be enabled on the token, which are repo, read:org, user:email, and read:discussion">
+### Removing a token
 
-To create a personal access token for a specific code host provider, please refer to the relevant section for "[GitHub](#github)", "[GitLab](#gitlab)", or "[Bitbucket Server](#bitbucket-server)". Once you have a token, you should paste it into the Sourcegraph input shown above, and click **Add token**.
+To remove a token, navigate back to the same section of your user settings, then click **Remove**:
 
-> NOTE: See ["Code host interactions in Batch Changes"](../explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes) for details on what the permissions are used for.
+<video width="1920" height="1080" autoplay loop muted playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/removing-user-token.webm" type="video/webm">
+  <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/removing-user-token.mp4" type="video/mp4">
+</video>
 
-Once this is done, Sourcegraph should indicate that you have a token with a green tick:
+The code host's indicator should revert to the empty red circle once the token is removed.
 
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/one-token.png" alt="A list of code hosts, with GitHub indicating that it has a token and the other hosts indicating that they do not">
+## Global service account tokens
+
+> NOTE: This section describes functionality added in Sourcegraph 3.27, and which is only accessible to **site administrators**.
+
+### Do I need to add a global service account token?
+
+Global credentials are usable by all users of the Sourcegraph instance who have not added their own personal access tokens for Batch Changes. This makes them a handy fallback, but not strictly required if users are adding their own tokens.
+
+Sourcegraph also uses the global service account to [track existing changesets](./tracking_existing_changesets.md) and keep changesets up to date. If no global service account token is set, we can currently fall back to the [token configured for the code host connection](#code-host-connection-tokens). However, this fallback will be deprecated in the future, so for this reason we highly recommend setting up a global service account.
+
+### Adding a token
+
+Adding a global service account token is done through the Batch Changes section of the site admin area:
+
+1. From any Sourcegraph page, click on your avatar at the top right of the page.
+1. Select **Site admin** from the dropdown menu.
+1. Click **Batch Changes** on the sidebar menu.
+1. Click **Add credentials** and follow the steps to [create a new token](#creating-a-code-host-token) for the code host
+
+Code hosts with tokens configured are indicated by a green tick to the left of the code host name, while code hosts without tokens have an empty red circle next to them.
+
+### Removing a token
+
+To remove a token, navigate back to the same section of the site admin area, then click **Remove**. The code host's indicator should revert to the empty red circle once the token is removed.
+
+## Code host connection tokens
+
+> WARNING: Using code host connection tokens with Batch Changes will be deprecated and removed in future versions of Sourcegraph.
+
+[Code host connection tokens](../../admin/external_service.md) are typically configured the first time a site administrator is connecting Sourcegraph to the external code host. Within Batch Changes, they are only used for syncing and importing changesets when a global service account token is not configured.
+
+> NOTE: Prior to Sourcegraph 3.29, admin users were also able to use the code host connection token as a fallback for other Batch Changes operations, such as creating and updating changesets. However, non-admin users were unable to apply batch changes without another form of access token being configured.
+
+## Creating a code host token
+
+To finish configuring the new credentials, you will need to create a new personal access token on your code host and paste it into the input field on the **Add credentials** modal:
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/user-token-input.png" alt="An input dialog, titled &quot;Batch Changes credentials: GitHub&quot;, with an input box to type or paste a token and a list of scopes that must be enabled for this type of code host token">
+
+### GitHub
+
+Follow the steps to [create a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub. Batch Changes requires the following scopes:
+
+- `repo`
+- `read:org`
+- `user:email`
+- `read:discussion`
+
+This is done by selecting the relevant checkboxes when creating the token:
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
+
+### GitLab
+
+Follow the steps to [create a personal access token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) on GitLab. Batch Changes requires the following scopes:
+
+- `api`
+- `read_repository`
+- `write_repository`
+
+This is done by selecting the relevant checkboxes when creating the token:
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/gitlab-token.png" alt="The GitLab token creation page, with the api, read_repository, and write_repository scopes selected">
+
+### Bitbucket Server
+
+Follow the steps to [create a personal access token](https://confluence.atlassian.com/bitbucketserver0516/personal-access-tokens-966061199.html?utm_campaign=in-app-help&utm_medium=in-app-help&utm_source=stash#Personalaccesstokens-Generatingpersonalaccesstokens) on Bitbucket.
+
+Batch Changes requires the access token to have the `write` permission on both projects and repositories. This is done by selecting the **Write** level in the **Projects** dropdown, and letting it be inherited by repositories:
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server token creation page, with Write permissions selected on both the Project and Repository dropdowns">
 
 ### SSH access to code host
 
@@ -57,45 +149,4 @@ When Sourcegraph is configured to [clone repositories using SSH via the `gitURLT
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/create-credential-ssh-key.png" alt="Credentials setup process, showing the SSH public key to be copied">
 
-### GitHub
 
-In addition to the below, you should refer to [GitHub's documentation on creating a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token).
-
-Sourcegraph requires the `repo`, `read:org`, `user:email`, and `read:discussion` scopes to be enabled on the user token. This is done by selecting the relevant checkboxes when creating the token:
-
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
-
-### GitLab
-
-In addition to the below, you should refer to [GitLab's documentation on creating a personal access token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token).
-
-Sourcegraph requires the `api`, `read_repository`, and `write_repository` scopes to be enabled on the user token. This is done by selecting the relevant checkboxes when creating the token:
-
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/gitlab-token.png" alt="The GitLab token creation page, with the api, read_repository, and write_repository scopes selected">
-
-### Bitbucket Server
-
-In addition to the below, you should refer to [Bitbucket Server's documentation on creating a personal access token](https://confluence.atlassian.com/bitbucketserver0516/personal-access-tokens-966061199.html?utm_campaign=in-app-help&utm_medium=in-app-help&utm_source=stash#Personalaccesstokens-Generatingpersonalaccesstokens).
-
-Sourcegraph requires the access token to have the `write` permission on both projects and repositories. This is done by selecting the **Write** level in the **Projects** dropdown, and letting it be inherited by repositories:
-
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server token creation page, with Write permissions selected on both the Project and Repository dropdowns">
-
-## Removing a personal access token
-
-Removing personal access tokens is done through the the Batch Changes section of your user settings. To access this page, follow these instructions (also shown in the video below):
-
-1. From any Sourcegraph page, click on your avatar at the top right of the page.
-1. Select **Settings** from the dropdown menu.
-1. Click **Batch Changes** on the sidebar menu.
-
-You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them.
-
-<video width="1920" height="1080" autoplay loop muted playsinline controls style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/removing-user-token.webm" type="video/webm">
-  <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/removing-user-token.mp4" type="video/mp4">
-</video>
-
-To remove a personal access token for a code host, click **Remove** next to that code host. The code host's indicator will change to an empty red circle to indicate that no token is configured for that code host:
-
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/no-tokens.png" alt="A list of code hosts, with all code hosts indicating that they do not have a token">

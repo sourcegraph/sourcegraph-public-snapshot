@@ -26,6 +26,7 @@ type IndexScheduler struct {
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
+var _ goroutine.ErrorHandler = &IndexScheduler{}
 
 func NewIndexScheduler(
 	dbStore DBStore,
@@ -54,9 +55,6 @@ func NewIndexScheduler(
 // For mocking in tests
 var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
 
-// Used to filter the valid repo group names
-var enabledRepoGroupNames = []string{"cncf"}
-
 func (s *IndexScheduler) Handle(ctx context.Context) error {
 	if !indexSchedulerEnabled() {
 		return nil
@@ -77,7 +75,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
 	//    https://github.com/sourcegraph/sourcegraph/issues/22130
 	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
-	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(enabledRepoGroupNames, groupsByName)
+	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(settings.CodeIntelligenceAutoIndexRepositoryGroups, groupsByName)
 
 	options := database.ReposListOptions{
 		IncludePatterns: []string{includePatterns},

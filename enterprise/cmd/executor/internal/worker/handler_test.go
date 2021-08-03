@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -58,6 +59,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	handler := &handler{
+		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
 		operations: command.NewOperations(&observation.TestContext),
 		runnerFactory: func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner {

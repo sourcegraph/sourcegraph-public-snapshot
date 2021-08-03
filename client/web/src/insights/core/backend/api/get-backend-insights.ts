@@ -11,7 +11,7 @@ import { createViewContent } from '../utils/create-view-content'
  * Returns list of backend insights via gql API request.
  */
 export function getBackendInsights(insightIds?: string[]): Observable<ViewInsightProviderResult[]> {
-    // Ids field wasn't specified returns all insights
+    // If Ids field wasn't specified then return all insights
     if (!insightIds) {
         return getRawBackendInsights([]).pipe(
             startWith([
@@ -42,7 +42,7 @@ export function getBackendInsights(insightIds?: string[]): Observable<ViewInsigh
 function getRawBackendInsights(insightIds: string[]): Observable<ViewInsightProviderResult[]> {
     return fetchBackendInsights(insightIds).pipe(
         map(backendInsights =>
-            backendInsights?.map(
+            backendInsights.map(
                 (insight): ViewInsightProviderResult => ({
                     id: insight.id,
                     view: {
@@ -55,13 +55,13 @@ function getRawBackendInsights(insightIds: string[]): Observable<ViewInsightProv
             )
         ),
         catchError(error =>
-            of<ViewInsightProviderResult[]>([
-                {
-                    id: 'Backend insight',
+            of<ViewInsightProviderResult[]>(
+                insightIds.map(id => ({
+                    id,
                     view: asError(error),
                     source: ViewInsightProviderSourceType.Backend,
-                },
-            ])
+                }))
+            )
         )
     )
 }
