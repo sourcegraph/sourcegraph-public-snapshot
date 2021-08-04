@@ -202,7 +202,8 @@ extend type GitBlob {
 }
 
 """
-LSIF data available for a tree entry.
+LSIF data available for a tree entry (file OR directory, see GitBlob for file-specific resolvers
+and GitTree for directory-specific resolvers.)
 """
 interface TreeEntryLSIFData {
     """
