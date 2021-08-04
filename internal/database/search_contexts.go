@@ -463,7 +463,7 @@ var getSearchContextRepositoryRevisionsFmtStr = `
 SELECT sc.repo_id, sc.revision, r.name
 FROM search_context_repos sc
 JOIN
-	(SELECT id, name FROM repo WHERE deleted_at IS NULL) r
+	(SELECT id, name FROM repo WHERE deleted_at IS NULL AND (%s)) r -- populates authzConds
 	ON r.id = sc.repo_id
 WHERE sc.search_context_id = %d
 `
@@ -473,8 +473,14 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 		return Mocks.SearchContexts.GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	}
 
+	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := s.Query(ctx, sqlf.Sprintf(
 		getSearchContextRepositoryRevisionsFmtStr,
+		authzConds,
 		searchContextID,
 	))
 	if err != nil {
