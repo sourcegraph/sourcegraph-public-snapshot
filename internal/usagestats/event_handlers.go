@@ -75,6 +75,8 @@ type bigQueryEvent struct {
 	FeatureFlags    string  `json:"feature_flags"`
 	CohortID        *string `json:"cohort_id,omitempty"`
 	Referrer        string  `json:"referrer,omitempty"`
+	// 🚨 PRIVACY: PublicArguments should only contain data that is non-private
+	PublicArguments *string `json:"argument,omitempty"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -97,7 +99,8 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if err != nil {
 		return err
 	}
-	event, err := json.Marshal(bigQueryEvent{
+
+	event := bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
@@ -108,11 +111,18 @@ func publishSourcegraphDotComEvent(args Event) error {
 		Version:         version.Version(),
 		FeatureFlags:    string(featureFlagJSON),
 		CohortID:        args.CohortID,
-	})
+	}
+
+	if _, ok := bigqueryEventsWithArgumentsAllowlist[args.EventName]; ok {
+		arguments := string(args.Argument)
+		event.PublicArguments = &arguments
+	}
+	bigqueryEventPayload, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
-	return pubsub.Publish(pubSubDotComEventsTopicID, string(event))
+
+	return pubsub.Publish(pubSubDotComEventsTopicID, string(bigqueryEventPayload))
 }
 
 // logLocalEvent logs users events.
