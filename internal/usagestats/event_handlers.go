@@ -114,6 +114,8 @@ func publishSourcegraphDotComEvent(args Event) error {
 	}
 
 	if _, ok := bigqueryEventsWithArgumentsAllowlist[args.EventName]; ok {
+		// 🚨 PRIVACY: Only include arguments for events that are on the BigQuery allowlist
+		// to ensure no private data is sent to BigQuery.
 		arguments := string(args.Argument)
 		event.PublicArguments = &arguments
 	}
