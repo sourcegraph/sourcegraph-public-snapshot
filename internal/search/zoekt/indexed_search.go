@@ -374,7 +374,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
 	}
 
-	return doZoektSearchGlobal(ctx, zoektquery.NewOr(qs...), args, typ, c)
+	return doZoektSearchGlobal(ctx, zoektquery.Simplify(zoektquery.NewOr(qs...)), args, typ, c)
 }
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
