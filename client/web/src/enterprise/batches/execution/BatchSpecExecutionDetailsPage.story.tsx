@@ -17,10 +17,12 @@ const { add } = storiesOf('web/batches/execution/BatchSpecExecutionDetailsPage',
         },
     })
 
+const inputSpec =
+    "name: hello-world\ndescription: Add Hello World to READMEs\n\n# Find all repositories that contain a README.md file.\non:\n  - repositoriesMatchingQuery: file:README.md\n\n# In each repository, run this command. Each repository's resulting diff is captured.\nsteps:\n  - run: echo Hello World | tee -a $(find -name README.md)\n    container: ubuntu:18.04\n\n# Describe the changeset (e.g., GitHub pull request) you want for each repository.\nchangesetTemplate:\n  title: Hello World\n  body: My first batch change!\n  branch: hello-world # Push the commit to this branch.\n  commit:\n    message: Append Hello World to all README.md files\n  published: false\n"
+
 const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
     id: 'QmF0Y2hTcGVjRXhlY3V0aW9uOiI5THpOWlBmUHhKSSI=',
-    inputSpec:
-        "name: hello-world\ndescription: Add Hello World to READMEs\n\n# Find all repositories that contain a README.md file.\non:\n  - repositoriesMatchingQuery: file:README.md\n\n# In each repository, run this command. Each repository's resulting diff is captured.\nsteps:\n  - run: echo Hello World | tee -a $(find -name README.md)\n    container: ubuntu:18.04\n\n# Describe the changeset (e.g., GitHub pull request) you want for each repository.\nchangesetTemplate:\n  title: Hello World\n  body: My first batch change!\n  branch: hello-world # Push the commit to this branch.\n  commit:\n    message: Append Hello World to all README.md files\n  published: false\n",
+    inputSpec,
     state: BatchSpecExecutionState.COMPLETED,
     createdAt: '2021-08-02T16:01:57Z',
     startedAt: '2021-08-02T16:01:57Z',
@@ -111,7 +113,7 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
 
 const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
     id: '1234',
-    inputSpec: 'speccccc.yml',
+    inputSpec,
     createdAt: '2021-08-02T14:50:15Z',
     startedAt: '2021-08-02T14:50:16Z',
     finishedAt: '2021-08-02T14:50:22Z',

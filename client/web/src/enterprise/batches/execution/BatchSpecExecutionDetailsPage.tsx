@@ -138,17 +138,9 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({
                 className: 'bg-success',
             },
 
-            setupStage(execution, expandStage !== undefined && expandStage !== null && expandStage === 'setup', now),
-            batchPreviewStage(
-                execution,
-                expandStage !== undefined && expandStage !== null && expandStage === 'srcPreview',
-                now
-            ),
-            teardownStage(
-                execution,
-                expandStage !== undefined && expandStage !== null && expandStage === 'teardown',
-                now
-            ),
+            setupStage(execution, expandStage === 'setup', now),
+            batchPreviewStage(execution, expandStage === 'srcPreview', now),
+            teardownStage(execution, expandStage === 'teardown', now),
 
             execution.state === BatchSpecExecutionState.COMPLETED
                 ? { icon: <CheckIcon />, text: 'Finished', date: execution.finishedAt, className: 'bg-success' }
