@@ -60,7 +60,7 @@ export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSugge
         fetchSuggestions(debouncedSearchTerm)
             .then(suggestions => {
                 if (!wasCanceled) {
-                    setSuggestions(suggestions.filter(suggestion => !distinctExcludedItems.includes(suggestion.name)))
+                    setSuggestions(suggestions)
                 }
             })
             .catch(error => {
