@@ -1,5 +1,11 @@
 
-.drilldown-filters {}
+.drilldown-filters {
+    padding: 0.5rem;
+}
+
+.header {
+    display: flex;
+}
 
 .regexp-field {
     display: flex;
