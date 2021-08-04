@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -52,7 +53,7 @@ type Store struct {
 	*basestore.Store
 	key        encryption.Key
 	now        func() time.Time
-	operations *Operations
+	operations *operations
 }
 
 // New returns a new Store backed by the given database.
@@ -67,7 +68,7 @@ func NewWithClock(db dbutil.DB, observationContext *observation.Context, key enc
 		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
 		key:        key,
 		now:        clock,
-		operations: NewOperations(observationContext),
+		operations: newOperations(observationContext),
 	}
 }
 
@@ -140,7 +141,7 @@ func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 	return count, nil
 }
 
-type Operations struct {
+type operations struct {
 	createBatchChange      *observation.Operation
 	updateBatchChange      *observation.Operation
 	deleteBatchChange      *observation.Operation
@@ -213,94 +214,105 @@ type Operations struct {
 	updateSiteCredential *observation.Operation
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
-	m := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"batches_dbstore",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+var (
+	singletonOperations *operations
+	operationsOnce      sync.Once
+)
 
-	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("batches.dbstore.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      m,
-		})
-	}
+// newOperations generates a singleton of the operations struct.
+// TODO: We should create one per observationContext.
+func newOperations(observationContext *observation.Context) *operations {
+	operationsOnce.Do(func() {
+		m := metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			"batches_dbstore",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
 
-	return &Operations{
-		createBatchChange:      op("CreateBatchChange"),
-		updateBatchChange:      op("UpdateBatchChange"),
-		deleteBatchChange:      op("DeleteBatchChange"),
-		countBatchChanges:      op("CountBatchChanges"),
-		listBatchChanges:       op("ListBatchChanges"),
-		getBatchChange:         op("GetBatchChange"),
-		getBatchChangeDiffStat: op("GetBatchChangeDiffStat"),
-		getRepoDiffStat:        op("GetRepoDiffStat"),
+		op := func(name string) *observation.Operation {
+			return observationContext.Operation(observation.Op{
+				Name:         fmt.Sprintf("batches.dbstore.%s", name),
+				MetricLabels: []string{name},
+				Metrics:      m,
+			})
+		}
 
-		createBatchSpecExecution: op("CreateBatchSpecExecution"),
-		getBatchSpecExecution:    op("GetBatchSpecExecution"),
+		singletonOperations = &operations{
+			createBatchChange:      op("CreateBatchChange"),
+			updateBatchChange:      op("UpdateBatchChange"),
+			deleteBatchChange:      op("DeleteBatchChange"),
+			countBatchChanges:      op("CountBatchChanges"),
+			listBatchChanges:       op("ListBatchChanges"),
+			getBatchChange:         op("GetBatchChange"),
+			getBatchChangeDiffStat: op("GetBatchChangeDiffStat"),
+			getRepoDiffStat:        op("GetRepoDiffStat"),
 
-		createBatchSpec:         op("CreateBatchSpec"),
-		updateBatchSpec:         op("UpdateBatchSpec"),
-		deleteBatchSpec:         op("DeleteBatchSpec"),
-		countBatchSpecs:         op("CountBatchSpecs"),
-		getBatchSpec:            op("GetBatchSpec"),
-		getNewestBatchSpec:      op("GetNewestBatchSpec"),
-		listBatchSpecs:          op("ListBatchSpecs"),
-		deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
+			createBatchSpecExecution: op("CreateBatchSpecExecution"),
+			getBatchSpecExecution:    op("GetBatchSpecExecution"),
 
-		getBulkOperation:        op("GetBulkOperation"),
-		listBulkOperations:      op("ListBulkOperations"),
-		countBulkOperations:     op("CountBulkOperations"),
-		listBulkOperationErrors: op("ListBulkOperationErrors"),
+			createBatchSpec:         op("CreateBatchSpec"),
+			updateBatchSpec:         op("UpdateBatchSpec"),
+			deleteBatchSpec:         op("DeleteBatchSpec"),
+			countBatchSpecs:         op("CountBatchSpecs"),
+			getBatchSpec:            op("GetBatchSpec"),
+			getNewestBatchSpec:      op("GetNewestBatchSpec"),
+			listBatchSpecs:          op("ListBatchSpecs"),
+			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
-		getChangesetEvent:     op("GetChangesetEvent"),
-		listChangesetEvents:   op("ListChangesetEvents"),
-		countChangesetEvents:  op("CountChangesetEvents"),
-		upsertChangesetEvents: op("UpsertChangesetEvents"),
+			getBulkOperation:        op("GetBulkOperation"),
+			listBulkOperations:      op("ListBulkOperations"),
+			countBulkOperations:     op("CountBulkOperations"),
+			listBulkOperationErrors: op("ListBulkOperationErrors"),
 
-		createChangesetJob: op("CreateChangesetJob"),
-		getChangesetJob:    op("GetChangesetJob"),
+			getChangesetEvent:     op("GetChangesetEvent"),
+			listChangesetEvents:   op("ListChangesetEvents"),
+			countChangesetEvents:  op("CountChangesetEvents"),
+			upsertChangesetEvents: op("UpsertChangesetEvents"),
 
-		createChangesetSpec:         op("CreateChangesetSpec"),
-		updateChangesetSpec:         op("UpdateChangesetSpec"),
-		deleteChangesetSpec:         op("DeleteChangesetSpec"),
-		countChangesetSpecs:         op("CountChangesetSpecs"),
-		getChangesetSpec:            op("GetChangesetSpec"),
-		listChangesetSpecs:          op("ListChangesetSpecs"),
-		deleteExpiredChangesetSpecs: op("DeleteExpiredChangesetSpecs"),
-		getRewirerMappings:          op("GetRewirerMappings"),
+			createChangesetJob: op("CreateChangesetJob"),
+			getChangesetJob:    op("GetChangesetJob"),
 
-		createChangeset:                   op("CreateChangeset"),
-		deleteChangeset:                   op("DeleteChangeset"),
-		countChangesets:                   op("CountChangesets"),
-		getChangeset:                      op("GetChangeset"),
-		listChangesetSyncData:             op("ListChangesetSyncData"),
-		listChangesets:                    op("ListChangesets"),
-		enqueueChangeset:                  op("EnqueueChangeset"),
-		updateChangeset:                   op("UpdateChangeset"),
-		updateChangesetBatchChanges:       op("UpdateChangesetBatchChanges"),
-		updateChangesetUIPublicationState: op("UpdateChangesetUIPublicationState"),
-		updateChangesetCodeHostState:      op("UpdateChangesetCodeHostState"),
-		getChangesetExternalIDs:           op("GetChangesetExternalIDs"),
-		cancelQueuedBatchChangeChangesets: op("CancelQueuedBatchChangeChangesets"),
-		enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
-		getChangesetsStats:                op("GetChangesetsStats"),
-		getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
-		enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
-		getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
+			createChangesetSpec:         op("CreateChangesetSpec"),
+			updateChangesetSpec:         op("UpdateChangesetSpec"),
+			deleteChangesetSpec:         op("DeleteChangesetSpec"),
+			countChangesetSpecs:         op("CountChangesetSpecs"),
+			getChangesetSpec:            op("GetChangesetSpec"),
+			listChangesetSpecs:          op("ListChangesetSpecs"),
+			deleteExpiredChangesetSpecs: op("DeleteExpiredChangesetSpecs"),
+			getRewirerMappings:          op("GetRewirerMappings"),
 
-		listCodeHosts:         op("ListCodeHosts"),
-		getExternalServiceIDs: op("GetExternalServiceIDs"),
+			createChangeset:                   op("CreateChangeset"),
+			deleteChangeset:                   op("DeleteChangeset"),
+			countChangesets:                   op("CountChangesets"),
+			getChangeset:                      op("GetChangeset"),
+			listChangesetSyncData:             op("ListChangesetSyncData"),
+			listChangesets:                    op("ListChangesets"),
+			enqueueChangeset:                  op("EnqueueChangeset"),
+			updateChangeset:                   op("UpdateChangeset"),
+			updateChangesetBatchChanges:       op("UpdateChangesetBatchChanges"),
+			updateChangesetUIPublicationState: op("UpdateChangesetUIPublicationState"),
+			updateChangesetCodeHostState:      op("UpdateChangesetCodeHostState"),
+			getChangesetExternalIDs:           op("GetChangesetExternalIDs"),
+			cancelQueuedBatchChangeChangesets: op("CancelQueuedBatchChangeChangesets"),
+			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
+			getChangesetsStats:                op("GetChangesetsStats"),
+			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
+			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
+			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
 
-		createSiteCredential: op("CreateSiteCredential"),
-		deleteSiteCredential: op("DeleteSiteCredential"),
-		getSiteCredential:    op("GetSiteCredential"),
-		listSiteCredentials:  op("ListSiteCredentials"),
-		updateSiteCredential: op("UpdateSiteCredential"),
-	}
+			listCodeHosts:         op("ListCodeHosts"),
+			getExternalServiceIDs: op("GetExternalServiceIDs"),
+
+			createSiteCredential: op("CreateSiteCredential"),
+			deleteSiteCredential: op("DeleteSiteCredential"),
+			getSiteCredential:    op("GetSiteCredential"),
+			listSiteCredentials:  op("ListSiteCredentials"),
+			updateSiteCredential: op("UpdateSiteCredential"),
+		}
+	})
+
+	return singletonOperations
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
