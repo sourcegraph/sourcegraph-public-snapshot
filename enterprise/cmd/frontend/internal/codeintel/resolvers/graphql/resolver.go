@@ -259,6 +259,15 @@ func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ R
 	return &gql.EmptyResponse{}, r.resolver.QueueAutoIndexJobForRepo(ctx, int(repositoryID))
 }
 
+func (r *Resolver) GitTreeLSIFData(ctx context.Context, args *gql.GitTreeLSIFDataArgs) (gql.GitTreeLSIFDataResolver, error) {
+	resolver, err := r.resolver.QueryResolver(ctx, args)
+	if err != nil || resolver == nil {
+		return nil, err
+	}
+
+	return NewQueryResolver(resolver, r.locationResolver), nil
+}
+
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {
 	resolver, err := r.resolver.QueryResolver(ctx, args)
 	if err != nil || resolver == nil {

@@ -149,6 +149,7 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 		return &u
 	}
 
+	// TODO(slimsag): this is failing! why?
 	typ := "blob"
 	if r.IsDirectory() {
 		typ = "tree"
@@ -217,7 +218,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (GitBlobLSIFDataResolver, error) {
+func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (GitTreeLSIFDataResolver, error) {
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
 
 	var toolName string
@@ -230,7 +231,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitTreeLSIFData(ctx, &GitTreeLSIFDataArgs{
 		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),
 		Path:      r.Path(),

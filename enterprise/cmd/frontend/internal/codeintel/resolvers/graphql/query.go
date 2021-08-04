@@ -33,7 +33,9 @@ type QueryResolver struct {
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *CachedLocationResolver) gql.GitBlobLSIFDataResolver {
+//
+// The returned resolver implements both the gql.GitBlobLSIFDataResolver and GitTreeLSIFDataResolver interfaces.
+func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *CachedLocationResolver) *QueryResolver {
 	return &QueryResolver{
 		resolver:         resolver,
 		locationResolver: locationResolver,

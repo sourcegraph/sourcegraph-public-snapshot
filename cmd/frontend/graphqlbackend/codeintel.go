@@ -23,6 +23,7 @@ type CodeIntelResolver interface {
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ Repository graphql.ID }) (*EmptyResponse, error)
+	GitTreeLSIFData(ctx context.Context, args *GitTreeLSIFDataArgs) (GitTreeLSIFDataResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
@@ -131,8 +132,12 @@ type QueueAutoIndexJobArgs struct {
 	Repository graphql.ID
 }
 
-type GitTreeLSIFDataResolver interface {
+type TreeEntryLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+}
+
+type GitTreeLSIFDataResolver interface {
+	TreeEntryLSIFDataResolver
 	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
 	DocumentationPathInfo(ctx context.Context, args *LSIFDocumentationPathInfoArgs) (JSONValue, error)
 	DocumentationDefinitions(ctx context.Context, args *LSIFQueryDocumentationArgs) (LocationConnectionResolver, error)
@@ -145,7 +150,7 @@ type CodeIntelligenceCommitGraphResolver interface {
 }
 
 type GitBlobLSIFDataResolver interface {
-	GitTreeLSIFDataResolver
+	TreeEntryLSIFDataResolver
 	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
 	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
 
@@ -156,13 +161,15 @@ type GitBlobLSIFDataResolver interface {
 	Documentation(ctx context.Context, args *LSIFQueryPositionArgs) (DocumentationResolver, error)
 }
 
-type GitBlobLSIFDataArgs struct {
+type GitTreeLSIFDataArgs struct {
 	Repo      *types.Repo
 	Commit    api.CommitID
 	Path      string
 	ExactPath bool
 	ToolName  string
 }
+
+type GitBlobLSIFDataArgs = GitTreeLSIFDataArgs
 
 type LSIFRangesArgs struct {
 	StartLine int32

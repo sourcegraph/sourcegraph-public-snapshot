@@ -9,27 +9,27 @@ import (
 )
 
 type LocationResolver interface {
-	Resource() *GitTreeEntryResolver
+	Resource() *GitBlobEntryResolver
 	Range() *rangeResolver
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
 }
 
 type locationResolver struct {
-	resource *GitTreeEntryResolver
+	resource *GitBlobEntryResolver
 	lspRange *lsp.Range
 }
 
 var _ LocationResolver = &locationResolver{}
 
-func NewLocationResolver(resource *GitTreeEntryResolver, lspRange *lsp.Range) LocationResolver {
+func NewLocationResolver(resource *GitBlobEntryResolver, lspRange *lsp.Range) LocationResolver {
 	return &locationResolver{
 		resource: resource,
 		lspRange: lspRange,
 	}
 }
 
-func (r *locationResolver) Resource() *GitTreeEntryResolver { return r.resource }
+func (r *locationResolver) Resource() *GitBlobEntryResolver { return r.resource }
 
 func (r *locationResolver) Range() *rangeResolver {
 	if r.lspRange == nil {
