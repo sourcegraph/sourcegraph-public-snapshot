@@ -6,7 +6,7 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import styles from './Input.module.scss'
 import { ForwardReferenceComponent } from './types'
 
-interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */
     title?: string
     /** Description block shown below the input. */
@@ -20,9 +20,9 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Exclusive status */
     status?: 'error' | 'loading' | 'valid'
     /** Disable input behavior */
-    disable?: boolean
+    disabled?: boolean
     /** Determines the size of the input */
-    size?: 'regular' | 'small'
+    variant?: 'regular' | 'small'
 }
 
 /**
@@ -32,29 +32,29 @@ export const Input = forwardRef((props, reference) => {
     const {
         as: Component = 'input',
         type = 'text',
-        size = 'regular',
+        variant = 'regular',
         title,
         message,
         className,
         inputClassName,
         inputSymbol,
-        disable,
+        disabled,
         status,
         ...otherProps
     } = props
 
     return (
         <label className={classnames('w-100', className)}>
-            {title && <div className="mb-2">{size === 'regular' ? title : <small>{title}</small>}</div>}
+            {title && <div className="mb-2">{variant === 'regular' ? title : <small>{title}</small>}</div>}
 
             <LoaderInput className="d-flex" loading={status === 'loading'}>
                 <Component
-                    disabled={disable}
+                    disabled={disabled}
                     type={type}
                     className={classnames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
                         'is-valid': status === 'valid',
                         'is-invalid': status === 'error',
-                        'form-control-sm': size === 'small',
+                        'form-control-sm': variant === 'small',
                     })}
                     {...otherProps}
                     ref={reference}
@@ -75,6 +75,6 @@ export const Input = forwardRef((props, reference) => {
             )}
         </label>
     )
-}) as ForwardReferenceComponent<'input', FormInputProps>
+}) as ForwardReferenceComponent<'input', InputProps>
 
 Input.displayName = 'Input'

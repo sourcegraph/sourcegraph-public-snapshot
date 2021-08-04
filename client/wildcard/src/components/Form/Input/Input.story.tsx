@@ -45,7 +45,7 @@ export const Simple = () => {
                 onChange={handleChange}
                 message="random message"
                 status="valid"
-                disable={false}
+                disabled={false}
                 placeholder="testing this one"
             />
             <Input
@@ -69,7 +69,7 @@ export const Simple = () => {
                 title="Disabled input"
                 onChange={handleChange}
                 message="random message"
-                disable={true}
+                disabled={true}
                 placeholder="disable status input"
             />
 
@@ -79,9 +79,9 @@ export const Simple = () => {
                 onChange={handleChange}
                 message="random message"
                 status="valid"
-                disable={false}
+                disabled={false}
                 placeholder="testing this one"
-                size="small"
+                variant="small"
             />
         </>
     )
