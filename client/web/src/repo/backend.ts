@@ -49,6 +49,7 @@ export const repositoryFragment = gql`
         viewerCanAdminister
         defaultBranch {
             displayName
+            abbrevName
         }
     }
 `

@@ -47,7 +47,7 @@ import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { GitCommitFields, RepositoryFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
@@ -121,7 +121,7 @@ interface Props
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
-    repo: TreePageRepositoryFields
+    repo: RepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
@@ -130,15 +130,6 @@ interface Props
     history: H.History
     globbing: boolean
 }
-
-export const treePageRepositoryFragment = gql`
-    fragment TreePageRepositoryFields on Repository {
-        id
-        name
-        description
-        viewerCanAdminister
-    }
-`
 
 export const TreePage: React.FunctionComponent<Props> = ({
     repo,
@@ -361,6 +352,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
         </div>
     )
 
+    const revisionOrBranch = revision || repo.defaultBranch?.abbrevName
+
     return (
         <div className="tree-page">
             <Container className="tree-page__container">
@@ -415,10 +408,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         <Link
                                             className="btn btn-outline-secondary"
                                             to={
-                                                revision
+                                                revisionOrBranch
                                                     ? `/${encodeURIPathComponent(
                                                           repo.name
-                                                      )}/-/compare/...${encodeURIComponent(revision)}`
+                                                      )}/-/compare/...${encodeURIComponent(revisionOrBranch)}`
                                                     : `/${encodeURIPathComponent(repo.name)}/-/compare`
                                             }
                                         >

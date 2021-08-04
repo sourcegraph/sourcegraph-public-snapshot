@@ -57,12 +57,6 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
         >
             <span className="d-flex align-items-center">
                 <code className="git-ref-tag-2">{node.displayName}</code>
-                {mostRecentSig && (
-                    <small className="pl-2">
-                        Updated <Timestamp date={mostRecentSig.date} />{' '}
-                        {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
-                    </small>
-                )}
             </span>
             {behindAhead && (
                 <small>

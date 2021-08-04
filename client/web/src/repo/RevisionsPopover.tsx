@@ -103,6 +103,8 @@ interface GitReferencePopoverNodeProps {
     currentRevision: string | undefined
 
     location: H.Location
+
+    getURLFromRevision: (href: string, revision: string) => string
 }
 
 const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
@@ -110,6 +112,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     defaultBranch,
     currentRevision,
     location,
+    getURLFromRevision,
 }) => {
     let isCurrent: boolean
     if (currentRevision) {
@@ -120,7 +123,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     return (
         <GitReferenceNode
             node={node}
-            url={replaceRevisionInURL(location.pathname + location.search + location.hash, node.abbrevName)}
+            url={getURLFromRevision(location.pathname + location.search + location.hash, node.abbrevName)}
             ancestorIsLink={false}
             className={classNames(
                 'connection-popover__node-link',
@@ -143,14 +146,21 @@ interface GitCommitNodeProps {
     currentCommitID: string | undefined
 
     location: H.Location
+
+    getURLFromRevision: (href: string, revision: string) => string
 }
 
-const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
+const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
+    node,
+    currentCommitID,
+    location,
+    getURLFromRevision,
+}) => {
     const isCurrent = currentCommitID === node.oid
     return (
         <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
             <Link
-                to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
+                to={getURLFromRevision(location.pathname + location.search + location.hash, node.oid)}
                 className={classNames(
                     'connection-popover__node-link',
                     isCurrent && 'connection-popover__node-link--active',
@@ -160,7 +170,6 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
                 <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
                     {node.abbreviatedOID}
                 </code>
-                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
                 {isCurrent && (
                     <CircleChevronLeftIcon
                         className="icon-inline connection-popover__node-link-icon"
@@ -172,7 +181,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
     )
 }
 
-interface Props {
+interface RevisionsPopoverProps {
     repo: Scalars['ID']
     repoName: string
     defaultBranch: string
@@ -187,6 +196,10 @@ interface Props {
 
     /* Callback to dismiss the parent popover wrapper */
     togglePopover: () => void
+
+    getURLFromRevision?: (href: string, revision: string) => string
+
+    tabs?: RevisionsPopoverTab[]
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -201,24 +214,40 @@ interface RevisionsPopoverTab {
 
 const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
-const TABS: RevisionsPopoverTab[] = [
-    { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
-    { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
-    { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
-]
+export const BRANCHES_TAB: RevisionsPopoverTab = {
+    id: 'branches',
+    label: 'Branches',
+    noun: 'branch',
+    pluralNoun: 'branches',
+    type: GitRefType.GIT_BRANCH,
+}
+export const TAGS_TAB: RevisionsPopoverTab = {
+    id: 'tags',
+    label: 'Tags',
+    noun: 'tag',
+    pluralNoun: 'tags',
+    type: GitRefType.GIT_TAG,
+}
+export const COMMITS_TAB: RevisionsPopoverTab = {
+    id: 'commits',
+    label: 'Commits',
+    noun: 'commit',
+    pluralNoun: 'commits',
+}
 
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
-export const RevisionsPopover: React.FunctionComponent<Props> = props => {
+export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = props => {
+    const { getURLFromRevision = replaceRevisionInURL, tabs = [BRANCHES_TAB, TAGS_TAB, COMMITS_TAB] } = props
+
     useEffect(() => {
         eventLogger.logViewEvent('RevisionsPopover')
     }, [])
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
@@ -239,13 +268,11 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         className: 'connection-popover__content',
         inputClassName: 'connection-popover__input',
         listClassName: 'connection-popover__nodes',
-        showMoreClassName: isRedesignEnabled ? '' : 'connection-popover__show-more',
         inputPlaceholder: 'Find...',
         compact: true,
         autoFocus: true,
         history: props.history,
         location: props.location,
-        noSummaryIfAllNodesVisible: !isRedesignEnabled,
         useURLQuery: false,
     }
 
@@ -253,7 +280,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
             <div className="tablist-wrapper revisions-popover__tabs">
                 <TabList>
-                    {TABS.map(({ label, id }) => (
+                    {tabs.map(({ label, id }) => (
                         <Tab key={id} data-tab-content={id}>
                             <span className="tablist-wrapper--tab-label">{label}</span>
                         </Tab>
@@ -269,7 +296,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                 </button>
             </div>
             <TabPanels>
-                {TABS.map(tab => (
+                {tabs.map(tab => (
                     <TabPanel key={tab.id}>
                         {tab.type ? (
                             <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
@@ -284,6 +311,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                     defaultBranch: props.defaultBranch,
                                     currentRevision: props.currentRev,
                                     location: props.location,
+                                    getURLFromRevision,
                                 }}
                             />
                         ) : (
@@ -298,6 +326,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 nodeComponentProps={{
                                     currentCommitID: props.currentCommitID,
                                     location: props.location,
+                                    getURLFromRevision,
                                 }}
                             />
                         )}
