@@ -4,23 +4,36 @@ import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from '
 import { TruncatedText } from '../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components/trancated-text/TrancatedText'
 import { FormInput } from '../../../../../form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../form/form-radio-input/FormRadioInput'
+import { useForm } from '../../../../../form/hooks/useForm'
 
 import styles from './DrillDownFiltersPanel.module.scss'
 
+interface DrillDownFilters {
+    includeRepoRegExp: string
+    excludeRepoRegExp: string
+}
+
+const DEFAULT_FILTERS: DrillDownFilters = {
+    excludeRepoRegExp: '',
+    includeRepoRegExp: '',
+}
+
 interface DrillDownFiltersPanelProps {
     className?: string
+    filters?: DrillDownFilters
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const { className } = props
+    const { className, filters = DEFAULT_FILTERS } = props
+
+    const { ref } = useForm<DrillDownFilters>({
+        initialValues: filters,
+        onChange: values => console.log(values),
+    })
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form
-            className={classnames(className, styles.drilldownFilters)}
-            onClick={event => event.stopPropagation()}
-            onBlur={event => event.stopPropagation()}
-        >
+        <form ref={ref} className={classnames(className, styles.drilldownFilters)}>
             <header className="d-flex align-items-center">
                 <h4 className="m-0">Filters by Repositories</h4>
                 <button type="button" className="btn btn-link ml-auto">
