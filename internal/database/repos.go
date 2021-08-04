@@ -287,6 +287,60 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	return ct, err
 }
 
+// Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
+// number of IDs given if a repo with the given ID does not exist.
+func (s *RepoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
+	if Mocks.Repos.Metadata != nil {
+		return Mocks.Repos.Metadata(ctx, ids...)
+	}
+	s.ensureStore()
+
+	tr, ctx := trace.New(ctx, "repos.Metadata", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := ReposListOptions{
+		IDs: ids,
+		// Return a limited subset of fields
+		Select: []string{
+			"repo.id",
+			"repo.name",
+			"repo.description",
+			"repo.fork",
+			"repo.archived",
+			"repo.private",
+			"repo.stars",
+			"gr.last_fetched",
+		},
+		// Required so gr.last_fetched is select-able
+		joinGitserverRepos: true,
+	}
+
+	res := make([]*types.SearchedRepo, 0, len(ids))
+	scanMetadata := func(rows *sql.Rows) error {
+		var r types.SearchedRepo
+		if err := rows.Scan(
+			&r.ID,
+			&r.Name,
+			&dbutil.NullString{S: &r.Description},
+			&r.Fork,
+			&r.Archived,
+			&r.Private,
+			&dbutil.NullInt{N: &r.Stars},
+			&r.LastFetched,
+		); err != nil {
+			return err
+		}
+
+		res = append(res, &r)
+		return nil
+	}
+
+	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
+}
+
 const listReposQueryFmtstr = `
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
@@ -558,6 +612,10 @@ type ReposListOptions struct {
 
 	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
 	IncludeDeleted bool
+
+	// joinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
+	// with the table alias "gr".
+	joinGitserverRepos bool
 
 	*LimitOffset
 }
@@ -888,7 +946,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
