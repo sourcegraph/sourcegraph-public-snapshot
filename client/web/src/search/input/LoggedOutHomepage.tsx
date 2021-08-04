@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
 import { HomepageModalVideo } from './HomepageModalVideo'
@@ -35,94 +36,154 @@ const exampleQueries = [
     },
 ]
 
-export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps {}
+const exampleNotebooks = [
+    {
+        label: 'Find and reference code across all of your repositories',
+        trackEventName: 'HomepageNotebookExampleRepoClicked',
+        query: 'repo:my-org/*',
+        to: '',
+    },
+    {
+        label: 'Search and review commits and their code faster than git log and grep ',
+        trackEventName: 'HomepageNotebookExampleDiffClicked',
+        query: 'type:diff before:"last week"',
+        to: '',
+    },
+    {
+        label: 'Quickly filter by file path, language and other elements of code',
+        trackEventName: 'HomepageNotebookExampleFilterClicked',
+        query: 'repo:sourcegraph/* lang:go -f:tests',
+        to: '',
+    },
+]
 
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
+export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
+
+interface SearchExample {
+    label: string
+    trackEventName: string
+    query: string
+    to: string
+}
+
+interface SearchExamplesProps extends TelemetryProps {
+    title: string
+    subtitle: string
+    examples: SearchExample[]
+    icon: JSX.Element
+}
+
+const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
+    title,
+    subtitle,
+    telemetryService,
+    examples,
+    icon,
+}) => {
     const searchExampleClicked = useCallback(
-        (trackEventName: string) => (): void => props.telemetryService.log(trackEventName),
-        [props.telemetryService]
+        (trackEventName: string) => (): void => telemetryService.log(trackEventName),
+        [telemetryService]
     )
-
     return (
-        <div className={styles.loggedOutHomepage}>
-            <div className={styles.helpContent}>
-                <div className={styles.searchExamplesWrapper}>
-                    <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
-                        <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>
-                            Search examples
-                        </div>
-                        <div className="font-weight-normal text-muted">
-                            Find answers faster with code search across multiple repos and commits
-                        </div>
-                    </div>
-                    <div className={styles.searchExamples}>
-                        {exampleQueries.map(example => (
-                            <div key={example.query} className={styles.searchExampleCardWrapper}>
-                                <Link
-                                    to={example.to}
-                                    className={classNames('card', styles.searchExampleCard)}
-                                    onClick={searchExampleClicked(example.trackEventName)}
-                                >
-                                    <div className={classNames(styles.searchExampleIcon)}>
-                                        <MagnifyingGlassSearchIcon />
-                                    </div>
-                                    <div className={styles.searchExampleQueryWrapper}>
-                                        <div className={styles.searchExampleQuery}>
-                                            <SyntaxHighlightedSearchQuery query={example.query} />
-                                        </div>
-                                    </div>
-                                </Link>
-                                <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
-                                    {example.label}
-                                </Link>
+        <div className={styles.searchExamplesWrapper}>
+            <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
+                <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>{title}</div>
+                <div className="font-weight-normal text-muted">{subtitle}</div>
+            </div>
+            <div className={styles.searchExamples}>
+                {examples.map(example => (
+                    <div key={example.query} className={styles.searchExampleCardWrapper}>
+                        <Link
+                            to={example.to}
+                            className={classNames('card', styles.searchExampleCard)}
+                            onClick={searchExampleClicked(example.trackEventName)}
+                        >
+                            <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
+                            <div className={styles.searchExampleQueryWrapper}>
+                                <div className={styles.searchExampleQuery}>
+                                    <SyntaxHighlightedSearchQuery query={example.query} />
+                                </div>
                             </div>
-                        ))}
+                        </Link>
+                        <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
+                            {example.label}
+                        </Link>
                     </div>
-                </div>
-                <div className={styles.thumbnail}>
-                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                    <HomepageModalVideo {...props} />
-                </div>
-            </div>
-
-            <div className="mt-5 d-flex justify-content-center">
-                <div className="d-flex align-items-center flex-column">
-                    <SignUpCta className={styles.loggedOutHomepageCta} telemetryService={props.telemetryService} />
-                    <div className="mt-2 text-center">
-                        Search private code by{' '}
-                        <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener noreferrer">
-                            installing Sourcegraph locally.
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-5">
-                <div className="d-flex align-items-baseline mt-5 mb-3">
-                    <div className={classNames(styles.title, 'mr-2')}>Repository groups</div>
-                    <div className="font-weight-normal text-muted">Search sets of repositories</div>
-                </div>
-                <div className={styles.loggedOutHomepageRepogroupListCards}>
-                    {repogroupList.map(repogroup => (
-                        <div className="d-flex align-items-center" key={repogroup.name}>
-                            <img
-                                className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
-                                src={repogroup.homepageIcon}
-                                alt={`${repogroup.name} icon`}
-                            />
-                            <Link
-                                to={repogroup.url}
-                                className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
-                            >
-                                {repogroup.title}
-                            </Link>
-                        </div>
-                    ))}
-                </div>
+                ))}
             </div>
         </div>
     )
 }
+
+export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => (
+    <div className={styles.loggedOutHomepage}>
+        <div className={styles.helpContent}>
+            {props.featureFlags.get('search-notebook-onboarding') ? (
+                <SearchExamples
+                    title="Search notebooks"
+                    subtitle="Three ways code search is more efficient than your IDE"
+                    examples={exampleNotebooks}
+                    icon={<NotebookIcon />}
+                    {...props}
+                />
+            ) : (
+                <SearchExamples
+                    title="Search examples"
+                    subtitle="Find answers faster with code search across multiple repos and commits"
+                    examples={exampleQueries}
+                    icon={<MagnifyingGlassSearchIcon />}
+                    {...props}
+                />
+            )}
+            <div className={styles.thumbnail}>
+                <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                <HomepageModalVideo {...props} />
+            </div>
+        </div>
+
+        <div className="mt-5 d-flex justify-content-center">
+            <div className="d-flex align-items-center flex-column">
+                <SignUpCta className={styles.loggedOutHomepageCta} telemetryService={props.telemetryService} />
+                <div className="mt-2 text-center">
+                    Search private code by{' '}
+                    <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener noreferrer">
+                        installing Sourcegraph locally.
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div className="mt-5">
+            <div className="d-flex align-items-baseline mt-5 mb-3">
+                <div className={classNames(styles.title, 'mr-2')}>Repository groups</div>
+                <div className="font-weight-normal text-muted">Search sets of repositories</div>
+            </div>
+            <div className={styles.loggedOutHomepageRepogroupListCards}>
+                {repogroupList.map(repogroup => (
+                    <div className="d-flex align-items-center" key={repogroup.name}>
+                        <img
+                            className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
+                            src={repogroup.homepageIcon}
+                            alt={`${repogroup.name} icon`}
+                        />
+                        <Link to={repogroup.url} className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}>
+                            {repogroup.title}
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+)
+
+const NotebookIcon = React.memo(() => (
+    <svg width="18" height="21" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+            d="M16 2.5h-1v-2h-2v2H5v-2H3v2H2a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-14a2 2 0 00-2-2zm0 16H2v-10h14v10zM2 6.5v-2h14v2H2zm2 4h10v2H4v-2zm0 4h10v2H4v-2z"
+            fill="currentColor"
+        />
+    </svg>
+))
 
 const MagnifyingGlassSearchIcon = React.memo(() => (
     <svg width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">

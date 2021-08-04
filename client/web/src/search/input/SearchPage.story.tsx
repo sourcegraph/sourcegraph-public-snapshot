@@ -63,6 +63,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    featureFlags: new Map(),
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({
