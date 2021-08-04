@@ -20,6 +20,13 @@ type InsightViewSeries struct {
 	Stroke                string
 }
 
+type Insight struct {
+	UniqueID    string
+	Title       string
+	Description string
+	Series      []InsightViewSeries
+}
+
 // InsightViewSeriesMetadata contains metadata about a viewable insight series such as render properties.
 type InsightViewSeriesMetadata struct {
 	Label  string

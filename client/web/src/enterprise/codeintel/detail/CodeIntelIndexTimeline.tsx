@@ -21,7 +21,7 @@ export const CodeIntelIndexTimeline: FunctionComponent<CodeIntelIndexTimelinePro
     const stages = useMemo(
         () => [
             { icon: <TimerSandIcon />, text: 'Queued', date: index.queuedAt, className: 'bg-success' },
-            { icon: <ProgressClockIcon />, text: 'Began processing', date: index.startedAt, className: 'bg-success' },
+            { icon: <CheckIcon />, text: 'Began processing', date: index.startedAt, className: 'bg-success' },
 
             indexSetupStage(index, now),
             indexPreIndexStage(index, now),
@@ -118,16 +118,17 @@ const indexTeardownStage = (index: LsifIndexFields, now?: () => Date): TimelineS
               ...genericStage(index.steps.teardown),
           }
 
-const genericStage = <E extends { startTime: string; exitCode: number }>(
+const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     value: E | E[]
 ): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
+    const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
     const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
-        icon: success ? <CheckIcon /> : <ErrorIcon />,
+        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
         date: isArray(value) ? value[0].startTime : value.startTime,
-        className: success ? 'bg-success' : 'bg-danger',
-        expanded: !success,
+        className: success || !finished ? 'bg-success' : 'bg-danger',
+        expanded: !(success || !finished),
     }
 }
 

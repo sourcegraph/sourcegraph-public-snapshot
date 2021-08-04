@@ -18,25 +18,25 @@ Loading configuration in this manner has two significant drawbacks:
 
 ## Site configuration
 
-Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
+Set `SITE_CONFIG_FILE=site.json` on:
 
-```bash
-SITE_CONFIG_FILE=site.json
-```
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
-`site.json` contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
+Where `site.json` is a file that contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
 
-If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`. **Note** that if you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`.
+
+> NOTE: If you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
 
 ## Code host configuration
 
-Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
+Set `EXTSVC_CONFIG_FILE=extsvc.json` on:
 
-```bash
-EXTSVC_CONFIG_FILE=extsvc.json
-```
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
-`extsvc.json` contains a JSON object that specifies _all_ of your code hosts in a single JSONC file:
+Where `extsvc.json` contains a JSON object that specifies _all_ of your code hosts in a single JSONC file:
 
 ```jsonc
 
@@ -76,13 +76,12 @@ If you want to _allow_ edits to be made through the web UI (which will be overwr
 
 ## Global settings
 
-Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
+Set `GLOBAL_SETTINGS_FILE=global-settings.json` on:
 
-```bash
-GLOBAL_SETTINGS_FILE=global-settings.json
-```
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
-`global-settings.json` contains the global settings, which you would otherwise edit through the in-app global settings editor.
+Where `global-settings.json` contains the global settings, which you would otherwise edit through the in-app global settings editor.
 
 If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `GLOBAL_SETTINGS_ALLOW_EDITS=true`. Note that if you do enable this, it is your responsibility to ensure the global settings on your instance and in the file remain in sync.
 

@@ -7,10 +7,12 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -47,7 +49,10 @@ var batchSpecExecutionInsertColumns = []*sqlf.Query{
 }
 
 // CreateBatchSpecExecution creates the given BatchSpecExecution.
-func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpecExecution) error {
+func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpecExecution) (err error) {
+	ctx, endObservation := s.operations.createBatchSpecExecution.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	if b.CreatedAt.IsZero() {
 		b.CreatedAt = s.now()
 	}
@@ -98,7 +103,13 @@ type GetBatchSpecExecutionOpts struct {
 }
 
 // GetBatchSpecExecution gets a BatchSpecExecution matching the given options.
-func (s *Store) GetBatchSpecExecution(ctx context.Context, opts GetBatchSpecExecutionOpts) (*btypes.BatchSpecExecution, error) {
+func (s *Store) GetBatchSpecExecution(ctx context.Context, opts GetBatchSpecExecutionOpts) (exec *btypes.BatchSpecExecution, err error) {
+	ctx, endObservation := s.operations.getBatchSpecExecution.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+		log.String("randID", opts.RandID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q, err := getBatchSpecExecutionQuery(&opts)
 	if err != nil {
 		return nil, err

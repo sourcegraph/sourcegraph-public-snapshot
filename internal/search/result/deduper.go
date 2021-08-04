@@ -12,9 +12,12 @@ func (d deduper) Add(m Match) {
 	prev, seen := d[m.Key()]
 
 	if seen {
-		if prevFileMatch, isFileMatch := prev.(*FileMatch); isFileMatch {
-			// Merge file match lines
-			prevFileMatch.AppendMatches(m.(*FileMatch)) // key matches, so we know it's a file match
+		switch prevMatch := prev.(type) {
+		// key matches, so we know to convert to respective type
+		case *FileMatch:
+			prevMatch.AppendMatches(m.(*FileMatch))
+		case *CommitMatch:
+			prevMatch.AppendMatches(m.(*CommitMatch))
 		}
 		return
 	}

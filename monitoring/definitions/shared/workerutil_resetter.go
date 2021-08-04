@@ -56,18 +56,26 @@ type ResetterGroupOptions struct {
 // internal/workerutil/dbworker/ResetterMetrics struct in the Go backend. Metrics are emitted
 // by the resetter processes themselves.
 func (workerutilResetterConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ResetterGroupOptions) monitoring.Group {
-	errorsOptions := options.ObservableConstructorOptions
-	errorsOptions.MetricNameRoot += "_record_reset"
+	row := make(monitoring.Row, 0, 3)
+	if options.RecordResets != nil {
+		row = append(row, options.RecordResets(WorkerutilResetter.Resets(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.RecordResetFailures != nil {
+		row = append(row, options.RecordResetFailures(WorkerutilResetter.ResetFailures(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.Errors != nil {
+		errorsOptions := options.ObservableConstructorOptions
+		errorsOptions.MetricNameRoot += "_record_reset"
+		row = append(row, options.Errors(Observation.Errors(errorsOptions)(containerName, owner)).Observable())
+	}
+
+	if len(row) == 0 {
+		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+	}
 
 	return monitoring.Group{
 		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
 		Hidden: options.Hidden,
-		Rows: []monitoring.Row{
-			{
-				options.RecordResets.safeApply(WorkerutilResetter.Resets(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.RecordResetFailures.safeApply(WorkerutilResetter.ResetFailures(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.Errors.safeApply(Observation.Errors(errorsOptions)(containerName, owner)).Observable(),
-			},
-		},
+		Rows:   []monitoring.Row{row},
 	}
 }

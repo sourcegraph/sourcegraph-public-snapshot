@@ -1,0 +1,39 @@
+.documentation-examples-list-item {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--code-bg);
+
+    &__repo-file-link {
+        display: inline-block;
+    }
+    &__code-excerpt {
+        border-top: 1px solid var(--border-color);
+        text-decoration: none; // don't use cascading link style
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        overflow: auto;
+
+        &-clickable {
+            cursor: pointer;
+        }
+
+        &:hover {
+            text-decoration: none;
+        }
+
+        &-code-wrapper {
+            position: relative;
+            overflow-x: auto;
+            &:not(:first-child) {
+                border-top: 1px solid var(--border-color-2);
+            }
+        }
+
+        // Needed to correct syntax highlighted code blocks so they can have text copied/pasted
+        // without extra newlines.
+        .code div {
+            display: inline-block;
+        }
+    }
+}

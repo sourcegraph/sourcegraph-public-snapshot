@@ -10,23 +10,21 @@ echo "Compiling..."
 #           it rw we prevent failing go install.
 go install -mod=mod .
 
-# Let's figure out where this got installed. First, we need to calculate the
-# effective $GOBIN; this logic is documented at
-# https://golang.org/cmd/go/#hdr-Compile_and_install_packages_and_dependencies
-orig_gobin="${GOBIN-}"
-if [ -z "$orig_gobin" ]; then
-  if [ -z "${GOPATH:-}" ]; then
-    GOBIN="$HOME/go/bin"
-  else
-    GOBIN="$GOPATH/bin"
-  fi
-fi
+# Let's find the install target. The documentation at
+#   https://golang.org/cmd/go/#hdr-Compile_and_install_packages_and_dependencies
+# that describes the effective $GOBIN path that's used doesn't seem correct
+# when a tool like `asdf` is used to manage Go installations.
+
+# So we use what the Go documentation recommends here
+#   https://golang.org/doc/tutorial/compile-install
+# and find the install target
+target="$(go list -f '{{.Target}}')"
 
 # Let's make sure that there's actually a binary there before we make
 # suggestions. (Unfortunately, there's no easy way to get this out of `go
 # install`, so we have to figure it out after the fact.)
-if [ ! -x "$GOBIN/sg" ]; then
-  echo "We expected to see sg in $GOBIN, but we can't find it!"
+if [ ! -x "$target" ]; then
+  echo "We expected to find sg at $target, but we can't find it!"
   echo
   echo "Useful debugging information:"
   echo
@@ -63,7 +61,7 @@ echo "        \[38;5;202m::[38;5;57m/    /                \[38;5;202m::[38;5
 echo "         \/____/  "
 echo "[0m  "
 echo "                                                  "
-echo "  sg installed to $GOBIN/sg."
+echo "  sg installed to $target"
 
 # We can now check whether `sg` is in the $PATH and make suggestions
 # accordingly in terms of usage.
@@ -75,14 +73,14 @@ set -e
 red_bg=$'\033[41m'
 white_fg=$'\033[37;1m'
 reset=$'\033[0m'
-if [ "$sg_in_path" != "$GOBIN/sg" ]; then
+if [ "$sg_in_path" != "$target" ]; then
   echo
   printf "  %s%sNOTE: this is NOT on your \$PATH.%s" "$red_bg" "$white_fg" "$reset"
   if [ -n "${sg_in_path}" ]; then
     echo "  running sg will run '$sg_in_path' instead."
   fi
   echo
-  echo "  Consider adding $GOBIN to your \$PATH for easier"
+  echo "  Consider adding $(dirname "$target") to your \$PATH for easier"
   echo "  sg-ing!"
 fi
 

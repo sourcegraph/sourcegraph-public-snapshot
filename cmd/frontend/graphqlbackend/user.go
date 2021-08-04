@@ -29,6 +29,9 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 	case args.Username != nil:
 		user, err := database.Users(r.db).GetByUsername(ctx, *args.Username)
 		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return NewUserResolver(r.db, user), nil
@@ -43,6 +46,9 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 		}
 		user, err := database.Users(r.db).GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return NewUserResolver(r.db, user), nil

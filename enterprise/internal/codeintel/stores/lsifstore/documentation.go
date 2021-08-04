@@ -295,21 +295,10 @@ func (s *Store) DocumentationDefinitions(ctx context.Context, bundleID int, path
 	}
 	extractor := func(r semantic.RangeData) semantic.ID { return r.DefinitionResultID }
 	operation := s.operations.documentationDefinitions
-	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, pathID, resultID, limit, offset)
+	return s.documentationDefinitions(ctx, extractor, operation, bundleID, pathID, resultID, limit, offset)
 }
 
-// DocumentationReferences returns the set of locations referencing the symbol found at the given path ID, if any.
-func (s *Store) DocumentationReferences(ctx context.Context, bundleID int, pathID string, limit, offset int) (_ []Location, _ int, err error) {
-	resultID, err := s.documentationPathIDToID(ctx, bundleID, pathID)
-	if resultID == "" || err != nil {
-		return nil, 0, err
-	}
-	extractor := func(r semantic.RangeData) semantic.ID { return r.ReferenceResultID }
-	operation := s.operations.documentationReferences
-	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, pathID, resultID, limit, offset)
-}
-
-func (s *Store) documentationDefinitionsReferences(
+func (s *Store) documentationDefinitions(
 	ctx context.Context,
 	extractor func(r semantic.RangeData) semantic.ID,
 	operation *observation.Operation,

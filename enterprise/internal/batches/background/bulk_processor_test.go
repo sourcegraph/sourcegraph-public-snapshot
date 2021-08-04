@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestBulkProcessor(t *testing.T) {
@@ -22,7 +23,7 @@ func TestBulkProcessor(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 	tx := dbtest.NewTx(t, db)
-	bstore := store.New(tx, nil)
+	bstore := store.New(tx, &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := repos[0]
@@ -53,6 +54,33 @@ func TestBulkProcessor(t *testing.T) {
 		err := bp.process(ctx, job)
 		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
 			t.Fatalf("unexpected error returned %s", err)
+		}
+	})
+
+	t.Run("changeset is processing", func(t *testing.T) {
+		processingChangeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
+			Repo:                repo.ID,
+			BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+			Metadata:            &github.PullRequest{},
+			ExternalServiceType: extsvc.TypeGitHub,
+			CurrentSpec:         changesetSpec.ID,
+			ReconcilerState:     btypes.ReconcilerStateProcessing,
+		})
+
+		job := &types.ChangesetJob{
+			// JobType doesn't matter but we need one for database validation
+			JobType:     types.ChangesetJobTypeComment,
+			ChangesetID: processingChangeset.ID,
+			UserID:      user.ID,
+		}
+		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		bp := &bulkProcessor{tx: bstore}
+		err := bp.process(ctx, job)
+		if err != changesetIsProcessingErr {
+			t.Fatalf("unexpected error. want=%s, got=%s", changesetIsProcessingErr, err)
 		}
 	})
 
@@ -231,20 +259,6 @@ func TestBulkProcessor(t *testing.T) {
 						ReconcilerState: btypes.ReconcilerStateCompleted,
 					},
 					wantRetryable: false,
-				},
-				"processing": {
-					spec: &ct.TestSpecOpts{
-						User:      user.ID,
-						Repo:      repo.ID,
-						BatchSpec: batchSpec.ID,
-						HeadRef:   "main",
-					},
-					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						ReconcilerState: btypes.ReconcilerStateProcessing,
-					},
-					wantRetryable: true,
 				},
 			} {
 				t.Run(name, func(t *testing.T) {
