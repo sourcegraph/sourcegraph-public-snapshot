@@ -390,7 +390,7 @@ function search({
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
-            ['display', '500'],
+            ['display', '1500'],
         ]
         if (versionContext) {
             parameters.push(['vc', versionContext])
