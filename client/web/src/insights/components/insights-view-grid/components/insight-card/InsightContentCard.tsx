@@ -45,7 +45,6 @@ export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<H
      * Deleting handler fires when the user clicks delete in the insight menu.
      */
     onDelete?: (id: string) => void
-
 }
 
 /**
@@ -102,8 +101,8 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
                             {subtitle && <div className={styles.insightCardSubtitle}>{subtitle}</div>}
                         </div>
 
-                        <div className='align-self-start d-flex align-items-center'>
-                            { actions }
+                        <div className="align-self-start d-flex align-items-center">
+                            {actions}
                             {hasMenu && (
                                 <InsightCardMenu
                                     menuButtonClassName="ml-1 mr-n2 d-inline-flex"
@@ -112,7 +111,6 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
                                 />
                             )}
                         </div>
-
                     </header>
                 )}
 

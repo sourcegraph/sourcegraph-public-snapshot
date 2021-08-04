@@ -1,7 +1,9 @@
 import classnames from 'classnames'
-import DatabaseIcon from 'mdi-react/DatabaseIcon';
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon';
-import React, { useCallback, useContext } from 'react'
+import DatabaseIcon from 'mdi-react/DatabaseIcon'
+import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
+import React, { useCallback, useContext, useRef } from 'react'
+import FocusLock from 'react-focus-lock'
+import { UncontrolledPopover } from 'reactstrap'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -19,6 +21,7 @@ import { InsightLoadingContent } from '../insight-card/components/insight-loadin
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 import styles from './BackendInsight.module.scss'
+import { DrillDownFiltersPanel } from './components/drill-down-filters/DrillDownFiltersPanel'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -26,13 +29,14 @@ interface BackendInsightProps
         PlatformContextProps<'updateSettings'>,
         React.HTMLAttributes<HTMLElement> {
     insight: SearchBackendBasedInsight
+    drilldown?: boolean
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, ...otherProps } = props
+    const { telemetryService, insight, platformContext, settingsCascade, drilldown, ...otherProps } = props
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
     const { data, loading, error } = useParallelRequests(
@@ -48,7 +52,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
-            actions={<FilterButton active={true}/>}
+            actions={drilldown && <DrillDownFilters active={true} />}
             telemetryService={telemetryService}
             onDelete={handleDelete}
             {...otherProps}
@@ -61,11 +65,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                     icon={DatabaseIcon}
                 />
             ) : isErrorLike(error) ? (
-                <InsightErrorContent
-                    error={error}
-                    title={insight.id}
-                    icon={DatabaseIcon}
-                />
+                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon} />
             ) : (
                 data && (
                     <InsightViewContent
@@ -85,24 +85,38 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     )
 }
 
-interface FilterButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface DrillDownFiltersProps {
     active?: boolean
 }
 
-const FilterButton: React.FunctionComponent<FilterButtonProps> = props => {
-    const { active, ...otherProps } = props
+const DrillDownFilters: React.FunctionComponent<DrillDownFiltersProps> = props => {
+    const { active } = props
+    const targetButtonReference = useRef<HTMLButtonElement>(null)
 
     return (
-        <button
-            {...otherProps}
-            type='button'
-            className={classnames(
-                'btn btn-icon btn-secondary rounded-circle p-1',
-                styles.filterButton,
-                { [styles.filterButtonActive]: active })
-            }>
+        <>
+            <button
+                ref={targetButtonReference}
+                type="button"
+                className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
+                    [styles.filterButtonActive]: active,
+                })}
+            >
+                <FilterOutlineIcon size="1rem" />
+            </button>
 
-            <FilterOutlineIcon size='1rem'/>
-        </button>
+            <UncontrolledPopover
+                placement="right-start"
+                target={targetButtonReference}
+                trigger="legacy"
+                hideArrow={true}
+                fade={false}
+                popperClassName="border-0"
+            >
+                <FocusLock returnFocus={true}>
+                    <DrillDownFiltersPanel className={classnames(styles.filterPanel)} />
+                </FocusLock>
+            </UncontrolledPopover>
+        </>
     )
 }

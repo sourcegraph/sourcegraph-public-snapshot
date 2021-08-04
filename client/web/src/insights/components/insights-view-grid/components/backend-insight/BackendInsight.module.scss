@@ -1,3 +1,4 @@
+@import '~@reach/menu-button/styles.css';
 
 .filter-button {
     position: relative;
@@ -16,4 +17,13 @@
             transform: translate(-100%, -100%);
         }
     }
+}
+
+.filter-panel {
+    // class .dropdown-menu brings absolute position and this breaks
+    // the menu positioning in a portal because of it we reset position
+    // to static explicitly
+    position: static;
+    max-width: 32rem;
+    display: block;
 }

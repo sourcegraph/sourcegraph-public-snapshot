@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import PuzzleIcon from 'mdi-react/PuzzleIcon';
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useContext, useMemo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -56,11 +56,7 @@ export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = 
                     icon={PuzzleIcon}
                 />
             ) : isErrorLike(data.view) ? (
-                <InsightErrorContent
-                    error={data.view}
-                    title={viewId}
-                    icon={PuzzleIcon}
-                />
+                <InsightErrorContent error={data.view} title={viewId} icon={PuzzleIcon} />
             ) : (
                 data.view && (
                     <InsightViewContent
