@@ -33,7 +33,6 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
         caretPosition,
     })
     const { searchValue, suggestions } = useRepoSuggestions({
-        excludedItems: repositories,
         search,
         disable: !panel,
     })
