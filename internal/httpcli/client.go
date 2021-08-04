@@ -378,12 +378,12 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		status := 0
 
 		defer func() {
-			if !retry {
+			if retry || a.Error == nil {
 				return
 			}
 
 			log15.Error(
-				"retrying HTTP request",
+				"retrying HTTP request failed",
 				"attempt", a.Index,
 				"method", a.Request.Method,
 				"url", a.Request.URL,
@@ -457,8 +457,9 @@ func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
 	return func(attempt rehttp.Attempt) time.Duration {
 		exp := math.Pow(2, float64(attempt.Index))
 		top := float64(base) * exp
+		n := int64(math.Min(float64(max), top))
 		mu.Lock()
-		delay := prng.Int63n(int64(math.Min(float64(max), top)))
+		delay := prng.Int63n(n)
 		mu.Unlock()
 		return time.Duration(delay)
 	}
