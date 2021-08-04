@@ -7,9 +7,9 @@ This document describes the exact changes needed to update a single-node Sourceg
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, refer to the [standard upgrade procedure](../install/docker-compose/operations.md#standard-upgrade-procedure) to upgrade your instance.
 
-## 3.29 -> 3.30.2
+## 3.29 -> 3.30.3
 
-**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.2. If you have upgraded to 3.30.0 and 3.30.1 please reach out to support@sourcegraph.com for assistance**
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
 
 ## Standard upgrade procedure
 
@@ -59,6 +59,8 @@ You can always find the version number of the latest release at [docs.sourcegrap
   - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
 
 ## 3.20 -> 3.21
+
+- A [bug](https://github.com/sourcegraph/customer/issues/144) exists in the version requiring upgrade from a patch release. **When upgrading please upgrade from v3.20.0 -> v3.20.1 -> v3.21.x**
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 

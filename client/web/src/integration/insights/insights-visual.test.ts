@@ -75,8 +75,16 @@ describe('[VISUAL] Code insights page', () => {
              * mock data - mocking extension work.
              * */
             userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {},
-                'searchInsights.insight.teamSize': {},
+                'searchInsights.insight.graphQLTypesMigration': {
+                    title: 'The First search-based insight',
+                    repositories: [],
+                    series: [],
+                },
+                'searchInsights.insight.teamSize': {
+                    title: 'The Second search-based insight',
+                    repositories: [],
+                    series: [],
+                },
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},
                 },
@@ -108,8 +116,16 @@ describe('[VISUAL] Code insights page', () => {
              * mock data - mocking extension work.
              * */
             userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {},
-                'searchInsights.insight.teamSize': {},
+                'searchInsights.insight.graphQLTypesMigration': {
+                    title: 'The First search-based insight',
+                    repositories: [],
+                    series: [],
+                },
+                'searchInsights.insight.teamSize': {
+                    title: 'The Second search-based insight',
+                    repositories: [],
+                    series: [],
+                },
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},
                 },
@@ -141,8 +157,16 @@ describe('[VISUAL] Code insights page', () => {
              * mock data - mocking extension work.
              * */
             userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {},
-                'searchInsights.insight.teamSize': {},
+                'searchInsights.insight.graphQLTypesMigration': {
+                    title: 'The First search-based insight',
+                    repositories: [],
+                    series: [],
+                },
+                'searchInsights.insight.teamSize': {
+                    title: 'The Second search-based insight',
+                    repositories: [],
+                    series: [],
+                },
                 'codeStatsInsights.insight.langUsage': {},
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},

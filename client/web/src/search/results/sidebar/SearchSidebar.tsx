@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 
@@ -19,6 +19,7 @@ import { getQuickLinks } from './QuickLink'
 import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
+import { getSearchTypeLinks } from './SearchTypeLink'
 
 const SEARCH_SIDEBAR_VISIBILITY_KEY = 'SearchProduct.SearchSidebar.Visibility'
 
@@ -96,9 +97,22 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [persistToggleState, props.telemetryService]
     )
 
+    const repoFilterLinks = useMemo(() => getRepoFilterLinks(props.filters, onDynamicFilterClicked), [
+        props.filters,
+        onDynamicFilterClicked,
+    ])
+
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Search Types"
+                    open={openSections[SectionID.SEARCH_TYPES] ?? true}
+                    onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
+                >
+                    {getSearchTypeLinks(props)}
+                </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
                     header="Search reference"
@@ -122,8 +136,14 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     open={openSections[SectionID.REPOSITORIES] ?? true}
                     onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
                     showSearch={true}
+                    noResultText={
+                        <span>
+                            None of the top {repoFilterLinks.length} repositories in your results match this filter. Try
+                            a <code>repo:</code> search in the main search bar instead.
+                        </span>
+                    }
                 >
-                    {getRepoFilterLinks(props.filters, onDynamicFilterClicked)}
+                    {repoFilterLinks}
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}

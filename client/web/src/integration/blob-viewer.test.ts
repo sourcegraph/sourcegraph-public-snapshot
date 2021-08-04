@@ -90,6 +90,59 @@ describe('Blob viewer', () => {
         })
     })
 
+    describe('line number redirects', () => {
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonBlobGraphQlResults,
+                Blob: () => ({
+                    repository: {
+                        commit: {
+                            file: {
+                                content: '// Log to console\nconsole.log("Hello world")\n// Third line',
+                                richHTML: '',
+                                highlight: {
+                                    aborted: false,
+                                    html:
+                                        // Note: whitespace in this string is significant.
+                                        '<table class="test-log-token"><tbody><tr><td class="line" data-line="1"/>' +
+                                        '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
+                                        'Log to console\n</span></span></td></tr>' +
+                                        '<tr><td class="line" data-line="2"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<span class="hl-meta hl-function-call hl-method hl-js">' +
+                                        '<span class="hl-support hl-type hl-object hl-console hl-js">console</span>' +
+                                        '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
+                                        '<span class="hl-support hl-function hl-console hl-js test-log-token">log</span>' +
+                                        '<span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js">(</span>' +
+                                        '<span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>Hello world' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
+                                        '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>\n</span></span></td></tr>' +
+                                        '<tr><td class="line" data-line="3"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
+                                        '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
+                                        'Third line\n</span></span></td></tr></tbody></table>',
+                                },
+                            },
+                        },
+                    },
+                }),
+            })
+        })
+
+        it('should redirect from line number hash to query parameter', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#2`)
+            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L2`)
+        })
+
+        it('should redirect from line range hash to query parameter', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#1-3`)
+            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L1-3`)
+        })
+    })
+
     // Describes the ways the blob viewer can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
         const getHoverContents = async (): Promise<string[]> => {

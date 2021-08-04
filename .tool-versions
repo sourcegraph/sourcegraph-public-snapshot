@@ -5,4 +5,3 @@ shfmt 3.2.0
 shellcheck 0.7.1
 kubectl 1.17.3
 github-cli 1.8.0
-nodejs 14.15.4

@@ -11,6 +11,7 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestSSHMigrator(t *testing.T) {
@@ -20,7 +21,7 @@ func TestSSHMigrator(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
-	cstore := store.New(db, et.TestKey{})
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	migrator := &sshMigrator{cstore}
 	progress, err := migrator.Progress(ctx)

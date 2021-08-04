@@ -77,13 +77,11 @@ loop:
 			log15.Error("Failed to reset stalled records", "name", r.options.Name, "error", err)
 		}
 
-		now := time.Now()
-
-		for id, lastHeartbeatTimestamp := range resetLastHeartbeatsByIDs {
-			log15.Warn("Reset stalled record back to 'queued' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
+		for id, lastHeartbeatAge := range resetLastHeartbeatsByIDs {
+			log15.Warn("Reset stalled record back to 'queued' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
 		}
-		for id, lastHeartbeatTimestamp := range failedLastHeartbeatsByIDs {
-			log15.Warn("Reset stalled record to 'failed' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", now.Sub(lastHeartbeatTimestamp))
+		for id, lastHeartbeatAge := range failedLastHeartbeatsByIDs {
+			log15.Warn("Reset stalled record to 'failed' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
 		}
 
 		r.options.Metrics.RecordResets.Add(float64(len(resetLastHeartbeatsByIDs)))

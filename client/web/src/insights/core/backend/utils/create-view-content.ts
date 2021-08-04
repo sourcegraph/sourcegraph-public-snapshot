@@ -12,6 +12,8 @@ export function createViewContent(
             if (!dataObject) {
                 dataObject = {
                     dateTime: Date.parse(point.dateTime),
+                    // Initialize all series to null (empty chart) value
+                    ...Object.fromEntries(insight.series.map((series, index) => [`series${index}`, null])),
                 }
                 dataByXValue.set(point.dateTime, dataObject)
             }

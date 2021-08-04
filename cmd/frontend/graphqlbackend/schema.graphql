@@ -6363,9 +6363,9 @@ type ExecutionLogEntry {
     startTime: DateTime!
 
     """
-    The exit code of the command.
+    The exit code of the command. Null, if the command has not finished yet.
     """
-    exitCode: Int!
+    exitCode: Int
 
     """
     The combined stdout and stderr logs of the command.
@@ -6373,7 +6373,7 @@ type ExecutionLogEntry {
     out: String!
 
     """
-    The duration in milliseconds of the command.
+    The duration in milliseconds of the command. Null, if the command has not finished yet.
     """
-    durationMilliseconds: Int!
+    durationMilliseconds: Int
 }

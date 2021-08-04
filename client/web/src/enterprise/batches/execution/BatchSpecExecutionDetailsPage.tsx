@@ -122,7 +122,7 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ ex
         () => [
             { icon: <TimerSandIcon />, text: 'Queued', date: execution.createdAt, className: 'bg-success' },
             {
-                icon: <ProgressClockIcon />,
+                icon: <CheckIcon />,
                 text: 'Began processing',
                 date: execution.startedAt,
                 className: 'bg-success',
@@ -176,16 +176,17 @@ const teardownStage = (execution: BatchSpecExecutionFields, now?: () => Date): T
               ...genericStage(execution.steps.teardown),
           }
 
-const genericStage = <E extends { startTime: string; exitCode: number }>(
+const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     value: E | E[]
 ): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
+    const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
     const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
-        icon: success ? <CheckIcon /> : <ErrorIcon />,
+        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
         date: isArray(value) ? value[0].startTime : value.startTime,
-        className: success ? 'bg-success' : 'bg-danger',
-        expanded: !success,
+        className: success || !finished ? 'bg-success' : 'bg-danger',
+        expanded: !(success || !finished),
     }
 }
 

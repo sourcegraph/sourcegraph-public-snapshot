@@ -48,7 +48,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { InsightsApiContext, InsightsViewGrid } from '../../insights'
+import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
@@ -462,7 +462,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
                         {views && (
-                            <InsightsViewGrid
+                            <StaticInsightsViewGrid
                                 telemetryService={props.telemetryService}
                                 className="tree-page__section mb-3"
                                 views={views}

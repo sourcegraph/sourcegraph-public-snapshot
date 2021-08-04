@@ -14,13 +14,14 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestSiteCredentialMigrator(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 
-	cstore := store.New(db, et.TestKey{})
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	migrator := &siteCredentialMigrator{cstore, true}
 	a := &auth.BasicAuth{Username: "foo", Password: "bar"}

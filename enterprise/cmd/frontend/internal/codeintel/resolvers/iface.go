@@ -55,7 +55,6 @@ type LSIFStore interface {
 	DocumentationPage(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPageData, error)
 	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPathInfoData, error)
 	DocumentationDefinitions(ctx context.Context, bundleID int, pathID string, limit, offset int) ([]lsifstore.Location, int, error)
-	DocumentationReferences(ctx context.Context, bundleID int, pathID string, limit, offset int) ([]lsifstore.Location, int, error)
 	DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) ([]string, error)
 }
 

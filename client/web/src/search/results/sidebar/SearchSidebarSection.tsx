@@ -14,7 +14,11 @@ export const SearchSidebarSection: React.FunctionComponent<{
     showSearch?: boolean // Search only works if children are FilterLink
     onToggle?: (open: boolean) => void
     open?: boolean
-}> = ({ header, children = [], className, showSearch = false, onToggle, open }) => {
+    /**
+     * Shown when the built-in search doesn't find any results.
+     */
+    noResultText?: React.ReactElement | string
+}> = ({ header, children = [], className, showSearch = false, onToggle, open, noResultText = 'No results' }) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
@@ -50,7 +54,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                         <li key={child.key || index}>{child}</li>
                     ))}
                     {filteredChildren.length === 0 && (
-                        <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
+                        <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>{noResultText}</li>
                     )}
                 </ul>
             </>
