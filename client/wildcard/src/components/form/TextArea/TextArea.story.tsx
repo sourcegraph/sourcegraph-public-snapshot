@@ -47,14 +47,14 @@ export const TextAreaExamples: React.FunctionComponent = () => {
                     <TextArea
                         onChange={handleChange}
                         value={value}
-                        title="Standard example"
+                        label="Standard example"
                         placeholder="Please type here..."
                     />
                 </div>
                 <div>
                     <TextArea
                         value=""
-                        title="Disabled example"
+                        label="Disabled example"
                         disabled={true}
                         message="This is helper text as needed."
                         placeholder="Please type here..."
@@ -65,7 +65,7 @@ export const TextAreaExamples: React.FunctionComponent = () => {
                         onChange={handleChange}
                         isError={true}
                         value={value}
-                        title="Error example"
+                        label="Error example"
                         message="show an error message"
                         placeholder="Please type here..."
                     />
@@ -74,7 +74,7 @@ export const TextAreaExamples: React.FunctionComponent = () => {
                     <TextArea
                         onChange={handleChange}
                         value={value}
-                        title="Small example"
+                        label="Small example"
                         placeholder="Please type here..."
                         size="small"
                     />

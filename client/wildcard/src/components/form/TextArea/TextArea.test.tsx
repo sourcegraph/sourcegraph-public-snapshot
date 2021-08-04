@@ -14,16 +14,10 @@ describe('TextArea', () => {
             <label
               class="w-100"
             >
-              <div
-                class="mb-2"
-              >
-                <small>
-                  TextArea loading
-                </small>
-              </div>
               <textarea
                 class="textarea form-control"
                 placeholder="TextArea"
+                title="TextArea loading"
               />
               <small
                 class="text-muted form-text"

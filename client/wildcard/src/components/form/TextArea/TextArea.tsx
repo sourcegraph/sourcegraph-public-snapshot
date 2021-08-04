@@ -5,7 +5,7 @@ import styles from './TextArea.module.scss'
 
 export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
     /** Title of textarea. Used as label */
-    title?: string
+    label?: string
     /** Description block shown below the textarea. */
     message?: ReactNode
     /** Custom class name for root label element. */
@@ -23,11 +23,11 @@ export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
  */
 export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<HTMLTextAreaElement>> = forwardRef(
     (props, reference) => {
-        const { title, message, className, disabled, isError, size, ...otherProps } = props
+        const { label, message, className, disabled, isError, size, ...otherProps } = props
 
         return (
             <label className={classnames('w-100', className)}>
-                {title && <div className="mb-2">{size === 'regular' ? title : <small>{title}</small>}</div>}
+                {label && <div className="mb-2">{size === 'regular' ? label : <small>{label}</small>}</div>}
 
                 <textarea
                     disabled={disabled}
