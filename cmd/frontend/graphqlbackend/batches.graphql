@@ -2623,7 +2623,7 @@ type BatchSpec implements Node {
         more than once in the array, or if a changeset spec ID returned within
         this page has a publication state set in its spec.
 
-        Note: Unlike createBatchChange(), this method will not validate the
+        Note: Unlike createBatchChange(), this query will not validate the
         entire set of changeset specs, as they may not all be loaded on the
         current page.
         """
