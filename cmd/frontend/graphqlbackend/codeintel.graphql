@@ -185,7 +185,7 @@ extend type GitTree {
         An optional filter for the name of the tool that produced the upload data.
         """
         toolName: String
-    ): TreeEntryLSIFData
+    ): GitTreeLSIFData
 }
 
 extend type GitBlob {
@@ -202,8 +202,8 @@ extend type GitBlob {
 }
 
 """
-LSIF data available for a tree entry (file OR directory, see GitBlob for file-specific resolvers
-and GitTree for directory-specific resolvers.)
+LSIF data available for a tree entry (file OR directory, see GitBlobLSIFData for file-specific
+resolvers and GitTreeLSIFData for directory-specific resolvers.)
 """
 interface TreeEntryLSIFData {
     """
@@ -292,8 +292,15 @@ interface TreeEntryLSIFData {
 }
 
 """
-A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
-null, no LSIF data is available for containing git blob.
+A wrapper object around LSIF query methods for a particular git-tree-at-revision. When this node is
+null, no LSIF data is available for the git tree in question.
+"""
+type GitTreeLSIFData implements TreeEntryLSIFData {
+}
+
+"""
+A wrapper object around LSIF query methods for a particular git-blob-at-revision. When this node is
+null, no LSIF data is available for the git blob in question.
 """
 type GitBlobLSIFData implements TreeEntryLSIFData {
     """
