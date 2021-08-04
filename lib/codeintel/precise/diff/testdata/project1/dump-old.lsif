@@ -1,6 +1,6 @@
 {"id":1,"type":"vertex","label":"metaData","version":"0.4.3","projectRoot":"file:///home/arrow/sourcegraph/sourcegraph","positionEncoding":"utf-16","toolInfo":{"name":"lsif-go","version":"dev","args":["--module-root=/home/arrow/sourcegraph/sourcegraph/lib"]}}
 {"id":2,"type":"vertex","label":"project","kind":"go"}
-{"id":3,"type":"vertex","label":"document","uri":"file:///home/arrow/sourcegraph/sourcegraph/lib/codeintel/semantic/diff/testdata/project1/test.go","languageId":"go"}
+{"id":3,"type":"vertex","label":"document","uri":"file:///home/arrow/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1/test.go","languageId":"go"}
 {"id":4,"type":"vertex","label":"range","start":{"line":4,"character":25},"end":{"line":4,"character":29}}
 {"id":5,"type":"vertex","label":"resultSet"}
 {"id":6,"type":"vertex","label":"definitionResult"}
@@ -17,7 +17,7 @@
 {"id":17,"type":"edge","label":"item","outV":14,"inVs":[12],"document":3}
 {"id":18,"type":"vertex","label":"hoverResult","result":{"contents":[{"language":"go","value":"struct field Field1 int"}]}}
 {"id":20,"type":"vertex","label":"packageInformation","name":"github.com/sourcegraph/sourcegraph/lib","manager":"gomod","version":"v3.25.0-3f0a00693ea0"}
-{"id":21,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic/diff/testdata/project1:Struct1.Field1"}
+{"id":21,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Struct1.Field1"}
 {"id":22,"type":"edge","label":"packageInformation","outV":21,"inV":20}
 {"id":24,"type":"vertex","label":"range","start":{"line":11,"character":1},"end":{"line":11,"character":7}}
 {"id":25,"type":"vertex","label":"resultSet"}
@@ -46,7 +46,7 @@
 {"id":49,"type":"edge","label":"item","outV":46,"inVs":[44],"document":3}
 {"id":50,"type":"vertex","label":"hoverResult","result":{"contents":[{"language":"go","value":"func Function1(arg1 int, arg2 int) string"}]}}
 {"id":51,"type":"edge","label":"textDocument/hover","outV":45,"inV":50}
-{"id":52,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic/diff/testdata/project1:Function1"}
+{"id":52,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Function1"}
 {"id":53,"type":"edge","label":"packageInformation","outV":52,"inV":20}
 {"id":54,"type":"edge","label":"moniker","outV":45,"inV":52}
 {"id":55,"type":"vertex","label":"range","start":{"line":4,"character":15},"end":{"line":4,"character":19}}
@@ -65,7 +65,7 @@
 {"id":68,"type":"edge","label":"item","outV":65,"inVs":[63],"document":3}
 {"id":69,"type":"vertex","label":"hoverResult","result":{"contents":[{"language":"go","value":"type Struct1 struct"},{"language":"go","value":"struct {\n    Field1 int\n    Field2 *Struct1\n    field3 string\n}"}]}}
 {"id":70,"type":"edge","label":"textDocument/hover","outV":64,"inV":69}
-{"id":71,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic/diff/testdata/project1:Struct1"}
+{"id":71,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Struct1"}
 {"id":72,"type":"edge","label":"packageInformation","outV":71,"inV":20}
 {"id":73,"type":"edge","label":"moniker","outV":64,"inV":71}
 {"id":74,"type":"vertex","label":"range","start":{"line":10,"character":1},"end":{"line":10,"character":7}}
@@ -74,9 +74,9 @@
 {"id":77,"type":"edge","label":"next","outV":74,"inV":75}
 {"id":78,"type":"edge","label":"textDocument/definition","outV":75,"inV":76}
 {"id":79,"type":"edge","label":"item","outV":76,"inVs":[74],"document":3}
-{"id":80,"type":"vertex","label":"hoverResult","result":{"contents":[{"language":"go","value":"struct field Field2 *github.com/sourcegraph/sourcegraph/lib/codeintel/semantic/diff/testdata/project1.Struct1"}]}}
+{"id":80,"type":"vertex","label":"hoverResult","result":{"contents":[{"language":"go","value":"struct field Field2 *github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1.Struct1"}]}}
 {"id":81,"type":"edge","label":"textDocument/hover","outV":75,"inV":80}
-{"id":82,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic/diff/testdata/project1:Struct1.Field2"}
+{"id":82,"type":"vertex","label":"moniker","kind":"export","scheme":"gomod","identifier":"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Struct1.Field2"}
 {"id":83,"type":"edge","label":"packageInformation","outV":82,"inV":20}
 {"id":84,"type":"edge","label":"moniker","outV":75,"inV":82}
 {"id":85,"type":"vertex","label":"range","start":{"line":5,"character":24},"end":{"line":5,"character":28}}
