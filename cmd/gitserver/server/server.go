@@ -850,7 +850,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				}
 
 				if traceID := trace.ID(ctx); traceID != "" {
-					ev.AddField("traceid", traceID)
+					ev.AddField("traceID", traceID)
 					ev.AddField("trace", trace.URL(traceID))
 				}
 
@@ -1083,7 +1083,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				}
 
 				if traceID := trace.ID(ctx); traceID != "" {
-					ev.AddField("traceid", traceID)
+					ev.AddField("traceID", traceID)
 					ev.AddField("trace", trace.URL(traceID))
 				}
 

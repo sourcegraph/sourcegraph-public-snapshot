@@ -220,7 +220,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			)
 
 			if traceID != "" {
-				kvs = append(kvs, "traceid", traceID)
+				kvs = append(kvs, "traceID", traceID)
 			}
 
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {

@@ -298,7 +298,7 @@ func createHoneyEvent(ctx context.Context, upload store.Upload, err error, durat
 	}
 	if traceID := trace.ID(ctx); traceID != "" {
 		fields["trace"] = trace.URL(traceID)
-		fields["traceid"] = traceID
+		fields["traceID"] = traceID
 	}
 
 	return honey.EventWithFields("codeintel-worker", fields)
