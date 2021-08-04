@@ -19,9 +19,7 @@ func rlimitCheck(ctx context.Context) (problem, fix string, err error) {
 	}
 
 	if limit.Cur < minLimit {
-		fix := fmt.Sprintf(`Please increase the open file limit by running "ulimit -n %d".`, minLimit)
-
-		fix = fmt.Sprintf("For Docker deployments, add --ulimit nofile=%d:%d to the docker run command", minLimit, minLimit)
+		fix := fmt.Sprintf(`Please increase the open file limit by running "ulimit -n %[1]d" or adding --ulimit nofile=%[1]d:%[1]d to the docker run command"`, minLimit)
 
 		return "Insufficient file descriptor limit", fix, nil
 	}
