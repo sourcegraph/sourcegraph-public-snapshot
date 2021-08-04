@@ -79,14 +79,7 @@ type bigQueryEvent struct {
 	PublicArguments *string `json:"argument,omitempty"`
 }
 
-// publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
-func publishSourcegraphDotComEvent(args Event) error {
-	if !envvar.SourcegraphDotComMode() {
-		return nil
-	}
-	if pubSubDotComEventsTopicID == "" {
-		return nil
-	}
+func createBigQueryEvent(args Event) (*bigQueryEvent, error) {
 	firstSourceURL := ""
 	if args.FirstSourceURL != nil {
 		firstSourceURL = *args.FirstSourceURL
@@ -97,7 +90,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 	}
 	featureFlagJSON, err := json.Marshal(args.FeatureFlags)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	event := bigQueryEvent{
@@ -119,6 +112,24 @@ func publishSourcegraphDotComEvent(args Event) error {
 		arguments := string(args.Argument)
 		event.PublicArguments = &arguments
 	}
+
+	return &event, nil
+}
+
+// publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
+func publishSourcegraphDotComEvent(args Event) error {
+	if !envvar.SourcegraphDotComMode() {
+		return nil
+	}
+	if pubSubDotComEventsTopicID == "" {
+		return nil
+	}
+
+	event, err := createBigQueryEvent(args)
+	if err != nil {
+		return err
+	}
+
 	bigqueryEventPayload, err := json.Marshal(event)
 	if err != nil {
 		return err
