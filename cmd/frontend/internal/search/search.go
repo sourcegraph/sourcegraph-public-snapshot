@@ -181,7 +181,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			display = match.Limit(display)
 		}
 
-		repoMetadata := getEventRepoMetadata(ctx, h.db, event)
+		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
+		if err != nil {
+			log15.Error("failed to get repo metadata", "error", err)
+			continue
+		}
 		for _, match := range event.Results {
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
@@ -381,7 +385,7 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]types.RepoMetadata) streamhttp.EventMatch {
+func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
 		return fromFileMatch(v, repoCache)
@@ -394,7 +398,7 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]types.RepoMetadata) 
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) streamhttp.EventMatch {
+func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
 	} else if len(fm.LineMatches) > 0 {
@@ -403,7 +407,7 @@ func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMeta
 	return fromPathMatch(fm, repoCache)
 }
 
-func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventPathMatch {
+func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventPathMatch {
 	pathEvent := &streamhttp.EventPathMatch{
 		Type:       streamhttp.PathMatchType,
 		Path:       fm.Path,
@@ -423,7 +427,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMeta
 	return pathEvent
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventContentMatch {
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -453,7 +457,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoM
 	return contentEvent
 }
 
-func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventSymbolMatch {
 	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
 	for _, sym := range fm.Symbols {
 		kind := sym.Symbol.LSPKind()
@@ -490,7 +494,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]types.RepoMe
 	return symbolMatch
 }
 
-func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventRepoMatch {
+func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
@@ -514,7 +518,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]types.RepoMet
 	return repoEvent
 }
 
-func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]types.RepoMetadata) *streamhttp.EventCommitMatch {
+func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
 	content := commit.Body.Value
 
 	highlights := commit.Body.Highlights

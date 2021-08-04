@@ -191,7 +191,7 @@ func TestSearchSuggestions(t *testing.T) {
 					Limit: 1,
 				},
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
+			if diff := cmp.Diff(have, want, cmp.AllowUnexported(database.ReposListOptions{})); diff != "" {
 				t.Error(diff)
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
@@ -203,7 +203,7 @@ func TestSearchSuggestions(t *testing.T) {
 					Limit: 1,
 				},
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
+			if diff := cmp.Diff(have, want, cmp.AllowUnexported(database.ReposListOptions{})); diff != "" {
 				t.Error(diff)
 			}
 			return []types.RepoName{{Name: "foo-repo"}}, nil

@@ -128,10 +128,10 @@ func TestDisplayLimit(t *testing.T) {
 				done: make(chan struct{}),
 			}
 
-			database.Mocks.Repos.Metadata = func(ctx context.Context, ids ...api2.RepoID) (_ []types.RepoMetadata, err error) {
-				res := make([]types.RepoMetadata, 0, len(ids))
+			database.Mocks.Repos.Metadata = func(ctx context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
+				res := make([]*types.SearchedRepo, 0, len(ids))
 				for _, id := range ids {
-					res = append(res, types.RepoMetadata{
+					res = append(res, &types.SearchedRepo{
 						ID: id,
 					})
 				}

@@ -67,8 +67,8 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 }
 
-// RepoMetadata is a collection of metadata about repos that is used to decorate search results
-type RepoMetadata struct {
+// SearchedRepo is a collection of metadata about repos that is used to decorate search results
+type SearchedRepo struct {
 	// ID is the unique numeric ID for this repository.
 	ID api.RepoID
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
