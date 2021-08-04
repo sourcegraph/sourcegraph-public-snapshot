@@ -21,6 +21,7 @@ ensuring you have prepared the items below to ensure you're ready to start your 
  - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
  - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
+> WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact.
 ### Steps
 
 1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
