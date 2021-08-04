@@ -34,7 +34,7 @@ func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (
 
 func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.Factory, au auth.Authenticator) (*BitbucketServerSource, error) {
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.ExternalClientFactory
 	}
 
 	var opts []httpcli.Opt

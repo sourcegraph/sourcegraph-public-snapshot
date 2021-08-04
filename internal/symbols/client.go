@@ -14,11 +14,11 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -26,19 +26,19 @@ import (
 
 var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
 
+var defaultDoer = func() httpcli.Doer {
+	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
+	if err != nil {
+		panic(err)
+	}
+	return d
+}()
+
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
-	URL: symbolsURL,
-	HTTPClient: &http.Client{
-		// ot.Transport will propagate opentracing spans
-		Transport: &ot.Transport{
-			RoundTripper: &http.Transport{
-				// Default is 2, but we can send many concurrent requests
-				MaxIdleConnsPerHost: 500,
-			},
-		},
-	},
+	URL:         symbolsURL,
+	HTTPClient:  defaultDoer,
 	HTTPLimiter: parallel.NewRun(500),
 }
 
@@ -48,7 +48,7 @@ type Client struct {
 	URL string
 
 	// HTTP client to use
-	HTTPClient *http.Client
+	HTTPClient httpcli.Doer
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
@@ -95,14 +95,24 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (res
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, errors.Errorf("Symbol.Search http status %d for %+v: %s", resp.StatusCode, resp.StatusCode, string(body))
+		return nil, errors.Errorf(
+			"Symbol.Search http status %d for %+v: %s",
+			resp.StatusCode,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	return result, err
 }
 
-func (c *Client) httpPost(ctx context.Context, method string, key key, payload interface{}) (resp *http.Response, err error) {
+func (c *Client) httpPost(
+	ctx context.Context,
+	method string,
+	key key,
+	payload interface{},
+) (resp *http.Response, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost")
 	defer func() {
 		if err != nil {
@@ -145,8 +155,5 @@ func (c *Client) httpPost(ctx context.Context, method string, key key, payload i
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	// Do not lose the context returned by TraceRequest
-	ctx = req.Context()
-
-	return ctxhttp.Do(ctx, c.HTTPClient, req)
+	return c.HTTPClient.Do(req)
 }

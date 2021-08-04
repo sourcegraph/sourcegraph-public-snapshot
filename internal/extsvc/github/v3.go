@@ -82,7 +82,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		cli = disabledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer()
+		cli = httpcli.ExternalDoer
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {

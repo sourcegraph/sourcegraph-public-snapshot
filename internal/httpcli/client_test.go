@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PuerkitoBio/rehttp"
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func TestHeadersMiddleware(t *testing.T) {
@@ -278,7 +278,7 @@ func TestNewTimeoutOpt(t *testing.T) {
 	}
 }
 
-func TestExternalHTTPClientErrorResilience(t *testing.T) {
+func TestErrorResilience(t *testing.T) {
 	failures := int64(5)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		status := 0
@@ -298,7 +298,6 @@ func TestExternalHTTPClientErrorResilience(t *testing.T) {
 		w.WriteHeader(status)
 	}))
 
-	rcache.SetupForTest(t)
 	t.Cleanup(srv.Close)
 
 	req, err := http.NewRequest("GET", srv.URL, nil)
@@ -306,7 +305,17 @@ func TestExternalHTTPClientErrorResilience(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res, err := ExternalDoer().Do(req)
+	cli, _ := NewFactory(
+		NewMiddleware(
+			ContextErrorMiddleware,
+		),
+		NewErrorResilientTransportOpt(
+			NewRetryPolicy(20),
+			rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+		),
+	).Doer()
+
+	res, err := cli.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
