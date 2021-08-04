@@ -165,16 +165,20 @@ The following are two recommendations for installing these dependencies:
 
     # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
+    chmod +x migrate.linux-amd64
+    mv migrate.linux-amd64 /usr/local/bin/golang-migrate
 
     # install comby (you must rename the extracted binary to `comby` and move the binary into your $PATH)
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
+    chmod +x comby-*-linux
+    mv comby-*-linux /usr/local/bin/comby
 
     # install watchman (you must put the binary and shared libraries on your $PATH and $LD_LIBRARY_PATH)
     curl -LO https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
     unzip watchman-*-linux.zip
-    sudo mkdir -p /usr/local/{bin,lib} /usr/local/var/run/watchman
-    sudo cp bin/* /usr/local/bin
-    sudo cp lib/* /usr/local/lib
+    sudo mkdir -p /usr/local/var/run/watchman
+    sudo cp watchman-*-linux/bin/* /usr/local/bin
+    sudo cp watchman-*-linux/lib/* /usr/local/lib
     sudo chmod 755 /usr/local/bin/watchman
     sudo chmod 2777 /usr/local/var/run/watchman
     # On Linux, you may need to run the following in addition:
