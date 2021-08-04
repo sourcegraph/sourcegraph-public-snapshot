@@ -1,9 +1,9 @@
 import classnames from 'classnames'
-import React, { forwardRef, ForwardRefExoticComponent, InputHTMLAttributes, ReactNode, RefAttributes } from 'react'
+import React, { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, TextareaHTMLAttributes } from 'react'
 
 import styles from './TextArea.module.scss'
 
-export interface FormTextAreaProps extends InputHTMLAttributes<HTMLTextAreaElement> {
+export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
     /** Title of textarea. Used as label */
     title?: string
     /** Description block shown below the textarea. */
@@ -21,7 +21,7 @@ export interface FormTextAreaProps extends InputHTMLAttributes<HTMLTextAreaEleme
 /**
  * Displays a textarea with description, error message, visual invalid and valid states.
  */
-export const TextArea: ForwardRefExoticComponent<FormTextAreaProps & RefAttributes<HTMLTextAreaElement>> = forwardRef(
+export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<HTMLTextAreaElement>> = forwardRef(
     (props, reference) => {
         const { title, message, className, disabled, isError, size, ...otherProps } = props
 
