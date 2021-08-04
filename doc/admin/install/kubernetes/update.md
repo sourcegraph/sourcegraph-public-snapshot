@@ -20,7 +20,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
    ```bash
    cd $DEPLOY_SOURCEGRAPH_FORK
-   git fetch
+   git fetch upstream
    # to merge the upstream release tag into your release branch.
    git checkout release
    # Choose which version you want to deploy from https://github.com/sourcegraph/deploy-sourcegraph/releases

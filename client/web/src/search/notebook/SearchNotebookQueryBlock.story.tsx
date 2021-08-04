@@ -47,8 +47,10 @@ add('default', () => (
                 input="query"
                 output={of(streamingSearchResult)}
                 isSelected={false}
+                isReadOnly={false}
                 isOtherBlockSelected={false}
                 isMacPlatform={true}
+                sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
@@ -68,7 +70,31 @@ add('selected', () => (
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isOtherBlockSelected={false}
+                isReadOnly={false}
                 isMacPlatform={true}
+                sourcegraphSearchLanguageId="sourcegraphSearch"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
+                settingsCascade={EMPTY_SETTINGS_CASCADE}
+            />
+        )}
+    </WebStory>
+))
+
+add('read-only selected', () => (
+    <WebStory>
+        {props => (
+            <SearchNotebookQueryBlock
+                {...props}
+                {...noopBlockCallbacks}
+                id="query-block-1"
+                input="query"
+                output={of(streamingSearchResult)}
+                isSelected={true}
+                isReadOnly={true}
+                isOtherBlockSelected={false}
+                isMacPlatform={true}
+                sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}

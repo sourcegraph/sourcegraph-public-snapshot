@@ -37,6 +37,8 @@ describe('[VISUAL] Code insights page', () => {
     afterEach(() => testContext?.dispose())
 
     async function takeChartSnapshot(name: string): Promise<void> {
+        // Move mouse cursor away from charts to avoid chart tooltip appearance
+        await driver.page.mouse.move(0, 0)
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
         // Due to autosize of chart we have to wait 1s that window-resize be able
         // render chart with container size.
@@ -75,8 +77,16 @@ describe('[VISUAL] Code insights page', () => {
              * mock data - mocking extension work.
              * */
             userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {},
-                'searchInsights.insight.teamSize': {},
+                'searchInsights.insight.graphQLTypesMigration': {
+                    title: 'The First search-based insight',
+                    repositories: [],
+                    series: [],
+                },
+                'searchInsights.insight.teamSize': {
+                    title: 'The Second search-based insight',
+                    repositories: [],
+                    series: [],
+                },
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},
                 },
@@ -108,8 +118,16 @@ describe('[VISUAL] Code insights page', () => {
              * mock data - mocking extension work.
              * */
             userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {},
-                'searchInsights.insight.teamSize': {},
+                'searchInsights.insight.graphQLTypesMigration': {
+                    title: 'The First search-based insight',
+                    repositories: [],
+                    series: [],
+                },
+                'searchInsights.insight.teamSize': {
+                    title: 'The Second search-based insight',
+                    repositories: [],
+                    series: [],
+                },
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},
                 },
@@ -141,8 +159,16 @@ describe('[VISUAL] Code insights page', () => {
              * mock data - mocking extension work.
              * */
             userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {},
-                'searchInsights.insight.teamSize': {},
+                'searchInsights.insight.graphQLTypesMigration': {
+                    title: 'The First search-based insight',
+                    repositories: [],
+                    series: [],
+                },
+                'searchInsights.insight.teamSize': {
+                    title: 'The Second search-based insight',
+                    repositories: [],
+                    series: [],
+                },
                 'codeStatsInsights.insight.langUsage': {},
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},

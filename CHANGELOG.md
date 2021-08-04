@@ -15,22 +15,66 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Backend Code Insights GraphQL queries now support arguments `includeRepoRegex` and `excludeRepoRegex` to filter on repository names. [#23256](https://github.com/sourcegraph/sourcegraph/pull/23256)
+- Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
+- Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
+- Syntax highlighting support for the [Cue](https://cuelang.org) language.
+- Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170(
 
 ### Changed
 
+- Code Insights will now always backfill from the time the data series was created. [#23430](https://github.com/sourcegraph/sourcegraph/pull/23430)
+- Code Insights queries will now extract repository name out of the GraphQL response instead of going to the database. [#23388](https://github.com/sourcegraph/sourcegraph/pull/23388)
 - Code Insights backend has moved from the `repo-updater` service to the `worker` service. [#23050](https://github.com/sourcegraph/sourcegraph/pull/23050)
 - Code Insights feature flag `DISABLE_CODE_INSIGHTS` environment variable has moved from the `repo-updater` service to the `worker` service. Any users of this flag will need to update their `worker` service configuration to continue using it. [#23050](https://github.com/sourcegraph/sourcegraph/pull/23050)
+- Updated Docker-Compose Caddy Image to v2.0.0-alpine. [#468](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/468)
+- Code Insights historical samples will record using the timestamp of the commit that was searched. [#23520](https://github.com/sourcegraph/sourcegraph/pull/23520)
+- Authorization checks are now handled using role based permissions instead of manually altering SQL statements. [23398](https://github.com/sourcegraph/sourcegraph/pull/23398)
+- Docker Compose: the Jaeger container's `SAMPLING_STRATEGIES_FILE` now has a default value. If you are currently using a custom sampling strategies configuration, you may need to make sure your configuration is not overridden by the change when upgrading. [sourcegraph/deploy-sourcegraph#489](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/489)
+- Code Insights historical samples will record using the most recent commit to the start of the frame instead of the middle of the frame. [#23573](https://github.com/sourcegraph/sourcegraph/pull/23573)
 
 ### Fixed
 
--
+- The search reference will now show matching entries when using the filter input. [#23224](https://github.com/sourcegraph/sourcegraph/pull/23224)
+- Graceful termination periods have been added to database deployments. [#3358](https://github.com/sourcegraph/deploy-sourcegraph/pull/3358) & [#477](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/477)
+- All commit search results for `and`-expressions are now highlighted. [#23336](https://github.com/sourcegraph/sourcegraph/pull/23336)
 
 ### Removed
 
--
+- The old batch repository syncer was removed and can no longer be activated by setting `ENABLE_STREAMING_REPOS_SYNCER=false`. [#22949](https://github.com/sourcegraph/sourcegraph/pull/22949)
+- Email notifications for saved searches are now deprecated in favor of Code Monitoring. Email notifications can no longer be enabled for saved searches. Saved searches that already have notifications enabled will continue to work, but there is now a button users can click to migrate to code monitors. Notifications for saved searches will be removed entirely in the future. [#23275](https://github.com/sourcegraph/sourcegraph/pull/23275)
+
+## 3.30.3
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
+
+### Fixed
+
+- Codeintel-db database images have been reverted back to debian due to corruption caused by glibc and alpine. [23324](https://github.com/sourcegraph/sourcegraph/pull/23324)
+
+## 3.30.2
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
+
+### Fixed
+
+- Postgres database images have been reverted back to debian due to corruption caused by glibc and alpine. [23302](https://github.com/sourcegraph/sourcegraph/pull/23302)
+
+## 3.30.1
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
+
+### Fixed
+
+- An issue where the UI would occasionally display `lsifStore.Ranges: ERROR: relation \"lsif_documentation_mappings\" does not exist (SQLSTATE 42P01)` [#23115](https://github.com/sourcegraph/sourcegraph/pull/23115)
+- Fixed a vulnerability in our Postgres Alpine image related to libgcrypt [#23174](https://github.com/sourcegraph/sourcegraph/pull/23174)
+- When syncing in streaming mode, repo-updater will now ensure a repo's transaction is committed before notifying gitserver to update that repo. [#23169](https://github.com/sourcegraph/sourcegraph/pull/23169)
+- When encountering spurious errors during streaming syncing (like temporary 500s from codehosts), repo-updater will no longer delete all associated repos that weren't seen. Deletion will happen only if there were no errors or if the error was one of "Unauthorized", "Forbidden" or "Account Suspended". [#23171](https://github.com/sourcegraph/sourcegraph/pull/23171)
+- External HTTP requests are now automatically retried when appropriate. [#23131](https://github.com/sourcegraph/sourcegraph/pull/23131)
 
 ## 3.30.0
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
 
 ### Added
 
@@ -81,7 +125,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The experimental paginated search feature (the `stable:` keyword) has been removed, to be replaced with streaming search. [#22428](https://github.com/sourcegraph/sourcegraph/pull/22428)
 - The experimental extensions view page has been removed. [#22565](https://github.com/sourcegraph/sourcegraph/pull/22565)
 - A search query diagnostic that previously warned the user when quotes are interpreted literally has been removed. The literal meaning has been Sourcegraph's default search behavior for some time now. [#22892](https://github.com/sourcegraph/sourcegraph/pull/22892)
-- The old batch repository syncer was removed and can no longer be activated by setting `ENABLE_STREAMING_REPOS_SYNCER=false`. [#22949](https://github.com/sourcegraph/sourcegraph/pull/22949)
+- Non-root overlays were removed for `deploy-sourcegraph` in favor of using `non-privileged`. [#3404](https://github.com/sourcegraph/deploy-sourcegraph/pull/3404)
 
 ### API docs (experimental)
 

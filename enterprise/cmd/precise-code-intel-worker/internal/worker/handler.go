@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type handler struct {
@@ -239,7 +239,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *semantic.GroupedBundleDataChans) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -296,8 +296,9 @@ func createHoneyEvent(ctx context.Context, upload store.Upload, err error, durat
 	if upload.UploadSize != nil {
 		fields["uploadSize"] = upload.UploadSize
 	}
-	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
-		fields["trace"] = spanURL
+	if traceID := trace.ID(ctx); traceID != "" {
+		fields["trace"] = trace.URL(traceID)
+		fields["traceID"] = traceID
 	}
 
 	return honey.EventWithFields("codeintel-worker", fields)

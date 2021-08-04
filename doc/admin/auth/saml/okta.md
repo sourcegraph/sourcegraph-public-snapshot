@@ -21,8 +21,7 @@
 
 ## 2. Add the SAML auth provider to Sourcegraph site config
 
-1. In Sourcegraph [site config](../../config/site_config.md), ensure `externalURL` is set the same Sourcegraph URL you used in the previous section (i.e., what you replaced `https://sourcegraph.example.com` with). Be mindful to use the exact same scheme (`http` or `https`), and there should be no trailing slash.
-1. Add an item to `auth.providers` with `type` "saml" and `identityProviderMetadataURL` set to the URL you copied from the "Identity Provider metadata" link in the previous section. Here is an example of what your site configuration should look like:
+[Add a SAML auth provider](./index.md#add-a-saml-provider) with `identityProviderMetadataURL` set to the URL you copied from the "Identity Provider metadata" link in the previous section. Here is an example of what your site configuration should look like:
 
 ```json
 {
@@ -38,5 +37,3 @@
  ]
 }
 ```
-
-Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata`. See [SAML troubleshooting](../saml.md#saml-troubleshooting) for more tips.

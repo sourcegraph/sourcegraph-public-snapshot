@@ -70,14 +70,7 @@ type operations struct {
 	persistUploadsVisibleAtTip *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"codeintel_dbstore",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
-
+func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
 			Name:         fmt.Sprintf("codeintel.dbstore.%s", name),

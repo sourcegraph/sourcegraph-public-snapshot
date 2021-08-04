@@ -50,13 +50,17 @@ func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 
 	groups = ResolveRepoGroupsFromSettings(settings)
 
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return groups, nil
+	}
+
 	if mode, err := database.GlobalUsers.CurrentUserAllowedExternalServices(ctx); err != nil {
 		return groups, err
 	} else if mode == conf.ExternalServiceModeDisabled {
 		return groups, nil
 	}
 
-	a := actor.FromContext(ctx)
 	repos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{UserID: a.UID})
 	if err != nil {
 		log15.Warn("getting user added repos", "err", err)

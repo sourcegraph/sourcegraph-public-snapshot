@@ -22,11 +22,18 @@ type Store interface {
 	// flag indicating the existence of a processable record.
 	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, bool, error)
 
-	// Heartbeat marks the given record as currently being processed.:2
-	Heartbeat(ctx context.Context, id int) error
+	// Heartbeat updates last_heartbeat_at of all the given jobs, when they're processing. All IDs of records that were
+	// touched are returned.
+	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs []int, err error)
 
-	// AddExecutionLogEntry adds an executor log entry to the record.
-	AddExecutionLogEntry(ctx context.Context, id int, entry ExecutionLogEntry) error
+	// AddExecutionLogEntry adds an executor log entry to the record and
+	// returns the ID of the new entry (which can be used with
+	// UpdateExecutionLogEntry) and a possible error.
+	AddExecutionLogEntry(ctx context.Context, id int, entry ExecutionLogEntry) (int, error)
+
+	// UpdateExecutionLogEntry updates the executor log entry with the given ID
+	// on the given record.
+	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry ExecutionLogEntry) error
 
 	// MarkComplete attempts to update the state of the record to complete. This method returns a boolean flag indicating
 	// if the record was updated.
@@ -46,7 +53,7 @@ type ExecutionLogEntry struct {
 	Key        string    `json:"key"`
 	Command    []string  `json:"command"`
 	StartTime  time.Time `json:"startTime"`
-	ExitCode   int       `json:"exitCode"`
-	Out        string    `json:"out"`
-	DurationMs int       `json:"durationMs"`
+	ExitCode   *int      `json:"exitCode,omitempty"`
+	Out        string    `json:"out,omitempty"`
+	DurationMs *int      `json:"durationMs,omitempty"`
 }

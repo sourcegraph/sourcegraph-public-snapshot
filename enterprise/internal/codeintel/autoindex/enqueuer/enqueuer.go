@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -13,26 +14,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type IndexEnqueuer struct {
-	dbStore          DBStore
-	gitserverClient  GitserverClient
-	repoUpdater      RepoUpdaterClient
-	maxJobsPerCommit int
-	operations       *operations
+	dbStore            DBStore
+	gitserverClient    GitserverClient
+	repoUpdater        RepoUpdaterClient
+	config             *Config
+	gitserverLimiter   *rate.Limiter
+	repoUpdaterLimiter *rate.Limiter
+	operations         *operations
 }
 
-const defaultMaxJobsPerCommit = 25
-
-func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient, repoUpdater RepoUpdaterClient, observationContext *observation.Context) *IndexEnqueuer {
+func NewIndexEnqueuer(
+	dbStore DBStore,
+	gitClient GitserverClient,
+	repoUpdater RepoUpdaterClient,
+	config *Config,
+	observationContext *observation.Context,
+) *IndexEnqueuer {
 	return &IndexEnqueuer{
-		dbStore:          dbStore,
-		gitserverClient:  gitClient,
-		repoUpdater:      repoUpdater,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(observationContext),
+		dbStore:            dbStore,
+		gitserverClient:    gitClient,
+		repoUpdater:        repoUpdater,
+		config:             config,
+		gitserverLimiter:   rate.NewLimiter(config.MaximumRepositoriesInspectedPerSecond, 1),
+		repoUpdaterLimiter: rate.NewLimiter(config.MaximumRepositoriesUpdatedPerSecond, 1),
+		operations:         newOperations(observationContext),
 	}
 }
 
@@ -78,7 +87,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code intelligence
 // index. Currently we only support recognition of "gomod" import monikers.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) (err error) {
+func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
 	ctx, traceLog, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("scheme", pkg.Scheme),
@@ -94,6 +103,10 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic
 	}
 	traceLog(log.String("repoName", repoName))
 	traceLog(log.String("revision", revision))
+
+	if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {
+		return err
+	}
 
 	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, api.RepoName(repoName))
 	if err != nil {
@@ -167,9 +180,7 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 	return s.queueIndexes(ctx, repositoryID, commit, indexes)
 }
 
-// queueIndexes inserts a set of index records into the database. It is assumed that the given repository id an
-// commit are the same for each given index record. In the same transaction as the insert, the repository's row
-// is updated in the lsif_indexable_repositories table as a crude form of rate limiting.
+// queueIndexes inserts a set of index records into the database.
 func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, commit string, indexes []store.Index) (err error) {
 	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {
@@ -198,6 +209,10 @@ func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, comm
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
 func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJob, error) {
+	if err := s.gitserverLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
 	paths, err := s.gitserverClient.ListFiles(ctx, repositoryID, commit, inference.Patterns)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.ListFiles")
@@ -210,7 +225,7 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 		indexes = append(indexes, recognizer.InferIndexJobs(gitclient, paths)...)
 	}
 
-	if len(indexes) > s.maxJobsPerCommit {
+	if len(indexes) > s.config.MaximumIndexJobsPerInferredConfiguration {
 		log15.Info("Too many inferred roots. Scheduling no index jobs for repository.", "repository_id", repositoryID)
 		return nil, nil
 	}

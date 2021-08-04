@@ -48,25 +48,16 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		return err
 	}
 
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if args.PatternInfo.Pattern == "" {
-		return nil
-	}
-
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.SymbolRequest, stream)
+	indexed, err := zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
@@ -252,12 +243,14 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 		}},
 		&zoektquery.Symbol{Expr: query},
 	}
-	for _, p := range *includePatterns {
-		q, err := zoektutil.FileRe(p, true)
-		if err != nil {
-			return nil, err
+	if includePatterns != nil {
+		for _, p := range *includePatterns {
+			q, err := zoektutil.FileRe(p, true)
+			if err != nil {
+				return nil, err
+			}
+			ands = append(ands, q)
 		}
-		ands = append(ands, q)
 	}
 
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))

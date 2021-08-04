@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type printableRank struct{ value *int }
@@ -209,9 +209,9 @@ func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
 // insertPackageReferences populates the lsif_references table with the given package references.
 func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsifstore.PackageReference) {
 	for _, packageReference := range packageReferences {
-		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []semantic.PackageReference{
+		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []precise.PackageReference{
 			{
-				Package: semantic.Package{
+				Package: precise.Package{
 					Scheme:  packageReference.Scheme,
 					Name:    packageReference.Name,
 					Version: packageReference.Version,

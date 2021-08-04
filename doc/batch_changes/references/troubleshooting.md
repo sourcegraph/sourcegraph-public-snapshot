@@ -148,7 +148,7 @@ If executing the `steps` in the batch spec fails with a message that looks simil
 /bin/sh: can't open '/tmp/tmp.IbdkiA': Permission denied
 ```
 
-or you're using SELinux or are in a locked-down environment it's possible that Docker bind mounts won't work.
+or if you are in a locked-down environment, it's possible that Docker bind mounts won't work.
 
 Try using the `-workspace volume` flag (see [`src batch apply`](../../cli/references/batch/apply.md#flags) for a list of all flags) to make `src` use Docker volumes instead:
 
@@ -158,8 +158,10 @@ src batch apply -workspace volume -f my-spec.yaml
 src batch preview -workspace volume -f my-spec.yaml
 ```
 
+If you're using SELinux then neither workspace is fully supported. See [this issue](https://github.com/sourcegraph/src-cli/issues/570) for more details.
+
 ## Publishing changesets
 
 ### Do you have the right credentials?
 
-When publishing changesets fails, make sure that the credentials you use have the correct credentials to create changesets on the code host: "[Configuring credentials](../how-tos/configuring_credentials.md)"
+When publishing changesets fails, make sure that you have [configured credentials](../how-tos/configuring_credentials.md) with all of the required scopes and from an account with write access to the changeset's repository on the code host.

@@ -17,7 +17,9 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
+import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
+import { CodeIntelligenceProps } from './codeintel'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -66,7 +68,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -91,6 +93,8 @@ export interface LayoutProps
         CodeMonitoringProps,
         SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
+        CodeIntelligenceProps,
+        BatchChangesProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -130,7 +134,6 @@ export interface LayoutProps
     showSearchNotebook: boolean
     showQueryBuilder: boolean
     isSourcegraphDotCom: boolean
-    showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
@@ -232,7 +235,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         props.location.pathname === '/sign-in' ||
         props.location.pathname === '/sign-up' ||
         props.location.pathname === '/password-reset' ||
-        props.location.pathname === '/post-sign-up'
+        props.location.pathname === '/welcome'
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
@@ -269,6 +272,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isRedesignEnabled,
+        isMacPlatform,
     }
 
     return (

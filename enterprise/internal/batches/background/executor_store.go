@@ -46,7 +46,10 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
 func NewExecutorStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
-	return &executorStore{Store: dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext)}
+	return &executorStore{
+		Store:              dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext),
+		observationContext: observationContext,
+	}
 }
 
 var _ dbworkerstore.Store = &executorStore{}
@@ -56,6 +59,8 @@ var _ dbworkerstore.Store = &executorStore{}
 // separate columns when marking a job as complete.
 type executorStore struct {
 	dbworkerstore.Store
+
+	observationContext *observation.Context
 }
 
 // markCompleteQuery is taken from internal/workerutil/dbworker/store/store.go
@@ -64,20 +69,20 @@ type executorStore struct {
 const markCompleteQuery = `
 UPDATE batch_spec_executions
 SET state = 'completed', finished_at = clock_timestamp(), batch_spec_id = (SELECT id FROM batch_specs WHERE rand_id = %s)
-WHERE id = %s AND state = 'processing'
+WHERE id = %s AND state = 'processing' AND worker_hostname = %s
 RETURNING id
 `
 
-func (s *executorStore) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
-	batchesStore := store.New(s.Store.Handle().DB(), nil)
+func (s *executorStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
+	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 
 	batchSpecRandID, err := loadAndExtractBatchSpecRandID(ctx, batchesStore, int64(id))
 	if err != nil {
 		// If we couldn't extract the batch spec rand id, we mark the job as failed
-		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract batch spec ID: %s", err))
+		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract batch spec ID: %s", err), options)
 	}
 
-	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id)))
+	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id, options.WorkerHostname)))
 	return ok, err
 }
 

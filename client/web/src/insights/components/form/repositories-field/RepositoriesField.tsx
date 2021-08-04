@@ -20,7 +20,7 @@ import { getSuggestionsSearchTerm } from './utils/get-suggestions-search-term'
 /**
  * Renders multi repositories input with suggestions.
  */
-export const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Ref<HTMLInputElement | null>) => {
+const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Ref<HTMLInputElement | null>) => {
     const { value, onChange, onBlur, ...otherProps } = props
 
     const inputReference = useRef<HTMLInputElement>(null)
@@ -33,7 +33,6 @@ export const RepositoriesField = forwardRef((props: RepositoryFieldProps, refere
         caretPosition,
     })
     const { searchValue, suggestions } = useRepoSuggestions({
-        excludedItems: repositories,
         search,
         disable: !panel,
     })
@@ -131,3 +130,7 @@ export const RepositoriesField = forwardRef((props: RepositoryFieldProps, refere
         </Combobox>
     )
 })
+
+RepositoriesField.displayName = 'RepositoriesField'
+
+export { RepositoriesField }

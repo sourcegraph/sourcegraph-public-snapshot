@@ -7,8 +7,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // GetChangesetEventOpts captures the query options needed for getting a ChangesetEvent
@@ -20,11 +22,17 @@ type GetChangesetEventOpts struct {
 }
 
 // GetChangesetEvent gets a changeset matching the given options.
-func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (*btypes.ChangesetEvent, error) {
+func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (ev *btypes.ChangesetEvent, err error) {
+	ctx, endObservation := s.operations.getChangesetEvent.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+		log.Int("changesetID", int(opts.ChangesetID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getChangesetEventQuery(&opts)
 
 	var c btypes.ChangesetEvent
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return scanChangesetEvent(&c, sc)
 	})
 	if err != nil {
@@ -85,6 +93,9 @@ type ListChangesetEventsOpts struct {
 
 // ListChangesetEvents lists ChangesetEvents with the given filters.
 func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*btypes.ChangesetEvent, next int64, err error) {
+	ctx, endObservation := s.operations.listChangesetEvents.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := listChangesetEventsQuery(&opts)
 
 	cs = make([]*btypes.ChangesetEvent, 0, opts.DBLimit())
@@ -157,7 +168,12 @@ type CountChangesetEventsOpts struct {
 }
 
 // CountChangesetEvents returns the number of changeset events in the database.
-func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (int, error) {
+func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (count int, err error) {
+	ctx, endObservation := s.operations.countChangesetEvents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("changesetID", int(opts.ChangesetID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.queryCount(ctx, countChangesetEventsQuery(&opts))
 }
 
@@ -183,6 +199,11 @@ func countChangesetEventsQuery(opts *CountChangesetEventsOpts) *sqlf.Query {
 
 // UpsertChangesetEvents creates or updates the given ChangesetEvents.
 func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) (err error) {
+	ctx, endObservation := s.operations.upsertChangesetEvents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("count", len(cs)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q, err := s.upsertChangesetEventsQuery(cs)
 	if err != nil {
 		return err

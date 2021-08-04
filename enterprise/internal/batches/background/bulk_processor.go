@@ -32,6 +32,8 @@ func (e unknownJobTypeErr) NonRetryable() bool {
 	return true
 }
 
+var changesetIsProcessingErr = errors.New("cannot update a changeset that is currently being processed; will retry")
+
 type bulkProcessor struct {
 	tx      *store.Store
 	sourcer sources.Sourcer
@@ -49,6 +51,11 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 	b.ch, err = b.tx.GetChangeset(ctx, store.GetChangesetOpts{ID: job.ChangesetID})
 	if err != nil {
 		return errors.Wrap(err, "loading changeset")
+	}
+
+	// Changesets that are currently processing should be retried at a later stage.
+	if b.ch.ReconcilerState == btypes.ReconcilerStateProcessing {
+		return changesetIsProcessingErr
 	}
 
 	// Load repo.
@@ -117,13 +124,14 @@ func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) er
 		return nil
 	}
 
-	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
-
-	// We do two `UPDATE` queries here: first we update all of the changesets
-	// columns to refelct the changes made here in the bulkProcessor. Then,
-	// with `EnqueueChangeset`, we do a second UPDATE that only updates the
-	// worker/reconciler-related columns.
-	if err := b.tx.UpdateChangeset(ctx, b.ch); err != nil {
+	// If we successfully marked the record as to-be-detached, we save the
+	// updated associations and trigger a reconciler run with two `UPDATE`
+	// queries:
+	// 1. Update only the changeset's BatchChanges in the database, trying not
+	//    to overwrite any other data.
+	// 2. Updates only the worker/reconciler-related columns to enqueue the
+	//    changeset.
+	if err := b.tx.UpdateChangesetBatchChanges(ctx, b.ch); err != nil {
 		return err
 	}
 
@@ -223,11 +231,6 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 		return errcode.MakeNonRetryable(errors.New("cannot publish a changeset that has a published value set in its changesetTemplate"))
 	}
 
-	// Changesets that are currently processing should be retried at a later stage.
-	if b.ch.ReconcilerState == btypes.ReconcilerStateProcessing {
-		return errors.New("cannot update a changeset that is currently being processed; will retry")
-	}
-
 	// Set the desired UI publication state.
 	if typedPayload.Draft {
 		b.ch.UiPublicationState = &btypes.ChangesetUiPublicationStateDraft
@@ -235,13 +238,20 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 		b.ch.UiPublicationState = &btypes.ChangesetUiPublicationStatePublished
 	}
 
-	// Reset the reconciler state.
-	b.ch.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
-
-	// And finally update the changeset record.
-	if err := b.tx.UpdateChangeset(ctx, b.ch); err != nil {
-		log15.Error("UpdateChangeset", "err", err)
+	// We do two UPDATE queries here:
+	// 1. Update only the changeset's UiPublicationState in the database, trying not
+	//    to overwrite any other data.
+	// 2. Updates only the worker/reconciler-related columns to enqueue the
+	//    changeset.
+	if err := b.tx.UpdateChangesetUiPublicationState(ctx, b.ch); err != nil {
+		log15.Error("UpdateChangesetUiPublicationState", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
+
+	if err := b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), ""); err != nil {
+		log15.Error("EnqueueChangeset", "err", err)
+		return errcode.MakeNonRetryable(err)
+	}
+
 	return nil
 }

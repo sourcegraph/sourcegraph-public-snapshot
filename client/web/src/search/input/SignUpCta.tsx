@@ -1,14 +1,15 @@
 import * as React from 'react'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MagnifyingGlassIcon } from '@sourcegraph/web/src/components/MagnifyingGlassIcon'
 
 import { CtaBanner } from '../../components/CtaBanner'
 
-interface Props {
+interface Props extends TelemetryProps {
     className?: string
 }
 
-export const SignUpCta: React.FunctionComponent<Props> = ({ className }) => (
+export const SignUpCta: React.FunctionComponent<Props> = ({ className, telemetryService }) => (
     <CtaBanner
         className={className}
         icon={<MagnifyingGlassIcon />}
@@ -17,5 +18,6 @@ export const SignUpCta: React.FunctionComponent<Props> = ({ className }) => (
         linkText="Sign up"
         href="/sign-up"
         googleAnalytics={true}
+        onClick={() => telemetryService.log('HomePageCTAImproveClicked')}
     />
 )

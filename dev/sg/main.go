@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -29,8 +30,8 @@ var (
 	runFlagSet = flag.NewFlagSet("sg run", flag.ExitOnError)
 	runCommand = &ffcli.Command{
 		Name:       "run",
-		ShortUsage: "sg run <command>",
-		ShortHelp:  "Run the given command.",
+		ShortUsage: "sg run <command>...",
+		ShortHelp:  "Run the given commands.",
 		FlagSet:    runFlagSet,
 		Exec:       runExec,
 		UsageFunc:  printRunUsage,
@@ -323,7 +324,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	var checks []Check
+	var checks []run.Check
 	for _, name := range set.Checks {
 		check, ok := globalConf.Checks[name]
 		if !ok {
@@ -333,7 +334,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		checks = append(checks, check)
 	}
 
-	ok, err := runChecks(ctx, checks...)
+	ok, err := run.Checks(ctx, globalConf.Env, checks...)
 	if err != nil {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s\n", err))
 	}
@@ -343,7 +344,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	cmds := make([]Command, 0, len(set.Commands))
+	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
 		cmd, ok := globalConf.Commands[name]
 		if !ok {
@@ -353,7 +354,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run(ctx, cmds...)
+	return run.Commands(ctx, globalConf.Env, cmds...)
 }
 
 func testExec(ctx context.Context, args []string) error {
@@ -374,7 +375,7 @@ func testExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	return runTest(ctx, cmd, args[1:])
+	return run.Test(ctx, cmd, args[1:], globalConf.Env)
 }
 
 func startExec(ctx context.Context, args []string) error {
@@ -404,18 +405,17 @@ func runExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
-		return flag.ErrHelp
+	var cmds []run.Command
+	for _, arg := range args {
+		cmd, ok := globalConf.Commands[arg]
+		if !ok {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", arg))
+			return flag.ErrHelp
+		}
+		cmds = append(cmds, cmd)
 	}
 
-	cmd, ok := globalConf.Commands[args[0]]
-	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", args[0]))
-		return flag.ErrHelp
-	}
-
-	return run(ctx, cmd)
+	return run.Commands(ctx, globalConf.Env, cmds...)
 }
 
 func doctorExec(ctx context.Context, args []string) error {
@@ -425,11 +425,11 @@ func doctorExec(ctx context.Context, args []string) error {
 		os.Exit(1)
 	}
 
-	var checks []Check
+	var checks []run.Check
 	for _, c := range globalConf.Checks {
 		checks = append(checks, c)
 	}
-	_, err := runChecks(ctx, checks...)
+	_, err := run.Checks(ctx, globalConf.Env, checks...)
 	return err
 }
 
@@ -580,7 +580,9 @@ func printRunUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
+	fmt.Fprintf(&out, "  sg %s <command>...\n", c.Name)
+	fmt.Fprintln(&out, "")
+	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
 	// Attempt to parse config to list available commands, but don't fail on
 	// error, because we should never error when the user wants --help output.

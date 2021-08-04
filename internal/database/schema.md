@@ -318,6 +318,7 @@ Referenced by:
  trigger_event     | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -437,6 +438,7 @@ Foreign-key constraints:
  num_results       | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -730,6 +732,7 @@ Referenced by:
  shard_id              | text                     |           | not null | 
  last_error            | text                     |           |          | 
  updated_at            | timestamp with time zone |           | not null | now()
+ last_fetched          | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
@@ -770,13 +773,21 @@ Indexes:
  record_time       | timestamp with time zone |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ priority          | integer                  |           | not null | 1
+ cost              | integer                  |           | not null | 500
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
+    "insights_query_runner_jobs_cost_idx" btree (cost)
+    "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_state_btree" btree (state)
 
 ```
 
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+
+**cost**: Integer representing a cost approximation of executing this search query.
+
+**priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
@@ -848,35 +859,6 @@ Stores the configuration used for code intel index jobs for a repository.
 **autoindex_enabled**: Whether or not auto-indexing should be attempted on this repo. Index jobs may be inferred from the repository contents if data is empty.
 
 **data**: The raw user-supplied [configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/autoindex/config/types.go#L3:6) (encoded in JSONC).
-
-# Table "public.lsif_indexable_repositories"
-```
-         Column         |           Type           | Collation | Nullable |                         Default                         
-------------------------+--------------------------+-----------+----------+---------------------------------------------------------
- id                     | integer                  |           | not null | nextval('lsif_indexable_repositories_id_seq'::regclass)
- repository_id          | integer                  |           | not null | 
- search_count           | integer                  |           | not null | 0
- precise_count          | integer                  |           | not null | 0
- last_index_enqueued_at | timestamp with time zone |           |          | 
- last_updated_at        | timestamp with time zone |           | not null | now()
- enabled                | boolean                  |           |          | 
-Indexes:
-    "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
-    "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
-
-```
-
-Stores the number of code intel events for repositories. Used for auto-index scheduling heursitics Sourcegraph Cloud.
-
-**enabled**: **Column unused.**
-
-**last_index_enqueued_at**: The last time an index for the repository was enqueued (for basic rate limiting).
-
-**last_updated_at**: The last time the event counts were updated for this repository.
-
-**precise_count**: The number of precise code intel events for the repository in the past week.
-
-**search_count**: The number of search-based code intel events for the repository in the past week.
 
 # Table "public.lsif_indexes"
 ```
@@ -1075,6 +1057,7 @@ Stores the retention policy of code intellience data for a repository.
  commit_last_checked_at | timestamp with time zone |           |          | 
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
+ execution_logs         | json[]                   |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text

@@ -68,9 +68,14 @@ func TestFilterFrames(t *testing.T) {
 			maxHistorical, maxHistorical.Add(time.Second * 500), "fedcba",
 		}}
 
-		want := []Frame{{
-			maxHistorical, maxHistorical.Add(time.Second * 500), "abcdef",
-		}}
+		want := []Frame{
+			{
+				maxHistorical, maxHistorical.Add(time.Second * 500), "abcdef",
+			},
+			{
+				maxHistorical, maxHistorical.Add(time.Second * 500), "fedcba",
+			},
+		}
 
 		got := commitFilter.FilterFrames(ctx, input, 1)
 
@@ -127,7 +132,7 @@ func TestFilterFrames(t *testing.T) {
 
 		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
 
-		want := []Frame{input[0], input[1]}
+		want := []Frame{input[0], input[1], input[2]}
 
 		got := commitFilter.FilterFrames(ctx, input, 1)
 

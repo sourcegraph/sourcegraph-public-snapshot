@@ -11,6 +11,7 @@ ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for furt
 ## Prerequisites
 
 * This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred
+* **NOTE: If you encountered this error during an upgrade, ensure you followed the [proper step upgrade process documented here.](https://docs.sourcegraph.com/admin/updates) This document is not intended to resolve a dirty database which resulted from skipping the step upgrade.**
 
 ## Steps to resolve
 

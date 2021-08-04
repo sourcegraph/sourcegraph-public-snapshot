@@ -64,6 +64,19 @@
     > :last-child {
         margin-bottom: 0;
     }
+
+    p > code {
+        white-space: break-spaces;
+    }
+
+    ul {
+        // margin-bottom: 1rem is used to have the same bottom spacing as the p
+        // elements that (likely) surround this list (the description consists
+        // of mainly Markdown)
+        margin-bottom: 1rem;
+        padding-left: 1rem;
+        list-style-type: square;
+    }
 }
 
 .placeholder {

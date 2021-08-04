@@ -6,8 +6,15 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+// defaultReferencesPageSize is the reference result page size when no limit is supplied in the
+// GraphQL layer. This is used as an approximation for an acceptable page size as we make multiple
+// references requests to discover references _not_ in the same file as the definition for API
+// docs.
+const defaultReferencesPageSize = 100
 
 // DocumentationReferences returns the list of source locations that reference the symbol found at
 // the given documentation path ID, if any.
@@ -16,7 +23,6 @@ func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID stri
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
-			log.String("path", r.path),
 			log.Int("numUploads", len(r.uploads)),
 			log.String("uploads", uploadIDsToString(r.uploads)),
 			log.String("pathID", pathID),
@@ -33,14 +39,58 @@ func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID stri
 	// request on the first location we find.
 	for _, upload := range r.uploads {
 		traceLog(log.Int("uploadID", upload.ID))
-		locations, _, err := r.lsifStore.DocumentationDefinitions(ctx, upload.ID, r.path, pathID, DefinitionsLimit, 0)
+
+		// Effectively replicate what we do in r.DocumentationDefinition in order to lookup the definition
+		// locations.
+		locations, _, err := r.lsifStore.DocumentationDefinitions(ctx, upload.ID, pathID, DefinitionsLimit, 0)
 		if err != nil {
 			return nil, "", errors.Wrap(err, "lsifStore.DocumentationDefinitions")
 		}
-		if len(locations) > 0 {
-			location := locations[0]
-			return r.References(ctx, location.Range.Start.Line, location.Range.Start.Character, limit, rawCursor)
+		if len(locations) == 0 {
+			continue
 		}
+		r.path = locations[0].Path
+		uploadsByID := map[int]dbstore.Dump{upload.ID: upload}
+		adjustedLocations, err := r.adjustLocations(ctx, uploadsByID, locations)
+		if err != nil {
+			return nil, "", err
+		}
+
+		// Now lookup references.
+		location := adjustedLocations[0]
+		var (
+			references       = make([]AdjustedLocation, 0, limit)
+			inDefinitionFile []AdjustedLocation
+		)
+		for len(references) < limit {
+			var candidates []AdjustedLocation
+			r.path = location.Path
+			candidates, rawCursor, err = r.References(ctx, location.AdjustedRange.Start.Line, location.AdjustedRange.Start.Character, defaultReferencesPageSize, rawCursor)
+			if err != nil {
+				return nil, rawCursor, err
+			}
+			for _, candidate := range candidates {
+				isDefinitionFile := candidate.Dump.RepositoryID == r.repositoryID && candidate.Path == location.Path
+				isDefinition := isDefinitionFile && candidate.AdjustedRange == location.AdjustedRange
+				if isDefinition {
+					// we never want the definition itself to show up as a reference.
+				} else if isDefinitionFile {
+					inDefinitionFile = append(inDefinitionFile, candidate)
+				} else {
+					references = append(references, candidate)
+				}
+			}
+			if len(candidates) == 0 || rawCursor == "" {
+				break // no more pages
+			}
+		}
+		if len(references) == 0 {
+			// If we found no references at all, we're willing to consider references in the
+			// definition file. Otherwise, we don't really want these as they make poor usage
+			// examples.
+			return inDefinitionFile, rawCursor, nil
+		}
+		return references[:limit], rawCursor, nil
 	}
 	return nil, "", nil
 }

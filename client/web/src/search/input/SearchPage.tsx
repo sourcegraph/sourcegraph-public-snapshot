@@ -27,8 +27,7 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { InsightsApiContext, InsightsViewGrid } from '../../insights'
+import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
@@ -56,8 +55,7 @@ export interface SearchPageProps
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
-        ShowQueryBuilderProps,
-        FeatureFlagProps {
+        ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -106,7 +104,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                {views && <InsightsViewGrid {...props} className="mt-5" views={views} />}
+                {views && <StaticInsightsViewGrid {...props} className="mt-5" views={views} />}
             </div>
             {props.isSourcegraphDotCom &&
                 props.showRepogroupHomepage &&

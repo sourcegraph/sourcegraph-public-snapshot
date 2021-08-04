@@ -13,11 +13,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // DocumentationPage returns the documentation page with the given PathID.
-func (s *Store) DocumentationPage(ctx context.Context, bundleID int, pathID string) (_ *semantic.DocumentationPageData, err error) {
+func (s *Store) DocumentationPage(ctx context.Context, bundleID int, pathID string) (_ *precise.DocumentationPageData, err error) {
 	ctx, _, endObservation := s.operations.documentationPage.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
@@ -46,7 +46,7 @@ WHERE
 
 // scanFirstDocumentationPageData reads the first DocumentationPageData row. If no rows match the
 // query, a nil is returned.
-func (s *Store) scanFirstDocumentationPageData(rows *sql.Rows, queryErr error) (_ *semantic.DocumentationPageData, err error) {
+func (s *Store) scanFirstDocumentationPageData(rows *sql.Rows, queryErr error) (_ *precise.DocumentationPageData, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -76,7 +76,7 @@ func (s *Store) scanFirstDocumentationPageData(rows *sql.Rows, queryErr error) (
 }
 
 // DocumentationPathInfo returns info describing what is at the given pathID.
-func (s *Store) DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (_ *semantic.DocumentationPathInfoData, err error) {
+func (s *Store) DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (_ *precise.DocumentationPathInfoData, err error) {
 	ctx, _, endObservation := s.operations.documentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
@@ -105,7 +105,7 @@ WHERE
 
 // scanFirstDocumentationPathInfoData reads the first DocumentationPathInfoData row. If no rows match the
 // query, a nil is returned.
-func (s *Store) scanFirstDocumentationPathInfoData(rows *sql.Rows, queryErr error) (_ *semantic.DocumentationPathInfoData, err error) {
+func (s *Store) scanFirstDocumentationPathInfoData(rows *sql.Rows, queryErr error) (_ *precise.DocumentationPathInfoData, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -136,7 +136,7 @@ func (s *Store) scanFirstDocumentationPathInfoData(rows *sql.Rows, queryErr erro
 
 // documentationIDsToPathIDs returns a mapping of the given documentationResult IDs to their
 // associative path IDs. Empty result IDs ("") are ignored.
-func (s *Store) documentationIDsToPathIDs(ctx context.Context, bundleID int, ids []semantic.ID) (_ map[semantic.ID]string, err error) {
+func (s *Store) documentationIDsToPathIDs(ctx context.Context, bundleID int, ids []precise.ID) (_ map[precise.ID]string, err error) {
 	ctx, _, endObservation := s.operations.documentationIDsToPathIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("ids", fmt.Sprint(ids)),
@@ -165,13 +165,13 @@ func (s *Store) documentationIDsToPathIDs(ctx context.Context, bundleID int, ids
 }
 
 // scanDocumentationPathIDs reads documentation path IDs from the given row object.
-func (s *Store) scanDocumentationPathIDs(rows *sql.Rows, queryErr error) (_ map[semantic.ID]string, err error) {
+func (s *Store) scanDocumentationPathIDs(rows *sql.Rows, queryErr error) (_ map[precise.ID]string, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	values := map[semantic.ID]string{}
+	values := map[precise.ID]string{}
 	for rows.Next() {
 		var (
 			resultID uint64
@@ -180,7 +180,7 @@ func (s *Store) scanDocumentationPathIDs(rows *sql.Rows, queryErr error) (_ map[
 		if err := rows.Scan(&resultID, &pathID); err != nil {
 			return nil, err
 		}
-		values[semantic.ID(strconv.FormatUint(resultID, 10))] = pathID
+		values[precise.ID(strconv.FormatUint(resultID, 10))] = pathID
 	}
 	return values, nil
 }
@@ -191,13 +191,13 @@ SELECT
 	result_id,
 	path_id
 FROM
-	lsif_documentation_mappings
+	lsif_data_documentation_mappings
 WHERE
 	dump_id = %s AND
 	result_id = ANY (%s)
 `
 
-func (s *Store) documentationPathIDToID(ctx context.Context, bundleID int, pathID string) (_ semantic.ID, err error) {
+func (s *Store) documentationPathIDToID(ctx context.Context, bundleID int, pathID string) (_ precise.ID, err error) {
 	ctx, _, endObservation := s.operations.documentationPathIDToID.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
@@ -211,7 +211,7 @@ func (s *Store) documentationPathIDToID(ctx context.Context, bundleID int, pathI
 	if resultID == -1 {
 		return "", err
 	}
-	return semantic.ID(strconv.FormatInt(resultID, 10)), nil
+	return precise.ID(strconv.FormatInt(resultID, 10)), nil
 }
 
 const documentationPathIDToIDQuery = `
@@ -219,7 +219,7 @@ const documentationPathIDToIDQuery = `
 SELECT
 	result_id
 FROM
-	lsif_documentation_mappings
+	lsif_data_documentation_mappings
 WHERE
 	dump_id = %s AND
 	path_id = %s
@@ -244,52 +244,92 @@ func (s *Store) scanFirstDocumentationResultID(rows *sql.Rows, queryErr error) (
 	return resultID, nil
 }
 
+// documentationPathIDToFilePath queries the file path associated with a documentation path ID,
+// e.g. the file where the documented symbol is located - if the path ID is describing such a
+// symbol, or nil otherwise.
+func (s *Store) documentationPathIDToFilePath(ctx context.Context, bundleID int, pathID string) (_ *string, err error) {
+	ctx, _, endObservation := s.operations.documentationPathIDToFilePath.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("pathID", pathID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.scanFirstDocumentationFilePath(s.Store.Query(ctx, sqlf.Sprintf(documentationPathIDToFilePathQuery, bundleID, pathID)))
+}
+
+const documentationPathIDToFilePathQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/ranges.go:documentationPathIDToFilePath
+SELECT
+	file_path
+FROM
+	lsif_data_documentation_mappings
+WHERE
+	dump_id = %s AND
+	path_id = %s
+LIMIT 1
+`
+
+// scanFirstDocumentationFilePath reads the first file_path row. If no rows match the query, an empty string is returned.
+func (s *Store) scanFirstDocumentationFilePath(rows *sql.Rows, queryErr error) (_ *string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if !rows.Next() {
+		return nil, nil
+	}
+
+	var filePath *string
+	if err := rows.Scan(&filePath); err != nil {
+		return nil, err
+	}
+	return filePath, nil
+}
+
 // DocumentationDefinitions returns the set of locations defining the symbol found at the given path ID, if any.
-func (s *Store) DocumentationDefinitions(ctx context.Context, bundleID int, path, pathID string, limit, offset int) (_ []Location, _ int, err error) {
+func (s *Store) DocumentationDefinitions(ctx context.Context, bundleID int, pathID string, limit, offset int) (_ []Location, _ int, err error) {
 	resultID, err := s.documentationPathIDToID(ctx, bundleID, pathID)
 	if err != nil || resultID == "" {
 		return nil, 0, err
 	}
-	extractor := func(r semantic.RangeData) semantic.ID { return r.DefinitionResultID }
+	extractor := func(r precise.RangeData) precise.ID { return r.DefinitionResultID }
 	operation := s.operations.documentationDefinitions
-	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, path, resultID, limit, offset)
+	return s.documentationDefinitions(ctx, extractor, operation, bundleID, pathID, resultID, limit, offset)
 }
 
-// DocumentationReferences returns the set of locations referencing the symbol found at the given path ID, if any.
-func (s *Store) DocumentationReferences(ctx context.Context, bundleID int, path string, pathID string, limit, offset int) (_ []Location, _ int, err error) {
-	resultID, err := s.documentationPathIDToID(ctx, bundleID, pathID)
-	if resultID == "" || err != nil {
-		return nil, 0, err
-	}
-	extractor := func(r semantic.RangeData) semantic.ID { return r.ReferenceResultID }
-	operation := s.operations.documentationReferences
-	return s.documentationDefinitionsReferences(ctx, extractor, operation, bundleID, path, resultID, limit, offset)
-}
-
-func (s *Store) documentationDefinitionsReferences(
+func (s *Store) documentationDefinitions(
 	ctx context.Context,
-	extractor func(r semantic.RangeData) semantic.ID,
+	extractor func(r precise.RangeData) precise.ID,
 	operation *observation.Operation,
 	bundleID int,
-	path string,
-	resultID semantic.ID,
+	pathID string,
+	resultID precise.ID,
 	limit,
 	offset int,
 ) (_ []Location, _ int, err error) {
 	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
-		log.String("path", path),
 		log.String("resultID", string(resultID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, path)))
+	filePath, err := s.documentationPathIDToFilePath(ctx, bundleID, pathID)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "documentationPathIDToFilePath")
+	}
+	if filePath == nil {
+		// The documentation result is not attached to a file, it cannot have references.
+		return nil, 0, nil
+	}
+
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, filePath)))
 	if err != nil || !exists {
 		return nil, 0, err
 	}
 
 	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
-	var found *semantic.RangeData
+	var found *precise.RangeData
 	for _, rn := range documentData.Document.Ranges {
 		if rn.DocumentationResultID == resultID {
 			found = &rn
@@ -301,7 +341,7 @@ func (s *Store) documentationDefinitionsReferences(
 		return nil, 0, errors.New("not found")
 	}
 
-	orderedResultIDs := extractResultIDs([]semantic.RangeData{*found}, extractor)
+	orderedResultIDs := extractResultIDs([]precise.RangeData{*found}, extractor)
 	locationsMap, totalCount, err := s.locations(ctx, bundleID, orderedResultIDs, limit, offset)
 	if err != nil {
 		return nil, 0, err

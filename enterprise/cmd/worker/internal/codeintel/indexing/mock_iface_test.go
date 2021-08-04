@@ -12,7 +12,7 @@ import (
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
-	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	schema "github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1428,7 +1428,7 @@ type MockIndexEnqueuer struct {
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: func(context.Context, semantic.Package) error {
+			defaultHook: func(context.Context, precise.Package) error {
 				return nil
 			},
 		},
@@ -1458,15 +1458,15 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 // QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
 // invoked.
 type IndexEnqueuerQueueIndexesForPackageFunc struct {
-	defaultHook func(context.Context, semantic.Package) error
-	hooks       []func(context.Context, semantic.Package) error
+	defaultHook func(context.Context, precise.Package) error
+	hooks       []func(context.Context, precise.Package) error
 	history     []IndexEnqueuerQueueIndexesForPackageFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueIndexesForPackage delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 semantic.Package) error {
+func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 precise.Package) error {
 	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
 	m.QueueIndexesForPackageFunc.appendCall(IndexEnqueuerQueueIndexesForPackageFuncCall{v0, v1, r0})
 	return r0
@@ -1475,7 +1475,7 @@ func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 semant
 // SetDefaultHook sets function that is called when the
 // QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
 // invoked and the hook queue is empty.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, semantic.Package) error) {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, precise.Package) error) {
 	f.defaultHook = hook
 }
 
@@ -1484,7 +1484,7 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, semantic.Package) error) {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, precise.Package) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1493,7 +1493,7 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, semantic.Package) error {
+	f.SetDefaultHook(func(context.Context, precise.Package) error {
 		return r0
 	})
 }
@@ -1501,12 +1501,12 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, semantic.Package) error {
+	f.PushHook(func(context.Context, precise.Package) error {
 		return r0
 	})
 }
 
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, semantic.Package) error {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, precise.Package) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1545,7 +1545,7 @@ type IndexEnqueuerQueueIndexesForPackageFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 semantic.Package
+	Arg1 precise.Package
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1678,6 +1678,9 @@ func (c IndexEnqueuerQueueIndexesForRepositoryFuncCall) Results() []interface{} 
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
 type MockIndexingRepoStore struct {
+	// ListIndexableReposFunc is an instance of a mock function object
+	// controlling the behavior of the method ListIndexableRepos.
+	ListIndexableReposFunc *IndexingRepoStoreListIndexableReposFunc
 	// ListRepoNamesFunc is an instance of a mock function object
 	// controlling the behavior of the method ListRepoNames.
 	ListRepoNamesFunc *IndexingRepoStoreListRepoNamesFunc
@@ -1688,6 +1691,11 @@ type MockIndexingRepoStore struct {
 // overwritten.
 func NewMockIndexingRepoStore() *MockIndexingRepoStore {
 	return &MockIndexingRepoStore{
+		ListIndexableReposFunc: &IndexingRepoStoreListIndexableReposFunc{
+			defaultHook: func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error) {
+				return nil, nil
+			},
+		},
 		ListRepoNamesFunc: &IndexingRepoStoreListRepoNamesFunc{
 			defaultHook: func(context.Context, database.ReposListOptions) ([]types.RepoName, error) {
 				return nil, nil
@@ -1701,10 +1709,125 @@ func NewMockIndexingRepoStore() *MockIndexingRepoStore {
 // implementation, unless overwritten.
 func NewMockIndexingRepoStoreFrom(i IndexingRepoStore) *MockIndexingRepoStore {
 	return &MockIndexingRepoStore{
+		ListIndexableReposFunc: &IndexingRepoStoreListIndexableReposFunc{
+			defaultHook: i.ListIndexableRepos,
+		},
 		ListRepoNamesFunc: &IndexingRepoStoreListRepoNamesFunc{
 			defaultHook: i.ListRepoNames,
 		},
 	}
+}
+
+// IndexingRepoStoreListIndexableReposFunc describes the behavior when the
+// ListIndexableRepos method of the parent MockIndexingRepoStore instance is
+// invoked.
+type IndexingRepoStoreListIndexableReposFunc struct {
+	defaultHook func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error)
+	hooks       []func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error)
+	history     []IndexingRepoStoreListIndexableReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListIndexableRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockIndexingRepoStore) ListIndexableRepos(v0 context.Context, v1 database.ListIndexableReposOptions) ([]types.RepoName, error) {
+	r0, r1 := m.ListIndexableReposFunc.nextHook()(v0, v1)
+	m.ListIndexableReposFunc.appendCall(IndexingRepoStoreListIndexableReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListIndexableRepos
+// method of the parent MockIndexingRepoStore instance is invoked and the
+// hook queue is empty.
+func (f *IndexingRepoStoreListIndexableReposFunc) SetDefaultHook(hook func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListIndexableRepos method of the parent MockIndexingRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *IndexingRepoStoreListIndexableReposFunc) PushHook(hook func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *IndexingRepoStoreListIndexableReposFunc) SetDefaultReturn(r0 []types.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *IndexingRepoStoreListIndexableReposFunc) PushReturn(r0 []types.RepoName, r1 error) {
+	f.PushHook(func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error) {
+		return r0, r1
+	})
+}
+
+func (f *IndexingRepoStoreListIndexableReposFunc) nextHook() func(context.Context, database.ListIndexableReposOptions) ([]types.RepoName, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *IndexingRepoStoreListIndexableReposFunc) appendCall(r0 IndexingRepoStoreListIndexableReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of IndexingRepoStoreListIndexableReposFuncCall
+// objects describing the invocations of this function.
+func (f *IndexingRepoStoreListIndexableReposFunc) History() []IndexingRepoStoreListIndexableReposFuncCall {
+	f.mutex.Lock()
+	history := make([]IndexingRepoStoreListIndexableReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// IndexingRepoStoreListIndexableReposFuncCall is an object that describes
+// an invocation of method ListIndexableRepos on an instance of
+// MockIndexingRepoStore.
+type IndexingRepoStoreListIndexableReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ListIndexableReposOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.RepoName
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c IndexingRepoStoreListIndexableReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c IndexingRepoStoreListIndexableReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // IndexingRepoStoreListRepoNamesFunc describes the behavior when the
