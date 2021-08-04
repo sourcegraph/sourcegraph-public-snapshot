@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"math"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
@@ -90,7 +93,7 @@ func NewExternalClientFactory() *Factory {
 		ExternalTransportOpt,
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries()),
-			rehttp.ExpJitterDelay(200*time.Millisecond, 10*time.Second),
+			ExpJitterDelay(200*time.Millisecond, 10*time.Second),
 		),
 		TracedTransportOpt,
 		NewCachedTransportOpt(redisCache, true),
@@ -120,7 +123,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries()),
-			rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			ExpJitterDelay(50*time.Millisecond, 5*time.Second),
 		),
 		MeteredTransportOpt(subsystem),
 		TracedTransportOpt,
@@ -436,6 +439,28 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		}
 
 		return false
+	}
+}
+
+// ExpJitterDelay returns a DelayFn that returns a delay between 0 and
+// base * 2^attempt capped at max (an exponential backoff delay with
+// jitter).
+//
+// See the full jitter algorithm in:
+// http://www.awsarchitectureblog.com/2015/03/backoff.html
+//
+// This is adapted from rehttp.ExpJitterDelay to not use a non-thread-safe
+// package level PRNG.
+func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
+	var mu sync.Mutex
+	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return func(attempt rehttp.Attempt) time.Duration {
+		exp := math.Pow(2, float64(attempt.Index))
+		top := float64(base) * exp
+		mu.Lock()
+		delay := prng.Int63n(int64(math.Min(float64(max), top)))
+		mu.Unlock()
+		return time.Duration(delay)
 	}
 }
 
