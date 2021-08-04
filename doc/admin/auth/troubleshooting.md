@@ -34,9 +34,33 @@ Therefore, it makes no sense to have the central SSO redirect users directly bac
 
 ## Debugging playbook
 
+### Enable oAuth log traces
+
+Set the env var `INSECURE_OAUTH2_LOG_TRACES=1` to log all OAuth2 requests and responses on:
+
+* [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
+* [Single-container](../install/docker/index.md): the `sourcegraph/server` container
+
 ### Make sure the client ID and client secret are actually correct
 
 Invalid client ID and client secret pair does not prevent the user from completing the OAuth flow until a confusing error, which may mislead the user into thinking the client ID and client secret pair are correct.
+
+### Make sure provider permissions are correct
+
+If you are unable to use OAuth to login, perhaps after an upgrade, and receive the following error:
+
+```
+An error has occurred
+The requested scope is invalid, unknown, or malformed.
+```
+
+This could be related to the scopes granted on your `clientID` and `clientSecret` on the `auth.providers` section in your site configuration.
+
+For example, for the GitLab oAuth integratio, check the [GitLab scopes](https://gitlab.com/-/profile/applications) granted to ensure that you have the following configured:
+
+* `api`
+* `read_user`
+* `read_api`
 
 ### Test in incognito mode
 

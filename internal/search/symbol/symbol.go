@@ -62,7 +62,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.SymbolRequest, stream)
+	indexed, err := zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}

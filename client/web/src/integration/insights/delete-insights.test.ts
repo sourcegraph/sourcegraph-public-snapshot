@@ -34,8 +34,16 @@ describe('Code insights page', () => {
 
     it('should update user/org settings if insight delete happened', async () => {
         const settings = {
-            'searchInsights.insight.graphQLTypesMigration': {},
-            'searchInsights.insight.teamSize': {},
+            'searchInsights.insight.graphQLTypesMigration': {
+                title: 'The First search-based insight',
+                repositories: [],
+                series: [],
+            },
+            'searchInsights.insight.teamSize': {
+                title: 'The Second search-based insight',
+                repositories: [],
+                series: [],
+            },
         }
 
         overrideGraphQLExtensions({
@@ -92,7 +100,11 @@ describe('Code insights page', () => {
         }, 'OverwriteSettings')
 
         assert.deepStrictEqual(JSON.parse(variables.contents), {
-            'searchInsights.insight.teamSize': {},
+            'searchInsights.insight.teamSize': {
+                title: 'The Second search-based insight',
+                repositories: [],
+                series: [],
+            },
         })
     })
 })

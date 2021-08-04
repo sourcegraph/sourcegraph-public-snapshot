@@ -29,6 +29,13 @@ type command struct {
 // runCommand invokes the given command on the host machine. The standard output and
 // standard error streams of the invoked command are written to the given logger.
 func runCommand(ctx context.Context, command command, logger *Logger) (err error) {
+	// The context here is used below as a guard against the command finishing before we close
+	// the stdout and stderr pipes. This context may not cancel until after logs for the job
+	// have been flushed, or after the 30m job deadline, so we enforce a cancellation of a
+	// child context at function exit to clean the goroutine up eagerly.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	ctx, endObservation := command.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -79,8 +86,9 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
 	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
 
-	handle.logEntry.ExitCode = exitCode
-	handle.logEntry.DurationMs = int(time.Since(startTime) / time.Millisecond)
+	handle.logEntry.ExitCode = &exitCode
+	duration := int(time.Since(startTime) / time.Millisecond)
+	handle.logEntry.DurationMs = &duration
 
 	if err != nil {
 		return err

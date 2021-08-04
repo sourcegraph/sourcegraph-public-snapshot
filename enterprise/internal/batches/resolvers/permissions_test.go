@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -39,7 +40,7 @@ func TestPermissionLevels(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	key := et.TestKey{}
 
-	cstore := store.New(db, key)
+	cstore := store.New(db, &observation.TestContext, key)
 	sr := New(cstore)
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -945,7 +946,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	db := dbtest.NewDB(t, "")
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {

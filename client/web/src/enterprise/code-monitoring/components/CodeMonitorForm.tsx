@@ -36,6 +36,8 @@ export interface CodeMonitorFormProps {
     showDeleteButton?: boolean
     /* Optional trigger query to pre-populate the trigger form */
     triggerQuery?: string
+    /* Optional description to pre-populate the name */
+    description?: string
 
     deleteCodeMonitor?: typeof _deleteCodeMonitor
 }
@@ -54,13 +56,14 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     showDeleteButton,
     deleteCodeMonitor = _deleteCodeMonitor,
     triggerQuery,
+    description,
 }) => {
     const LOADING = 'loading' as const
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
             id: '',
-            description: '',
+            description: description ?? '',
             enabled: true,
             trigger: { id: '', query: triggerQuery ?? '' },
             actions: {

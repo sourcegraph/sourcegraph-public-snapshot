@@ -303,6 +303,8 @@ func Frontend() *monitoring.Container {
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
 			shared.CodeIntelligence.NewUploadStoreGroup(containerName),
 
+			shared.Batches.NewDBStoreGroup(containerName),
+
 			// src_oobmigration_total
 			// src_oobmigration_duration_seconds_bucket
 			// src_oobmigration_errors_total
@@ -319,10 +321,12 @@ func Frontend() *monitoring.Container {
 					},
 				},
 
-				Total:     shared.NoAlertsOption("none"),
-				Duration:  shared.NoAlertsOption("none"),
-				Errors:    shared.NoAlertsOption("none"),
-				ErrorRate: shared.NoAlertsOption("none"),
+				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
+					Total:     shared.NoAlertsOption("none"),
+					Duration:  shared.NoAlertsOption("none"),
+					Errors:    shared.NoAlertsOption("none"),
+					ErrorRate: shared.NoAlertsOption("none"),
+				},
 			}),
 
 			// src_oobmigration_total
@@ -341,10 +345,12 @@ func Frontend() *monitoring.Container {
 					},
 				},
 
-				Total:     shared.NoAlertsOption("none"),
-				Duration:  shared.NoAlertsOption("none"),
-				Errors:    shared.NoAlertsOption("none"),
-				ErrorRate: shared.NoAlertsOption("none"),
+				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
+					Total:     shared.NoAlertsOption("none"),
+					Duration:  shared.NoAlertsOption("none"),
+					Errors:    shared.NoAlertsOption("none"),
+					ErrorRate: shared.NoAlertsOption("none"),
+				},
 			}),
 
 			{

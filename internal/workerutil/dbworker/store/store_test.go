@@ -932,57 +932,70 @@ func TestStoreResetStalled(t *testing.T) {
 func TestStoreHeartbeat(t *testing.T) {
 	db := setupStoreTest(t)
 
-	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state)
-		VALUES
-			(1, 'queued')
-	`); err != nil {
-		t.Fatalf("unexpected error inserting records: %s", err)
-	}
-
 	now := time.Unix(1587396557, 0).UTC()
 	clock := glock.NewMockClockAt(now)
 	store := testStore(db, defaultTestStoreOptions(clock))
 
-	if _, err := store.Heartbeat(context.Background(), []int{1}, HeartbeatOptions{}); err != nil {
+	if err := store.Exec(context.Background(), sqlf.Sprintf(`
+		INSERT INTO workerutil_test (id, state, worker_hostname, last_heartbeat_at)
+		VALUES
+			(1, 'queued', 'worker1', %s),
+			(2, 'queued', 'worker1', %s),
+			(3, 'queued', 'worker2', %s)
+	`, now, now, now)); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	readAndCompareTimes := func(expected map[int]time.Duration) {
+		times, err := scanLastHeartbeatTimestampsFrom(clock.Now())(store.Query(context.Background(), sqlf.Sprintf(`
+			SELECT id, last_heartbeat_at FROM workerutil_test
+		`)))
+		if err != nil {
+			t.Fatalf("unexpected error scanning heartbeats: %s", err)
+		}
+
+		if diff := cmp.Diff(expected, times); diff != "" {
+			t.Errorf("unexpected times (-want +got):\n%s", diff)
+		}
+	}
+
+	clock.Advance(5 * time.Second)
+
+	if _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
-
-	readAndCompareTime := func(wantTime *time.Time) {
-		rows, err := db.QueryContext(context.Background(), `SELECT last_heartbeat_at FROM workerutil_test WHERE id = 1`)
-		if err != nil {
-			t.Fatalf("unexpected error querying record: %s", err)
-		}
-		defer func() { _ = basestore.CloseRows(rows, nil) }()
-
-		if !rows.Next() {
-			t.Fatal("expected record to exist")
-		}
-
-		var lastHeartbeatAt *time.Time
-		if err := rows.Scan(&lastHeartbeatAt); err != nil {
-			t.Fatalf("unexpected error scanning record: %s", err)
-		}
-
-		want, have := wantTime, lastHeartbeatAt
-		if (want == nil && want != have) || (want != nil && (have == nil || !want.Equal(*have))) {
-			t.Errorf("invalid heartbeat stored, want=%q have=%q", want, have)
-		}
-	}
-
-	// Expect null time to be stored.
-	readAndCompareTime(nil)
+	readAndCompareTimes(map[int]time.Duration{
+		1: 5 * time.Second, // not updated, clock advanced 5s from start; note state='queued'
+		2: 5 * time.Second, // not updated, clock advanced 5s from start; note state='queued'
+		3: 5 * time.Second, // not updated, clock advanced 5s from start; note state='queued'
+	})
 
 	// Now update state to processing and expect it to update properly.
-	if _, err := db.ExecContext(context.Background(), `
-	UPDATE workerutil_test SET state = 'processing' WHERE id = 1
-	`); err != nil {
+	if _, err := db.ExecContext(context.Background(), `UPDATE workerutil_test SET state = 'processing'`); err != nil {
 		t.Fatalf("unexpected error updating records: %s", err)
 	}
-	if _, err := store.Heartbeat(context.Background(), []int{1}, HeartbeatOptions{}); err != nil {
+
+	clock.Advance(5 * time.Second)
+
+	// Only one worker
+	if _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{WorkerHostname: "worker1"}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
+	readAndCompareTimes(map[int]time.Duration{
+		1: 0,                // updated
+		2: 0,                // updated
+		3: 10 * time.Second, // not updated, clock advanced 10s from start; note worker_hostname=worker2
+	})
 
-	// Now expect time to be stored properly.
-	readAndCompareTime(&now)
+	clock.Advance(5 * time.Second)
+
+	// Multiple workers
+	if _, err := store.Heartbeat(context.Background(), []int{1, 3}, HeartbeatOptions{}); err != nil {
+		t.Fatalf("unexpected error updating heartbeat: %s", err)
+	}
+	readAndCompareTimes(map[int]time.Duration{
+		1: 0,               // updated
+		2: 5 * time.Second, // not in known ID list
+		3: 0,               // updated
+	})
 }
