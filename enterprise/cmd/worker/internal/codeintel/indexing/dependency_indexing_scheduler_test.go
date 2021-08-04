@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
@@ -44,7 +44,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 6 {
 		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForRepositoryFunc.History()))
 	} else {
-		var packages []semantic.Package
+		var packages []precise.Package
 		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
 			packages = append(packages, call.Arg1)
 		}
@@ -65,7 +65,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 			return false
 		})
 
-		expectedPackages := []semantic.Package{
+		expectedPackages := []precise.Package{
 			{Scheme: "test", Name: "name1", Version: "v1.2.0"},
 			{Scheme: "test", Name: "name1", Version: "v2.2.0"},
 			{Scheme: "test", Name: "name1", Version: "v3.2.0"},

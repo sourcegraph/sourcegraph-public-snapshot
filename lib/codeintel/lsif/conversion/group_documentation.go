@@ -7,7 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // documentationChannels represents three result channels (pages, pathInfo, mappings), each being
@@ -20,13 +20,13 @@ import (
 // collectDocumentation works by incrementally building all three channels (and, without the queue,
 // would fill up a channel and effectively become blocked.)
 type documentationChannels struct {
-	pages    chan *semantic.DocumentationPageData
-	pathInfo chan *semantic.DocumentationPathInfoData
-	mappings chan semantic.DocumentationMapping
+	pages    chan *precise.DocumentationPageData
+	pathInfo chan *precise.DocumentationPathInfoData
+	mappings chan precise.DocumentationMapping
 
-	enqueuePages    chan *semantic.DocumentationPageData
-	enqueuePathInfo chan *semantic.DocumentationPathInfoData
-	enqueueMappings chan semantic.DocumentationMapping
+	enqueuePages    chan *precise.DocumentationPageData
+	enqueuePathInfo chan *precise.DocumentationPathInfoData
+	enqueueMappings chan precise.DocumentationMapping
 }
 
 func (c *documentationChannels) close() {
@@ -37,17 +37,17 @@ func (c *documentationChannels) close() {
 
 func newDocumentationChannels() documentationChannels {
 	channels := documentationChannels{
-		pages:           make(chan *semantic.DocumentationPageData, 128),
-		pathInfo:        make(chan *semantic.DocumentationPathInfoData, 128),
-		mappings:        make(chan semantic.DocumentationMapping, 1024),
-		enqueuePages:    make(chan *semantic.DocumentationPageData, 128),
-		enqueuePathInfo: make(chan *semantic.DocumentationPathInfoData, 128),
-		enqueueMappings: make(chan semantic.DocumentationMapping, 1024),
+		pages:           make(chan *precise.DocumentationPageData, 128),
+		pathInfo:        make(chan *precise.DocumentationPathInfoData, 128),
+		mappings:        make(chan precise.DocumentationMapping, 1024),
+		enqueuePages:    make(chan *precise.DocumentationPageData, 128),
+		enqueuePathInfo: make(chan *precise.DocumentationPathInfoData, 128),
+		enqueueMappings: make(chan precise.DocumentationMapping, 1024),
 	}
 	go func() {
 		dst := channels.pages
 		src := channels.enqueuePages
-		var buf []*semantic.DocumentationPageData
+		var buf []*precise.DocumentationPageData
 		for {
 			if len(buf) == 0 {
 				v, ok := <-src
@@ -76,7 +76,7 @@ func newDocumentationChannels() documentationChannels {
 	go func() {
 		dst := channels.pathInfo
 		src := channels.enqueuePathInfo
-		var buf []*semantic.DocumentationPathInfoData
+		var buf []*precise.DocumentationPathInfoData
 		for {
 			if len(buf) == 0 {
 				v, ok := <-src
@@ -105,7 +105,7 @@ func newDocumentationChannels() documentationChannels {
 	go func() {
 		dst := channels.mappings
 		src := channels.enqueueMappings
-		var buf []semantic.DocumentationMapping
+		var buf []precise.DocumentationMapping
 		for {
 			if len(buf) == 0 {
 				v, ok := <-src
@@ -170,13 +170,13 @@ func collectDocumentation(ctx context.Context, state *State) documentationChanne
 		},
 	}
 
-	tmpPages := make(chan *semantic.DocumentationPageData)
+	tmpPages := make(chan *precise.DocumentationPageData)
 	go pageCollector.collect(ctx, tmpPages, channels.enqueueMappings)
 	go func() {
 		// Emit path info for each page as a post-processing step once we've collected pages.
 		for page := range tmpPages {
-			var collectChildrenPages func(node *semantic.DocumentationNode) []string
-			collectChildrenPages = func(node *semantic.DocumentationNode) []string {
+			var collectChildrenPages func(node *precise.DocumentationNode) []string
+			collectChildrenPages = func(node *precise.DocumentationNode) []string {
 				var children []string
 				for _, child := range node.Children {
 					if child.PathID != "" {
@@ -190,7 +190,7 @@ func collectDocumentation(ctx context.Context, state *State) documentationChanne
 			isIndex := page.Tree.Label.Value == "" && page.Tree.Detail.Value == ""
 
 			channels.enqueuePages <- page
-			channels.enqueuePathInfo <- &semantic.DocumentationPathInfoData{
+			channels.enqueuePathInfo <- &precise.DocumentationPathInfoData{
 				PathID:   page.Tree.PathID,
 				IsIndex:  isIndex,
 				Children: collectChildrenPages(page.Tree),
@@ -238,13 +238,13 @@ type pageCollector struct {
 	lookupFilepath              func(documentationResultID int) *string
 }
 
-func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData, mappings chan<- semantic.DocumentationMapping) (remainingPages []*pageCollector) {
-	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
-	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
+func (p *pageCollector) collect(ctx context.Context, ch chan<- *precise.DocumentationPageData, mappings chan<- precise.DocumentationMapping) (remainingPages []*pageCollector) {
+	var walk func(parent *precise.DocumentationNode, documentationResult int, pathID string)
+	walk = func(parent *precise.DocumentationNode, documentationResult int, pathID string) {
 		labelID := p.state.DocumentationStringLabel[documentationResult]
 		detailID := p.state.DocumentationStringDetail[documentationResult]
 		documentation := p.state.DocumentationResultsData[documentationResult]
-		this := &semantic.DocumentationNode{
+		this := &precise.DocumentationNode{
 			Documentation: documentation,
 			Label:         p.state.DocumentationStringsData[labelID],
 			Detail:        p.state.DocumentationStringsData[detailID],
@@ -269,11 +269,11 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				// spawn a new pageCollector to collect this page. We can't simply emit our page right
 				// now, because we might not be finished collecting all the other descendant children
 				// of this node.
-				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
+				parent.Children = append(parent.Children, precise.DocumentationNodeChild{
 					PathID: this.PathID,
 				})
 				if p.walkedPages.add(this.PathID) {
-					mappings <- semantic.DocumentationMapping{
+					mappings <- precise.DocumentationMapping{
 						ResultID: uint64(documentationResult),
 						PathID:   this.PathID,
 						FilePath: p.lookupFilepath(documentationResult),
@@ -290,12 +290,12 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				}
 				return
 			} else {
-				mappings <- semantic.DocumentationMapping{
+				mappings <- precise.DocumentationMapping{
 					ResultID: uint64(documentationResult),
 					PathID:   this.PathID,
 					FilePath: p.lookupFilepath(documentationResult),
 				}
-				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
+				parent.Children = append(parent.Children, precise.DocumentationNodeChild{
 					Node: this,
 				})
 			}
@@ -312,7 +312,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				log15.Error("API docs: upload failed due to duplicate pathIDs", "duplicates", duplicates, "nonDuplicates", nonDuplicates)
 				return
 			}
-			ch <- &semantic.DocumentationPageData{Tree: this}
+			ch <- &precise.DocumentationPageData{Tree: this}
 		}
 	}
 	walk(nil, p.startingDocumentationResult, p.parentPathID)

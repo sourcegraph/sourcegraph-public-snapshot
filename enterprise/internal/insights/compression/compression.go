@@ -79,9 +79,7 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 	// horizon of the indexer
 	include = append(include, frames[0])
 
-	// The last frame will always be excluded because this is the frame closest to now. In this case, we will allow
-	// the most recent sample to be resolved from the 'present day recorder' insight_enqueuer.go
-	for i := 1; i < len(frames)-1; i++ {
+	for i := 1; i < len(frames); i++ {
 		frame := frames[i]
 
 		if metadata.LastIndexedAt.Before(frame.To) {

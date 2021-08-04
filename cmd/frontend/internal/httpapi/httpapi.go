@@ -204,7 +204,7 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	traceURL := trace.URL(traceID)
 
 	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceid", traceID)
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceID", traceID)
 	}
 }
 
