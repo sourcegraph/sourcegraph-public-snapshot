@@ -277,13 +277,11 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 	}
 	var multi error
 
-	frames := Frames(h.framesToBackfill(), h.frameLength(), h.now())
-
-	hardErr := h.allReposIterator(ctx, h.buildForRepo(ctx, uniqueSeries, sortedSeriesIDs, frames, multi))
+	hardErr := h.allReposIterator(ctx, h.buildForRepo(ctx, uniqueSeries, sortedSeriesIDs, multi))
 	return hardErr
 }
 
-func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, frames []compression.Frame, softErr error) func(repoName string) error {
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string) error {
 	return func(repoName string) error {
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
@@ -303,9 +301,9 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 			duration := h.now().Sub(series.OldestHistoricalAt) / time.Duration(h.framesToBackfill())
 			frames := Frames(h.framesToBackfill(), duration, series.CreatedAt)
 
-			log15.Info("insights: starting frames", "series_id", series.SeriesID, "starting_frames", frames)
+			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 			filtered := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
-			log15.Info("insights: sampling historical data frames", "series_id", series.SeriesID, "repo_id", repo.ID, "frames", frames)
+			log15.Debug("insights: sampling historical data frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 
 			// Find the first commit made to the repository on the default branch.
 			firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
@@ -469,9 +467,15 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	if len(recentCommits) > 0 {
 		nearestCommit = recentCommits[0]
 	}
-	if nearestCommit == nil || nearestCommit.Committer == nil {
+	if nearestCommit == nil {
+		log15.Error("null commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.from, "to", bctx.to)
 		return // repository has no commits / is empty. Maybe not yet pushed to code host.
 	}
+	if nearestCommit.Committer == nil {
+		log15.Error("null committer", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.from, "to", bctx.to)
+		return
+	}
+	log15.Debug("nearest_commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.from, "to", bctx.to, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
 
 	// Build the search query we will run. The most important part here is
 	query = withCountUnlimited(query)
