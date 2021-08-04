@@ -30,7 +30,7 @@ type FileDiffHunk struct {
 
 type File struct {
 	Name string
-	// Ignoring other fields of File2, since that would require gitserver
+	// Ignoring other fields of File, since that would require gitserver
 }
 
 type FileDiff struct {
