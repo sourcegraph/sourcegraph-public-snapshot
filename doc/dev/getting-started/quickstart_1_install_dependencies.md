@@ -159,21 +159,27 @@ The following are two recommendations for installing these dependencies:
     ```
     sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
 
-    # (without docker) install PostgreSQL and/or Redis if you don't want to run them as docker containers
+    # (without docker) Install PostgreSQL and/or Redis if you don't want to run them as docker containers
     sudo apt install -y redis-server
     sudo apt install -y postgresql postgresql-contrib
 
-    # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
+    # Install golang-migrate
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
+
+    # The extracted binary must be in your $PATH available as `golang-migrate`.
+    # Here's how you'd move it to `/usr/local/bin` (which is most likely in your `$PATH`):
     chmod +x migrate.linux-amd64
     mv migrate.linux-amd64 /usr/local/bin/golang-migrate
 
-    # install comby (you must rename the extracted binary to `comby` and move the binary into your $PATH)
+    # Install comby
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
+
+    # The extracted binary must be in your $PATH available as `comby`.
+    # Here's how you'd move it to `/usr/local/bin` (which is most likely in your `$PATH`):
     chmod +x comby-*-linux
     mv comby-*-linux /usr/local/bin/comby
 
-    # install watchman (you must put the binary and shared libraries on your $PATH and $LD_LIBRARY_PATH)
+    # Install watchman (you must put the binary and shared libraries on your $PATH and $LD_LIBRARY_PATH)
     curl -LO https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
     unzip watchman-*-linux.zip
     sudo mkdir -p /usr/local/var/run/watchman
@@ -184,12 +190,12 @@ The following are two recommendations for installing these dependencies:
     # On Linux, you may need to run the following in addition:
     watchman watch <path to sourcegraph repository>
 
-    # nvm (to manage Node.js)
+    # Install nvm (to manage Node.js)
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
     curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
     sh install-nvm.sh
 
-    # in repo dir: install current recommendend version of Node JS
+    # In sourcegraph repository directory: install current recommendend version of Node JS
     nvm install
     ```
 
