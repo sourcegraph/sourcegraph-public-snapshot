@@ -13,7 +13,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -346,7 +345,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	g, ctx := errgroup.WithContext(ctx)
+	var qs []zoektquery.Q
 
 	// Public
 	if !args.RepoOptions.OnlyPrivate {
@@ -362,9 +361,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		apply(zoektquery.RcOnlyForks, args.RepoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
 
-		g.Go(func() error {
-			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query), args, typ, c)
-		})
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
 	}
 
 	// Private
@@ -374,12 +371,10 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		for _, r := range args.UserPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-
-		g.Go(func() error {
-			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query), args, typ, c)
-		})
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
 	}
-	return g.Wait()
+
+	return doZoektSearchGlobal(ctx, zoektquery.Simplify(zoektquery.NewOr(qs...)), args, typ, c)
 }
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
