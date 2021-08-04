@@ -118,13 +118,12 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
 	if err != nil {
 		return Index{}, false, err
 	}
-	defer func() { err = done(err) }()
 
-	return scanFirstIndex(s.WithDB(tx).Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id)))
+	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
 }
 
 const indexAssociatedUploadIDQueryFragment = `
@@ -169,7 +168,7 @@ FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.id = %s
+WHERE u.id = %s AND %s
 `
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
@@ -184,18 +183,17 @@ func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err
 		return nil, nil
 	}
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = done(err) }()
 
 	queries := make([]*sqlf.Query, 0, len(ids))
 	for _, id := range ids {
 		queries = append(queries, sqlf.Sprintf("%d", id))
 	}
 
-	return scanIndexes(s.WithDB(tx).Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "))))
+	return scanIndexes(s.Store.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
 }
 
 const getIndexesByIDsQuery = `
@@ -226,7 +224,7 @@ FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.id IN (%s)
+WHERE u.id IN (%s) AND %s
 `
 
 type GetIndexesOptions struct {
@@ -248,13 +246,11 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer func() { err = done(err) }()
-
-	stx := s.WithDB(tx)
+	defer func() { err = tx.Done(err) }()
 
 	var conds []*sqlf.Query
 
@@ -268,16 +264,18 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
 	}
 
-	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("true"))
+	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	if err != nil {
+		return nil, 0, err
 	}
+	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(stx.Query(ctx, sqlf.Sprintf(getIndexesCountQuery, sqlf.Join(conds, " AND "))))
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesCountQuery, sqlf.Join(conds, " AND "))))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	indexes, err := scanIndexes(stx.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
+	indexes, err := scanIndexes(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, 0, err
 	}

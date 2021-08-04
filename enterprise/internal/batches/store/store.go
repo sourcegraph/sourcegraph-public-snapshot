@@ -94,11 +94,6 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other), key: s.key, operations: s.operations, now: s.now}
 }
 
-// WithDB creates a new Store with the given dbutil.DB handle.
-func (s *Store) WithDB(other dbutil.DB) *Store {
-	return &Store{Store: basestore.NewWithDB(other, sql.TxOptions{}), key: s.key, now: s.now}
-}
-
 // Transact creates a new transaction.
 // It's required to implement this method and wrap the Transact method of the
 // underlying basestore.Store.

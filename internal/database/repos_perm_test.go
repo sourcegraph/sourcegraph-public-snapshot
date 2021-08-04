@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -44,6 +45,132 @@ func (p *fakeProvider) FetchUserPermsByToken(context.Context, string) (*authz.Ex
 
 func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return nil, nil
+}
+
+// 🚨 SECURITY: Tests are necessary to ensure security.
+func TestAuthzQueryConds(t *testing.T) {
+	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
+	db := dbtest.NewDB(t, "")
+
+	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+		defer authz.SetProviders(true, nil)
+
+		_, err := AuthzQueryConds(context.Background(), db)
+		gotErr := fmt.Sprintf("%v", err)
+		if diff := cmp.Diff(errPermissionsUserMappingConflict.Error(), gotErr); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("When permissions user mapping is enabled", func(t *testing.T) {
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		got, err := AuthzQueryConds(context.Background(), db)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := authzQuery(false, true, int32(0), authz.Read)
+		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	defer func() {
+		Mocks.Users.GetByCurrentAuthUser = nil
+	}()
+	tests := []struct {
+		name                string
+		setup               func(t *testing.T) context.Context
+		authzAllowByDefault bool
+		wantQuery           *sqlf.Query
+	}{
+		{
+			name: "internal actor bypass checks",
+			setup: func(t *testing.T) context.Context {
+				return actor.WithInternalActor(context.Background())
+			},
+			wantQuery: authzQuery(true, false, int32(0), authz.Read),
+		},
+		{
+			name: "no authz provider and not allow by default",
+			setup: func(t *testing.T) context.Context {
+				return context.Background()
+			},
+			wantQuery: authzQuery(false, false, int32(0), authz.Read),
+		},
+		{
+			name: "no authz provider but allow by default",
+			setup: func(t *testing.T) context.Context {
+				return context.Background()
+			},
+			authzAllowByDefault: true,
+			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
+		},
+		{
+			name: "authenticated user is a site admin",
+			setup: func(t *testing.T) context.Context {
+				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+					return &types.User{ID: 1, SiteAdmin: true}, nil
+				}
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+				})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			},
+			wantQuery: authzQuery(true, false, int32(1), authz.Read),
+		},
+		{
+			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
+			setup: func(t *testing.T) context.Context {
+				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+					return &types.User{ID: 1, SiteAdmin: true}, nil
+				}
+				conf.Get().AuthzEnforceForSiteAdmins = true
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+					conf.Get().AuthzEnforceForSiteAdmins = false
+				})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			},
+			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+		},
+		{
+			name: "authenticated user is not a site admin",
+			setup: func(t *testing.T) context.Context {
+				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+					return &types.User{ID: 1}, nil
+				}
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+				})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			},
+			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			authz.SetProviders(test.authzAllowByDefault, nil)
+			defer authz.SetProviders(true, nil)
+
+			q, err := AuthzQueryConds(test.setup(t), db)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantQuery, q, cmpOpts); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
