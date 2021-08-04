@@ -1425,11 +1425,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// per backend. This works better than batch based since we have higher
 	// defaults.
 	stream := r.stream
-		return &SearchResults{
-			Matches: matches,
-			Stats:   common,
-			Alert:   alert,
-		}, err
 	}
 
 	// This ensures we properly cleanup in the case of an early return. In
