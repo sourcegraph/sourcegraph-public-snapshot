@@ -185,7 +185,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         }
     }, [notebook, selectedBlockId, onMoveBlockSelection, setSelectedBlockId])
 
-    useQueryIntelligence(fetchSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
         patternType: SearchPatternType.literal,
         globbing: props.globbing,
         interpretComments: true,
@@ -232,6 +232,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                                 {...props}
                                 {...block}
                                 {...blockCallbackProps}
+                                sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
                                 isReadOnly={isReadOnly}
                                 isSelected={selectedBlockId === block.id}
                                 isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
