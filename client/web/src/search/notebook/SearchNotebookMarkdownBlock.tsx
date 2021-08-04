@@ -10,7 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
-import { SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
+import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
 import styles from './SearchNotebookMarkdownBlock.module.scss'
 import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
@@ -78,8 +78,6 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     useEffect(() => {
         if (isEditing) {
             editor?.focus()
-        } else {
-            blockElement.current?.focus()
         }
     }, [isEditing, editor])
 
@@ -91,25 +89,26 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         isMacPlatform,
         ...props,
     })
-    const menuActions = useMemo(
-        () =>
-            [
-                isEditing
-                    ? {
-                          label: 'Render',
-                          icon: <PlayCircleOutlineIcon className="icon-inline" />,
-                          onClick: runBlock,
-                          keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
-                      }
-                    : {
-                          label: 'Edit',
-                          icon: <PencilIcon className="icon-inline" />,
-                          onClick: onEnterBlock,
-                          keyboardShortcutLabel: '↵',
-                      },
-            ].concat(commonMenuActions),
-        [isEditing, modifierKeyLabel, runBlock, onEnterBlock, commonMenuActions]
-    )
+    const menuActions = useMemo(() => {
+        const action: BlockMenuAction[] = [
+            isEditing
+                ? {
+                      type: 'button',
+                      label: 'Render',
+                      icon: <PlayCircleOutlineIcon className="icon-inline" />,
+                      onClick: runBlock,
+                      keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
+                  }
+                : {
+                      type: 'button',
+                      label: 'Edit',
+                      icon: <PencilIcon className="icon-inline" />,
+                      onClick: onEnterBlock,
+                      keyboardShortcutLabel: '↵',
+                  },
+        ]
+        return action.concat(commonMenuActions)
+    }, [isEditing, modifierKeyLabel, runBlock, onEnterBlock, commonMenuActions])
 
     const blockMenu = isSelected && !isReadOnly && <SearchNotebookBlockMenu id={id} actions={menuActions} />
 
