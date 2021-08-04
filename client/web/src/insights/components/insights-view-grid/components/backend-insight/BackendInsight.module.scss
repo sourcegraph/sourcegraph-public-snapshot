@@ -1,0 +1,19 @@
+
+.filter-button {
+    position: relative;
+
+    &--active {
+        &:before {
+            content: '';
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background-color: var(--purple);
+
+            position: absolute;
+            top: 100%;
+            left: 100%;
+            transform: translate(-100%, -100%);
+        }
+    }
+}
