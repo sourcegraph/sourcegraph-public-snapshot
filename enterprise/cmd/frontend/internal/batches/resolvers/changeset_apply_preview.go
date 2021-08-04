@@ -232,8 +232,10 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		changeset := changesets[0]
 
 		// Set the changeset UI publication state if necessary.
-		if state, ok := r.publicationStates[mappingChangesetSpec.RandID]; ok {
-			changeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
+		if r.publicationStates != nil {
+			if state, ok := r.publicationStates[mappingChangesetSpec.RandID]; ok {
+				changeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
+			}
 		}
 
 		// Detached changesets would still appear here, but since they'll never match one of the new specs, they don't actually appear here.
