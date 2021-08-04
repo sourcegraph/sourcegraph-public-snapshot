@@ -92,7 +92,7 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
     Type definitions of common `batches` types, such as `BatchChange`, `BatchSpec`, `Changeset`, etc. A few helper functions and methods, but no real business logic.
 - `enterprise/internal/batches`:
 
-    The hook `InitBackgroundJobs` to inject Batch Changes code into `enterprise/repo-updater`. This is the "glue" in "glue code".
+    The hook `InitBackgroundJobs` injects Batch Changes code into `enterprise/repo-updater`. This is the "glue" in "glue code".
 - `enterprise/internal/batches/background`
 
     Another bit of glue code that starts background goroutines: the changeset reconciler, the stuck-reconciler resetter, the old-changeset-spec expirer.
