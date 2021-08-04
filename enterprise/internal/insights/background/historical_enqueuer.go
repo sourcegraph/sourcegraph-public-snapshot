@@ -486,7 +486,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		SearchQuery: query,
 		RecordTime:  &nearestCommit.Committer.Date,
 		State:       "queued",
-		Priority:    int(priority.FromTimeInterval(bctx.from, bctx.series.CreatedAt)), // eventually we will use the end of the historical range, for now current time works fine
+		Priority:    int(priority.FromTimeInterval(bctx.from, bctx.series.CreatedAt)),
 		Cost:        int(priority.Unindexed),
 	})
 	return
