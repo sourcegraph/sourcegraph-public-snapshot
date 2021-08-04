@@ -195,11 +195,6 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 }
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
 	hasTimeFilter := false
 	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
 		hasTimeFilter = true
@@ -209,10 +204,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	}
 
 	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
 		return &TimeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil

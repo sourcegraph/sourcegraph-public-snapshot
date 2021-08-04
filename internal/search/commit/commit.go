@@ -74,14 +74,10 @@ func ResolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*s
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
 	}
-	repos, err := tp.RepoPromise.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	return &search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       repos,
+		Repos:       tp.Repos,
 		Query:       tp.Query,
 	}, nil
 }

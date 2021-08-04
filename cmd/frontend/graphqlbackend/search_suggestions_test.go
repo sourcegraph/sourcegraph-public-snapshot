@@ -159,12 +159,8 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
-			repos, err := args.RepoPromise.Get(context.Background())
-			if err != nil {
-				t.Error(err)
-			}
-			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", repos, want)
+			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []result.Match{&result.RepoMatch{Name: "foo-repo", ID: 23}},
 				&streaming.Stats{},
@@ -273,12 +269,8 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
-			repos, err := args.RepoPromise.Get(context.Background())
-			if err != nil {
-				t.Error(err)
-			}
-			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", repos, want)
+			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []result.Match{mkFileMatch(types.RepoName{Name: "foo-repo"}, "dir/bar-file")}, &streaming.Stats{}, nil
 		}

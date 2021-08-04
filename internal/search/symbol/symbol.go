@@ -48,12 +48,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		return err
 	}
 
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
