@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -23,15 +23,14 @@ type InsightPermStore struct {
 // repos - which is highly likely given the public / private model that repos use today.
 func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error) {
 	db := i.Store.Handle().DB()
-	store := database.Repos(db)
-	conds, err := database.AuthzQueryConds(ctx, db)
+	db, done, err := database.WithEnforcedAuthz(ctx, db)
 	if err != nil {
-		return []api.RepoID{}, err
+		return []api.RepoID{}, errors.Wrap(err, "enforcing authz")
 	}
+	defer func() { err = done(err) }()
+	store := database.Repos(db)
 
-	q := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnauthorizedReposSql), conds}, " ")
-
-	rows, err := store.Query(ctx, q)
+	rows, err := store.Query(ctx, sqlf.Sprintf(fetchUnauthorizedReposSql))
 	if err != nil {
 		return []api.RepoID{}, err
 	}
@@ -48,9 +47,16 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 	return results, nil
 }
 
+// All non deleted repos will have at least one entry in external_service_repos.
+// We join against the repo table so that our permissions checking on that table
+// kicks in and any joins that don't match indicate a repo we don't have access
+// to.
 const fetchUnauthorizedReposSql = `
 -- source: enterprise/internal/insights/resolver/permissions.go:FetchUnauthorizedRepos
-	SELECT id FROM repo WHERE NOT`
+	SELECT distinct(repo_id) FROM external_service_repos esr
+    LEFT JOIN repo r on r.id = esr.repo_id
+    WHERE r.id IS NULL
+`
 
 func NewInsightPermissionStore(db dbutil.DB) *InsightPermStore {
 	return &InsightPermStore{

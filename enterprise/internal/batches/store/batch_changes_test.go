@@ -613,7 +613,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-		if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
+		if err := repoStore.Create(actor.WithInternalActor(ctx), repo1, repo2, repo3); err != nil {
 			t.Fatal(err)
 		}
 

@@ -2,6 +2,7 @@ package dbstore
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -29,6 +30,13 @@ func NewWithDB(db dbutil.DB, observationContext *observation.Context) *Store {
 func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
 		Store:      s.Store.With(other),
+		operations: s.operations,
+	}
+}
+
+func (s *Store) WithDB(other dbutil.DB) *Store {
+	return &Store{
+		Store:      s.Store.With(basestore.NewWithDB(other, sql.TxOptions{})),
 		operations: s.operations,
 	}
 }

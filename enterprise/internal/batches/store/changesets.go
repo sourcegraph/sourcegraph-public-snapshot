@@ -264,11 +264,17 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 	ctx, endObservation := s.operations.countChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
-	if err != nil {
-		return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
+	if opts.EnforceAuthz {
+		tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+		if err != nil {
+			return 0, errors.Wrap(err, "CountChangesets enforcing authz")
+		}
+		defer func() { err = done(err) }()
+
+		return s.WithDB(tx).queryCount(ctx, countChangesetsQuery(&opts))
 	}
-	return s.queryCount(ctx, countChangesetsQuery(&opts, authzConds))
+
+	return s.queryCount(ctx, countChangesetsQuery(&opts))
 }
 
 var countChangesetsQueryFmtstr = `
@@ -280,7 +286,7 @@ INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 `
 
-func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sqlf.Query {
+func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
@@ -318,9 +324,6 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	}
 	if opts.OwnedByBatchChangeID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_batch_change_id = %s", opts.OwnedByBatchChangeID))
-	}
-	if opts.EnforceAuthz {
-		preds = append(preds, authzConds)
 	}
 	if opts.RepoID != 0 {
 		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
@@ -534,14 +537,20 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	ctx, endObservation := s.operations.listChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
+	stx := s
+	if opts.EnforceAuthz {
+		tx, done, err := database.WithEnforcedAuthz(ctx, stx.Handle().DB())
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "ListChangesets enforcing authz")
+		}
+		defer func() { err = done(err) }()
+		stx = s.WithDB(tx)
 	}
-	q := listChangesetsQuery(&opts, authzConds)
+
+	q := listChangesetsQuery(&opts)
 
 	cs = make([]*btypes.Changeset, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = stx.query(ctx, q, func(sc scanner) (err error) {
 		var c btypes.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return err
@@ -567,7 +576,7 @@ WHERE %s
 ORDER BY id ASC
 `
 
-func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf.Query {
+func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -619,9 +628,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 	if opts.OwnedByBatchChangeID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_batch_change_id = %s", opts.OwnedByBatchChangeID))
-	}
-	if opts.EnforceAuthz {
-		preds = append(preds, authzConds)
 	}
 	if opts.RepoID != 0 {
 		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
@@ -1264,14 +1270,16 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
 	if err != nil {
-		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
+		return nil, errors.Wrap(err, "GetRepoChangesetsStats enforcing authz")
 	}
-	q := getRepoChangesetsStatsQuery(int64(repoID), authzConds)
+	defer func() { err = done(err) }()
+
+	q := getRepoChangesetsStatsQuery(int64(repoID))
 
 	stats = &btypes.RepoChangesetsStats{}
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.WithDB(tx).query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
 			&stats.Unpublished,
@@ -1404,14 +1412,13 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 	)
 }
 
-func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
+func getRepoChangesetsStatsQuery(repoID int64) *sqlf.Query {
 	publishedAndCompleted := sqlf.Sprintf("publication_state = 'PUBLISHED' AND reconciler_state = 'completed'")
 
 	return sqlf.Sprintf(
 		getRepoChangesetsStatsFmtstr,
 		publishedAndCompleted, publishedAndCompleted, publishedAndCompleted, publishedAndCompleted,
 		strconv.Itoa(int(repoID)),
-		authzConds,
 	)
 }
 
@@ -1438,8 +1445,6 @@ FROM (
 		repo.id = %s
 		-- where the changeset is not archived on at least one batch change
 		AND jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
-		-- authz conditions:
-		AND %s
 ) AS fcs;
 `
 

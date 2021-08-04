@@ -1478,7 +1478,7 @@ Referenced by:
 Policies:
     POLICY "sg_repo_access_policy"
       TO sg_service
-      USING ((((NOT (current_setting('rls.use_permissions_user_mapping'::text))::boolean) AND ((private IS FALSE) OR (EXISTS ( SELECT
+      USING (((current_setting('rls.bypass'::text))::boolean OR ((NOT (current_setting('rls.use_permissions_user_mapping'::text))::boolean) AND ((private IS FALSE) OR (EXISTS ( SELECT
    FROM (external_services es
      JOIN external_service_repos esr ON (((esr.external_service_id = es.id) AND (esr.repo_id = repo.id) AND (es.unrestricted = true) AND (es.deleted_at IS NULL))))
  LIMIT 1)))) OR (EXISTS ( SELECT 1

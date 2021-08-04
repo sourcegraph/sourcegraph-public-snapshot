@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -54,7 +55,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
 
-	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
+	if err := rs.Create(actor.WithActor(ctx, &actor.Actor{Internal: true}), repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))

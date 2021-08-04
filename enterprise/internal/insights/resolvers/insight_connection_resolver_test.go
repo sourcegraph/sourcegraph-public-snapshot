@@ -157,7 +157,18 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 						   site_admin)
 		VALUES
 		(1, 'user1', 'user1', null, current_timestamp, current_timestamp, null, 1, 'abc', false),
-		(2, 'user2', 'user2', null, current_timestamp, current_timestamp, null, 1, 'abc', false);`)
+		(2, 'user2', 'user2', null, current_timestamp, current_timestamp, null, 1, 'abc', false);
+
+		INSERT INTO external_services (id, kind, display_name, config)
+		VALUES
+			(1, 'GITHUB', 'GITHUB 1', '{}');
+
+		INSERT INTO external_service_repos (repo_id, external_service_id, clone_url, user_id)
+		VALUES
+			(1, 1, 'example.com', 1),
+			(2, 1, 'example.com', 1),
+			(3, 1, 'example.com', 1);
+		`)
 	if err != nil {
 		t.Fatal(err)
 	}
