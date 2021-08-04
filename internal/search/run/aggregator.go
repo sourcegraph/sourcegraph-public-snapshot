@@ -204,10 +204,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	}
 
 	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.RepoPromise) > max {
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.RepoPromise) > max {
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
 		return &TimeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil

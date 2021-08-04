@@ -77,7 +77,7 @@ func ResolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*s
 
 	return &search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       tp.RepoPromise,
+		Repos:       tp.Repos,
 		Query:       tp.Query,
 	}, nil
 }

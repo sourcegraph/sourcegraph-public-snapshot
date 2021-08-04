@@ -337,7 +337,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
-	args.RepoPromise = resolved.RepoRevs
+	args.Repos = resolved.RepoRevs
 
 	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {
