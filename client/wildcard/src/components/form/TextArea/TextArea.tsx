@@ -14,6 +14,8 @@ export interface FormTextAreaProps extends InputHTMLAttributes<HTMLTextAreaEleme
     isError?: boolean
     /** Disable textarea behavior */
     disabled?: boolean
+    /** Determines the size of the textarea */
+    size?: 'regular' | 'small'
 }
 
 /**
@@ -21,16 +23,17 @@ export interface FormTextAreaProps extends InputHTMLAttributes<HTMLTextAreaEleme
  */
 export const TextArea: ForwardRefExoticComponent<FormTextAreaProps & RefAttributes<HTMLTextAreaElement>> = forwardRef(
     (props, reference) => {
-        const { title, message, className, disabled, isError, ...otherProps } = props
+        const { title, message, className, disabled, isError, size, ...otherProps } = props
 
         return (
             <label className={classnames('w-100', className)}>
-                {title && <div className="mb-2">{title}</div>}
+                {title && <div className="mb-2">{size === 'regular' ? title : <small>{title}</small>}</div>}
 
                 <textarea
                     disabled={disabled}
                     className={classnames(styles.textarea, 'form-control', {
                         'is-invalid': isError,
+                        'form-control-sm': size === 'small',
                     })}
                     {...otherProps}
                     ref={reference}

@@ -42,7 +42,7 @@ export const TextAreaExamples: React.FunctionComponent = () => {
     return (
         <>
             <h1>TextArea</h1>
-            <Grid columnCount={3}>
+            <Grid columnCount={4}>
                 <div>
                     <TextArea
                         onChange={handleChange}
@@ -68,6 +68,15 @@ export const TextAreaExamples: React.FunctionComponent = () => {
                         title="Error example"
                         message="show an error message"
                         placeholder="Please type here..."
+                    />
+                </div>
+                <div>
+                    <TextArea
+                        onChange={handleChange}
+                        value={value}
+                        title="Small example"
+                        placeholder="Please type here..."
+                        size="small"
                     />
                 </div>
             </Grid>

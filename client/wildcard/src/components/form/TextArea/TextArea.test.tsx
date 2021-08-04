@@ -17,7 +17,9 @@ describe('TextArea', () => {
               <div
                 class="mb-2"
               >
-                TextArea loading
+                <small>
+                  TextArea loading
+                </small>
               </div>
               <textarea
                 class="textarea form-control"
