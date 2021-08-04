@@ -1,4 +1,4 @@
-package semantic
+package precise
 
 import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 

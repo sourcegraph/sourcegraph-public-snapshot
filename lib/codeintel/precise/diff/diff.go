@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-func Diff(old, new *semantic.GroupedBundleDataMaps) string {
+func Diff(old, new *precise.GroupedBundleDataMaps) string {
 	builder := strings.Builder{}
 	allPaths := make(map[string]struct{})
 	for path := range old.Documents {
@@ -28,11 +29,11 @@ func Diff(old, new *semantic.GroupedBundleDataMaps) string {
 	for path := range allPaths {
 		oldDocument := old.Documents[path]
 		newDocument := new.Documents[path]
-		locationSet := make(map[semantic.LocationData]struct{})
-		oldResults := make(map[semantic.LocationData]semantic.QueryResult)
-		newResults := make(map[semantic.LocationData]semantic.QueryResult)
+		locationSet := make(map[precise.LocationData]struct{})
+		oldResults := make(map[precise.LocationData]precise.QueryResult)
+		newResults := make(map[precise.LocationData]precise.QueryResult)
 		for _, rng := range oldDocument.Ranges {
-			loc := semantic.LocationData{
+			loc := precise.LocationData{
 				URI:            path,
 				StartLine:      rng.StartLine,
 				StartCharacter: rng.StartCharacter,
@@ -40,10 +41,10 @@ func Diff(old, new *semantic.GroupedBundleDataMaps) string {
 				EndCharacter:   rng.EndCharacter,
 			}
 			locationSet[loc] = struct{}{}
-			oldResults[loc] = semantic.Resolve(old, oldDocument, rng)
+			oldResults[loc] = precise.Resolve(old, oldDocument, rng)
 		}
 		for _, rng := range newDocument.Ranges {
-			location := semantic.LocationData{
+			location := precise.LocationData{
 				URI:            path,
 				StartLine:      rng.StartLine,
 				StartCharacter: rng.StartCharacter,
@@ -51,14 +52,14 @@ func Diff(old, new *semantic.GroupedBundleDataMaps) string {
 				EndCharacter:   rng.EndCharacter,
 			}
 			locationSet[location] = struct{}{}
-			newResults[location] = semantic.Resolve(new, newDocument, rng)
+			newResults[location] = precise.Resolve(new, newDocument, rng)
 		}
-		var sortedLocations []semantic.LocationData
+		var sortedLocations []precise.LocationData
 		for location := range locationSet {
 			sortedLocations = append(sortedLocations, location)
 		}
 		sort.Slice(sortedLocations, func(i, j int) bool {
-			return semantic.CompareLocations(sortedLocations[i], sortedLocations[j]) < 0
+			return precise.CompareLocations(sortedLocations[i], sortedLocations[j]) < 0
 		})
 
 		for _, location := range sortedLocations {
@@ -132,7 +133,7 @@ func Diff(old, new *semantic.GroupedBundleDataMaps) string {
 	return builder.String()
 }
 
-func diffQualifiedMonikers(builder *strings.Builder, old, new []semantic.QualifiedMonikerData, prefix string) {
+func diffQualifiedMonikers(builder *strings.Builder, old, new []precise.QualifiedMonikerData, prefix string) {
 	type noIDMonikerData struct {
 		Kind       string
 		Scheme     string
@@ -189,11 +190,11 @@ func diffQualifiedMonikers(builder *strings.Builder, old, new []semantic.Qualifi
 	}
 }
 
-func diffLocations(builder *strings.Builder, old, new []semantic.LocationData, prefix string) {
-	oldSet := make(map[semantic.LocationData]struct{})
-	var oldSlice []semantic.LocationData
-	newSet := make(map[semantic.LocationData]struct{})
-	var newSlice []semantic.LocationData
+func diffLocations(builder *strings.Builder, old, new []precise.LocationData, prefix string) {
+	oldSet := make(map[precise.LocationData]struct{})
+	var oldSlice []precise.LocationData
+	newSet := make(map[precise.LocationData]struct{})
+	var newSlice []precise.LocationData
 	for _, location := range old {
 		oldSet[location] = struct{}{}
 		oldSlice = append(oldSlice, location)
@@ -219,7 +220,7 @@ func diffLocations(builder *strings.Builder, old, new []semantic.LocationData, p
 
 func diffMonikers(
 	builder *strings.Builder,
-	old, new map[string]map[string][]semantic.LocationData,
+	old, new map[string]map[string][]precise.LocationData,
 	prefix string,
 ) {
 	type schemeID struct {
@@ -262,7 +263,7 @@ func diffMonikers(
 	}
 }
 
-func locationString(location semantic.LocationData) string {
+func locationString(location precise.LocationData) string {
 	return fmt.Sprintf(
 		"%v:(%v:%v)-(%v:%v)",
 		location.URI,
@@ -281,8 +282,8 @@ func added(builder *strings.Builder, value string) {
 	builder.WriteString(color.GreenString(fmt.Sprintf("+ %v\n", value)))
 }
 
-func sortLocations(locations []semantic.LocationData) {
+func sortLocations(locations []precise.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
-		return semantic.CompareLocations(locations[i], locations[j]) < 0
+		return precise.CompareLocations(locations[i], locations[j]) < 0
 	})
 }

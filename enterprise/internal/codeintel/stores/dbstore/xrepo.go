@@ -10,14 +10,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // DefinitionDumpsLimit is the maximum number of records that can be returned from DefinitionDumps.
 const DefinitionDumpsLimit = 10
 
 // DefinitionDumps returns the set of dumps that define at least one of the given monikers.
-func (s *Store) DefinitionDumps(ctx context.Context, monikers []semantic.QualifiedMonikerData) (_ []Dump, err error) {
+func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []Dump, err error) {
 	ctx, traceLog, endObservation := s.operations.definitionDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numMonikers", len(monikers)),
 		log.String("monikers", monikersToString(monikers)),
@@ -73,7 +73,7 @@ FROM lsif_dumps_with_repository_name u WHERE u.id IN (
 // Visibility is determined in two parts: if the index belongs to the given repository, it is visible if
 // it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
 // the default branch of its own repository.
-func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []semantic.QualifiedMonikerData, limit, offset int) (_ PackageReferenceScanner, _ int, err error) {
+func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ PackageReferenceScanner, _ int, err error) {
 	ctx, traceLog, endObservation := s.operations.referenceIDsAndFilters.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
@@ -148,7 +148,7 @@ const referenceIDsAndFiltersCountQuery = referenceIDsAndFiltersCTEDefinitions + 
 SELECT COUNT(distinct r.dump_id)
 ` + referenceIDsAndFiltersBaseQuery
 
-func monikersToString(vs []semantic.QualifiedMonikerData) string {
+func monikersToString(vs []precise.QualifiedMonikerData) string {
 	strs := make([]string, 0, len(vs))
 	for _, v := range vs {
 		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Scheme, v.Identifier, v.Version))
