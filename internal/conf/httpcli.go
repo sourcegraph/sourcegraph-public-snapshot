@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-
 func init() {
 	// This watch loop is here so that we don't introduce
 	// dependency cycles, since conf itself uses httpcli's internal

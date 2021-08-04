@@ -12,9 +12,9 @@ import (
 )
 
 type externalTransport struct {
-	base *http.Transport
+	base      *http.Transport
 	mu        sync.RWMutex
-	config  *schema.TlsExternal
+	config    *schema.TlsExternal
 	effective *http.Transport
 }
 
@@ -22,7 +22,6 @@ var tlsExternalConfig struct {
 	sync.RWMutex
 	*schema.TlsExternal
 }
-
 
 // SetTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
 // This is needed to avoid circular imports.
