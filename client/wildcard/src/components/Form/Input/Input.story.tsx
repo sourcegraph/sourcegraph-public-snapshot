@@ -7,7 +7,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Input } from './Input'
 
 const Story: Meta = {
-    title: 'wildcard/Form/Input',
+    title: 'wildcard/Input',
 
     decorators: [
         story => (

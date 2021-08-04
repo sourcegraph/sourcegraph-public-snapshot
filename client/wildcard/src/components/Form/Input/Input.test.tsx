@@ -39,7 +39,7 @@ describe('Input', () => {
                 />
               </div>
               <small
-                class="text-muted form-text message"
+                class="text-muted form-text font-weight-normal"
               >
                 random message
               </small>

@@ -63,8 +63,7 @@ export const Input = forwardRef((props, reference) => {
                 <small
                     className={classnames(
                         status === 'error' ? 'text-danger' : 'text-muted',
-                        'form-text',
-                        styles.message
+                        'form-text font-weight-normal'
                     )}
                 >
                     {message}
