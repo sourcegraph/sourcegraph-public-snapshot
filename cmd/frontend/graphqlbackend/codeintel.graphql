@@ -5,9 +5,11 @@ extend type Mutation {
     updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
 
     """
-    Queues the index jobs for a repository for execution.
+    Queues the index jobs for a repository for execution. An optional resolvable revhash
+    (commit, branch name, or tag name) can be specified; by default the tip of the default
+    branch will be used.
     """
-    queueAutoIndexJobForRepo(repository: ID!): EmptyResponse
+    queueAutoIndexJobForRepo(repository: ID!, rev: String): EmptyResponse
 
     """
     Deletes an LSIF upload.

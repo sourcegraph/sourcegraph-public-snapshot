@@ -246,7 +246,7 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeInte
 	return r.resolver.CommitGraph(ctx, int(repositoryID))
 }
 
-func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ Repository graphql.ID }) (*gql.EmptyResponse, error) {
+func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, args *gql.QueueAutoIndexJobForRepoArgs) (*gql.EmptyResponse, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
@@ -256,7 +256,7 @@ func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ R
 		return nil, err
 	}
 
-	return &gql.EmptyResponse{}, r.resolver.QueueAutoIndexJobForRepo(ctx, int(repositoryID))
+	return &gql.EmptyResponse{}, r.resolver.QueueAutoIndexJobForRepo(ctx, int(repositoryID), args.Rev)
 }
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {

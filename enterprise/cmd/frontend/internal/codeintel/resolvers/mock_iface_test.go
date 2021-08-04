@@ -4461,7 +4461,7 @@ type MockIndexEnqueuer struct {
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		ForceQueueIndexesForRepositoryFunc: &IndexEnqueuerForceQueueIndexesForRepositoryFunc{
-			defaultHook: func(context.Context, int) error {
+			defaultHook: func(context.Context, int, string) error {
 				return nil
 			},
 		},
@@ -4491,24 +4491,24 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 // when the ForceQueueIndexesForRepository method of the parent
 // MockIndexEnqueuer instance is invoked.
 type IndexEnqueuerForceQueueIndexesForRepositoryFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
 	history     []IndexEnqueuerForceQueueIndexesForRepositoryFuncCall
 	mutex       sync.Mutex
 }
 
 // ForceQueueIndexesForRepository delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) ForceQueueIndexesForRepository(v0 context.Context, v1 int) error {
-	r0 := m.ForceQueueIndexesForRepositoryFunc.nextHook()(v0, v1)
-	m.ForceQueueIndexesForRepositoryFunc.appendCall(IndexEnqueuerForceQueueIndexesForRepositoryFuncCall{v0, v1, r0})
+func (m *MockIndexEnqueuer) ForceQueueIndexesForRepository(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.ForceQueueIndexesForRepositoryFunc.nextHook()(v0, v1, v2)
+	m.ForceQueueIndexesForRepositoryFunc.appendCall(IndexEnqueuerForceQueueIndexesForRepositoryFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // ForceQueueIndexesForRepository method of the parent MockIndexEnqueuer
 // instance is invoked and the hook queue is empty.
-func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) error) {
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
 	f.defaultHook = hook
 }
 
@@ -4517,7 +4517,7 @@ func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) SetDefaultHook(hook fu
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) PushHook(hook func(context.Context, int) error) {
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) PushHook(hook func(context.Context, int, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4526,7 +4526,7 @@ func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) PushHook(hook func(con
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
+	f.SetDefaultHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
@@ -4534,12 +4534,12 @@ func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) SetDefaultReturn(r0 er
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
+	f.PushHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
 
-func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) nextHook() func(context.Context, int) error {
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) nextHook() func(context.Context, int, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4580,6 +4580,9 @@ type IndexEnqueuerForceQueueIndexesForRepositoryFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -4588,7 +4591,7 @@ type IndexEnqueuerForceQueueIndexesForRepositoryFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c IndexEnqueuerForceQueueIndexesForRepositoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

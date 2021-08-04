@@ -59,7 +59,7 @@ type LSIFStore interface {
 }
 
 type IndexEnqueuer interface {
-	ForceQueueIndexesForRepository(ctx context.Context, repositoryID int) error
+	ForceQueueIndexesForRepository(ctx context.Context, repositoryID int, commit string) error
 	InferIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, error)
 }
 
