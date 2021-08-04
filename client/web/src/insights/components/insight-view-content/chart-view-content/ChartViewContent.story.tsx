@@ -6,6 +6,7 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
+import { LINE_CHART_CONTENT_MOCK } from '../../../mocks/charts-content'
 
 import { ChartViewContent } from './ChartViewContent'
 
@@ -22,52 +23,7 @@ const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => 
     <WebStory>{() => <div style={{ width: '32rem', height: '20rem' }}>{story()}</div>}</WebStory>
 ))
 
-add('Line chart', () => (
-    <ChartViewContent
-        {...commonProps}
-        content={{
-            chart: 'line',
-            data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 0, b: 150 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 20, b: 260 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 56, b: 200 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 98, b: 190 },
-                { x: 1588965700286, a: 123, b: 170 },
-            ],
-            series: [
-                {
-                    dataKey: 'a',
-                    name: 'A metric',
-                    stroke: 'var(--warning)',
-                    linkURLs: [
-                        '#A:1st_data_point',
-                        '#A:2nd_data_point',
-                        '#A:3rd_data_point',
-                        '#A:4th_data_point',
-                        '#A:5th_data_point',
-                    ],
-                },
-                {
-                    dataKey: 'b',
-                    name: 'B metric',
-                    stroke: 'var(--warning)',
-                    linkURLs: [
-                        '#B:1st_data_point',
-                        '#B:2nd_data_point',
-                        '#B:3rd_data_point',
-                        '#B:4th_data_point',
-                        '#B:5th_data_point',
-                    ],
-                },
-            ],
-            xAxis: {
-                dataKey: 'x',
-                scale: 'time',
-                type: 'number',
-            },
-        }}
-    />
-))
+add('Line chart', () => <ChartViewContent {...commonProps} content={LINE_CHART_CONTENT_MOCK} />)
 
 add('Line chart with missing data', () => (
     <ChartViewContent

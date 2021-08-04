@@ -75,6 +75,17 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 	return nil
 }
 
+// AppendMatches merges highlight information for commit messages. Diff contents
+// are not currently supported. TODO(@team/search): Diff highlight information
+// cannot reliably merge this way because of offset issues with markdown
+// rendering.
+func (r *CommitMatch) AppendMatches(src *CommitMatch) {
+	if r.MessagePreview != nil && src.MessagePreview != nil {
+		r.MessagePreview.Highlights = append(r.MessagePreview.Highlights, src.MessagePreview.Highlights...)
+		r.Body.Highlights = append(r.Body.Highlights, src.Body.Highlights...)
+	}
+}
+
 // Key implements Match interface's Key() method
 func (r *CommitMatch) Key() Key {
 	typeRank := rankCommitMatch

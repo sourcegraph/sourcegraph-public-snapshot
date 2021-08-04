@@ -1,0 +1,46 @@
+{
+  "variables": {
+    "version": "{{env `VERSION`}}",
+    "build_timestamp": "{{env `BUILD_TIMESTAMP`}}",
+    "SRC_CLI_VERSION": "{{env `SRC_CLI_VERSION`}}"
+  },
+  "builders": [
+    {
+      "type": "googlecompute",
+      "project_id": "sourcegraph-ci",
+      "source_image_project_id": "ubuntu-os-cloud",
+      "source_image_family": "ubuntu-2004-lts",
+      "disk_size": "10",
+      "ssh_username": "packer",
+      "zone": "us-central1-c",
+      "image_licenses": ["projects/vm-options/global/licenses/enable-vmx"],
+      "disk_type": "pd-ssd",
+      "image_name": "executor-{{user `version`}}-{{user `build_timestamp`}}",
+      "tags": ["packer"],
+      "account_file": "/workspace/builder-sa-key.json"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "sources": ["/workspace/builder-sa-key.json"],
+      "destination": "/tmp/"
+    },
+    {
+      "type": "file",
+      "sources": ["executor"],
+      "destination": "/tmp/"
+    },
+    {
+      "type": "file",
+      "sources": ["ignite-ubuntu"],
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}",
+      "script": "build.sh",
+      "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}"]
+    }
+  ]
+}

@@ -60,6 +60,7 @@ var emojis = map[string]string{
 	"roadmap":         "🛠️",
 	"security":        "🔒",
 	"spike":           "🕵️",
+	"stretch-goal":    "🙆",
 }
 
 // categorizeLabels adds emojis based on the issue labels.

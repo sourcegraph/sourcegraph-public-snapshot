@@ -74,14 +74,21 @@ type QueueSizeGroupOptions struct {
 // instructions on how to create the processor metrics, see the `NewWorkerutilGroup` function in
 // this package.
 func (queueConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options QueueSizeGroupOptions) monitoring.Group {
+	row := make(monitoring.Row, 0, 2)
+	if options.QueueSize != nil {
+		row = append(row, options.QueueSize(Queue.Size(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.QueueGrowthRate != nil {
+		row = append(row, options.QueueGrowthRate(Queue.GrowthRate(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+
+	if len(row) == 0 {
+		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+	}
+
 	return monitoring.Group{
 		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
 		Hidden: options.Hidden,
-		Rows: []monitoring.Row{
-			{
-				options.QueueSize.safeApply(Queue.Size(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-				options.QueueGrowthRate.safeApply(Queue.GrowthRate(options.ObservableConstructorOptions)(containerName, owner)).Observable(),
-			},
-		},
+		Rows:   []monitoring.Row{row},
 	}
 }

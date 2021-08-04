@@ -1087,13 +1087,3 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
  */
 export const getMonacoTokens = (tokens: Token[]): Monaco.languages.IToken[] =>
     tokens.flatMap(token => decorate(token).map(decoratedToMonaco))
-
-/**
- * Converts a zero-indexed, single-line {@link CharacterRange} to a Monaco {@link IRange}.
- */
-export const toMonacoRange = ({ start, end }: CharacterRange): Monaco.IRange => ({
-    startLineNumber: 1,
-    endLineNumber: 1,
-    startColumn: start + 1,
-    endColumn: end + 1,
-})

@@ -8,14 +8,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -24,7 +25,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -33,7 +34,7 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, nil, clock)
+	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:        ct.TestRawBatchSpec,

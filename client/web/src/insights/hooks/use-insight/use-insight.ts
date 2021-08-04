@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../schema/settings.schema'
 import {
@@ -11,6 +12,7 @@ import {
     InsightType,
     SearchBasedInsightSettings,
 } from '../../core/types'
+import { useDistinctValue } from '../use-distinct-value'
 
 export interface UseInsightProps extends SettingsCascadeProps<Settings> {
     insightId: string
@@ -23,6 +25,18 @@ export function useInsight(props: UseInsightProps): Insight | null {
     const { settingsCascade, insightId } = props
 
     return useMemo(() => findInsightById(settingsCascade, insightId), [settingsCascade, insightId])
+}
+
+export interface UseInsightsProps extends SettingsCascadeProps<Settings> {
+    insightIds: string[]
+}
+
+export function useInsights(props: UseInsightsProps): Insight[] {
+    const { settingsCascade, insightIds } = props
+
+    const ids = useDistinctValue(insightIds)
+
+    return useMemo(() => ids.map(id => findInsightById(settingsCascade, id)).filter(isDefined), [settingsCascade, ids])
 }
 
 export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings>, insightId: string): Insight | null {

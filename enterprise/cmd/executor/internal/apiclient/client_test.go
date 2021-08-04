@@ -87,9 +87,9 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   123,
+		ExitCode:   intptr(123),
 		Out:        "<log payload>",
-		DurationMs: 23123,
+		DurationMs: intptr(23123),
 	}
 
 	spec := routeSpec{
@@ -127,9 +127,9 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   123,
+		ExitCode:   intptr(123),
 		Out:        "<log payload>",
-		DurationMs: 23123,
+		DurationMs: intptr(23123),
 	}
 
 	spec := routeSpec{
@@ -163,9 +163,9 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   123,
+		ExitCode:   intptr(123),
 		Out:        "<log payload>",
-		DurationMs: 23123,
+		DurationMs: intptr(23123),
 	}
 
 	spec := routeSpec{
@@ -200,9 +200,9 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   123,
+		ExitCode:   intptr(123),
 		Out:        "<log payload>",
-		DurationMs: 23123,
+		DurationMs: intptr(23123),
 	}
 
 	spec := routeSpec{
@@ -427,3 +427,5 @@ func normalizeJSON(v []byte) string {
 	v, _ = json.Marshal(temp)
 	return string(v)
 }
+
+func intptr(v int) *int { return &v }

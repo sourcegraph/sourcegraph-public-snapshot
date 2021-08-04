@@ -164,4 +164,4 @@ If you're using SELinux then neither workspace is fully supported. See [this iss
 
 ### Do you have the right credentials?
 
-When publishing changesets fails, make sure that the credentials you use have the correct credentials to create changesets on the code host: "[Configuring credentials](../how-tos/configuring_credentials.md)"
+When publishing changesets fails, make sure that you have [configured credentials](../how-tos/configuring_credentials.md) with all of the required scopes and from an account with write access to the changeset's repository on the code host.

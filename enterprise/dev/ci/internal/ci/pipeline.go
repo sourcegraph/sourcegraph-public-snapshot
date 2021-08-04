@@ -154,23 +154,25 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
-			triggerAsync(c),               // triggers a slow pipeline, so do it first.
-			addBackendIntegrationTests(c), // ~11m
-			addDockerImages(c, false),     // ~8m (candidate images)
-			addLint,                       // ~4.5m
-			addSharedTests(c),             // ~4.5m
-			addWebApp,                     // ~3m
-			addBrowserExt,                 // ~2m
-			addBrandedTests,               // ~1.5m
-			addGoTests,                    // ~1.5m
-			addCheck,                      // ~1m
-			addGoBuild,                    // ~0.5m
-			addPostgresBackcompat,         // ~0.25m
-			addDockerfileLint,             // ~0.2m
-			wait,                          // wait for all steps to pass
+			triggerAsync(c),                 // triggers a slow pipeline, so do it first.
+			addBackendIntegrationTests(c),   // ~11m
+			addDockerImages(c, false),       // ~8m (candidate images)
+			addExecutorPackerStep(c, false), // ~6m (building executor base VM)
+			addLint,                         // ~4.5m
+			addSharedTests(c),               // ~4.5m
+			addWebApp,                       // ~3m
+			addBrowserExt,                   // ~2m
+			addBrandedTests,                 // ~1.5m
+			addGoTests,                      // ~1.5m
+			addCheck,                        // ~1m
+			addGoBuild,                      // ~0.5m
+			addPostgresBackcompat,           // ~0.25m
+			addDockerfileLint,               // ~0.2m
+			wait,                            // wait for all steps to pass
 
-			triggerE2EandQA(c, env),  // trigger e2e late so that it can leverage candidate images
-			addDockerImages(c, true), // publish final images
+			triggerE2EandQA(c, env),        // trigger e2e late so that it can leverage candidate images
+			addDockerImages(c, true),       // publish final images
+			addExecutorPackerStep(c, true), // add tag to executor base VM
 			wait,
 
 			triggerUpdaterPipeline(c),

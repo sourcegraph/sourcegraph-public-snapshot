@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestBatchChangeConnectionResolver(t *testing.T) {
@@ -24,12 +24,12 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -184,7 +184,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 	orgID := ct.InsertTestOrg(t, db, "org")
 
-	store := store.New(db, nil)
+	store := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)

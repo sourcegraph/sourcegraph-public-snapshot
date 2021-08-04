@@ -2,7 +2,7 @@
 
 Operations guides specific to managing [Sourcegraph with Docker Compose](./index.md) installations.
 
-Trying to deploy Sourcegraph? Refer to our [installation guide](./index.md#installation).
+Trying to deploy Sourcegraph with Docker Compose? Refer to our [installation guide](./index.md#installation).
 
 ## Featured guides
 
@@ -36,17 +36,19 @@ Migrating from another [deployment type](../index.md)? Refer to our [migrating t
 
 We **strongly** recommend that you create and run Sourcegraph from your own fork of the [reference repository](./index.md#reference-repository) to track customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). **This will make [upgrades](#upgrade) far easier.**
 
-- [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) repository.
+- [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](./index.md#reference-repository).
 
     > WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
 
 - Clone your fork using the repository's URL.
 
+    > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
+
   ```bash
   git clone $FORK_URL
   ```
 
-- Add the reference repository as an `upstream` remote so that you can [get updates](#upgrade).
+- Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](#upgrade).
 
   ```bash
   git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
@@ -56,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.29.1"
+  export SOURCEGRAPH_VERSION="v3.30.3"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -67,6 +69,64 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
 - The version argument in the YAML file must be the same as in the standard deployment
 - Users should only alter the YAML file to adjust resource limits, or duplicate container entries to add more container replicas
+
+### Enable tracing
+
+To enable [tracing](../../observability/tracing.md), add `SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json` to the `jaeger` container:
+
+```yaml
+jaeger:
+  container_name: jaeger
+  # ...
+  environment:
+    - 'SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json'
+```
+
+### Git configuration and authentication
+
+Learn more about Git [configuration](../../repo/git_config.md) and [authentication](../../repo/auth.md).
+
+#### SSH configuration
+
+Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/config`, `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`--but you can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
+
+For example, in the `gitserver-0` container configuration in your docker-compose.yaml file, add the second volume listed below, replacing `~/path/on/host/` with the path on the host machine to the `.ssh` directory:
+
+```yaml
+gitserver-0:
+  container_name: gitserver-0
+  ...
+  volumes:
+    - 'gitserver-0:/data/repos'
+    - '~/path/on/host/.ssh:/home/sourcegraph/.ssh'
+  ...
+```
+
+> WARNING: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. For example, run `chmod -v -R 600 ~/path/to/.ssh` in the folder on the host machine.
+
+#### HTTP(S) authentication
+
+The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
+
+Otherwise, follow the steps above for mounting SSH configuration to mount a host directory containing the desired `.netrc` file to `/home/sourcegraph/` in the `gitserver` container.
+
+### Expose debug port
+
+To [generate pprof profiling data](../../pprof.md), you must [configure your deployment](#configure) to expose port 6060 on one of your frontend containers, for example:
+
+```diff
+  sourcegraph-frontend-0:
+    container_name: sourcegraph-frontend-0
+    # ...
++   ports:
++     - '0.0.0.0:6060:6060'
+```
+
+Also see [debug ports](../../pprof.md#debug-ports) for specific ports that can be exposed.
+
+### Use an external database
+
+The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence.
 
 ## Upgrade
 
@@ -84,20 +144,28 @@ git merge upstream v$SOURCEGRAPH_VERSION
 
 Address any merge conflicts you might have.
 
-If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**. Then run:
+If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**.
+Then, ensure that the current Sourcegraph instance is completely stopped:
 
 ```bash
-# Fully stop the Docker Compose instance of Sourcegraph currently running
 docker-compose down --remove-orphans
-# Start Docker Compose again, now using the latest contents of the Sourcegraph configuration
+```
+
+**Once the instance has fully stopped**, you can then start Docker Compose again, now using the latest contents of the Sourcegraph configuration:
+
+```bash
 docker-compose up -d
 ```
 
 You can see what's changed in the [Sourcegraph changelog](../../../CHANGELOG.md).
 
-## Use an external database
+## Monitoring
 
-The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence.
+You can monitor the health of a deployment in several ways:
+
+- Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
+- Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
+  - This requires direct access to your instance's host machine.
 
 ## Manage storage
 

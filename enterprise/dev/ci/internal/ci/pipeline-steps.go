@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -292,7 +293,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.30.1"
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.30.3"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
@@ -426,6 +427,38 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
+	}
+}
+
+var currentBuildTimestamp = strconv.Itoa(int(time.Now().UTC().Unix()))
+
+func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		if !c.isMainBranch() && !c.isMainDryRun {
+			return
+		}
+
+		if final {
+			if !c.isMainDryRun {
+				cmds := []bk.StepOpt{
+					bk.Cmd(`echo "Releasing executor cloud image..."`),
+					bk.Env("VERSION", c.version),
+					bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
+					bk.Cmd("./enterprise/cmd/executor/release.sh"),
+				}
+
+				pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
+			}
+		} else {
+			cmds := []bk.StepOpt{
+				bk.Cmd(`echo "Building executor cloud image..."`),
+				bk.Env("VERSION", c.version),
+				bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
+				bk.Cmd("./enterprise/cmd/executor/build.sh"),
+			}
+
+			pipeline.AddStep(":packer: :construction: executor image", cmds...)
+		}
 	}
 }
 

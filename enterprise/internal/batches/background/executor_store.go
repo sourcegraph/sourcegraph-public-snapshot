@@ -46,7 +46,10 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
 func NewExecutorStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
-	return &executorStore{Store: dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext)}
+	return &executorStore{
+		Store:              dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext),
+		observationContext: observationContext,
+	}
 }
 
 var _ dbworkerstore.Store = &executorStore{}
@@ -56,6 +59,8 @@ var _ dbworkerstore.Store = &executorStore{}
 // separate columns when marking a job as complete.
 type executorStore struct {
 	dbworkerstore.Store
+
+	observationContext *observation.Context
 }
 
 // markCompleteQuery is taken from internal/workerutil/dbworker/store/store.go
@@ -69,7 +74,7 @@ RETURNING id
 `
 
 func (s *executorStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	batchesStore := store.New(s.Store.Handle().DB(), nil)
+	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 
 	batchSpecRandID, err := loadAndExtractBatchSpecRandID(ctx, batchesStore, int64(id))
 	if err != nil {

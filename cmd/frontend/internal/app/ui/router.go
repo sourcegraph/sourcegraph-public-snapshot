@@ -46,6 +46,7 @@ const (
 	routeRepoStats        = "repo-stats"
 	routeInsights         = "insights"
 	routeBatchChanges     = "batch-changes"
+	routeWelcome          = "welcome"
 	routeCodeMonitoring   = "code-monitoring"
 	routeContexts         = "contexts"
 	routeThreads          = "threads"
@@ -139,6 +140,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
@@ -238,6 +240,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil)))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil)))
+	router.Get(routeWelcome).Handler(handler(serveBrandedPageString("Welcome", nil)))
 	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil)))
 	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings", nil)))
 	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin", nil)))
@@ -457,15 +460,15 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
-	// Determine span URl and log the error.
-	var spanURL string
+	// Determine trace URL and log the error.
+	var traceURL string
 	if span := opentracing.SpanFromContext(r.Context()); span != nil {
 		ext.Error.Set(span, true)
 		span.SetTag("err", err)
 		span.SetTag("error-id", errorID)
-		spanURL = trace.SpanURL(span)
+		traceURL = trace.URL(trace.IDFromSpan(span))
 	}
-	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", spanURL)
+	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it

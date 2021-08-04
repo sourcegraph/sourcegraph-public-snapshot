@@ -32,13 +32,17 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	}
 
 	authenticatedUserID := int32(0)
+	a := actor.FromContext(ctx)
 
-	// Authz is bypassed when the request is coming from an internal actor or there
-	// is no authz provider configured and access to all repositories are allowed by
-	// default. Authz can be bypassed by site admins unless
+	// Authz is bypassed when the request is coming from an internal actor or
+	// there is no authz provider configured and access to all repositories are
+	// allowed by default. Authz can be bypassed by site admins unless
 	// conf.AuthEnforceForSiteAdmins is set to "true".
-	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
-	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
+	//
+	// 🚨 SECURITY: internal requests bypass authz provider permissions checks,
+	// so correctness is important here.
+	bypassAuthz := a.IsInternal() || (authzAllowByDefault && len(authzProviders) == 0)
+	if !bypassAuthz && a.IsAuthenticated() {
 		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
@@ -99,13 +103,4 @@ OR (                             -- Restricted repositories require checking per
 		authenticatedUserID,
 		perms.String(),
 	)
-}
-
-// isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
-// request that originates from within Sourcegraph itself).
-//
-// 🚨 SECURITY: internal requests bypass authz provider permissions checks, so correctness is
-// important here.
-func isInternalActor(ctx context.Context) bool {
-	return actor.FromContext(ctx).Internal
 }

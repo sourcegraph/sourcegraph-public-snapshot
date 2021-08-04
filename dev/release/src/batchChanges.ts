@@ -56,7 +56,7 @@ export function releaseTrackingBatchChange(version: string, cliConfig: Sourcegra
  * Does not ensure the batch change exists.
  */
 export function batchChangeURL(options: BatchChangeOptions): string {
-    return `${options.cliConfig.SRC_ENDPOINT}/organizations/${options.namespace}/batch changes/${options.name}`
+    return `${options.cliConfig.SRC_ENDPOINT}/organizations/${options.namespace}/batch-changes/${options.name}`
 }
 
 /**
@@ -141,7 +141,7 @@ async function applyBatchChange(batchChange: BatchChangeSpec, options: BatchChan
     console.log(`Rendered batch change spec:\n\n${batchChangeYAML}`)
 
     // apply the batch change
-    await execa('src', ['batch change', 'apply', '-namespace', options.namespace, '-f', '-'], {
+    await execa('src', ['batch', 'apply', '-namespace', options.namespace, '-f', '-'], {
         stdout: 'inherit',
         input: batchChangeYAML,
         env: options.cliConfig,
