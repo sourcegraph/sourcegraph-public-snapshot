@@ -194,7 +194,7 @@ func TestRewirerMappings(t *testing.T) {
 			publishA = &btypes.RewirerMapping{ChangesetSpecID: 4}
 			publishB = &btypes.RewirerMapping{ChangesetSpecID: 5}
 		)
-		rmf := newRewirerMappingsFacade(nil, 0)
+		rmf := newRewirerMappingsFacade(nil, 0, nil)
 		rmf.All = btypes.RewirerMappings{detach, hidden, noAction, publishA, publishB}
 		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
@@ -396,7 +396,7 @@ func TestRewirerMappings(t *testing.T) {
 		}
 
 		s := &store.Store{}
-		rmf := newRewirerMappingsFacade(s, 1)
+		rmf := newRewirerMappingsFacade(s, 1, nil)
 		rmf.batchChange = &btypes.BatchChange{}
 
 		mapping := &btypes.RewirerMapping{}

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPreviewConnectionResolver{}
@@ -25,6 +26,8 @@ type changesetApplyPreviewConnectionResolver struct {
 	opts        store.GetRewirerMappingsOpts
 	action      *btypes.ReconcilerOperation
 	batchSpecID int64
+	// publicationStates are keyed by changeset spec random ID.
+	publicationStates map[string]batches.PublishedValue
 
 	once     sync.Once
 	mappings *rewirerMappingsFacade
@@ -233,7 +236,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 
 func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappingsFacade, error) {
 	r.once.Do(func() {
-		r.mappings = newRewirerMappingsFacade(r.store, r.batchSpecID)
+		r.mappings = newRewirerMappingsFacade(r.store, r.batchSpecID, r.publicationStates)
 		r.err = r.mappings.compute(ctx, r.opts)
 	})
 
@@ -246,8 +249,9 @@ type rewirerMappingsFacade struct {
 	All btypes.RewirerMappings
 
 	// Inputs from outside the resolver that we need to build other resolvers.
-	batchSpecID int64
-	store       *store.Store
+	batchSpecID       int64
+	publicationStates map[string]batches.PublishedValue
+	store             *store.Store
 
 	// This field is set when ReconcileBatchChange is called.
 	batchChange *btypes.BatchChange
@@ -263,12 +267,13 @@ type rewirerMappingsFacade struct {
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
 // includes dry running the batch change reconciliation.
-func newRewirerMappingsFacade(s *store.Store, batchSpecID int64) *rewirerMappingsFacade {
+func newRewirerMappingsFacade(s *store.Store, batchSpecID int64, publicationStates map[string]batches.PublishedValue) *rewirerMappingsFacade {
 	return &rewirerMappingsFacade{
-		batchSpecID: batchSpecID,
-		store:       s,
-		pages:       make(map[rewirerMappingPageOpts]*rewirerMappingPage),
-		resolvers:   make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
+		batchSpecID:       batchSpecID,
+		publicationStates: publicationStates,
+		store:             s,
+		pages:             make(map[rewirerMappingPageOpts]*rewirerMappingPage),
+		resolvers:         make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
 	}
 }
 
@@ -381,6 +386,7 @@ func (rmf *rewirerMappingsFacade) Resolver(mapping *btypes.RewirerMapping) graph
 		mapping:              mapping,
 		preloadedBatchChange: rmf.batchChange,
 		batchSpecID:          rmf.batchSpecID,
+		publicationStates:    rmf.publicationStates,
 	}
 	return rmf.resolvers[mapping]
 }
