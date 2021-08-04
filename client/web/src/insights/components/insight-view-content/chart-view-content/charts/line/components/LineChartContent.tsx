@@ -26,7 +26,7 @@ import { TooltipContent } from './TooltipContent'
 // Chart configuration
 const WIDTH_PER_TICK = 70
 const HEIGHT_PER_TICK = 40
-const MARGIN = { top: 10, left: 30, bottom: 26, right: 20 }
+const MARGIN = { top: 10, left: 40, bottom: 26, right: 20 }
 const SCALES_CONFIG = {
     x: {
         type: 'time' as const,
