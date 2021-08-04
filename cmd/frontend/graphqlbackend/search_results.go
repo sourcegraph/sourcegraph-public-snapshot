@@ -1522,9 +1522,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	// Resolve repo promise so searches waiting on it can proceed. We do this
-	// after reporting the above progress to ensure we don't get search
-	// results before the above reporting.
 	args.Repos = resolved.RepoRevs
 
 	if args.ResultTypes.Has(result.TypeRepo) {
