@@ -10,11 +10,11 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -39,7 +40,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, et.TestKey{}, clock)
+	cstore := store.NewWithClock(db, &observation.TestContext, et.TestKey{}, clock)
 
 	admin := ct.CreateTestUser(t, db, true)
 
@@ -596,7 +597,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 
-	cstore := store.New(db, et.TestKey{})
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := rs[0]
@@ -635,11 +636,11 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 }
 
 func TestLoadChangesetSource(t *testing.T) {
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-	cstore := store.New(db, et.TestKey{})
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -796,10 +797,10 @@ func TestLoadChangesetSource(t *testing.T) {
 }
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
-	cstore := store.New(db, et.TestKey{})
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)

@@ -19,7 +19,7 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	user := ct.CreateTestUser(t, db, true)
 
-	s := store.New(db, nil)
+	s := store.New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, &observation.TestContext)
 
 	t.Run("success", func(t *testing.T) {

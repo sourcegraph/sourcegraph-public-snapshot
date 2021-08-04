@@ -377,13 +377,13 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             // Update references to Sourcegraph versions in docs
-                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
                             `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version}\`/g' doc/index.md`,
-                            `${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' doc/admin/install/kubernetes/index.md`,
-                            `${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' doc/admin/install/docker-compose/index.md`,
-                            `${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" doc/admin/install/docker-compose/aws.md`,
-                            `${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" doc/admin/install/docker-compose/digitalocean.md`,
-                            `${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" doc/admin/install/docker-compose/google_cloud.md`,
+                            // Update sourcegraph/server:VERSION everywhere except changelog
+                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
+                            // Update Sourcegraph versions in installation guides
+                            `find ./doc/admin/install/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' {} +`,
+                            // Update fork variables in installation guides
+                            `find ./doc/admin/install/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" {} +`,
 
                             notPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
@@ -642,7 +642,7 @@ Batch change: ${batchChangeURL}`,
         id: '_test:batchchange-create-from-changes',
         description: 'Test batch changes integration',
         argNames: ['batchchangeConfigJSON'],
-        // Example: yarn run release _test:batchchange-create-from-changes "$(cat ./.secrets/import.json)"
+        // Example: yarn run release _test:batchchange-create-from-changes "$(cat ./.secrets/test-batch-change-import.json)"
         run: async (_config, batchchangeConfigJSON) => {
             const batchChangeConfig = JSON.parse(batchchangeConfigJSON) as {
                 changes: CreatedChangeset[]

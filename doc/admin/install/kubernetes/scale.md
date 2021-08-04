@@ -57,7 +57,7 @@ When you're using Sourcegraph with many repositories (100s-10,000s), the most im
 
 - `sourcegraph-frontend` CPU/memory resource allocations
 - `searcher` replica count
-- `indexedSearch` CPU/memory resource allocations
+- `indexedSearch` replica count and CPU/memory resource allocations
 - `gitserver` replica count
 - `symbols` replica count and CPU/memory resource allocations
 - `gitMaxConcurrentClones`, because `git clone` and `git fetch` operations are IO- and CPU-intensive

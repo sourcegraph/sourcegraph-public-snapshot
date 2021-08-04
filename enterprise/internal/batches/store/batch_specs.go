@@ -6,9 +6,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // batchSpecColumns are used by the batchSpec related Store methods to insert,
@@ -41,7 +43,10 @@ var batchSpecInsertColumns = []*sqlf.Query{
 const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
-func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) error {
+func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
+	ctx, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q, err := s.createBatchSpecQuery(c)
 	if err != nil {
 		return err
@@ -91,7 +96,12 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 }
 
 // UpdateBatchSpec updates the given BatchSpec.
-func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) error {
+func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
+	ctx, endObservation := s.operations.updateBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(c.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q, err := s.updateBatchSpecQuery(c)
 	if err != nil {
 		return err
@@ -134,7 +144,12 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 }
 
 // DeleteBatchSpec deletes the BatchSpec with the given ID.
-func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) error {
+func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) (err error) {
+	ctx, endObservation := s.operations.deleteBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteBatchSpecQueryFmtstr, id))
 }
 
@@ -144,7 +159,10 @@ DELETE FROM batch_specs WHERE id = %s
 `
 
 // CountBatchSpecs returns the number of code mods in the database.
-func (s *Store) CountBatchSpecs(ctx context.Context) (int, error) {
+func (s *Store) CountBatchSpecs(ctx context.Context) (count int, err error) {
+	ctx, endObservation := s.operations.countBatchSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	return s.queryCount(ctx, sqlf.Sprintf(countBatchSpecsQueryFmtstr))
 }
 
@@ -161,11 +179,17 @@ type GetBatchSpecOpts struct {
 }
 
 // GetBatchSpec gets a BatchSpec matching the given options.
-func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (*btypes.BatchSpec, error) {
+func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.getBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+		log.String("randID", opts.RandID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getBatchSpecQuery(&opts)
 
 	var c btypes.BatchSpec
-	err := s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
@@ -219,11 +243,14 @@ type GetNewestBatchSpecOpts struct {
 
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // options.
-func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecOpts) (*btypes.BatchSpec, error) {
+func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.getNewestBatchSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := getNewestBatchSpecQuery(&opts)
 
 	var c btypes.BatchSpec
-	err := s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
@@ -281,6 +308,9 @@ type ListBatchSpecsOpts struct {
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
 func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs []*btypes.BatchSpec, next int64, err error) {
+	ctx, endObservation := s.operations.listBatchSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := listBatchSpecsQuery(&opts)
 
 	cs = make([]*btypes.BatchSpec, 0, opts.DBLimit())
@@ -322,7 +352,10 @@ func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
 
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
 // to a Batch change within BatchSpecTTL.
-func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) error {
+func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
+	ctx, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	expirationTime := s.now().Add(-btypes.BatchSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredBatchSpecsQueryFmtstr, expirationTime)
 
