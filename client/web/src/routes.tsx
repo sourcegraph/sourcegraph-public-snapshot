@@ -139,11 +139,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             window.context.sourcegraphDotComMode &&
             (window.context.experimentalFeatures.enablePostSignupFlow ||
                 props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
-                <PostSignUpPage
-                    authenticatedUser={props.authenticatedUser}
-                    telemetryService={props.telemetryService}
-                    context={window.context}
-                />
+                <PostSignUpPage authenticatedUser={props.authenticatedUser} context={window.context} />
             ) : (
                 <Redirect to="/search" />
             ),
