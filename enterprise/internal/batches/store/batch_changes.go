@@ -312,16 +312,14 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
-		return nil, errors.Wrap(err, "GetBatchChangeDiffStat enforcing authz")
+		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}
-	defer func() { err = done(err) }()
-
-	q := getBatchChangeDiffStatQuery(opts)
+	q := getBatchChangeDiffStatQuery(opts, authzConds)
 
 	var diffStat diff.Stat
-	err = s.WithDB(tx).query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
 	})
 	if err != nil {
@@ -342,11 +340,13 @@ FROM
 INNER JOIN repo ON changesets.repo_id = repo.id
 WHERE
 	changesets.batch_change_ids ? %s AND
-	repo.deleted_at IS NULL
+	repo.deleted_at IS NULL AND
+	-- authz conditions:
+	%s
 `
 
-func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts) *sqlf.Query {
-	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.BatchChangeID)))
+func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sqlf.Query) *sqlf.Query {
+	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.BatchChangeID)), authzConds)
 }
 
 func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *diff.Stat, err error) {
@@ -355,16 +355,14 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
-		return nil, errors.Wrap(err, "GetRepoDiffStat enforcing authz")
+		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
 	}
-	defer func() { err = done(err) }()
-
-	q := getRepoDiffStatQuery(int64(repoID))
+	q := getRepoDiffStatQuery(int64(repoID), authzConds)
 
 	var diffStat diff.Stat
-	err = s.WithDB(tx).query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
 	})
 	if err != nil {
@@ -384,11 +382,13 @@ FROM changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
 WHERE
 	changesets.repo_id = %s AND
-	repo.deleted_at IS NULL
+	repo.deleted_at IS NULL AND
+	-- authz conditions:
+	%s
 `
 
-func getRepoDiffStatQuery(repoID int64) *sqlf.Query {
-	return sqlf.Sprintf(getRepoDiffStatQueryFmtstr, repoID)
+func getRepoDiffStatQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
+	return sqlf.Sprintf(getRepoDiffStatQueryFmtstr, repoID, authzConds)
 }
 
 // ListBatchChangesOpts captures the query options needed for
@@ -411,16 +411,15 @@ type ListBatchChangesOpts struct {
 func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*btypes.BatchChange, next int64, err error) {
 	ctx, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "ListBatchChanges enforcing authz")
-	}
-	defer func() { err = done(err) }()
 
-	q := listBatchChangesQuery(&opts)
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
+	}
+	q := listBatchChangesQuery(&opts, repoAuthzConds)
 
 	cs = make([]*btypes.BatchChange, 0, opts.DBLimit())
-	err = s.WithDB(tx).query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		var c btypes.BatchChange
 		if err := scanBatchChange(&c, sc); err != nil {
 			return err
@@ -445,7 +444,7 @@ WHERE %s
 ORDER BY id DESC
 `
 
-func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
+func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
@@ -490,8 +489,10 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 			WHERE
 				changesets.batch_change_ids ? batch_changes.id::TEXT AND
 				changesets.repo_id = %s AND
-				repo.deleted_at IS NULL
-		)`, opts.RepoID))
+				repo.deleted_at IS NULL AND
+				-- authz conditions:
+				%s
+		)`, opts.RepoID, repoAuthzConds))
 	}
 
 	if len(preds) == 0 {

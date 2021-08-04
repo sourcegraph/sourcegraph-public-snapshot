@@ -4,13 +4,11 @@ import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { RepositorySuggestion } from '../../../../core/backend/requests/fetch-repository-suggestions'
-import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { memoizeAsync } from '../utils/memoize-async'
 
 interface UseRepoSuggestionsProps {
     search: string | null
     disable?: boolean
-    excludedItems?: string[]
 }
 
 interface UseRepoSuggestionsResult {
@@ -35,16 +33,11 @@ function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestion
  * Provides list of repository suggestions.
  */
 export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSuggestionsResult {
-    const { search, disable = false, excludedItems = [] } = props
+    const { search, disable = false } = props
 
     const [suggestions, setSuggestions] = useState<RepositorySuggestion[] | Error | undefined>([])
     const debouncedSearchTerm = useDebounce(search, 1000)
     const fetchSuggestions = useFetchSuggestions()
-
-    // To not trigger use effect with fetching each render call
-    // we compare prev and next value for excludedItems and return
-    // prev value if value wasn't changed
-    const distinctExcludedItems = useDistinctValue(excludedItems)
 
     useEffect(() => {
         if (disable || !debouncedSearchTerm) {
@@ -60,7 +53,7 @@ export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSugge
         fetchSuggestions(debouncedSearchTerm)
             .then(suggestions => {
                 if (!wasCanceled) {
-                    setSuggestions(suggestions.filter(suggestion => !distinctExcludedItems.includes(suggestion.name)))
+                    setSuggestions(suggestions)
                 }
             })
             .catch(error => {
@@ -72,7 +65,7 @@ export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSugge
         return () => {
             wasCanceled = true
         }
-    }, [distinctExcludedItems, fetchSuggestions, disable, debouncedSearchTerm])
+    }, [fetchSuggestions, disable, debouncedSearchTerm])
 
     return { searchValue: debouncedSearchTerm, suggestions }
 }
