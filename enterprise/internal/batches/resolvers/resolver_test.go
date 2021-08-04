@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -36,7 +37,7 @@ func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	db := dbtest.NewDB(t, "")
-	sr := New(store.New(db, nil))
+	sr := New(store.New(db, &observation.TestContext, nil))
 
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -114,7 +115,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -294,7 +295,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -373,7 +374,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, nil, clock)
+	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -533,7 +534,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
@@ -610,7 +611,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, nil, clock)
+	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -788,7 +789,7 @@ func TestMoveBatchChange(t *testing.T) {
 	orgName := "move-batch-change-test"
 	orgID := ct.InsertTestOrg(t, db, orgName)
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         ct.TestRawBatchSpec,
@@ -1063,7 +1064,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
@@ -1193,7 +1194,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
 	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
@@ -1277,7 +1278,7 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments", userID)
@@ -1378,7 +1379,7 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue", userID)
@@ -1486,7 +1487,7 @@ func TestMergeChangesets(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge", userID)
@@ -1598,7 +1599,7 @@ func TestResolver_CreateBatchSpecExecution(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 	now := time.Now().UTC().Truncate(time.Millisecond)
-	cstore := store.NewWithClock(db, nil, func() time.Time { return now })
+	cstore := store.NewWithClock(db, &observation.TestContext, nil, func() time.Time { return now })
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	orgID := ct.InsertTestOrg(t, db, "test-org")
@@ -1671,7 +1672,7 @@ func TestCloseChangesets(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID)
@@ -1782,7 +1783,7 @@ func TestPublishChangesets(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID)

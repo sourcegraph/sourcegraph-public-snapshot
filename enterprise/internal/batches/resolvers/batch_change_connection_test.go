@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestBatchChangeConnectionResolver(t *testing.T) {
@@ -28,7 +29,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db, nil)
+	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -183,7 +184,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 	orgID := ct.InsertTestOrg(t, db, "org")
 
-	store := store.New(db, nil)
+	store := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)

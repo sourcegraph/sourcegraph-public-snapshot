@@ -1,6 +1,7 @@
 import { of, throwError } from 'rxjs'
 
-import { getCombinedViews, getInsightCombinedViews } from './api/get-combined-views'
+import { getBackendInsightById } from './api/get-backend-insight-by-id'
+import { getCombinedViews } from './api/get-combined-views'
 import { getExtensionViewById } from './api/get-extension-view-by-id'
 import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
 import { getRepositorySuggestions } from './api/get-repository-suggestions'
@@ -13,11 +14,11 @@ import { ApiService } from './types'
  * Main API service to get data for code insights
  *
  * See {@link ApiService} for full description of each method.
- * */
+ */
 export const createInsightAPI = (overrides: Partial<ApiService> = {}): ApiService => ({
     // Insights loading
     getCombinedViews,
-    getInsightCombinedViews,
+    getBackendInsightById,
     getExtensionViewById,
 
     // Subject operations
@@ -37,10 +38,10 @@ export const createInsightAPI = (overrides: Partial<ApiService> = {}): ApiServic
 /**
  * Mock API service. Used to mock part or some specific api requests in demo and
  * storybook stories.
- * */
+ */
 export const createMockInsightAPI = (overrideRequests: Partial<ApiService>): ApiService => ({
     getCombinedViews: () => of([]),
-    getInsightCombinedViews: () => of([]),
+    getBackendInsightById: () => throwError(new Error('Implement getBackendInsightById handler first')),
     getExtensionViewById: () => throwError(new Error('Implement getExtensionViewById handler first')),
     getSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
     updateSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),

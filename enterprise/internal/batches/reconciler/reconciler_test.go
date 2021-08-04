@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -24,7 +25,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
-	store := store.New(db, nil)
+	store := store.New(db, &observation.TestContext, nil)
 
 	admin := ct.CreateTestUser(t, db, true)
 

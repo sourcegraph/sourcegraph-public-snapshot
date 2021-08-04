@@ -274,6 +274,12 @@
         "type": "string"
       }
     },
+    "codeIntelligence.autoIndexPopularRepoLimit": {
+      "description": "Up to this number of repos are auto indexed automatically. Ordered by star count.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",

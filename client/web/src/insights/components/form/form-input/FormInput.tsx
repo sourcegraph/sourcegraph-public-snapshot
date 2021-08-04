@@ -32,7 +32,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
 /**
  * Displays the input with description, error message, visual invalid and valid states.
  */
-export const FormInput = forwardRef((props, reference) => {
+const FormInput = forwardRef((props, reference) => {
     const {
         as: Component = 'input',
         type = 'text',
@@ -77,3 +77,7 @@ export const FormInput = forwardRef((props, reference) => {
         </label>
     )
 }) as ForwardReferenceComponent<'input', FormInputProps>
+
+FormInput.displayName = 'FormInput'
+
+export { FormInput }

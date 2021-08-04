@@ -1,0 +1,183 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BaseControlInput checkbox input renders correctly 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+</div>
+`;
+
+exports[`BaseControlInput checkbox input renders with correct styles when invalid 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input is-invalid"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+  <small
+    class="invalid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput checkbox input renders with correct styles when valid 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input is-valid"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+  <small
+    class="valid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput checkbox input renders with message correctly 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="checkbox"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+  <small
+    class="field-message"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput radio input renders correctly 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+</div>
+`;
+
+exports[`BaseControlInput radio input renders with correct styles when invalid 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input is-invalid"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+  <small
+    class="invalid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput radio input renders with correct styles when valid 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input is-valid"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+  <small
+    class="valid-feedback"
+  >
+    Additional message
+  </small>
+</div>
+`;
+
+exports[`BaseControlInput radio input renders with message correctly 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    class="form-check-input"
+    id="test"
+    label="Hello world"
+    type="radio"
+  />
+  <label
+    class="form-check-label"
+    for="test"
+  >
+    Hello world
+  </label>
+  <small
+    class="field-message"
+  >
+    Additional message
+  </small>
+</div>
+`;

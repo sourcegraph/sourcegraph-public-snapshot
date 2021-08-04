@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -36,7 +37,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
-	s := store.New(db, nil)
+	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
 
 	admin := ct.CreateTestUser(t, db, true)
@@ -186,7 +187,7 @@ func TestService(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
-	s := store.NewWithClock(db, nil, clock)
+	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
 	fakeSource := &sources.FakeChangesetSource{}

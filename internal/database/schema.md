@@ -860,35 +860,6 @@ Stores the configuration used for code intel index jobs for a repository.
 
 **data**: The raw user-supplied [configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/autoindex/config/types.go#L3:6) (encoded in JSONC).
 
-# Table "public.lsif_indexable_repositories"
-```
-         Column         |           Type           | Collation | Nullable |                         Default                         
-------------------------+--------------------------+-----------+----------+---------------------------------------------------------
- id                     | integer                  |           | not null | nextval('lsif_indexable_repositories_id_seq'::regclass)
- repository_id          | integer                  |           | not null | 
- search_count           | integer                  |           | not null | 0
- precise_count          | integer                  |           | not null | 0
- last_index_enqueued_at | timestamp with time zone |           |          | 
- last_updated_at        | timestamp with time zone |           | not null | now()
- enabled                | boolean                  |           |          | 
-Indexes:
-    "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
-    "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
-
-```
-
-Stores the number of code intel events for repositories. Used for auto-index scheduling heursitics Sourcegraph Cloud.
-
-**enabled**: **Column unused.**
-
-**last_index_enqueued_at**: The last time an index for the repository was enqueued (for basic rate limiting).
-
-**last_updated_at**: The last time the event counts were updated for this repository.
-
-**precise_count**: The number of precise code intel events for the repository in the past week.
-
-**search_count**: The number of search-based code intel events for the repository in the past week.
-
 # Table "public.lsif_indexes"
 ```
          Column         |           Type           | Collation | Nullable |                 Default                  

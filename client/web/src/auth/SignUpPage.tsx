@@ -27,7 +27,6 @@ interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
 export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     authenticatedUser,
     context,
-    featureFlags,
     isLightTheme,
     telemetryService,
 }) => {
@@ -65,7 +64,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             // if sign up is successful and enablePostSignupFlow feature is ON -
             // redirect user to the /post-sign-up page
             if (context.experimentalFeatures.enablePostSignupFlow) {
-                window.location.replace(new URL('/post-sign-up', window.location.href).pathname)
+                window.location.replace(new URL('/welcome', window.location.href).pathname)
             } else {
                 window.location.replace(getReturnTo(location))
             }

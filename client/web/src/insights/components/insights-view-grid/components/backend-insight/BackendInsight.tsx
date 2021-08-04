@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { useMemo } from 'react'
+import React, { useCallback, useContext } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -7,16 +7,15 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../schema/settings.schema'
+import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { ViewInsightProviderSourceType } from '../../../../core/backend/types'
 import { SearchBackendBasedInsight } from '../../../../core/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
-import { useParallelRequests } from '../../../../hooks/use-parallel-request'
+import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { getInsightViewIcon, InsightContentCard } from '../insight-card/InsightContentCard'
-
-import { getBackendInsightById } from './utils/fetch-backend-insight-by-id'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -31,9 +30,10 @@ interface BackendInsightProps
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, platformContext, settingsCascade, ...otherProps } = props
+    const { getBackendInsightById } = useContext(InsightsApiContext)
 
     const { data, loading, error } = useParallelRequests(
-        useMemo(() => () => getBackendInsightById(insight.id), [insight.id])
+        useCallback(() => getBackendInsightById(insight.id), [insight.id, getBackendInsightById])
     )
 
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
