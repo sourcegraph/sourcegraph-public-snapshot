@@ -1425,37 +1425,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// per backend. This works better than batch based since we have higher
 	// defaults.
 	stream := r.stream
-	if stream != nil {
-		var cancelOnLimit context.CancelFunc
-		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
-		defer cancelOnLimit()
-	}
-
-	agg := run.NewAggregator(r.db, stream)
-
-	// finalize converts the content of the aggregator to a proper return value.
-	// finalize relies on all WaitGroups being done since it relies on collecting
-	// from the streams.
-	finalize := func() (*SearchResults, error) {
-		matches, common, aggErrs := agg.Get()
-
-		if aggErrs == nil {
-			return nil, errors.New("aggErrs should never be nil")
-		}
-
-		ao := alertObserver{
-			Inputs:     r.SearchInputs,
-			hasResults: len(matches) > 0,
-		}
-		for _, err := range aggErrs.Errors {
-			ao.Error(ctx, err)
-		}
-		alert, err := ao.Done(&common)
-
-		tr.LazyPrintf("matches=%d %s", len(matches), &common)
-
-		r.sortResults(matches)
-
 		return &SearchResults{
 			Matches: matches,
 			Stats:   common,
