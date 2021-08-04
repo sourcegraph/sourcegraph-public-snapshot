@@ -16,7 +16,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
-import { SOURCEGRAPH_SEARCH, useQueryDiagnostics } from '../useQueryIntelligence'
+import { useQueryDiagnostics } from '../useQueryIntelligence'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
@@ -35,6 +35,7 @@ interface SearchNotebookQueryBlockProps
         SettingsCascadeProps,
         TelemetryProps {
     isMacPlatform: boolean
+    sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -48,6 +49,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     isSelected,
     isOtherBlockSelected,
     isMacPlatform,
+    sourcegraphSearchLanguageId,
     fetchHighlightedFileLineRanges,
     onRunBlock,
     onSelectBlock,
@@ -132,7 +134,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                     )}
                 >
                     <MonacoEditor
-                        language={SOURCEGRAPH_SEARCH}
+                        language={sourcegraphSearchLanguageId}
                         value={input}
                         height="auto"
                         isLightTheme={isLightTheme}

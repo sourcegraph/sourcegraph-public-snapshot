@@ -25,12 +25,6 @@ describe('example helpers', () => {
                 Object {
                   "tokens": Array [
                     Object {
-                      "end": 0,
-                      "start": 0,
-                      "type": "text",
-                      "value": "",
-                    },
-                    Object {
                       "end": 3,
                       "start": 0,
                       "type": "placeholder",

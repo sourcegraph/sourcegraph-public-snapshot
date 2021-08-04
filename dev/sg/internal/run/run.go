@@ -125,12 +125,17 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 		cmdOut = e.output
 	case runErr:
 		message = "Failed to run " + cmdName
-		cmdOut = e.stderr
+		cmdOut = fmt.Sprintf("Exit code: %d\n\n", e.exitCode)
 
-		formattedStdout := "\t" + strings.Join(strings.Split(e.stdout, "\n"), "\n\t")
-		formattedStderr := "\t" + strings.Join(strings.Split(e.stderr, "\n"), "\n\t")
+		if len(strings.TrimSpace(e.stdout)) > 0 {
+			formattedStdout := "\t" + strings.Join(strings.Split(e.stdout, "\n"), "\n\t")
+			cmdOut += fmt.Sprintf("Standard out:\n%s\n", formattedStdout)
+		}
 
-		cmdOut = fmt.Sprintf("Exit code: %d\n\nStandard out:\n%s\nStandard err:\n%s\n", e.exitCode, formattedStdout, formattedStderr)
+		if len(strings.TrimSpace(e.stderr)) > 0 {
+			formattedStderr := "\t" + strings.Join(strings.Split(e.stderr, "\n"), "\n\t")
+			cmdOut += fmt.Sprintf("Standard err:\n%s\n", formattedStderr)
+		}
 
 	default:
 		message = fmt.Sprintf("Failed to run %s: %s", cmdName, err)
@@ -279,6 +284,16 @@ func makeEnv(envs ...map[string]string) []string {
 
 	for _, env := range envs {
 		for k, v := range env {
+			if _, ok := os.LookupEnv(k); ok {
+				// If the key is already set in the process env, we don't
+				// overwrite it. That way we can do something like:
+				//
+				//	SRC_LOG_LEVEL=debug sg run enterprise-frontend
+				//
+				// to overwrite the default value in sg.config.yaml
+				continue
+			}
+
 			// Expand env vars and keep track of previously set env vars
 			// so they can be used when expanding too.
 			// TODO: using range to iterate over the env is not stable and thus

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestBulkProcessor(t *testing.T) {
@@ -22,7 +23,7 @@ func TestBulkProcessor(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 	tx := dbtest.NewTx(t, db)
-	bstore := store.New(tx, nil)
+	bstore := store.New(tx, &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := repos[0]

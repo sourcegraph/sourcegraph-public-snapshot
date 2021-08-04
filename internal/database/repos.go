@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net"
+	"os"
 	regexpsyntax "regexp/syntax"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/query"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -137,12 +141,18 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.RepoID) {
+	if disabled, _ := strconv.ParseBool(os.Getenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS")); disabled {
+		return
+	}
+
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Resource string       `json:"resource"`
+		Service  string       `json:"service"`
 		Repos    []api.RepoID `json:"repo_ids"`
 	}{
 		Resource: "db.repo",
+		Service:  env.MyName,
 		Repos:    ids,
 	})
 
@@ -275,6 +285,60 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	})
 
 	return ct, err
+}
+
+// Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
+// number of IDs given if a repo with the given ID does not exist.
+func (s *RepoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
+	if Mocks.Repos.Metadata != nil {
+		return Mocks.Repos.Metadata(ctx, ids...)
+	}
+	s.ensureStore()
+
+	tr, ctx := trace.New(ctx, "repos.Metadata", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := ReposListOptions{
+		IDs: ids,
+		// Return a limited subset of fields
+		Select: []string{
+			"repo.id",
+			"repo.name",
+			"repo.description",
+			"repo.fork",
+			"repo.archived",
+			"repo.private",
+			"repo.stars",
+			"gr.last_fetched",
+		},
+		// Required so gr.last_fetched is select-able
+		joinGitserverRepos: true,
+	}
+
+	res := make([]*types.SearchedRepo, 0, len(ids))
+	scanMetadata := func(rows *sql.Rows) error {
+		var r types.SearchedRepo
+		if err := rows.Scan(
+			&r.ID,
+			&r.Name,
+			&dbutil.NullString{S: &r.Description},
+			&r.Fork,
+			&r.Archived,
+			&r.Private,
+			&dbutil.NullInt{N: &r.Stars},
+			&r.LastFetched,
+		); err != nil {
+			return err
+		}
+
+		res = append(res, &r)
+		return nil
+	}
+
+	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
 }
 
 const listReposQueryFmtstr = `
@@ -549,6 +613,10 @@ type ReposListOptions struct {
 	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
 	IncludeDeleted bool
 
+	// joinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
+	// with the table alias "gr".
+	joinGitserverRepos bool
+
 	*LimitOffset
 }
 
@@ -662,8 +730,10 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		return nil, err
 	}
 
-	// TODO: Actually log event here
-	counterAccessGranted.Inc()
+	if len(privateIDs) > 0 {
+		counterAccessGranted.Inc()
+		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
+	}
 
 	return repos, nil
 }
@@ -685,8 +755,8 @@ func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	})
 
 	if len(privateIDs) > 0 {
-		// TODO: Actually log event here
 		counterAccessGranted.Inc()
+		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
 	}
 
 	return rs, err
@@ -702,6 +772,9 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
+		if e, ok := err.(*net.OpError); ok && e.Timeout() {
+			return errors.Wrapf(context.DeadlineExceeded, "RepoStore.list: %s", err.Error())
+		}
 		return err
 	}
 	defer rows.Close()
@@ -873,7 +946,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
@@ -938,6 +1011,8 @@ type ListIndexableReposOptions struct {
 	OnlyUncloned bool
 	// If true, we include user added private repos
 	IncludePrivate bool
+
+	*LimitOffset
 }
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
@@ -974,6 +1049,7 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		listIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(where, "\nAND "),
+		opts.LimitOffset.SQL(),
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -1022,6 +1098,7 @@ WHERE deleted_at IS NULL
 AND blocked IS NULL
 AND %s
 ORDER BY stars DESC NULLS LAST
+%s
 `
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

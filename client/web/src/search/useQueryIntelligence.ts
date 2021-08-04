@@ -1,6 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { useEffect, useMemo } from 'react'
 import { Observable } from 'rxjs'
+import * as uuid from 'uuid'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
@@ -8,7 +9,7 @@ import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 
-export const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
+const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
 
 /**
  * Adds code intelligence for the Sourcegraph search syntax to Monaco.
@@ -21,7 +22,15 @@ export function useQueryIntelligence(
         interpretComments?: boolean
         isSourcegraphDotCom?: boolean
     }
-): void {
+): string {
+    // Due to the global nature of Monaco (tokens, hover, completion) providers we have to create a unique
+    // language for each editor and register the providers for the new language. This ensures that there is no cross-contamination
+    // between different editors using the query intelligence hook. The main issue with using a single language id
+    // is when a component using the hook gets unmounted. When navigating between pages that both contain a search box (homepage -> search results page),
+    // the unmounted useEffect hook below would trigger cleanup after the search results hook already registered its providers. This effectively
+    // removes query intelligence from all editors.
+    const sourcegraphSearchLanguageId = useMemo(() => `${SOURCEGRAPH_SEARCH}-${uuid.v4()}`, [])
+
     const memoizedOptions = useMemo(
         () => ({
             patternType: options.patternType,
@@ -33,22 +42,26 @@ export function useQueryIntelligence(
     )
 
     useEffect(() => {
-        // Register language ID
-        Monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
+        if (Monaco.languages.getEncodedLanguageId(sourcegraphSearchLanguageId) === 0) {
+            // Register language ID
+            Monaco.languages.register({ id: sourcegraphSearchLanguageId })
+        }
 
         // Register providers
         const providers = getProviders(fetchSuggestions, memoizedOptions)
         const disposables = [
-            Monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens),
-            Monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover),
-            Monaco.languages.registerCompletionItemProvider(SOURCEGRAPH_SEARCH, providers.completion),
+            Monaco.languages.setTokensProvider(sourcegraphSearchLanguageId, providers.tokens),
+            Monaco.languages.registerHoverProvider(sourcegraphSearchLanguageId, providers.hover),
+            Monaco.languages.registerCompletionItemProvider(sourcegraphSearchLanguageId, providers.completion),
         ]
         return () => {
             for (const disposable of disposables) {
                 disposable.dispose()
             }
         }
-    }, [fetchSuggestions, memoizedOptions])
+    }, [fetchSuggestions, sourcegraphSearchLanguageId, memoizedOptions])
+
+    return sourcegraphSearchLanguageId
 }
 
 /**

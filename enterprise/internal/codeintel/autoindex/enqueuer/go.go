@@ -4,14 +4,14 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 const GitHubScheme = "https://"
 
 var goVersionPattern = lazyregexp.New(`^v?[\d\.]+-([a-f0-9]+)`)
 
-func InferGoRepositoryAndRevision(pkg semantic.Package) (repoName, gitTagOrCommit string, ok bool) {
+func InferGoRepositoryAndRevision(pkg precise.Package) (repoName, gitTagOrCommit string, ok bool) {
 	if pkg.Scheme != "gomod" || !strings.HasPrefix(pkg.Name, GitHubScheme+"github.com/") {
 		return "", "", false
 	}

@@ -1,6 +1,5 @@
-import * as H from 'history'
 import React, { FunctionComponent } from 'react'
-import { Redirect } from 'react-router-dom'
+import { Redirect, useLocation } from 'react-router-dom'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -12,20 +11,20 @@ import { getReturnTo } from './SignInSignUpCommon'
 interface Props {
     authenticatedUser?: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'allowSignup' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
-    location: H.Location
 }
 
 export const PostSignUpPage: FunctionComponent<Props> = ({
     authenticatedUser,
-    location,
     context: { sourcegraphDotComMode, experimentalFeatures },
-}) =>
+}) => {
+    const location = useLocation()
+
     // post sign-up flow is available only for .com and only in two cases, user:
     // 1. is authenticated and has AllowUserViewPostSignup tag
     // 2. is authenticated and enablePostSignupFlow experimental feature is ON
-    sourcegraphDotComMode &&
-    ((authenticatedUser && experimentalFeatures.enablePostSignupFlow) ||
-        authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
+    return sourcegraphDotComMode &&
+        ((authenticatedUser && experimentalFeatures.enablePostSignupFlow) ||
+            authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
         <div className="signin-signup-page post-signup-page">
             <PageTitle title="Post sign up page" />
 
@@ -43,3 +42,4 @@ export const PostSignUpPage: FunctionComponent<Props> = ({
     ) : (
         <Redirect to={getReturnTo(location)} />
     )
+}

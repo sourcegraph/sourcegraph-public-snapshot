@@ -3,6 +3,10 @@ This is the main entry point for all styles for the web app.
 It should import all component stylesheets.
 */
 
+// Global libraries styles
+@import 'react-grid-layout/css/styles.css';
+@import 'react-resizable/css/styles.css';
+
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
@@ -91,6 +95,7 @@ body,
 @import './site-admin/init/SiteInitPage';
 @import './site-admin/SiteAdmin';
 @import './tree/Tree';
+@import './insights/insights-global-styles';
 @import './nav/GlobalNavbar';
 @import './nav/NavLinks';
 @import './auth/ResetPasswordPage';

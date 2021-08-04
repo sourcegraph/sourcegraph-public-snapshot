@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type IndexEnqueuer struct {
@@ -87,7 +87,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code intelligence
 // index. Currently we only support recognition of "gomod" import monikers.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) (err error) {
+func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
 	ctx, traceLog, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("scheme", pkg.Scheme),
@@ -180,9 +180,7 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 	return s.queueIndexes(ctx, repositoryID, commit, indexes)
 }
 
-// queueIndexes inserts a set of index records into the database. It is assumed that the given repository id an
-// commit are the same for each given index record. In the same transaction as the insert, the repository's row
-// is updated in the lsif_indexable_repositories table as a crude form of rate limiting.
+// queueIndexes inserts a set of index records into the database.
 func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, commit string, indexes []store.Index) (err error) {
 	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {
