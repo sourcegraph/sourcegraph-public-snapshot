@@ -41,6 +41,21 @@
     margin-bottom: 5rem;
     align-self: flex-start;
 
+    &__loading:after {
+        width: 0px;
+        overflow: hidden;
+        content: '...';
+        display: inline-block;
+        vertical-align: bottom;
+        animation: ellipsis steps(4, end) 1000ms infinite;
+    }
+
+    @keyframes ellipsis {
+        to {
+            width: 2rem;
+        }
+    }
+
     &__logo {
         height: 1.75rem;
         width: 1.75rem;

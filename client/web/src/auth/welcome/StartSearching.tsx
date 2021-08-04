@@ -107,20 +107,20 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
                 <Terminal>
                     {!isDoneCloning && (
                         <TerminalLine>
-                            <code>Cloning Repositories...</code>
+                            <code className="mb-2 post-signup-page__loading">Cloning Repositories</code>
                         </TerminalLine>
                     )}
                     {cloningStatusLoading && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <code>Loading...</code>
+                                <code className="mb-2 post-signup-page__loading">Loading</code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}
                     {!cloningStatusLoading &&
                         !isDoneCloning &&
                         cloningStatusLines?.map(({ id, title, details, progress }) => (
-                            <React.Fragment key={id}>
+                            <div key={id} className="mb-2">
                                 <TerminalLine>
                                     <TerminalTitle>{title}</TerminalTitle>
                                 </TerminalLine>
@@ -130,7 +130,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
                                 <TerminalLine>
                                     <TerminalProgress character="#" progress={progress} />
                                 </TerminalLine>
-                            </React.Fragment>
+                            </div>
                         ))}
                     {isDoneCloning && (
                         <>

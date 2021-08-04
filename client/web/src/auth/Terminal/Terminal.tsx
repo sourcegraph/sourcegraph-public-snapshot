@@ -2,8 +2,8 @@ import React from 'react'
 
 import terminalStyles from './Terminal.module.scss'
 
-// 73 '=' characters are the 100% of the progress bar
-const CHARACTERS_LENGTH = 73
+// 74 '=' characters are the 100% of the progress bar
+const CHARACTERS_LENGTH = 74
 
 export const Terminal: React.FunctionComponent = ({ children }) => (
     <section className={terminalStyles.terminalWrapper}>
