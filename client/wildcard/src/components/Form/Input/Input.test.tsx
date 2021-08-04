@@ -21,16 +21,12 @@ describe('Input', () => {
               class="w-100"
             >
               <div
-                class="mb-2"
-              >
-                Input loading
-              </div>
-              <div
                 class="loader-input__container d-flex"
               >
                 <input
                   class="input form-control with-invalid-icon"
                   placeholder="loading status input"
+                  title="Input loading"
                   type="text"
                   value="Input value"
                 />

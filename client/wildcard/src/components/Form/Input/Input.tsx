@@ -7,8 +7,8 @@ import styles from './Input.module.scss'
 import { ForwardReferenceComponent } from './types'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    /** Title of input. */
-    title?: string
+    /** text label of input. */
+    label?: string
     /** Description block shown below the input. */
     message?: ReactNode
     /** Custom class name for root label element. */
@@ -33,7 +33,7 @@ export const Input = forwardRef((props, reference) => {
         as: Component = 'input',
         type = 'text',
         variant = 'regular',
-        title,
+        label,
         message,
         className,
         inputClassName,
@@ -45,7 +45,7 @@ export const Input = forwardRef((props, reference) => {
 
     return (
         <label className={classnames('w-100', className)}>
-            {title && <div className="mb-2">{variant === 'regular' ? title : <small>{title}</small>}</div>}
+            {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
 
             <LoaderInput className="d-flex" loading={status === 'loading'}>
                 <Component

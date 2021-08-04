@@ -38,10 +38,10 @@ export const Simple = () => {
 
     return (
         <>
-            <Input title="Input raw" value={selected} onChange={handleChange} />
+            <Input label="Input raw" value={selected} onChange={handleChange} />
             <Input
                 value={selected}
-                title="Input valid"
+                label="Input valid"
                 onChange={handleChange}
                 message="random message"
                 status="valid"
@@ -58,7 +58,7 @@ export const Simple = () => {
             />
             <Input
                 value={selected}
-                title="Input error"
+                label="Input error"
                 onChange={handleChange}
                 message="a message with error"
                 status="error"
@@ -66,7 +66,7 @@ export const Simple = () => {
             />
             <Input
                 value={selected}
-                title="Disabled input"
+                label="Disabled input"
                 onChange={handleChange}
                 message="random message"
                 disabled={true}
@@ -75,7 +75,7 @@ export const Simple = () => {
 
             <Input
                 value={selected}
-                title="Input small"
+                label="Input small"
                 onChange={handleChange}
                 message="random message"
                 status="valid"
