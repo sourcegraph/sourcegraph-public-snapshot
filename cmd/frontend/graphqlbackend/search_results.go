@@ -1496,9 +1496,10 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 		return nil, err
 	}
+	args.Repos = resolved.RepoRevs
 
-	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
-	if len(resolved.RepoRevs) == 0 {
+	tr.LazyPrintf("searching %d repos, %d missing", len(args.Repos), len(resolved.MissingRepoRevs))
+	if len(args.Repos) == 0 {
 		return r.alertForNoResolvedRepos(ctx, args.Query).wrapResults(), nil
 	}
 
@@ -1508,8 +1509,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	// Send down our first bit of progress.
 	{
-		repos := make(map[api.RepoID]types.RepoName, len(resolved.RepoRevs))
-		for _, repoRev := range resolved.RepoRevs {
+		repos := make(map[api.RepoID]types.RepoName, len(args.Repos))
+		for _, repoRev := range args.Repos {
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
@@ -1521,8 +1522,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			},
 		})
 	}
-
-	args.Repos = resolved.RepoRevs
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
