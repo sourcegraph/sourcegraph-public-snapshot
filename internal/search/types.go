@@ -138,7 +138,7 @@ type TextParameters struct {
 	Timeout     time.Duration
 
 	// deprecated
-	RepoPromise *RepoPromise
+	RepoPromise []*RepositoryRevisions // TODO(stefan): rename this
 
 	// perf: For global queries, we only resolve private repos.
 	UserPrivateRepos []types.RepoName

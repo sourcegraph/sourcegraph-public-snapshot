@@ -14,7 +14,6 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -48,12 +47,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		return err
 	}
 
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.RepoPromise)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

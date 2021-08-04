@@ -594,7 +594,6 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
-		RepoPromise:  &search.RepoPromise{},
 	}
 	args = withResultTypes(args, forceResultTypes)
 	args = withMode(args, r.PatternType, r.VersionContext)
@@ -1526,7 +1525,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// Resolve repo promise so searches waiting on it can proceed. We do this
 	// after reporting the above progress to ensure we don't get search
 	// results before the above reporting.
-	args.RepoPromise.Resolve(resolved.RepoRevs)
+	args.RepoPromise = resolved.RepoRevs
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
