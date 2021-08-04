@@ -21,6 +21,8 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: 'error' | 'loading' | 'valid'
     /** Disable input behavior */
     disable?: boolean
+    /** Determines the size of the input */
+    size?: 'regular' | 'small'
 }
 
 /**
@@ -30,6 +32,7 @@ export const Input = forwardRef((props, reference) => {
     const {
         as: Component = 'input',
         type = 'text',
+        size = 'regular',
         title,
         message,
         className,
@@ -42,7 +45,7 @@ export const Input = forwardRef((props, reference) => {
 
     return (
         <label className={classnames('w-100', className)}>
-            {title && <div className="mb-2">{title}</div>}
+            {title && <div className="mb-2">{size === 'regular' ? title : <small>{title}</small>}</div>}
 
             <LoaderInput className="d-flex" loading={status === 'loading'}>
                 <Component
@@ -51,6 +54,7 @@ export const Input = forwardRef((props, reference) => {
                     className={classnames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
                         'is-valid': status === 'valid',
                         'is-invalid': status === 'error',
+                        'form-control-sm': size === 'small',
                     })}
                     {...otherProps}
                     ref={reference}
@@ -63,7 +67,7 @@ export const Input = forwardRef((props, reference) => {
                 <small
                     className={classnames(
                         status === 'error' ? 'text-danger' : 'text-muted',
-                        'form-text font-weight-normal'
+                        'form-text font-weight-normal mt-2'
                     )}
                 >
                     {message}

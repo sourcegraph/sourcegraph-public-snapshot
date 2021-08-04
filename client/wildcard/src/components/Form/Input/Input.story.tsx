@@ -72,6 +72,17 @@ export const Simple = () => {
                 disable={true}
                 placeholder="disable status input"
             />
+
+            <Input
+                value={selected}
+                title="Input small"
+                onChange={handleChange}
+                message="random message"
+                status="valid"
+                disable={false}
+                placeholder="testing this one"
+                size="small"
+            />
         </>
     )
 }
