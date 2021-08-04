@@ -6,15 +6,14 @@
 # You can also use `sg run redis-postgres`.
 services:
   redis:
-    image: redis:6.2.5
-    command: redis-server redis.conf
+    image: sourcegraph/redis-cache:insiders
     ports:
       - 6379:6379
     volumes:
-      - ./redis.conf:/data/redis.conf
+      - ./redis.conf:/etc/redis/redis.conf
       - ${REDIS_DATA_DIR:-redis_data}:/data
   postgresql:
-    image: postgres
+    image: sourcegraph/postgres-12.6:insiders
     ports:
       - 5432:5432
     environment:
