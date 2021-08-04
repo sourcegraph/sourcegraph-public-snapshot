@@ -2,6 +2,7 @@ package dbstore
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
