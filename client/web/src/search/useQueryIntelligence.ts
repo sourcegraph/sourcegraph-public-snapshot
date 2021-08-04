@@ -27,7 +27,7 @@ export function useQueryIntelligence(
     // language for each editor and register the providers for the new language. This ensures that there is no cross-contamination
     // between different editors using the query intelligence hook. The main issue with using a single language id
     // is when a component using the hook gets unmounted. When navigating between pages that both contain a search box (homepage -> search results page),
-    // the unmounted useEffect hook below would trigger cleanup after the search results hook already registered it's providers. This effectively
+    // the unmounted useEffect hook below would trigger cleanup after the search results hook already registered its providers. This effectively
     // removes query intelligence from all editors.
     const sourcegraphSearchLanguageId = useMemo(() => `${SOURCEGRAPH_SEARCH}-${uuid.v4()}`, [])
 
