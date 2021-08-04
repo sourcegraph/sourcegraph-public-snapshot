@@ -105,7 +105,7 @@ Indexes:
 Check constraints:
     "batch_spec_executions_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
-    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
+    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     "batch_spec_executions_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) DEFERRABLE
     "batch_spec_executions_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) DEFERRABLE
     "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
@@ -134,7 +134,7 @@ Foreign-key constraints:
     "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
+    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```

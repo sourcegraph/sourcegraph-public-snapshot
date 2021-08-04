@@ -368,12 +368,14 @@ DELETE FROM
   batch_specs
 WHERE
   created_at < %s
-AND
-NOT EXISTS (
+AND NOT EXISTS (
   SELECT 1 FROM batch_changes WHERE batch_spec_id = batch_specs.id
 )
 AND NOT EXISTS (
   SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
+)
+AND NOT EXISTS (
+  SELECT 1 FROM batch_spec_executions WHERE batch_spec_id = batch_specs.id
 );
 `
 
