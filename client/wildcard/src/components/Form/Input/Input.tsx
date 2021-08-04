@@ -13,8 +13,6 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     message?: ReactNode
     /** Custom class name for root label element. */
     className?: string
-    /** Turn on or turn off autofocus for input. */
-    autofocus?: boolean
     /** Custom class name for input element. */
     inputClassName?: string
     /** Input icon (symbol) which render right after the input element. */
@@ -75,3 +73,5 @@ export const Input = forwardRef((props, reference) => {
         </label>
     )
 }) as ForwardReferenceComponent<'input', FormInputProps>
+
+Input.displayName = 'Input'
