@@ -248,6 +248,68 @@ func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) (*sqlf.Query, e
 	), nil
 }
 
+// ListBatchSpecExecutionsOpts captures the query options needed for
+// listing batch spec executions.
+type ListBatchSpecExecutionsOpts struct {
+	Cancel         *bool
+	State          btypes.BatchSpecExecutionState
+	WorkerHostname string
+}
+
+// ListBatchSpecExecutions lists batch changes with the given filters.
+func (s *Store) ListBatchSpecExecutions(ctx context.Context, opts ListBatchSpecExecutionsOpts) (cs []*btypes.BatchSpecExecution, err error) {
+	ctx, endObservation := s.operations.listBatchSpecExecutions.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := listBatchSpecExecutionsQuery(opts)
+
+	cs = make([]*btypes.BatchSpecExecution, 0)
+	err = s.query(ctx, q, func(sc scanner) error {
+		var c btypes.BatchSpecExecution
+		if err := scanBatchSpecExecution(&c, sc); err != nil {
+			return err
+		}
+		cs = append(cs, &c)
+		return nil
+	})
+
+	return cs, err
+}
+
+var listBatchSpecExecutionsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_execution.go:ListBatchSpecExecutions
+SELECT %s FROM batch_spec_executions
+%s
+WHERE %s
+ORDER BY id ASC
+`
+
+func listBatchSpecExecutionsQuery(opts ListBatchSpecExecutionsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+
+	if opts.Cancel != nil {
+		preds = append(preds, sqlf.Sprintf("batch_spec_executions.cancel IS %t", *opts.Cancel))
+	}
+
+	if opts.State != "" {
+		preds = append(preds, sqlf.Sprintf("batch_spec_executions.state = %s", opts.State))
+	}
+
+	if opts.WorkerHostname != "" {
+		preds = append(preds, sqlf.Sprintf("batch_spec_executions.worker_hostname = %s", opts.WorkerHostname))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(
+		listBatchSpecExecutionsQueryFmtstr,
+		sqlf.Join(batchChangeColumns, ", "),
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
 func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 

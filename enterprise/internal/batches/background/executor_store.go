@@ -14,6 +14,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -43,9 +44,14 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumRetries: 0,
 }
 
+type ExecutorStore interface {
+	dbworkerstore.Store
+	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
+}
+
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
-func NewExecutorStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewExecutorStore(handle *basestore.TransactableHandle, observationContext *observation.Context) ExecutorStore {
 	return &executorStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, executorWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
@@ -86,59 +92,25 @@ func (s *executorStore) MarkComplete(ctx context.Context, id int, options dbwork
 	return ok, err
 }
 
-// Heartbeat marks the given record as currently being processed.
-// Overwrite heartbeat: We want to find those records that are marked as to-be-cancelled
-// and filter those out from here and reset them in the DB.
-func (s *executorStore) Heartbeat(ctx context.Context, ids []int, options dbworkerstore.HeartbeatOptions) (knownIDs []int, err error) {
-	if len(ids) == 0 {
-		return s.Store.Heartbeat(ctx, ids, options)
-	}
-	batchesStore := store.New(s.Store.Handle().DB(), nil)
+func (s *executorStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
+	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 
-	sqlIDs := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
-	}
-
-	canceledIDs, err := basestore.ScanInts(batchesStore.Query(ctx, sqlf.Sprintf(
-		markCanceledQuery,
-		sqlf.Join(sqlIDs, ","),
-		options.WorkerHostname,
-	)))
-	if err != nil {
-		return nil, err
-	}
-	canceledIDsMap := make(map[int]struct{})
-	for _, id := range canceledIDs {
-		canceledIDsMap[id] = struct{}{}
-	}
-	realIDs, err := s.Store.Heartbeat(ctx, ids, options)
+	t := true
+	cs, err := batchesStore.ListBatchSpecExecutions(ctx, store.ListBatchSpecExecutionsOpts{
+		Cancel:         &t,
+		State:          btypes.BatchSpecExecutionStateProcessing,
+		WorkerHostname: executorName,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, id := range realIDs {
-		if _, ok := canceledIDsMap[id]; !ok {
-			knownIDs = append(knownIDs, id)
-		}
+	ids := make([]int, 0, len(cs))
+	for _, c := range cs {
+		ids = append(ids, c.RecordID())
 	}
-	return knownIDs, nil
+	return ids, nil
 }
-
-const markCanceledQuery = `
-UPDATE batch_spec_executions
-SET
-	cancel = FALSE
-WHERE
-	id IN (%s)
-	AND
-	state = 'processing'
-	AND
-	worker_hostname = %s
-	AND
-	cancel = TRUE
-RETURNING id
-`
 
 func loadAndExtractBatchSpecRandID(ctx context.Context, s *store.Store, id int64) (string, error) {
 	exec, err := s.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{ID: id})

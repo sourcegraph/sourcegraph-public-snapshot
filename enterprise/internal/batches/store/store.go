@@ -148,6 +148,7 @@ type operations struct {
 
 	createBatchSpecExecution *observation.Operation
 	getBatchSpecExecution    *observation.Operation
+	listBatchSpecExecutions  *observation.Operation
 
 	createBatchSpec         *observation.Operation
 	updateBatchSpec         *observation.Operation
@@ -248,6 +249,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 			createBatchSpecExecution: op("CreateBatchSpecExecution"),
 			getBatchSpecExecution:    op("GetBatchSpecExecution"),
+			listBatchSpecExecutions:  op("ListBatchSpecExecutions"),
 
 			createBatchSpec:         op("CreateBatchSpec"),
 			updateBatchSpec:         op("UpdateBatchSpec"),

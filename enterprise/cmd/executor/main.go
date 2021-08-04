@@ -49,7 +49,7 @@ func main() {
 	nameSet := janitor.NewNameSet()
 
 	routines := []goroutine.BackgroundRoutine{
-		worker.NewWorker(nameSet, config.APIWorkerOptions(), observationContext),
+		worker.NewWorker(context.Background(), nameSet, config.APIWorkerOptions(), observationContext),
 	}
 	if config.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(

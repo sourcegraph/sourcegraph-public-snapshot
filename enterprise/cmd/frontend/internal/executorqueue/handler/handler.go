@@ -23,6 +23,8 @@ type QueueOptions struct {
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
 	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
+
+	FetchCanceled func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
 func newHandler(queueOptions QueueOptions) *handler {
@@ -140,4 +142,12 @@ func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int)
 		// both executors that ever got the job would be writing to the same record. This prevents it.
 		WorkerHostname: executorName,
 	})
+}
+
+// canceled calls canceled for the given jobs.
+func (h *handler) canceled(ctx context.Context, executorName string) (knownIDs []int, err error) {
+	if h.FetchCanceled == nil {
+		return nil, nil
+	}
+	return h.FetchCanceled(ctx, executorName)
 }

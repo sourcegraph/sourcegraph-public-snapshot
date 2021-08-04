@@ -29,6 +29,7 @@ func SetupRoutes(queueOptionsMap map[string]QueueOptions, router *mux.Router) {
 			"markErrored":             h.handleMarkErrored,
 			"markFailed":              h.handleMarkFailed,
 			"heartbeat":               h.handleHeartbeat,
+			"canceled":                h.handleCanceled,
 		}
 		for path, handler := range routes {
 			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
@@ -119,6 +120,16 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
 		unknownIDs, err := h.heartbeat(r.Context(), payload.ExecutorName, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
+	})
+}
+
+// POST /{queueName}/canceled
+func (h *handler) handleCanceled(w http.ResponseWriter, r *http.Request) {
+	var payload apiclient.CanceledRequest
+
+	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
+		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName)
+		return http.StatusOK, canceledIDs, err
 	})
 }
 

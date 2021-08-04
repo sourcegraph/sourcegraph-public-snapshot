@@ -44,6 +44,16 @@ func (i *IDSet) Remove(id int) {
 	}
 }
 
+func (i *IDSet) Cancel(id int) {
+	i.RLock()
+	cancel, ok := i.ids[id]
+	i.RUnlock()
+
+	if ok {
+		cancel()
+	}
+}
+
 // Slice returns an ordered copy of the identifiers composing the set.
 func (i *IDSet) Slice() []int {
 	i.RLock()

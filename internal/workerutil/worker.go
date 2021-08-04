@@ -92,6 +92,10 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 	}
 }
 
+func (w *Worker) Cancel(id int) {
+	w.runningIDSet.Cancel(id)
+}
+
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker) Start() {
 	defer close(w.finished)
