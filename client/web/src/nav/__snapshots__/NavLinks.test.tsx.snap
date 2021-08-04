@@ -244,7 +244,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         tabindex="-1"
       >
         <button
-          class="feedback-prompt__close"
+          class="btn feedback-prompt__close"
           type="button"
         >
           <svg
@@ -453,7 +453,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             </li>
           </ul>
           <button
-            class="btn btn-block btn-secondary feedback-prompt__button"
+            class="btn btn-secondary btn-block feedback-prompt__button"
             disabled=""
             role="menuitem"
             type="submit"
@@ -1055,7 +1055,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         tabindex="-1"
       >
         <button
-          class="feedback-prompt__close"
+          class="btn feedback-prompt__close"
           type="button"
         >
           <svg
@@ -1264,7 +1264,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             </li>
           </ul>
           <button
-            class="btn btn-block btn-secondary feedback-prompt__button"
+            class="btn btn-secondary btn-block feedback-prompt__button"
             disabled=""
             role="menuitem"
             type="submit"
@@ -1876,7 +1876,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         tabindex="-1"
       >
         <button
-          class="feedback-prompt__close"
+          class="btn feedback-prompt__close"
           type="button"
         >
           <svg
@@ -2085,7 +2085,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             </li>
           </ul>
           <button
-            class="btn btn-block btn-secondary feedback-prompt__button"
+            class="btn btn-secondary btn-block feedback-prompt__button"
             disabled=""
             role="menuitem"
             type="submit"
@@ -2668,7 +2668,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         tabindex="-1"
       >
         <button
-          class="feedback-prompt__close"
+          class="btn feedback-prompt__close"
           type="button"
         >
           <svg
@@ -2877,7 +2877,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             </li>
           </ul>
           <button
-            class="btn btn-block btn-secondary feedback-prompt__button"
+            class="btn btn-secondary btn-block feedback-prompt__button"
             disabled=""
             role="menuitem"
             type="submit"

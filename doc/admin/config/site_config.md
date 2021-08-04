@@ -34,32 +34,28 @@ disablePublicRepoRedirects
 
 ## Editing your site configuration if you cannot access the web UI
 
-If you are having trouble accessing the web UI, you can make edits to your site configuration by editing a file in the Docker container using the following commands:
+If you are having trouble accessing the web UI, you can make edits to your site configuration by editing the configuration directly.
 
-#### Single-container Docker instances
+### Sourcegraph with Docker Compose and single-server Sourcegraph with Docker
 
-For Sourcegraph v3.12.1+ use:
+Set `FRONTEND_CONTAINER` to:
+
+- [Docker Compose](../install/docker-compose/index.md): the `sourcegraph-frontend` container
+- [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
 ```sh
-docker exec -it $CONTAINER sh -c 'apk add --no-cache nano && nano ~/site-config.json'
+docker exec -it $FRONTEND_CONTAINER sh -c 'apk add --no-cache nano && nano ~/site-config.json'
 ```
 
 Or if you prefer using a Vim editor:
 
 ```sh
-docker exec -it $CONTAINER sh -c 'vi ~/site-config.json'
+docker exec -it $FRONTEND_CONTAINER sh -c 'vi ~/site-config.json'
 ```
 
-> **Note:** Not running Sourcegraph v3.12.1+? Use the following:
-```sh
-docker exec -it $CONTAINER sh -c 'apk add --no-cache nano && nano /site-config.json'
-```
-> Or if you prefer using a Vim editor:
-```sh
-docker exec -it $CONTAINER sh -c 'vi /site-config.json'
-```
+### Sourcegraph with Kubernetes
 
-#### Kubernetes cluster instances
+For [Kubernetes](../install/kubernetes/index.md) deployments:
 
 ```sh
 kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano ~/site-config.json'
@@ -71,23 +67,13 @@ Or if you prefer using a Vim editor:
 kubectl exec -it $FRONTEND_POD -- sh -c 'vi ~/site-config.json'
 ```
 
-> **Note:** Not running Sourcegraph v3.12.1+? Use the following:
-```
-kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano /site-config.json'
-```
-
-> Or if you prefer using a Vim editor:
-```sh
-kubectl exec -it $FRONTEND_POD -- sh -c 'vi /site-config.json'
-```
-
 Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same was as if you had made them through the web UI.
 
-#### If you are still encountering issues
+## If you are still encountering issues
 
 You can check the container logs to see if you have made any typos or mistakes in editing the configuration file. If you are still encountering problems, you can save the default site configuration that comes with Sourcegraph (below) or contact support@sourcegraph.com with any questions you have.
 
-```
+```json
 {
 	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 	// This is required to be configured for Sourcegraph to work correctly.

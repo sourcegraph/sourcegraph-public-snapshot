@@ -32,6 +32,7 @@ type IndexingSettingStore interface {
 
 type IndexingRepoStore interface {
 	ListRepoNames(ctx context.Context, opt database.ReposListOptions) (results []types.RepoName, err error)
+	ListIndexableRepos(ctx context.Context, opts database.ListIndexableReposOptions) (results []types.RepoName, err error)
 }
 
 func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {

@@ -3,6 +3,10 @@ package batches
 import (
 	"context"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
@@ -12,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // InitBackgroundJobs starts all jobs required to run batches. Currently, it is called from
@@ -28,7 +34,13 @@ func InitBackgroundJobs(
 	// the registry can start or stop the syncer associated with the service
 	HandleExternalServiceSync(es api.ExternalService)
 } {
-	cstore := store.New(db, key)
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	cstore := store.New(db, observationContext, key)
 
 	// We use an internal actor so that we can freely load dependencies from
 	// the database without repository permissions being enforced.
@@ -39,7 +51,7 @@ func InitBackgroundJobs(
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, cf)
 
-	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, cf)...)
+	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, cf, observationContext)...)
 
 	return syncRegistry
 }

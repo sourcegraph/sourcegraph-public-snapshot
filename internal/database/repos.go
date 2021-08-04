@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	regexpsyntax "regexp/syntax"
 	"strconv"
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/query"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -146,9 +148,11 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Resource string       `json:"resource"`
+		Service  string       `json:"service"`
 		Repos    []api.RepoID `json:"repo_ids"`
 	}{
 		Resource: "db.repo",
+		Service:  env.MyName,
 		Repos:    ids,
 	})
 
@@ -710,6 +714,9 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
+		if e, ok := err.(*net.OpError); ok && e.Timeout() {
+			return errors.Wrapf(context.DeadlineExceeded, "RepoStore.list: %s", err.Error())
+		}
 		return err
 	}
 	defer rows.Close()
@@ -946,6 +953,8 @@ type ListIndexableReposOptions struct {
 	OnlyUncloned bool
 	// If true, we include user added private repos
 	IncludePrivate bool
+
+	*LimitOffset
 }
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
@@ -982,6 +991,7 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		listIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(where, "\nAND "),
+		opts.LimitOffset.SQL(),
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -1030,6 +1040,7 @@ WHERE deleted_at IS NULL
 AND blocked IS NULL
 AND %s
 ORDER BY stars DESC NULLS LAST
+%s
 `
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

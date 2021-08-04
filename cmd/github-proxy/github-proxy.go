@@ -124,12 +124,12 @@ func main() {
 		log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
 		_, _ = io.Copy(w, bytes.NewReader(b))
 	})
-	h = ot.Middleware(h)
-	h = trace.HTTPTraceMiddleware(h)
 	if logRequests {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
+	h = trace.HTTPTraceMiddleware(h)
+	h = ot.Middleware(h)
 	http.Handle("/", h)
 
 	host := ""

@@ -53,6 +53,10 @@ var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
 func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
+	if !indexSchedulerEnabled() {
+		return nil
+	}
+
 	job := record.(dbstore.DependencyIndexingJob)
 
 	if ok, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID); err != nil || !ok {

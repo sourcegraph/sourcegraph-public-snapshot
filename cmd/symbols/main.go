@@ -72,7 +72,7 @@ func main() {
 		log.Fatalln("Start:", err)
 	}
 
-	handler := trace.HTTPTraceMiddleware(ot.Middleware(service.Handler()))
+	handler := ot.Middleware(trace.HTTPTraceMiddleware(service.Handler()))
 
 	host := ""
 	if env.InsecureDev {

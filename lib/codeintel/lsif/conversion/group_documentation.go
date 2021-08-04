@@ -62,6 +62,10 @@ func newDocumentationChannels() documentationChannels {
 				buf = buf[1:]
 			case v, ok := <-src:
 				if !ok {
+					// No more src values, flush all to dst and we're done.
+					for _, v := range buf {
+						dst <- v
+					}
 					close(dst)
 					return
 				}
@@ -87,6 +91,10 @@ func newDocumentationChannels() documentationChannels {
 				buf = buf[1:]
 			case v, ok := <-src:
 				if !ok {
+					// No more src values, flush all to dst and we're done.
+					for _, v := range buf {
+						dst <- v
+					}
 					close(dst)
 					return
 				}
@@ -112,6 +120,10 @@ func newDocumentationChannels() documentationChannels {
 				buf = buf[1:]
 			case v, ok := <-src:
 				if !ok {
+					// No more src values, flush all to dst and we're done.
+					for _, v := range buf {
+						dst <- v
+					}
 					close(dst)
 					return
 				}

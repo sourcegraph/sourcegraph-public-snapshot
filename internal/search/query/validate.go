@@ -422,25 +422,16 @@ func validateTypeStructural(nodes []Node) error {
 }
 
 // validatePredicates validates predicate parameters with respect to their validation logic.
-func validatePredicates(nodes []Node) error {
-	var err error
-	VisitParameter(nodes, func(field, value string, negated bool, annotation Annotation) {
-		if err != nil {
-			return
-		}
-		if annotation.Labels.IsSet(IsPredicate) {
-			if negated {
-				err = errors.New("predicates do not currently support negation")
-				return
-			}
-			name, params := ParseAsPredicate(value)                // guaranteed to succeed
-			predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
-			if parseErr := predicate.ParseParams(params); parseErr != nil {
-				err = errors.Errorf("invalid predicate value: %s", parseErr)
-			}
-		}
-	})
-	return err
+func validatePredicate(field, value string, negated bool) error {
+	if negated {
+		return errors.New("predicates do not currently support negation")
+	}
+	name, params := ParseAsPredicate(value)                // guaranteed to succeed
+	predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
+	if err := predicate.ParseParams(params); err != nil {
+		return errors.Errorf("invalid predicate value: %s", err)
+	}
+	return nil
 }
 
 // validateRepoHasFile validates that the repohasfile parameter can be executed.
@@ -488,8 +479,13 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 func validateParameters(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
+	VisitParameter(nodes, func(field, value string, negated bool, annotation Annotation) {
 		if err != nil {
+			return
+		}
+		if annotation.Labels.IsSet(IsPredicate) {
+			err = validatePredicate(field, value, negated)
+			seen[field] = struct{}{}
 			return
 		}
 		err = validateField(field, value, negated, seen)
@@ -530,7 +526,6 @@ func validate(nodes []Node) error {
 		validateRepoRevPair,
 		validateRepoHasFile,
 		validateCommitParameters,
-		validatePredicates,
 		validateTypeStructural,
 	)
 }

@@ -1,7 +1,7 @@
 import { Remote } from 'comlink'
 import { Duration } from 'date-fns'
 import { Observable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
+import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -25,6 +25,18 @@ export interface ViewInsightProviderResult extends ViewProviderResult {
     source: ViewInsightProviderSourceType
 }
 
+/**
+ * Backend insight result data interface
+ */
+export interface BackendInsightData {
+    id: string
+    view: {
+        title: string
+        subtitle: string
+        content: LineChartContent<any, string>[]
+    }
+}
+
 export interface SubjectSettingsResult {
     id: number | null
     contents: string
@@ -36,17 +48,22 @@ export interface SearchInsightSettings {
     repositories: string[]
 }
 
-export interface LangStatsInsightsSettings {
-    /** URL of git repository from which statistics will be collected */
-    repository: string
-    /** The threshold below which a language is counted as part of 'Other' */
-    threshold: number
-}
-
 export interface DataSeries {
     name: string
     stroke: string
     query: string
+}
+
+export interface LangStatsInsightsSettings {
+    /**
+     * URL of git repository from which statistics will be collected
+     */
+    repository: string
+
+    /**
+     * The threshold below which a language is counted as part of 'Other'
+     */
+    threshold: number
 }
 
 export interface ApiService {
@@ -63,14 +80,15 @@ export interface ApiService {
         backendInsightsIds?: string[]
     ) => Observable<ViewInsightProviderResult[]>
 
-    getInsightCombinedViews: (
-        extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
-        allInsightsIds?: string[],
-        backendInsightsIds?: string[]
-    ) => Observable<ViewInsightProviderResult[]>
+    /**
+     * Returns backend insight (via gql API handler) by insight id.
+     *
+     * @param id - insight id
+     */
+    getBackendInsightById: (id: string) => Observable<BackendInsightData>
 
     /**
-     * Returns resolved extension provider result by extension view id.
+     * Returns resolved extension provider result by extension view id via extension API.
      */
     getExtensionViewById: (
         id: string,
@@ -103,14 +121,14 @@ export interface ApiService {
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
-    getSearchInsightContent: (insight: SearchInsightSettings) => Promise<sourcegraph.LineChartContent<any, string>>
+    getSearchInsightContent: (insight: SearchInsightSettings) => Promise<LineChartContent<any, string>>
 
     /**
      * Returns content for the code stats insight live preview chart.
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
-    getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<sourcegraph.PieChartContent<any>>
+    getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<PieChartContent<any>>
 
     /**
      * Returns a list of suggestions for the repositories field in the insight creation UI.

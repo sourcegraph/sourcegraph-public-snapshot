@@ -166,14 +166,14 @@ func main() {
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
 	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-		// Additionally set TMP_DIR so other temporary files we may accidentally
+		// Additionally, set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
 		log.Fatalf("Setting TMP_DIR: %s", err)
 	}
 
 	// Create Handler now since it also initializes state
 
-	handler := trace.HTTPTraceMiddleware(ot.Middleware(gitserver.Handler()))
+	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
 
 	// Ready immediately
 	ready := make(chan struct{})

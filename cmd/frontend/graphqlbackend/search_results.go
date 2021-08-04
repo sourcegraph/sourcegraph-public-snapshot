@@ -1127,7 +1127,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args 
 	//
 	// In this case, or if we got a partial timeout where ALL repositories timed out,
 	// we do not return partial results and instead display a timeout alert.
-	shouldShowAlert := err == context.DeadlineExceeded
+	shouldShowAlert := errors.Is(err, context.DeadlineExceeded)
 	if err == nil && rr.Stats.AllReposTimedOut() {
 		shouldShowAlert = true
 	}

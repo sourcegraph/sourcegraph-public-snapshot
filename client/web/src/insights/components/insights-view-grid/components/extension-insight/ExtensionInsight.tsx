@@ -11,7 +11,7 @@ import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { ViewInsightProviderSourceType } from '../../../../core/backend/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
-import { useParallelRequests } from '../../../../hooks/use-parallel-request'
+import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
@@ -71,6 +71,11 @@ export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = 
                     />
                 )
             )}
+            {
+                // Passing children props explicitly to render any top-level content like
+                // resize-handler from the react-grid-layout library
+                otherProps.children
+            }
         </InsightContentCard>
     )
 }

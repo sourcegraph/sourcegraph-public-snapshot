@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -29,7 +30,7 @@ func TestBulkOperationResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, nil, clock)
+	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
