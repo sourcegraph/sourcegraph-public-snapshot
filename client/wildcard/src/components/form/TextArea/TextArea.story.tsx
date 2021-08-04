@@ -1,6 +1,6 @@
 import { Meta } from '@storybook/react'
 import { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/preview/types'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -32,15 +32,45 @@ const config: Meta = {
 // eslint-disable-next-line import/no-default-export
 export default config
 
-export const TextAreaExamples: React.FunctionComponent = () => (
-    <>
-        <h1>Radio</h1>
-        <Grid columnCount={4}>
-            <div>
-                <h2>Standard</h2>
-                <TextArea value="" title="Standard example" />
-                <TextArea status="error" value="error example" title="Error example" />
-            </div>
-        </Grid>
-    </>
-)
+export const TextAreaExamples: React.FunctionComponent = () => {
+    const [value, setValue] = useState('')
+
+    const handleChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(event => {
+        setValue(event.target.value)
+    }, [])
+
+    return (
+        <>
+            <h1>TextArea</h1>
+            <Grid columnCount={3}>
+                <div>
+                    <TextArea
+                        onChange={handleChange}
+                        value={value}
+                        title="Standard example"
+                        placeholder="Please type here..."
+                    />
+                </div>
+                <div>
+                    <TextArea
+                        value=""
+                        title="Disabled example"
+                        disabled={true}
+                        message="This is helper text as needed."
+                        placeholder="Please type here..."
+                    />
+                </div>
+                <div>
+                    <TextArea
+                        onChange={handleChange}
+                        isError={true}
+                        value={value}
+                        title="Error example"
+                        message="show an error message"
+                        placeholder="Please type here..."
+                    />
+                </div>
+            </Grid>
+        </>
+    )
+}

@@ -1,55 +1,43 @@
 import classnames from 'classnames'
 import React, { forwardRef, ForwardRefExoticComponent, InputHTMLAttributes, ReactNode, RefAttributes } from 'react'
 
-// import styles from './TextArea.module.scss'
+import styles from './TextArea.module.scss'
 
 export interface FormTextAreaProps extends InputHTMLAttributes<HTMLTextAreaElement> {
-    /** Title of input. */
+    /** Title of textarea. Used as label */
     title?: string
-    /** Description block shown below the input. */
+    /** Description block shown below the textarea. */
     message?: ReactNode
     /** Custom class name for root label element. */
     className?: string
-    /** Turn on or turn off autofocus for input. */
-    autofocus?: boolean
-    /** Custom class for text area element. */
-    textAreaClassName?: string
-    /** Exclusive status */
-    status?: 'error'
-    /** Disable input behavior */
-    disable?: boolean
+    /** Define an error in the textarea */
+    isError?: boolean
+    /** Disable textarea behavior */
+    disabled?: boolean
 }
 
 /**
- * Displays the input with description, error message, visual invalid and valid states.
+ * Displays a textarea with description, error message, visual invalid and valid states.
  */
-export const TextArea: ForwardRefExoticComponent<FormTextAreaProps & RefAttributes<unknown>> = forwardRef(
+export const TextArea: ForwardRefExoticComponent<FormTextAreaProps & RefAttributes<HTMLTextAreaElement>> = forwardRef(
     (props, reference) => {
-        const { title, message, className, textAreaClassName, disable, status, ...otherProps } = props
+        const { title, message, className, disabled, isError, ...otherProps } = props
 
         return (
             <label className={classnames('w-100', className)}>
                 {title && <div className="mb-2">{title}</div>}
 
-                <TextArea
-                    disabled={disable}
-                    className={classnames(/* styles.textarea,*/ 'form-control', {
-                        'is-invalid': status === 'error',
+                <textarea
+                    disabled={disabled}
+                    className={classnames(styles.textarea, 'form-control', {
+                        'is-invalid': isError,
                     })}
                     {...otherProps}
                     ref={reference}
                 />
 
                 {message && (
-                    <small
-                        className={classnames(
-                            status === 'error' ? 'text-danger' : 'text-muted',
-                            'form-text'
-                            // styles.message
-                        )}
-                    >
-                        {message}
-                    </small>
+                    <small className={classnames(isError ? 'text-danger' : 'text-muted', 'form-text')}>{message}</small>
                 )}
             </label>
         )
