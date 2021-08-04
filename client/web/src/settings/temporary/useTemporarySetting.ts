@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext } from 'react'
 
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -19,27 +19,20 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
 ] => {
     const temporarySettings = useContext(TemporarySettingsContext)
 
-    const [value, setValue] = useState(temporarySettings.get(key))
-
-    // Keep value updated with storage changes.
-    const updatedValue = useObservable(temporarySettings.listen(key))
-    useEffect(() => {
-        setValue(updatedValue)
-    }, [updatedValue])
+    const updatedValue = useObservable(temporarySettings.get(key))
 
     const setValueAndSave = useCallback(
         (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])): void => {
             let finalValue: TemporarySettings[K]
             if (typeof newValue === 'function') {
-                finalValue = newValue(value)
+                finalValue = newValue(updatedValue)
             } else {
                 finalValue = newValue
             }
-            setValue(finalValue)
             temporarySettings.set(key, finalValue)
         },
-        [key, temporarySettings, value]
+        [key, temporarySettings, updatedValue]
     )
 
-    return [value, setValueAndSave]
+    return [updatedValue, setValueAndSave]
 }

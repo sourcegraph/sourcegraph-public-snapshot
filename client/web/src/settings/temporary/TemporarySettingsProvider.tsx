@@ -1,4 +1,4 @@
-import React, { createContext, useEffect } from 'react'
+import React, { createContext, useEffect, useState } from 'react'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -6,18 +6,28 @@ import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
 export const TemporarySettingsContext = createContext<TemporarySettingsStorage>(new TemporarySettingsStorage())
 
+/**
+ * React context provider for the temporary settings.
+ * The web app needs to be wrapped around this.
+ */
 export const TemporarySettingsProvider: React.FunctionComponent<{ authenticatedUser: AuthenticatedUser | null }> = ({
     children,
     authenticatedUser,
 }) => {
-    const temporarySettings = React.useRef(new TemporarySettingsStorage())
+    const [temporarySettingsStorage] = useState<TemporarySettingsStorage>(() => {
+        const storage = new TemporarySettingsStorage()
+        storage.setAuthenticatedUser(authenticatedUser)
+        return storage
+    })
+
+    useEffect(() => () => temporarySettingsStorage.dispose(), [temporarySettingsStorage])
 
     useEffect(() => {
-        temporarySettings.current.setAuthenticatedUser(authenticatedUser)
-    }, [authenticatedUser])
+        temporarySettingsStorage?.setAuthenticatedUser(authenticatedUser)
+    }, [temporarySettingsStorage, authenticatedUser])
 
     return (
-        <TemporarySettingsContext.Provider value={temporarySettings.current}>
+        <TemporarySettingsContext.Provider value={temporarySettingsStorage}>
             {children}
         </TemporarySettingsContext.Provider>
     )
