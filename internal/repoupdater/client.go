@@ -24,7 +24,7 @@ import (
 // environment variable.
 var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
 
-var defaultDoer, _ = httpcli.NewInternalClientFactory("repo_updater").Doer()
+var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
 
 // Client is a repoupdater client.
 type Client struct {
