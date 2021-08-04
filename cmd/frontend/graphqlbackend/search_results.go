@@ -1492,7 +1492,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			tr.LazyPrintf("context canceled during repo resolution: %v", err)
 			optionalWg.Wait()
 			requiredWg.Wait()
-
 			return r.toSearchResults(ctx, agg)
 		}
 		return nil, err
@@ -1602,7 +1601,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	timer.Stop()
 
-  
 	return r.toSearchResults(ctx, agg)
 }
 
