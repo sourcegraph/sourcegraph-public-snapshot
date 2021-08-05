@@ -120,9 +120,9 @@ func (l *Logger) writeEntries() {
 
 	var wg sync.WaitGroup
 	for handle := range l.handles {
-		log15.Info("Writing log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, handle.CurrentLogEntry())
+		initialLogEntry := handle.CurrentLogEntry()
+		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, initialLogEntry)
 		if err != nil {
 			// If there is a timeout or cancellation error we don't want to skip
 			// writing these logs as users will often want to see how far something
@@ -130,13 +130,14 @@ func (l *Logger) writeEntries() {
 			log15.Warn("Failed to upload executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
 			continue
 		}
+		log15.Info("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
 		wg.Add(1)
-		go func(handle *entryHandle, entryID int) {
+		go func(handle *entryHandle, entryID int, initialLogEntry workerutil.ExecutionLogEntry) {
 			defer wg.Done()
 
-			l.syncLogEntry(handle, entryID)
-		}(handle, entryID)
+			l.syncLogEntry(handle, entryID, initialLogEntry)
+		}(handle, entryID, initialLogEntry)
 	}
 
 	wg.Wait()
@@ -144,11 +145,8 @@ func (l *Logger) writeEntries() {
 
 const syncLogEntryInterval = 1 * time.Second
 
-func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
-	var (
-		lastWrite = false
-		old       = handle.logEntry
-	)
+func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.ExecutionLogEntry) {
+	lastWrite := false
 
 	for !lastWrite {
 		select {
