@@ -5,6 +5,7 @@ import { AuthenticatedUser } from '../../auth'
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
 export const TemporarySettingsContext = createContext<TemporarySettingsStorage>(new TemporarySettingsStorage())
+TemporarySettingsContext.displayName = 'TemporarySettingsContext'
 
 /**
  * React context provider for the temporary settings.
