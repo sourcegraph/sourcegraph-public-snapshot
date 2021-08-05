@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { Popover } from 'reactstrap'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, PageHeader } from '@sourcegraph/wildcard'
 
 import { BRANCHES_TAB, RevisionsPopover, TAGS_TAB } from '../RevisionsPopover'
 
@@ -76,7 +76,6 @@ export const RepositoryComparePopover: React.FunctionComponent<{
                     location={location}
                     togglePopover={togglePopover}
                     getURLFromRevision={getURLFromRevision}
-                    tabs={[BRANCHES_TAB, TAGS_TAB]}
                 />
             </Popover>
         </Button>
@@ -93,6 +92,11 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
     repo,
 }) => (
     <div className={`repository-compare-header ${className}`}>
+        <PageHeader
+            path={[{ text: 'Compare changes' }]}
+            description="Compare changes across branches, tags and commits."
+            className="mb-3"
+        />
         <div className={`${className}-inner d-flex align-items-center`}>
             <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
             <DotsHorizontalIcon className="icon-inline mx-2" />

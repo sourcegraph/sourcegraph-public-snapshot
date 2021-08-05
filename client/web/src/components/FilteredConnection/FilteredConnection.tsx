@@ -460,6 +460,7 @@ export class FilteredConnection<
         //     this.state.connectionOrError.nodes.length > 0 &&
         //     this.props.hideControlsWhenEmpty
 
+        // TODO: Replace with ConnectionContainer
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div

@@ -2,7 +2,7 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -14,6 +14,8 @@ import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservabl
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { ConnectionContainer, ConnectionForm } from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -29,6 +31,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 
 import { GitReferenceNode, queryGitReferences } from './GitReference'
+import { ReferencesRevisionsList } from './RevisionsPopoverLists'
 
 const fetchRepositoryCommits = memoizeObservable(
     (
@@ -107,7 +110,7 @@ interface GitReferencePopoverNodeProps {
     getURLFromRevision: (href: string, revision: string) => string
 }
 
-const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
+export const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
     node,
     defaultBranch,
     currentRevision,
@@ -241,6 +244,8 @@ export const COMMITS_TAB: RevisionsPopoverTab = {
  */
 export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = props => {
     const { getURLFromRevision = replaceRevisionInURL, tabs = [BRANCHES_TAB, TAGS_TAB, COMMITS_TAB] } = props
+    const [searchValue, setSearchValue] = useState('')
+    const debouncedSearchValue = useDebounce(searchValue, 200)
 
     useEffect(() => {
         eventLogger.logViewEvent('RevisionsPopover')
@@ -264,18 +269,6 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
             revision: props.currentRev || props.defaultBranch,
         })
 
-    const sharedPanelProps = {
-        className: 'connection-popover__content',
-        inputClassName: 'connection-popover__input',
-        listClassName: 'connection-popover__nodes',
-        inputPlaceholder: 'Find...',
-        compact: true,
-        autoFocus: true,
-        history: props.history,
-        location: props.location,
-        useURLQuery: false,
-    }
-
     return (
         <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
             <div className="tablist-wrapper revisions-popover__tabs">
@@ -296,42 +289,31 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                 </button>
             </div>
             <TabPanels>
-                {tabs.map(tab => (
-                    <TabPanel key={tab.id}>
-                        {tab.type ? (
-                            <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
-                                {...sharedPanelProps}
-                                key={tab.id}
-                                defaultFirst={50}
-                                noun={tab.noun}
-                                pluralNoun={tab.pluralNoun}
-                                queryConnection={tab.type === GitRefType.GIT_BRANCH ? queryGitBranches : queryGitTags}
-                                nodeComponent={GitReferencePopoverNode}
-                                nodeComponentProps={{
-                                    defaultBranch: props.defaultBranch,
-                                    currentRevision: props.currentRev,
-                                    location: props.location,
-                                    getURLFromRevision,
-                                }}
-                            />
-                        ) : (
-                            <FilteredConnection<GitCommitAncestorFields, Omit<GitCommitNodeProps, 'node'>>
-                                {...sharedPanelProps}
-                                key={tab.id}
-                                defaultFirst={15}
-                                noun={tab.noun}
-                                pluralNoun={tab.pluralNoun}
-                                queryConnection={queryRepositoryCommits}
-                                nodeComponent={GitCommitNode}
-                                nodeComponentProps={{
-                                    currentCommitID: props.currentCommitID,
-                                    location: props.location,
-                                    getURLFromRevision,
-                                }}
-                            />
-                        )}
-                    </TabPanel>
-                ))}
+                <ConnectionContainer compact={true} className="connection-popover__content">
+                    <ConnectionForm
+                        inputValue={searchValue}
+                        onInputChange={event => setSearchValue(event.target.value)}
+                        autoFocus={true}
+                        inputPlaceholder="Find..."
+                        inputClassName="connection-popover__input"
+                    />
+                    {tabs.map(tab => (
+                        <TabPanel key={tab.id}>
+                            {tab.type ? (
+                                <ReferencesRevisionsList
+                                    query={debouncedSearchValue}
+                                    noun={tab.noun}
+                                    pluralNoun={tab.pluralNoun}
+                                    type={tab.type}
+                                    currentRev={props.currentRev}
+                                    getURLFromRevision={getURLFromRevision}
+                                    defaultBranch={props.defaultBranch}
+                                    repo={props.repo}
+                                />
+                            ) : null}
+                        </TabPanel>
+                    ))}
+                </ConnectionContainer>
             </TabPanels>
         </Tabs>
     )

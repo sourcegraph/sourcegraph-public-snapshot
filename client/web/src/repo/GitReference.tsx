@@ -57,6 +57,12 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
         >
             <span className="d-flex align-items-center">
                 <code className="git-ref-tag-2">{node.displayName}</code>
+                {mostRecentSig && (
+                    <small className="pl-2">
+                        Updated <Timestamp date={mostRecentSig.date} />{' '}
+                        {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
+                    </small>
+                )}
             </span>
             {behindAhead && (
                 <small>
@@ -102,6 +108,30 @@ export const gitReferenceFragments = gql`
     }
 `
 
+export const REPOSITORY_GIT_REFS = gql`
+    query RepositoryGitRefs($repo: ID!, $first: Int, $query: String, $type: GitRefType!, $withBehindAhead: Boolean!) {
+        node(id: $repo) {
+            ... on Repository {
+                gitRefs(first: $first, query: $query, type: $type, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                    ...GitRefConnectionFields
+                }
+            }
+        }
+    }
+
+    fragment GitRefConnectionFields on GitRefConnection {
+        nodes {
+            ...GitRefFields
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+        }
+    }
+
+    ${gitReferenceFragments}
+`
+
 export const queryGitReferences = memoizeObservable(
     (args: {
         repo: Scalars['ID']
@@ -110,45 +140,14 @@ export const queryGitReferences = memoizeObservable(
         type: GitRefType
         withBehindAhead?: boolean
     }): Observable<GitRefConnectionFields> =>
-        requestGraphQL<RepositoryGitRefsResult, RepositoryGitRefsVariables>(
-            gql`
-                query RepositoryGitRefs(
-                    $repo: ID!
-                    $first: Int
-                    $query: String
-                    $type: GitRefType!
-                    $withBehindAhead: Boolean!
-                ) {
-                    node(id: $repo) {
-                        ... on Repository {
-                            gitRefs(first: $first, query: $query, type: $type, orderBy: AUTHORED_OR_COMMITTED_AT) {
-                                ...GitRefConnectionFields
-                            }
-                        }
-                    }
-                }
-
-                fragment GitRefConnectionFields on GitRefConnection {
-                    nodes {
-                        ...GitRefFields
-                    }
-                    totalCount
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
-
-                ${gitReferenceFragments}
-            `,
-            {
-                query: args.query ?? null,
-                first: args.first ?? null,
-                repo: args.repo,
-                type: args.type,
-                withBehindAhead:
-                    args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
-            }
-        ).pipe(
+        requestGraphQL<RepositoryGitRefsResult, RepositoryGitRefsVariables>(REPOSITORY_GIT_REFS, {
+            query: args.query ?? null,
+            first: args.first ?? null,
+            repo: args.repo,
+            type: args.type,
+            withBehindAhead:
+                args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
+        }).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node || !data.node.gitRefs) {
                     throw createAggregateError(errors)
