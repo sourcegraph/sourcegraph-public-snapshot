@@ -135,13 +135,8 @@
         }
     }
 
-    .docExplorerShow {
-        background: var(--color-bg-3);
-        border: 0;
-        color: var(--light-text);
-    }
-
     .toolbar-button,
+    .docExplorerShow,
     .doc-category .show-btn {
         @extend .btn;
         @extend .btn-secondary;
