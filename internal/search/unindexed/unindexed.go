@@ -142,6 +142,20 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	return g.Wait()
 }
 
+// StructuralSearchFilesInRepoBatch is a convenience function around
+// StructuralSearchFilesInRepos which collects the results from the stream.
+func StructuralSearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
+	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
+		return StructuralSearchFilesInRepos(ctx, args, stream)
+	})
+
+	fms, fmErr := matchesToFileMatches(matches)
+	if fmErr != nil && err == nil {
+		err = errors.Wrap(fmErr, "StructuralSearchFilesInReposBatch failed to convert results")
+	}
+	return fms, stats, err
+}
+
 // SearchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func SearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
