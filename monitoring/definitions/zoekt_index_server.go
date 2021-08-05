@@ -43,15 +43,6 @@ func ZoektIndexServer() *monitoring.Container {
 							Owner:          monitoring.ObservableOwnerSearch,
 							Interpretation: "Sudden changes should be caused by indexing configuration changes.",
 						},
-						{
-							Name:           "repos_priorities",
-							Description:    "total number of repos with priorities for ranking",
-							Query:          `sum(index_priorities_total)`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel(),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "Sudden changes should be caused by indexing configuration changes.",
-						},
 					},
 					{
 						{
