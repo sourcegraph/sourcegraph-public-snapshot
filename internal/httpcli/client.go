@@ -119,7 +119,6 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
-		NewTimeoutOpt(time.Minute), // Needs to be high for retries.
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries()),
