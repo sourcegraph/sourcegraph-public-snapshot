@@ -22,70 +22,45 @@ interface BlockMenuLinkAction extends BaseBlockMenuAction {
 }
 
 export type BlockMenuAction = BlockMenuButtonAction | BlockMenuLinkAction
+const BlockMenuActionComponent: React.FunctionComponent<
+    {
+        id?: string
+        className?: string
+        iconClassName?: string
+        keyboardShorcutLabelClassName?: string
+    } & BlockMenuAction
+> = props => {
+    const Element = props.type === 'button' ? 'button' : 'a'
+    const elementSpecificProps =
+        props.type === 'button'
+            ? { onClick: () => props.id && props.onClick(props.id), disabled: props.isDisabled ?? false }
+            : { href: props.url, target: '_blank', rel: 'noopener noreferrer' }
+    return (
+        <Element
+            key={props.label}
+            className={classNames('btn btn-sm d-flex align-items-center', props.className, styles.actionButton)}
+            type="button"
+            role="menuitem"
+            data-testid={props.label}
+            {...elementSpecificProps}
+        >
+            <div className={props.iconClassName}>{props.icon}</div>
+            <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{props.label}</div>
+            <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
+            {props.type === 'button' && (
+                <small className={classNames(props.keyboardShorcutLabelClassName, styles.hideOnSmallScreen)}>
+                    {props.keyboardShortcutLabel}
+                </small>
+            )}
+        </Element>
+    )
+}
 
 interface SearchNotebookBlockMenuProps {
     id: string
     mainAction?: BlockMenuButtonAction
     actions: BlockMenuAction[]
 }
-
-const BlockMenuButtonActionComponent: React.FunctionComponent<
-    {
-        id: string
-        className?: string
-        iconClassName?: string
-        keyboardShorcutLabelClassName?: string
-    } & BlockMenuButtonAction
-> = ({
-    id,
-    className,
-    iconClassName,
-    keyboardShorcutLabelClassName,
-    label,
-    icon,
-    isDisabled,
-    onClick,
-    keyboardShortcutLabel,
-}) => (
-    <button
-        key={label}
-        className={classNames('btn btn-sm d-flex align-items-center', className, styles.actionButton)}
-        type="button"
-        role="menuitem"
-        data-testid={label}
-        disabled={isDisabled ?? false}
-        onClick={() => onClick(id)}
-    >
-        <div className={iconClassName}>{icon}</div>
-        <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{label}</div>
-        <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
-        <small className={classNames(keyboardShorcutLabelClassName, styles.hideOnSmallScreen)}>
-            {keyboardShortcutLabel}
-        </small>
-    </button>
-)
-
-const BlockMenuButtonLinkComponent: React.FunctionComponent<{ className?: string } & BlockMenuLinkAction> = ({
-    className,
-    label,
-    icon,
-    url,
-}) => (
-    <a
-        key={label}
-        href={url}
-        className={classNames('btn btn-sm d-flex align-items-center', className, styles.actionButton)}
-        type="button"
-        role="menuitem"
-        target="_blank"
-        rel="noopener noreferrer"
-        data-testid={label}
-    >
-        <div className="text-muted">{icon}</div>
-        <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{label}</div>
-        <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
-    </a>
-)
 
 export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBlockMenuProps> = ({
     id,
@@ -95,13 +70,13 @@ export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBloc
     <div className={styles.blockMenu} role="menu">
         {mainAction && (
             <div className={classNames(actions.length > 0 && styles.mainActionButtonWrapper)}>
-                <BlockMenuButtonActionComponent className="btn-primary w-100" id={id} {...mainAction} />
+                <BlockMenuActionComponent className="btn-primary w-100" id={id} {...mainAction} />
             </div>
         )}
         {actions.map(action => {
             if (action.type === 'button') {
                 return (
-                    <BlockMenuButtonActionComponent
+                    <BlockMenuActionComponent
                         key={action.label}
                         id={id}
                         iconClassName="text-muted"
@@ -110,7 +85,7 @@ export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBloc
                     />
                 )
             }
-            return <BlockMenuButtonLinkComponent key={action.label} {...action} />
+            return <BlockMenuActionComponent key={action.label} {...action} />
         })}
     </div>
 )
