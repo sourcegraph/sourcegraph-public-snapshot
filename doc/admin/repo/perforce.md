@@ -9,7 +9,7 @@ Screenshot of using Sourcegraph for code navigation in a Perforce depot:
 
 ## Sourcegraph 3.25.1+ configuration instructions
 
-Adding Perforce depots through the UI is an experimental feature in Sourcegraph 3.25.1. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
+Adding Perforce depots through the UI is an experimental feature in Sourcegraph 3.25.1. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md), this change requires a restart to take effect:
 
 ```json
 {
