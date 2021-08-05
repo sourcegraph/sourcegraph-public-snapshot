@@ -34,6 +34,8 @@ The plugin is configurable _globally_ by creating a `sourcegraph-jetbrains.prope
 
 ```
 url = https://sourcegraph.example.com
+defaultBranch = example-branch
+remoteUrlReplacements = git.example.com, git-web.example.com
 ```
 
 You may also choose to configure it _per repository_ using a `.idea/sourcegraph.xml` file in your repository like so:
@@ -43,6 +45,8 @@ You may also choose to configure it _per repository_ using a `.idea/sourcegraph.
 <project version="4">
     <component name="Config">
         <option name="url" value="https://sourcegraph.example.com" />
+        <option name="defaultBranch" value="example-branch" />
+        <option name="remoteUrlReplacements" value="git.example.com, git-web.example.com" />
     </component>
 </project>
 ```
@@ -78,6 +82,8 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 
 #### v1.2.1
 - Added `Open In Sourcegraph` action to VCS History and Git Log to open a revision in the Sourcegraph diff view.
+- Added `defaultBranch` configuration option that allows opening files in a specific branch on Sourcegraph.
+- Added `remoteUrlReplacements` configuration option that allow users to replace specified values in the remote url with new strings.
 
 #### v1.2.0
 

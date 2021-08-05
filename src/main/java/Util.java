@@ -68,6 +68,16 @@ public class Util {
         return defaultBranch;
     }
 
+    // get remoteUrlReplacements configuration option
+    public static String setRemoteUrlReplacements(Project project) {
+        String replacements = Config.getInstance(project).getRemoteUrlReplacements();
+        if (replacements == null || replacements.length() == 0) {
+            Properties props = readProps();
+            replacements = props.getProperty("remoteUrlReplacements", null);
+        }
+        return replacements;
+    }
+
     // readProps tries to read the $HOME/sourcegraph-jetbrains.properties file.
     private static Properties readProps() {
         Properties props = new Properties();
@@ -94,7 +104,7 @@ public class Util {
     // repoInfo returns the Sourcegraph repository URI, and the file path
     // relative to the repository root. If the repository URI cannot be
     // determined, a RepoInfo with empty strings is returned.
-    public static RepoInfo repoInfo(String fileName) {
+    public static RepoInfo repoInfo(String fileName, Project project) {
         String fileRel = "";
         String remoteURL = "";
         String branch = "";
@@ -106,11 +116,23 @@ public class Util {
             // Determine file path, relative to repository root.
             fileRel = fileName.substring(repoRoot.length()+1);
             remoteURL = configuredGitRemoteURL(repoRoot);
-            branch = gitBranch(repoRoot);
+            branch = Util.setDefaultBranch(project)!=null ? Util.setDefaultBranch(project) : gitBranch(repoRoot);
 
-            // If on a branch that does not exist on the remote, use "master" instead.
+            // If on a branch that does not exist on the remote or if defaultBranch does not exist on the remote,
+            // use "master" instead.
             if (!isRemoteBranch(branch, repoRoot)) {
                 branch = "master";
+            }
+
+            // replace remoteURL if config option is not null
+            String r = Util.setRemoteUrlReplacements(project);
+
+            if(r!=null) {
+                String[] replacements = r.trim().split("\\s*,\\s*");
+                // Check if the entered values are pairs
+                for (int i = 0; i < replacements.length && replacements.length % 2 == 0; i += 2) {
+                    remoteURL = remoteURL.replace(replacements[i], replacements[i+1]);
+                }
             }
         } catch (Exception err) {
             Logger.getInstance(Util.class).info(err);
@@ -129,7 +151,7 @@ public class Util {
         BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
-        // Log any stderr ouput.
+        // Log any stderr output.
         Logger logger = Logger.getInstance(Util.class);
         String s;
         while ((s = stderr.readLine()) != null) {

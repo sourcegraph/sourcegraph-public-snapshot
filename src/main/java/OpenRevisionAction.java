@@ -61,7 +61,7 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
     try {
       String productName = ApplicationInfo.getInstance().getVersionName();
       String productVersion = ApplicationInfo.getInstance().getFullVersion();
-      RepoInfo repoInfo = Util.repoInfo(context.getProject().getProjectFilePath());
+      RepoInfo repoInfo = Util.repoInfo(context.getProject().getProjectFilePath(), context.getProject());
 
       CommitViewUriBuilder builder = new CommitViewUriBuilder();
       URI uri = builder.build(Util.sourcegraphURL(context.getProject()), context.getRevisionNumber(), repoInfo, productName, productVersion);

@@ -23,6 +23,12 @@ class Config implements PersistentStateComponent<Config> {
         return defaultBranch;
     }
 
+    public String remoteUrlReplacements;
+
+    public String getRemoteUrlReplacements() {
+        return remoteUrlReplacements;
+    }
+
     @Nullable
     @Override
     public Config getState() {
@@ -33,6 +39,7 @@ class Config implements PersistentStateComponent<Config> {
     public void loadState(@NotNull Config config) {
         this.url = config.url;
         this.defaultBranch = config.defaultBranch;
+        this.remoteUrlReplacements = config.remoteUrlReplacements;
     }
 
     @Nullable static Config getInstance(Project project) {
