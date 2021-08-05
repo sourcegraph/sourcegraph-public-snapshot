@@ -116,12 +116,9 @@ func (l *Logger) Log(logEntry *workerutil.ExecutionLogEntry) *entryHandle {
 }
 
 func (l *Logger) writeEntries() {
-	wg := &sync.WaitGroup{}
-	defer func() {
-		wg.Wait()
-		close(l.done)
-	}()
+	defer close(l.done)
 
+	var wg sync.WaitGroup
 	for handle := range l.handles {
 		log15.Info("Writing log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
@@ -141,13 +138,17 @@ func (l *Logger) writeEntries() {
 			l.syncLogEntry(handle, entryID)
 		}(handle, entryID)
 	}
+
+	wg.Wait()
 }
 
 const syncLogEntryInterval = 1 * time.Second
 
 func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
-	lastWrite := false
-	old := handle.logEntry
+	var (
+		lastWrite = false
+		old       = handle.logEntry
+	)
 
 	for !lastWrite {
 		select {
@@ -161,13 +162,24 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
 			continue
 		}
 
-		log15.Info(
-			"Updating executor log entry",
+		logArgs := make([]interface{}, 0, 16)
+		logArgs = append(
+			logArgs,
 			"jobID", l.job.ID,
 			"repositoryName", l.job.RepositoryName,
 			"commit", l.job.Commit,
 			"entryID", entryID,
+			"key", current.Key,
+			"outLen", len(current.Out),
 		)
+		if current.ExitCode != nil {
+			logArgs = append(logArgs, "exitCode", current.ExitCode)
+		}
+		if current.DurationMs != nil {
+			logArgs = append(logArgs, "durationMs", current.DurationMs)
+		}
+
+		log15.Info("Updating executor log entry", logArgs...)
 
 		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
 			logMethod := log15.Warn
