@@ -145,7 +145,7 @@
     .doc-category .show-btn {
         @extend .btn;
         @extend .btn-secondary;
-
+        background: var(--secondary);
         box-shadow: none;
         &:active {
             box-shadow: none;
