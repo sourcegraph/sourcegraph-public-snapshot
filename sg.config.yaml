@@ -309,13 +309,15 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   docsite:
-    cmd: .bin/docsite_${VERSION} -config doc/docsite.json serve -http=localhost:5080
+    cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
     install: |
-      curl -sS -L -f \
-      "https://github.com/sourcegraph/docsite/releases/download/${VERSION}/docsite_${VERSION}_$(go env GOOS)_$(go env GOARCH)" \
-      -o .bin/docsite_${VERSION} && chmod +x .bin/docsite_${VERSION}
+      if [ ! -x .bin/docsite_${DOCSITE_VERSION} ]; then
+        curl -sS -L -f \
+        "https://github.com/sourcegraph/docsite/releases/download/${DOCSITE_VERSION}/docsite_${DOCSITE_VERSION}_$(go env GOOS)_$(go env GOARCH)" \
+        -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
+      fi
     env:
-      VERSION: v1.7.0
+      DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
 
   syntect_server:
     ignoreStdout: true
@@ -840,3 +842,8 @@ tests:
     cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
     env:
       TS_NODE_PROJECT: client/web/src/end-to-end/tsconfig.json
+
+  docsite:
+    cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
+    env:
+      DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
