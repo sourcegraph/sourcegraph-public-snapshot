@@ -66,11 +66,27 @@ func addWebApp(pipeline *bk.Pipeline) {
 
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
-	// Browser extension build
-	pipeline.AddStep(":webpack::chrome: Build browser extension",
-		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
+	// Browser extension integration tests
+	for _, browser := range []string{"chrome"} {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "true"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Env("RECORD", "false"), // ensure that we use existing recordings
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
+			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn nyc report -r json"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
+	}
 
-	// Browser extension tests
+	// Browser extension unit tests
 	pipeline.AddStep(":jest::chrome: Test browser extension",
 		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))

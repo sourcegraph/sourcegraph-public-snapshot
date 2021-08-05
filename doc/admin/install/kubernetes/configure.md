@@ -32,7 +32,7 @@ To make customizations to the Sourcegraph deployment such as resources, replicas
 
 ## Configure a storage class
 
-Sourcegraph by default requires a storage class for all persisent volumes claims. By default this storage class is called `sourceraph`. This storage class must be configured before applying the base configuration to your cluster.
+Sourcegraph by default requires a storage class for all persisent volumes claims. By default this storage class is called `sourcegraph`. This storage class must be configured before applying the base configuration to your cluster.
 
 - Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
 
@@ -50,6 +50,33 @@ kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Re
 See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
 
 ### Google Cloud Platform (GCP)
+
+#### Kubernetes 1.18 and higher
+
+1. Please read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
+
+
+2. Add the following Kubernetes manifest to the `base` directory of your fork:
+
+```yaml
+# base/sourcegraph.StorageClass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: sourcegraph
+  labels:
+    deploy: sourcegraph
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-ssd # This configures SSDs (recommended).
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+```
+
+[Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver).
+
+#### Kubernetes 1.17 and below
 
 ```yaml
 # base/sourcegraph.StorageClass.yaml
@@ -70,6 +97,34 @@ allowVolumeExpansion: true
 
 ### Amazon Web Services (AWS)
 
+#### Kubernetes 1.17 and higher
+
+1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
+
+1. Add the following Kubernetes manifest to the `base` directory of your fork:
+
+
+```yaml
+# base/sourcegraph.StorageClass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: sourcegraph
+  labels:
+    deploy: sourcegraph
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp2 # This configures SSDs (recommended).
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+```
+
+[Additional documentation](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html).
+
+#### Kubernetes 1.16 and below
+
+
 ```yaml
 # base/sourcegraph.StorageClass.yaml
 kind: StorageClass
@@ -88,6 +143,37 @@ allowVolumeExpansion: true
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
 
 ### Azure
+
+#### Kubernetes 1.18 and higher
+
+> WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
+
+1. Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
+
+2. Add the following Kubernetes manifest to the `base` directory of your fork:
+
+
+```yaml
+# base/sourcegraph.StorageClass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: sourcegraph
+  labels:
+    deploy: sourcegraph
+provisioner: disk.csi.azure.com
+parameters:
+  storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+```
+
+
+[Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers).
+
+#### Kubernetes 1.17 and below
+
 
 ```yaml
 # base/sourcegraph.StorageClass.yaml
@@ -123,6 +209,28 @@ allowVolumeExpansion: true
 # provisioner:
 # parameters:
 ```
+
+### Using a storage class with an alternate name
+
+If you wish to use a different storage class for Sourcegraph, then you need to update all persistent volume claims with the name of the desired storage class. Convenience script:
+
+```bash
+#!/usr/bin/env bash
+
+# This script requires https://github.com/mikefarah/yq v4 or greater
+
+# Set SC to your storage class name
+SC=
+
+PVC=()
+STS=()
+mapfile -t PVC < <(fd --absolute-path --extension yaml "PersistentVolumeClaim" base)
+mapfile -t STS < <(fd --absolute-path --extension yaml "StatefulSet" base)
+
+for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
+for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
+```
+
 
 ## Security - Configure network access
 

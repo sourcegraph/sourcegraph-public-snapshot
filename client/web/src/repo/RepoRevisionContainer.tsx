@@ -36,7 +36,7 @@ import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStrea
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
-import { CopyLinkAction } from './actions/CopyLinkAction'
+import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
@@ -330,10 +330,10 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
             </Switch>
             <RepoHeaderContributionPortal
                 position="left"
-                id="copy-link"
+                id="copy-path"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {() => <CopyLinkAction key="copy-link" />}
+                {() => <CopyPathAction key="copy-path" />}
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"

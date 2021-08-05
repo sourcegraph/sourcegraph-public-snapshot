@@ -9,10 +9,11 @@
 
 .terminal-wrapper {
     padding: 1.5rem;
+    padding-right: 1.75rem;
     background-color: #214863;
     color: var(--light-text);
     height: 25rem;
-    overflow-y: auto;
+    overflow-y: overlay;
 }
 
 .terminal-line {

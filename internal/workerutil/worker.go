@@ -252,19 +252,19 @@ func (w *Worker) handle(ctx context.Context, record Record) (err error) {
 	handleErr := w.handler.Handle(ctx, record)
 
 	if errcode.IsNonRetryable(handleErr) {
-		if marked, markErr := w.store.MarkFailed(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
+		if marked, markErr := w.store.MarkFailed(w.ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
 			log15.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
 		}
 	} else if handleErr != nil {
-		if marked, markErr := w.store.MarkErrored(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
+		if marked, markErr := w.store.MarkErrored(w.ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
 			log15.Warn("Marked record as errored", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
 		}
 	} else {
-		if marked, markErr := w.store.MarkComplete(ctx, record.RecordID()); markErr != nil {
+		if marked, markErr := w.store.MarkComplete(w.ctx, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
 			log15.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())

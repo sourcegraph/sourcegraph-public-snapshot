@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 var testConfig = Config{
@@ -379,7 +379,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 
 	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, mockRepoUpdater, &testConfig, &observation.TestContext)
 
-	_ = scheduler.QueueIndexesForPackage(context.Background(), semantic.Package{
+	_ = scheduler.QueueIndexesForPackage(context.Background(), precise.Package{
 		Scheme:  "gomod",
 		Name:    "https://github.com/sourcegraph/sourcegraph",
 		Version: "v3.26.0-4e7eeb0f8a96",

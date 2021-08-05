@@ -67,6 +67,28 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 }
 
+// SearchedRepo is a collection of metadata about repos that is used to decorate search results
+type SearchedRepo struct {
+	// ID is the unique numeric ID for this repository.
+	ID api.RepoID
+	// Name is the name for this repository (e.g., "github.com/user/repo"). It
+	// is the same as URI, unless the user configures a non-default
+	// repositoryPathPattern.
+	Name api.RepoName
+	// Description is a brief description of the repository.
+	Description string
+	// Fork is whether this repository is a fork of another repository.
+	Fork bool
+	// Archived is whether the repository has been archived.
+	Archived bool
+	// Private is whether the repository is private.
+	Private bool
+	// Stars is the star count the repository has in the code host.
+	Stars int
+	// LastFetched is the time of the last fetch of new commits from the code host.
+	LastFetched *time.Time
+}
+
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
 type RepoBlock struct {
 	At     int64 // Unix timestamp

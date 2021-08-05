@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -49,5 +49,5 @@ type GitserverClient interface {
 
 type IndexEnqueuer interface {
 	QueueIndexesForRepository(ctx context.Context, repositoryID int) error
-	QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) error
+	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 }

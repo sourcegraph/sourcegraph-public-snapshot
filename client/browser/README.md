@@ -143,6 +143,12 @@ It currently does not run in CI and is intended to be run manually for release t
 
 `end-to-end/gitlab.test.ts` tests the browser extension on gitlab.com (or a private Gitlab instance).
 
+### Integration tests
+
+All test suites in `integration` run in CI. These tests run the browser extension against recordings of code hosts (using [Polly.JS](https://netflix.github.io/pollyjs/#/)) and mock data for our GraphQL API.
+
+To update all recordings, run `yarn record-integration`. To update a subset of recordings, run `RECORD=true SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep=YOUR_PATTERN`, where `YOUR_PATTERN` is typically a test name.
+
 ## Deploy
 
 Deployment the Chrome web store happen automatically in CI when the `bext/release` branch is updated.

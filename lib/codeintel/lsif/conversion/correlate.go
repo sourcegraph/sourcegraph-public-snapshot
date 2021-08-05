@@ -15,14 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
 // the same data canonicalized and pruned for storage.
 //
 // If getChildren == nil, no pruning of irrelevant data is performed.
-func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*semantic.GroupedBundleDataChans, error) {
+func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*precise.GroupedBundleDataChans, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(ctx, r, root)
 	if err != nil {
@@ -48,7 +48,7 @@ func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathex
 	return groupedBundleData, nil
 }
 
-func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot string) (*semantic.GroupedBundleDataChans, error) {
+func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot string) (*precise.GroupedBundleDataChans, error) {
 	absoluteProjectRoot, err := filepath.Abs(relativeRoot)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error getting absolute root of project: "+relativeRoot)
@@ -70,7 +70,7 @@ func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot strin
 	return bundle, nil
 }
 
-func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*semantic.GroupedBundleDataChans, error) {
+func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*precise.GroupedBundleDataChans, error) {
 	absoluteProjectRoot, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error getting absolute root of project: "+projectRoot)

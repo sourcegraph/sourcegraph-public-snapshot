@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -148,7 +149,7 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
 	lastWrite := false
 	old := handle.logEntry
 
-	for {
+	for !lastWrite {
 		select {
 		case <-handle.done:
 			lastWrite = true
@@ -156,28 +157,43 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
 		}
 
 		current := handle.CurrentLogEntry()
-		if entryWasUpdated(old, current) {
-			log15.Info("Updating executor log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "entryID", entryID)
-
-			if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
-				log15.Warn("Failed to update executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
-			}
-
-			old = current
+		if !entryWasUpdated(old, current) {
+			continue
 		}
 
-		if lastWrite {
-			return
+		log15.Info(
+			"Updating executor log entry",
+			"jobID", l.job.ID,
+			"repositoryName", l.job.RepositoryName,
+			"commit", l.job.Commit,
+			"entryID", entryID,
+		)
+
+		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
+			logMethod := log15.Warn
+			if lastWrite {
+				logMethod = log15.Error
+			}
+
+			logMethod(
+				"Failed to update executor log entry for job",
+				"jobID", l.job.ID,
+				"repositoryName", l.job.RepositoryName,
+				"commit", l.job.Commit,
+				"entryID", entryID,
+				"lastWrite", lastWrite,
+				"error", err,
+			)
+		} else {
+			old = current
 		}
 	}
 }
 
+// If old didn't have exit code or duration and current does, update; we're finished.
+// Otherwise, update if the log text has changed since the last write to the API.
 func entryWasUpdated(old, current workerutil.ExecutionLogEntry) bool {
-	if current.DurationMs != old.DurationMs || current.Out != old.Out || current.ExitCode != old.ExitCode {
-		return true
-	}
-
-	return false
+	return (current.ExitCode != nil && old.ExitCode == nil) || (current.DurationMs != nil && old.DurationMs == nil) || current.Out != old.Out
 }
 
 func redact(entry *workerutil.ExecutionLogEntry, replacer *strings.Replacer) {

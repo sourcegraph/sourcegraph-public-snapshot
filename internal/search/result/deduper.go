@@ -1,15 +1,20 @@
 package result
 
-import "sort"
-
-type deduper map[Key]Match
-
-func NewDeduper() deduper {
-	return make(map[Key]Match)
+// deduper deduplicates matches added to it with Add(). Matches are deduplicated by their key,
+// and the return value of Results() is ordered in the same order results are added with Add().
+type deduper struct {
+	results []Match
+	seen    map[Key]Match
 }
 
-func (d deduper) Add(m Match) {
-	prev, seen := d[m.Key()]
+func NewDeduper() deduper {
+	return deduper{
+		seen: make(map[Key]Match),
+	}
+}
+
+func (d *deduper) Add(m Match) {
+	prev, seen := d.seen[m.Key()]
 
 	if seen {
 		switch prevMatch := prev.(type) {
@@ -22,19 +27,15 @@ func (d deduper) Add(m Match) {
 		return
 	}
 
-	d[m.Key()] = m
+	d.results = append(d.results, m)
+	d.seen[m.Key()] = m
 }
 
-func (d deduper) Seen(m Match) bool {
-	_, ok := d[m.Key()]
+func (d *deduper) Seen(m Match) bool {
+	_, ok := d.seen[m.Key()]
 	return ok
 }
 
-func (d deduper) Results() []Match {
-	matches := make([]Match, 0, len(d))
-	for _, match := range d {
-		matches = append(matches, match)
-	}
-	sort.Sort(Matches(matches))
-	return matches
+func (d *deduper) Results() []Match {
+	return d.results
 }

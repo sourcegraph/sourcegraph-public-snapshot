@@ -13,7 +13,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -231,10 +230,6 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	// If Zoekt is disabled just fallback to Unindexed.
 	if !args.Zoekt.Enabled() {
@@ -243,7 +238,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed:        limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -254,14 +249,14 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, errors.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed: limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
 		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed: limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		}, nil
 	}
 
@@ -288,7 +283,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed:        limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
@@ -296,7 +291,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.repoRevs)),
@@ -346,7 +341,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	g, ctx := errgroup.WithContext(ctx)
+	var qs []zoektquery.Q
 
 	// Public
 	if !args.RepoOptions.OnlyPrivate {
@@ -362,9 +357,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		apply(zoektquery.RcOnlyForks, args.RepoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
 
-		g.Go(func() error {
-			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query), args, typ, c)
-		})
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
 	}
 
 	// Private
@@ -374,12 +367,10 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		for _, r := range args.UserPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-
-		g.Go(func() error {
-			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query), args, typ, c)
-		})
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
 	}
-	return g.Wait()
+
+	return doZoektSearchGlobal(ctx, zoektquery.Simplify(zoektquery.NewOr(qs...)), args, typ, c)
 }
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
