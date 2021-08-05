@@ -250,7 +250,7 @@ type rewirerMappingsFacade struct {
 
 	// Inputs from outside the resolver that we need to build other resolvers.
 	batchSpecID       int64
-	publicationStates map[string]batches.PublishedValue
+	publicationStates publicationStateMap
 	store             *store.Store
 
 	// This field is set when ReconcileBatchChange is called.
