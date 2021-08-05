@@ -26,7 +26,6 @@ const Story: Meta = {
     },
 }
 
-// eslint-disable-next-line import/no-default-export
 export default Story
 
 export const Simple = () => {
