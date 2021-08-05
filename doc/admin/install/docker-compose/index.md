@@ -9,6 +9,7 @@ Not sure if Docker Compose is the right choice for you? Learn more about the var
 <div class="cta-group">
 <a class="btn btn-primary" href="#installation">★ Installation</a>
 <a class="btn" href="operations">Operations guides</a>
+<a class="btn" href="#about">About Docker Compose</a>
 <a class="btn" href="../../../#get-help">Get help</a>
 </div>
 
