@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS temporary_settings (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
 
-    FOREIGN KEY (namespace_user_id) REFERENCES users (id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE INDEX temporary_settings_user_id ON temporary_settings (user_id);
