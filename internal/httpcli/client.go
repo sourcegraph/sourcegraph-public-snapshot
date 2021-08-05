@@ -449,7 +449,8 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 // http://www.awsarchitectureblog.com/2015/03/backoff.html
 //
 // This is adapted from rehttp.ExpJitterDelay to not use a non-thread-safe
-// package level PRNG.
+// package level PRNG and to be safe against overflows. It assumes that
+// max > base.
 func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
 	var mu sync.Mutex
 	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -457,10 +458,23 @@ func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
 		exp := math.Pow(2, float64(attempt.Index))
 		top := float64(base) * exp
 		n := int64(math.Min(float64(max), top))
+		if n <= 0 {
+			return base
+		}
+
 		mu.Lock()
-		delay := prng.Int63n(n)
+		delay := time.Duration(prng.Int63n(n))
 		mu.Unlock()
-		return time.Duration(delay)
+
+		// Overflow handling
+		switch {
+		case delay < base:
+			return base
+		case delay > max:
+			return max
+		default:
+			return delay
+		}
 	}
 }
 

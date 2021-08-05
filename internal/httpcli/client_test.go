@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
@@ -322,6 +323,39 @@ func TestErrorResilience(t *testing.T) {
 
 	if res.StatusCode != 404 {
 		t.Fatalf("want status code 404, got: %d", res.StatusCode)
+	}
+}
+
+func TestExpJitterDelay(t *testing.T) {
+	prop := func(b, m uint32, a uint16) bool {
+		base := time.Duration(b)
+		max := time.Duration(m)
+		for max < base {
+			max *= 2
+		}
+		attempt := int(a)
+
+		delay := ExpJitterDelay(base, max)(rehttp.Attempt{
+			Index: attempt,
+		})
+
+		t.Logf("base: %v, max: %v, attempt: %v", base, max, attempt)
+
+		switch {
+		case delay > max:
+			t.Logf("delay %v > max %v", delay, max)
+			return false
+		case delay < base:
+			t.Logf("delay %v < base %v", delay, base)
+			return false
+		}
+
+		return true
+	}
+
+	err := quick.Check(prop, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
