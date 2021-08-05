@@ -131,7 +131,22 @@ export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, chi
     }
 
     return (
-        <RouterLink to={to} className={navItemStyles.link} activeClassName={navItemStyles.active}>
+        <RouterLink
+            to={to}
+            className={navItemStyles.link}
+            activeClassName={navItemStyles.active}
+            isActive={(match, location) => {
+                const service = location.pathname.split('/')[1]
+                if (match?.url === to) {
+                    return true
+                }
+                if (to === '/search' && (service === 'github.com' || service === 'gitlab.com')) {
+                    return true
+                }
+
+                return false
+            }}
+        >
             {content}
         </RouterLink>
     )
