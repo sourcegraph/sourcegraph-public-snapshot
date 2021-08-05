@@ -29,6 +29,10 @@ func TestCancelWithReason(t *testing.T) {
 		t.Fatalf("child context should NOT have been canceled")
 	case <-time.After(10 * time.Millisecond):
 	}
+
+	if childCtx.Err() != nil {
+		t.Fatalf("child context should return nil error")
+	}
 }
 
 func TestCancelWithoutReason(t *testing.T) {
@@ -80,5 +84,27 @@ func TestDeadlineExceeded(t *testing.T) {
 	if !errors.Is(childCtx.Err(), context.DeadlineExceeded) {
 		t.Fatalf("got %v, want %v", childCtx.Err(), context.DeadlineExceeded)
 	}
+}
 
+func TestCancelChildContext(t *testing.T) {
+	parentCtx := context.Background()
+	mutCtx := WithMutableValue(parentCtx)
+	childCtx, cancelChildCtx := PickyContext(mutCtx, CanceledLimitHit)
+	cancelChildCtx()
+
+	select {
+	case <-parentCtx.Done():
+		t.Fatalf("parent context should not have been canceled")
+	case <-time.After(10 * time.Millisecond):
+	}
+
+	select {
+	case <-childCtx.Done():
+	case <-time.After(10 * time.Millisecond):
+		t.Fatalf("child context should have been canceled")
+	}
+
+	if !errors.Is(childCtx.Err(), context.Canceled) {
+		t.Fatalf("got %s, want %s\n", childCtx.Err(), context.Canceled)
+	}
 }

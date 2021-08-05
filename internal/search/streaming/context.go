@@ -52,6 +52,8 @@ func PickyContext(parent context.Context, reason mutValueCtxKey) (context.Contex
 	once := sync.Once{}
 	c := make(chan struct{})
 
+	ctx := &pickyCtx{Context: parent, d: done}
+
 	go func() {
 		select {
 		case <-parent.Done():
@@ -62,18 +64,41 @@ func PickyContext(parent context.Context, reason mutValueCtxKey) (context.Contex
 				// explicitly.
 				return
 			}
+			ctx.mu.Lock()
+			ctx.err = parent.Err()
+			ctx.mu.Unlock()
 		case <-c:
+			ctx.mu.Lock()
+			if ctx.err == nil {
+				ctx.err = context.Canceled
+			}
+			ctx.mu.Unlock()
 		}
 		close(done)
 	}()
-	return &pickyCtx{Context: parent, d: done}, func() { once.Do(func() { close(c) }) }
+	return ctx, func() { once.Do(func() { close(c) }) }
 }
 
 type pickyCtx struct {
 	context.Context
 	d chan struct{}
+
+	mu  sync.Mutex
+	err error
 }
 
 func (ctx *pickyCtx) Done() <-chan struct{} {
 	return ctx.d
+}
+
+func (ctx *pickyCtx) Err() error {
+	select {
+	default:
+		return nil
+	case <-ctx.d:
+		ctx.mu.Lock()
+		err := ctx.err
+		ctx.mu.Unlock()
+		return err
+	}
 }
