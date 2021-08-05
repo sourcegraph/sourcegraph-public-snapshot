@@ -295,7 +295,7 @@ func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSy
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
-	// Sourcegraph.com: this is on the user path, do not block for ever if codehost is being
+	// Sourcegraph.com: this is on the user path, do not block forever if codehost is being
 	// bad. Ideally block before cloudflare 504s the request (1min).
 	// Other: we only speak to our database, so response should be in a few ms.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -392,12 +392,12 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 // remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
 // for remoteName on codehost.
 func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
-	var repo *types.Repo
+	var sourced *types.Repo
 	var err error
 	switch codehost {
 	case extsvc.GitHubDotCom:
 		nameWithOwner := strings.TrimPrefix(remoteName, "github.com/")
-		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
+		sourced, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
 			if github.IsNotFound(err) {
 				return &protocol.RepoLookupResult{
@@ -421,7 +421,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 
 	case extsvc.GitLabDotCom:
 		projectWithNamespace := strings.TrimPrefix(remoteName, "gitlab.com/")
-		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
+		sourced, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
 		if err != nil {
 			if gitlab.IsNotFound(err) {
 				return &protocol.RepoLookupResult{
@@ -437,7 +437,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}
 	case extsvc.JVMPackages:
 		if s.JVMPackagesSource != nil {
-			repo, err = s.JVMPackagesSource.GetRepo(ctx, remoteName)
+			sourced, err = s.JVMPackagesSource.GetRepo(ctx, remoteName)
 			if err != nil {
 				if errcode.IsNotFound(err) {
 					return &protocol.RepoLookupResult{
@@ -456,18 +456,21 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}
 	}
 
-	if repo.Private {
+	// We should attempt a sync even if the sourced repo is private in case it was
+	// public in the past in which case it will be removed during the sync.
+	err = s.Syncer.SyncRepo(ctx, sourced)
+	if err != nil {
+		return nil, err
+	}
+
+	// We should never actually return a private repo
+	if sourced.Private {
 		return &protocol.RepoLookupResult{
 			ErrorNotFound: true,
 		}, nil
 	}
 
-	err = s.Syncer.SyncRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	repoInfo, err := newRepoInfo(repo)
+	repoInfo, err := newRepoInfo(sourced)
 	if err != nil {
 		return nil, err
 	}

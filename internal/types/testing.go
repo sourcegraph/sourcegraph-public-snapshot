@@ -220,6 +220,7 @@ var Opt = struct {
 	RepoSources               func(...string) func(*Repo)
 	RepoMetadata              func(interface{}) func(*Repo)
 	RepoExternalID            func(string) func(*Repo)
+	RepoPrivate               func(bool) func(*Repo)
 }{
 	ExternalServiceID: func(n int64) func(*ExternalService) {
 		return func(e *ExternalService) {
@@ -284,6 +285,11 @@ var Opt = struct {
 	RepoExternalID: func(id string) func(*Repo) {
 		return func(r *Repo) {
 			r.ExternalRepo.ID = id
+		}
+	},
+	RepoPrivate: func(b bool) func(*Repo) {
+		return func(r *Repo) {
+			r.Private = b
 		}
 	},
 }

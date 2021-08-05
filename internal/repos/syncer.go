@@ -254,12 +254,12 @@ func (s *Syncer) SyncRepo(ctx context.Context, sourced *types.Repo) (err error) 
 	if err != nil {
 		return errors.Wrap(err, "listing external services")
 	}
-
 	if len(svcs) != 1 {
 		return errors.Wrapf(err, "cloud default external service of type %q not found", sourced.ExternalRepo.ServiceType)
 	}
 
 	svc = svcs[0]
+
 	_, err = s.sync(ctx, svc, sourced)
 	return err
 }
@@ -455,6 +455,16 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			break
 		}
 
+		// Private repos are not allowed in our cloud default external services. If the
+		// repo has become private, we should delete it.
+		if sourced.Private && svc.CloudDefault {
+			if err = tx.DeleteExternalServiceRepo(ctx, svc, stored[0].ID); err != nil {
+				return Diff{}, errors.Wrap(err, "syncer: failed to delete external service repo")
+			}
+			d.Deleted = append(d.Deleted, stored[0])
+			break
+		}
+
 		if err = tx.UpdateExternalServiceRepo(ctx, svc, stored[0]); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to update external service repo")
 		}
@@ -480,6 +490,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 					userAdded, userLimit,
 				)
 			}
+		}
+
+		// Private repos are not allowed in our cloud default external services.
+		if svc.CloudDefault && sourced.Private {
+			break
 		}
 
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {

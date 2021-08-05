@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -628,11 +629,27 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 			},
 			assert: types.Assert.ReposEqual(repo.With(
 				types.Opt.RepoCreatedAt(clock.Time(2)))),
-		}}
+		}, {
+			name: "private repos should not be added",
+			sourced: repo.With(
+				types.Opt.RepoPrivate(true),
+			),
+			assert: types.Assert.ReposEqual(),
+		}, {
+			name: "repos that have become private should be removed",
+			// Stored public
+			stored: types.Repos([]*types.Repo{repo}),
+			// Sourced private. ie, visibility has changed
+			sourced: repo.With(
+				types.Opt.RepoPrivate(true),
+			),
+			assert: types.Assert.ReposEqual(),
+		},
+		}
 
 		for _, tc := range testCases {
 			if tc.name == "" {
-				continue
+				t.Fatal("name required")
 			}
 
 			tc := tc
@@ -650,6 +667,7 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 					Now:   clock.Now,
 					Store: st,
 				}
+
 				err := syncer.SyncRepo(ctx, tc.sourced.Clone())
 				if err != nil {
 					t.Fatal(err)
