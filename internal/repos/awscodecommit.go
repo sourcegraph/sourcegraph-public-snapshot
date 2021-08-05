@@ -46,7 +46,7 @@ func NewAWSCodeCommitSource(svc *types.ExternalService, cf *httpcli.Factory) (*A
 
 func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.ExternalClientFactory
 	}
 
 	cli, err := cf.Doer(func(c *http.Client) error {

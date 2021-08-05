@@ -53,10 +53,6 @@ func main() {
 
 	ctx := context.Background()
 
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		log15.Error("failed to wait for frontend", "error", err)
-	}
-
 	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
 
 	go func() {

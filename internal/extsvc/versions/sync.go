@@ -41,7 +41,7 @@ func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 		return nil, err
 	}
 
-	cf := httpcli.NewExternalHTTPClientFactory()
+	cf := httpcli.ExternalClientFactory
 	sourcer := repos.NewSourcer(cf)
 
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {

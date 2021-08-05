@@ -10,8 +10,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 type testRegisterer struct{}
@@ -70,9 +68,14 @@ func (rm *RequestMeter) Transport(transport http.RoundTripper, categoryFunc func
 	}
 }
 
+// Doer is a copy of the httpcli.Doer interface. We need it to avoid circular imports.
+type Doer interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
 // Doer returns an httpcli.Doer that updates rm for each request. The categoryFunc is called to
 // determine the category label for each request.
-func (rm *RequestMeter) Doer(cli httpcli.Doer, categoryFunc func(*url.URL) string) httpcli.Doer {
+func (rm *RequestMeter) Doer(cli Doer, categoryFunc func(*url.URL) string) Doer {
 	return &requestCounterMiddleware{
 		meter:        rm,
 		cli:          cli,
@@ -82,7 +85,7 @@ func (rm *RequestMeter) Doer(cli httpcli.Doer, categoryFunc func(*url.URL) strin
 
 type requestCounterMiddleware struct {
 	meter        *RequestMeter
-	cli          httpcli.Doer
+	cli          Doer
 	transport    http.RoundTripper
 	categoryFunc func(*url.URL) string
 }

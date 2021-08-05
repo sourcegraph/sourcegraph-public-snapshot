@@ -651,19 +651,5 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, service := range r.Form["service"] {
-		switch service {
-		case "gitserver":
-			if err := gitserver.DefaultClient.WaitForGitServers(r.Context()); err != nil {
-				http.Error(w, "wait for gitservers failed: "+err.Error(), http.StatusBadGateway)
-				return
-			}
-
-		default:
-			http.Error(w, "unknown service: "+service, http.StatusBadRequest)
-			return
-		}
-	}
-
 	_, _ = w.Write([]byte("pong"))
 }

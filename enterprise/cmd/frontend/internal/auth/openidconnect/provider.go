@@ -10,12 +10,12 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-oidc"
-	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -89,7 +89,9 @@ func (p *provider) oauth2Config() *oauth2.Config {
 		// It would be nice if this was "/.auth/openidconnect/callback" not "/.auth/callback", but
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
-		RedirectURL: globals.ExternalURL().ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).String(),
+		RedirectURL: globals.ExternalURL().
+			ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).
+			String(),
 
 		Endpoint: p.oidc.Endpoint(),
 		Scopes:   []string{oidc.ScopeOpenID, "profile", "email"},
@@ -142,18 +144,28 @@ func revokeToken(ctx context.Context, p *provider, accessToken, tokenType string
 	if tokenType != "" {
 		postData.Set("token_type_hint", tokenType)
 	}
-	req, err := http.NewRequest(p.oidc.RevocationEndpoint, "application/x-www-form-urlencoded", strings.NewReader(postData.Encode()))
+	req, err := http.NewRequest(
+		"POST",
+		p.oidc.RevocationEndpoint,
+		strings.NewReader(postData.Encode()),
+	)
 	if err != nil {
 		return err
 	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(p.config.ClientID, p.config.ClientSecret)
-	resp, err := ctxhttp.Do(ctx, nil, req)
+	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("non-200 HTTP response from token revocation endpoint %s: HTTP %d", p.oidc.RevocationEndpoint, resp.StatusCode)
+		return errors.Errorf(
+			"non-200 HTTP response from token revocation endpoint %s: HTTP %d",
+			p.oidc.RevocationEndpoint,
+			resp.StatusCode,
+		)
 	}
 	return nil
 }

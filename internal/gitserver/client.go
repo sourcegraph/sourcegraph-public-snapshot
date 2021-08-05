@@ -33,27 +33,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
-var requestMeter = metrics.NewRequestMeter("gitserver", "Total number of requests sent to gitserver.")
-
-// defaultTransport is the default transport used in the default client and the
-// default reverse proxy. ot.Transport will propagate opentracing spans.
-var defaultTransport = &ot.Transport{
-	RoundTripper: requestMeter.Transport(&http.Transport{
-		// Default is 2, but we can send many concurrent requests
-		MaxIdleConnsPerHost: 500,
-	}, func(u *url.URL) string {
-		// break it down by API function call (ie "/archive", "/exec", "/is-repo-cloneable", etc)
-		return u.Path
-	}),
-}
+var clientFactory = httpcli.NewInternalClientFactory("gitserver")
+var defaultDoer, _ = clientFactory.Doer()
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = NewClient(&http.Client{Transport: defaultTransport})
+var DefaultClient = NewClient(defaultDoer)
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
@@ -440,60 +428,6 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 
 func (c *cmdReader) Close() error {
 	return c.rc.Close()
-}
-
-// WaitForGitServers retries a noop request to all gitserver instances until
-// getting back a successful response.
-func (c *Client) WaitForGitServers(ctx context.Context) error {
-	for {
-		if errs := c.pingAll(ctx); len(errs) == 0 {
-			return nil
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(250 * time.Millisecond):
-		}
-	}
-}
-
-func (c *Client) pingAll(ctx context.Context) []error {
-	addrs := c.Addrs()
-
-	ch := make(chan error, len(addrs))
-	for _, addr := range addrs {
-		go func(addr string) {
-			ch <- c.ping(ctx, addr)
-		}(addr)
-	}
-
-	errs := make([]error, 0, len(addrs))
-	for i := 0; i < cap(ch); i++ {
-		if err := <-ch; err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return errs
-}
-
-func (c *Client) ping(ctx context.Context, addr string) error {
-	req, err := http.NewRequest("GET", "http://"+addr+"/ping", nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
-	}
-
-	return nil
 }
 
 // ListGitolite lists Gitolite repositories.
