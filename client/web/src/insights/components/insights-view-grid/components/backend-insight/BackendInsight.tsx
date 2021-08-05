@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { useCallback, useContext, useRef } from 'react'
+import React, { useCallback, useContext, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 import { UncontrolledPopover } from 'reactstrap'
 
@@ -15,6 +15,7 @@ import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { SearchBackendBasedInsight } from '../../../../core/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { FormChangeEvent } from '../../../form/hooks/useForm'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
@@ -22,6 +23,7 @@ import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersPanel } from './components/drill-down-filters/DrillDownFiltersPanel'
+import { DrillDownFilters, DrillDownFiltersMode, EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters/types'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -39,6 +41,8 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { telemetryService, insight, platformContext, settingsCascade, drilldown, ...otherProps } = props
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
+    const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
+
     const { data, loading, error } = useParallelRequests(
         useCallback(() => getBackendInsightById(insight.id), [insight.id, getBackendInsightById])
     )
@@ -48,11 +52,16 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         platformContext,
     })
 
+    const handleDrillDownFiltersChange = (filters: DrillDownFilters): void => {
+        console.log(filters)
+        setFilters(filters)
+    }
+
     return (
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
-            actions={drilldown && <DrillDownFilters active={true} />}
+            actions={<DrillDownFiltersAction filters={filters} onFilterChange={handleDrillDownFiltersChange} />}
             telemetryService={telemetryService}
             onDelete={handleDelete}
             {...otherProps}
@@ -85,13 +94,33 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     )
 }
 
-interface DrillDownFiltersProps {
-    active?: boolean
+const hasActiveFilters = (filters: DrillDownFilters): boolean => {
+    switch (filters.mode) {
+        case DrillDownFiltersMode.Regex:
+            return filters.excludeRepoRegex.trim() !== '' || filters.includeRepoRegex.trim() !== ''
+        case DrillDownFiltersMode.Repolist:
+            // We don't have the repo list mode support yet
+            return false
+    }
 }
 
-const DrillDownFilters: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { active } = props
+interface DrillDownFiltersProps {
+    filters: DrillDownFilters
+    onFilterChange: (filters: DrillDownFilters) => void
+}
+
+const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
+    const { filters, onFilterChange } = props
+
     const targetButtonReference = useRef<HTMLButtonElement>(null)
+
+    const handleFilterChange = (event: FormChangeEvent<DrillDownFilters>): void => {
+        if (event.valid) {
+            onFilterChange(event.values)
+        }
+    }
+
+    console.log('has filters', hasActiveFilters(filters))
 
     return (
         <>
@@ -99,7 +128,7 @@ const DrillDownFilters: React.FunctionComponent<DrillDownFiltersProps> = props =
                 ref={targetButtonReference}
                 type="button"
                 className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
-                    [styles.filterButtonActive]: active,
+                    [styles.filterButtonActive]: hasActiveFilters(filters),
                 })}
             >
                 <FilterOutlineIcon size="1rem" />
@@ -114,7 +143,11 @@ const DrillDownFilters: React.FunctionComponent<DrillDownFiltersProps> = props =
                 popperClassName="border-0"
             >
                 <FocusLock returnFocus={true}>
-                    <DrillDownFiltersPanel className={classnames(styles.filterPanel)} />
+                    <DrillDownFiltersPanel
+                        initialFiltersValue={filters}
+                        className={classnames(styles.filterPanel)}
+                        onFiltersChange={handleFilterChange}
+                    />
                 </FocusLock>
             </UncontrolledPopover>
         </>
