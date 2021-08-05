@@ -35,6 +35,8 @@ changesetTemplate:
   published: false # Do not publish any changes to the code hosts yet
 ```
 
+The commits created from your spec will use the git config values for `user.name` and `user.email` from your local environment, or "batch-changes@sourcegraph.com" if no user is set. Alternatively, you can also [specify an `author`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-author) in this spec.
+
 See the ["batch spec YAML reference"](../references/batch_spec_yaml_reference.md) and the [tutorials](../tutorials/index.md) for more details on how to write batch specs.
 
 ## Creating a batch change after previewing
