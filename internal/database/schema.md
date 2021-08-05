@@ -571,6 +571,7 @@ Referenced by:
  timestamp         | timestamp with time zone |           | not null | 
  feature_flags     | jsonb                    |           |          | 
  cohort_id         | date                     |           |          | 
+ public_argument   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
