@@ -262,39 +262,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         setPage(1)
     }, [repoState.repos, codeHostFilter, query])
 
-    // track selection changes
-    useEffect(() => {
-        const affiliatedRepos = selectionState.repos.keys()
-
-        const currentlySelectedRepos = [...affiliatedRepos]
-
-        const didChange = !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
-
-        // set current step as complete if user had already selected repos or made changes
-        if (didChange || onloadSelectedRepos.length !== 0) {
-            setComplete(currentIndex, true)
-        } else {
-            setComplete(currentIndex, false)
-        }
-
-        // save off last selected repos
-        const selection = [...selectionState.repos.values()].reduce((accumulator, repo) => {
-            const serviceType = repo.codeHost?.kind.toLowerCase()
-            const serviceName = serviceType ? `${serviceType}.com` : 'unknown'
-
-            accumulator.push({
-                name: `${serviceName}/${repo.name}`,
-                externalRepository: { serviceType: serviceType || 'unknown', id: repo.codeHost?.id },
-            })
-            return accumulator
-        }, [] as MinSelectedRepo[])
-
-        // safe off repo selection to apollo
-        selectedReposVar(selection)
-
-        setDidSelectionChange(didChange)
-    }, [currentIndex, onloadSelectedRepos, selectionState.repos, setComplete])
-
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
         setSelectionState({
             repos: selectionState.repos,
@@ -392,19 +359,54 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const onRepoClicked = useCallback(
         (repo: Repo) => (): void => {
             const clickedRepo = getRepoServiceAndName(repo)
-            const newMap = new Map(selectionState.repos)
-            if (newMap.has(clickedRepo)) {
-                newMap.delete(clickedRepo)
+            const newSelection = new Map(selectionState.repos)
+            if (newSelection.has(clickedRepo)) {
+                newSelection.delete(clickedRepo)
             } else {
-                newMap.set(clickedRepo, repo)
+                newSelection.set(clickedRepo, repo)
             }
+
+            const currentlySelectedRepos = [...newSelection.keys()]
+            const didChange = !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+
+            // set current step as complete if user had already selected repos or made changes
+            if (didChange || onloadSelectedRepos.length !== 0) {
+                setComplete(currentIndex, true)
+                setDidSelectionChange(true)
+            } else {
+                setComplete(currentIndex, false)
+            }
+
+            // save off last selected repos
+            const selection = [...newSelection.values()].reduce((accumulator, repo) => {
+                const serviceType = repo.codeHost?.kind.toLowerCase()
+                const serviceName = serviceType ? `${serviceType}.com` : 'unknown'
+
+                accumulator.push({
+                    name: `${serviceName}/${repo.name}`,
+                    externalRepository: { serviceType: serviceType || 'unknown', id: repo.codeHost?.id },
+                })
+                return accumulator
+            }, [] as MinSelectedRepo[])
+
+            // safe off repo selection to apollo
+            selectedReposVar(selection)
+
+            // set new selection state
             setSelectionState({
-                repos: newMap,
+                repos: newSelection,
                 radio: selectionState.radio,
                 loaded: selectionState.loaded,
             })
         },
-        [selectionState, setSelectionState]
+        [
+            currentIndex,
+            onloadSelectedRepos,
+            selectionState.loaded,
+            selectionState.radio,
+            selectionState.repos,
+            setComplete,
+        ]
     )
 
     const selectAll = (): void => {
