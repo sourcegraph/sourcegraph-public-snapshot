@@ -125,6 +125,7 @@ You can override that by setting this env variable:
 # means 5%. You may want to put that into .bashrc for convinience
 SRC_REPOS_DESIRED_PERCENT_FREE=5
 ```
+If you are unsure where to add this line of code, check [here](../../../admin/config/deployment-env-config.md)
 
 ## CPU/RAM/bandwidth/battery usage
 
