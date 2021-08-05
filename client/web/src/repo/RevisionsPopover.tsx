@@ -31,158 +31,8 @@ import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 
 import { GitReferenceNode, queryGitReferences } from './GitReference'
-import { ReferencesRevisionsList } from './RevisionsPopoverLists'
-
-const fetchRepositoryCommits = memoizeObservable(
-    (
-        args: RevisionSpec & { repo: Scalars['ID']; first?: number; query?: string }
-    ): Observable<GitCommitAncestorsConnectionFields> =>
-        requestGraphQL<RepositoryGitCommitResult, RepositoryGitCommitVariables>(
-            gql`
-                query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {
-                    node(id: $repo) {
-                        __typename
-                        ... on Repository {
-                            commit(rev: $revision) {
-                                ancestors(first: $first, query: $query) {
-                                    ...GitCommitAncestorsConnectionFields
-                                }
-                            }
-                        }
-                    }
-                }
-
-                fragment GitCommitAncestorsConnectionFields on GitCommitConnection {
-                    nodes {
-                        ...GitCommitAncestorFields
-                    }
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
-
-                fragment GitCommitAncestorFields on GitCommit {
-                    id
-                    oid
-                    abbreviatedOID
-                    author {
-                        person {
-                            name
-                            avatarURL
-                        }
-                        date
-                    }
-                    subject
-                }
-            `,
-            {
-                first: args.first ?? null,
-                query: args.query ?? null,
-                repo: args.repo,
-                revision: args.revision,
-            }
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(({ node }) => {
-                if (!node) {
-                    throw new Error(`Repository ${args.repo} not found`)
-                }
-                if (node.__typename !== 'Repository') {
-                    throw new Error(`Node is a ${node.__typename}, not a Repository`)
-                }
-                if (!node.commit?.ancestors) {
-                    throw new Error(`Cannot load ancestors for repository ${args.repo}`)
-                }
-                return node.commit.ancestors
-            })
-        ),
-    args => JSON.stringify(args)
-)
-
-interface GitReferencePopoverNodeProps {
-    node: GitRefFields
-
-    defaultBranch: string
-    currentRevision: string | undefined
-
-    location: H.Location
-
-    getURLFromRevision: (href: string, revision: string) => string
-}
-
-export const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
-    node,
-    defaultBranch,
-    currentRevision,
-    location,
-    getURLFromRevision,
-}) => {
-    let isCurrent: boolean
-    if (currentRevision) {
-        isCurrent = node.name === currentRevision || node.abbrevName === currentRevision
-    } else {
-        isCurrent = node.name === `refs/heads/${defaultBranch}`
-    }
-    return (
-        <GitReferenceNode
-            node={node}
-            url={getURLFromRevision(location.pathname + location.search + location.hash, node.abbrevName)}
-            ancestorIsLink={false}
-            className={classNames(
-                'connection-popover__node-link',
-                isCurrent && 'connection-popover__node-link--active'
-            )}
-        >
-            {isCurrent && (
-                <CircleChevronLeftIcon
-                    className="icon-inline connection-popover__node-link-icon"
-                    data-tooltip="Current"
-                />
-            )}
-        </GitReferenceNode>
-    )
-}
-
-interface GitCommitNodeProps {
-    node: GitCommitAncestorFields
-
-    currentCommitID: string | undefined
-
-    location: H.Location
-
-    getURLFromRevision: (href: string, revision: string) => string
-}
-
-const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
-    node,
-    currentCommitID,
-    location,
-    getURLFromRevision,
-}) => {
-    const isCurrent = currentCommitID === node.oid
-    return (
-        <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
-            <Link
-                to={getURLFromRevision(location.pathname + location.search + location.hash, node.oid)}
-                className={classNames(
-                    'connection-popover__node-link',
-                    isCurrent && 'connection-popover__node-link--active',
-                    'revisions-popover-git-commit-node__link'
-                )}
-            >
-                <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
-                    {node.abbreviatedOID}
-                </code>
-                {isCurrent && (
-                    <CircleChevronLeftIcon
-                        className="icon-inline connection-popover__node-link-icon"
-                        data-tooltip="Current commit"
-                    />
-                )}
-            </Link>
-        </li>
-    )
-}
+import { RevisionCommitsTab } from './RevisionsPopoverCommits'
+import { RevisionReferencesTab } from './RevisionsPopoverReferences'
 
 interface RevisionsPopoverProps {
     repo: Scalars['ID']
@@ -244,8 +94,6 @@ export const COMMITS_TAB: RevisionsPopoverTab = {
  */
 export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = props => {
     const { getURLFromRevision = replaceRevisionInURL, tabs = [BRANCHES_TAB, TAGS_TAB, COMMITS_TAB] } = props
-    const [searchValue, setSearchValue] = useState('')
-    const debouncedSearchValue = useDebounce(searchValue, 200)
 
     useEffect(() => {
         eventLogger.logViewEvent('RevisionsPopover')
@@ -253,21 +101,6 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-
-    const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
-        queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
-
-    const queryGitTags = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
-        queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_TAG, withBehindAhead: false })
-
-    const queryRepositoryCommits = (
-        args: FilteredConnectionQueryArguments
-    ): Observable<GitCommitAncestorsConnectionFields> =>
-        fetchRepositoryCommits({
-            ...args,
-            repo: props.repo,
-            revision: props.currentRev || props.defaultBranch,
-        })
 
     return (
         <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
@@ -289,31 +122,31 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                 </button>
             </div>
             <TabPanels>
-                <ConnectionContainer compact={true} className="connection-popover__content">
-                    <ConnectionForm
-                        inputValue={searchValue}
-                        onInputChange={event => setSearchValue(event.target.value)}
-                        autoFocus={true}
-                        inputPlaceholder="Find..."
-                        inputClassName="connection-popover__input"
-                    />
-                    {tabs.map(tab => (
-                        <TabPanel key={tab.id}>
-                            {tab.type ? (
-                                <ReferencesRevisionsList
-                                    query={debouncedSearchValue}
-                                    noun={tab.noun}
-                                    pluralNoun={tab.pluralNoun}
-                                    type={tab.type}
-                                    currentRev={props.currentRev}
-                                    getURLFromRevision={getURLFromRevision}
-                                    defaultBranch={props.defaultBranch}
-                                    repo={props.repo}
-                                />
-                            ) : null}
-                        </TabPanel>
-                    ))}
-                </ConnectionContainer>
+                {tabs.map(tab => (
+                    <TabPanel key={tab.id}>
+                        {tab.type ? (
+                            <RevisionReferencesTab
+                                noun={tab.noun}
+                                pluralNoun={tab.pluralNoun}
+                                type={tab.type}
+                                currentRev={props.currentRev}
+                                getURLFromRevision={getURLFromRevision}
+                                defaultBranch={props.defaultBranch}
+                                repo={props.repo}
+                            />
+                        ) : (
+                            <RevisionCommitsTab
+                                noun={tab.noun}
+                                pluralNoun={tab.pluralNoun}
+                                currentRev={props.currentRev}
+                                getURLFromRevision={getURLFromRevision}
+                                defaultBranch={props.defaultBranch}
+                                repo={props.repo}
+                                currentCommitID={props.currentCommitID}
+                            />
+                        )}
+                    </TabPanel>
+                ))}
             </TabPanels>
         </Tabs>
     )

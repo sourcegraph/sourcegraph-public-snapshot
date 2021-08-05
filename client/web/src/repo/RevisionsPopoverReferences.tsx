@@ -1,31 +1,73 @@
-import React from 'react'
+import classNames from 'classnames'
+import * as H from 'history'
+import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 
+import { CircleChevronLeftIcon } from '@sourcegraph/shared/src/components/icons'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
+    ConnectionForm,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { useDebounce } from '@sourcegraph/wildcard'
 
-import {
-    GitRefConnectionFields,
-    GitRefFields,
-    RepositoryGitRefsResult,
-    RepositoryGitRefsVariables,
-} from '../graphql-operations'
+import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../graphql-operations'
 
-import { REPOSITORY_GIT_REFS } from './GitReference'
-import { GitReferencePopoverNode } from './RevisionsPopover'
+import { GitReferenceNode, REPOSITORY_GIT_REFS } from './GitReference'
 
-interface BranchesRevisionsListProps {
+interface GitReferencePopoverNodeProps {
+    node: GitRefFields
+
+    defaultBranch: string
+    currentRevision: string | undefined
+
+    location: H.Location
+
+    getURLFromRevision: (href: string, revision: string) => string
+}
+
+const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
+    node,
+    defaultBranch,
+    currentRevision,
+    location,
+    getURLFromRevision,
+}) => {
+    let isCurrent: boolean
+    if (currentRevision) {
+        isCurrent = node.name === currentRevision || node.abbrevName === currentRevision
+    } else {
+        isCurrent = node.name === `refs/heads/${defaultBranch}`
+    }
+    return (
+        <GitReferenceNode
+            node={node}
+            url={getURLFromRevision(location.pathname + location.search + location.hash, node.abbrevName)}
+            ancestorIsLink={false}
+            className={classNames(
+                'connection-popover__node-link',
+                isCurrent && 'connection-popover__node-link--active'
+            )}
+        >
+            {isCurrent && (
+                <CircleChevronLeftIcon
+                    className="icon-inline connection-popover__node-link-icon"
+                    data-tooltip="Current"
+                />
+            )}
+        </GitReferenceNode>
+    )
+}
+
+interface RevisionReferencesTabProps {
     type: GitRefType
-    query: string
     repo: Scalars['ID']
     defaultBranch: string
     getURLFromRevision: (href: string, revision: string) => string
@@ -35,11 +77,12 @@ interface BranchesRevisionsListProps {
 
     /** The current revision, or undefined for the default branch. */
     currentRev: string | undefined
+
+    allowCustomBranches?: boolean
 }
 
-export const ReferencesRevisionsList: React.FunctionComponent<BranchesRevisionsListProps> = ({
+export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTabProps> = ({
     type,
-    query,
     repo,
     defaultBranch,
     getURLFromRevision,
@@ -47,7 +90,10 @@ export const ReferencesRevisionsList: React.FunctionComponent<BranchesRevisionsL
     noun,
     pluralNoun,
 }) => {
+    const [searchValue, setSearchValue] = useState('')
+    const debouncedSearchValue = useDebounce(searchValue, 200)
     const location = useLocation()
+
     const { connection, loading, errors, hasNextPage, fetchMore } = useConnection<
         RepositoryGitRefsResult,
         RepositoryGitRefsVariables,
@@ -55,7 +101,7 @@ export const ReferencesRevisionsList: React.FunctionComponent<BranchesRevisionsL
     >({
         query: REPOSITORY_GIT_REFS,
         variables: {
-            query,
+            query: debouncedSearchValue,
             first: 50,
             repo,
             type,
@@ -93,8 +139,15 @@ export const ReferencesRevisionsList: React.FunctionComponent<BranchesRevisionsL
     )
 
     return (
-        <>
-            <SummaryContainer>{query && summary}</SummaryContainer>
+        <ConnectionContainer compact={true} className="connection-popover__content">
+            <ConnectionForm
+                inputValue={searchValue}
+                onInputChange={event => setSearchValue(event.target.value)}
+                autoFocus={true}
+                inputPlaceholder="Find..."
+                inputClassName="connection-popover__input"
+            />
+            <SummaryContainer>{searchValue && summary}</SummaryContainer>
             <ConnectionList className="connection-popover__nodes">
                 {connection?.nodes?.map((node, index) => (
                     <GitReferencePopoverNode
@@ -110,11 +163,10 @@ export const ReferencesRevisionsList: React.FunctionComponent<BranchesRevisionsL
             {loading && <ConnectionLoading />}
             {connection && (
                 <SummaryContainer>
-                    <h1>yep</h1>
                     {summary}
                     {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                 </SummaryContainer>
             )}
-        </>
+        </ConnectionContainer>
     )
 }
