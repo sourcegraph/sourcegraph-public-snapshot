@@ -28,7 +28,7 @@ func main() {
 	env.HandleHelpFlag()
 
 	logging.Init()
-	trace.Init(false)
+	trace.Init()
 
 	if err := config.Validate(); err != nil {
 		log.Fatalf("failed to read config: %s", err)
