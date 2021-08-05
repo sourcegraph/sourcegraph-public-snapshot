@@ -47,25 +47,24 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
     return (
         <>
             <h2>1. Write a batch spec</h2>
-            <Container className="mb-3">
-                <p className="mb-0">
-                    The batch spec YAML file (
-                    <a
-                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
-                        rel="noopener noreferrer"
-                        target="_blank"
-                    >
-                        syntax reference
-                    </a>
-                    ) describes what the batch change does. You'll need it to create or update batch changes. We
-                    recommend downloading and committing it to source control.
-                </p>
-            </Container>
+            <p>
+                The batch spec describes what a batch change should do. Choose an example template and edit it here. See
+                the{' '}
+                <a
+                    href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >
+                    syntax reference
+                </a>{' '}
+                for more options.
+            </p>
             <ExampleTabs isLightTheme={isLightTheme} updateSpec={setSpec} />
-            <h2 className="mt-4">2. Execute the spec</h2>
-            <Container className="mb-3">
-                <p className="mb-0">Execute the spec to preview your batch change, before publishing the results.</p>
-            </Container>
+            <h2 className="mt-4">2. Execute the batch spec</h2>
+            <p>
+                Execute the batch spec to preview your batch change before publishing the results. There are two ways to
+                execute your batch spec:
+            </p>
             <div className="d-flex">
                 <div className="w-50 pr-3">
                     <h3>

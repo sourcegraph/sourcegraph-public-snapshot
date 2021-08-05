@@ -117,19 +117,12 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
 
     return (
         <TabPanel {...props}>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-                Choose an example template, then edit your spec here.
-                <div className="d-flex">
-                    {/* TODO: Confirmation before discarding changes */}
-                    <button
-                        className="text-right btn btn-outline-secondary text-nowrap mr-2"
-                        type="button"
-                        onClick={reset}
-                    >
-                        Reset
-                    </button>
-                    <BatchSpecDownloadLink name={example.name} originalInput={code} />
-                </div>
+            <div className="d-flex justify-content-end align-items-center mb-2">
+                {/* TODO: Confirmation before discarding changes */}
+                <button className="text-right btn btn-outline-secondary text-nowrap mr-2" type="button" onClick={reset}>
+                    Reset
+                </button>
+                <BatchSpecDownloadLink name={example.name} originalInput={code} />
             </div>
             <MonacoSettingsEditor
                 isLightTheme={isLightTheme}
