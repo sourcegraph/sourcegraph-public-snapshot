@@ -92,13 +92,8 @@ func (ctx *pickyCtx) Done() <-chan struct{} {
 }
 
 func (ctx *pickyCtx) Err() error {
-	select {
-	default:
-		return nil
-	case <-ctx.d:
-		ctx.mu.Lock()
-		err := ctx.err
-		ctx.mu.Unlock()
-		return err
-	}
+	ctx.mu.Lock()
+	err := ctx.err
+	ctx.mu.Unlock()
+	return err
 }
