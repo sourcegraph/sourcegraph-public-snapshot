@@ -73,6 +73,7 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 		change.AMConfig.Global.SMTPAuthSecret = amconfig.Secret(email.SMTP.Password)
 	}
 	change.AMConfig.Global.SMTPRequireTLS = !email.SMTP.DisableTLS
+	change.AMConfig.Global.SMTPRequireTLS = !email.SMTP.NoVerifyTLS
 
 	return
 }
