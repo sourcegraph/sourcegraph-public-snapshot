@@ -274,7 +274,11 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 func (h *historicalEnqueuer) markInsightsComplete(ctx context.Context, completed []itypes.InsightSeries) {
 	for _, series := range completed {
-		_, _ = h.dataSeriesStore.StampBackfill(ctx, series)
+		_, err := h.dataSeriesStore.StampBackfill(ctx, series)
+		if err != nil {
+			// do nothing to preserve at least once semantics
+			continue
+		}
 		log15.Info("Insight marked backfill complete.", "series_id", series.SeriesID)
 	}
 }
