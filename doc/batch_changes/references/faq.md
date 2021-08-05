@@ -68,3 +68,7 @@ ${{ "${{ leave me alone! }}" }}
 ```
 
 Keep in mind the context in which the inner `${{ }}` will be evaluated and be sure to escape characters as is appropriate. Check out the cheatsheet for an [example](batch_spec_cheat_sheet.md#write-a-github-actions-workflow-that-includes-github-expression-syntax) within a shell script.
+
+### How is commit author determined for commits produced from Batch Changes?
+
+Commit author is determined at the time of running `src batch [apply|preview]`. If no [author](./batch_spec_yaml_reference.md#changesettemplate-commit-author) key is defined in the batch spec, `src` will try to use the git config values for `user.name` and `user.email` from your local environment, or "batch-changes@sourcegraph.com" if no user is set.

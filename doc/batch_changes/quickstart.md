@@ -70,6 +70,8 @@ changesetTemplate:
   published: false
 ```
 
+The commits you create here will use the git config values for `user.name` and `user.email` from your local environment, or "batch-changes@sourcegraph.com" if no user is set. Alternatively, you can also [specify an `author`](./references/batch_spec_yaml_reference.md#changesettemplate-commit-author) in this spec.
+
 ## Create the batch change
 
 Let's see the changes that will be made. Don't worry---no commits, branches, or changesets will be published yet (the repositories on your code host will be untouched).
