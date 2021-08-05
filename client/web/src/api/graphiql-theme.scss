@@ -42,6 +42,9 @@
             margin-left: auto;
         }
     }
+    .history-contents li:hover {
+        background-color: var(--color-bg-3);
+    }
     .variable-editor-title,
     .resultWrap,
     .history-contents,
