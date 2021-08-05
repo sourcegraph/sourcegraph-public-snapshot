@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import { noop } from 'lodash'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useState, useCallback, useRef, useMemo } from 'react'
@@ -12,6 +13,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
@@ -19,7 +21,7 @@ import { StreamingSearchResultsList } from '../results/StreamingSearchResultsLis
 import { useQueryDiagnostics } from '../useQueryIntelligence'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
-import { SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
+import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
 import styles from './SearchNotebookQueryBlock.module.scss'
 import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
@@ -87,9 +89,10 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, onRunBlock: runBlock, ...props })
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const mainMenuAction = useMemo(() => {
+    const mainMenuAction: BlockMenuAction = useMemo(() => {
         const isLoading = searchResults && searchResults.state === 'loading'
         return {
+            type: 'button',
             label: isLoading ? 'Searching...' : 'Run search',
             isDisabled: isLoading ?? false,
             icon: <PlayCircleOutlineIcon className="icon-inline" />,
@@ -98,7 +101,21 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
         }
     }, [runBlock, isSelected, modifierKeyLabel, searchResults])
 
-    const commonMenuActions = useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isMacPlatform, ...props })
+    const linkMenuActions: BlockMenuAction[] = useMemo(
+        () => [
+            {
+                type: 'link',
+                label: 'Open in new tab',
+                icon: <OpenInNewIcon className="icon-inline" />,
+                url: `/search?${buildSearchURLQuery(input, SearchPatternType.literal, false)}`,
+            },
+        ],
+        [input]
+    )
+
+    const commonMenuActions = linkMenuActions.concat(
+        useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isMacPlatform, ...props })
+    )
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
@@ -168,7 +185,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 <SearchNotebookBlockMenu
                     id={id}
                     mainAction={mainMenuAction}
-                    actions={isSelected ? commonMenuActions : []}
+                    actions={isSelected ? commonMenuActions : linkMenuActions}
                 />
             )}
         </div>
