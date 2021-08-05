@@ -231,7 +231,7 @@ func newOperations(observationContext *observation.Context) *operations {
 				MetricLabels: []string{name},
 				Metrics:      m,
 				ErrorFilter: func(err error) bool {
-					return !errors.Is(err, ErrNoResults)
+					return errors.Is(err, ErrNoResults)
 				},
 			})
 		}
