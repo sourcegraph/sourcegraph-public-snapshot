@@ -11,7 +11,6 @@ import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
@@ -47,7 +46,6 @@ interface Props
 }
 
 export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrumb, node, depth, ...props }) => {
-    useScrollToLocationHash(props.location)
     const repoRevision = {
         repoName: props.repo.name,
         revision: props.revision || '',

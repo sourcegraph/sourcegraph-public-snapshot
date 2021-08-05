@@ -20,6 +20,7 @@ import { Container } from '@sourcegraph/wildcard'
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
+import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
 import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
 import { routes } from '../../routes'
@@ -75,6 +76,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
+    useScrollToLocationHash(props.location)
 
     const thisPage = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: '' })
     useBreadcrumb(useMemo(() => ({ key: 'node', element: <Link to={thisPage}>API docs</Link> }), [thisPage]))

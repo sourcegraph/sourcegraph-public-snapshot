@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
@@ -34,7 +33,6 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
 }
 
 export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, depth, ...props }) => {
-    useScrollToLocationHash(props.location)
     const repoRevision = {
         repoName: props.repo.name,
         revision: props.revision || '',
