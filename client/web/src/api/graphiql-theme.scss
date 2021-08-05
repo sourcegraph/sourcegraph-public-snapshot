@@ -24,7 +24,7 @@
     color: var(--body-color);
     font-family: var(--sans-serif);
     input {
-        color: var(--text-muted);
+        color: var(--body-color);
         padding-left: 1.5rem !important;
     }
     .search-box-icon {
@@ -141,9 +141,11 @@
         color: var(--light-text);
     }
 
-    .execute-button,
     .toolbar-button,
     .doc-category .show-btn {
+        @extend .btn;
+        @extend .btn-secondary;
+
         box-shadow: none;
         &:active {
             box-shadow: none;
@@ -152,9 +154,18 @@
             color: var(--danger);
         }
     }
-    // .execute-button {
-    //     border-radius: 17px;
-    // }
+    .execute-button {
+        @extend .btn;
+        @extend .btn-primary;
+        background: var(--primary);
+        fill: #ffffff;
+        padding: 0;
+        border-radius: 17px;
+        box-shadow: none;
+        &:active {
+            box-shadow: none;
+        }
+    }
 
     .CodeMirror-hints {
         border-left: solid 1px var(--dropdown-border-color);
