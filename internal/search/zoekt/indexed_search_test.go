@@ -704,35 +704,6 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 	}
 }
 
-func TestBufferedSender(t *testing.T) {
-	// We create an unbuffered Sender, which means a call to Send blocks if there is
-	// no consumer.
-	c := make(chan *zoekt.SearchResult)
-	defer close(c)
-	unbufferedMockSender := searchbackend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		c <- event
-	})
-
-	// We add a buffer to unbufferedMockSender. A call to Send should not block anymore.
-	bufferedMockSender, cleanup := bufferedSender(1, unbufferedMockSender)
-	defer cleanup()
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		// Should not block.
-		bufferedMockSender.Send(&zoekt.SearchResult{Files: generateZoektMatches(1)})
-
-	}()
-	select {
-	case <-done:
-	case <-time.After(1 * time.Second):
-		t.Errorf("bufferedMockSender.Send did not return in time")
-	}
-	// Drain the buffer to make sure that cleanup() can return.
-	<-c
-}
-
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
