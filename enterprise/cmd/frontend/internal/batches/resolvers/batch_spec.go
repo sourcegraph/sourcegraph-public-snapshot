@@ -8,7 +8,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchSpecIDKind = "BatchSpec"
@@ -123,26 +121,9 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 			return nil, errors.Errorf("invalid action %q", *args.Action)
 		}
 	}
-	// TODO: refactor into helper function for testing purposes.
-	publicationStates := map[string]batches.PublishedValue{}
-	if args.PublicationStates != nil {
-		var errs *multierror.Error
-		for _, ps := range *args.PublicationStates {
-			id, err := unmarshalChangesetSpecID(ps.ChangesetSpec)
-			if err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "malformed changeset spec ID %q", string(ps.ChangesetSpec)))
-				continue
-			}
-
-			if _, ok := publicationStates[id]; ok {
-				errs = multierror.Append(errs, errors.Newf("duplicate changeset spec ID %q", string(ps.ChangesetSpec)))
-				continue
-			}
-			publicationStates[id] = ps.PublicationState
-		}
-		if err := errs.ErrorOrNil(); err != nil {
-			return nil, err
-		}
+	publicationStates, err := newPublicationStateMap(args.PublicationStates)
+	if err != nil {
+		return nil, err
 	}
 
 	return &changesetApplyPreviewConnectionResolver{

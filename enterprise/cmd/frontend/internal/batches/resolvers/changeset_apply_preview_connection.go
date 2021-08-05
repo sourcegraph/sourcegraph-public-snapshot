@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -23,11 +24,10 @@ var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPr
 type changesetApplyPreviewConnectionResolver struct {
 	store *store.Store
 
-	opts        store.GetRewirerMappingsOpts
-	action      *btypes.ReconcilerOperation
-	batchSpecID int64
-	// publicationStates are keyed by changeset spec random ID.
-	publicationStates map[string]batches.PublishedValue
+	opts              store.GetRewirerMappingsOpts
+	action            *btypes.ReconcilerOperation
+	batchSpecID       int64
+	publicationStates publicationStateMap
 
 	once     sync.Once
 	mappings *rewirerMappingsFacade
@@ -267,7 +267,7 @@ type rewirerMappingsFacade struct {
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
 // includes dry running the batch change reconciliation.
-func newRewirerMappingsFacade(s *store.Store, batchSpecID int64, publicationStates map[string]batches.PublishedValue) *rewirerMappingsFacade {
+func newRewirerMappingsFacade(s *store.Store, batchSpecID int64, publicationStates publicationStateMap) *rewirerMappingsFacade {
 	return &rewirerMappingsFacade{
 		batchSpecID:       batchSpecID,
 		publicationStates: publicationStates,
@@ -402,4 +402,36 @@ func (rmf *rewirerMappingsFacade) ResolverWithNextSync(mapping *btypes.RewirerMa
 	resolver.preloadedNextSync = nextSync
 
 	return &resolver
+}
+
+// publicationStateMap maps changeset specs (by random ID) to their desired UI
+// publication state.
+type publicationStateMap map[string]batches.PublishedValue
+
+// newPublicationStateMap creates a new publicationStateMap from the given
+// publication state input, validating that there are no duplicates or invalid
+// changeset spec GraphQL IDs.
+func newPublicationStateMap(in *[]graphqlbackend.ChangesetSpecPublicationStateInput) (publicationStateMap, error) {
+	out := publicationStateMap{}
+	if in != nil {
+		var errs *multierror.Error
+		for _, ps := range *in {
+			id, err := unmarshalChangesetSpecID(ps.ChangesetSpec)
+			if err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "malformed changeset spec ID %q", string(ps.ChangesetSpec)))
+				continue
+			}
+
+			if _, ok := out[id]; ok {
+				errs = multierror.Append(errs, errors.Newf("duplicate changeset spec ID %q", string(ps.ChangesetSpec)))
+				continue
+			}
+			out[id] = ps.PublicationState
+		}
+		if err := errs.ErrorOrNil(); err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
 }

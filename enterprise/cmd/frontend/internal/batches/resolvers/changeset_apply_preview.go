@@ -24,7 +24,7 @@ type changesetApplyPreviewResolver struct {
 	preloadedNextSync    time.Time
 	preloadedBatchChange *btypes.BatchChange
 	batchSpecID          int64
-	publicationStates    map[string]batches.PublishedValue
+	publicationStates    publicationStateMap
 }
 
 var _ graphqlbackend.ChangesetApplyPreviewResolver = &changesetApplyPreviewResolver{}
