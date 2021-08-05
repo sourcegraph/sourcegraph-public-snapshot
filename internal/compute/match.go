@@ -7,6 +7,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
+// Location represents the position in a text file, which may be an absolute
+// offset or line/column pair. Offsets can be converted to line/columns or vice
+// versa when the input file is available. We represent the possibility, but not
+// the requirement, of representing either offset or line/column in this data
+// type because tools or processes may expose only, e.g., offsets for
+// performance reasons (e.g., parsing) and leave conversion (which has
+// performance implications) up to the client. Nevertheless, from a usability
+// perspective, it is advantageous to represent both possibilities in a single
+// type. Conventionally, "null" values may be represented with -1.
 type Location struct {
 	Offset int `json:"offset"`
 	Line   int `json:"line"`
@@ -56,6 +65,8 @@ func ofRegexpMatches(matches [][]int, lineValue string, lineNumber int) Match {
 	var firstValue string
 	var firstRange Range
 	for _, m := range matches {
+		// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
+		// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
 		for j := 0; j < len(m); j += 2 {
 			start := m[j]
 			end := m[j+1]
@@ -77,7 +88,7 @@ func ofRegexpMatches(matches [][]int, lineValue string, lineNumber int) Match {
 }
 
 func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
-	var matches []Match
+	matches := make([]Match, 0, len(fm.LineMatches))
 	for _, l := range fm.LineMatches {
 		regexpMatches := r.FindAllStringSubmatchIndex(l.Preview, -1)
 		matches = append(matches, ofRegexpMatches(regexpMatches, l.Preview, int(l.LineNumber)))
