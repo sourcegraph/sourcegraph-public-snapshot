@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
-	"fmt"
 	"testing"
 	"time"
 
@@ -461,28 +460,6 @@ func TestZoektResultCountFactor(t *testing.T) {
 			}
 		})
 	}
-}
-
-func generateZoektMatches(count int) []zoekt.FileMatch {
-	var zoektFileMatches []zoekt.FileMatch
-	for i := 1; i <= count; i++ {
-		repoName := fmt.Sprintf("repo-%d", i)
-		fileName := fmt.Sprintf("foobar-%d.go", i)
-
-		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
-			Score:      5.0,
-			FileName:   fileName,
-			Repository: repoName, // Important: this needs to match a name in `repos`
-			Branches:   []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
-		})
-	}
-	return zoektFileMatches
 }
 
 func TestZoektIndexedRepos_single(t *testing.T) {
