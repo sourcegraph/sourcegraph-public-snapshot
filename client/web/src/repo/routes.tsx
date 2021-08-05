@@ -255,24 +255,53 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/docs/:pathID*',
-        condition: ({ settingsCascade }) => {
+        condition: ({ settingsCascade }): boolean => {
             if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
                 return false
             }
             const settings: Settings = settingsCascade.final
             return settings.experimentalFeatures?.apiDocs !== false
         },
-        render: ({ resolvedRev: { commitID }, match, repoHeaderContributionsLifecycleProps, ...context }: any) => (
+        render: ({
+            useBreadcrumb,
+            setBreadcrumb,
+            settingsCascade,
+            versionContext,
+            repo,
+            history,
+            location,
+            isLightTheme,
+            fetchHighlightedFileLineRanges,
+            resolvedRev: { commitID },
+            match,
+            ...context
+        }) => (
             <>
+                {/*
+                    IMPORTANT: do NOT use `{...context}` expansion to pass props to page components
+                    here. Doing so adds other props that exist in `context` that are NOT required
+                    or specified by the component props, but TypeScript will NOT strip them out.
+                    For example, the navbarSearchQueryState - meaning every time a user types into
+                    the search input our React component props would change despite it being a field
+                    that we are absolutely not using in any way. See:
+                    https://github.com/sourcegraph/sourcegraph/issues/21200
+                */}
                 <RepositoryDocumentationPage
-                    {...context}
-                    match={match}
-                    commitID={commitID}
+                    useBreadcrumb={useBreadcrumb}
+                    setBreadcrumb={setBreadcrumb}
+                    settingsCascade={settingsCascade}
+                    versionContext={versionContext}
+                    repo={repo}
+                    history={history}
+                    location={location}
+                    isLightTheme={isLightTheme}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
+                    commitID={commitID}
                 />
                 <ActionItemsBar
                     useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
+                    location={location}
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}
                     telemetryService={context.telemetryService}
