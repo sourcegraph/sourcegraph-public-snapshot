@@ -12,7 +12,6 @@ const config: Meta = {
     },
 }
 
-// eslint-disable-next-line import/no-default-export
 export default config
 
 export const LoadingSpinnerExample = () => <LoadingSpinner inline={boolean('inline', true)} />

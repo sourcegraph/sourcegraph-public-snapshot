@@ -28,7 +28,6 @@ const config: Meta = {
     },
 }
 
-// eslint-disable-next-line import/no-default-export
 export default config
 
 const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid' | 'disabled'>) => {
