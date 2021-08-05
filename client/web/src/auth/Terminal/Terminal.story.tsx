@@ -86,7 +86,7 @@ const Story: Meta = {
     title: 'web/Terminal',
 
     decorators: [
-        story => <BrandedStory styles={webStyles}>{() => <div style={{ width: 590 }}>{story()}</div>}</BrandedStory>,
+        story => <BrandedStory styles={webStyles}>{() => <div style={{ width: 595 }}>{story()}</div>}</BrandedStory>,
     ],
 
     parameters: {
