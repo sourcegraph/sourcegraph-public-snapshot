@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -145,12 +147,12 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 }
 
 const queryChangesetApplyPreview = `
-query ($batchSpec: ID!) {
+query ($batchSpec: ID!, $first: Int, $after: String, $publicationStates: [ChangesetSpecPublicationStateInput!]) {
     node(id: $batchSpec) {
       __typename
       ... on BatchSpec {
         id
-        applyPreview {
+        applyPreview(first: $first, after: $after, publicationStates: $publicationStates) {
           totalCount
           pageInfo {
             hasNextPage
@@ -222,3 +224,258 @@ query ($batchSpec: ID!) {
     }
   }
 `
+
+func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
+	// We have multiple scenarios to test here: these essentially act as
+	// integration tests for the applyPreview() resolver when publication states
+	// are set.
+	//
+	// The first is the case where we don't have a batch change yet (we're
+	// applying a new batch spec), and some changeset specs have associated
+	// publication states. We should get the appropriate actions on those
+	// changeset specs.
+	//
+	// The second is the case where we do have a batch change, and we're
+	// updating some publication states. Again, we should get the appropriate
+	// actions.
+	//
+	// Finally, we need to ensure that providing a conflicting UI publication
+	// state results in an error.
+	//
+	// As ever, let's start with some boilerplate.
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := actor.WithInternalActor(context.Background())
+	db := dbtest.NewDB(t, "")
+
+	userID := ct.CreateTestUser(t, db, false).ID
+
+	bstore := store.New(db, &observation.TestContext, nil)
+	esStore := database.ExternalServicesWith(bstore)
+	repoStore := database.ReposWith(bstore)
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We need a batch spec and a set of changeset specs that we can use to
+	// verify that the behaviour is as expected. We'll create one changeset spec
+	// with an explicit published field (so we can verify that UI publication
+	// states can't override that), and four changeset specs without published
+	// fields (one for each possible publication state).
+	var (
+		batchSpec = ct.CreateBatchSpec(t, ctx, bstore, "batch-spec", userID)
+
+		specPublished = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repo.ID,
+			HeadRef:   "published",
+			Published: true,
+		})
+		specToBePublished = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repo.ID,
+			HeadRef:   "to be published",
+		})
+		specToBeDraft = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repo.ID,
+			HeadRef:   "to be draft",
+		})
+		specToBeUnpublished = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repo.ID,
+			HeadRef:   "to be unpublished",
+		})
+		specToBeOmitted = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repo.ID,
+			HeadRef:   "to be omitted",
+		})
+	)
+
+	// Most of the input variables are common in the GraphQL queries below, so
+	// here's a function to decorate the common input variables with whatever
+	// custom variables are required.
+	decorateInput := func(in map[string]interface{}) map[string]interface{} {
+		commonInputs := map[string]interface{}{
+			"batchSpec": marshalBatchSpecRandID(batchSpec.RandID),
+			"publicationStates": []map[string]interface{}{
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(specToBePublished.RandID),
+					"publicationState": true,
+				},
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(specToBeDraft.RandID),
+					"publicationState": "draft",
+				},
+				{
+					"changesetSpec":    marshalChangesetSpecRandID(specToBeUnpublished.RandID),
+					"publicationState": false,
+				},
+				// We'll also toss in a spec that doesn't exist, since
+				// applyPreview() is documented to ignore unknown changeset specs
+				// due to its pagination behaviour.
+				{
+					"changesetSpec":    marshalChangesetSpecRandID("this is not a valid random ID"),
+					"publicationState": true,
+				},
+			},
+		}
+
+		for k, v := range in {
+			commonInputs[k] = v
+		}
+
+		return commonInputs
+	}
+
+	// To make it easier to assert against the operations in a preview node,
+	// here are some canned operations that we expect when publishing.
+	var (
+		publishOps = []btypes.ReconcilerOperation{
+			btypes.ReconcilerOperationPush,
+			btypes.ReconcilerOperationPublish,
+		}
+		publishDraftOps = []btypes.ReconcilerOperation{
+			btypes.ReconcilerOperationPush,
+			btypes.ReconcilerOperationPublishDraft,
+		}
+		noOps = []btypes.ReconcilerOperation{}
+	)
+
+	t.Run("new batch change", func(t *testing.T) {
+		// We'll use a page size of 1 here to ensure that the publication states
+		// are correctly handled across pages.
+		previews := repeatApplyPreview(
+			ctx, t, s,
+			decorateInput(map[string]interface{}{}),
+			queryChangesetApplyPreview,
+			1,
+		)
+
+		assert.Len(t, previews, 5)
+		assertOperations(t, previews, specPublished, publishOps)
+		assertOperations(t, previews, specToBePublished, publishOps)
+		assertOperations(t, previews, specToBeDraft, publishDraftOps)
+		assertOperations(t, previews, specToBeUnpublished, noOps)
+		assertOperations(t, previews, specToBeOmitted, noOps)
+	})
+
+	t.Run("existing batch change", func(t *testing.T) {
+		batchChange := ct.CreateBatchChange(t, ctx, bstore, "batch-spec", userID, batchSpec.ID)
+		assert.NotNil(t, batchChange)
+
+		// Same as above, but this time we'll use a page size of 2 just to mix
+		// it up.
+		previews := repeatApplyPreview(
+			ctx, t, s,
+			decorateInput(map[string]interface{}{}),
+			queryChangesetApplyPreview,
+			2,
+		)
+
+		assert.Len(t, previews, 5)
+		assertOperations(t, previews, specPublished, publishOps)
+		assertOperations(t, previews, specToBePublished, publishOps)
+		assertOperations(t, previews, specToBeDraft, publishDraftOps)
+		assertOperations(t, previews, specToBeUnpublished, noOps)
+		assertOperations(t, previews, specToBeOmitted, noOps)
+	})
+
+	t.Run("conflicting publication state", func(t *testing.T) {
+		var response struct{ Node apitest.BatchSpec }
+		err := apitest.Exec(
+			ctx, t, s,
+			decorateInput(map[string]interface{}{
+				"publicationStates": []map[string]interface{}{
+					{
+						"changesetSpec":    marshalChangesetSpecRandID(specPublished.RandID),
+						"publicationState": true,
+					},
+				},
+			}),
+			&response,
+			queryChangesetApplyPreview,
+		)
+
+		assert.Len(t, err, 1)
+		assert.Error(t, err[0])
+	})
+}
+
+// assertOperations asserts that the given operations appear for the given
+// changeset spec within the array of preview nodes.
+func assertOperations(
+	t *testing.T,
+	previews []apitest.ChangesetApplyPreview,
+	spec *btypes.ChangesetSpec,
+	want []btypes.ReconcilerOperation,
+
+) {
+	t.Helper()
+
+	preview := findPreviewForChangesetSpec(previews, spec)
+	if preview == nil {
+		t.Fatal("could not find changeset spec")
+	}
+
+	assert.Equal(t, want, preview.Operations)
+}
+
+func findPreviewForChangesetSpec(
+	previews []apitest.ChangesetApplyPreview,
+	spec *btypes.ChangesetSpec,
+) *apitest.ChangesetApplyPreview {
+	id := string(marshalChangesetSpecRandID(spec.RandID))
+	for _, preview := range previews {
+		if preview.Targets.ChangesetSpec.ID == id {
+			return &preview
+		}
+	}
+
+	return nil
+}
+
+// repeatApplyPreview tests the applyPreview resolver's pagination behaviour by
+// retrieving the entire set of previews for the given input by making repeated
+// requests.
+func repeatApplyPreview(
+	ctx context.Context,
+	t *testing.T,
+	schema *graphql.Schema,
+	in map[string]interface{},
+	query string,
+	pageSize int,
+) []apitest.ChangesetApplyPreview {
+	t.Helper()
+
+	in["first"] = pageSize
+	in["after"] = nil
+	out := []apitest.ChangesetApplyPreview{}
+
+	for {
+		var response struct{ Node apitest.BatchSpec }
+		apitest.MustExec(ctx, t, schema, in, &response, query)
+		out = append(out, response.Node.ApplyPreview.Nodes...)
+
+		if response.Node.ApplyPreview.PageInfo.HasNextPage {
+			in["after"] = *response.Node.ApplyPreview.PageInfo.EndCursor
+		} else {
+			return out
+		}
+	}
+}
