@@ -983,7 +983,9 @@ func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int6
 	ctx, endObservation := s.operations.enqueueChangesetsToClose.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchChangeID", int(batchChangeID)),
 	}})
-	defer endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
+	}()
 
 	// Just for safety, so we don't end up with stray cancel requests bombarding
 	// the DB with 10 requests a second forever:
