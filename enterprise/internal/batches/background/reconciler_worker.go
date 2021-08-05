@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -29,6 +31,7 @@ const reconcilerMaxNumResets = 60
 func newReconcilerWorker(
 	ctx context.Context,
 	s *store.Store,
+	workerStore dbworkerstore.Store,
 	gitClient reconciler.GitserverClient,
 	sourcer sources.Sourcer,
 	metrics batchChangesMetrics,
@@ -43,15 +46,11 @@ func newReconcilerWorker(
 		Metrics:           metrics.reconcilerWorkerMetrics,
 	}
 
-	workerStore := createReconcilerDBWorkerStore(s)
-
 	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
 	return worker
 }
 
-func newReconcilerWorkerResetter(s *store.Store, metrics batchChangesMetrics) *dbworker.Resetter {
-	workerStore := createReconcilerDBWorkerStore(s)
-
+func newReconcilerWorkerResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
 		Name:     "batches_reconciler_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -66,8 +65,8 @@ func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, boo
 	return store.ScanFirstChangeset(rows, err)
 }
 
-func createReconcilerDBWorkerStore(s *store.Store) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+func NewReconcilerDBWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+	options := dbworkerstore.Options{
 		Name:                 "batches_reconciler_worker_store",
 		TableName:            "changesets",
 		ViewName:             "reconciler_changesets changesets",
@@ -85,5 +84,7 @@ func createReconcilerDBWorkerStore(s *store.Store) dbworkerstore.Store {
 
 		RetryAfter:    5 * time.Second,
 		MaxNumRetries: reconcilerMaxNumRetries,
-	})
+	}
+
+	return dbworkerstore.NewWithMetrics(handle, options, observationContext)
 }
