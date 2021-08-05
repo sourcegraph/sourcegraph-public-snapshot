@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -79,6 +80,8 @@ var redisCache = rcache.NewWithTTL("http", 604800)
 // and middleware pre-set for communicating with external services.
 var ExternalClientFactory = NewExternalClientFactory()
 
+var externalTimeout, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
+
 // NewExternalClientFactory returns a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services.
 func NewExternalClientFactory() *Factory {
@@ -86,7 +89,7 @@ func NewExternalClientFactory() *Factory {
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
-		NewTimeoutOpt(5*time.Minute),
+		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
