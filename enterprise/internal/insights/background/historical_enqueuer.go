@@ -279,7 +279,7 @@ func (h *historicalEnqueuer) markInsightsComplete(ctx context.Context, completed
 			// do nothing to preserve at least once semantics
 			continue
 		}
-		log15.Info("Insight marked backfill complete.", "series_id", series.SeriesID)
+		log15.Info("insights: Insight marked backfill complete.", "series_id", series.SeriesID)
 	}
 }
 
