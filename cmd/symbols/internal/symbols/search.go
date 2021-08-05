@@ -250,7 +250,7 @@ func symbolToSymbolInDB(symbol result.Symbol) symbolInDB {
 		Parent:        symbol.Parent,
 		ParentKind:    symbol.ParentKind,
 		Signature:     symbol.Signature,
-		Pattern:       symbol.Pattern,
+		Pattern:       fmt.Sprintf("/^%s$/", escape(string(symbol.Line))),
 
 		FileLimited: symbol.FileLimited,
 	}
@@ -266,7 +266,7 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
 		Parent:     symbolInDB.Parent,
 		ParentKind: symbolInDB.ParentKind,
 		Signature:  symbolInDB.Signature,
-		Pattern:    symbolInDB.Pattern,
+		Pattern:    fmt.Sprintf("/^%s$/", escape(string(symbolInDB.Line))),
 
 		FileLimited: symbolInDB.FileLimited,
 	}

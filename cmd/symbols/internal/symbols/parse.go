@@ -2,6 +2,7 @@ package symbols
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"strings"
 	"sync"
@@ -177,6 +178,38 @@ func (s *Service) parse(ctx context.Context, req parseRequest) (entries []*ctags
 	}
 }
 
+func escape(s string) string {
+	isSpecial := func(c rune) bool {
+		switch c {
+		case '\\', '/':
+			return true
+		default:
+			return false
+		}
+	}
+
+	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
+	// but is more efficient since it does it via bytes.
+	count := 0
+	for _, c := range s {
+		if isSpecial(c) {
+			count++
+		}
+	}
+	if count == 0 {
+		return s
+	}
+
+	escaped := make([]rune, 0, len(s)+count)
+	for _, c := range s {
+		if isSpecial(c) {
+			escaped = append(escaped, '\\')
+		}
+		escaped = append(escaped, c)
+	}
+	return string(escaped)
+}
+
 func entryToSymbol(e *ctags.Entry) result.Symbol {
 	return result.Symbol{
 		Name:        e.Name,
@@ -187,7 +220,7 @@ func entryToSymbol(e *ctags.Entry) result.Symbol {
 		Parent:      e.Parent,
 		ParentKind:  e.ParentKind,
 		Signature:   e.Signature,
-		Pattern:     e.Pattern,
+		Pattern:     fmt.Sprintf("/^%s$/", escape(string(e.Line))),
 		FileLimited: e.FileLimited,
 	}
 }
