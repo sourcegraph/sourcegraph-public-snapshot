@@ -7,6 +7,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [Search configuration](../search.md)
 - [Configuring Authorization and Authentication](./authorization_and_authentication.md)
 - [Batch Changes configuration](batch_changes.md)
+- [ENV Configuration](deployment-env-config.md)
 
 ## Common tasks
 
