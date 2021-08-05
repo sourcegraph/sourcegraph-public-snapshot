@@ -53,28 +53,8 @@ func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissi
 
 // StructuralSearchFilesInRepos searches a set of repos for a structural pattern.
 func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
-	if MockSearchFilesInRepos != nil {
-		matches, mockStats, err := MockSearchFilesInRepos(args)
-		stream.Send(streaming.SearchEvent{
-			Results: matches,
-			Stats:   mockStats.Deref(),
-		})
-		return err
-	}
-
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
-
-	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
-	defer func() {
-		tr.SetErrorIfNotContext(err)
-		tr.Finish()
-	}()
-	tr.LogFields(
-		trace.Stringer("query", args.Query),
-		trace.Stringer("info", args.PatternInfo),
-		trace.Stringer("global_search_mode", args.Mode),
-	)
 
 	indexed, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
@@ -84,23 +64,14 @@ func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParamete
 	g, ctx := errgroup.WithContext(ctx)
 
 	if args.Mode != search.SearcherOnly {
-		// Run searches on indexed repositories.
-
-		if !args.PatternInfo.IsStructuralPat {
-			// Run literal and regexp searches.
-			g.Go(func() error {
-				return indexed.Search(ctx, stream)
-			})
-		} else {
-			// Run structural search (fulfilled via searcher).
-			g.Go(func() error {
-				repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
-				for _, repo := range indexed.Repos() {
-					repos = append(repos, repo)
-				}
-				return callSearcherOverRepos(ctx, args, stream, repos, true)
-			})
-		}
+		// Run structural search on indexed repositories (fulfilled via searcher).
+		g.Go(func() error {
+			repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
+			for _, repo := range indexed.Repos() {
+				repos = append(repos, repo)
+			}
+			return callSearcherOverRepos(ctx, args, stream, repos, true)
+		})
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
