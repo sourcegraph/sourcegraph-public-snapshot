@@ -232,7 +232,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		changeset := changesets[0]
 
 		// Set the changeset UI publication state if necessary.
-		if r.publicationStates != nil {
+		if r.publicationStates != nil && mappingChangesetSpec != nil {
 			if state, ok := r.publicationStates[mappingChangesetSpec.RandID]; ok {
 				changeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
 			}
