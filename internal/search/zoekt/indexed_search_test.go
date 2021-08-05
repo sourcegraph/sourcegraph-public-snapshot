@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
-	"fmt"
 	"testing"
 	"time"
 
@@ -463,28 +462,6 @@ func TestZoektResultCountFactor(t *testing.T) {
 	}
 }
 
-func generateZoektMatches(count int) []zoekt.FileMatch {
-	var zoektFileMatches []zoekt.FileMatch
-	for i := 1; i <= count; i++ {
-		repoName := fmt.Sprintf("repo-%d", i)
-		fileName := fmt.Sprintf("foobar-%d.go", i)
-
-		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
-			Score:      5.0,
-			FileName:   fileName,
-			Repository: repoName, // Important: this needs to match a name in `repos`
-			Branches:   []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
-		})
-	}
-	return zoektFileMatches
-}
-
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -702,35 +679,6 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("expected context to be done")
 	}
-}
-
-func TestBufferedSender(t *testing.T) {
-	// We create an unbuffered Sender, which means a call to Send blocks if there is
-	// no consumer.
-	c := make(chan *zoekt.SearchResult)
-	defer close(c)
-	unbufferedMockSender := searchbackend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		c <- event
-	})
-
-	// We add a buffer to unbufferedMockSender. A call to Send should not block anymore.
-	bufferedMockSender, cleanup := bufferedSender(1, unbufferedMockSender)
-	defer cleanup()
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		// Should not block.
-		bufferedMockSender.Send(&zoekt.SearchResult{Files: generateZoektMatches(1)})
-
-	}()
-	select {
-	case <-done:
-	case <-time.After(1 * time.Second):
-		t.Errorf("bufferedMockSender.Send did not return in time")
-	}
-	// Drain the buffer to make sure that cleanup() can return.
-	<-c
 }
 
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {

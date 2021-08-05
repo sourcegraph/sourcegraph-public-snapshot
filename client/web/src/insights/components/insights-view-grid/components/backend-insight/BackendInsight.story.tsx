@@ -42,6 +42,7 @@ const mockInsightAPI = createMockInsightAPI({
 add('Backend Insight Card', () => (
     <InsightsApiContext.Provider value={mockInsightAPI}>
         <BackendInsight
+            drilldown={true}
             style={{ width: 400, height: 400 }}
             insight={INSIGHT_CONFIGURATION_MOCK}
             settingsCascade={SETTINGS_CASCADE}

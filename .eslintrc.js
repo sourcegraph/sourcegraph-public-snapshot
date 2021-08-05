@@ -85,6 +85,7 @@ See https://about.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-sourc
       files: '*.story.tsx',
       rules: {
         'react/forbid-dom-props': 'off',
+        'import/no-default-export': 'off',
       },
     },
   ],

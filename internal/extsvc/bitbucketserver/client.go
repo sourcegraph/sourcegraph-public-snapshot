@@ -120,7 +120,7 @@ func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	}
 
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer()
+		httpClient = httpcli.ExternalDoer
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
 

@@ -5,10 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"golang.org/x/net/context/ctxhttp"
-
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/opentracing/opentracing-go/ext"
@@ -36,7 +35,7 @@ func NewZipVFS(url string, onFetchStart, onFetchFailed func(), evictOnClose bool
 				return nil, errors.Wrapf(err, "failed to construct a new request with URL %s", url)
 			}
 			request.Header.Add("Accept", "application/zip")
-			resp, err := ctxhttp.Do(ctx, nil, request)
+			resp, err := httpcli.InternalDoer.Do(request.WithContext(ctx))
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to fetch zip archive from %s", url)
 			}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -62,7 +61,7 @@ func (c *Config) Validate() error {
 	return c.BaseConfig.Validate()
 }
 
-func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options {
+func (c *Config) APIWorkerOptions() apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:             c.VMPrefix,
 		QueueName:            c.QueueName,
@@ -71,7 +70,7 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 		ResourceOptions:      c.ResourceOptions(),
 		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
 		GitServicePath:       "/.executors/git",
-		ClientOptions:        c.ClientOptions(transport),
+		ClientOptions:        c.ClientOptions(),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -106,7 +105,7 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) ClientOptions(transport http.RoundTripper) apiclient.Options {
+func (c *Config) ClientOptions() apiclient.Options {
 	hn := hostname.Get()
 
 	return apiclient.Options{
@@ -115,14 +114,12 @@ func (c *Config) ClientOptions(transport http.RoundTripper) apiclient.Options {
 		ExecutorHostname:  hn,
 		PathPrefix:        "/.executors/queue",
 		EndpointOptions:   c.EndpointOptions(),
-		BaseClientOptions: c.BaseClientOptions(transport),
+		BaseClientOptions: c.BaseClientOptions(),
 	}
 }
 
-func (c *Config) BaseClientOptions(transport http.RoundTripper) apiclient.BaseClientOptions {
-	return apiclient.BaseClientOptions{
-		Transport: transport,
-	}
+func (c *Config) BaseClientOptions() apiclient.BaseClientOptions {
+	return apiclient.BaseClientOptions{}
 }
 
 func (c *Config) EndpointOptions() apiclient.EndpointOptions {

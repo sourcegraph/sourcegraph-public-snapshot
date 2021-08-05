@@ -1,0 +1,52 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Input Renders status 'error' correctly 1`] = `
+<label
+  class="w-100"
+>
+  <div
+    class="loader-input__container d-flex"
+  >
+    <input
+      class="input form-control with-invalid-icon is-invalid"
+      type="text"
+      value=""
+    />
+  </div>
+</label>
+`;
+
+exports[`Input Renders status 'loading' correctly 1`] = `
+<label
+  class="w-100"
+>
+  <div
+    class="loader-input__container d-flex"
+  >
+    <input
+      class="input form-control with-invalid-icon"
+      type="text"
+      value=""
+    />
+    <div
+      class="loading-spinner loader-input__spinner"
+    />
+  </div>
+</label>
+`;
+
+exports[`Input Renders status 'valid' correctly 1`] = `
+<label
+  class="w-100"
+>
+  <div
+    class="loader-input__container d-flex"
+  >
+    <input
+      class="input form-control with-invalid-icon is-valid"
+      type="text"
+      value=""
+    />
+  </div>
+</label>
+`;

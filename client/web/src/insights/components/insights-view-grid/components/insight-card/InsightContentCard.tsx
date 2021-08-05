@@ -2,7 +2,7 @@ import classnames from 'classnames'
 import { MdiReactIconComponentType } from 'mdi-react'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { PropsWithChildren } from 'react'
+import React, { PropsWithChildren, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -25,9 +25,10 @@ export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<H
     insight: ViewProviderResult
 
     /**
-     * Deleting handler fires when the user clicks delete in the insight menu.
+     * Custom card actions (like filter buttons) that render element right next to three dots
+     * card context menu.
      */
-    onDelete?: (id: string) => void
+    actions?: ReactNode
 
     /**
      * Prop for enabling and disabling insight context menu.
@@ -39,6 +40,11 @@ export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<H
      * To get container to track hovers for pings
      */
     containerClassName?: string
+
+    /**
+     * Deleting handler fires when the user clicks delete in the insight menu.
+     */
+    onDelete?: (id: string) => void
 }
 
 /**
@@ -47,6 +53,7 @@ export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<H
 export const InsightContentCard: React.FunctionComponent<PropsWithChildren<InsightCardProps>> = props => {
     const {
         insight: { id, view },
+        actions,
         containerClassName,
         hasContextMenu,
         onDelete = ASYNC_NOOP,
@@ -73,6 +80,8 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
         <section
             {...otherProps}
             data-testid={`insight-card.${id}`}
+            /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
+            tabIndex={0}
             className={classnames('card', otherProps.className, styles.insightCard)}
         >
             <ErrorBoundary
@@ -92,13 +101,16 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
                             {subtitle && <div className={styles.insightCardSubtitle}>{subtitle}</div>}
                         </div>
 
-                        {hasMenu && (
-                            <InsightCardMenu
-                                menuButtonClassName="mr-n2 d-inline-flex"
-                                insightID={id}
-                                onDelete={onDelete}
-                            />
-                        )}
+                        <div className="align-self-start d-flex align-items-center">
+                            {actions}
+                            {hasMenu && (
+                                <InsightCardMenu
+                                    menuButtonClassName="ml-1 mr-n2 d-inline-flex"
+                                    insightID={id}
+                                    onDelete={onDelete}
+                                />
+                            )}
+                        </div>
                     </header>
                 )}
 

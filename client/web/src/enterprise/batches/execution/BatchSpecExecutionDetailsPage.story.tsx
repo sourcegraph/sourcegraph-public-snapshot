@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import { subDays, addMinutes, addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -20,13 +21,19 @@ const { add } = storiesOf('web/batches/execution/BatchSpecExecutionDetailsPage',
 const inputSpec =
     "name: hello-world\ndescription: Add Hello World to READMEs\n\n# Find all repositories that contain a README.md file.\non:\n  - repositoriesMatchingQuery: file:README.md\n\n# In each repository, run this command. Each repository's resulting diff is captured.\nsteps:\n  - run: echo Hello World | tee -a $(find -name README.md)\n    container: ubuntu:18.04\n\n# Describe the changeset (e.g., GitHub pull request) you want for each repository.\nchangesetTemplate:\n  title: Hello World\n  body: My first batch change!\n  branch: hello-world # Push the commit to this branch.\n  commit:\n    message: Append Hello World to all README.md files\n  published: false\n"
 
+const now = new Date()
+const createdAt = addHours(subDays(now, 2), 12)
+const startedAt = addMinutes(createdAt, 1).toISOString()
+const startTime = addMinutes(createdAt, 2).toISOString()
+const finishedAt = addMinutes(createdAt, 5).toISOString()
+
 const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
     id: 'QmF0Y2hTcGVjRXhlY3V0aW9uOiI5THpOWlBmUHhKSSI=',
     inputSpec,
     state: BatchSpecExecutionState.COMPLETED,
-    createdAt: '2021-08-02T16:01:57Z',
-    startedAt: '2021-08-02T16:01:57Z',
-    finishedAt: '2021-08-02T16:02:23Z',
+    createdAt: createdAt.toISOString(),
+    startedAt,
+    finishedAt,
     failure: null,
     steps: {
         setup: [
@@ -52,7 +59,7 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
                     'USERNAME_REMOVED-c70e5459-a30d-43fe-ae6e-7a17b3adec51',
                     'sourcegraph/ignite-ubuntu:insiders',
                 ],
-                startTime: '2021-08-02T18:01:57+02:00',
+                startTime,
                 exitCode: 0,
                 durationMilliseconds: 6784,
                 out:
@@ -68,7 +75,7 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
                 '--',
                 'cd /work && SRC_ENDPOINT=http://USERNAME_REMOVED:PASSWORD_REMOVED@192.168.1.34:3080 SRC_ACCESS_TOKEN=SRC_ACCESS_TOKEN_REMOVED HOME=/home/mrnugget PATH=/home/mrnugget/google-cloud-sdk/bin:/home/mrnugget/bin:/home/mrnugget/.yarn/bin:/home/mrnugget/.config/yarn/global/node_modules/.bin:/usr/local/heroku/bin:/home/mrnugget/code/go/bin:/home/mrnugget/.asdf/shims:/usr/local/opt/asdf/bin:/usr/local/bin:/home/mrnugget/.cargo/bin:/home/mrnugget/.local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/go/bin:/home/mrnugget/.fzf/bin src batch preview -f spec.yml -text-only -skip-errors -n mrnugget',
             ],
-            startTime: '2021-08-02T18:02:04+02:00',
+            startTime,
             exitCode: 0,
             durationMilliseconds: 16532,
             out:
@@ -78,7 +85,7 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
             {
                 key: 'teardown.firecracker.stop',
                 command: ['ignite', 'stop', 'USERNAME_REMOVED-c70e5459-a30d-43fe-ae6e-7a17b3adec51'],
-                startTime: '2021-08-02T18:02:21+02:00',
+                startTime,
                 exitCode: 0,
                 durationMilliseconds: 2067,
                 out:
@@ -87,7 +94,7 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
             {
                 key: 'teardown.firecracker.remove',
                 command: ['ignite', 'rm', '-f', 'USERNAME_REMOVED-c70e5459-a30d-43fe-ae6e-7a17b3adec51'],
-                startTime: '2021-08-02T18:02:23+02:00',
+                startTime,
                 exitCode: 0,
                 durationMilliseconds: 71,
                 out:
@@ -114,9 +121,9 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
 const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
     id: '1234',
     inputSpec,
-    createdAt: '2021-08-02T14:50:15Z',
-    startedAt: '2021-08-02T14:50:16Z',
-    finishedAt: '2021-08-02T14:50:22Z',
+    createdAt: createdAt.toISOString(),
+    startedAt: addMinutes(createdAt, 1).toISOString(),
+    finishedAt: addMinutes(createdAt, 2).toISOString(),
     failure: 'failed to perform src-cli step: command failed',
     state: BatchSpecExecutionState.ERRORED,
     steps: {
@@ -143,7 +150,7 @@ const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
                     'USERNAME_REMOVED-1c25d857-837e-4d16-bfd6-12b9034fcad3',
                     'sourcegraph/ignite-ubuntu:insiders',
                 ],
-                startTime: '2021-08-02T16:50:16+02:00',
+                startTime: startedAt,
                 exitCode: 0,
                 durationMilliseconds: 4889,
                 out:
@@ -159,7 +166,7 @@ const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
                 '--',
                 'cd /work && SRC_ENDPOINT=https://USERNAME_REMOVED:PASSWORD_REMOVED@sourcegraph.test:3443 SRC_ACCESS_TOKEN=SRC_ACCESS_TOKEN_REMOVED HOME=/home/mrnugget PATH=/home/mrnugget/google-cloud-sdk/bin:/home/mrnugget/bin:/home/mrnugget/.yarn/bin:/home/mrnugget/.config/yarn/global/node_modules/.bin:/usr/local/heroku/bin:/home/mrnugget/code/go/bin:/home/mrnugget/.asdf/shims:/usr/local/opt/asdf/bin:/usr/local/bin:/home/mrnugget/.cargo/bin:/home/mrnugget/.local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/go/bin:/home/mrnugget/.fzf/bin src batch preview -f spec.yml -text-only -skip-errors -n mrnugget',
             ],
-            startTime: '2021-08-02T16:50:21+02:00',
+            startTime,
             exitCode: 1,
             durationMilliseconds: 157,
             out:
@@ -169,7 +176,7 @@ const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
             {
                 key: 'teardown.firecracker.stop',
                 command: ['ignite', 'stop', 'USERNAME_REMOVED-1c25d857-837e-4d16-bfd6-12b9034fcad3'],
-                startTime: '2021-08-02T16:50:21+02:00',
+                startTime,
                 exitCode: 0,
                 durationMilliseconds: 701,
                 out:
@@ -178,7 +185,7 @@ const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
             {
                 key: 'teardown.firecracker.remove',
                 command: ['ignite', 'rm', '-f', 'USERNAME_REMOVED-1c25d857-837e-4d16-bfd6-12b9034fcad3'],
-                startTime: '2021-08-02T16:50:22+02:00',
+                startTime,
                 exitCode: 0,
                 durationMilliseconds: 17,
                 out:

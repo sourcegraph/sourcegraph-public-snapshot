@@ -42,7 +42,7 @@ All users are automatically given read permissions to a batch change. Granular p
 
 ## Code host interactions in Batch Changes
 
-Interactions with a code host are made possible by [configuring credentials](../how-tos/configuring_credentials.md) for that code host. When writing a commit or a changeset to the code host with Batch Changes, the author and permissions will reflect the token used (e.g., on GitHub, the commit or pull request author will be you).
+Interactions with a code host are made possible by [configuring credentials](../how-tos/configuring_credentials.md) for that code host. When publishing a changeset to the code host with Batch Changes, the author and permissions will reflect the token used (e.g., on GitHub, the pull request author will be you).
 
 ## Repository permissions for Batch Changes
 

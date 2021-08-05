@@ -4,6 +4,11 @@
     padding: 0.5rem 1rem;
     cursor: default;
 
+    &:focus,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
+
     &__header {
         display: flex;
         align-items: center;

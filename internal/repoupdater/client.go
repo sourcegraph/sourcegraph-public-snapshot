@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -15,17 +14,17 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
-
-var requestMeter = metrics.NewRequestMeter("repoupdater", "Total number of requests sent to repoupdater.")
 
 // DefaultClient is the default Client. Unless overwritten, it is
 // connected to the server specified by the REPO_UPDATER_URL
 // environment variable.
 var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
+
+var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
 
 // Client is a repoupdater client.
 type Client struct {
@@ -33,30 +32,22 @@ type Client struct {
 	URL string
 
 	// HTTP client to use
-	HTTPClient *http.Client
+	HTTPClient httpcli.Doer
 }
 
 // NewClient will initiate a new repoupdater Client with the given serverURL.
 func NewClient(serverURL string) *Client {
 	return &Client{
-		URL: serverURL,
-		HTTPClient: &http.Client{
-			// ot.Transport will propagate opentracing spans and whether or not to trace
-			Transport: &ot.Transport{
-				RoundTripper: requestMeter.Transport(&http.Transport{
-					// Default is 2, but we can send many concurrent requests
-					MaxIdleConnsPerHost: 500,
-				}, func(u *url.URL) string {
-					// break it down by API function call (ie "/repo-update-scheduler-info", "/repo-lookup", etc)
-					return u.Path
-				}),
-			},
-		},
+		URL:        serverURL,
+		HTTPClient: defaultDoer,
 	}
 }
 
 // RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
-func (c *Client) RepoUpdateSchedulerInfo(ctx context.Context, args protocol.RepoUpdateSchedulerInfoArgs) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
+func (c *Client) RepoUpdateSchedulerInfo(
+	ctx context.Context,
+	args protocol.RepoUpdateSchedulerInfoArgs,
+) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
 	resp, err := c.httpPost(ctx, "repo-update-scheduler-info", args)
 	if err != nil {
 		return nil, err
@@ -75,7 +66,10 @@ func (c *Client) RepoUpdateSchedulerInfo(ctx context.Context, args protocol.Repo
 var MockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 // RepoLookup retrieves information about the repository on repoupdater.
-func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+func (c *Client) RepoLookup(
+	ctx context.Context,
+	args protocol.RepoLookupArgs,
+) (result *protocol.RepoLookupResult, err error) {
 	if MockRepoLookup != nil {
 		return MockRepoLookup(args)
 	}
@@ -104,7 +98,12 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, errors.Errorf("RepoLookup for %+v failed with http status %d: %s", args, resp.StatusCode, string(body))
+		return nil, errors.Errorf(
+			"RepoLookup for %+v failed with http status %d: %s",
+			args,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
@@ -236,7 +235,10 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 }
 
 // SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
+func (c *Client) SyncExternalService(
+	ctx context.Context,
+	svc api.ExternalService,
+) (*protocol.ExternalServiceSyncResult, error) {
 	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {

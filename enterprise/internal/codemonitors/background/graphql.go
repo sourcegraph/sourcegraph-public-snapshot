@@ -5,13 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net/http"
 	"net/url"
 	"runtime"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"golang.org/x/net/context/ctxhttp"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
 )
@@ -135,7 +135,13 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
 
-	resp, err := ctxhttp.Post(ctx, nil, url, "application/json", &buf)
+	req, err := http.NewRequest("POST", url, &buf)
+	if err != nil {
+		return nil, errors.Wrap(err, "Post")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}
