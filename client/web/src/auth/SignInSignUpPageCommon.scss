@@ -47,7 +47,7 @@
         content: '...';
         display: inline-block;
         vertical-align: bottom;
-        animation: ellipsis steps(4, end) 1000ms infinite;
+        animation: ellipsis steps(4, end) 1500ms infinite;
     }
 
     @keyframes ellipsis {

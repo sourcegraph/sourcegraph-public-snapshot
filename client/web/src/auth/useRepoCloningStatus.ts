@@ -42,8 +42,14 @@ interface CloneProgressResult {
     }>
 }
 
-// temp object to store previous cloning progress percentage
-let previousPercentage: { [key: string]: number } = {}
+interface ParsedMirrorInfo {
+    progress: number
+    details: string
+    cloned: boolean
+}
+
+// temp object to store previous cloning progress
+let previousMirrorInfo: { [key: string]: ParsedMirrorInfo } = {}
 
 const USER_AFFILIATED_REPOS_MIRROR_INFO = gql`
     query UserRepositoriesMirrorInfo(
@@ -116,7 +122,13 @@ export const useRepoCloningStatus = ({
 
     const repos = data?.node?.repositories.nodes
 
-    if (!Array.isArray(repos)) {
+    // check if we received cloning status for all selected repos
+    const didReceiveAllRepoStatuses = xor(getRepoNames(selectedRepos), getRepoNames(repos)).length === 0
+
+    // don't display repo statuses unless we received all repos
+    // when user goes back to reselect repos and navigates to the terminal UI
+    // the endpoint may still respond with statuses for the previous selection
+    if (!Array.isArray(repos) || !didReceiveAllRepoStatuses) {
         return {
             repos: undefined,
             isDoneCloning: false,
@@ -125,9 +137,6 @@ export const useRepoCloningStatus = ({
             statusSummary: '',
         }
     }
-
-    // check if we received cloning status for all selected repos
-    const didReceiveAllRepoStatuses = xor(getRepoNames(selectedRepos), getRepoNames(repos)).length === 0
 
     const repoLines: RepoLine[] = repos.reduce((lines, { id, name, mirrorInfo }) => {
         const { details, progress, cloned } = parseMirrorInfo(id, mirrorInfo)
@@ -159,7 +168,7 @@ export const useRepoCloningStatus = ({
     // stop polling and cleanup memory when all repos are done cloning
     if (called && isDoneCloning) {
         stopPolling()
-        previousPercentage = {}
+        previousMirrorInfo = {}
     }
 
     return {
@@ -171,10 +180,7 @@ export const useRepoCloningStatus = ({
     }
 }
 
-const parseMirrorInfo = (
-    id: string,
-    mirrorInfo: RepoFields['mirrorInfo']
-): { progress: number; details: string; cloned: boolean } => {
+const parseMirrorInfo = (id: string, mirrorInfo: RepoFields['mirrorInfo']): ParsedMirrorInfo => {
     const { cloneProgress, cloned, cloneInProgress } = mirrorInfo
 
     // cloned
@@ -186,8 +192,15 @@ const parseMirrorInfo = (
         }
     }
 
-    // not cloned and cloning is not in progress
     if (!cloneInProgress) {
+        // If we have previous mirror info - return it.
+        // Endpoint may return that cloning is not in progress because of async
+        // behavior on the backend. But if it was started we should continue
+        // showing repo cloning as "in progress" on the FE
+        if (previousMirrorInfo[id]) {
+            return previousMirrorInfo[id]
+        }
+
         return {
             cloned,
             details: 'Not cloned yet',
@@ -206,17 +219,23 @@ const parseMirrorInfo = (
      */
     let percentage = 0
     if (normalizedDetails.startsWith('*')) {
-        percentage = previousPercentage[id] || 0
+        const reposPreviousMirrorInfo = previousMirrorInfo[id]
+        percentage = reposPreviousMirrorInfo?.progress || 0
     } else {
         percentage = findProgressPercentage(cloneProgress)
-        previousPercentage[id] = percentage
     }
 
-    return {
+    const parsedMirrorInfo = {
         cloned,
         details: normalizedDetails,
         progress: percentage,
     }
+
+    if (percentage !== 0) {
+        previousMirrorInfo[id] = parsedMirrorInfo
+    }
+
+    return parsedMirrorInfo
 }
 
 const findProgressPercentage = (progress: string = ''): number => {
