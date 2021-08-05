@@ -431,6 +431,12 @@ type Mutation {
         The additional argument information.
         """
         argument: String
+        """
+        Public argument information. PRIVACY: Do NOT include any potentially private information in this field.
+        These properties get sent to our analytics tools for Cloud, so must not include private information,
+        such as search queries or repository names.
+        """
+        publicArgument: String
     ): EmptyResponse
     """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
