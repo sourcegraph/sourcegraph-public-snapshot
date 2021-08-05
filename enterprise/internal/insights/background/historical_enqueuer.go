@@ -484,7 +484,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	hardErr = h.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 		SeriesID:    bctx.seriesID,
 		SearchQuery: query,
-		RecordTime:  &nearestCommit.Committer.Date,
+		RecordTime:  &bctx.from,
 		State:       "queued",
 		Priority:    int(priority.FromTimeInterval(bctx.from, bctx.series.CreatedAt)),
 		Cost:        int(priority.Unindexed),
