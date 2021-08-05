@@ -30,7 +30,7 @@ Trying to deploy Sourcegraph with Kubernetes? Refer to our [installation guide](
 
 Refer to our [installation guide](./index.md#installation) for more details on how to deploy Sourcegraph.
 
-Migrating from another [deployment type](../index.md)? Refer to our [migration guides](./migrate-backup.md).
+Migrating from another [deployment type](../index.md)? Refer to our [migration guides](../migrate-backup.md).
 
 ## Configure
 
