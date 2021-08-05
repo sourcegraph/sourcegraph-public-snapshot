@@ -19,7 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
 - Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
 - Syntax highlighting support for the [Cue](https://cuelang.org) language.
-- Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170(
+- Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170)
+- Add a new environment variable `SRC_HTTP_CLI_EXTERNAL_TIMEOUT` to control the timeout for all external HTTP requests. [#23620](https://github.com/sourcegraph/sourcegraph/pull/23620)
 
 ### Changed
 
