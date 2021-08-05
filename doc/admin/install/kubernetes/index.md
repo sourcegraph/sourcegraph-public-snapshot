@@ -14,7 +14,7 @@ Before you get started, we recommend [learning about how Sourcegraph with Kubern
 In addition to the requirements in the [about](#about) section, we recommend reading [configuration guide](configure.md) 
 ensuring you have prepared the items below to ensure you're ready to start your installation. 
 
- - [Customizations](./overlays.md)
+ - [Configuration](./configure.md)
  - [Storage class](./configure.md#configure-a-storage-class)
  - [Network Acess](./configure.md#security-configure-network-access)
  - [PostgreSQL Database](./configure.md#sourcegraph-databases)
@@ -22,6 +22,7 @@ ensuring you have prepared the items below to ensure you're ready to start your 
  - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
 > WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact.
+
 ### Steps
 
 1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
@@ -137,7 +138,38 @@ We also recommend familiarizing yourself with the following before proceeding wi
 
 ### Kustomize
 
-We support the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template free way to customize configuration, in a Kubernetes like way with a simple configuration file. For more information about how to use Kustomize with Sourcegraph, see our [overlays guide](./overlays.md). 
+We support the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template free way to customize configuration, in a Kubernetes like way with a simple configuration file.
+
+For more information about how to use Kustomize with Sourcegraph, see our [customization guide](./configure.md#customizations) and [introduction to overlays](#overlays).
+
+#### Overlays
+
+An [*overlay*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) specifies customizations for a base directory of Kubernetes manifests, in this case the `base/` directory in the [reference repository](#reference-repository). Overlays can:
+
+- be used for example to change the number of replicas, change a namespace, add a label, etc
+- refer to other overlays that eventually refer to the base (forming a directed acyclic graph with the base as the root)
+
+An overlay is defined in a `kustomization.yaml` file.
+To avoid complications with reference cycles an overlay can only reference resources inside the directory subtree of the directory it resides in (symlinks are not allowed either).
+Learn more in the [`kustomization` documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
+
+Overlays can be used in one of two ways:
+
+- With `kubectl`: Starting with `kubectl` client version 1.14 `kubectl` can handle `kustomization.yaml` files directly.
+When using `kubectl` there is no intermediate step that generates actual manifest files. Instead the combined resources from the
+overlays and the base are directly sent to the cluster. This is done with the `kubectl apply -k` command. The argument to the
+command is a directory containing a `kustomization.yaml` file.
+- With`kustomize`: This generates manifest files that are then applied in the conventional way using `kubectl apply -f`.
+
+The overlays provided in our [overlays directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) rely on the `kustomize` tool and the `overlay-generate-cluster.sh` script in the
+`root` directory to generate the manifests. There are two reasons why it was set up like this:
+
+- It avoids having to put a `kustomization.yaml` file in the `base` directory and forcing users that don't use overlays
+  to deal with it (unfortunately `kubectl apply -f` doesn't work if a `kustomization.yaml` file is in the directory).
+- It generates manifests instead of applying them directly. This provides opportunity to additionally validate the files
+  and also allows using `kubectl apply -f` with `--prune` flag turned on (`apply -k` with `--prune` does not work correctly).
+
+To learn about our available overlays and how to use them, please refer to our [overlays guides](./configure.md#overlays).
 
 ### Reference repository
 
