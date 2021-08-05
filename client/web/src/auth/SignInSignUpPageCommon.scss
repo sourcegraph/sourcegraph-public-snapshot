@@ -41,8 +41,8 @@
     margin-bottom: 5rem;
     align-self: flex-start;
 
-    &__loading:after {
-        width: 0px;
+    &__loading::after {
+        width: 0;
         overflow: hidden;
         content: '...';
         display: inline-block;
@@ -68,7 +68,7 @@
         text-decoration: none;
         position: absolute;
     }
-    @media screen and (max-width: 800px) {
+    @media screen and (max-width: 50rem) {
         &__logo-link {
             position: relative;
         }
