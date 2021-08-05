@@ -115,23 +115,10 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	g, ctx := errgroup.WithContext(ctx)
 
 	if args.Mode != search.SearcherOnly {
-		// Run searches on indexed repositories.
-
-		if !args.PatternInfo.IsStructuralPat {
-			// Run literal and regexp searches.
-			g.Go(func() error {
-				return indexed.Search(ctx, stream)
-			})
-		} else {
-			// Run structural search (fulfilled via searcher).
-			g.Go(func() error {
-				repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
-				for _, repo := range indexed.Repos() {
-					repos = append(repos, repo)
-				}
-				return callSearcherOverRepos(ctx, args, stream, repos, true)
-			})
-		}
+		// Run literal and regexp searches on indexed repositories.
+		g.Go(func() error {
+			return indexed.Search(ctx, stream)
+		})
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
