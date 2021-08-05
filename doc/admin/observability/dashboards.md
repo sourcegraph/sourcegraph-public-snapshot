@@ -4554,16 +4554,6 @@ Sudden changes should be caused by indexing configuration changes.
 
 <br />
 
-#### zoekt-indexserver: repos_priorities
-
-This panel indicates total number of repos with priorities for ranking.
-
-Sudden changes should be caused by indexing configuration changes.
-
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
-
-<br />
-
 #### zoekt-indexserver: repo_index_state
 
 This panel indicates indexing results over 5m (noop=no changes, empty=no branches to index).
