@@ -4,7 +4,7 @@
     position: relative;
 
     &--active {
-        &:before {
+        &::before {
             content: '';
             width: 0.5rem;
             height: 0.5rem;
