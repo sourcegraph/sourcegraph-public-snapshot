@@ -237,7 +237,7 @@ type historicalEnqueuer struct {
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Discover all insights on the instance.
-	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{})
+	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillIncomplete: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
@@ -262,7 +262,25 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	if err := h.buildFrames(ctx, uniqueSeries, sortedSeriesIDs); err != nil {
 		return multierror.Append(multi, err)
 	}
+	if err == nil {
+		// we successfully performed a full repo iteration without any "hard" errors, so we will update the metadata
+		// of each insight series to reflect they have seen a full iteration. This does not mean they were necessarily successful,
+		// only that they had a chance to queue up queries for each repo.
+		h.markInsightsComplete(ctx, foundInsights)
+	}
+
 	return nil
+}
+
+func (h *historicalEnqueuer) markInsightsComplete(ctx context.Context, completed []itypes.InsightSeries) {
+	for _, series := range completed {
+		_, err := h.dataSeriesStore.StampBackfill(ctx, series)
+		if err != nil {
+			// do nothing to preserve at least once semantics
+			continue
+		}
+		log15.Info("insights: Insight marked backfill complete.", "series_id", series.SeriesID)
+	}
 }
 
 // buildFrames is invoked to build historical data for all past timeframes that we care about
@@ -484,7 +502,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	hardErr = h.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 		SeriesID:    bctx.seriesID,
 		SearchQuery: query,
-		RecordTime:  &nearestCommit.Committer.Date,
+		RecordTime:  &bctx.from,
 		State:       "queued",
 		Priority:    int(priority.FromTimeInterval(bctx.from, bctx.series.CreatedAt)),
 		Cost:        int(priority.Unindexed),
