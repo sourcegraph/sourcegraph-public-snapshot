@@ -8,7 +8,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -16,7 +16,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BatchSpecExecutionState } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -47,20 +46,26 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
     expandStage,
 }) => {
-    const batchSpecExecution: BatchSpecExecutionFields | null | undefined = useObservable(
-        useMemo(
-            () =>
-                fetchBatchSpecExecution(executionID).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(2500))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [fetchBatchSpecExecution, executionID]
-        )
-    )
+    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields | null | undefined>()
+
+    useEffect(() => {
+        const subscription = fetchBatchSpecExecution(executionID)
+            .pipe(
+                repeatWhen(notifier => notifier.pipe(delay(2500))),
+                distinctUntilChanged((a, b) => isEqual(a, b))
+            )
+            .subscribe(execution => {
+                setBatchSpecExecution(execution)
+            })
+
+        return () => subscription.unsubscribe()
+    }, [fetchBatchSpecExecution, executionID])
+
     const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
     const cancelExecution = useCallback(async () => {
         try {
-            await cancelBatchSpecExecution(executionID)
+            const execution = await cancelBatchSpecExecution(executionID)
+            setBatchSpecExecution(execution)
         } catch (error) {
             setIsCanceling(asError(error))
         }

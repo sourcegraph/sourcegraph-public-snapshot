@@ -174,6 +174,7 @@ SET
 	-- If the execution is still queued, we directly abort, otherwise we keep the
 	-- state, so the worker can to teardown and, at some point, mark it failed itself.
 	state = CASE WHEN batch_spec_executions.state = 'processing' THEN batch_spec_executions.state ELSE 'failed' END,
+	finished_at = CASE WHEN batch_spec_executions.state = 'processing' THEN batch_spec_executions.finished_at ELSE %s END,
 	updated_at = %s
 WHERE
 	id IN (SELECT id FROM candidate)
@@ -187,6 +188,7 @@ func (s *Store) cancelBatchSpecExecutionQuery(randID string) *sqlf.Query {
 	return sqlf.Sprintf(
 		cancelBatchSpecExecutionQueryFmtstr,
 		randID,
+		s.now(),
 		s.now(),
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 	)
