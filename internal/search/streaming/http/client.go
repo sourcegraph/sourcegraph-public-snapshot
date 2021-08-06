@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 )
 
+const maxPayloadSize = 10 * 1024 * 1024 // 10mb
+
 // NewRequest returns an http.Request against the streaming API for query.
 func NewRequest(baseURL string, query string) (*http.Request, error) {
 	u := baseURL + "/search/stream?q=" + url.QueryEscape(query)
@@ -37,7 +39,6 @@ type FrontendStreamDecoder struct {
 }
 
 func (rr FrontendStreamDecoder) ReadAll(r io.Reader) error {
-	const maxPayloadSize = 10 * 1024 * 1024 // 10mb
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 4096), maxPayloadSize)
 	// bufio.ScanLines, except we look for two \n\n which separate events.
