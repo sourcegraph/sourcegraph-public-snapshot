@@ -5,11 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
@@ -174,6 +176,15 @@ var (
 		Exec:       rfcExec,
 		UsageFunc:  printRFCUsage,
 	}
+
+	funkyLogoFlagSet = flag.NewFlagSet("sg logo", flag.ExitOnError)
+	funkLogoCommand  = &ffcli.Command{
+		Name:       "logo",
+		ShortUsage: "sg logo",
+		ShortHelp:  "Print the sg logo",
+		FlagSet:    funkyLogoFlagSet,
+		Exec:       logoExec,
+	}
 )
 
 const (
@@ -219,6 +230,7 @@ var (
 			liveCommand,
 			migrationCommand,
 			rfcCommand,
+			funkLogoCommand,
 		},
 	}
 )
@@ -871,4 +883,54 @@ func printLogo(out io.Writer) {
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, `         \/____/`)
 	fmt.Fprintf(out, "%s", output.StyleReset)
+}
+
+func logoExec(ctx context.Context, args []string) error {
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	randoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }
+
+	var (
+		color1 = randoColor()
+		color2 = output.StyleLogo
+	)
+
+	times := 20
+	for i := 0; i < times; i++ {
+		const linesPrinted = 23
+
+		stdout.Out.Writef("%s", color2)
+		stdout.Out.Write(`          _____                    _____`)
+		stdout.Out.Write(`         /\    \                  /\    \`)
+		stdout.Out.Writef(`        /%s::%s\    \                /%s::%s\    \`, color1, color2, color1, color2)
+		stdout.Out.Writef(`       /%s::::%s\    \              /%s::::%s\    \`, color1, color2, color1, color2)
+		stdout.Out.Writef(`      /%s::::::%s\    \            /%s::::::%s\    \`, color1, color2, color1, color2)
+		stdout.Out.Writef(`     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, color1, color2, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, color1, color2, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, color1, color2, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, color1, color2, color1, color2, color1, color2, color1, color2)
+		stdout.Out.Writef(`      \%s::::::%s/    /            \%s::::::%s/    /`, color1, color2, color1, color2)
+		stdout.Out.Writef(`       \%s::::%s/    /              \%s::::%s/    /`, color1, color2, color1, color2)
+		stdout.Out.Writef(`        \%s::%s/    /                \%s::%s/____/`, color1, color2, color1, color2)
+		stdout.Out.Write(`         \/____/`)
+		stdout.Out.Writef("%s", output.StyleReset)
+
+		time.Sleep(200 * time.Millisecond)
+
+		color1, color2 = randoColor(), color1
+
+		if i != times-1 {
+			stdout.Out.MoveUpLines(linesPrinted)
+		}
+	}
+
+	return nil
 }
