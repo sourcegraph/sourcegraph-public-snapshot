@@ -27,7 +27,12 @@ func TestOfLineMatches(t *testing.T) {
 		return string(v)
 	}
 
-	autogold.Want("compute regexp submatch environment", `{
+	autogold.Want("compute regexp submatch empty environment", `{
+  "matches": [],
+  "path": "bedge"
+}`).Equal(t, test("nothing"))
+
+	autogold.Want("compute regexp submatch nonempty environment", `{
   "matches": [
     {
       "value": "abcdefgh",

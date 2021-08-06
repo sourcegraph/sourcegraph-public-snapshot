@@ -91,7 +91,9 @@ func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
 	matches := make([]Match, 0, len(fm.LineMatches))
 	for _, l := range fm.LineMatches {
 		regexpMatches := r.FindAllStringSubmatchIndex(l.Preview, -1)
-		matches = append(matches, ofRegexpMatches(regexpMatches, l.Preview, int(l.LineNumber)))
+		if len(regexpMatches) > 0 {
+			matches = append(matches, ofRegexpMatches(regexpMatches, l.Preview, int(l.LineNumber)))
+		}
 	}
 	return &Result{Matches: matches, Path: fm.Path}
 }
