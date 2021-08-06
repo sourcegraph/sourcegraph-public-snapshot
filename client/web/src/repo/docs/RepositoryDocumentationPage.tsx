@@ -202,7 +202,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
                             }`}
                         >
-                            <DocumentationWelcomeAlert />
+                            {/*
+                                TODO(apidocs): Eventually this welcome alert should go away entirely, but for now
+                                it's the best thing we have for the sometimes empty root landing page.
+                            */}
+                            {page.tree.detail.value === '' && <DocumentationWelcomeAlert />}
                             {isExcluded(page.tree, excludingTags) ? (
                                 <div className="m-3">
                                     <h2 className="text-muted">Looks like there's nothing to see here.</h2>
@@ -215,23 +219,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 node={page.tree}
                                 pagePathID={pagePathID}
                                 depth={0}
+                                isFirstChild={true}
                                 excludingTags={excludingTags}
                             />
-                        </div>
-                    </div>
-                    <div className="repository-docs-page__feedback-container">
-                        <div className="repository-docs-page__feedback-container-content">
-                            <Badge status="experimental" className="text-uppercase mr-2" />
-                            <a
-                                // eslint-disable-next-line react/jsx-no-target-blank
-                                target="_blank"
-                                rel="noopener"
-                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
-                            >
-                                Learn more
-                            </a>
-                            <FeedbackPrompt routes={routes} />
                         </div>
                     </div>
                 </>
