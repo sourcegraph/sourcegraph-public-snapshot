@@ -30,6 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -225,6 +226,9 @@ var longGitCommandTimeout = time.Hour
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
+	// The server context should use an internal actor as it needs access to all
+	// repos.
+	s.ctx = actor.WithInternalActor(s.ctx)
 	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 

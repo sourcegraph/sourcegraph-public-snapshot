@@ -176,6 +176,7 @@ func main() {
 
 	// Create Handler now since it also initializes state
 
+	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
 
 	// Ready immediately
@@ -237,8 +238,12 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
+
 	//
 	// START FLAILING
+
+	// TODO: Remove this hack once we're confident we're using contexts with internal
+	// actors everywhere
 
 	// Gitserver is an internal actor. We rely on the frontend to do authz
 	// checks for user requests.
