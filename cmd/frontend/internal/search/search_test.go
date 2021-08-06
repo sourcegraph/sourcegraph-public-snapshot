@@ -164,7 +164,7 @@ func TestDisplayLimit(t *testing.T) {
 			var displayLimitHit bool
 			var message string
 			var matchCount int
-			decoder := streamhttp.Decoder{
+			decoder := streamhttp.FrontendStreamDecoder{
 				OnProgress: func(progress *api.Progress) {
 					if skipped, ok := any(api.DisplayLimit, progress.Skipped); ok {
 						displayLimitHit = true
