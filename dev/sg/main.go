@@ -219,6 +219,7 @@ var (
 			liveCommand,
 			migrationCommand,
 			rfcCommand,
+			docCommand,
 		},
 	}
 )
