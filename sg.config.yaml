@@ -15,6 +15,8 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
+  GO111MODULE: 'on'
+
   DEPLOY_TYPE: dev
 
   SRC_HTTP_ADDR: ':3082'
@@ -343,7 +345,6 @@ commands:
     install: |
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
       go install github.com/google/zoekt/cmd/zoekt-archive-index
       go install github.com/google/zoekt/cmd/zoekt-git-index
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
@@ -372,7 +373,7 @@ commands:
   zoekt-webserver-template: &zoekt_webserver_template
     install: |
       mkdir -p .bin
-      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
+      env GOBIN="${PWD}/.bin" go install github.com/google/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: false
