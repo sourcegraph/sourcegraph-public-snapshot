@@ -100,44 +100,8 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 		tr.Finish()
 	}()
 
-	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
-		// Service structural search via SearchFilesInRepos when we have
-		// an explicit `count` value that differs from the default value
-		// (e.g., user sets higher counts).
-		return unindexed.StructuralSearchFilesInRepos(ctx, args, a)
-	}
-
-	// For structural search with default limits we retry if we get no results.
-	fileMatches, stats, err := unindexed.StructuralSearchFilesInReposBatch(ctx, args)
-
-	if len(fileMatches) == 0 && err == nil {
-		// No results for structural search? Automatically search again and force Zoekt
-		// to resolve more potential file matches by setting a higher FileMatchLimit.
-		patternCopy := *(args.PatternInfo)
-		patternCopy.FileMatchLimit = 1000
-		argsCopy := *args
-		argsCopy.PatternInfo = &patternCopy
-		args = &argsCopy
-
-		fileMatches, stats, err = unindexed.StructuralSearchFilesInReposBatch(ctx, args)
-
-		if len(fileMatches) == 0 {
-			// Still no results? Give up.
-			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-			stats.IsLimitHit = false // Ensure we don't display "Show more".
-		}
-	}
-
-	matches := make([]result.Match, 0, len(fileMatches))
-	for _, fm := range fileMatches {
-		matches = append(matches, fm)
-	}
-
-	a.Send(streaming.SearchEvent{
-		Results: matches,
-		Stats:   stats,
-	})
-	return err
+	err = unindexed.StructuralSearch(ctx, args, a)
+	return errors.Wrap(err, "structural search failed")
 }
 
 func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextParameters) (err error) {
