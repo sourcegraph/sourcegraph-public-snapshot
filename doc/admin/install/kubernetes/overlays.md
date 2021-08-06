@@ -1,17 +1,16 @@
 # Overlays
 
-- [Overlays](#overlays)
-  - [Overlay basic principles](#overlay-basic-principles)
-  - [Handling overlays](#handling-overlays)
-  - [Git Strategies when using overlays to reduce conflicts](#git-strategies-with-overlays)
-    - [Steps](#general-steps)
-      - [Namespaced overlay](#namespaced-overlay)
-      - [Non-privileged create cluster overlay](#non-privileged-create-cluster-overlay)
-      - [Non-privileged overlay](#non-privileged-overlay)
-      - [Migrate-to-nonprivileged overlay](#migrate-to-nonprivileged-overlay)
-      - [minikube overlay](#minikube-overlay)
-    - [Upgrading Sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
-  - [Troubleshooting](#troubleshooting)
+- [Customizing your Sourcegraph Deployment](#customizing-your-sourcegraph-deployment)
+- [Overlay basic principles](#overlay-basic-principles)
+- [Handling overlays](#handling-overlays)
+- [General Steps](#general-steps)
+  - [Namespaced overlay](#namespaced-overlay)
+  - [Non-privileged create cluster overlay](#non-privileged-create-cluster-overlay)
+  - [Non-privileged overlay](#non-privileged-overlay)
+  - [Migrate-to-nonprivileged overlay](#migrate-to-nonprivileged-overlay)
+  - [minikube overlay](#minikube-overlay)
+- [Upgrading Sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
+- [Test](#test)
 
 ## Customizing your Sourcegraph Deployment
 
@@ -269,3 +268,12 @@ minikube stop
 # Troubleshooting
 
 See the [Troubleshooting docs](troubleshoot.md).
+
+## Test
+
+<!-- sg-doc-mirror begin -->
+<!-- sg-doc-mirror header-level=3 https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays -->
+
+hello world
+
+<!-- sg-doc-mirror end -->
