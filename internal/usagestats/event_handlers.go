@@ -76,7 +76,7 @@ type bigQueryEvent struct {
 	FeatureFlags    string  `json:"feature_flags"`
 	CohortID        *string `json:"cohort_id,omitempty"`
 	Referrer        string  `json:"referrer,omitempty"`
-	PublicArgument  string  `json:"publicArgument,omitempty"`
+	PublicArgument  string  `json:"public_argument"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
