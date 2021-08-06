@@ -102,7 +102,8 @@ To access the remote server using `sshuttle` from your local machine:
 sshuttle -r user@host 0/0
 ```
 
-## ENV Configuration
+## Environment variables
+
 Add the following to your docker run command:
 
 ```
