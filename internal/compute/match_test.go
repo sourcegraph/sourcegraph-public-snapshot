@@ -9,6 +9,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
+type serializer func(*Result) interface{}
+
+func match(r *Result) interface{} {
+	return r
+}
+
+func environment(r *Result) interface{} {
+	env := make(map[string]string)
+	for _, m := range r.Matches {
+		for k, v := range m.Environment {
+			env[k] = v.Value
+		}
+	}
+	return env
+}
+
 func TestOfLineMatches(t *testing.T) {
 	data := &result.FileMatch{
 		File: result.File{Path: "bedge"},
@@ -20,17 +36,22 @@ func TestOfLineMatches(t *testing.T) {
 		},
 	}
 
-	test := func(input string) string {
+	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
 		result := ofFileMatches(data, r)
-		v, _ := json.MarshalIndent(result, "", "  ")
+		v, _ := json.MarshalIndent(serialize(result), "", "  ")
 		return string(v)
 	}
 
 	autogold.Want("compute regexp submatch empty environment", `{
   "matches": [],
   "path": "bedge"
-}`).Equal(t, test("nothing"))
+}`).Equal(t, test("nothing", match))
+
+	autogold.Want("compute named regexp submatch", `{
+  "$1": "a",
+  "ThisIsNamed": "b"
+}`).Equal(t, test("(a)(?P<ThisIsNamed>b)", environment))
 
 	autogold.Want("compute regexp submatch nonempty environment", `{
   "matches": [
@@ -113,5 +134,5 @@ func TestOfLineMatches(t *testing.T) {
     }
   ],
   "path": "bedge"
-}`).Equal(t, test("a(b(c))(de)f(g)h"))
+}`).Equal(t, test("a(b(c))(de)f(g)h", match))
 }
