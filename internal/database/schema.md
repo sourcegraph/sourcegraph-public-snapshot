@@ -1691,13 +1691,12 @@ Foreign-key constraints:
 ------------+--------------------------+-----------+----------+------------------------------------------------
  id         | integer                  |           | not null | nextval('temporary_settings_id_seq'::regclass)
  user_id    | integer                  |           | not null | 
- contents   | text                     |           |          | 
+ contents   | jsonb                    |           |          | 
  created_at | timestamp with time zone |           | not null | now()
  updated_at | timestamp with time zone |           | not null | now()
 Indexes:
     "temporary_settings_pkey" PRIMARY KEY, btree (id)
     "temporary_settings_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
-    "temporary_settings_user_id" btree (user_id)
 Foreign-key constraints:
     "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
