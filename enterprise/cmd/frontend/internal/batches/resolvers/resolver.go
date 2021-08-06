@@ -1462,6 +1462,17 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
+func (r *Resolver) PreviewBatchSpecExecutionWorkspaces(ctx context.Context, args *graphqlbackend.PreviewBatchSpecExecutionWorkspacesArgs) ([]graphqlbackend.BatchSpecExecutionWorkspaceResolver, error) {
+	var resolvers []graphqlbackend.BatchSpecExecutionWorkspaceResolver
+
+	for i := 0; i < 5; i++ {
+		resolvers = append(resolvers, &batchSpecExecutionWorkspaceResolver{
+			workspacePath: "client/web",
+		})
+	}
+	return resolvers, nil
+}
+
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
 		return btypes.BatchChangeStateAny, nil

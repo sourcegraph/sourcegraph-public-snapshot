@@ -304,7 +304,7 @@ type BatchChangesResolver interface {
 
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
 
-	PreviewBatchSpecExecutionWorkspaces(ctx context.Context, args *PreviewBatchSpecExecutionWorkspacesArgs) (BatchSpecExecutionResolver, error)
+	PreviewBatchSpecExecutionWorkspaces(ctx context.Context, args *PreviewBatchSpecExecutionWorkspacesArgs) ([]BatchSpecExecutionWorkspaceResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -756,4 +756,10 @@ type BatchSpecExecutionStepsResolver interface {
 	Setup() []ExecutionLogEntryResolver
 	SrcPreview() ExecutionLogEntryResolver
 	Teardown() []ExecutionLogEntryResolver
+}
+
+type BatchSpecExecutionWorkspaceResolver interface {
+
+	Repository(ctx context.Context) *RepositoryResolver
+	Path() string
 }
