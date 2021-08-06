@@ -14,7 +14,7 @@ import { validRegexp } from './validators'
 interface DrillDownFiltersPanelProps {
     className?: string
     initialFiltersValue?: DrillDownFilters
-    onFiltersChange: (filters: FormChangeEvent<DrillDownFilters>) => void
+    onFiltersChange?: (filters: FormChangeEvent<DrillDownFilters>) => void
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
@@ -71,7 +71,6 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
             <FormInput
                 as={DrillDownRegExpInput}
                 autoFocus={true}
-                autofocus={true}
                 prefix="repo:"
                 title={
                     <LabelWithReset onReset={() => includeRegex.input.onChange('')}>

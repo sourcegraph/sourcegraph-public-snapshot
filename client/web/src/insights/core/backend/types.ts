@@ -54,6 +54,11 @@ export interface DataSeries {
     query: string
 }
 
+export interface BackendInsightFilters {
+    excludeRepoRegexp: string
+    includeRepoRegexp: string
+}
+
 export interface LangStatsInsightsSettings {
     /**
      * URL of git repository from which statistics will be collected
@@ -85,7 +90,7 @@ export interface ApiService {
      *
      * @param id - insight id
      */
-    getBackendInsightById: (id: string) => Observable<BackendInsightData>
+    getBackendInsightById: (id: string, filters?: BackendInsightFilters) => Observable<BackendInsightData>
 
     /**
      * Returns resolved extension provider result by extension view id via extension API.

@@ -1,6 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
+import { delay } from 'rxjs/operators'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -28,21 +29,22 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
 }
 
 const mockInsightAPI = createMockInsightAPI({
-    getBackendInsightById: (id: string) =>
-        of({
+    getBackendInsightById: (id: string, filters) => {
+        console.log('RUN API WITH', filters)
+        return of({
             id,
             view: {
                 title: 'Backend Insight Mock',
                 subtitle: 'Backend insight description text',
                 content: [LINE_CHART_CONTENT_MOCK],
             },
-        }),
+        }).pipe(delay(2000))
+    },
 })
 
 add('Backend Insight Card', () => (
     <InsightsApiContext.Provider value={mockInsightAPI}>
         <BackendInsight
-            drilldown={true}
             style={{ width: 400, height: 400 }}
             insight={INSIGHT_CONFIGURATION_MOCK}
             settingsCascade={SETTINGS_CASCADE}
