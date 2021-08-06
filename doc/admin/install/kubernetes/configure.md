@@ -613,7 +613,7 @@ Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL
 
 Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
 other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace (as described in our [Overlays docs](overlays.md) or below in the
+then we recommend running Sourcegraph in a namespace (as described in our [Overlays guide](#overlays) or below in the
 [Using NetworkPolicy with Namespaced Overlay Example](#using-networkpolicy-with-namespaced-overlay)).
 You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
 When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
