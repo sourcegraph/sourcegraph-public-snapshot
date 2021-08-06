@@ -51,6 +51,29 @@ func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissi
 	return zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, onMissing)
 }
 
+// newSearchers constructs searcher jobs (represented as functions) for indexed and
+// unindexed search backend invocations which may run in separate Go routines.
+// It expects an input function `searcher` which may be parameterized by the
+// repositories to search, and whether the search job operates on indexed or
+// unindexed repositories.
+func newStructuralSearchers(mode search.GlobalSearchMode, indexed *zoektutil.IndexedSearchRequest, searcher func([]*search.RepositoryRevisions, bool) error) []func() error {
+	fns := []func() error{}
+	if mode != search.SearcherOnly {
+		// Add a structural search job for indexed repositories (fulfilled via searcher).
+		fns = append(fns,
+			func() error {
+				repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
+				for _, repo := range indexed.Repos() {
+					repos = append(repos, repo)
+				}
+				return searcher(repos, true)
+			})
+	}
+	// Add a structural search job for unindexed repositories.
+	fns = append(fns, func() error { return searcher(indexed.Unindexed, false) })
+	return fns
+}
+
 // StructuralSearchFilesInRepos searches a set of repos for a structural pattern.
 func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
@@ -60,25 +83,15 @@ func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParamete
 	if err != nil {
 		return err
 	}
-
 	g, ctx := errgroup.WithContext(ctx)
 
-	if args.Mode != search.SearcherOnly {
-		// Run structural search on indexed repositories (fulfilled via searcher).
-		g.Go(func() error {
-			repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
-			for _, repo := range indexed.Repos() {
-				repos = append(repos, repo)
-			}
-			return callSearcherOverRepos(ctx, args, stream, repos, true)
-		})
+	searcher := func(repos []*search.RepositoryRevisions, indexed bool) error {
+		return callSearcherOverRepos(ctx, args, stream, repos, indexed)
 	}
 
-	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
-	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
-	})
-
+	for _, job := range newStructuralSearchers(args.Mode, indexed, searcher) {
+		g.Go(job)
+	}
 	return g.Wait()
 }
 
