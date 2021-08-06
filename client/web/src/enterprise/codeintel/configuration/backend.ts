@@ -70,17 +70,17 @@ export function updateConfiguration({ id, content }: { id: string; content: stri
     )
 }
 
-export function enqueueIndexJob(id: string): Observable<void> {
+export function enqueueIndexJob(id: string, revision: string): Observable<void> {
     const query = gql`
-        mutation QueueAutoIndexJobForRepo($id: ID!) {
-            queueAutoIndexJobForRepo(repository: $id) {
+        mutation QueueAutoIndexJobForRepo($id: ID!, $rev: String) {
+            queueAutoIndexJobForRepo(repository: $id, rev: $rev) {
                 alwaysNil
             }
         }
     `
 
-    return requestGraphQL<QueueAutoIndexJobForRepoResult, QueueAutoIndexJobForRepoVariables>(query, { id }).pipe(
-        map(dataOrThrowErrors),
-        mapTo(undefined)
-    )
+    return requestGraphQL<QueueAutoIndexJobForRepoResult, QueueAutoIndexJobForRepoVariables>(query, {
+        id,
+        rev: revision,
+    }).pipe(map(dataOrThrowErrors), mapTo(undefined))
 }

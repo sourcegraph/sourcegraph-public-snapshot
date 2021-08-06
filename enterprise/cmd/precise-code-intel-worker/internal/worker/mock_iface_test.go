@@ -9,7 +9,7 @@ import (
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -98,12 +98,12 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		UpdatePackageReferencesFunc: &DBStoreUpdatePackageReferencesFunc{
-			defaultHook: func(context.Context, int, []semantic.PackageReference) error {
+			defaultHook: func(context.Context, int, []precise.PackageReference) error {
 				return nil
 			},
 		},
 		UpdatePackagesFunc: &DBStoreUpdatePackagesFunc{
-			defaultHook: func(context.Context, int, []semantic.Package) error {
+			defaultHook: func(context.Context, int, []precise.Package) error {
 				return nil
 			},
 		},
@@ -1018,15 +1018,15 @@ func (c DBStoreUpdateCommitedAtFuncCall) Results() []interface{} {
 // UpdatePackageReferences method of the parent MockDBStore instance is
 // invoked.
 type DBStoreUpdatePackageReferencesFunc struct {
-	defaultHook func(context.Context, int, []semantic.PackageReference) error
-	hooks       []func(context.Context, int, []semantic.PackageReference) error
+	defaultHook func(context.Context, int, []precise.PackageReference) error
+	hooks       []func(context.Context, int, []precise.PackageReference) error
 	history     []DBStoreUpdatePackageReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackageReferences delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) UpdatePackageReferences(v0 context.Context, v1 int, v2 []semantic.PackageReference) error {
+func (m *MockDBStore) UpdatePackageReferences(v0 context.Context, v1 int, v2 []precise.PackageReference) error {
 	r0 := m.UpdatePackageReferencesFunc.nextHook()(v0, v1, v2)
 	m.UpdatePackageReferencesFunc.appendCall(DBStoreUpdatePackageReferencesFuncCall{v0, v1, v2, r0})
 	return r0
@@ -1035,7 +1035,7 @@ func (m *MockDBStore) UpdatePackageReferences(v0 context.Context, v1 int, v2 []s
 // SetDefaultHook sets function that is called when the
 // UpdatePackageReferences method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, int, []semantic.PackageReference) error) {
+func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, int, []precise.PackageReference) error) {
 	f.defaultHook = hook
 }
 
@@ -1043,7 +1043,7 @@ func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Co
 // UpdatePackageReferences method of the parent MockDBStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context, int, []semantic.PackageReference) error) {
+func (f *DBStoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context, int, []precise.PackageReference) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1052,7 +1052,7 @@ func (f *DBStoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, []semantic.PackageReference) error {
+	f.SetDefaultHook(func(context.Context, int, []precise.PackageReference) error {
 		return r0
 	})
 }
@@ -1060,12 +1060,12 @@ func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreUpdatePackageReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, []semantic.PackageReference) error {
+	f.PushHook(func(context.Context, int, []precise.PackageReference) error {
 		return r0
 	})
 }
 
-func (f *DBStoreUpdatePackageReferencesFunc) nextHook() func(context.Context, int, []semantic.PackageReference) error {
+func (f *DBStoreUpdatePackageReferencesFunc) nextHook() func(context.Context, int, []precise.PackageReference) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1107,7 +1107,7 @@ type DBStoreUpdatePackageReferencesFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 []semantic.PackageReference
+	Arg2 []precise.PackageReference
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1128,15 +1128,15 @@ func (c DBStoreUpdatePackageReferencesFuncCall) Results() []interface{} {
 // DBStoreUpdatePackagesFunc describes the behavior when the UpdatePackages
 // method of the parent MockDBStore instance is invoked.
 type DBStoreUpdatePackagesFunc struct {
-	defaultHook func(context.Context, int, []semantic.Package) error
-	hooks       []func(context.Context, int, []semantic.Package) error
+	defaultHook func(context.Context, int, []precise.Package) error
+	hooks       []func(context.Context, int, []precise.Package) error
 	history     []DBStoreUpdatePackagesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackages delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDBStore) UpdatePackages(v0 context.Context, v1 int, v2 []semantic.Package) error {
+func (m *MockDBStore) UpdatePackages(v0 context.Context, v1 int, v2 []precise.Package) error {
 	r0 := m.UpdatePackagesFunc.nextHook()(v0, v1, v2)
 	m.UpdatePackagesFunc.appendCall(DBStoreUpdatePackagesFuncCall{v0, v1, v2, r0})
 	return r0
@@ -1145,7 +1145,7 @@ func (m *MockDBStore) UpdatePackages(v0 context.Context, v1 int, v2 []semantic.P
 // SetDefaultHook sets function that is called when the UpdatePackages
 // method of the parent MockDBStore instance is invoked and the hook queue
 // is empty.
-func (f *DBStoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, int, []semantic.Package) error) {
+func (f *DBStoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, int, []precise.Package) error) {
 	f.defaultHook = hook
 }
 
@@ -1153,7 +1153,7 @@ func (f *DBStoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, in
 // UpdatePackages method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreUpdatePackagesFunc) PushHook(hook func(context.Context, int, []semantic.Package) error) {
+func (f *DBStoreUpdatePackagesFunc) PushHook(hook func(context.Context, int, []precise.Package) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1162,7 +1162,7 @@ func (f *DBStoreUpdatePackagesFunc) PushHook(hook func(context.Context, int, []s
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreUpdatePackagesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, []semantic.Package) error {
+	f.SetDefaultHook(func(context.Context, int, []precise.Package) error {
 		return r0
 	})
 }
@@ -1170,12 +1170,12 @@ func (f *DBStoreUpdatePackagesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreUpdatePackagesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, []semantic.Package) error {
+	f.PushHook(func(context.Context, int, []precise.Package) error {
 		return r0
 	})
 }
 
-func (f *DBStoreUpdatePackagesFunc) nextHook() func(context.Context, int, []semantic.Package) error {
+func (f *DBStoreUpdatePackagesFunc) nextHook() func(context.Context, int, []precise.Package) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1216,7 +1216,7 @@ type DBStoreUpdatePackagesFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 []semantic.Package
+	Arg2 []precise.Package
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1790,42 +1790,42 @@ func NewMockLSIFStore() *MockLSIFStore {
 			},
 		},
 		WriteDefinitionsFunc: &LSIFStoreWriteDefinitionsFunc{
-			defaultHook: func(context.Context, int, chan semantic.MonikerLocations) error {
+			defaultHook: func(context.Context, int, chan precise.MonikerLocations) error {
 				return nil
 			},
 		},
 		WriteDocumentationMappingsFunc: &LSIFStoreWriteDocumentationMappingsFunc{
-			defaultHook: func(context.Context, int, chan semantic.DocumentationMapping) error {
+			defaultHook: func(context.Context, int, chan precise.DocumentationMapping) error {
 				return nil
 			},
 		},
 		WriteDocumentationPagesFunc: &LSIFStoreWriteDocumentationPagesFunc{
-			defaultHook: func(context.Context, int, chan *semantic.DocumentationPageData) error {
+			defaultHook: func(context.Context, int, chan *precise.DocumentationPageData) error {
 				return nil
 			},
 		},
 		WriteDocumentationPathInfoFunc: &LSIFStoreWriteDocumentationPathInfoFunc{
-			defaultHook: func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
+			defaultHook: func(context.Context, int, chan *precise.DocumentationPathInfoData) error {
 				return nil
 			},
 		},
 		WriteDocumentsFunc: &LSIFStoreWriteDocumentsFunc{
-			defaultHook: func(context.Context, int, chan semantic.KeyedDocumentData) error {
+			defaultHook: func(context.Context, int, chan precise.KeyedDocumentData) error {
 				return nil
 			},
 		},
 		WriteMetaFunc: &LSIFStoreWriteMetaFunc{
-			defaultHook: func(context.Context, int, semantic.MetaData) error {
+			defaultHook: func(context.Context, int, precise.MetaData) error {
 				return nil
 			},
 		},
 		WriteReferencesFunc: &LSIFStoreWriteReferencesFunc{
-			defaultHook: func(context.Context, int, chan semantic.MonikerLocations) error {
+			defaultHook: func(context.Context, int, chan precise.MonikerLocations) error {
 				return nil
 			},
 		},
 		WriteResultChunksFunc: &LSIFStoreWriteResultChunksFunc{
-			defaultHook: func(context.Context, int, chan semantic.IndexedResultChunkData) error {
+			defaultHook: func(context.Context, int, chan precise.IndexedResultChunkData) error {
 				return nil
 			},
 		},
@@ -2079,15 +2079,15 @@ func (c LSIFStoreTransactFuncCall) Results() []interface{} {
 // LSIFStoreWriteDefinitionsFunc describes the behavior when the
 // WriteDefinitions method of the parent MockLSIFStore instance is invoked.
 type LSIFStoreWriteDefinitionsFunc struct {
-	defaultHook func(context.Context, int, chan semantic.MonikerLocations) error
-	hooks       []func(context.Context, int, chan semantic.MonikerLocations) error
+	defaultHook func(context.Context, int, chan precise.MonikerLocations) error
+	hooks       []func(context.Context, int, chan precise.MonikerLocations) error
 	history     []LSIFStoreWriteDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteDefinitions(v0 context.Context, v1 int, v2 chan semantic.MonikerLocations) error {
+func (m *MockLSIFStore) WriteDefinitions(v0 context.Context, v1 int, v2 chan precise.MonikerLocations) error {
 	r0 := m.WriteDefinitionsFunc.nextHook()(v0, v1, v2)
 	m.WriteDefinitionsFunc.appendCall(LSIFStoreWriteDefinitionsFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2096,7 +2096,7 @@ func (m *MockLSIFStore) WriteDefinitions(v0 context.Context, v1 int, v2 chan sem
 // SetDefaultHook sets function that is called when the WriteDefinitions
 // method of the parent MockLSIFStore instance is invoked and the hook queue
 // is empty.
-func (f *LSIFStoreWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, chan semantic.MonikerLocations) error) {
+func (f *LSIFStoreWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, chan precise.MonikerLocations) error) {
 	f.defaultHook = hook
 }
 
@@ -2104,7 +2104,7 @@ func (f *LSIFStoreWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context
 // WriteDefinitions method of the parent MockLSIFStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LSIFStoreWriteDefinitionsFunc) PushHook(hook func(context.Context, int, chan semantic.MonikerLocations) error) {
+func (f *LSIFStoreWriteDefinitionsFunc) PushHook(hook func(context.Context, int, chan precise.MonikerLocations) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2113,7 +2113,7 @@ func (f *LSIFStoreWriteDefinitionsFunc) PushHook(hook func(context.Context, int,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteDefinitionsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan semantic.MonikerLocations) error {
+	f.SetDefaultHook(func(context.Context, int, chan precise.MonikerLocations) error {
 		return r0
 	})
 }
@@ -2121,12 +2121,12 @@ func (f *LSIFStoreWriteDefinitionsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteDefinitionsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan semantic.MonikerLocations) error {
+	f.PushHook(func(context.Context, int, chan precise.MonikerLocations) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteDefinitionsFunc) nextHook() func(context.Context, int, chan semantic.MonikerLocations) error {
+func (f *LSIFStoreWriteDefinitionsFunc) nextHook() func(context.Context, int, chan precise.MonikerLocations) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2167,7 +2167,7 @@ type LSIFStoreWriteDefinitionsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan semantic.MonikerLocations
+	Arg2 chan precise.MonikerLocations
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2189,15 +2189,15 @@ func (c LSIFStoreWriteDefinitionsFuncCall) Results() []interface{} {
 // WriteDocumentationMappings method of the parent MockLSIFStore instance is
 // invoked.
 type LSIFStoreWriteDocumentationMappingsFunc struct {
-	defaultHook func(context.Context, int, chan semantic.DocumentationMapping) error
-	hooks       []func(context.Context, int, chan semantic.DocumentationMapping) error
+	defaultHook func(context.Context, int, chan precise.DocumentationMapping) error
+	hooks       []func(context.Context, int, chan precise.DocumentationMapping) error
 	history     []LSIFStoreWriteDocumentationMappingsFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDocumentationMappings delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteDocumentationMappings(v0 context.Context, v1 int, v2 chan semantic.DocumentationMapping) error {
+func (m *MockLSIFStore) WriteDocumentationMappings(v0 context.Context, v1 int, v2 chan precise.DocumentationMapping) error {
 	r0 := m.WriteDocumentationMappingsFunc.nextHook()(v0, v1, v2)
 	m.WriteDocumentationMappingsFunc.appendCall(LSIFStoreWriteDocumentationMappingsFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2206,7 +2206,7 @@ func (m *MockLSIFStore) WriteDocumentationMappings(v0 context.Context, v1 int, v
 // SetDefaultHook sets function that is called when the
 // WriteDocumentationMappings method of the parent MockLSIFStore instance is
 // invoked and the hook queue is empty.
-func (f *LSIFStoreWriteDocumentationMappingsFunc) SetDefaultHook(hook func(context.Context, int, chan semantic.DocumentationMapping) error) {
+func (f *LSIFStoreWriteDocumentationMappingsFunc) SetDefaultHook(hook func(context.Context, int, chan precise.DocumentationMapping) error) {
 	f.defaultHook = hook
 }
 
@@ -2215,7 +2215,7 @@ func (f *LSIFStoreWriteDocumentationMappingsFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LSIFStoreWriteDocumentationMappingsFunc) PushHook(hook func(context.Context, int, chan semantic.DocumentationMapping) error) {
+func (f *LSIFStoreWriteDocumentationMappingsFunc) PushHook(hook func(context.Context, int, chan precise.DocumentationMapping) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2224,7 +2224,7 @@ func (f *LSIFStoreWriteDocumentationMappingsFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteDocumentationMappingsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan semantic.DocumentationMapping) error {
+	f.SetDefaultHook(func(context.Context, int, chan precise.DocumentationMapping) error {
 		return r0
 	})
 }
@@ -2232,12 +2232,12 @@ func (f *LSIFStoreWriteDocumentationMappingsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteDocumentationMappingsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan semantic.DocumentationMapping) error {
+	f.PushHook(func(context.Context, int, chan precise.DocumentationMapping) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteDocumentationMappingsFunc) nextHook() func(context.Context, int, chan semantic.DocumentationMapping) error {
+func (f *LSIFStoreWriteDocumentationMappingsFunc) nextHook() func(context.Context, int, chan precise.DocumentationMapping) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2279,7 +2279,7 @@ type LSIFStoreWriteDocumentationMappingsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan semantic.DocumentationMapping
+	Arg2 chan precise.DocumentationMapping
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2301,15 +2301,15 @@ func (c LSIFStoreWriteDocumentationMappingsFuncCall) Results() []interface{} {
 // WriteDocumentationPages method of the parent MockLSIFStore instance is
 // invoked.
 type LSIFStoreWriteDocumentationPagesFunc struct {
-	defaultHook func(context.Context, int, chan *semantic.DocumentationPageData) error
-	hooks       []func(context.Context, int, chan *semantic.DocumentationPageData) error
+	defaultHook func(context.Context, int, chan *precise.DocumentationPageData) error
+	hooks       []func(context.Context, int, chan *precise.DocumentationPageData) error
 	history     []LSIFStoreWriteDocumentationPagesFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDocumentationPages delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteDocumentationPages(v0 context.Context, v1 int, v2 chan *semantic.DocumentationPageData) error {
+func (m *MockLSIFStore) WriteDocumentationPages(v0 context.Context, v1 int, v2 chan *precise.DocumentationPageData) error {
 	r0 := m.WriteDocumentationPagesFunc.nextHook()(v0, v1, v2)
 	m.WriteDocumentationPagesFunc.appendCall(LSIFStoreWriteDocumentationPagesFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2318,7 +2318,7 @@ func (m *MockLSIFStore) WriteDocumentationPages(v0 context.Context, v1 int, v2 c
 // SetDefaultHook sets function that is called when the
 // WriteDocumentationPages method of the parent MockLSIFStore instance is
 // invoked and the hook queue is empty.
-func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultHook(hook func(context.Context, int, chan *semantic.DocumentationPageData) error) {
+func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultHook(hook func(context.Context, int, chan *precise.DocumentationPageData) error) {
 	f.defaultHook = hook
 }
 
@@ -2327,7 +2327,7 @@ func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LSIFStoreWriteDocumentationPagesFunc) PushHook(hook func(context.Context, int, chan *semantic.DocumentationPageData) error) {
+func (f *LSIFStoreWriteDocumentationPagesFunc) PushHook(hook func(context.Context, int, chan *precise.DocumentationPageData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2336,7 +2336,7 @@ func (f *LSIFStoreWriteDocumentationPagesFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan *semantic.DocumentationPageData) error {
+	f.SetDefaultHook(func(context.Context, int, chan *precise.DocumentationPageData) error {
 		return r0
 	})
 }
@@ -2344,12 +2344,12 @@ func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteDocumentationPagesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan *semantic.DocumentationPageData) error {
+	f.PushHook(func(context.Context, int, chan *precise.DocumentationPageData) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteDocumentationPagesFunc) nextHook() func(context.Context, int, chan *semantic.DocumentationPageData) error {
+func (f *LSIFStoreWriteDocumentationPagesFunc) nextHook() func(context.Context, int, chan *precise.DocumentationPageData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2391,7 +2391,7 @@ type LSIFStoreWriteDocumentationPagesFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan *semantic.DocumentationPageData
+	Arg2 chan *precise.DocumentationPageData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2413,15 +2413,15 @@ func (c LSIFStoreWriteDocumentationPagesFuncCall) Results() []interface{} {
 // WriteDocumentationPathInfo method of the parent MockLSIFStore instance is
 // invoked.
 type LSIFStoreWriteDocumentationPathInfoFunc struct {
-	defaultHook func(context.Context, int, chan *semantic.DocumentationPathInfoData) error
-	hooks       []func(context.Context, int, chan *semantic.DocumentationPathInfoData) error
+	defaultHook func(context.Context, int, chan *precise.DocumentationPathInfoData) error
+	hooks       []func(context.Context, int, chan *precise.DocumentationPathInfoData) error
 	history     []LSIFStoreWriteDocumentationPathInfoFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDocumentationPathInfo delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteDocumentationPathInfo(v0 context.Context, v1 int, v2 chan *semantic.DocumentationPathInfoData) error {
+func (m *MockLSIFStore) WriteDocumentationPathInfo(v0 context.Context, v1 int, v2 chan *precise.DocumentationPathInfoData) error {
 	r0 := m.WriteDocumentationPathInfoFunc.nextHook()(v0, v1, v2)
 	m.WriteDocumentationPathInfoFunc.appendCall(LSIFStoreWriteDocumentationPathInfoFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2430,7 +2430,7 @@ func (m *MockLSIFStore) WriteDocumentationPathInfo(v0 context.Context, v1 int, v
 // SetDefaultHook sets function that is called when the
 // WriteDocumentationPathInfo method of the parent MockLSIFStore instance is
 // invoked and the hook queue is empty.
-func (f *LSIFStoreWriteDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, int, chan *semantic.DocumentationPathInfoData) error) {
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, int, chan *precise.DocumentationPathInfoData) error) {
 	f.defaultHook = hook
 }
 
@@ -2439,7 +2439,7 @@ func (f *LSIFStoreWriteDocumentationPathInfoFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LSIFStoreWriteDocumentationPathInfoFunc) PushHook(hook func(context.Context, int, chan *semantic.DocumentationPathInfoData) error) {
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) PushHook(hook func(context.Context, int, chan *precise.DocumentationPathInfoData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2448,7 +2448,7 @@ func (f *LSIFStoreWriteDocumentationPathInfoFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteDocumentationPathInfoFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
+	f.SetDefaultHook(func(context.Context, int, chan *precise.DocumentationPathInfoData) error {
 		return r0
 	})
 }
@@ -2456,12 +2456,12 @@ func (f *LSIFStoreWriteDocumentationPathInfoFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteDocumentationPathInfoFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
+	f.PushHook(func(context.Context, int, chan *precise.DocumentationPathInfoData) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteDocumentationPathInfoFunc) nextHook() func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) nextHook() func(context.Context, int, chan *precise.DocumentationPathInfoData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2503,7 +2503,7 @@ type LSIFStoreWriteDocumentationPathInfoFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan *semantic.DocumentationPathInfoData
+	Arg2 chan *precise.DocumentationPathInfoData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2524,15 +2524,15 @@ func (c LSIFStoreWriteDocumentationPathInfoFuncCall) Results() []interface{} {
 // LSIFStoreWriteDocumentsFunc describes the behavior when the
 // WriteDocuments method of the parent MockLSIFStore instance is invoked.
 type LSIFStoreWriteDocumentsFunc struct {
-	defaultHook func(context.Context, int, chan semantic.KeyedDocumentData) error
-	hooks       []func(context.Context, int, chan semantic.KeyedDocumentData) error
+	defaultHook func(context.Context, int, chan precise.KeyedDocumentData) error
+	hooks       []func(context.Context, int, chan precise.KeyedDocumentData) error
 	history     []LSIFStoreWriteDocumentsFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDocuments delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteDocuments(v0 context.Context, v1 int, v2 chan semantic.KeyedDocumentData) error {
+func (m *MockLSIFStore) WriteDocuments(v0 context.Context, v1 int, v2 chan precise.KeyedDocumentData) error {
 	r0 := m.WriteDocumentsFunc.nextHook()(v0, v1, v2)
 	m.WriteDocumentsFunc.appendCall(LSIFStoreWriteDocumentsFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2541,7 +2541,7 @@ func (m *MockLSIFStore) WriteDocuments(v0 context.Context, v1 int, v2 chan seman
 // SetDefaultHook sets function that is called when the WriteDocuments
 // method of the parent MockLSIFStore instance is invoked and the hook queue
 // is empty.
-func (f *LSIFStoreWriteDocumentsFunc) SetDefaultHook(hook func(context.Context, int, chan semantic.KeyedDocumentData) error) {
+func (f *LSIFStoreWriteDocumentsFunc) SetDefaultHook(hook func(context.Context, int, chan precise.KeyedDocumentData) error) {
 	f.defaultHook = hook
 }
 
@@ -2549,7 +2549,7 @@ func (f *LSIFStoreWriteDocumentsFunc) SetDefaultHook(hook func(context.Context, 
 // WriteDocuments method of the parent MockLSIFStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LSIFStoreWriteDocumentsFunc) PushHook(hook func(context.Context, int, chan semantic.KeyedDocumentData) error) {
+func (f *LSIFStoreWriteDocumentsFunc) PushHook(hook func(context.Context, int, chan precise.KeyedDocumentData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2558,7 +2558,7 @@ func (f *LSIFStoreWriteDocumentsFunc) PushHook(hook func(context.Context, int, c
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteDocumentsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan semantic.KeyedDocumentData) error {
+	f.SetDefaultHook(func(context.Context, int, chan precise.KeyedDocumentData) error {
 		return r0
 	})
 }
@@ -2566,12 +2566,12 @@ func (f *LSIFStoreWriteDocumentsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteDocumentsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan semantic.KeyedDocumentData) error {
+	f.PushHook(func(context.Context, int, chan precise.KeyedDocumentData) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteDocumentsFunc) nextHook() func(context.Context, int, chan semantic.KeyedDocumentData) error {
+func (f *LSIFStoreWriteDocumentsFunc) nextHook() func(context.Context, int, chan precise.KeyedDocumentData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2612,7 +2612,7 @@ type LSIFStoreWriteDocumentsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan semantic.KeyedDocumentData
+	Arg2 chan precise.KeyedDocumentData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2633,15 +2633,15 @@ func (c LSIFStoreWriteDocumentsFuncCall) Results() []interface{} {
 // LSIFStoreWriteMetaFunc describes the behavior when the WriteMeta method
 // of the parent MockLSIFStore instance is invoked.
 type LSIFStoreWriteMetaFunc struct {
-	defaultHook func(context.Context, int, semantic.MetaData) error
-	hooks       []func(context.Context, int, semantic.MetaData) error
+	defaultHook func(context.Context, int, precise.MetaData) error
+	hooks       []func(context.Context, int, precise.MetaData) error
 	history     []LSIFStoreWriteMetaFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteMeta delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteMeta(v0 context.Context, v1 int, v2 semantic.MetaData) error {
+func (m *MockLSIFStore) WriteMeta(v0 context.Context, v1 int, v2 precise.MetaData) error {
 	r0 := m.WriteMetaFunc.nextHook()(v0, v1, v2)
 	m.WriteMetaFunc.appendCall(LSIFStoreWriteMetaFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2649,7 +2649,7 @@ func (m *MockLSIFStore) WriteMeta(v0 context.Context, v1 int, v2 semantic.MetaDa
 
 // SetDefaultHook sets function that is called when the WriteMeta method of
 // the parent MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreWriteMetaFunc) SetDefaultHook(hook func(context.Context, int, semantic.MetaData) error) {
+func (f *LSIFStoreWriteMetaFunc) SetDefaultHook(hook func(context.Context, int, precise.MetaData) error) {
 	f.defaultHook = hook
 }
 
@@ -2657,7 +2657,7 @@ func (f *LSIFStoreWriteMetaFunc) SetDefaultHook(hook func(context.Context, int, 
 // WriteMeta method of the parent MockLSIFStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LSIFStoreWriteMetaFunc) PushHook(hook func(context.Context, int, semantic.MetaData) error) {
+func (f *LSIFStoreWriteMetaFunc) PushHook(hook func(context.Context, int, precise.MetaData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2666,7 +2666,7 @@ func (f *LSIFStoreWriteMetaFunc) PushHook(hook func(context.Context, int, semant
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteMetaFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, semantic.MetaData) error {
+	f.SetDefaultHook(func(context.Context, int, precise.MetaData) error {
 		return r0
 	})
 }
@@ -2674,12 +2674,12 @@ func (f *LSIFStoreWriteMetaFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteMetaFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, semantic.MetaData) error {
+	f.PushHook(func(context.Context, int, precise.MetaData) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteMetaFunc) nextHook() func(context.Context, int, semantic.MetaData) error {
+func (f *LSIFStoreWriteMetaFunc) nextHook() func(context.Context, int, precise.MetaData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2720,7 +2720,7 @@ type LSIFStoreWriteMetaFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 semantic.MetaData
+	Arg2 precise.MetaData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2741,15 +2741,15 @@ func (c LSIFStoreWriteMetaFuncCall) Results() []interface{} {
 // LSIFStoreWriteReferencesFunc describes the behavior when the
 // WriteReferences method of the parent MockLSIFStore instance is invoked.
 type LSIFStoreWriteReferencesFunc struct {
-	defaultHook func(context.Context, int, chan semantic.MonikerLocations) error
-	hooks       []func(context.Context, int, chan semantic.MonikerLocations) error
+	defaultHook func(context.Context, int, chan precise.MonikerLocations) error
+	hooks       []func(context.Context, int, chan precise.MonikerLocations) error
 	history     []LSIFStoreWriteReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteReferences delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteReferences(v0 context.Context, v1 int, v2 chan semantic.MonikerLocations) error {
+func (m *MockLSIFStore) WriteReferences(v0 context.Context, v1 int, v2 chan precise.MonikerLocations) error {
 	r0 := m.WriteReferencesFunc.nextHook()(v0, v1, v2)
 	m.WriteReferencesFunc.appendCall(LSIFStoreWriteReferencesFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2758,7 +2758,7 @@ func (m *MockLSIFStore) WriteReferences(v0 context.Context, v1 int, v2 chan sema
 // SetDefaultHook sets function that is called when the WriteReferences
 // method of the parent MockLSIFStore instance is invoked and the hook queue
 // is empty.
-func (f *LSIFStoreWriteReferencesFunc) SetDefaultHook(hook func(context.Context, int, chan semantic.MonikerLocations) error) {
+func (f *LSIFStoreWriteReferencesFunc) SetDefaultHook(hook func(context.Context, int, chan precise.MonikerLocations) error) {
 	f.defaultHook = hook
 }
 
@@ -2766,7 +2766,7 @@ func (f *LSIFStoreWriteReferencesFunc) SetDefaultHook(hook func(context.Context,
 // WriteReferences method of the parent MockLSIFStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LSIFStoreWriteReferencesFunc) PushHook(hook func(context.Context, int, chan semantic.MonikerLocations) error) {
+func (f *LSIFStoreWriteReferencesFunc) PushHook(hook func(context.Context, int, chan precise.MonikerLocations) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2775,7 +2775,7 @@ func (f *LSIFStoreWriteReferencesFunc) PushHook(hook func(context.Context, int, 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan semantic.MonikerLocations) error {
+	f.SetDefaultHook(func(context.Context, int, chan precise.MonikerLocations) error {
 		return r0
 	})
 }
@@ -2783,12 +2783,12 @@ func (f *LSIFStoreWriteReferencesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan semantic.MonikerLocations) error {
+	f.PushHook(func(context.Context, int, chan precise.MonikerLocations) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteReferencesFunc) nextHook() func(context.Context, int, chan semantic.MonikerLocations) error {
+func (f *LSIFStoreWriteReferencesFunc) nextHook() func(context.Context, int, chan precise.MonikerLocations) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2829,7 +2829,7 @@ type LSIFStoreWriteReferencesFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan semantic.MonikerLocations
+	Arg2 chan precise.MonikerLocations
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2850,15 +2850,15 @@ func (c LSIFStoreWriteReferencesFuncCall) Results() []interface{} {
 // LSIFStoreWriteResultChunksFunc describes the behavior when the
 // WriteResultChunks method of the parent MockLSIFStore instance is invoked.
 type LSIFStoreWriteResultChunksFunc struct {
-	defaultHook func(context.Context, int, chan semantic.IndexedResultChunkData) error
-	hooks       []func(context.Context, int, chan semantic.IndexedResultChunkData) error
+	defaultHook func(context.Context, int, chan precise.IndexedResultChunkData) error
+	hooks       []func(context.Context, int, chan precise.IndexedResultChunkData) error
 	history     []LSIFStoreWriteResultChunksFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteResultChunks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteResultChunks(v0 context.Context, v1 int, v2 chan semantic.IndexedResultChunkData) error {
+func (m *MockLSIFStore) WriteResultChunks(v0 context.Context, v1 int, v2 chan precise.IndexedResultChunkData) error {
 	r0 := m.WriteResultChunksFunc.nextHook()(v0, v1, v2)
 	m.WriteResultChunksFunc.appendCall(LSIFStoreWriteResultChunksFuncCall{v0, v1, v2, r0})
 	return r0
@@ -2867,7 +2867,7 @@ func (m *MockLSIFStore) WriteResultChunks(v0 context.Context, v1 int, v2 chan se
 // SetDefaultHook sets function that is called when the WriteResultChunks
 // method of the parent MockLSIFStore instance is invoked and the hook queue
 // is empty.
-func (f *LSIFStoreWriteResultChunksFunc) SetDefaultHook(hook func(context.Context, int, chan semantic.IndexedResultChunkData) error) {
+func (f *LSIFStoreWriteResultChunksFunc) SetDefaultHook(hook func(context.Context, int, chan precise.IndexedResultChunkData) error) {
 	f.defaultHook = hook
 }
 
@@ -2875,7 +2875,7 @@ func (f *LSIFStoreWriteResultChunksFunc) SetDefaultHook(hook func(context.Contex
 // WriteResultChunks method of the parent MockLSIFStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LSIFStoreWriteResultChunksFunc) PushHook(hook func(context.Context, int, chan semantic.IndexedResultChunkData) error) {
+func (f *LSIFStoreWriteResultChunksFunc) PushHook(hook func(context.Context, int, chan precise.IndexedResultChunkData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2884,7 +2884,7 @@ func (f *LSIFStoreWriteResultChunksFunc) PushHook(hook func(context.Context, int
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteResultChunksFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan semantic.IndexedResultChunkData) error {
+	f.SetDefaultHook(func(context.Context, int, chan precise.IndexedResultChunkData) error {
 		return r0
 	})
 }
@@ -2892,12 +2892,12 @@ func (f *LSIFStoreWriteResultChunksFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteResultChunksFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan semantic.IndexedResultChunkData) error {
+	f.PushHook(func(context.Context, int, chan precise.IndexedResultChunkData) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteResultChunksFunc) nextHook() func(context.Context, int, chan semantic.IndexedResultChunkData) error {
+func (f *LSIFStoreWriteResultChunksFunc) nextHook() func(context.Context, int, chan precise.IndexedResultChunkData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2938,7 +2938,7 @@ type LSIFStoreWriteResultChunksFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan semantic.IndexedResultChunkData
+	Arg2 chan precise.IndexedResultChunkData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

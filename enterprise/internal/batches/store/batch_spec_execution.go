@@ -41,6 +41,7 @@ var BatchSpecExecutionColumns = []*sqlf.Query{
 var batchSpecExecutionInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("rand_id"),
 	sqlf.Sprintf("batch_spec"),
+	sqlf.Sprintf("batch_spec_id"),
 	sqlf.Sprintf("user_id"),
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
@@ -71,7 +72,7 @@ func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpe
 var createBatchSpecExecutionQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_executions.go:CreateBatchSpecExecution
 INSERT INTO batch_spec_executions (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, error) {
@@ -87,6 +88,7 @@ func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, e
 		sqlf.Join(batchSpecExecutionInsertColumns, ", "),
 		c.RandID,
 		c.BatchSpec,
+		nullInt64Column(c.BatchSpecID),
 		c.UserID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),

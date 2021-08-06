@@ -19,11 +19,11 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -137,11 +137,17 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 			}
 			certData, err := base64.StdEncoding.DecodeString(xcert.Data)
 			if err != nil {
-				return nil, errors.WithMessage(err, fmt.Sprintf("decoding SAML Identity Provider metadata certificate %d", i))
+				return nil, errors.WithMessage(
+					err,
+					fmt.Sprintf("decoding SAML Identity Provider metadata certificate %d", i),
+				)
 			}
 			idpCert, err := x509.ParseCertificate(certData)
 			if err != nil {
-				return nil, errors.WithMessage(err, fmt.Sprintf("parsing SAML Identity Provider metadata certificate %d X.509 data", i))
+				return nil, errors.WithMessage(
+					err,
+					fmt.Sprintf("parsing SAML Identity Provider metadata certificate %d X.509 data", i),
+				)
 			}
 			idpCertStore.Roots = append(idpCertStore.Roots, idpCert)
 		}
@@ -160,7 +166,9 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 	// pc.Issuer's default of ${externalURL}/.auth/saml/metadata already applied (in withConfigDefaults).
 	sp.ServiceProviderIssuer = pc.ServiceProviderIssuer
 	if pc.ServiceProviderIssuer == "" {
-		return nil, errors.New("invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty externalURL)")
+		return nil, errors.New(
+			"invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty externalURL)",
+		)
 	}
 	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
@@ -240,7 +248,9 @@ func readProviderConfig(pc *schema.SAMLAuthProvider) (*providerConfig, error) {
 	// file contents directly.
 	switch {
 	case pc.IdentityProviderMetadataURL != "" && pc.IdentityProviderMetadata != "":
-		return nil, errors.New("invalid SAML configuration: set either identityProviderMetadataURL or identityProviderMetadata, not both")
+		return nil, errors.New(
+			"invalid SAML configuration: set either identityProviderMetadataURL or identityProviderMetadata, not both",
+		)
 
 	case pc.IdentityProviderMetadataURL != "":
 		var err error
@@ -253,7 +263,9 @@ func readProviderConfig(pc *schema.SAMLAuthProvider) (*providerConfig, error) {
 		c.identityProviderMetadata = []byte(pc.IdentityProviderMetadata)
 
 	default:
-		return nil, errors.New("invalid SAML configuration: must provide the SAML metadata, using either identityProviderMetadataURL (URL where XML file is available) or identityProviderMetadata (XML file contents)")
+		return nil, errors.New(
+			"invalid SAML configuration: must provide the SAML metadata, using either identityProviderMetadataURL (URL where XML file is available) or identityProviderMetadata (XML file contents)",
+		)
 	}
 
 	return &c, nil
@@ -264,13 +276,21 @@ func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byt
 		return c.identityProviderMetadata, nil
 	}
 
-	resp, err := ctxhttp.Get(ctx, nil, c.identityProviderMetadataURL.String())
+	req, err := http.NewRequest("GET", c.identityProviderMetadataURL.String(), nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "bad URL")
+	}
+
+	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.WithMessage(err, "fetching SAML Identity Provider metadata")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("non-200 HTTP response for SAML Identity Provider metadata URL: %s", c.identityProviderMetadataURL)
+		return nil, errors.Errorf(
+			"non-200 HTTP response for SAML Identity Provider metadata URL: %s",
+			c.identityProviderMetadataURL,
+		)
 	}
 
 	data, err := io.ReadAll(resp.Body)

@@ -19,32 +19,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var (
-	requestCounter = metrics.NewRequestMeter("textsearch", "Total number of requests sent to the textsearch API.")
-
-	searchHTTPClient = &http.Client{
-		// ot.Transport will propagate opentracing spans
-		Transport: &ot.Transport{
-			RoundTripper: requestCounter.Transport(&http.Transport{
-				// Default is 2, but we can send many concurrent requests
-				MaxIdleConnsPerHost: 500,
-			}, func(u *url.URL) string {
-				return "search"
-			}),
-		},
-	}
+	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
+	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
 )
 
-var MockSearch func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
-
 // Search searches repo@commit with p.
-func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, branch string, commit api.CommitID, indexed bool, p *search.TextPatternInfo, fetchTimeout time.Duration, indexerEndpoints []string) (matches []*protocol.FileMatch, limitHit bool, err error) {
+func Search(
+	ctx context.Context,
+	searcherURLs *endpoint.Map,
+	repo api.RepoName,
+	branch string,
+	commit api.CommitID,
+	indexed bool,
+	p *search.TextPatternInfo,
+	fetchTimeout time.Duration,
+	indexerEndpoints []string,
+) (matches []*protocol.FileMatch, limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, commit, p, fetchTimeout)
 	}
@@ -172,7 +169,7 @@ func textSearchURL(ctx context.Context, url string) ([]*protocol.FileMatch, bool
 	// Do not lose the context returned by TraceRequest
 	ctx = req.Context()
 
-	resp, err := searchHTTPClient.Do(req)
+	resp, err := searchDoer.Do(req)
 	if err != nil {
 		// If we failed due to cancellation or timeout (with no partial results in the response
 		// body), return just that.

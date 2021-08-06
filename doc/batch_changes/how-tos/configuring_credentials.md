@@ -34,7 +34,7 @@ Closing a changeset | 🟢 | 🟡 | 🔴
 [Importing a changeset](./tracking_existing_changesets.md) | 🔴 | 🟢 | 🟡
 Syncing a changeset | 🔴 | 🟢 | 🟡
 
-When writing a commit or a changeset to the code host, the author will reflect the token used (e.g., on GitHub, the commit or pull request author will be you). It is for this reason that a personal access token is preferred for most operations.
+When writing a changeset to the code host, the author will reflect the token used (e.g., on GitHub, the pull request author will be you). It is for this reason that a personal access token is preferred for most operations.
 
 > WARNING: Using the code host connection token with Batch Changes will be deprecated in the future; therefore, we highly recommend that admins configure a global service account token for Batch Changes instead.
 
@@ -42,7 +42,9 @@ When writing a commit or a changeset to the code host, the author will reflect t
 
 ### Do I need to add a personal access token?
 
-Personal access tokens are not required if a global access token has also been configured, but users should add one if they want Sourcegraph to create commits and changesets under their name.
+Personal access tokens are not required if a global access token has also been configured, but users should add one if they want Sourcegraph to create changesets under their name.
+
+> NOTE: Commit author is determined by your spec file or local git config at the time of running `src batch [apply|preview]`, completely independent from code host credentials.
 
 ### Adding a token
 

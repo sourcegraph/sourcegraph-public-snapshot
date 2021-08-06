@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestHandle(t *testing.T) {
@@ -81,7 +81,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	expectedPackagesDumpID := 42
-	expectedPackages := []semantic.Package{
+	expectedPackages := []precise.Package{
 		{
 			Scheme:  "scheme B",
 			Name:    "pkg B",
@@ -101,9 +101,9 @@ func TestHandle(t *testing.T) {
 		t.Fatalf("unexpected error creating filter: %s", err)
 	}
 	expectedPackageReferencesDumpID := 42
-	expectedPackageReferences := []semantic.PackageReference{
+	expectedPackageReferences := []precise.PackageReference{
 		{
-			Package: semantic.Package{
+			Package: precise.Package{
 				Scheme:  "scheme A",
 				Name:    "pkg A",
 				Version: "v0.1.0",

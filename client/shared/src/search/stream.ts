@@ -24,6 +24,7 @@ export interface PathMatch {
     name: string
     repository: string
     repoStars?: number
+    repoLastFetched?: string
     branches?: string[]
     version?: string
 }
@@ -33,6 +34,7 @@ export interface ContentMatch {
     name: string
     repository: string
     repoStars?: number
+    repoLastFetched?: string
     branches?: string[]
     version?: string
     lineMatches: LineMatch[]
@@ -50,6 +52,7 @@ export interface SymbolMatch {
     name: string
     repository: string
     repoStars?: number
+    repoLastFetched?: string
     branches?: string[]
     version?: string
     symbols: MatchedSymbol[]
@@ -77,6 +80,7 @@ export interface CommitMatch {
     detail: MarkdownText
     repository: string
     repoStars?: number
+    repoLastFetched?: string
 
     content: MarkdownText
     ranges: number[][]
@@ -86,9 +90,11 @@ export interface RepositoryMatch {
     type: 'repo'
     repository: string
     repoStars?: number
+    repoLastFetched?: string
     description?: string
     fork?: boolean
     archived?: boolean
+    private?: boolean
     branches?: string[]
 }
 

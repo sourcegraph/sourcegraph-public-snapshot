@@ -45,9 +45,9 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
-func NewExecutorStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+func NewExecutorStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
 	return &executorStore{
-		Store:              dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, observationContext),
+		Store:              dbworkerstore.NewWithMetrics(handle, executorWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
 	}
 }

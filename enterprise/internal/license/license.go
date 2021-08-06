@@ -48,7 +48,9 @@ func (l Info) IsExpiredWithGracePeriod() bool {
 // HasTag reports whether tag is in l's list of tags.
 func (l Info) HasTag(tag string) bool {
 	for _, t := range l.Tags {
-		if tag == t {
+		// NOTE: Historically, our web form have accidentally submitted tags with
+		//  surrounding spaces.
+		if tag == strings.TrimSpace(t) {
 			return true
 		}
 	}

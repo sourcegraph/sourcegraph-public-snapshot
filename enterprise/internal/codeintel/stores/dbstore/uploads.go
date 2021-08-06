@@ -137,13 +137,12 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
 	if err != nil {
 		return Upload{}, false, err
 	}
-	defer func() { err = done(err) }()
 
-	return scanFirstUpload(s.WithDB(tx).Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id)))
+	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
 }
 
 const uploadRankQueryFragment = `
@@ -181,7 +180,7 @@ FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.state != 'deleted' AND u.id = %s
+WHERE u.state != 'deleted' AND u.id = %s AND %s
 `
 
 const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
@@ -198,18 +197,17 @@ func (s *Store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []Upload, er
 		return nil, nil
 	}
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = done(err) }()
 
 	queries := make([]*sqlf.Query, 0, len(ids))
 	for _, id := range ids {
 		queries = append(queries, sqlf.Sprintf("%d", id))
 	}
 
-	return scanUploads(s.WithDB(tx).Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "))))
+	return scanUploads(s.Store.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
 }
 
 const getUploadsByIDsQuery = `
@@ -239,7 +237,7 @@ FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.state != 'deleted' AND u.id IN (%s)
+WHERE u.state != 'deleted' AND u.id IN (%s) AND %s
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
@@ -306,13 +304,11 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, done, err := database.WithEnforcedAuthz(ctx, s.Handle().DB())
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer func() { err = done(err) }()
-
-	stx := s.WithDB(tx)
+	defer func() { err = tx.Done(err) }()
 
 	var conds []*sqlf.Query
 	if opts.RepositoryID != 0 {
@@ -336,9 +332,16 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
 	}
 
-	q := sqlf.Sprintf(getUploadsCountQuery, sqlf.Join(conds, " AND "))
+	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	if err != nil {
+		return nil, 0, err
+	}
+	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(stx.Query(ctx, q))
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
+		ctx,
+		sqlf.Sprintf(getUploadsCountQuery, sqlf.Join(conds, " AND ")),
+	))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -350,8 +353,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		orderExpression = sqlf.Sprintf("uploaded_at DESC")
 	}
 
-	q = sqlf.Sprintf(getUploadsQuery, sqlf.Join(conds, " AND "), orderExpression, opts.Limit, opts.Offset)
-	uploads, err := scanUploads(stx.Query(ctx, q))
+	uploads, err := scanUploads(tx.Store.Query(ctx, sqlf.Sprintf(getUploadsQuery, sqlf.Join(conds, " AND "), orderExpression, opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, 0, err
 	}

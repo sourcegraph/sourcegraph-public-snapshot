@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 var testConfig = Config{
@@ -65,8 +65,8 @@ func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 
 	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
@@ -180,8 +180,8 @@ func TestQueueIndexesForRepositoryInRepository(t *testing.T) {
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) (bool, error) {
 		return file == "sourcegraph.yaml", nil
@@ -264,8 +264,8 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		switch repositoryID {
@@ -329,8 +329,8 @@ func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
 	}
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		if repositoryID == 42 {
@@ -379,7 +379,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 
 	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, mockRepoUpdater, &testConfig, &observation.TestContext)
 
-	_ = scheduler.QueueIndexesForPackage(context.Background(), semantic.Package{
+	_ = scheduler.QueueIndexesForPackage(context.Background(), precise.Package{
 		Scheme:  "gomod",
 		Name:    "https://github.com/sourcegraph/sourcegraph",
 		Version: "v3.26.0-4e7eeb0f8a96",

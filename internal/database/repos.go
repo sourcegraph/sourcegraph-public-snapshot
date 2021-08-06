@@ -287,12 +287,67 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	return ct, err
 }
 
+// Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
+// number of IDs given if a repo with the given ID does not exist.
+func (s *RepoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
+	if Mocks.Repos.Metadata != nil {
+		return Mocks.Repos.Metadata(ctx, ids...)
+	}
+	s.ensureStore()
+
+	tr, ctx := trace.New(ctx, "repos.Metadata", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := ReposListOptions{
+		IDs: ids,
+		// Return a limited subset of fields
+		Select: []string{
+			"repo.id",
+			"repo.name",
+			"repo.description",
+			"repo.fork",
+			"repo.archived",
+			"repo.private",
+			"repo.stars",
+			"gr.last_fetched",
+		},
+		// Required so gr.last_fetched is select-able
+		joinGitserverRepos: true,
+	}
+
+	res := make([]*types.SearchedRepo, 0, len(ids))
+	scanMetadata := func(rows *sql.Rows) error {
+		var r types.SearchedRepo
+		if err := rows.Scan(
+			&r.ID,
+			&r.Name,
+			&dbutil.NullString{S: &r.Description},
+			&r.Fork,
+			&r.Archived,
+			&r.Private,
+			&dbutil.NullInt{N: &r.Stars},
+			&r.LastFetched,
+		); err != nil {
+			return err
+		}
+
+		res = append(res, &r)
+		return nil
+	}
+
+	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
+}
+
 const listReposQueryFmtstr = `
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
 FROM %%s
 WHERE
 %%s       -- Populates "queryConds"
+AND (%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
 `
 
@@ -558,6 +613,10 @@ type ReposListOptions struct {
 	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
 	IncludeDeleted bool
 
+	// joinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
+	// with the table alias "gr".
+	joinGitserverRepos bool
+
 	*LimitOffset
 }
 
@@ -703,7 +762,7 @@ func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	return rs, err
 }
 
-func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) (err error) {
+func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
 	q, err := s.listSQL(ctx, opt)
 	if err != nil {
 		return err
@@ -711,13 +770,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	tr.LogFields(trace.SQL(q))
 
-	tx, cleanup, err := WithEnforcedAuthz(ctx, s.Handle().DB())
-	if err != nil {
-		return err
-	}
-	defer func() { err = cleanup(err) }()
-
-	rows, err := Repos(tx).Query(ctx, q)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		if e, ok := err.(*net.OpError); ok && e.Timeout() {
 			return errors.Wrapf(context.DeadlineExceeded, "RepoStore.list: %s", err.Error())
@@ -837,16 +890,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("archived"))
 	}
 	if opt.NoCloned {
-		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
-		// We'll remove repo.cloned and can then switch to this:
-		// where = append(where, sqlf.Sprintf("gr.clone_status IS NULL OR gr.clone_status = 'not_cloned'"))
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR (gr.clone_status IS NULL AND NOT repo.cloned))"))
+		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR gr.clone_status IS NULL)"))
 	}
 	if opt.OnlyCloned {
-		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
-		// We'll remove repo.cloned and can then switch to this:
-		// where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'cloned' OR (gr.clone_status IS NULL AND repo.cloned))"))
+		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 	}
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
@@ -893,7 +940,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
@@ -930,11 +977,17 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
+	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
 	return sqlf.Sprintf(
 		fmt.Sprintf(listReposQueryFmtstr, strings.Join(columns, ",")),
 		queryPrefix,
 		fromClause,
 		queryConds,
+		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
 	), nil
 }

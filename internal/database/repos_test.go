@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -510,6 +511,90 @@ func TestListIndexableRepos(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRepoStore_Metadata(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+
+	ctx := context.Background()
+
+	repos := []*types.Repo{
+		{
+			ID:          1,
+			Name:        "foo",
+			Description: "foo 1",
+			Fork:        false,
+			Archived:    false,
+			Private:     false,
+			Stars:       10,
+			URI:         "foo-uri",
+			Sources:     map[string]*types.SourceInfo{},
+		},
+		{
+			ID:          2,
+			Name:        "bar",
+			Description: "bar 2",
+			Fork:        true,
+			Archived:    true,
+			Private:     true,
+			Stars:       20,
+			URI:         "bar-uri",
+			Sources:     map[string]*types.SourceInfo{},
+		},
+	}
+
+	r := Repos(db)
+	require.NoError(t, r.Create(ctx, repos...))
+
+	d1 := time.Unix(1627945150, 0)
+	d2 := time.Unix(1628945150, 0)
+	gitserverRepos := []*types.GitserverRepo{
+		{
+			RepoID:      1,
+			LastFetched: d1,
+			ShardID:     "abc",
+		},
+		{
+			RepoID:      2,
+			LastFetched: d2,
+			ShardID:     "abc",
+		},
+	}
+
+	gr := GitserverRepos(db)
+	require.NoError(t, gr.Upsert(ctx, gitserverRepos...))
+
+	expected := []*types.SearchedRepo{
+		{
+			ID:          1,
+			Name:        "foo",
+			Description: "foo 1",
+			Fork:        false,
+			Archived:    false,
+			Private:     false,
+			Stars:       10,
+			LastFetched: &d1,
+		},
+		{
+			ID:          2,
+			Name:        "bar",
+			Description: "bar 2",
+			Fork:        true,
+			Archived:    true,
+			Private:     true,
+			Stars:       20,
+			LastFetched: &d2,
+		},
+	}
+
+	md, err := r.Metadata(ctx, 1, 2)
+	require.NoError(t, err)
+	require.ElementsMatch(t, expected, md)
 }
 
 func TestRepoStore_Blocking(t *testing.T) {

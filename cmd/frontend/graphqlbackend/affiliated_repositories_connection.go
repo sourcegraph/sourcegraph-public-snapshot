@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	cf = httpcli.NewExternalHTTPClientFactory()
+	cf = httpcli.ExternalClientFactory
 )
 
 type affiliatedRepositoriesConnection struct {

@@ -32,8 +32,9 @@ type Event struct {
 	CohortID       *string
 	// Referrer is only measured for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
-	Referrer *string
-	Argument json.RawMessage
+	Referrer       *string
+	Argument       json.RawMessage
+	PublicArgument json.RawMessage
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -61,7 +62,7 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 			return err
 		}
 	}
-	return logLocalEvent(ctx, db, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument, args.FeatureFlags, args.CohortID)
+	return logLocalEvent(ctx, db, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument, args.PublicArgument, args.FeatureFlags, args.CohortID)
 }
 
 type bigQueryEvent struct {
@@ -75,6 +76,7 @@ type bigQueryEvent struct {
 	FeatureFlags    string  `json:"feature_flags"`
 	CohortID        *string `json:"cohort_id,omitempty"`
 	Referrer        string  `json:"referrer,omitempty"`
+	PublicArgument  string  `json:"publicArgument,omitempty"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -108,6 +110,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 		Version:         version.Version(),
 		FeatureFlags:    string(featureFlagJSON),
 		CohortID:        args.CohortID,
+		PublicArgument:  string(args.PublicArgument),
 	})
 	if err != nil {
 		return err
@@ -116,7 +119,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 }
 
 // logLocalEvent logs users events.
-func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
 	if name == "SearchResultsQueried" {
 		err := logSiteSearchOccurred()
 		if err != nil {
@@ -140,6 +143,7 @@ func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID i
 		Timestamp:       timeNow().UTC(),
 		FeatureFlags:    featureFlags,
 		CohortID:        cohortID,
+		PublicArgument:  publicArgument,
 	}
 	return database.EventLogs(db).Insert(ctx, info)
 }
