@@ -424,7 +424,6 @@ func assertOperations(
 	previews []apitest.ChangesetApplyPreview,
 	spec *btypes.ChangesetSpec,
 	want []btypes.ReconcilerOperation,
-
 ) {
 	t.Helper()
 
