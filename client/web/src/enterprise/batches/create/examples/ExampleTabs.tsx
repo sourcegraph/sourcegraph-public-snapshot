@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import React, { useState, useCallback, useEffect } from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../../components/Sidebar'
@@ -39,11 +40,6 @@ interface ExampleTabsProps extends ThemeProps {
 export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLightTheme, updateSpec }) => {
     const [activeIndex, setActiveIndex] = useState<number>(0)
 
-    // Update the spec whenever the active changes, before the user makes any edits to it
-    useEffect(() => {
-        updateSpec({ code: EXAMPLES[activeIndex].code, fileName: getFileName(EXAMPLES[activeIndex].name) })
-    }, [updateSpec, activeIndex])
-
     return (
         <Tabs className={styles.exampleTabs} onChange={setActiveIndex}>
             <TabList className="d-flex flex-column flex-shrink-0">
@@ -61,11 +57,12 @@ export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLight
 
             <div className="ml-3 flex-grow-1">
                 <TabPanels>
-                    {EXAMPLES.map(example => (
+                    {EXAMPLES.map((example, index) => (
                         <ExampleTabPanel
                             key={example.name}
                             example={example}
                             isLightTheme={isLightTheme}
+                            index={index}
                             updateSpec={updateSpec}
                         />
                     ))}
@@ -96,23 +93,27 @@ const ExampleTab: React.FunctionComponent<{ index: number }> = ({ children, inde
 interface ExampleTabPanelProps extends ThemeProps {
     example: Example
     updateSpec: (spec: Spec) => void
+    index: number
 }
 
 const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
     example,
     isLightTheme,
+    index,
     updateSpec,
     ...props
 }) => {
     const [code, setCode] = useState<string>(example.code)
 
-    const onChange = useCallback(
-        (newCode: string) => {
-            setCode(newCode)
-            updateSpec({ code: newCode, fileName: getFileName(example.name) })
-        },
-        [updateSpec, example.name]
-    )
+    const { selectedIndex } = useTabsContext()
+
+    // Update the spec in parent state whenever the code changes
+    useEffect(() => {
+        if (selectedIndex === index) {
+            updateSpec({ code, fileName: getFileName(example.name) })
+        }
+    }, [code, example.name, updateSpec, selectedIndex, index])
+
     const reset = useCallback(() => setCode(example.code), [example.code])
 
     return (
@@ -124,13 +125,15 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                 </button>
                 <BatchSpecDownloadLink name={example.name} originalInput={code} />
             </div>
-            <MonacoSettingsEditor
-                isLightTheme={isLightTheme}
-                language="yaml"
-                value={code}
-                jsonSchema={batchSpecSchemaJSON}
-                onChange={onChange}
-            />
+            <Container>
+                <MonacoSettingsEditor
+                    isLightTheme={isLightTheme}
+                    language="yaml"
+                    value={code}
+                    jsonSchema={batchSpecSchemaJSON}
+                    onChange={setCode}
+                />
+            </Container>
         </TabPanel>
     )
 }
