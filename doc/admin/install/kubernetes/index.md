@@ -44,16 +44,7 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
       --clusterrole cluster-admin --user $(gcloud config get-value account)
   ```
 
-- `cd` to the forked local copy of [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously setup during [configuration](./configure.md#getting-started):
-
-  ```bash
-  # 🚨 The master branch tracks development.
-  # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.30
-  cd deploy-sourcegraph
-  export SOURCEGRAPH_VERSION="v3.30.3"
-  git checkout $SOURCEGRAPH_VERSION -b release
-  ```
-
+- `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
 - Deploy the desired version of Sourcegraph to your cluster by [applying the Kubernetes manifests](./configure.md#applying-manifests):
 
   ```sh
