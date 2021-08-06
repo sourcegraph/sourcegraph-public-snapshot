@@ -6,7 +6,7 @@
 # You can also use `sg run redis-postgres`.
 services:
   redis:
-    image: sourcegraph/redis-cache:insiders
+    image: index.docker.io/sourcegraph/redis-cache:insiders
     ports:
       - 6379:6379
     volumes:
