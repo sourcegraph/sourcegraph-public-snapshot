@@ -28,6 +28,7 @@ export interface Props {
     actions: Action[]
     defaultAction?: number
     disabled?: boolean
+    dropdownMenuPosition?: 'left' | 'right'
     initiallyOpen?: boolean
     onLabel?: (label: string | undefined) => void
     placeholder?: string
@@ -38,6 +39,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     actions,
     defaultAction,
     disabled,
+    dropdownMenuPosition,
     initiallyOpen,
     onLabel,
     placeholder,
@@ -137,12 +139,18 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
                         <button
                             type="button"
                             onClick={toggleIsOpen}
+                            disabled={isDisabled}
                             className="btn btn-primary dropdown-toggle dropdown-toggle-split"
                         />
                         <div
                             className={classNames(
-                                'dropdown-menu dropdown-menu-right',
+                                'dropdown-menu',
                                 isOpen && 'show',
+                                dropdownMenuPosition === 'left'
+                                    ? 'dropdown-menu-left'
+                                    : dropdownMenuPosition === 'right'
+                                    ? 'dropdown-menu-right'
+                                    : null,
                                 styles.dropdownButtonItem
                             )}
                         >

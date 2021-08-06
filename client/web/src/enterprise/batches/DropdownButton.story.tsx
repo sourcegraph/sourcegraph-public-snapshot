@@ -1,9 +1,10 @@
+import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 
-import { Action, DropdownButton } from './DropdownButton'
+import { Action, DropdownButton, Props } from './DropdownButton'
 
 const { add } = storiesOf('web/batches/DropdownButton', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
@@ -40,18 +41,41 @@ const experimentalAction: Action = {
     experimental: true,
 }
 
-add('No actions', () => <EnterpriseWebStory>{() => <DropdownButton actions={[]} />}</EnterpriseWebStory>)
+const commonKnobs: () => Pick<Props, 'disabled' | 'dropdownMenuPosition'> = () => ({
+    disabled: boolean('Disabled', false),
+    dropdownMenuPosition: select(
+        'Dropdown menu position',
+        {
+            None: undefined,
+            Left: 'left',
+            Right: 'right',
+        },
+        undefined
+    ),
+})
 
-add('Single action', () => <EnterpriseWebStory>{() => <DropdownButton actions={[action]} />}</EnterpriseWebStory>)
+add('No actions', () => (
+    <EnterpriseWebStory>{() => <DropdownButton actions={[]} {...commonKnobs()} />}</EnterpriseWebStory>
+))
+
+add('Single action', () => (
+    <EnterpriseWebStory>{() => <DropdownButton actions={[action]} {...commonKnobs()} />}</EnterpriseWebStory>
+))
 
 add('Multiple actions without default', () => (
     <EnterpriseWebStory>
-        {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} />}
+        {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} {...commonKnobs()} />}
     </EnterpriseWebStory>
 ))
 
 add('Multiple actions with default', () => (
     <EnterpriseWebStory>
-        {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} defaultAction={1} />}
+        {() => (
+            <DropdownButton
+                actions={[action, disabledAction, experimentalAction]}
+                defaultAction={1}
+                {...commonKnobs()}
+            />
+        )}
     </EnterpriseWebStory>
 ))
