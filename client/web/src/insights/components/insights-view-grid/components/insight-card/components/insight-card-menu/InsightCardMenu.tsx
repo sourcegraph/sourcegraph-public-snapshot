@@ -1,10 +1,11 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@reach/menu-button'
 import classnames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React, { MouseEvent } from 'react'
+import React, { MouseEvent, useContext } from 'react'
 import { useHistory } from 'react-router'
 
 import { positionRight } from '../../../../../context-menu/utils'
+import { LineChartSettingsContext } from '../../../../../insight-view-content/chart-view-content/charts/line/line-chart-settings-provider'
 
 import styles from './InsightCardMenu.module.scss'
 
@@ -19,6 +20,7 @@ export interface InsightCardMenuProps {
  */
 export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
     const { insightID, menuButtonClassName, onDelete } = props
+    const { toggleZeroYAxisMin } = useContext(LineChartSettingsContext)
     const history = useHistory()
 
     const handleEditClick = (event: MouseEvent): void => {
@@ -46,6 +48,16 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                     >
                         Edit
                     </MenuLink>
+
+                    {toggleZeroYAxisMin && (
+                        <MenuLink
+                            data-testid="InsightContextMenuEditLink"
+                            className={classnames('btn btn-outline', styles.item)}
+                            onClick={toggleZeroYAxisMin}
+                        >
+                            Toggle Y Axis Zero
+                        </MenuLink>
+                    )}
 
                     <MenuItem
                         data-testid="insight-context-menu-delete-button"
