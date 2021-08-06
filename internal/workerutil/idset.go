@@ -70,3 +70,14 @@ func (i *IDSet) Slice() []int {
 
 	return ids
 }
+
+// Has returns whether the IDSet contains the given id.
+func (i *IDSet) Has(id int) bool {
+	for _, have := range i.Slice() {
+		if id == have {
+			return true
+		}
+	}
+
+	return false
+}

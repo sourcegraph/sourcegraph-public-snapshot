@@ -87,7 +87,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 	canceler := goroutine.NewPeriodicGoroutine(
 		ctx,
 		canceledJobsPollInterval,
-		goroutine.NewHandlerWithErrorMessage("poll canceled", func(ctx context.Context) error {
+		goroutine.NewHandlerWithErrorMessage("executor.worker.pollCanceled", func(ctx context.Context) error {
 			canceled, err := queueStore.Canceled(ctx, options.QueueName)
 			if err != nil {
 				return err
