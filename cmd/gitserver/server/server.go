@@ -1144,17 +1144,7 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName, lastFetc
 	if s.DB == nil {
 		return nil
 	}
-	tx, err := database.Repos(s.DB).Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repo, err := tx.GetByName(ctx, name)
-	if err != nil {
-		return err
-	}
-	return database.NewGitserverReposWith(tx).SetLastFetched(ctx, repo.ID, lastFetched, s.Hostname)
+	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, lastFetched, s.Hostname)
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors

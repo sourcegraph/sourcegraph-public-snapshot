@@ -227,15 +227,16 @@ WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
 
 // SetLastFetched will attempt to update ONLY the last fetched time of a GitServerRepo.
 // a matching row does not yet exist a new one will be created.
-func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, id api.RepoID, lastFetched time.Time, shardID string) error {
+func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastFetched
 INSERT INTO gitserver_repos(repo_id, last_fetched, shard_id, updated_at)
-VALUES (%s, %s, %s, now())
+SELECT id, %s, %s, now()
+FROM repo WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
 SET (last_fetched, shard_id, updated_at) =
     (EXCLUDED.last_fetched, EXCLUDED.shard_id, now())
-`, id, lastFetched, shardID))
+`, lastFetched, shardID, name))
 
 	return errors.Wrap(err, "setting last fetched")
 }
