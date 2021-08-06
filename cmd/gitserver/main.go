@@ -242,11 +242,10 @@ func getDB() (dbutil.DB, error) {
 	//
 	// START FLAILING
 
-	// TODO: Remove this hack once we're confident we're using contexts with internal
-	// actors everywhere
-
-	// Gitserver is an internal actor. We rely on the frontend to do authz
-	// checks for user requests.
+	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
+	// user requests.
+	//
+	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
 	// END FLAILING

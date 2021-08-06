@@ -205,18 +205,20 @@ SET (clone_status, shard_id, updated_at) =
 // SetLastError will attempt to update ONLY the last error of a GitServerRepo. If
 // a matching row does not yet exist a new one will be created.
 // If the error value hasn't changed, the row will not be updated.
-func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error, shardID string) error {
+func (s *GitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error {
 	ns := dbutil.NewNullString(sanitizeToUTF8(error))
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastError
 INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)
-VALUES (%s, %s, %s, now())
+SELECT id, %s, %s, now()
+FROM repo
+WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
-SET (last_error, shard_id, updated_at) =
-    (EXCLUDED.last_error, EXCLUDED.shard_id, now())
-    WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
-`, id, ns, shardID))
+    SET (last_error, shard_id, updated_at) =
+            (EXCLUDED.last_error, EXCLUDED.shard_id, now())
+WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
+`, ns, shardID, name))
 
 	return errors.Wrap(err, "setting last error")
 }

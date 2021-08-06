@@ -284,7 +284,7 @@ func TestSetLastError(t *testing.T) {
 	//
 	// We are using a null terminated string for the last_error column. See
 	// https://stackoverflow.com/a/38008565/1773961 on how to set null terminated strings in Go.
-	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "oops\x00", shardID)
+	err = GitserverRepos(db).SetLastError(ctx, repo1.Name, "oops\x00", shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,7 +300,7 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	// Remove error
-	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "", shardID)
+	err = GitserverRepos(db).SetLastError(ctx, repo1.Name, "", shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +316,7 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	// Set again to same value, updated_at should not change
-	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "", shardID)
+	err = GitserverRepos(db).SetLastError(ctx, repo1.Name, "", shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
