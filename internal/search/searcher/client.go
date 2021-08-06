@@ -41,6 +41,7 @@ func Search(
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
 	indexerEndpoints []string,
+	cb func([]*protocol.FileMatch),
 ) (matches []*protocol.FileMatch, limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, commit, p, fetchTimeout)
@@ -96,6 +97,9 @@ func Search(
 	if p.IsNegated {
 		q.Set("IsNegated", "true")
 	}
+	if cb != nil {
+		q.Set("Stream", "true")
+	}
 	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
 	// these fields from old frontends that do not (and provide a default in the latter case).
 	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
@@ -133,9 +137,16 @@ func Search(
 
 		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
-		matches, limitHit, err = textSearchURL(ctx, url)
-		if err == nil || errcode.IsTimeout(err) {
-			return matches, limitHit, err
+		if cb != nil {
+			limitHit, err = textSearchURLStream(ctx, url, cb)
+			if err == nil || errcode.IsTimeout(err) {
+				return nil, limitHit, err
+			}
+		} else {
+			matches, limitHit, err = textSearchURL(ctx, url)
+			if err == nil || errcode.IsTimeout(err) {
+				return matches, limitHit, err
+			}
 		}
 
 		// If we are canceled, return that error.
@@ -152,6 +163,62 @@ func Search(
 		// Retry search on another searcher instance (if possible)
 		excludedSearchURLs[searcherURL] = true
 	}
+}
+
+func textSearchURLStream(ctx context.Context, url string, cb func([]*protocol.FileMatch)) (bool, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return false, err
+	}
+	req = req.WithContext(ctx)
+
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
+		nethttp.OperationName("Searcher Client"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
+
+	// Do not lose the context returned by TraceRequest
+	ctx = req.Context()
+
+	resp, err := searchDoer.Do(req)
+	if err != nil {
+		// If we failed due to cancellation or timeout (with no partial results in the response
+		// body), return just that.
+		if ctx.Err() != nil {
+			err = ctx.Err()
+		}
+		return false, errors.Wrap(err, "searcher request failed")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return false, err
+		}
+		return false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
+	}
+
+	var ed EventDone
+	dec := StreamDecoder{
+		OnMatches: cb,
+		OnDone: func(e EventDone) {
+			ed = e
+		},
+		OnUnknown: func(event []byte, _ []byte) {
+			err = errors.Errorf("unknown event %q", event)
+		},
+	}
+	dec.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+	if ed.Error != "" {
+		return false, errors.New(ed.Error)
+	}
+	if ed.DeadlineHit {
+		err = context.DeadlineExceeded
+	}
+	return ed.LimitHit, err
 }
 
 func textSearchURL(ctx context.Context, url string) ([]*protocol.FileMatch, bool, error) {
