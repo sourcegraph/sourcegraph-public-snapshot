@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
 set -euxo pipefail
-
 cd /var/lib/postgresql
+
+# shellcheck source=./env.sh
+source /env.sh
 
 # Allow the container to be started with root in Kubernetes and change permissions
 # of the parent volume directory to be owned entirely by the postgres user.
@@ -19,5 +21,10 @@ if [ ! -s "$PGDATA/PG_VERSION" ]; then
 fi
 
 /conf.sh
+
+if [ ! -s "${REINDEX_COMPLETED_FILE}" ]; then
+  echo "[INFO] Re-creating all indexes from for database '$POSTGRES_DB'"
+  /reindex.sh
+fi
 
 exec postgres
