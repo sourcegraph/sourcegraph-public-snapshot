@@ -371,7 +371,7 @@ func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
 	logLevelVariable := "SRC_LOG_LEVEL"
 
 	if level, ok := overrides[cmd.Name]; ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "Setting log level: %s for command %s.", level, cmd.Name))
+		out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
 		if cmd.Env == nil {
 			cmd.Env = make(map[string]string, 1)
 			cmd.Env[logLevelVariable] = level
