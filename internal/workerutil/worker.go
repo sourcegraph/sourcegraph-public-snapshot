@@ -165,7 +165,7 @@ func (w *Worker) Stop() {
 }
 
 // Cancel cancels the handler context of the running job with the given record id.
-// It will eventually be marked as errored.
+// It will eventually be marked as failed.
 func (w *Worker) Cancel(id int) {
 	w.runningIDSet.Cancel(id)
 }
