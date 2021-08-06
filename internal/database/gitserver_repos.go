@@ -188,16 +188,18 @@ WHERE repo_id = %s
 // SetCloneStatus will attempt to update ONLY the clone status of a
 // GitServerRepo. If a matching row does not yet exist a new one will be created.
 // If the status value hasn't changed, the row will not be updated.
-func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus, shardID string) error {
+func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetCloneStatus
 INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, updated_at)
-VALUES (%s, %s, %s, now())
+SELECT id, %s, %s, now()
+FROM repo
+WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
 SET (clone_status, shard_id, updated_at) =
     (EXCLUDED.clone_status, EXCLUDED.shard_id, now())
     WHERE gitserver_repos.clone_status IS DISTINCT FROM EXCLUDED.clone_status
-`, id, status, shardID))
+`, status, shardID, name))
 
 	return errors.Wrap(err, "setting clone status")
 }

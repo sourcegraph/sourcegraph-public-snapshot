@@ -191,7 +191,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	// Set cloned
-	err = GitserverRepos(db).SetCloneStatus(ctx, gitserverRepo.RepoID, types.CloneStatusCloned, shardID)
+	err = GitserverRepos(db).SetCloneStatus(ctx, repo1.Name, types.CloneStatusCloned, shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +219,7 @@ func TestSetCloneStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := GitserverRepos(db).SetCloneStatus(ctx, repo2.ID, types.CloneStatusCloned, shardID); err != nil {
+	if err := GitserverRepos(db).SetCloneStatus(ctx, repo2.Name, types.CloneStatusCloned, shardID); err != nil {
 		t.Fatal(err)
 	}
 	fromDB, err = GitserverRepos(db).GetByID(ctx, repo2.ID)
@@ -236,7 +236,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	// Setting the same status again should not touch the row
-	if err := GitserverRepos(db).SetCloneStatus(ctx, repo2.ID, types.CloneStatusCloned, shardID); err != nil {
+	if err := GitserverRepos(db).SetCloneStatus(ctx, repo2.Name, types.CloneStatusCloned, shardID); err != nil {
 		t.Fatal(err)
 	}
 	after, err := GitserverRepos(db).GetByID(ctx, repo2.ID)
