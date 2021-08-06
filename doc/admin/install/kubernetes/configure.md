@@ -2,8 +2,29 @@
 
 Configuring a [Sourcegraph Kubernetes cluster](./index.md) is done by applying manifest files and with simple
 `kubectl` commands. You can configure Sourcegraph as flexibly as you need to meet the requirements
-of your deployment environment.  We provide simple instructions for common things like setting up
-TLS, enabling code intelligence, and exposing Sourcegraph to external traffic below.
+of your deployment environment.
+
+## Featured guides
+
+<div class="getting-started">
+  <a href="#getting-started" class="btn btn-primary" alt="Configure">
+   <span>Getting started</span>
+   </br>
+   Get started with configuring Sourcegraph with Kubernetes.
+  </a>
+
+  <a href="#overlays" class="btn" alt="Overlays">
+   <span>Overlays</span>
+   </br>
+   Learn about Kustomize, how to use our provided overlays, and how to create your own.
+  </a>
+
+  <!-- <a href="#configure-external-databases" class="btn" alt="Configure external databases">
+   <span>External databases</span>
+   </br>
+   Learn about setting up an external database for Sourcegraph with Kubernetes.
+  </a> -->
+</div>
 
 ## Getting started
 
@@ -44,32 +65,39 @@ Some of the following instructions require cluster access. Ensure you can [acces
 ### Customizations
 
 To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](./index.md#kustomize) and [overlays](./index.md#overlays).
+This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](#applying-manifests).
 
-One benefit of generating manifest from base instead of modifying base directly is that it reduces the odds of encountering a merge conflict when upgrading - they allow you to separate your unique changes from the upstream bases.
+In general, we recommend that customizations works like this:
 
-In general, customization works like this:
-  
-1. Create and customize the overlays for your deployment
-2. Generate the overlays with the `./overlay-generate-cluster` script
-3. Apply the generated manifests from the `generated-cluster` directory using `kubectl apply` 
-4. Ensure the services came up correctly, then commit all the customizations to the new branch
+1. [Create, customize, and apply overlays](#overlays) for your deployment
+2. Ensure the services came up correctly, then commit all the customizations to the new branch
 
   ```sh
-  git add /overlays/$MY_OVERLAYS/*
+  git add /overlays/$MY_OVERLAY/*
   # Keeping all overlays contained to a single commit allows for easier cherry-picking
-  git commit amend -m "overlays: update my overlays"
+  git commit amend -m "overlays: update $MY_OVERLAY"
   ```
 
 See the [overlays guide](#overlays) to learn about the [overlays we provide](#provided-overlays) and [how to create your own overlays](#custom-overlays).
 
-## Applying Kubernetes manifests
+### Applying manifests
 
-Most of our guides will reference a `kubectl-apply-all.sh` script.
-By default, this script applies our base manifests, but if you have specific commands that should be run whenever you apply your manifests you should modify this script as needed (for example, if you use [overlays](#overlays), you should modify this script to apply your generated cluster instead).
+Most of our guides will reference a `kubectl-apply-all.sh` script that you run to apply changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster, for example:
+
+```sh
+./kubectl-apply-all.sh
+```
+
+By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
+
+If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
+For example, if you use [overlays to make changes to the manifests](#overlays), you should modify this script to apply your generated cluster instead.
 
 ## Overlays
 
-> NOTE: If you have not worked with [Kustomize](./index.md#kustomize) overlays before, please refer to our [overlays introduction](./index.md#overlays).
+Kustomize overlays are our recommended way to [customize Sourcegraph with Kubernetes](#customization).
+
+> NOTE: If you have not worked with [Kustomize](./index.md#kustomize) or overlays before, please refer to our [Kustomize introduction](./index.md#kustomize).
 
 To generate Kubernetes manifests from an overlay, run the `overlay-generate-cluster.sh` with two arguments:
 
@@ -90,7 +118,9 @@ After executing the script you can apply the generated manifests from the `gener
 kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
-We recommend that you update `kubectl-apply-all.sh` with your variant of the above command for [applying manifests](#applying-kubernetes-manifests).
+We reommend that you [update the `./overlay-generate-cluster` script](#applying-manifests) to apply the generated manifests from the `generated-cluster` directory.
+
+We also recommend that you commit your changes separately - see our [customization guide](#customizations) for more details.
 
 ### Provided overlays
 
@@ -247,7 +277,12 @@ To get started, we recommend you explore writing your own [`patches`](https://ku
 - [`patchesStrategicMerge`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patchesstrategicmerge/)
 - [`patchesJson6902`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patchesjson6902/)
 
+To avoid complications with reference cycles an overlay can only reference resources inside the directory subtree of the directory it resides in (symlinks are not allowed either).
+
+Learn more in the [`kustomization` documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/).
 You can also explore how our [provided overlays](#provided-overlays) use patches, for reference: [`deploy-sourcegraph` usage of patches](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+lang:YAML+patches:+:%5B_%5D+OR+patchesStrategicMerge:+:%5B_%5D+OR+patchesJson6902:+:%5B_%5D+count:999&patternType=structural).
+
+Once you have created your overlays, refer to our [overlays guide](#overlays).
 
 <br />
 
@@ -452,8 +487,7 @@ for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
 for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
 ```
 
-
-## Security - Configure network access
+## Configure network access
 
 You need to make the main web server accessible over the network to external users.
 
@@ -616,8 +650,7 @@ spec:
           name: ns-sourcegraph
 ```
 
-
-## Sourcegraph Databases
+## Configure external databases
 
 We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcgraph databases, see [this guide](../../postgres.md).
 

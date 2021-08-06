@@ -138,6 +138,11 @@ We also recommend familiarizing yourself with the following before proceeding wi
 
 We support the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template free way to customize configuration, in a Kubernetes like way with a simple configuration file.
 
+Some benefits of using Kustomize to generate manifests instead of modifying the base directly include:
+
+- Reduce the odds of encountering a merge conflict when [upgrading](update.md) - they allow you to separate your unique changes from the upstream bases.
+- Better enable us to support you if you run into issues, because how your deployment varies from our [reference deployment](#reference-repository) is encapsulated in a small set of files.
+
 For more information about how to use Kustomize with Sourcegraph, see our [customization guide](./configure.md#customizations) and [introduction to overlays](#overlays).
 
 #### Overlays
@@ -146,10 +151,6 @@ An [*overlay*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustom
 
 - be used for example to change the number of replicas, change a namespace, add a label, etc
 - refer to other overlays that eventually refer to the base (forming a directed acyclic graph with the base as the root)
-
-An overlay is defined in a `kustomization.yaml` file.
-To avoid complications with reference cycles an overlay can only reference resources inside the directory subtree of the directory it resides in (symlinks are not allowed either).
-Learn more in the [`kustomization` documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
 
 Overlays can be used in one of two ways:
 
