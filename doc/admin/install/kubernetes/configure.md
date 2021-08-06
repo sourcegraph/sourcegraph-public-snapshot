@@ -62,32 +62,39 @@ In general, customization works like this:
 
 See the [overlays guide](#overlays) to learn about the [overlays we provide](#provided-overlays) and [how to create your own overlays](#custom-overlays).
 
+## Applying Kubernetes manifests
+
+Most of our guides will reference a `kubectl-apply-all.sh` script.
+By default, this script applies our base manifests, but if you have specific commands that should be run whenever you apply your manifests you should modify this script as needed (for example, if you use [overlays](#overlays), you should modify this script to apply your generated cluster instead).
+
 ## Overlays
 
-> NOTE: If you have not worked with [Kustomize](./index.md#kustomize) overlays before, please refer to our [overlays introduction](./index.md#overlays)
+> NOTE: If you have not worked with [Kustomize](./index.md#kustomize) overlays before, please refer to our [overlays introduction](./index.md#overlays).
 
-To generate the manifests run the `overlay-generate-cluster.sh` with two arguments:
+To generate Kubernetes manifests from an overlay, run the `overlay-generate-cluster.sh` with two arguments:
 
 - the name of the overlay
 - and a path to an output directory where the generated manifests will be
 
-Example (assuming you are in the `root` directory):
+For example:
 
-```shell script
-./overlay-generate-cluster.sh non-root generated-cluster
+```sh
+#                overlay directory name    output directory
+#                                 |             |
+./overlay-generate-cluster.sh my-overlay generated-cluster
 ```
 
 After executing the script you can apply the generated manifests from the `generated-cluster` directory:
 
-```shell script
+```sh
 kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
-Available overlays are the subdirectories of [`overlays`](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) (only give the name of the subdirectory, not the full path as an argument) and are documented here.
-
-> NOTE: You only need to apply one of the three overlays, each builds on the overlay listed before. For example, using the non-root overlay will also install Sourcegraph in a non-default namespace.
+We recommend that you update `kubectl-apply-all.sh` with your variant of the above command for [applying manifests](#applying-kubernetes-manifests).
 
 ### Provided overlays
+
+Overlays provided out-of-the-box are in the subdirectories of [`deploy-sourcegraph/overlays`](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) and are documented here.
 
 #### Namespaced overlay
 
@@ -207,7 +214,42 @@ minikube stop
 
 ### Custom overlays
 
-TODO
+To create your own [overlays](#overlays), first [set up your deployment reference repository to enable customizations](#getting-started).
+
+Then, within the `overlays` directory of the [reference repository](./index.md#reference-repository), create a new directory for your overlay along with a `kustomization.yaml`.
+
+```text
+deploy-sourcegraph
+ |-- overlays
+ |    |-- my-new-overlay
+ |    |    +-- kustomization.yaml
+ |    |-- bases
+ |    +-- ...
+ +-- ...
+```
+
+Within `kustomization.yaml`:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Only include resources from 'overlays/bases' you are interested in modifying
+# To learn more about bases: https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#base
+resources:
+  - ../bases/deployments
+  - ../bases/rbac-roles
+  - ../bases/pvcs
+```
+
+You can then define patches, transformations, and more. A complete reference is available [here](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/).
+To get started, we recommend you explore writing your own [`patches`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/), or the more specific variants:
+
+- [`patchesStrategicMerge`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patchesstrategicmerge/)
+- [`patchesJson6902`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patchesjson6902/)
+
+You can also explore how our [provided overlays](#provided-overlays) use patches, for reference: [`deploy-sourcegraph` usage of patches](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+lang:YAML+patches:+:%5B_%5D+OR+patchesStrategicMerge:+:%5B_%5D+OR+patchesJson6902:+:%5B_%5D+count:999&patternType=structural).
+
+<br />
 
 ## Configure a storage class
 
