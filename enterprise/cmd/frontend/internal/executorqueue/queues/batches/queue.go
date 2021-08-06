@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/executorstore"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -20,7 +20,7 @@ func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.
 	}
 
 	return handler.QueueOptions{
-		Store:             background.NewExecutorStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext),
+		Store:             executorstore.NewExecutorStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext),
 		RecordTransformer: recordTransformer,
 	}
 }

@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/executorstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -18,7 +19,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 
 	reconcilerWorkerStore := NewReconcilerDBWorkerStore(batchesStore.Handle(), observationContext)
 	bulkProcessorWorkerStore := NewBulkOperationDBWorkerStore(batchesStore.Handle(), observationContext)
-	specExecutionWorkerStore := NewExecutorStore(batchesStore.Handle(), observationContext)
+	specExecutionWorkerStore := executorstore.NewExecutorStore(batchesStore.Handle(), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
 		newReconcilerWorker(ctx, batchesStore, reconcilerWorkerStore, gitserver.DefaultClient, sourcer, metrics),
