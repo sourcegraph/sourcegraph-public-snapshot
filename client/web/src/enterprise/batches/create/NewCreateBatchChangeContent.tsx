@@ -188,6 +188,9 @@ const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
         [namespaces]
     )
 
+    // Set the initially-selected namespace to the user's namespace
+    useEffect(() => onSelect(userNamespace.id), [onSelect, userNamespace])
+
     const onSelectNamespace = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
             onSelect(event.target.value)
@@ -203,7 +206,7 @@ const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
             <select
                 className={classNames(styles.namespaceSelector, 'form-control')}
                 id={NAMESPACE_SELECTOR_ID}
-                value={selectedNamespace || userNamespace.id}
+                value={selectedNamespace}
                 onChange={onSelectNamespace}
             >
                 <option value={userNamespace.id}>{userNamespace.displayName ?? userNamespace.username}</option>
