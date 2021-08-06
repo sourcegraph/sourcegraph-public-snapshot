@@ -113,7 +113,7 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		QueueAutoIndexJobForRepoFunc: &ResolverQueueAutoIndexJobForRepoFunc{
-			defaultHook: func(context.Context, int) error {
+			defaultHook: func(context.Context, int, *string) error {
 				return nil
 			},
 		},
@@ -1281,24 +1281,24 @@ func (c ResolverQueryResolverFuncCall) Results() []interface{} {
 // QueueAutoIndexJobForRepo method of the parent MockResolver instance is
 // invoked.
 type ResolverQueueAutoIndexJobForRepoFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
+	defaultHook func(context.Context, int, *string) error
+	hooks       []func(context.Context, int, *string) error
 	history     []ResolverQueueAutoIndexJobForRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueAutoIndexJobForRepo delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockResolver) QueueAutoIndexJobForRepo(v0 context.Context, v1 int) error {
-	r0 := m.QueueAutoIndexJobForRepoFunc.nextHook()(v0, v1)
-	m.QueueAutoIndexJobForRepoFunc.appendCall(ResolverQueueAutoIndexJobForRepoFuncCall{v0, v1, r0})
+func (m *MockResolver) QueueAutoIndexJobForRepo(v0 context.Context, v1 int, v2 *string) error {
+	r0 := m.QueueAutoIndexJobForRepoFunc.nextHook()(v0, v1, v2)
+	m.QueueAutoIndexJobForRepoFunc.appendCall(ResolverQueueAutoIndexJobForRepoFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // QueueAutoIndexJobForRepo method of the parent MockResolver instance is
 // invoked and the hook queue is empty.
-func (f *ResolverQueueAutoIndexJobForRepoFunc) SetDefaultHook(hook func(context.Context, int) error) {
+func (f *ResolverQueueAutoIndexJobForRepoFunc) SetDefaultHook(hook func(context.Context, int, *string) error) {
 	f.defaultHook = hook
 }
 
@@ -1307,7 +1307,7 @@ func (f *ResolverQueueAutoIndexJobForRepoFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ResolverQueueAutoIndexJobForRepoFunc) PushHook(hook func(context.Context, int) error) {
+func (f *ResolverQueueAutoIndexJobForRepoFunc) PushHook(hook func(context.Context, int, *string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1316,7 +1316,7 @@ func (f *ResolverQueueAutoIndexJobForRepoFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ResolverQueueAutoIndexJobForRepoFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
+	f.SetDefaultHook(func(context.Context, int, *string) error {
 		return r0
 	})
 }
@@ -1324,12 +1324,12 @@ func (f *ResolverQueueAutoIndexJobForRepoFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ResolverQueueAutoIndexJobForRepoFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
+	f.PushHook(func(context.Context, int, *string) error {
 		return r0
 	})
 }
 
-func (f *ResolverQueueAutoIndexJobForRepoFunc) nextHook() func(context.Context, int) error {
+func (f *ResolverQueueAutoIndexJobForRepoFunc) nextHook() func(context.Context, int, *string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1369,6 +1369,9 @@ type ResolverQueueAutoIndexJobForRepoFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1377,7 +1380,7 @@ type ResolverQueueAutoIndexJobForRepoFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ResolverQueueAutoIndexJobForRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
