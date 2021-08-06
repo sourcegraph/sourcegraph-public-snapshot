@@ -32,24 +32,17 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 ### Steps
 
 - After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
-
-  ```bash
-  kubectl version
-  ```
-
-  ```bash
-  # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes.
-  # See the [GCP's documentation: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control
-  kubectl create clusterrolebinding cluster-admin-binding \
-      --clusterrole cluster-admin --user $(gcloud config get-value account)
-  ```
-
 - `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
 - Deploy the desired version of Sourcegraph to your cluster by [applying the Kubernetes manifests](./configure.md#applying-manifests):
 
   ```sh
   ./kubectl-apply-all.sh
   ```
+
+  > NOTE: Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes
+  > ([Learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control)):
+  >
+  > `kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)`
 
 - Monitor the status of the deployment:
 
