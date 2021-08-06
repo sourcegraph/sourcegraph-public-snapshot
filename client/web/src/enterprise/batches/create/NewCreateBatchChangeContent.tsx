@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,
@@ -14,7 +13,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../components/alerts'
-import { BatchSpecExecutionCreateFields } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 
 import { createBatchSpecExecution } from './backend'

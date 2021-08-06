@@ -37,40 +37,36 @@ interface ExampleTabsProps extends ThemeProps {
     updateSpec: (spec: Spec) => void
 }
 
-export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLightTheme, updateSpec }) => {
-    const [activeIndex, setActiveIndex] = useState<number>(0)
-
-    return (
-        <Tabs className={styles.exampleTabs} onChange={setActiveIndex}>
-            <TabList className="d-flex flex-column flex-shrink-0">
-                <SidebarGroup>
-                    <SidebarGroupItems>
-                        <SidebarGroupHeader label="Examples" />
-                        {EXAMPLES.map((example, index) => (
-                            <ExampleTab key={example.name} index={index}>
-                                {example.name}
-                            </ExampleTab>
-                        ))}
-                    </SidebarGroupItems>
-                </SidebarGroup>
-            </TabList>
-
-            <div className="ml-3 flex-grow-1">
-                <TabPanels>
+export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLightTheme, updateSpec }) => (
+    <Tabs className={styles.exampleTabs}>
+        <TabList className="d-flex flex-column flex-shrink-0">
+            <SidebarGroup>
+                <SidebarGroupItems>
+                    <SidebarGroupHeader label="Examples" />
                     {EXAMPLES.map((example, index) => (
-                        <ExampleTabPanel
-                            key={example.name}
-                            example={example}
-                            isLightTheme={isLightTheme}
-                            index={index}
-                            updateSpec={updateSpec}
-                        />
+                        <ExampleTab key={example.name} index={index}>
+                            {example.name}
+                        </ExampleTab>
                     ))}
-                </TabPanels>
-            </div>
-        </Tabs>
-    )
-}
+                </SidebarGroupItems>
+            </SidebarGroup>
+        </TabList>
+
+        <div className="ml-3 flex-grow-1">
+            <TabPanels>
+                {EXAMPLES.map((example, index) => (
+                    <ExampleTabPanel
+                        key={example.name}
+                        example={example}
+                        isLightTheme={isLightTheme}
+                        index={index}
+                        updateSpec={updateSpec}
+                    />
+                ))}
+            </TabPanels>
+        </div>
+    </Tabs>
+)
 
 const ExampleTab: React.FunctionComponent<{ index: number }> = ({ children, index }) => {
     const { selectedIndex } = useTabsContext()
