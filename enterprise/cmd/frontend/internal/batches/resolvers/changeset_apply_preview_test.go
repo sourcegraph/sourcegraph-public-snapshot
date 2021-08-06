@@ -8,17 +8,21 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func TestChangesetApplyPreviewResolver(t *testing.T) {
@@ -239,6 +243,11 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	// updating some publication states. Again, we should get the appropriate
 	// actions.
 	//
+	// Another interesting case is ensuring that we handle a scenario where a
+	// previously spec-published changeset is now UI-published (because the
+	// published field was removed from the spec). This should result in no
+	// action, since the changeset is already published.
+	//
 	// Finally, we need to ensure that providing a conflicting UI publication
 	// state results in an error.
 	//
@@ -257,91 +266,10 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	repoStore := database.ReposWith(bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, repoStore.Create(ctx, repo))
 
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// We need a batch spec and a set of changeset specs that we can use to
-	// verify that the behaviour is as expected. We'll create one changeset spec
-	// with an explicit published field (so we can verify that UI publication
-	// states can't override that), and four changeset specs without published
-	// fields (one for each possible publication state).
-	var (
-		batchSpec = ct.CreateBatchSpec(t, ctx, bstore, "batch-spec", userID)
-
-		specPublished = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
-			User:      userID,
-			Repo:      repo.ID,
-			HeadRef:   "published",
-			Published: true,
-		})
-		specToBePublished = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
-			User:      userID,
-			Repo:      repo.ID,
-			HeadRef:   "to be published",
-		})
-		specToBeDraft = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
-			User:      userID,
-			Repo:      repo.ID,
-			HeadRef:   "to be draft",
-		})
-		specToBeUnpublished = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
-			User:      userID,
-			Repo:      repo.ID,
-			HeadRef:   "to be unpublished",
-		})
-		specToBeOmitted = ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
-			User:      userID,
-			Repo:      repo.ID,
-			HeadRef:   "to be omitted",
-		})
-	)
-
-	// Most of the input variables are common in the GraphQL queries below, so
-	// here's a function to decorate the common input variables with whatever
-	// custom variables are required.
-	decorateInput := func(in map[string]interface{}) map[string]interface{} {
-		commonInputs := map[string]interface{}{
-			"batchSpec": marshalBatchSpecRandID(batchSpec.RandID),
-			"publicationStates": []map[string]interface{}{
-				{
-					"changesetSpec":    marshalChangesetSpecRandID(specToBePublished.RandID),
-					"publicationState": true,
-				},
-				{
-					"changesetSpec":    marshalChangesetSpecRandID(specToBeDraft.RandID),
-					"publicationState": "draft",
-				},
-				{
-					"changesetSpec":    marshalChangesetSpecRandID(specToBeUnpublished.RandID),
-					"publicationState": false,
-				},
-				// We'll also toss in a spec that doesn't exist, since
-				// applyPreview() is documented to ignore unknown changeset specs
-				// due to its pagination behaviour.
-				{
-					"changesetSpec":    marshalChangesetSpecRandID("this is not a valid random ID"),
-					"publicationState": true,
-				},
-			},
-		}
-
-		for k, v := range in {
-			commonInputs[k] = v
-		}
-
-		return commonInputs
-	}
+	require.Nil(t, err)
 
 	// To make it easier to assert against the operations in a preview node,
 	// here are some canned operations that we expect when publishing.
@@ -358,52 +286,131 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	)
 
 	t.Run("new batch change", func(t *testing.T) {
+		fx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "new")
+
 		// We'll use a page size of 1 here to ensure that the publication states
 		// are correctly handled across pages.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			decorateInput(map[string]interface{}{}),
+			fx.DecorateInput(map[string]interface{}{}),
 			queryChangesetApplyPreview,
 			1,
 		)
 
 		assert.Len(t, previews, 5)
-		assertOperations(t, previews, specPublished, publishOps)
-		assertOperations(t, previews, specToBePublished, publishOps)
-		assertOperations(t, previews, specToBeDraft, publishDraftOps)
-		assertOperations(t, previews, specToBeUnpublished, noOps)
-		assertOperations(t, previews, specToBeOmitted, noOps)
+		assertOperations(t, previews, fx.specPublished, publishOps)
+		assertOperations(t, previews, fx.specToBePublished, publishOps)
+		assertOperations(t, previews, fx.specToBeDraft, publishDraftOps)
+		assertOperations(t, previews, fx.specToBeUnpublished, noOps)
+		assertOperations(t, previews, fx.specToBeOmitted, noOps)
 	})
 
 	t.Run("existing batch change", func(t *testing.T) {
-		batchChange := ct.CreateBatchChange(t, ctx, bstore, "batch-spec", userID, batchSpec.ID)
-		assert.NotNil(t, batchChange)
+		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "existing")
+
+		// Apply the batch spec so we have an existing batch change.
+		svc := service.New(bstore)
+		batchChange, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{
+			BatchSpecRandID:   createdFx.batchSpec.RandID,
+			PublicationStates: createdFx.DefaultUiPublicationStates(),
+		})
+		require.Nil(t, err)
+		require.NotNil(t, batchChange)
+
+		// Now we need a fresh batch spec.
+		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "existing")
 
 		// Same as above, but this time we'll use a page size of 2 just to mix
 		// it up.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			decorateInput(map[string]interface{}{}),
+			newFx.DecorateInput(map[string]interface{}{}),
 			queryChangesetApplyPreview,
 			2,
 		)
 
 		assert.Len(t, previews, 5)
-		assertOperations(t, previews, specPublished, publishOps)
-		assertOperations(t, previews, specToBePublished, publishOps)
-		assertOperations(t, previews, specToBeDraft, publishDraftOps)
-		assertOperations(t, previews, specToBeUnpublished, noOps)
-		assertOperations(t, previews, specToBeOmitted, noOps)
+		assertOperations(t, previews, newFx.specPublished, publishOps)
+		assertOperations(t, previews, newFx.specToBePublished, publishOps)
+		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
+		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
+		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
+	})
+
+	t.Run("already published changeset", func(t *testing.T) {
+		// The set up on this is pretty similar to the previous test case, but
+		// with the extra step of then modifying the relevant changeset to make
+		// it look like it's been published.
+		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+
+		// Apply the batch spec so we have an existing batch change.
+		svc := service.New(bstore)
+		batchChange, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{
+			BatchSpecRandID:   createdFx.batchSpec.RandID,
+			PublicationStates: createdFx.DefaultUiPublicationStates(),
+		})
+		require.Nil(t, err)
+		require.NotNil(t, batchChange)
+
+		// Find the changeset for specPublished, and mock it up to look open.
+		changesets, _, err := bstore.ListChangesets(ctx, store.ListChangesetsOpts{
+			BatchChangeID: batchChange.ID,
+		})
+		require.Nil(t, err)
+		for _, changeset := range changesets {
+			if changeset.CurrentSpecID == createdFx.specPublished.ID {
+				changeset.PublicationState = btypes.ChangesetPublicationStatePublished
+				changeset.ExternalID = "12345"
+				changeset.ExternalState = btypes.ChangesetExternalStateOpen
+				require.Nil(t, bstore.UpsertChangeset(ctx, changeset))
+				break
+			}
+		}
+
+		// Now we need a fresh batch spec.
+		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+
+		// We need to modify the changeset spec to not have a published field.
+		newFx.specPublished.Spec.Published = batches.PublishedValue{Val: nil}
+		require.Nil(t, bstore.UpdateChangesetSpec(ctx, newFx.specPublished))
+
+		// Same as above, but this time we'll use a page size of 3 just to mix
+		// it up.
+		previews := repeatApplyPreview(
+			ctx, t, s,
+			newFx.DecorateInput(map[string]interface{}{
+				"publicationStates": []map[string]interface{}{
+					{
+						"changesetSpec":    marshalChangesetSpecRandID(newFx.specPublished.RandID),
+						"publicationState": true,
+					},
+				},
+			}),
+			queryChangesetApplyPreview,
+			3,
+		)
+
+		// The key point here is that specPublished has no operations, since
+		// it's already published.
+		assert.Len(t, previews, 5)
+		assertOperations(t, previews, newFx.specPublished, noOps)
+		assertOperations(t, previews, newFx.specToBePublished, publishOps)
+		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
+		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
+		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
+
 	})
 
 	t.Run("conflicting publication state", func(t *testing.T) {
+		fx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "conflicting")
+
 		var response struct{ Node apitest.BatchSpec }
 		err := apitest.Exec(
 			ctx, t, s,
-			decorateInput(map[string]interface{}{
+			fx.DecorateInput(map[string]interface{}{
 				"publicationStates": []map[string]interface{}{
 					{
-						"changesetSpec":    marshalChangesetSpecRandID(specPublished.RandID),
+						"changesetSpec":    marshalChangesetSpecRandID(fx.specPublished.RandID),
 						"publicationState": true,
 					},
 				},
@@ -477,4 +484,113 @@ func repeatApplyPreview(
 			return out
 		}
 	}
+}
+
+type applyPreviewTestFixture struct {
+	batchSpec           *btypes.BatchSpec
+	specPublished       *btypes.ChangesetSpec
+	specToBePublished   *btypes.ChangesetSpec
+	specToBeDraft       *btypes.ChangesetSpec
+	specToBeUnpublished *btypes.ChangesetSpec
+	specToBeOmitted     *btypes.ChangesetSpec
+}
+
+func newApplyPreviewTestFixture(
+	t *testing.T, ctx context.Context, bstore *store.Store,
+	userID int32,
+	repoID api.RepoID,
+	name string,
+) *applyPreviewTestFixture {
+	// We need a batch spec and a set of changeset specs that we can use to
+	// verify that the behaviour is as expected. We'll create one changeset spec
+	// with an explicit published field (so we can verify that UI publication
+	// states can't override that), and four changeset specs without published
+	// fields (one for each possible publication state).
+	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, name, userID)
+
+	return &applyPreviewTestFixture{
+		batchSpec: batchSpec,
+		specPublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repoID,
+			HeadRef:   "published " + name,
+			Published: true,
+		}),
+		specToBePublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repoID,
+			HeadRef:   "to be published " + name,
+		}),
+		specToBeDraft: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repoID,
+			HeadRef:   "to be draft " + name,
+		}),
+		specToBeUnpublished: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repoID,
+			HeadRef:   "to be unpublished " + name,
+		}),
+		specToBeOmitted: ct.CreateChangesetSpec(t, ctx, bstore, ct.TestSpecOpts{
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      repoID,
+			HeadRef:   "to be omitted " + name,
+		}),
+	}
+}
+
+func (fx *applyPreviewTestFixture) DecorateInput(in map[string]interface{}) map[string]interface{} {
+	commonInputs := map[string]interface{}{
+		"batchSpec":         marshalBatchSpecRandID(fx.batchSpec.RandID),
+		"publicationStates": fx.DefaultPublicationStates(),
+	}
+
+	for k, v := range in {
+		commonInputs[k] = v
+	}
+
+	return commonInputs
+}
+
+func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]interface{} {
+	return []map[string]interface{}{
+		{
+			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBePublished.RandID),
+			"publicationState": true,
+		},
+		{
+			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBeDraft.RandID),
+			"publicationState": "draft",
+		},
+		{
+			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBeUnpublished.RandID),
+			"publicationState": false,
+		},
+		// We'll also toss in a spec that doesn't exist, since applyPreview() is
+		// documented to ignore unknown changeset specs due to its pagination
+		// behaviour.
+		{
+			"changesetSpec":    marshalChangesetSpecRandID("this is not a valid random ID"),
+			"publicationState": true,
+		},
+	}
+}
+
+func (fx *applyPreviewTestFixture) DefaultUiPublicationStates() service.UiPublicationStates {
+	ups := service.UiPublicationStates{}
+
+	for spec, state := range map[*btypes.ChangesetSpec]interface{}{
+		fx.specToBePublished:   true,
+		fx.specToBeDraft:       "draft",
+		fx.specToBeUnpublished: false,
+	} {
+		ups.Add(spec.RandID, batches.PublishedValue{Val: state})
+	}
+
+	return ups
 }
