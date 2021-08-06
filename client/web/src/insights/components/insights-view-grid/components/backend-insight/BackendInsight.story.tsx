@@ -30,7 +30,6 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
 
 const mockInsightAPI = createMockInsightAPI({
     getBackendInsightById: (id: string, filters) => {
-        console.log('RUN API WITH', filters)
         return of({
             id,
             view: {
