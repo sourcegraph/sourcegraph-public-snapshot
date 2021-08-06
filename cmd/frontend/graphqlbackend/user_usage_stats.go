@@ -106,9 +106,9 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		return nil, nil // Future(slimsag): implement actual event logging for these events
 	}
 
-	var publicPropertiesPayload json.RawMessage
+	var publicArgumentPayload json.RawMessage
 	if args.PublicArgument != nil {
-		if err := json.Unmarshal([]byte(*args.PublicArgument), &publicPropertiesPayload); err != nil {
+		if err := json.Unmarshal([]byte(*args.PublicArgument), &publicArgumentPayload); err != nil {
 			return nil, err
 		}
 	}
@@ -126,7 +126,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		FeatureFlags:   ffs,
 		CohortID:       args.CohortID,
 		Referrer:       args.Referrer,
-		PublicArgument: publicPropertiesPayload,
+		PublicArgument: publicArgumentPayload,
 	})
 }
 
