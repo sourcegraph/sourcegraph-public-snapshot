@@ -63,7 +63,7 @@ function install_docker() {
 
   if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]; then
     mkdir -p "$(dirname "${DOCKER_DAEMON_CONFIG_FILE}")"
-    cat '{"log-driver": "journald"}' >"${DOCKER_DAEMON_CONFIG_FILE}"
+    echo '{"log-driver": "journald"}' >"${DOCKER_DAEMON_CONFIG_FILE}"
   fi
 
   ## Restart Docker daemon to pick up our changes.
