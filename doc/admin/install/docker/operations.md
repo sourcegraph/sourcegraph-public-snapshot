@@ -101,3 +101,12 @@ To access the remote server using `sshuttle` from your local machine:
 ```bash script
 sshuttle -r user@host 0/0
 ```
+
+## ENV Configuration
+Add the following to your docker run command:
+
+```
+docker run [...]
+-e (YOUR CODE)
+sourcegraph/server:3.30.3
+```
