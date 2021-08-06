@@ -250,6 +250,11 @@ type PublishChangesetsArgs struct {
 	Draft bool
 }
 
+type PreviewBatchSpecExecutionWorkspacesArgs struct {
+	Spec      string
+	Namespace *graphql.ID
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -296,7 +301,10 @@ type BatchChangesResolver interface {
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
+
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
+
+	PreviewBatchSpecExecutionWorkspaces(ctx context.Context, args *PreviewBatchSpecExecutionWorkspacesArgs) (BatchSpecExecutionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }

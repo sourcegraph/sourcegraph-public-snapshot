@@ -2224,6 +2224,26 @@ extend type Query {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+
+    """
+    Returns a preview of which repositories would be involved in a batch spec execution
+    """
+    previewBatchSpecExecutionWorkspaces(
+        spec: String!, namespace: ID
+    ): [BatchSpecExecutionWorkspace!]!
+
+}
+
+"""
+A batch spec execution workspace is a combination of repository and relative path in which a batch spec will be executed.
+"""
+type BatchSpecExecutionWorkspace {
+    """
+    """
+    repository: Repository!
+    """
+    """
+    path: String!
 }
 
 """
