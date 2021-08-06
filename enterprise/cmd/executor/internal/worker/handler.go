@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -144,18 +143,6 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	}
 	runner := h.runnerFactory(workingDirectory, logger, options, h.operations)
 
-	// Deduplicate and sort (for testing)
-	imageMap := map[string]struct{}{}
-	for _, dockerStep := range job.DockerSteps {
-		imageMap[dockerStep.Image] = struct{}{}
-	}
-
-	imageNames := make([]string, 0, len(imageMap))
-	for image := range imageMap {
-		imageNames = append(imageNames, image)
-	}
-	sort.Strings(imageNames)
-
 	scriptNames := make([]string, 0, len(job.DockerSteps))
 	for i, dockerStep := range job.DockerSteps {
 		scriptName := scriptNameFromJobStep(job, i)
@@ -171,7 +158,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 	// Setup Firecracker VM (if enabled)
-	if err := runner.Setup(ctx, imageNames, nil); err != nil {
+	if err := runner.Setup(ctx); err != nil {
 		return wrapError(err, "failed to setup virtual machine")
 	}
 	defer func() {

@@ -24,12 +24,12 @@ type Config struct {
 	QueuePollInterval    time.Duration
 	MaximumNumJobs       int
 	FirecrackerImage     string
+	VMStartupScriptPath  string
 	VMPrefix             string
 	UseFirecracker       bool
 	FirecrackerNumCPUs   int
 	FirecrackerMemory    string
 	FirecrackerDiskSpace string
-	ImageArchivesPath    string
 	MaximumRuntimePerJob time.Duration
 	CleanupTaskInterval  time.Duration
 }
@@ -43,11 +43,11 @@ func (c *Config) Load() {
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", "true", "Whether to isolate commands in virtual machines.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
+	c.VMStartupScriptPath = c.GetOptional("EXECUTOR_VM_STARTUP_SCRIPT_PATH", "A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.")
 	c.VMPrefix = c.Get("EXECUTOR_VM_PREFIX", "executor", "A name prefix for virtual machines controlled by this instance.")
 	c.FirecrackerNumCPUs = c.GetInt("EXECUTOR_FIRECRACKER_NUM_CPUS", "4", "How many CPUs to allocate to each virtual machine or container.")
 	c.FirecrackerMemory = c.Get("EXECUTOR_FIRECRACKER_MEMORY", "12G", "How much memory to allocate to each virtual machine or container.")
 	c.FirecrackerDiskSpace = c.Get("EXECUTOR_FIRECRACKER_DISK_SPACE", "20G", "How much disk space to allocate to each virtual machine or container.")
-	c.ImageArchivesPath = c.Get("EXECUTOR_IMAGE_ARCHIVE_PATH", "", "Where to store tar archives of docker images shared by virtual machines.")
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 }
@@ -91,9 +91,9 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 
 func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 	return command.FirecrackerOptions{
-		Enabled:           c.UseFirecracker,
-		Image:             c.FirecrackerImage,
-		ImageArchivesPath: c.ImageArchivesPath,
+		Enabled:             c.UseFirecracker,
+		Image:               c.FirecrackerImage,
+		VMStartupScriptPath: c.VMStartupScriptPath,
 	}
 }
 
