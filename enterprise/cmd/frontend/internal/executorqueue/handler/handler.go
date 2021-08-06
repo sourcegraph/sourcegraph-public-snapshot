@@ -24,13 +24,14 @@ type QueueOptions struct {
 	// record from that queue into the job to be given to an executor.
 	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
 
+	// FetchCanceled is an optional hook that can be provided to support cancelation.
+	// If it is set, it will be invoked periodically and should return the IDs to be
+	// canceled for the given executor.
 	FetchCanceled func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
 func newHandler(queueOptions QueueOptions) *handler {
-	return &handler{
-		QueueOptions: queueOptions,
-	}
+	return &handler{queueOptions}
 }
 
 var ErrUnknownJob = errors.New("unknown job")
@@ -144,7 +145,8 @@ func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int)
 	})
 }
 
-// canceled calls canceled for the given jobs.
+// canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
+// to be canceled.
 func (h *handler) canceled(ctx context.Context, executorName string) (knownIDs []int, err error) {
 	if h.FetchCanceled == nil {
 		return nil, nil

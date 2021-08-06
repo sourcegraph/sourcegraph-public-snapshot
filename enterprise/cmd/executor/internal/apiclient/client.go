@@ -173,7 +173,7 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) WhatIsCanceled(ctx context.Context, queueName string) (canceledIDs []int, err error) {
+func (c *Client) Canceled(ctx context.Context, queueName string) (canceledIDs []int, err error) {
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/canceled", queueName), executor.CanceledRequest{
 		ExecutorName: c.options.ExecutorName,
 	})

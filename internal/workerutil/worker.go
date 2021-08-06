@@ -92,10 +92,6 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 	}
 }
 
-func (w *Worker) Cancel(id int) {
-	w.runningIDSet.Cancel(id)
-}
-
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker) Start() {
 	defer close(w.finished)
@@ -166,6 +162,12 @@ loop:
 func (w *Worker) Stop() {
 	w.cancel()
 	<-w.finished
+}
+
+// Cancel cancels the handler context of the running job with the given record id.
+// It will eventually be marked as errored.
+func (w *Worker) Cancel(id int) {
+	w.runningIDSet.Cancel(id)
 }
 
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record

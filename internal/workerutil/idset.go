@@ -31,7 +31,7 @@ func (i *IDSet) Add(id int, cancel context.CancelFunc) bool {
 }
 
 // Remove invokes the cancel function associated with the given identifier
-// in the setand removes the identifier from the set. If the identifier is
+// in the set and removes the identifier from the set. If the identifier is
 // not a member of the set, then no action is performed.
 func (i *IDSet) Remove(id int) {
 	i.Lock()
@@ -44,6 +44,9 @@ func (i *IDSet) Remove(id int) {
 	}
 }
 
+// Remove invokes the cancel function associated with the given identifier
+// in the set. If the identifier is not a member of the set, then no action
+// is performed.
 func (i *IDSet) Cancel(id int) {
 	i.RLock()
 	cancel, ok := i.ids[id]
