@@ -128,7 +128,8 @@ Also see [debug ports](../../pprof.md#debug-ports) for specific ports that can b
 
 The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence.
 
-## ENV Configuration
+## Environment variables
+
 Add/modify the environment variables to all of the sourcegraph-frontend-* services and the sourcegraph-frontend-internal service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml):
 ```
 sourcegraph-frontend-0:
