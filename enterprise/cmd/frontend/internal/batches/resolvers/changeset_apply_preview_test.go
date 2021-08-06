@@ -147,7 +147,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 }
 
 const queryChangesetApplyPreview = `
-query ($batchSpec: ID!, $first: Int, $after: String, $publicationStates: [ChangesetSpecPublicationStateInput!]) {
+query ($batchSpec: ID!, $first: Int = 50, $after: String, $publicationStates: [ChangesetSpecPublicationStateInput!]) {
     node(id: $batchSpec) {
       __typename
       ... on BatchSpec {
