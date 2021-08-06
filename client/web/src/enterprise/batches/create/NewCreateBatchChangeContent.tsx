@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useHistory } from 'react-router'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -11,7 +12,6 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecExecutionCreateFields } from '../../../graphql-operations'
@@ -27,22 +27,21 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
     isLightTheme,
     settingsCascade,
 }) => {
+    const history = useHistory()
+
     const [spec, setSpec] = useState<{ fileName: string; code: string }>({ fileName: '', code: '' })
-    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionCreateFields>()
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [selectedNamespace, setSelectedNamespace] = useState<string>('')
 
     const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
-        setBatchSpecExecution(undefined)
         setIsLoading(true)
         try {
-            const exec = await createBatchSpecExecution(spec.code, selectedNamespace)
-            setBatchSpecExecution(exec)
-            setIsLoading(false)
+            const execution = await createBatchSpecExecution(spec.code, selectedNamespace)
+            history.push(`${execution.namespace.url}/batch-changes/executions/${execution.id}`)
         } catch (error) {
             setIsLoading(error)
         }
-    }, [spec.code, selectedNamespace])
+    }, [spec.code, selectedNamespace, history])
 
     return (
         <>
@@ -124,16 +123,6 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                         Run batch spec
                     </button>
                     {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
-                    {batchSpecExecution && (
-                        <div className="mt-3 mb-0 alert alert-success">
-                            Running batch spec.{' '}
-                            <Link
-                                to={`${batchSpecExecution.namespace.url}/batch-changes/executions/${batchSpecExecution.id}`}
-                            >
-                                Check it out here.
-                            </Link>
-                        </div>
-                    )}
                     <hr className="mb-3" />
                     <p>
                         This is the <strong>recommended</strong> way to execute a batch spec. Choose this option if:
