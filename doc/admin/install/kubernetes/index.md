@@ -29,7 +29,9 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 > WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
 
-### Steps
+Once you are all set up, either [install Sourcegraph directly](#direct-installation) or [deploy Sourcegraph to a cloud of your choice](#cloud-installation).
+
+### Direct installation
 
 - After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 - `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
@@ -60,7 +62,7 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 > NOTE: If you previously [set up an `ingress-controller`](./configure.md#ingress-controller-recommended), you can now also access your deployment via the ingress.
 
-## Cloud installation guides
+### Cloud installation
 
 > WARNING: If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
