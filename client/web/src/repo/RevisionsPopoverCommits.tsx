@@ -90,12 +90,6 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     {node.abbreviatedOID}
                 </code>
                 <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
-                {isCurrent && (
-                    <CircleChevronLeftIcon
-                        className="icon-inline connection-popover__node-link-icon"
-                        data-tooltip="Current commit"
-                    />
-                )}
             </Link>
         </li>
     )

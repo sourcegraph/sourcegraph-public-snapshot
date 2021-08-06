@@ -32,6 +32,8 @@ interface GitReferenceNodeProps {
     children?: React.ReactNode
 
     className?: string
+
+    icon?: React.ComponentType<{ className?: string }>
 }
 
 export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
@@ -40,6 +42,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     ancestorIsLink,
     children,
     className,
+    icon: Icon,
 }) => {
     const mostRecentSig =
         node.target.commit &&
@@ -56,6 +59,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
             to={!ancestorIsLink ? url : undefined}
         >
             <span className="d-flex align-items-center">
+                {Icon && <Icon className="icon-inline mr-1" />}
                 <code className="git-ref-tag-2">{node.displayName}</code>
                 {mostRecentSig && (
                     <small className="pl-2">

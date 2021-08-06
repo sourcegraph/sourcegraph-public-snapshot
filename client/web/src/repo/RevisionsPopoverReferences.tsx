@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 
@@ -31,6 +32,8 @@ interface GitReferencePopoverNodeProps {
     location: H.Location
 
     getURLFromRevision: (href: string, revision: string) => string
+
+    isSpeculative?: boolean
 }
 
 const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
@@ -39,6 +42,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     currentRevision,
     location,
     getURLFromRevision,
+    isSpeculative,
 }) => {
     let isCurrent: boolean
     if (currentRevision) {
@@ -55,14 +59,8 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
                 'connection-popover__node-link',
                 isCurrent && 'connection-popover__node-link--active'
             )}
-        >
-            {isCurrent && (
-                <CircleChevronLeftIcon
-                    className="icon-inline connection-popover__node-link-icon"
-                    data-tooltip="Current"
-                />
-            )}
-        </GitReferenceNode>
+            icon={isSpeculative ? SearchIcon : undefined}
+        />
     )
 }
 
@@ -103,6 +101,7 @@ export const SpectulativeGitReferencePopoverNode: React.FunctionComponent<Spectu
             defaultBranch={defaultBranch}
             getURLFromRevision={getURLFromRevision}
             location={location}
+            isSpeculative={true}
         />
     )
 }

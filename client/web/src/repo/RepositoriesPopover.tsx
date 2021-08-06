@@ -56,9 +56,6 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, cu
             }`}
         >
             {displayRepoName(node.name)}
-            {node.id === currentRepo && (
-                <CircleChevronLeftIcon className="icon-inline connection-popover__node-link-icon" />
-            )}
         </Link>
     </li>
 )
