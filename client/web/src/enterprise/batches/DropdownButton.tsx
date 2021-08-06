@@ -12,14 +12,12 @@ export interface Action {
     dropdownTitle: string
     /* The description in the dropdown menu item. */
     dropdownDescription: string
-    /* Conditionally display the action based on the given query arguments. */
-    isAvailable: () => boolean
     /**
      * Invoked when the action is triggered. Either onDone or onCancel need to
      * be called eventually. Can return a JSX.Element to be rendered adjacent to
      * the button (i.e. a modal).
      */
-    onTrigger: (onDone: () => void, onCancel: () => void) => Promise<void | JSX.Element>
+    onTrigger: (onDone: () => void, onCancel: () => void) => Promise<void | JSX.Element> | void | JSX.Element
     /** If set, displays an experimental badge next to the dropdown title. */
     experimental?: boolean
 }
@@ -47,8 +45,6 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
 }) => {
     placeholder ??= 'Select action'
 
-    actions = useMemo(() => actions.filter(action => action.isAvailable()), [actions])
-
     const [isDisabled, setIsDisabled] = useState(!!disabled)
 
     const [isOpen, setIsOpen] = useState(!!initiallyOpen)
@@ -61,7 +57,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
         }
 
         const id = selected !== undefined ? selected : defaultAction
-        if (id !== undefined && id >= 0 && id < actions.length && actions[id].isAvailable()) {
+        if (id !== undefined && id >= 0 && id < actions.length) {
             return actions[id]
         }
         return undefined
@@ -90,15 +86,17 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
         // Right now, we don't handle onDone or onCancel separately, but we may
         // want to expose this at a later stage.
         setIsDisabled(true)
-        const element = await selectedAction.onTrigger(
-            () => {
-                setIsDisabled(false)
-                setRenderedElement(undefined)
-            },
-            () => {
-                setIsDisabled(false)
-                setRenderedElement(undefined)
-            }
+        const element = await Promise.resolve(
+            selectedAction.onTrigger(
+                () => {
+                    setIsDisabled(false)
+                    setRenderedElement(undefined)
+                },
+                () => {
+                    setIsDisabled(false)
+                    setRenderedElement(undefined)
+                }
+            )
         )
         if (element !== undefined) {
             setRenderedElement(element)
@@ -106,7 +104,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     }, [selectedAction])
 
     const label = useMemo(() => {
-        const label = selectedAction?.isAvailable()
+        const label = selectedAction
             ? selectedAction.buttonLabel + (selectedAction.experimental ? ' (Experimental)' : '')
             : undefined
 
@@ -115,7 +113,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
 
     useEffect(() => {
         if (onLabel) {
-            if (selectedAction?.isAvailable()) {
+            if (selectedAction) {
                 onLabel(selectedAction.buttonLabel + (selectedAction.experimental ? ' (Experimental)' : ''))
             }
         }

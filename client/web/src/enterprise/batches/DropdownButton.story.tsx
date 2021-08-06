@@ -18,7 +18,6 @@ const action: Action = {
     buttonLabel: 'Action',
     dropdownTitle: 'Action',
     dropdownDescription: 'Perform an action',
-    isAvailable: () => true,
     onTrigger,
 }
 
@@ -27,7 +26,6 @@ const disabledAction: Action = {
     buttonLabel: 'Disabled action',
     dropdownTitle: 'Disabled action',
     dropdownDescription: 'Perform an action, if only this were enabled',
-    isAvailable: () => false,
     onTrigger,
 }
 
@@ -36,7 +34,6 @@ const experimentalAction: Action = {
     buttonLabel: 'Experimental action',
     dropdownTitle: 'Experimental action',
     dropdownDescription: 'Perform a super cool action that might explode',
-    isAvailable: () => true,
     onTrigger,
     experimental: true,
 }
