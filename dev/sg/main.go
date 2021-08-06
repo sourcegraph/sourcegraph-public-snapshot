@@ -891,8 +891,10 @@ func logoExec(ctx context.Context, args []string) error {
 	randoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }
 
 	var (
-		color1 = randoColor()
-		color2 = output.StyleLogo
+		color1a = randoColor()
+		color1b = randoColor()
+		color1c = randoColor()
+		color2  = output.StyleLogo
 	)
 
 	times := 20
@@ -902,30 +904,30 @@ func logoExec(ctx context.Context, args []string) error {
 		stdout.Out.Writef("%s", color2)
 		stdout.Out.Write(`          _____                    _____`)
 		stdout.Out.Write(`         /\    \                  /\    \`)
-		stdout.Out.Writef(`        /%s::%s\    \                /%s::%s\    \`, color1, color2, color1, color2)
-		stdout.Out.Writef(`       /%s::::%s\    \              /%s::::%s\    \`, color1, color2, color1, color2)
-		stdout.Out.Writef(`      /%s::::::%s\    \            /%s::::::%s\    \`, color1, color2, color1, color2)
-		stdout.Out.Writef(`     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, color1, color2, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, color1, color2, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, color1, color2, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, color1, color2, color1, color2, color1, color2, color1, color2)
-		stdout.Out.Writef(`      \%s::::::%s/    /            \%s::::::%s/    /`, color1, color2, color1, color2)
-		stdout.Out.Writef(`       \%s::::%s/    /              \%s::::%s/    /`, color1, color2, color1, color2)
-		stdout.Out.Writef(`        \%s::%s/    /                \%s::%s/____/`, color1, color2, color1, color2)
+		stdout.Out.Writef(`        /%s::%s\    \                /%s::%s\    \`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`       /%s::::%s\    \              /%s::::%s\    \`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`      /%s::::::%s\    \            /%s::::::%s\    \`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
+		stdout.Out.Writef(` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`      \%s::::::%s/    /            \%s::::::%s/    /`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`       \%s::::%s/    /              \%s::::%s/    /`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`        \%s::%s/    /                \%s::%s/____/`, color1a, color2, color1b, color2)
 		stdout.Out.Write(`         \/____/`)
 		stdout.Out.Writef("%s", output.StyleReset)
 
 		time.Sleep(200 * time.Millisecond)
 
-		color1, color2 = randoColor(), color1
+		color1a, color1b, color1c, color2 = randoColor(), color1a, color1b, color1c
 
 		if i != times-1 {
 			stdout.Out.MoveUpLines(linesPrinted)
