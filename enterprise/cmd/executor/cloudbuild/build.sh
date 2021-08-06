@@ -63,57 +63,11 @@ function install_docker() {
 
   if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]; then
     mkdir -p "$(dirname "${DOCKER_DAEMON_CONFIG_FILE}")"
-    cat <<'EOF' >"${DOCKER_DAEMON_CONFIG_FILE}"
-{
-  "log-driver": "journald",
-  "registry-mirrors": ["http://localhost:5000"]
-}
-EOF
+    cat '{"log-driver": "journald"}' >"${DOCKER_DAEMON_CONFIG_FILE}"
   fi
 
   ## Restart Docker daemon to pick up our changes.
   systemctl restart --now docker
-}
-
-## Docker pull-through cache
-## Reference: https://docs.docker.com/registry/recipes/mirror/
-function setup_pull_through_docker_cache() {
-  DOCKER_REGISTRY_CONFIG_FILE='/etc/docker/registry_config.json'
-
-  if [ ! -f "${DOCKER_REGISTRY_CONFIG_FILE}" ]; then
-    mkdir -p "$(dirname "${DOCKER_REGISTRY_CONFIG_FILE}")"
-    cat <<'EOF' >"${DOCKER_REGISTRY_CONFIG_FILE}"
-version: 0.1
-log:
-  fields:
-    service: registry
-storage:
-  cache:
-    blobdescriptor: inmemory
-  filesystem:
-    rootdirectory: /var/lib/registry
-http:
-  addr: :5000
-  headers:
-    X-Content-Type-Options: [nosniff]
-health:
-  storagedriver:
-    enabled: true
-    interval: 10s
-    threshold: 3
-proxy:
-  remoteurl: https://registry-1.docker.io
-EOF
-  fi
-
-  # TODO: Convert this into a proper service.
-  docker run \
-    -d \
-    --restart=always \
-    -p 5000:5000 \
-    -v ${DOCKER_REGISTRY_CONFIG_FILE}:/etc/docker/registry/config.yml \
-    --name registry \
-    registry:2
 }
 
 ## Install Weaveworks Ignite
@@ -179,7 +133,6 @@ install_logging_agent
 install_monitoring_agent
 increase_inotify_limit
 install_docker
-setup_pull_through_docker_cache
 install_ignite
 install_executor
 generate_ignite_base_image
