@@ -7,6 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 )
 
+type matchSender interface {
+	Send(protocol.FileMatch)
+	SentCount() int
+	Remaining() int
+	LimitHit() bool
+}
+
 type limitedStreamCollector struct {
 	mux       sync.Mutex
 	collected []protocol.FileMatch
