@@ -137,10 +137,9 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		return &conf.Unified{}
 	}
 	externalService := &internalTypes.ExternalService{
-		Kind:         extsvc.KindGitHub,
-		DisplayName:  "GITHUB #1",
-		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-		Unrestricted: true,
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 	}
 	err := database.ExternalServices(postgres).Create(context.Background(), confGet, externalService)
 	if err != nil {
@@ -158,10 +157,6 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 			(2, 'test-repo2', 'description', false, current_timestamp, current_timestamp, 2, 'github', 1, false, 'github.com/test-repo/test-repo2', null, '{}', false, true, 1),
 			(3, 'test-repo3', 'description', false, current_timestamp, current_timestamp, 3, 'github', 1, false, 'github.com/test-repo/test-repo3', null, '{}', false, true, 1);
 
-		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES ($1, 1, '');
-		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES ($1, 2, '');
-		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES ($1, 3, '');
-
 		INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at, object_ids_ints)
 		VALUES
 		       (1, 'read', 'repos', '', current_timestamp, current_timestamp, ARRAY[1]);
@@ -176,7 +171,18 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		VALUES
 		(1, 'user1', 'user1', null, current_timestamp, current_timestamp, null, 1, 'abc', false),
 		(2, 'user2', 'user2', null, current_timestamp, current_timestamp, null, 1, 'abc', false);`,
-		externalService.ID,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = postgres.Exec(`
+		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+		VALUES
+		       ($1, 1, ''),
+		       ($1, 2, ''),
+		       ($1, 3, '');
+`, externalService.ID,
 	)
 	if err != nil {
 		t.Fatal(err)
