@@ -1686,6 +1686,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.temporary_settings"
+```
+   Column   |           Type           | Collation | Nullable |                    Default                     
+------------+--------------------------+-----------+----------+------------------------------------------------
+ id         | integer                  |           | not null | nextval('temporary_settings_id_seq'::regclass)
+ user_id    | integer                  |           | not null | 
+ contents   | jsonb                    |           |          | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "temporary_settings_pkey" PRIMARY KEY, btree (id)
+    "temporary_settings_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+Foreign-key constraints:
+    "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+Stores per-user temporary settings used in the UI, for example, which modals have been dimissed or what theme is preferred.
+
+**contents**: JSON-encoded temporary settings.
+
+**user_id**: The ID of the user the settings will be saved for.
+
 # Table "public.user_credentials"
 ```
         Column         |           Type           | Collation | Nullable |                   Default                    
@@ -1872,6 +1895,7 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
