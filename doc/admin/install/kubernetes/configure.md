@@ -511,6 +511,9 @@ Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https:/
 
 - Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
 
+## Environment variables
+
+Update the environment variables in the sourcegraph-frontend deployment YAML file
 
 ## Troubleshooting
 
