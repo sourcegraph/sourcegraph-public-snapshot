@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type changesetApplyPreviewResolver struct {
@@ -23,6 +24,7 @@ type changesetApplyPreviewResolver struct {
 	preloadedNextSync    time.Time
 	preloadedBatchChange *btypes.BatchChange
 	batchSpecID          int64
+	publicationStates    publicationStateMap
 }
 
 var _ graphqlbackend.ChangesetApplyPreviewResolver = &changesetApplyPreviewResolver{}
@@ -40,6 +42,7 @@ func (r *changesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphq
 			preloadedNextSync:    r.preloadedNextSync,
 			preloadedBatchChange: r.preloadedBatchChange,
 			batchSpecID:          r.batchSpecID,
+			publicationStates:    r.publicationStates,
 		}, true
 	}
 	return nil, false
@@ -135,6 +138,7 @@ type visibleChangesetApplyPreviewResolver struct {
 	preloadedNextSync    time.Time
 	preloadedBatchChange *btypes.BatchChange
 	batchSpecID          int64
+	publicationStates    map[string]batches.PublishedValue
 
 	planOnce sync.Once
 	plan     *reconciler.Plan
@@ -226,6 +230,17 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			return
 		}
 		changeset := changesets[0]
+
+		// Set the changeset UI publication state if necessary.
+		if r.publicationStates != nil && mappingChangesetSpec != nil {
+			if state, ok := r.publicationStates[mappingChangesetSpec.RandID]; ok {
+				if !mappingChangesetSpec.Spec.Published.Nil() {
+					r.planErr = errors.Newf("changeset spec %q has the published field set in its spec", mappingChangesetSpec.RandID)
+					return
+				}
+				changeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
+			}
+		}
 
 		// Detached changesets would still appear here, but since they'll never match one of the new specs, they don't actually appear here.
 		// Once we have a way to have changeset specs for detached changesets, this would be the place to do a "will be detached" check.
