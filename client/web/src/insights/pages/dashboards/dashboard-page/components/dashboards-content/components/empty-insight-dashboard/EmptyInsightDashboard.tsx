@@ -44,7 +44,7 @@ export const EmptyBuiltInDashboard: React.FunctionComponent = () => (
         </Link>
         <span className="d-flex justify-content-center mt-3">
             <span>
-                ...or add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
+                or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
             </span>
         </span>
     </section>
@@ -76,7 +76,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 </div>
             </button>
             <span className="d-flex justify-content-center mt-3">
-                <Link to="/insights/create">...or create new insight</Link>
+                <Link to="/insights/create">or, create new insight</Link>
             </span>
         </section>
     )

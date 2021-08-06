@@ -554,30 +554,6 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ Ind
 	})
 }
 
-// bufferedSender returns a buffered Sender with capacity cap, and a cleanup
-// function which blocks until the buffer is drained. The cleanup function may
-// only be called once. For cap=0, bufferedSender returns the input sender.
-func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
-	if cap == 0 {
-		return sender, func() {}
-	}
-	buf := make(chan *zoekt.SearchResult, cap-1)
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for e := range buf {
-			sender.Send(e)
-		}
-	}()
-	cleanup := func() {
-		close(buf)
-		<-done
-	}
-	return backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		buf <- event
-	}), cleanup
-}
-
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.

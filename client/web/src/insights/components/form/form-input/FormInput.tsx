@@ -6,9 +6,9 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import styles from './FormInput.module.scss'
 import { ForwardReferenceComponent } from './types'
 
-interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'title'> {
     /** Title of input. */
-    title?: string
+    title?: ReactNode
     /** Description block for field. */
     description?: ReactNode
     /** Custom class name for root label element. */

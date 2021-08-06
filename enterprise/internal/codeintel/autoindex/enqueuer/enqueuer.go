@@ -49,14 +49,14 @@ func NewIndexEnqueuer(
 // repository. If this repository and commit already has an index or upload record associated with it, this method
 // does nothing.
 func (s *IndexEnqueuer) QueueIndexesForRepository(ctx context.Context, repositoryID int) error {
-	return s.queueIndexForRepository(ctx, repositoryID, false)
+	return s.queueIndexForRepository(ctx, repositoryID, "HEAD", false)
 }
 
 // ForceQueueIndexesForRepository attempts to queue an index for the lastest commit on the default branch of the given
 // repository. If this repository and commit already has an index or upload record associated with it, a new index job
 // record will still be enqueued.
-func (s *IndexEnqueuer) ForceQueueIndexesForRepository(ctx context.Context, repositoryID int) error {
-	return s.queueIndexForRepository(ctx, repositoryID, true)
+func (s *IndexEnqueuer) ForceQueueIndexesForRepository(ctx context.Context, repositoryID int, rev string) error {
+	return s.queueIndexForRepository(ctx, repositoryID, rev, true)
 }
 
 // InferIndexConfiguration looks at the repository contents at the lastest commit on the default branch of the given
@@ -135,7 +135,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryID int, force bool) (err error) {
+func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryID int, rev string, force bool) (err error) {
 	ctx, traceLog, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
@@ -143,10 +143,11 @@ func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryI
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, ok, err := s.gitserverClient.Head(ctx, repositoryID)
-	if err != nil || !ok {
-		return errors.Wrap(err, "gitserver.Head")
+	commitID, err := s.gitserverClient.ResolveRevision(ctx, repositoryID, rev)
+	if err != nil {
+		return errors.Wrap(err, "gitserver.ResolveRevision")
 	}
+	commit := string(commitID)
 	traceLog(log.String("commit", commit))
 
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, force, traceLog)

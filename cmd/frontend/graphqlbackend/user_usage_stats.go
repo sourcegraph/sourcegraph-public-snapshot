@@ -86,23 +86,31 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Argument       *string
 	CohortID       *string
 	Referrer       *string
+	PublicArgument *string
 }) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() {
 		return nil, nil
 	}
 
-	var payload json.RawMessage
+	var argumentPayload json.RawMessage
 	if args.Argument != nil {
-		if err := json.Unmarshal([]byte(*args.Argument), &payload); err != nil {
+		if err := json.Unmarshal([]byte(*args.Argument), &argumentPayload); err != nil {
 			return nil, err
 		}
 	}
 
 	if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
-		if err := exportPrometheusSearchLatencies(args.Event, payload); err != nil {
+		if err := exportPrometheusSearchLatencies(args.Event, argumentPayload); err != nil {
 			log15.Error("export prometheus search latencies", "error", err)
 		}
 		return nil, nil // Future(slimsag): implement actual event logging for these events
+	}
+
+	var publicArgumentPayload json.RawMessage
+	if args.PublicArgument != nil {
+		if err := json.Unmarshal([]byte(*args.PublicArgument), &publicArgumentPayload); err != nil {
+			return nil, err
+		}
 	}
 
 	actor := actor.FromContext(ctx)
@@ -114,10 +122,11 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		UserCookieID:   args.UserCookieID,
 		FirstSourceURL: args.FirstSourceURL,
 		Source:         args.Source,
-		Argument:       payload,
+		Argument:       argumentPayload,
 		FeatureFlags:   ffs,
 		CohortID:       args.CohortID,
 		Referrer:       args.Referrer,
+		PublicArgument: publicArgumentPayload,
 	})
 }
 

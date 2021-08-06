@@ -1,6 +1,6 @@
-# Configuring Sourcegraph
+# Configure Sourcegraph with Kubernetes
 
-Configuring a Sourcegraph Kubernetes cluster is done by applying manifest files and with simple
+Configuring a [Sourcegraph Kubernetes cluster](./index.md) is done by applying manifest files and with simple
 `kubectl` commands. You can configure Sourcegraph as flexibly as you need to meet the requirements
 of your deployment environment.  We provide simple instructions for common things like setting up
 TLS, enabling code intelligence, and exposing Sourcegraph to external traffic below.

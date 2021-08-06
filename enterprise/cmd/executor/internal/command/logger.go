@@ -116,16 +116,13 @@ func (l *Logger) Log(logEntry *workerutil.ExecutionLogEntry) *entryHandle {
 }
 
 func (l *Logger) writeEntries() {
-	wg := &sync.WaitGroup{}
-	defer func() {
-		wg.Wait()
-		close(l.done)
-	}()
+	defer close(l.done)
 
+	var wg sync.WaitGroup
 	for handle := range l.handles {
-		log15.Info("Writing log entry", "jobID", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, handle.CurrentLogEntry())
+		initialLogEntry := handle.CurrentLogEntry()
+		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, initialLogEntry)
 		if err != nil {
 			// If there is a timeout or cancellation error we don't want to skip
 			// writing these logs as users will often want to see how far something
@@ -133,21 +130,23 @@ func (l *Logger) writeEntries() {
 			log15.Warn("Failed to upload executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
 			continue
 		}
+		log15.Info("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
 		wg.Add(1)
-		go func(handle *entryHandle, entryID int) {
+		go func(handle *entryHandle, entryID int, initialLogEntry workerutil.ExecutionLogEntry) {
 			defer wg.Done()
 
-			l.syncLogEntry(handle, entryID)
-		}(handle, entryID)
+			l.syncLogEntry(handle, entryID, initialLogEntry)
+		}(handle, entryID, initialLogEntry)
 	}
+
+	wg.Wait()
 }
 
 const syncLogEntryInterval = 1 * time.Second
 
-func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
+func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.ExecutionLogEntry) {
 	lastWrite := false
-	old := handle.logEntry
 
 	for !lastWrite {
 		select {
@@ -161,13 +160,24 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int) {
 			continue
 		}
 
-		log15.Info(
-			"Updating executor log entry",
+		logArgs := make([]interface{}, 0, 16)
+		logArgs = append(
+			logArgs,
 			"jobID", l.job.ID,
 			"repositoryName", l.job.RepositoryName,
 			"commit", l.job.Commit,
 			"entryID", entryID,
+			"key", current.Key,
+			"outLen", len(current.Out),
 		)
+		if current.ExitCode != nil {
+			logArgs = append(logArgs, "exitCode", current.ExitCode)
+		}
+		if current.DurationMs != nil {
+			logArgs = append(logArgs, "durationMs", current.DurationMs)
+		}
+
+		log15.Info("Updating executor log entry", logArgs...)
 
 		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
 			logMethod := log15.Warn

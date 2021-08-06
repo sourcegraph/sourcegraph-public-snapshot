@@ -29,7 +29,6 @@ const config: Meta = {
     },
 }
 
-// eslint-disable-next-line import/no-default-export
 export default config
 
 export const TextAreaExamples: React.FunctionComponent = () => {

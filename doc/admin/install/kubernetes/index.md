@@ -7,6 +7,13 @@ available code search and code intelligence.
 
 Not sure if Kubernetes is the right choice for you? Learn more about the various [Sourcegraph installation options](../index.md).
 
+<div class="cta-group">
+<a class="btn btn-primary" href="#installation">★ Installation</a>
+<a class="btn" href="operations">Operations guides</a>
+<a class="btn" href="#about">About Kubernetes</a>
+<a class="btn" href="../../../#get-help">Get help</a>
+</div>
+
 ## Installation
 
 Before you get started, we recommend [learning about how Sourcegraph with Kubernetes works](#about).
@@ -82,15 +89,6 @@ kubectl get ingress sourcegraph-frontend
 NAME                   CLASS    HOSTS             ADDRESS     PORTS     AGE
 sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
 ```
-
-## Troubleshooting
-
-See the [Troubleshooting docs](troubleshoot.md).
-
-## Updating
-
-- See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
-- See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
 
 ## Cloud installation guides
 

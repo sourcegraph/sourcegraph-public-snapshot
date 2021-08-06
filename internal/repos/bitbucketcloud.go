@@ -48,7 +48,7 @@ func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketClou
 	apiURL = extsvc.NormalizeBaseURL(apiURL)
 
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.ExternalClientFactory
 	}
 
 	cli, err := cf.Doer()

@@ -1,4 +1,4 @@
-package background
+package processor
 
 import (
 	"context"
@@ -34,6 +34,17 @@ func (e unknownJobTypeErr) NonRetryable() bool {
 
 var changesetIsProcessingErr = errors.New("cannot update a changeset that is currently being processed; will retry")
 
+func New(tx *store.Store, sourcer sources.Sourcer) BulkProcessor {
+	return &bulkProcessor{
+		tx:      tx,
+		sourcer: sourcer,
+	}
+}
+
+type BulkProcessor interface {
+	Process(ctx context.Context, job *btypes.ChangesetJob) error
+}
+
 type bulkProcessor struct {
 	tx      *store.Store
 	sourcer sources.Sourcer
@@ -43,7 +54,7 @@ type bulkProcessor struct {
 	ch   *btypes.Changeset
 }
 
-func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (err error) {
 	// Use the acting user for the operation to enforce repository permissions.
 	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
 

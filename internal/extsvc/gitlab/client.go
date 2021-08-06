@@ -85,7 +85,7 @@ type CommonOp struct {
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
-		cli = httpcli.ExternalDoer()
+		cli = httpcli.ExternalDoer
 	}
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The 3rd component of the Path (/api/v4/XYZ) mostly maps to the type of API

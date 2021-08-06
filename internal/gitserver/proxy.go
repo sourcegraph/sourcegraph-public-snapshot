@@ -12,7 +12,9 @@ import (
 
 // DefaultReverseProxy is the default ReverseProxy. It uses the same transport and HTTP
 // limiter as the default client.
-var DefaultReverseProxy = NewReverseProxy(defaultTransport, DefaultClient.HTTPLimiter)
+var DefaultReverseProxy = NewReverseProxy(defaultClient.Transport, DefaultClient.HTTPLimiter)
+
+var defaultClient, _ = clientFactory.Client()
 
 // NewReverseProxy returns a new gitserver.ReverseProxy instantiated with the given
 // transport and HTTP limiter.

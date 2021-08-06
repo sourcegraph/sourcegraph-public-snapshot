@@ -2,6 +2,7 @@
 @import './DocumentationWelcomeAlert';
 @import './DocumentationIcon';
 @import './DocumentationExamples';
+@import './DocumentationNode';
 
 .repository-docs-page {
     width: 100%;
@@ -17,23 +18,6 @@
             margin: auto;
             &--sidebar-visible {
                 margin: unset;
-            }
-        }
-    }
-    &__feedback-container {
-        width: 0;
-        height: 0;
-        z-index: 1;
-        &-content {
-            display: block;
-            width: 19rem;
-            margin-top: 1rem;
-            float: right;
-            .btn {
-                background-color: var(--color-bg-1);
-            }
-            .feedback-prompt {
-                display: inline-block;
             }
         }
     }

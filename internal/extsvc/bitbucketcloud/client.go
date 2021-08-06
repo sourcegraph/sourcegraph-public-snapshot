@@ -60,7 +60,7 @@ type Client struct {
 // required to be set before calling any APIs.
 func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer()
+		httpClient = httpcli.ExternalDoer
 	}
 
 	httpClient = requestCounter.Doer(httpClient, func(u *url.URL) string {
