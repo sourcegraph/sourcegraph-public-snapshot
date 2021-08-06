@@ -66,9 +66,51 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     )
 }
 
+interface SpectulativeGitReferencePopoverNodeProps extends Omit<GitReferencePopoverNodeProps, 'node'> {
+    name: string
+    repoName: string
+    existingNodes: GitRefFields[]
+}
+
+export const SpectulativeGitReferencePopoverNode: React.FunctionComponent<SpectulativeGitReferencePopoverNodeProps> = ({
+    name,
+    repoName,
+    currentRevision,
+    defaultBranch,
+    getURLFromRevision,
+    location,
+    existingNodes,
+}) => {
+    const alreadyExists = existingNodes.some(existingNode => existingNode.abbrevName === name)
+
+    if (alreadyExists) {
+        // We're already showing this node, so don't show it again.
+        return null
+    }
+
+    // We haven't found a node with the same name, render a node with expected props
+    return (
+        <GitReferencePopoverNode
+            node={{
+                displayName: name,
+                name,
+                abbrevName: name,
+                id: name,
+                url: `/${repoName}@${name}`,
+                target: { commit: null },
+            }}
+            currentRevision={currentRevision}
+            defaultBranch={defaultBranch}
+            getURLFromRevision={getURLFromRevision}
+            location={location}
+        />
+    )
+}
+
 interface RevisionReferencesTabProps {
     type: GitRefType
     repo: Scalars['ID']
+    repoName: string
     defaultBranch: string
     getURLFromRevision: (href: string, revision: string) => string
 
@@ -78,30 +120,32 @@ interface RevisionReferencesTabProps {
     /** The current revision, or undefined for the default branch. */
     currentRev: string | undefined
 
-    allowCustomBranches?: boolean
+    allowSpeculativeSearch?: boolean
 }
 
 export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTabProps> = ({
     type,
     repo,
+    repoName,
     defaultBranch,
     getURLFromRevision,
     currentRev,
     noun,
     pluralNoun,
+    allowSpeculativeSearch,
 }) => {
     const [searchValue, setSearchValue] = useState('')
-    const debouncedSearchValue = useDebounce(searchValue, 200)
+    const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    const { connection, loading, errors, hasNextPage, fetchMore } = useConnection<
+    const { connection, loading, hasNextPage, fetchMore } = useConnection<
         RepositoryGitRefsResult,
         RepositoryGitRefsVariables,
         GitRefFields
     >({
         query: REPOSITORY_GIT_REFS,
         variables: {
-            query: debouncedSearchValue,
+            query,
             first: 50,
             repo,
             type,
@@ -115,26 +159,15 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
         },
     })
 
-    if (loading) {
-        console.log('Loading...')
-    }
-
-    if (errors) {
-        console.log('Got errors', errors)
-    }
-
-    if (connection) {
-        console.log('Got connection!')
-        console.log(connection.nodes)
-    }
-
     const summary = connection && (
         <ConnectionSummary
+            emptyElement={allowSpeculativeSearch ? <></> : undefined}
             connection={connection}
             noun={noun}
             pluralNoun={pluralNoun}
             totalCount={connection.totalCount ?? null}
             hasNextPage={hasNextPage}
+            connectionQuery={query}
         />
     )
 
@@ -147,7 +180,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                 inputPlaceholder="Find..."
                 inputClassName="connection-popover__input"
             />
-            <SummaryContainer>{searchValue && summary}</SummaryContainer>
+            <SummaryContainer>{query && summary}</SummaryContainer>
             <ConnectionList className="connection-popover__nodes">
                 {connection?.nodes?.map((node, index) => (
                     <GitReferencePopoverNode
@@ -159,11 +192,23 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                         location={location}
                     />
                 ))}
+                {/* For branch filtering, we support speculative searching */}
+                {allowSpeculativeSearch && connection && query && (
+                    <SpectulativeGitReferencePopoverNode
+                        name={query}
+                        repoName={repoName}
+                        existingNodes={connection.nodes}
+                        currentRevision={currentRev}
+                        defaultBranch={defaultBranch}
+                        getURLFromRevision={getURLFromRevision}
+                        location={location}
+                    />
+                )}
             </ConnectionList>
             {loading && <ConnectionLoading />}
             {connection && (
                 <SummaryContainer>
-                    {summary}
+                    {!query && summary}
                     {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                 </SummaryContainer>
             )}

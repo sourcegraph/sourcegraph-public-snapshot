@@ -133,6 +133,8 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 getURLFromRevision={getURLFromRevision}
                                 defaultBranch={props.defaultBranch}
                                 repo={props.repo}
+                                repoName={props.repoName}
+                                allowSpeculativeSearch={tab.type === GitRefType.GIT_BRANCH}
                             />
                         ) : (
                             <RevisionCommitsTab

@@ -94,7 +94,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
     <div className={`repository-compare-header ${className}`}>
         <PageHeader
             path={[{ text: 'Compare changes' }]}
-            description="Compare changes across branches, tags and commits."
+            description="Compare changes across revisions."
             className="mb-3"
         />
         <div className={`${className}-inner d-flex align-items-center`}>

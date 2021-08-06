@@ -73,7 +73,7 @@ export interface ConnectionNodesDisplayProps {
     noSummaryIfAllNodesVisible?: boolean
 
     /** The component displayed when the list of nodes is empty. */
-    emptyElement?: JSX.Element
+    emptyElement?: JSX.Element | null
 
     /** The component displayed when all nodes have been fetched. */
     totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
