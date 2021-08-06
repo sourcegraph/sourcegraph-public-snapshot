@@ -145,6 +145,13 @@ func (s *Store) CancelBatchSpecExecution(ctx context.Context, randID string) (*b
 
 	var b btypes.BatchSpecExecution
 	err := s.query(ctx, q, func(sc scanner) error { return scanBatchSpecExecution(&b, sc) })
+	if err != nil {
+		return nil, err
+	}
+
+	if b.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &b, err
 }
