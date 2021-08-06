@@ -412,7 +412,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 			queryChangesetApplyPreview,
 		)
 
-		assert.Len(t, err, 1)
+		assert.Greater(t, len(err), 0)
 		assert.Error(t, err[0])
 	})
 }
