@@ -20,9 +20,9 @@
 1. Click Next.
 1. Now you should be on the “Feedback” step. Select the radio button for “I’m an Okta customer adding an internal app”, and provide feedback if you wish. Click "Finish".
 1. You should now be on the Application page for Sourcegraph, where you can view the settings and configurations you have just set. You will want to grant users or groups sign-in access before moving on.
-  - To grant access to your own user:
-    - Go to the “Assignments” tab, where you should see a table of People and Groups. Click the “Assign” dropdown, and then “Assign to People”.
-    - A new window should pop-up. Find your account, and click “Assign”, “Save and Go Back”, and then “Done”.
+    - To grant access to your own user:
+      - Go to the “Assignments” tab, where you should see a table of People and Groups. Click the “Assign” dropdown, and then “Assign to People”.
+      - A new window should pop-up. Find your account, and click “Assign”, “Save and Go Back”, and then “Done”.
 1. You have now finished configuring the settings in Okta. Before moving to step #2, make sure you have granted access to users/groups. Also, go into the “Sign On” tab, and look for the “Identity Provider metadata” link. Copy this link to your clipboard. You will need this for step #2.
 
 ## 2. Add the SAML auth provider to Sourcegraph site config
