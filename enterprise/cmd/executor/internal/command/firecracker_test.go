@@ -107,8 +107,8 @@ func TestSetupFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
-			Image:             "ignite-ubuntu",
-			ImageArchivesPath: "/archives",
+			Image:               "ignite-ubuntu",
+			VMStartupScriptPath: "/vm-startup.sh",
 		},
 		ResourceOptions: ResourceOptions{
 			NumCPUs:   4,
@@ -118,7 +118,7 @@ func TestSetupFirecracker(t *testing.T) {
 	}
 	operations := NewOperations(&observation.TestContext)
 
-	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, []string{}, options, operations); err != nil {
+	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
@@ -128,29 +128,16 @@ func TestSetupFirecracker(t *testing.T) {
 	}
 
 	expected := []string{
-		"docker pull img1",
-		"docker save -o /archives/image0.tar img1",
-		"docker pull img2",
-		"docker save -o /archives/image1.tar img2",
-		"docker pull img3",
-		"docker save -o /archives/image2.tar img3",
 		strings.Join([]string{
 			"ignite run",
 			"--runtime docker --network-plugin docker-bridge",
 			"--cpus 4 --memory 20G --size 1T",
-			"--copy-files /archives/image0.tar:/image0.tar",
-			"--copy-files /archives/image1.tar:/image1.tar",
-			"--copy-files /archives/image2.tar:/image2.tar",
 			"--copy-files /proj:/work",
+			"--copy-files /vm-startup.sh:/vm-startup.sh",
 			"--ssh --name deadbeef",
 			"ignite-ubuntu",
 		}, " "),
-		"ignite exec deadbeef -- docker load -i /image0.tar",
-		"ignite exec deadbeef -- docker load -i /image1.tar",
-		"ignite exec deadbeef -- docker load -i /image2.tar",
-		"ignite exec deadbeef -- rm /image0.tar",
-		"ignite exec deadbeef -- rm /image1.tar",
-		"ignite exec deadbeef -- rm /image2.tar",
+		"ignite exec deadbeef -- /vm-startup.sh",
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)

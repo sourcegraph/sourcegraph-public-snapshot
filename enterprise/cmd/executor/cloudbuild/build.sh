@@ -6,7 +6,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
-export EXECUTOR_IMAGE_ARCHIVE_PATH=/images
 
 function cleanup() {
   apt-get -y autoremove
@@ -148,11 +147,6 @@ function generate_ignite_base_image() {
   docker image rm "$EXECUTOR_FIRECRACKER_IMAGE"
 }
 
-# Ensure image archive path exists
-function ensure_image_archive_path() {
-  mkdir "${EXECUTOR_IMAGE_ARCHIVE_PATH}"
-}
-
 # Write systemd unit file for indexer service
 function install_executor_service() {
   # Create stub environment file.
@@ -168,9 +162,9 @@ Description=User code executor
 ExecStart=/usr/local/bin/executor
 Restart=always
 EnvironmentFile=/etc/systemd/system/executor.env
-Environment=SRC_LOG_LEVEL=dbug
-Environment=EXECUTOR_IMAGE_ARCHIVE_PATH="${EXECUTOR_IMAGE_ARCHIVE_PATH}" EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 Environment=HOME="%h"
+Environment=SRC_LOG_LEVEL=dbug
+Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 
 [Install]
 WantedBy=multi-user.target
@@ -189,6 +183,5 @@ setup_pull_through_docker_cache
 install_ignite
 install_executor
 generate_ignite_base_image
-ensure_image_archive_path
 install_executor_service
 cleanup
