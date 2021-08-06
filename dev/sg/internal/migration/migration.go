@@ -286,7 +286,7 @@ func writeMigrationFiles(paths ...string) (err error) {
 	}()
 
 	for _, path := range paths {
-		if err := os.WriteFile(path, []byte(migrationFileTemplate), os.ModePerm); err != nil {
+		if err := os.WriteFile(path, []byte(migrationFileTemplate), os.FileMode(0644)); err != nil {
 			return err
 		}
 	}
