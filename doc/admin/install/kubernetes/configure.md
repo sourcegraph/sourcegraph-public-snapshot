@@ -118,9 +118,15 @@ After executing the script you can apply the generated manifests from the `gener
 kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
-We reommend that you [update the `./overlay-generate-cluster` script](#applying-manifests) to apply the generated manifests from the `generated-cluster` directory.
+We recommend that you:
 
-We also recommend that you commit your changes separately - see our [customization guide](#customizations) for more details.
+- [Update the `./overlay-generate-cluster` script](#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
+- Commit your overlays changes separately - see our [customization guide](#customizations) for more details.
+
+You can now get started with using overlays:
+
+- [Provided overlays](#provided-overlays)
+- [Custom overlays](#custom-overlays)
 
 ### Provided overlays
 
@@ -522,6 +528,15 @@ kubectl -n ingress-nginx get svc
 ```
 
 If you are having trouble accessing Sourcegraph, ensure ingress-nginx IP is accessible above. Otherwise see [Troubleshooting ingress-nginx](https://kubernetes.github.io/ingress-nginx/troubleshooting/). The namespace of the ingress-controller is `ingress-nginx`.
+
+Once you have [installed Sourcegraph](./index.md#installation), run the following command, and ensure an IP address has been assigned to your ingress resource. Then browse to the IP or configured URL.
+
+```sh
+kubectl get ingress sourcegraph-frontend
+
+NAME                   CLASS    HOSTS             ADDRESS     PORTS     AGE
+sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
+```
 
 #### Configuration
 
