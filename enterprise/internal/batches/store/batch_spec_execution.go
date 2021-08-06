@@ -48,7 +48,6 @@ var batchSpecExecutionInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
-	sqlf.Sprintf("cancel"),
 }
 
 // CreateBatchSpecExecution creates the given BatchSpecExecution.
@@ -96,7 +95,6 @@ func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, e
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		c.Cancel,
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 	), nil
 }
@@ -120,8 +118,7 @@ SET
 	namespace_user_id = %s,
 	namespace_org_id = %s,
 	created_at = %s,
-	updated_at = %s,
-	cancel = %s
+	updated_at = %s
 WHERE
 	id = %s
 RETURNING %s
@@ -137,50 +134,53 @@ func updateBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) *sqlf.Query {
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		c.Cancel,
 		c.ID,
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 	)
 }
 
 // CancelBatchSpecExecution cancels the given BatchSpecExecution.
-func (s *Store) CancelBatchSpecExecution(ctx context.Context, b *btypes.BatchSpecExecution) error {
-	b.UpdatedAt = s.now()
+func (s *Store) CancelBatchSpecExecution(ctx context.Context, randID string) (*btypes.BatchSpecExecution, error) {
+	q := s.cancelBatchSpecExecutionQuery(randID)
 
-	q := cancelBatchSpecExecutionQuery(b)
-	return s.query(ctx, q, func(sc scanner) error { return scanBatchSpecExecution(b, sc) })
+	var b btypes.BatchSpecExecution
+	err := s.query(ctx, q, func(sc scanner) error { return scanBatchSpecExecution(&b, sc) })
+
+	return &b, err
 }
 
 var cancelBatchSpecExecutionQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_executions.go:CancelBatchSpecExecution
+WITH candidate AS (
+	SELECT
+		id
+	FROM
+		batch_spec_executions
+	WHERE
+		rand_id = %s
+	FOR UPDATE
+)
 UPDATE
 	batch_spec_executions
 SET
-	rand_id = %s,
-	batch_spec = %s,
-	user_id = %s,
-	namespace_user_id = %s,
-	namespace_org_id = %s,
-	created_at = %s,
-	updated_at = %s,
-	cancel = %s
+	cancel = TRUE,
+	-- If the execution is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can to teardown and, at some point, mark it failed itself.
+	state = CASE WHEN batch_spec_executions.state = 'processing' THEN batch_spec_executions.state ELSE 'failed' END,
+	updated_at = %s
 WHERE
-	id = %s
+	id IN (SELECT id FROM candidate)
+	AND
+	-- It must be queued or processing, we cannot cancel jobs that have already completed.
+	state IN ('queued', 'processing')
 RETURNING %s
 `
 
-func cancelBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) *sqlf.Query {
+func (s *Store) cancelBatchSpecExecutionQuery(randID string) *sqlf.Query {
 	return sqlf.Sprintf(
 		cancelBatchSpecExecutionQueryFmtstr,
-		c.RandID,
-		c.BatchSpec,
-		c.UserID,
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
-		c.CreatedAt,
-		c.UpdatedAt,
-		c.Cancel,
-		c.ID,
+		randID,
+		s.now(),
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 	)
 }

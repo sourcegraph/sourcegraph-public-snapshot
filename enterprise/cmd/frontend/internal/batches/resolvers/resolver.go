@@ -1463,7 +1463,7 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 }
 
 func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CancelBatchSpecExecution", "")
+	tr, ctx := trace.New(ctx, "Resolver.CancelBatchSpecExecution", fmt.Sprintf("BatchSpecExecution: %q", args.BatchSpecExecution))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -1482,22 +1482,13 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	if err != nil {
 		return nil, err
 	}
+
 	if dbID == "" {
 		return nil, ErrIDIsZero{}
 	}
-	exec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{RandID: dbID})
+
+	exec, err := r.store.CancelBatchSpecExecution(ctx, dbID)
 	if err != nil {
-		return nil, err
-	}
-	exec.Cancel = true
-	if exec.State == btypes.BatchSpecExecutionStateQueued {
-		exec.State = btypes.BatchSpecExecutionStateErrored
-		fmsg := "Canceled"
-		exec.FailureMessage = &fmsg
-		now := r.store.Clock()()
-		exec.FinishedAt = &now
-	}
-	if err := r.store.UpdateBatchSpecExecution(ctx, exec); err != nil {
 		return nil, err
 	}
 

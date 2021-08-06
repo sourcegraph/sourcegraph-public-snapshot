@@ -92,7 +92,13 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         to: `${batchSpecExecution.namespace.url}/batch-changes`,
                         text: batchSpecExecution.namespace.namespaceName,
                     },
-                    { text: 'Execution' },
+                    {
+                        text: (
+                            <>
+                                Execution <span className="badge badge-secondary">{batchSpecExecution.state}</span>
+                            </>
+                        ),
+                    },
                 ]}
                 actions={
                     (batchSpecExecution.state === BatchSpecExecutionState.QUEUED ||
