@@ -84,12 +84,12 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 
 	if options.FirecrackerOptions.VMStartupScriptPath != "" {
 		startupScriptCommand := command{
-			Key:       fmt.Sprintf("setup.startup-script"),
+			Key:       "setup.startup-script",
 			Command:   flatten("ignite", "exec", name, "--", options.FirecrackerOptions.VMStartupScriptPath),
 			Operation: operations.SetupStartupScript,
 		}
 		if err := runner.RunCommand(ctx, startupScriptCommand, logger); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to run startup script"))
+			return errors.Wrap(err, "failed to run startup script")
 		}
 	}
 
