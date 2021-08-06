@@ -11,7 +11,7 @@ export const SearchPageFooter: React.FunctionComponent<{ className?: string }> =
             // TODO(farhan): these events are named with the name of the CTA because
             // we currently can't collect arguments in BQ. Remove the name of CTA
             // once we can collect arguments.
-            eventLogger.log(`HomepageFooterCTASelected:${name}`, { name })
+            eventLogger.log('HomepageFooterCTASelected', { name }, { name })
         },
         []
     )

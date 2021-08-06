@@ -44,7 +44,11 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     )
 
     const onClickInstallSubtext = useCallback(() => {
-        props.telemetryService.log('HomepageInstallSourcegraphCTAClicked', { name: 'InstallSourcegraphSubtext' })
+        props.telemetryService.log(
+            'HomepageInstallSourcegraphCTAClicked',
+            { name: 'InstallSourcegraphSubtext' },
+            { name: 'InstallSourcegraphSubtext' }
+        )
     }, [props.telemetryService])
 
     return (
