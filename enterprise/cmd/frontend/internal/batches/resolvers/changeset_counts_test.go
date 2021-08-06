@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -174,9 +173,9 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
-			t.Fatal(err)
-		}
+		// if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
+		// 	t.Fatal(err)
+		// }
 	}
 
 	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil)

@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
@@ -49,7 +49,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			return nil, err
 		}
 		for _, d := range syncData {
-			scheduledSyncs[d.ChangesetID] = syncer.NextSync(r.store.Clock(), d)
+			scheduledSyncs[d.ChangesetID] = state.NextSync(r.store.Clock(), d)
 		}
 	}
 

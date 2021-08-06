@@ -1,4 +1,4 @@
-package syncer
+package batches
 
 import (
 	"container/heap"

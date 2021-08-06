@@ -1,4 +1,4 @@
-package syncer
+package state
 
 import (
 	"time"

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -141,10 +140,10 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
-		if err != nil {
-			t.Fatal(err)
-		}
+		// err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
+		// if err != nil {
+		// 	t.Fatal(err)
+		// }
 
 		hook := NewGitHubWebhook(s)
 

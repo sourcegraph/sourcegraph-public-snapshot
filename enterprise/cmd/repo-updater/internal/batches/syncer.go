@@ -1,4 +1,4 @@
-package syncer
+package batches
 
 import (
 	"context"
@@ -21,12 +21,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// SyncRegistry manages a changesetSyncer per code host.
+type SyncRegistry interface {
+	// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
+	// An error indicates that no changesets have been enqueued.
+	EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+
+	goroutine.BackgroundRoutine
+}
+
 // externalServiceSyncerInterval is the time in between synchronizations with the
 // database to start/stop syncers as needed.
 const externalServiceSyncerInterval = 1 * time.Minute
 
-// SyncRegistry manages a changesetSyncer per code host
-type SyncRegistry struct {
+// syncRegistry manages a changesetSyncer per code host
+type syncRegistry struct {
 	ctx         context.Context
 	cancel      context.CancelFunc
 	syncStore   SyncStore
@@ -41,13 +50,11 @@ type SyncRegistry struct {
 	syncers map[string]*changesetSyncer
 }
 
-var _ goroutine.BackgroundRoutine = &SyncRegistry{}
-
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory, observationContext *observation.Context) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory, observationContext *observation.Context) SyncRegistry {
 	ctx, cancel := context.WithCancel(ctx)
-	return &SyncRegistry{
+	return &syncRegistry{
 		ctx:            ctx,
 		cancel:         cancel,
 		syncStore:      bstore,
@@ -58,7 +65,7 @@ func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory,
 	}
 }
 
-func (s *SyncRegistry) Start() {
+func (s *syncRegistry) Start() {
 	// Fetch initial list of syncers.
 	if err := s.syncCodeHosts(s.ctx); err != nil {
 		log15.Error("Fetching initial list of code hosts", "err", err)
@@ -76,16 +83,17 @@ func (s *SyncRegistry) Start() {
 		}),
 	)
 
+	log15.Info("Changeset syncer starting")
 	goroutine.MonitorBackgroundRoutines(s.ctx, externalServiceSyncer)
 }
 
-func (s *SyncRegistry) Stop() {
+func (s *syncRegistry) Stop() {
 	s.cancel()
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
 // An error indicates that no changesets have been enqueued.
-func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
+func (s *syncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
 	// The channel below is buffered so we'll usually send without blocking.
 	// It is important not to block here as this method is called from the UI
 	select {
@@ -98,7 +106,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // addCodeHostSyncer adds a syncer for the code host associated with the supplied code host if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
+func (s *syncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
 		log15.Info("Code host not support by batch changes", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
@@ -136,7 +144,7 @@ func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 
 // handlePriorityItems fetches changesets in the priority queue from the database and passes them
 // to the appropriate syncer.
-func (s *SyncRegistry) handlePriorityItems() {
+func (s *syncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]*btypes.ChangesetSyncData, error) {
 		ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
 		defer cancel()
@@ -182,7 +190,7 @@ func (s *SyncRegistry) handlePriorityItems() {
 // syncCodeHosts fetches the list of currently active code hosts on the Sourcegraph instance.
 // The running syncers will then be matched against those and missing ones are spawned and
 // excess ones are stopped.
-func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
+func (s *syncRegistry) syncCodeHosts(ctx context.Context) error {
 	codeHosts, err := s.syncStore.ListCodeHosts(ctx, store.ListCodeHostsOpts{})
 	if err != nil {
 		return err
@@ -408,7 +416,7 @@ func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 	ss := make([]scheduledSync, len(syncData))
 	for i := range syncData {
-		nextSync := NextSync(s.syncStore.Clock(), syncData[i])
+		nextSync := state.NextSync(s.syncStore.Clock(), syncData[i])
 
 		ss[i] = scheduledSync{
 			changesetID: syncData[i].ChangesetID,

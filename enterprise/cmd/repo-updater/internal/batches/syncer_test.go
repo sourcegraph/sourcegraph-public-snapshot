@@ -1,4 +1,4 @@
-package syncer
+package batches
 
 import (
 	"context"
@@ -178,7 +178,7 @@ func TestSyncRegistry(t *testing.T) {
 		return codeHosts, nil
 	})
 
-	r := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
+	r := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext).(*syncRegistry)
 
 	go r.Start()
 	t.Cleanup(r.Stop)

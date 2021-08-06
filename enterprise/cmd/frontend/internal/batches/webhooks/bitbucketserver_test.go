@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -151,10 +150,10 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = syncer.SyncChangeset(ctx, s, src, bitbucketRepo, ch)
-			if err != nil {
-				t.Fatal(err)
-			}
+			// err = syncer.SyncChangeset(ctx, s, src, bitbucketRepo, ch)
+			// if err != nil {
+			// 	t.Fatal(err)
+			// }
 		}
 
 		hook := NewBitbucketServerWebhook(s)
