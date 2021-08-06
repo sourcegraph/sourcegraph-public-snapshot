@@ -257,7 +257,7 @@ func (w *Worker) handle(ctx context.Context, record Record) (err error) {
 
 	handleErr := w.handler.Handle(ctx, record)
 
-	if errcode.IsNonRetryable(handleErr) || w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
+	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
 		if marked, markErr := w.store.MarkFailed(w.ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
