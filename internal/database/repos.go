@@ -890,16 +890,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("archived"))
 	}
 	if opt.NoCloned {
-		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
-		// We'll remove repo.cloned and can then switch to this:
-		// where = append(where, sqlf.Sprintf("gr.clone_status IS NULL OR gr.clone_status = 'not_cloned'"))
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR (gr.clone_status IS NULL AND NOT repo.cloned))"))
+		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR gr.clone_status IS NULL)"))
 	}
 	if opt.OnlyCloned {
-		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
-		// We'll remove repo.cloned and can then switch to this:
-		// where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'cloned' OR (gr.clone_status IS NULL AND repo.cloned))"))
+		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 	}
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
