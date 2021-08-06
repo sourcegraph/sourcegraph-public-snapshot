@@ -80,8 +80,11 @@ func ofRegexpMatches(matches [][]int, namedGroups []string, lineValue string, li
 				firstRange = range_
 				continue
 			}
-			v := fmt.Sprintf("$%d", j/2)
-			if namedGroups[j/2] != "" {
+
+			var v string
+			if namedGroups[j/2] == "" {
+				v = fmt.Sprintf("$%d", j/2)
+			} else {
 				v = namedGroups[j/2]
 			}
 			env[v] = Data{Value: value, Range: range_}
