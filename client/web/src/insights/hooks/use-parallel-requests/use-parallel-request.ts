@@ -101,7 +101,6 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
         useEffect(() => {
             const cancelStream = new Subject<boolean>()
 
-
             setState({ data: undefined, loading: true, error: undefined })
 
             const event: Request<D> = {
