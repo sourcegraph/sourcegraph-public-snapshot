@@ -48,6 +48,9 @@ export interface InsightCardProps
      */
     onDelete?: (id: string) => void
 
+    /**
+     * Ref prop for root element (section) of insight content card.
+     */
     innerRef: React.RefObject<HTMLElement>
 }
 

@@ -63,6 +63,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
 
     // Catch any outside click of popover element
     useOnClickOutside(popoverReference, handleClickOutside)
+    // Close popover on escape
     useKeyboard({ detectKeys: ['Escape'] }, handleEscapePress)
 
     return (
