@@ -51,16 +51,11 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 		return StructuralSearchFilesInRepos(ctx, args, stream)
 	}
 
-	searchBatched := func() ([]*result.FileMatch, streaming.Stats, error) {
+	searchBatched := func() ([]result.Match, streaming.Stats, error) {
 		matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
 			return StructuralSearchFilesInRepos(ctx, args, stream)
 		})
-
-		fms, fmErr := matchesToFileMatches(matches)
-		if fmErr != nil && err == nil {
-			err = errors.Wrap(fmErr, "StructuralSearchFilesInReposBatch failed to convert results")
-		}
-		return fms, stats, err
+		return matches, stats, err
 	}
 
 	// For structural search with default limits we retry if we get no results.
@@ -86,6 +81,9 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 
 	matches := make([]result.Match, 0, len(fileMatches))
 	for _, fm := range fileMatches {
+		if _, ok := fm.(*result.FileMatch); !ok {
+			return errors.Errorf("StructuralSearch failed to convert results")
+		}
 		matches = append(matches, fm)
 	}
 
