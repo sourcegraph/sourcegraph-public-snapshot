@@ -100,6 +100,7 @@ type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
 	Deleted             bool
+	BackfillIncomplete  bool
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -115,6 +116,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+	}
+	if args.BackfillIncomplete {
+		preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -241,6 +245,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 type DataSeriesStore interface {
 	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 }
 
 type InsightMetadataStore interface {
@@ -258,6 +263,23 @@ func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightS
 	series.NextRecordingAfter = next
 	return series, nil
 }
+
+// StampBackfill will update the backfill queued time for this series and return the InsightSeries struct with updated values.
+func (s *InsightStore) StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	current := s.Now()
+	if err := s.Exec(ctx, sqlf.Sprintf(stampBackfillSql, current, series.ID)); err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.BackfillQueuedAt = current
+	return series, nil
+}
+
+const stampBackfillSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StampRecording
+UPDATE insight_series
+SET backfill_queued_at = %s
+WHERE id = %s;
+`
 
 const stampRecordingSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:StampRecording

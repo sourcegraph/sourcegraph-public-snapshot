@@ -15,7 +15,7 @@ This tutorial shows you how to deploy [single-container Sourcegraph with Docker]
 - Open the **Management, disks, networking, and SSH keys** dropdown section and add the following in the **Startup script** field:
 
   ```
-  #!/bin/bash
+  #!/usr/bin/env bash
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   sudo apt-get update

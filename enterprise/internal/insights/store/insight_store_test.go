@@ -414,3 +414,57 @@ func TestInsightStore_StampRecording(t *testing.T) {
 		}
 	})
 }
+
+func TestInsightStore_StampBackfill(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	series := types.InsightSeries{
+		SeriesID:              "unique-1",
+		Query:                 "query-1",
+		OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter:    now,
+		RecordingIntervalDays: 4,
+	}
+	created, err := store.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.StampBackfill(ctx, created)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("test only incomplete", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			BackfillIncomplete: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := 0
+		if diff := cmp.Diff(want, len(got)); diff != "" {
+			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+		}
+	})
+	t.Run("test get all", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := 1
+		if diff := cmp.Diff(want, len(got)); diff != "" {
+			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+		}
+	})
+}

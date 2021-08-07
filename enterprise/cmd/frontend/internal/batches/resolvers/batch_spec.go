@@ -121,12 +121,17 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 			return nil, errors.Errorf("invalid action %q", *args.Action)
 		}
 	}
+	publicationStates, err := newPublicationStateMap(args.PublicationStates)
+	if err != nil {
+		return nil, err
+	}
 
 	return &changesetApplyPreviewConnectionResolver{
-		store:       r.store,
-		opts:        opts,
-		action:      (*btypes.ReconcilerOperation)(args.Action),
-		batchSpecID: r.batchSpec.ID,
+		store:             r.store,
+		opts:              opts,
+		action:            (*btypes.ReconcilerOperation)(args.Action),
+		batchSpecID:       r.batchSpec.ID,
+		publicationStates: publicationStates,
 	}, nil
 }
 

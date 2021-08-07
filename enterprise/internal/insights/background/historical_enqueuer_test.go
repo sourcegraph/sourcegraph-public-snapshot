@@ -193,14 +193,14 @@ func Test_historicalEnqueuer(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{
 			allReposIteratorCalls: 1, reposGetByName: 2,
 			operations: []string{
-				`enqueueQueryRunnerJob("2020-06-30T12:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2019-12-31T00:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-06-30T12:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2019-12-31T00:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-06-30T12:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
-				`enqueueQueryRunnerJob("2019-12-31T00:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
-				`enqueueQueryRunnerJob("2020-06-30T12:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
-				`enqueueQueryRunnerJob("2019-12-31T00:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-07-02T12:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-01-02T00:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-07-02T12:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-01-02T00:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-07-02T12:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-01-02T00:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-07-02T12:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-01-02T00:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
 			},
 		})
 		want.Equal(t, testHistoricalEnqueuer(t, &testParams{
