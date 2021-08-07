@@ -1,6 +1,6 @@
 import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
-export const SETTINGS_CASCADE: SettingsCascade = {
+export const SETTINGS_CASCADE_MOCK: SettingsCascade = {
     subjects: [
         {
             lastID: 102,

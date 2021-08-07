@@ -1,5 +1,6 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+import React, { forwardRef, InputHTMLAttributes, ReactNode, useEffect } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
@@ -45,8 +46,22 @@ const FormInput = forwardRef((props, reference) => {
         error,
         loading = false,
         errorInputState,
+        autoFocus,
         ...otherProps
     } = props
+
+    const localReference = React.useRef<HTMLInputElement>(null)
+    const mergedReference = useMergeRefs([localReference, reference])
+
+    useEffect(() => {
+        if (localReference.current && autoFocus) {
+            // In some cases if form input is rendered within popover element
+            // we have to call focus explicitly in the next tick.
+            requestAnimationFrame(() => {
+                localReference.current?.focus()
+            })
+        }
+    }, [autoFocus])
 
     return (
         <label className={classnames('w-100', className)}>
@@ -60,7 +75,7 @@ const FormInput = forwardRef((props, reference) => {
                         'is-invalid': !!error || errorInputState,
                     })}
                     {...otherProps}
-                    ref={reference}
+                    ref={mergedReference}
                 />
 
                 {inputSymbol}

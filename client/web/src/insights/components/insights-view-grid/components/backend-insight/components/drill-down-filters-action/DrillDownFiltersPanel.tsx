@@ -1,14 +1,16 @@
+import Popover, { positionRight } from '@reach/popover'
 import classnames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { useRef } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
-import { UncontrolledPopover } from 'reactstrap'
 
 import { FormChangeEvent } from '../../../../../form/hooks/useForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 import { DrillDownFilters, DrillDownFiltersMode } from '../drill-down-filters-panel/types'
 
 import styles from './DrillDownFiltersPanel.module.scss'
+import { useKeyboard } from './hooks/use-keyboard'
+import { useOnClickOutside } from './hooks/use-outside-click'
 
 const hasActiveFilters = (filters: DrillDownFilters): boolean => {
     switch (filters.mode) {
@@ -22,19 +24,46 @@ const hasActiveFilters = (filters: DrillDownFilters): boolean => {
 
 interface DrillDownFiltersProps {
     filters: DrillDownFilters
+    targetRef: React.RefObject<HTMLElement>
     onFilterChange: (filters: DrillDownFilters) => void
 }
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { filters, onFilterChange } = props
+    const { targetRef, filters, onFilterChange } = props
 
+    const [open, setOpen] = useState(false)
     const targetButtonReference = useRef<HTMLButtonElement>(null)
+    const popoverReference = useRef<HTMLDivElement>(null)
+
+    const handleTargetClick = (): void => {
+        setOpen(open => !open)
+    }
+
+    const handleClickOutside = useCallback((event: Event) => {
+        if (!targetButtonReference.current) {
+            return
+        }
+
+        if (targetButtonReference.current.contains(event.target as Node)) {
+            return
+        }
+
+        setOpen(false)
+    }, [])
+
+    const handleEscapePress = useCallback(() => {
+        setOpen(false)
+    }, [])
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFilters>): void => {
         if (event.valid) {
             onFilterChange(event.values)
         }
     }
+
+    // Catch any outside click of popover element
+    useOnClickOutside(popoverReference, handleClickOutside)
+    useKeyboard({ detectKeys: ['Escape'] }, handleEscapePress)
 
     return (
         <>
@@ -44,26 +73,27 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
                     [styles.filterButtonActive]: hasActiveFilters(filters),
                 })}
+                onClick={handleTargetClick}
             >
                 <FilterOutlineIcon size="1rem" />
             </button>
 
-            <UncontrolledPopover
-                placement="right-start"
-                target={targetButtonReference}
-                trigger="legacy"
-                hideArrow={true}
-                fade={false}
-                popperClassName="border-0"
-            >
-                <FocusLock returnFocus={true}>
-                    <DrillDownFiltersPanel
-                        initialFiltersValue={filters}
-                        className={classnames(styles.filterPanel)}
-                        onFiltersChange={handleFilterChange}
-                    />
-                </FocusLock>
-            </UncontrolledPopover>
+            {open && (
+                <Popover
+                    ref={popoverReference}
+                    targetRef={targetRef}
+                    position={positionRight}
+                    className={classnames('dropdown-menu', styles.popover)}
+                >
+                    <FocusLock returnFocus={true}>
+                        <DrillDownFiltersPanel
+                            initialFiltersValue={filters}
+                            className={classnames(styles.filterPanel)}
+                            onFiltersChange={handleFilterChange}
+                        />
+                    </FocusLock>
+                </Popover>
+            )}
         </>
     )
 }

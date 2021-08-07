@@ -1,6 +1,6 @@
 import classnames from 'classnames'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
-import React, { useCallback, useContext, useState } from 'react'
+import React, { useCallback, useContext, useRef, useState } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -27,7 +27,7 @@ interface BackendInsightProps
     extends TelemetryProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps<'updateSettings'>,
-        React.HTMLAttributes<HTMLElement> {
+        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: SearchBackendBasedInsight
 }
 
@@ -35,9 +35,10 @@ interface BackendInsightProps
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, ...otherProps } = props
+    const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
+    const localReference = useRef<HTMLDivElement>(null)
     const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
 
     // Currently we support only regexp filters so extract them in a separate object
@@ -69,9 +70,16 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
-            actions={<DrillDownFiltersAction filters={filters} onFilterChange={handleDrillDownFiltersChange} />}
+            actions={
+                <DrillDownFiltersAction
+                    targetRef={localReference}
+                    filters={filters}
+                    onFilterChange={handleDrillDownFiltersChange}
+                />
+            }
             telemetryService={telemetryService}
             onDelete={handleDelete}
+            innerRef={localReference}
             {...otherProps}
             className={classnames('be-insight-card', otherProps.className)}
         >
