@@ -1,27 +1,27 @@
 import classnames from 'classnames'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { useCallback, useContext, useRef } from 'react'
-import FocusLock from 'react-focus-lock'
-import { UncontrolledPopover } from 'reactstrap'
+import React, { useCallback, useContext, useState } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
+import { BackendInsightFilters } from '../../../../core/backend/types'
 import { SearchBackendBasedInsight } from '../../../../core/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
+import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
-import styles from './BackendInsight.module.scss'
-import { DrillDownFiltersPanel } from './components/drill-down-filters/DrillDownFiltersPanel'
+import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
+import { DrillDownFilters, EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/types'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -29,18 +29,31 @@ interface BackendInsightProps
         PlatformContextProps<'updateSettings'>,
         React.HTMLAttributes<HTMLElement> {
     insight: SearchBackendBasedInsight
-    drilldown?: boolean
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, drilldown, ...otherProps } = props
+    const { telemetryService, insight, platformContext, settingsCascade, ...otherProps } = props
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
+    const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
+
+    // Currently we support only regexp filters so extract them in a separate object
+    // to pass further in a gql api fetcher method
+    const regexpFilters = useDistinctValue<BackendInsightFilters>({
+        excludeRepoRegexp: filters.excludeRepoRegex,
+        includeRepoRegexp: filters.includeRepoRegex,
+    })
+    const debouncedFilters = useDebounce(regexpFilters, 500)
+
     const { data, loading, error } = useParallelRequests(
-        useCallback(() => getBackendInsightById(insight.id), [insight.id, getBackendInsightById])
+        useCallback(() => getBackendInsightById(insight.id, debouncedFilters), [
+            insight.id,
+            debouncedFilters,
+            getBackendInsightById,
+        ])
     )
 
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
@@ -48,11 +61,15 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         platformContext,
     })
 
+    const handleDrillDownFiltersChange = (filters: DrillDownFilters): void => {
+        setFilters(filters)
+    }
+
     return (
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
-            actions={drilldown && <DrillDownFilters active={true} />}
+            actions={<DrillDownFiltersAction filters={filters} onFilterChange={handleDrillDownFiltersChange} />}
             telemetryService={telemetryService}
             onDelete={handleDelete}
             {...otherProps}
@@ -82,41 +99,5 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 otherProps.children
             }
         </InsightContentCard>
-    )
-}
-
-interface DrillDownFiltersProps {
-    active?: boolean
-}
-
-const DrillDownFilters: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { active } = props
-    const targetButtonReference = useRef<HTMLButtonElement>(null)
-
-    return (
-        <>
-            <button
-                ref={targetButtonReference}
-                type="button"
-                className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
-                    [styles.filterButtonActive]: active,
-                })}
-            >
-                <FilterOutlineIcon size="1rem" />
-            </button>
-
-            <UncontrolledPopover
-                placement="right-start"
-                target={targetButtonReference}
-                trigger="legacy"
-                hideArrow={true}
-                fade={false}
-                popperClassName="border-0"
-            >
-                <FocusLock returnFocus={true}>
-                    <DrillDownFiltersPanel className={classnames(styles.filterPanel)} />
-                </FocusLock>
-            </UncontrolledPopover>
-        </>
     )
 }
