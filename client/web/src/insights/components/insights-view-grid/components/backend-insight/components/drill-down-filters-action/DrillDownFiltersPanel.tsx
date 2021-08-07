@@ -1,9 +1,10 @@
-import Popover, { positionRight } from '@reach/popover'
+import Popover from '@reach/popover'
 import classnames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useCallback, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 
+import { flipRightPosition } from '../../../../../context-menu/utils'
 import { FormChangeEvent } from '../../../../../form/hooks/useForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 import { DrillDownFilters, DrillDownFiltersMode } from '../drill-down-filters-panel/types'
@@ -83,7 +84,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 <Popover
                     ref={popoverReference}
                     targetRef={targetRef}
-                    position={positionRight}
+                    position={flipRightPosition}
                     className={classnames('dropdown-menu', styles.popover)}
                 >
                     <FocusLock returnFocus={true}>
