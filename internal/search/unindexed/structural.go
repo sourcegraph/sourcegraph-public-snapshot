@@ -51,15 +51,10 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 		return StructuralSearchFilesInRepos(ctx, args, stream)
 	}
 
-	searchBatched := func() ([]result.Match, streaming.Stats, error) {
-		matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-			return StructuralSearchFilesInRepos(ctx, args, stream)
-		})
-		return matches, stats, err
-	}
-
 	// For structural search with default limits we retry if we get no results.
-	fileMatches, stats, err := searchBatched()
+	fileMatches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
+		return StructuralSearchFilesInRepos(ctx, args, stream)
+	})
 
 	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
@@ -70,7 +65,9 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileMatches, stats, err = searchBatched()
+		fileMatches, stats, err = streaming.CollectStream(func(stream streaming.Sender) error {
+			return StructuralSearchFilesInRepos(ctx, args, stream)
+		})
 
 		if len(fileMatches) == 0 {
 			// Still no results? Give up.
