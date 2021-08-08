@@ -75,6 +75,7 @@ const FormInput = forwardRef((props, reference) => {
                         'is-invalid': !!error || errorInputState,
                     })}
                     {...otherProps}
+                    autoFocus={autoFocus}
                     ref={mergedReference}
                 />
 

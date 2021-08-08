@@ -217,7 +217,6 @@ describe('CreateInsightContent', () => {
             })
 
             sinon.assert.notCalled(onSubmitMock)
-
             expect(seriesName).toHaveFocus()
             expect(getByText(/series is invalid/i)).toBeInTheDocument()
         })

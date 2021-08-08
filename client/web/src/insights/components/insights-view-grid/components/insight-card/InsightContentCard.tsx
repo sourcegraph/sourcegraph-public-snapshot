@@ -51,7 +51,7 @@ export interface InsightCardProps
     /**
      * Ref prop for root element (section) of insight content card.
      */
-    innerRef: React.RefObject<HTMLElement>
+    innerRef?: React.RefObject<HTMLElement>
 }
 
 /**
