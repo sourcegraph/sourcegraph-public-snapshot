@@ -159,6 +159,5 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 		arg.Point.Time = dependent
 		args = append(args, arg)
 	}
-	log15.Info("QueryWorker RecordCount", "count", len(args))
 	return args
 }

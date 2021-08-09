@@ -507,7 +507,6 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repoName), revision)
 
 	job := bctx.execution.ToQueueJob(bctx.seriesID, query, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
-	log15.Info("enqueue", "count", bctx.execution.RecordCount())
 	hardErr = h.enqueueQueryRunnerJob(ctx, job)
 	return
 }
