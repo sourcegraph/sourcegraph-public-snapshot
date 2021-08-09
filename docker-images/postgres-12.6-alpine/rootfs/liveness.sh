@@ -6,7 +6,7 @@ source /env.sh
 
 # This script checks to see if postgres is alive. It uses the ready check, but
 # additionally ignores upgrades to give the container enough time to
-# re-calculate any . It is expected to be used by a Kubernetes liveness probe.
+# re-compute indexes. It is expected to be used by a Kubernetes liveness probe.
 
 # Ensure we are in the same dir ready.sh
 cd "$(dirname "${BASH_SOURCE[0]}")"
