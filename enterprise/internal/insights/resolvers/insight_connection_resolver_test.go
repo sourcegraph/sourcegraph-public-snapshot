@@ -5,23 +5,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	"github.com/hexops/autogold"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Note: You can `go test ./resolvers -update` to update the expected `want` values in these tests.
@@ -133,10 +132,24 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	pointTime := now.Add(-time.Hour * 24)
 	authz.SetProviders(false, []authz.Provider{}) // setting authz in this way will force user permissions to be enabled
 
+	// Set up an external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	externalService := &internalTypes.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+	}
+	err := database.ExternalServices(postgres).Create(context.Background(), confGet, externalService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Create three repositories -
 	// 1) private repo that will be assigned to user 1
 	// 2 & 3) public repos
-	_, err := postgres.Exec(`
+	_, err = postgres.Exec(`
 		INSERT INTO repo (id, name, description, fork, created_at, updated_at, external_id, external_service_type,
 					  external_service_id, archived, uri, deleted_at, metadata, private, cloned, stars)
 		VALUES
@@ -157,7 +170,20 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 						   site_admin)
 		VALUES
 		(1, 'user1', 'user1', null, current_timestamp, current_timestamp, null, 1, 'abc', false),
-		(2, 'user2', 'user2', null, current_timestamp, current_timestamp, null, 1, 'abc', false);`)
+		(2, 'user2', 'user2', null, current_timestamp, current_timestamp, null, 1, 'abc', false);`,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = postgres.Exec(`
+		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+		VALUES
+		       ($1, 1, ''),
+		       ($1, 2, ''),
+		       ($1, 3, '');
+`, externalService.ID,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

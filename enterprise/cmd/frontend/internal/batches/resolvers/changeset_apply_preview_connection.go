@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPreviewConnectionResolver{}
@@ -22,9 +24,10 @@ var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPr
 type changesetApplyPreviewConnectionResolver struct {
 	store *store.Store
 
-	opts        store.GetRewirerMappingsOpts
-	action      *btypes.ReconcilerOperation
-	batchSpecID int64
+	opts              store.GetRewirerMappingsOpts
+	action            *btypes.ReconcilerOperation
+	batchSpecID       int64
+	publicationStates publicationStateMap
 
 	once     sync.Once
 	mappings *rewirerMappingsFacade
@@ -233,7 +236,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 
 func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappingsFacade, error) {
 	r.once.Do(func() {
-		r.mappings = newRewirerMappingsFacade(r.store, r.batchSpecID)
+		r.mappings = newRewirerMappingsFacade(r.store, r.batchSpecID, r.publicationStates)
 		r.err = r.mappings.compute(ctx, r.opts)
 	})
 
@@ -246,8 +249,9 @@ type rewirerMappingsFacade struct {
 	All btypes.RewirerMappings
 
 	// Inputs from outside the resolver that we need to build other resolvers.
-	batchSpecID int64
-	store       *store.Store
+	batchSpecID       int64
+	publicationStates publicationStateMap
+	store             *store.Store
 
 	// This field is set when ReconcileBatchChange is called.
 	batchChange *btypes.BatchChange
@@ -263,12 +267,13 @@ type rewirerMappingsFacade struct {
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
 // includes dry running the batch change reconciliation.
-func newRewirerMappingsFacade(s *store.Store, batchSpecID int64) *rewirerMappingsFacade {
+func newRewirerMappingsFacade(s *store.Store, batchSpecID int64, publicationStates publicationStateMap) *rewirerMappingsFacade {
 	return &rewirerMappingsFacade{
-		batchSpecID: batchSpecID,
-		store:       s,
-		pages:       make(map[rewirerMappingPageOpts]*rewirerMappingPage),
-		resolvers:   make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
+		batchSpecID:       batchSpecID,
+		publicationStates: publicationStates,
+		store:             s,
+		pages:             make(map[rewirerMappingPageOpts]*rewirerMappingPage),
+		resolvers:         make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
 	}
 }
 
@@ -381,6 +386,7 @@ func (rmf *rewirerMappingsFacade) Resolver(mapping *btypes.RewirerMapping) graph
 		mapping:              mapping,
 		preloadedBatchChange: rmf.batchChange,
 		batchSpecID:          rmf.batchSpecID,
+		publicationStates:    rmf.publicationStates,
 	}
 	return rmf.resolvers[mapping]
 }
@@ -396,4 +402,36 @@ func (rmf *rewirerMappingsFacade) ResolverWithNextSync(mapping *btypes.RewirerMa
 	resolver.preloadedNextSync = nextSync
 
 	return &resolver
+}
+
+// publicationStateMap maps changeset specs (by random ID) to their desired UI
+// publication state.
+type publicationStateMap map[string]batches.PublishedValue
+
+// newPublicationStateMap creates a new publicationStateMap from the given
+// publication state input, validating that there are no duplicates or invalid
+// changeset spec GraphQL IDs.
+func newPublicationStateMap(in *[]graphqlbackend.ChangesetSpecPublicationStateInput) (publicationStateMap, error) {
+	out := publicationStateMap{}
+	if in != nil {
+		var errs *multierror.Error
+		for _, ps := range *in {
+			id, err := unmarshalChangesetSpecID(ps.ChangesetSpec)
+			if err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "malformed changeset spec ID %q", string(ps.ChangesetSpec)))
+				continue
+			}
+
+			if _, ok := out[id]; ok {
+				errs = multierror.Append(errs, errors.Newf("duplicate changeset spec ID %q", string(ps.ChangesetSpec)))
+				continue
+			}
+			out[id] = ps.PublicationState
+		}
+		if err := errs.ErrorOrNil(); err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
 }

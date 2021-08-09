@@ -612,38 +612,6 @@ func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
 	return lines
 }
 
-func escape(s string) string {
-	isSpecial := func(c rune) bool {
-		switch c {
-		case '\\', '/':
-			return true
-		default:
-			return false
-		}
-	}
-
-	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
-	// but is more efficient since it does it via bytes.
-	count := 0
-	for _, c := range s {
-		if isSpecial(c) {
-			count++
-		}
-	}
-	if count == 0 {
-		return s
-	}
-
-	escaped := make([]rune, 0, len(s)+count)
-	for _, c := range s {
-		if isSpecial(c) {
-			escaped = append(escaped, '\\')
-		}
-		escaped = append(escaped, c)
-	}
-	return string(escaped)
-}
-
 func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	newFile := &result.File{
 		Path:     file.FileName,
@@ -663,23 +631,17 @@ func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, fil
 				continue
 			}
 
-			symbols = append(symbols, &result.SymbolMatch{
-				Symbol: result.Symbol{
-					Name:       m.SymbolInfo.Sym,
-					Kind:       m.SymbolInfo.Kind,
-					Parent:     m.SymbolInfo.Parent,
-					ParentKind: m.SymbolInfo.ParentKind,
-					Path:       file.FileName,
-					Line:       l.LineNumber,
-					// symbolRange requires a Pattern /^...$/ containing the line of the symbol to compute the symbol's offsets.
-					// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
-					// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
-					// It must escape `/` or `\` in the line.
-					Pattern:  fmt.Sprintf("/^%s$/", escape(string(l.Line))),
-					Language: file.Language,
-				},
-				File: newFile,
-			})
+			symbols = append(symbols, result.NewSymbolMatch(
+				newFile,
+				l.LineNumber,
+				m.SymbolInfo.Sym,
+				m.SymbolInfo.Kind,
+				m.SymbolInfo.Parent,
+				m.SymbolInfo.ParentKind,
+				file.Language,
+				string(l.Line),
+				false,
+			))
 		}
 	}
 

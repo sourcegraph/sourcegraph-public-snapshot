@@ -362,7 +362,7 @@ var noSuchHostErrorRe = lazyregexp.New(`no such host`)
 // parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
 func MaxRetries() int {
 	if strings.HasSuffix(os.Args[0], ".test") {
-		return 1
+		return 0
 	}
 
 	max, _ := strconv.Atoi(os.Getenv("SRC_HTTP_CLI_MAX_RETRIES"))
@@ -398,7 +398,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			status = a.Response.StatusCode
 		}
 
-		if a.Index > max { // Max retries
+		if a.Index >= max { // Max retries
 			return false
 		}
 

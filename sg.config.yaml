@@ -811,11 +811,28 @@ commandsets:
       - github-proxy
 
   monitoring:
+    checks:
+      - docker
     commands:
       - jaeger
       - prometheus
       - grafana
       - postgres_exporter
+
+  monitoring-alerts:
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - prometheus
+      - grafana
+      # For generated alerts docs
+      - docsite
+      # For the alerting integration with frontend
+      - enterprise-frontend
+      - enterprise-web
+      - caddy
 
 tests:
   # These can be run with `sg test [name]`

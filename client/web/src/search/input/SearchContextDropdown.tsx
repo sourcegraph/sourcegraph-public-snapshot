@@ -99,9 +99,10 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
+        telemetryService.log('SearchContextDropdownToggled')
         setIsOpen(value => !value)
         tour.cancel()
-    }, [tour])
+    }, [tour, telemetryService])
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
@@ -139,9 +140,14 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         [submitSearchOnSearchContextChange, submitOnToggle, setSelectedSearchContextSpec]
     )
 
-    // Log CTA view event whenver dropdown is opened, if user is not authenticated
     useEffect(() => {
+        if (isOpen && authenticatedUser) {
+            // Log search context dropdown view event whenever dropdown is opened, if user is authenticated
+            telemetryService.log('SearchContextsDropdownViewed')
+        }
+
         if (isOpen && !authenticatedUser) {
+            // Log CTA view event whenver dropdown is opened, if user is not authenticated
             telemetryService.log('SearchResultContextsCTAShown')
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -142,6 +142,11 @@ export interface FieldMetaState {
     touched: boolean
 
     /**
+     * State to understand when user typed some value in input element or not.
+     */
+    dirty: boolean
+
+    /**
      * Valid state with initial value NOT_VALIDATED, with VALID when all validators
      * didn't return validation error, CHECKING for when async validation is going on,
      * and INVALID when some validator returns validation error.

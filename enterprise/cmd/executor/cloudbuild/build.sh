@@ -6,7 +6,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
-export EXECUTOR_IMAGE_ARCHIVE_PATH=/images
 
 function cleanup() {
   apt-get -y autoremove
@@ -64,57 +63,11 @@ function install_docker() {
 
   if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]; then
     mkdir -p "$(dirname "${DOCKER_DAEMON_CONFIG_FILE}")"
-    cat <<'EOF' >"${DOCKER_DAEMON_CONFIG_FILE}"
-{
-  "log-driver": "journald",
-  "registry-mirrors": ["http://localhost:5000"]
-}
-EOF
+    echo '{"log-driver": "journald"}' >"${DOCKER_DAEMON_CONFIG_FILE}"
   fi
 
   ## Restart Docker daemon to pick up our changes.
   systemctl restart --now docker
-}
-
-## Docker pull-through cache
-## Reference: https://docs.docker.com/registry/recipes/mirror/
-function setup_pull_through_docker_cache() {
-  DOCKER_REGISTRY_CONFIG_FILE='/etc/docker/registry_config.json'
-
-  if [ ! -f "${DOCKER_REGISTRY_CONFIG_FILE}" ]; then
-    mkdir -p "$(dirname "${DOCKER_REGISTRY_CONFIG_FILE}")"
-    cat <<'EOF' >"${DOCKER_REGISTRY_CONFIG_FILE}"
-version: 0.1
-log:
-  fields:
-    service: registry
-storage:
-  cache:
-    blobdescriptor: inmemory
-  filesystem:
-    rootdirectory: /var/lib/registry
-http:
-  addr: :5000
-  headers:
-    X-Content-Type-Options: [nosniff]
-health:
-  storagedriver:
-    enabled: true
-    interval: 10s
-    threshold: 3
-proxy:
-  remoteurl: https://registry-1.docker.io
-EOF
-  fi
-
-  # TODO: Convert this into a proper service.
-  docker run \
-    -d \
-    --restart=always \
-    -p 5000:5000 \
-    -v ${DOCKER_REGISTRY_CONFIG_FILE}:/etc/docker/registry/config.yml \
-    --name registry \
-    registry:2
 }
 
 ## Install Weaveworks Ignite
@@ -148,11 +101,6 @@ function generate_ignite_base_image() {
   docker image rm "$EXECUTOR_FIRECRACKER_IMAGE"
 }
 
-# Ensure image archive path exists
-function ensure_image_archive_path() {
-  mkdir "${EXECUTOR_IMAGE_ARCHIVE_PATH}"
-}
-
 # Write systemd unit file for indexer service
 function install_executor_service() {
   # Create stub environment file.
@@ -168,9 +116,9 @@ Description=User code executor
 ExecStart=/usr/local/bin/executor
 Restart=always
 EnvironmentFile=/etc/systemd/system/executor.env
-Environment=SRC_LOG_LEVEL=dbug
-Environment=EXECUTOR_IMAGE_ARCHIVE_PATH="${EXECUTOR_IMAGE_ARCHIVE_PATH}" EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 Environment=HOME="%h"
+Environment=SRC_LOG_LEVEL=dbug
+Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 
 [Install]
 WantedBy=multi-user.target
@@ -185,10 +133,8 @@ install_logging_agent
 install_monitoring_agent
 increase_inotify_limit
 install_docker
-setup_pull_through_docker_cache
 install_ignite
 install_executor
 generate_ignite_base_image
-ensure_image_archive_path
 install_executor_service
 cleanup
