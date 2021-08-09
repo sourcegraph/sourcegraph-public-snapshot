@@ -43,6 +43,14 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
         [props.telemetryService]
     )
 
+    const onClickInstallSubtext = useCallback(() => {
+        props.telemetryService.log(
+            'HomepageInstallSourcegraphCTAClicked',
+            { name: 'InstallSourcegraphSubtext' },
+            { name: 'InstallSourcegraphSubtext' }
+        )
+    }, [props.telemetryService])
+
     return (
         <div className={styles.loggedOutHomepage}>
             <div className={styles.helpContent}>
@@ -90,7 +98,12 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     <SignUpCta className={styles.loggedOutHomepageCta} telemetryService={props.telemetryService} />
                     <div className="mt-2 text-center">
                         Search private code by{' '}
-                        <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener noreferrer">
+                        <a
+                            href="https://docs.sourcegraph.com/admin/install"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={onClickInstallSubtext}
+                        >
                             installing Sourcegraph locally.
                         </a>
                     </div>

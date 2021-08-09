@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
@@ -194,7 +196,7 @@ func TestRewirerMappings(t *testing.T) {
 			publishA = &btypes.RewirerMapping{ChangesetSpecID: 4}
 			publishB = &btypes.RewirerMapping{ChangesetSpecID: 5}
 		)
-		rmf := newRewirerMappingsFacade(nil, 0)
+		rmf := newRewirerMappingsFacade(nil, 0, nil)
 		rmf.All = btypes.RewirerMappings{detach, hidden, noAction, publishA, publishB}
 		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
@@ -396,7 +398,7 @@ func TestRewirerMappings(t *testing.T) {
 		}
 
 		s := &store.Store{}
-		rmf := newRewirerMappingsFacade(s, 1)
+		rmf := newRewirerMappingsFacade(s, 1, nil)
 		rmf.batchChange = &btypes.BatchChange{}
 
 		mapping := &btypes.RewirerMapping{}
@@ -420,6 +422,80 @@ func TestRewirerMappings(t *testing.T) {
 		have = rmf.ResolverWithNextSync(mapping, nextSync).(*changesetApplyPreviewResolver)
 		want.preloadedNextSync = nextSync
 		compareResolvers(t, have, want)
+	})
+}
+
+func TestPublicationStateMap(t *testing.T) {
+	t.Run("errors", func(t *testing.T) {
+		for name, in := range map[string]*[]graphqlbackend.ChangesetSpecPublicationStateInput{
+			"invalid GraphQL ID": {
+				graphqlbackend.ChangesetSpecPublicationStateInput{
+					ChangesetSpec: "not a valid ID",
+				},
+			},
+			"duplicate GraphQL ID": {
+				graphqlbackend.ChangesetSpecPublicationStateInput{
+					ChangesetSpec: marshalChangesetSpecRandID("foo"),
+				},
+				graphqlbackend.ChangesetSpecPublicationStateInput{
+					ChangesetSpec: marshalChangesetSpecRandID("foo"),
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := newPublicationStateMap(in)
+				assert.Error(t, err)
+				assert.Nil(t, have)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			in   *[]graphqlbackend.ChangesetSpecPublicationStateInput
+			want publicationStateMap
+		}{
+			"nil input": {
+				in:   nil,
+				want: publicationStateMap{},
+			},
+			"empty input": {
+				in:   &[]graphqlbackend.ChangesetSpecPublicationStateInput{},
+				want: publicationStateMap{},
+			},
+			"non-empty input": {
+				in: &[]graphqlbackend.ChangesetSpecPublicationStateInput{
+					{
+						ChangesetSpec:    marshalChangesetSpecRandID("true"),
+						PublicationState: batches.PublishedValue{Val: true},
+					},
+					{
+						ChangesetSpec:    marshalChangesetSpecRandID("false"),
+						PublicationState: batches.PublishedValue{Val: false},
+					},
+					{
+						ChangesetSpec:    marshalChangesetSpecRandID("draft"),
+						PublicationState: batches.PublishedValue{Val: "draft"},
+					},
+					{
+						ChangesetSpec:    marshalChangesetSpecRandID("nil"),
+						PublicationState: batches.PublishedValue{Val: nil},
+					},
+				},
+				want: publicationStateMap{
+					"true":  {Val: true},
+					"false": {Val: false},
+					"draft": {Val: "draft"},
+					"nil":   {Val: nil},
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := newPublicationStateMap(tc.in)
+				assert.NoError(t, err)
+				assert.EqualValues(t, tc.want, have)
+			})
+		}
 	})
 }
 

@@ -43,7 +43,6 @@ export EXECUTOR_FRONTEND_URL=http://localhost:3080
 export EXECUTOR_FRONTEND_USERNAME=executor
 export EXECUTOR_FRONTEND_PASSWORD=hunter2
 export EXECUTOR_USE_FIRECRACKER=false
-export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-worker executor "

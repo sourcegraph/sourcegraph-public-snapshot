@@ -2,22 +2,28 @@
 
 ## 1. Add a SAML application in Okta
 
-1. Navigate to the "Classic UI" in the Okta Admin site. In the upper left-hand corner, it should say "Classic UI". If it says "Developer Console", click it and select "Classic UI". ![Okta Developer Console: Classic UI](https://user-images.githubusercontent.com/1646931/71300638-7a52fd80-234b-11ea-90cf-960820d4d5f2.png)
-1. Go to the Applications tab. Click "Add Application" and then "Create New App". Select "Web" as the choice of Platform and "SAML 2.0" as the Sign on method. Then click "Create". ![Add application](https://user-images.githubusercontent.com/1646931/71300683-02390780-234c-11ea-8cbb-7c9987d3b472.png)
-1. Give your app a name ("Sourcegraph") and click "Next".
-1. Set the following values in the SAML Settings (replacing `https://sourcegraph.example.com` with your Sourcegraph URL):
-  * **Single sign on URL:** `https://sourcegraph.example.com/.auth/saml/acs`<br>
-    (Check the box for "Use this for Recipient URL and Destination URL")
-  * **Audience URI (SP Entity ID):** `https://sourcegraph.example.com/.auth/saml/metadata`
-  * **Attribute statements:**:<br>
-    `email` (required): user.email<br>
-    `login` (optional): user.login<br>
-    `displayName` (optional): user.firstName<br>
-  * **Name ID**: `email`
-1. Click "Next".
-1. Select "I'm an Okta customer adding an internal app" and click "Finish".
-1. In the Settings panel on the next page, find the "Identity Provider metadata" link and record its URL. ![Identity Provider metadata link](https://user-images.githubusercontent.com/1646931/71300825-63ada600-234d-11ea-858a-a489d8a79168.png)
-1. Grant users or groups sign-in access in the "Assignments" tab. You can do other users later, but at the very least, grant your own Okta user access to the application, or else you won't be able to sign in.
+1. Login to your Okta account.
+1. On the left hand side, click on the “Applications” menu, and then select the “Applications” item.
+1. Click on “Create App Integration”. Another screen should pop-up, listing sign-in methods. Choose “SAML 2.0”. Click "Next".
+1. You should now see “Create SAML Integration” on this page, and you will be on “General Settings”. Specify a name for “App name” (Ex: “Sourcegraph”). Click “Next”.
+1. Now you should be on “Configure SAML”. On this page, you will need your Sourcegraph URL (Ex: https://sourcegraph.example.com). Follow along with the following instructions, replacing `<URL>` with your Sourcegraph URL:
+    - In section A ("SAML Settings"), under "General":
+      - For “Single sign on URL”, set the value to `<URL>`/.auth/saml/acs
+        - Under this box, there should be a checkbox labeled “Use this for Recipient URL and Destination URL”. Check the box if it is not already selected.
+      - For “Audience URI (SP Entity ID)”, set the value to `<URL>`/.auth/saml/metadata
+      - For "Name ID format", choose "EmailAddress"
+    - In the section titled “Attribute Statements (optional)”:
+      - Set the following Name and Values, leaving the Name format to “Unspecified”
+      - Email: user.email (This one is required)
+      - Login: user.login (This one is optional)
+      - displayName: user.firstName (This one is optional)
+1. Click Next.
+1. Now you should be on the “Feedback” step. Select the radio button for “I’m an Okta customer adding an internal app”, and provide feedback if you wish. Click "Finish".
+1. You should now be on the Application page for Sourcegraph, where you can view the settings and configurations you have just set. You will want to grant users or groups sign-in access before moving on.
+    - To grant access to your own user:
+      - Go to the “Assignments” tab, where you should see a table of People and Groups. Click the “Assign” dropdown, and then “Assign to People”.
+      - A new window should pop-up. Find your account, and click “Assign”, “Save and Go Back”, and then “Done”.
+1. You have now finished configuring the settings in Okta. Before moving to step #2, make sure you have granted access to users/groups. Also, go into the “Sign On” tab, and look for the “Identity Provider metadata” link. Copy this link to your clipboard. You will need this for step #2.
 
 ## 2. Add the SAML auth provider to Sourcegraph site config
 

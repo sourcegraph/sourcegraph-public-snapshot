@@ -222,7 +222,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
-                eventLogger.log('UserAttemptConnectCodeHost', { kind })
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href

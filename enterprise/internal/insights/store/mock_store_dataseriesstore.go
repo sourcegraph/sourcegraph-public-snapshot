@@ -17,6 +17,9 @@ type MockDataSeriesStore struct {
 	// GetDataSeriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDataSeries.
 	GetDataSeriesFunc *DataSeriesStoreGetDataSeriesFunc
+	// StampBackfillFunc is an instance of a mock function object
+	// controlling the behavior of the method StampBackfill.
+	StampBackfillFunc *DataSeriesStoreStampBackfillFunc
 	// StampRecordingFunc is an instance of a mock function object
 	// controlling the behavior of the method StampRecording.
 	StampRecordingFunc *DataSeriesStoreStampRecordingFunc
@@ -30,6 +33,11 @@ func NewMockDataSeriesStore() *MockDataSeriesStore {
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
 			defaultHook: func(context.Context, GetDataSeriesArgs) ([]types.InsightSeries, error) {
 				return nil, nil
+			},
+		},
+		StampBackfillFunc: &DataSeriesStoreStampBackfillFunc{
+			defaultHook: func(context.Context, types.InsightSeries) (types.InsightSeries, error) {
+				return types.InsightSeries{}, nil
 			},
 		},
 		StampRecordingFunc: &DataSeriesStoreStampRecordingFunc{
@@ -47,6 +55,9 @@ func NewMockDataSeriesStoreFrom(i DataSeriesStore) *MockDataSeriesStore {
 	return &MockDataSeriesStore{
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
 			defaultHook: i.GetDataSeries,
+		},
+		StampBackfillFunc: &DataSeriesStoreStampBackfillFunc{
+			defaultHook: i.StampBackfill,
 		},
 		StampRecordingFunc: &DataSeriesStoreStampRecordingFunc{
 			defaultHook: i.StampRecording,
@@ -161,6 +172,116 @@ func (c DataSeriesStoreGetDataSeriesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DataSeriesStoreGetDataSeriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DataSeriesStoreStampBackfillFunc describes the behavior when the
+// StampBackfill method of the parent MockDataSeriesStore instance is
+// invoked.
+type DataSeriesStoreStampBackfillFunc struct {
+	defaultHook func(context.Context, types.InsightSeries) (types.InsightSeries, error)
+	hooks       []func(context.Context, types.InsightSeries) (types.InsightSeries, error)
+	history     []DataSeriesStoreStampBackfillFuncCall
+	mutex       sync.Mutex
+}
+
+// StampBackfill delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDataSeriesStore) StampBackfill(v0 context.Context, v1 types.InsightSeries) (types.InsightSeries, error) {
+	r0, r1 := m.StampBackfillFunc.nextHook()(v0, v1)
+	m.StampBackfillFunc.appendCall(DataSeriesStoreStampBackfillFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the StampBackfill method
+// of the parent MockDataSeriesStore instance is invoked and the hook queue
+// is empty.
+func (f *DataSeriesStoreStampBackfillFunc) SetDefaultHook(hook func(context.Context, types.InsightSeries) (types.InsightSeries, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// StampBackfill method of the parent MockDataSeriesStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DataSeriesStoreStampBackfillFunc) PushHook(hook func(context.Context, types.InsightSeries) (types.InsightSeries, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DataSeriesStoreStampBackfillFunc) SetDefaultReturn(r0 types.InsightSeries, r1 error) {
+	f.SetDefaultHook(func(context.Context, types.InsightSeries) (types.InsightSeries, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DataSeriesStoreStampBackfillFunc) PushReturn(r0 types.InsightSeries, r1 error) {
+	f.PushHook(func(context.Context, types.InsightSeries) (types.InsightSeries, error) {
+		return r0, r1
+	})
+}
+
+func (f *DataSeriesStoreStampBackfillFunc) nextHook() func(context.Context, types.InsightSeries) (types.InsightSeries, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DataSeriesStoreStampBackfillFunc) appendCall(r0 DataSeriesStoreStampBackfillFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DataSeriesStoreStampBackfillFuncCall
+// objects describing the invocations of this function.
+func (f *DataSeriesStoreStampBackfillFunc) History() []DataSeriesStoreStampBackfillFuncCall {
+	f.mutex.Lock()
+	history := make([]DataSeriesStoreStampBackfillFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DataSeriesStoreStampBackfillFuncCall is an object that describes an
+// invocation of method StampBackfill on an instance of MockDataSeriesStore.
+type DataSeriesStoreStampBackfillFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.InsightSeries
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.InsightSeries
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DataSeriesStoreStampBackfillFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DataSeriesStoreStampBackfillFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

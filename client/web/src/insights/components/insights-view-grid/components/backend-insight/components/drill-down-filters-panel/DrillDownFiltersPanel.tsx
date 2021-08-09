@@ -4,62 +4,98 @@ import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from '
 import { TruncatedText } from '../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components/trancated-text/TrancatedText'
 import { FormInput } from '../../../../../form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../form/form-radio-input/FormRadioInput'
-import { useForm } from '../../../../../form/hooks/useForm'
+import { useField } from '../../../../../form/hooks/useField'
+import { FormChangeEvent, useForm } from '../../../../../form/hooks/useForm'
 
 import styles from './DrillDownFiltersPanel.module.scss'
-
-interface DrillDownFilters {
-    includeRepoRegExp: string
-    excludeRepoRegExp: string
-}
-
-const DEFAULT_FILTERS: DrillDownFilters = {
-    excludeRepoRegExp: '',
-    includeRepoRegExp: '',
-}
+import { DrillDownFilters, DrillDownFiltersMode, EMPTY_DRILLDOWN_FILTERS } from './types'
+import { validRegexp } from './validators'
 
 interface DrillDownFiltersPanelProps {
     className?: string
-    filters?: DrillDownFilters
+    initialFiltersValue?: DrillDownFilters
+    onFiltersChange?: (filters: FormChangeEvent<DrillDownFilters>) => void
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const { className, filters = DEFAULT_FILTERS } = props
+    const { className, initialFiltersValue = EMPTY_DRILLDOWN_FILTERS, onFiltersChange } = props
 
-    const { ref } = useForm<DrillDownFilters>({
-        initialValues: filters,
-        onChange: values => console.log(values),
+    const { ref, formAPI } = useForm<DrillDownFilters>({
+        initialValues: initialFiltersValue,
+        onChange: onFiltersChange,
     })
+
+    const mode = useField({
+        name: 'mode',
+        formApi: formAPI,
+    })
+
+    const includeRegex = useField({
+        name: 'includeRepoRegex',
+        formApi: formAPI,
+        validators: { sync: validRegexp },
+    })
+
+    const excludeRegex = useField({
+        name: 'excludeRepoRegex',
+        formApi: formAPI,
+        validators: { sync: validRegexp },
+    })
+
+    const handleFiltersReset = (): void => {
+        includeRegex.input.onChange('')
+        excludeRegex.input.onChange('')
+    }
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} className={classnames(className, styles.drilldownFilters)}>
             <header className="d-flex align-items-center">
                 <h4 className="m-0">Filters by Repositories</h4>
-                <button type="button" className="btn btn-link ml-auto">
+                <button type="button" className="btn btn-link ml-auto" onClick={handleFiltersReset}>
                     Clear filters
                 </button>
             </header>
 
             <hr className="ml-n3 mr-n3" />
 
-            <FormRadioInput checked={true} title="Regular expression" className="pt-3 pb-3" />
+            <FormRadioInput
+                title="Regular expression"
+                className="pt-3 pb-3"
+                name="mode"
+                value={DrillDownFiltersMode.Regex}
+                checked={mode.input.value === DrillDownFiltersMode.Regex}
+                onChange={mode.input.onChange}
+            />
 
             <FormInput
                 as={DrillDownRegExpInput}
                 autoFocus={true}
-                autofocus={true}
                 prefix="repo:"
-                title={<LabelWithReset>Include repositories</LabelWithReset>}
+                title={
+                    <LabelWithReset onReset={() => includeRegex.input.onChange('')}>
+                        Include repositories
+                    </LabelWithReset>
+                }
                 placeholder="regexp-pattern"
                 className="mb-4"
+                valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
+                error={includeRegex.meta.dirty && includeRegex.meta.error}
+                {...includeRegex.input}
             />
 
             <FormInput
                 as={DrillDownRegExpInput}
                 prefix="-repo:"
-                title={<LabelWithReset>Exclude repositories</LabelWithReset>}
+                title={
+                    <LabelWithReset onReset={() => excludeRegex.input.onChange('')}>
+                        Exclude repositories
+                    </LabelWithReset>
+                }
                 placeholder="regexp-pattern"
+                valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
+                error={excludeRegex.meta.dirty && excludeRegex.meta.error}
+                {...excludeRegex.input}
             />
         </form>
     )

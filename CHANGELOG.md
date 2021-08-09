@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Syntax highlighting support for the [Cue](https://cuelang.org) language.
 - Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170)
 - Add a new environment variable `SRC_HTTP_CLI_EXTERNAL_TIMEOUT` to control the timeout for all external HTTP requests. [#23620](https://github.com/sourcegraph/sourcegraph/pull/23620)
+- Improved usability where filters followed by a space in the search query will warn users that the filter value is empty. [#23646](https://github.com/sourcegraph/sourcegraph/pull/23646)
 
 ### Changed
 
@@ -42,6 +43,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Graceful termination periods have been added to database deployments. [#3358](https://github.com/sourcegraph/deploy-sourcegraph/pull/3358) & [#477](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/477)
 - All commit search results for `and`-expressions are now highlighted. [#23336](https://github.com/sourcegraph/sourcegraph/pull/23336)
 - Email notifiers in `observability.alerts` now correctly respect the `email.smtp.noVerifyTLS` site configuration field. [#23636](https://github.com/sourcegraph/sourcegraph/issues/23636)
+- Alertmanager (Prometheus) now respects `SMTPServerConfig.noVerifyTLS` field. [#23636](https://github.com/sourcegraph/sourcegraph/issues/23636)
+- Clicking on symbols in the left search pane now renders hover tooltips for indexed repositories. [#23664](https://github.com/sourcegraph/sourcegraph/pull/23664)
 
 ### Removed
 

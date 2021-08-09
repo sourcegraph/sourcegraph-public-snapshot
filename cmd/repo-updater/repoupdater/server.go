@@ -52,9 +52,6 @@ type Server struct {
 	ChangesetSyncRegistry interface {
 		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
-		// HandleExternalServiceSync should be called when an external service changes so that
-		// the registry can start or stop the syncer associated with the service
-		HandleExternalServiceSync(es api.ExternalService)
 	}
 	RateLimitSyncer interface {
 		// SyncRateLimiters should be called when an external service changes so that
@@ -244,9 +241,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		if err != nil {
 			log15.Warn("Handling rate limiter sync", "err", err)
 		}
-	}
-	if s.ChangesetSyncRegistry != nil {
-		s.ChangesetSyncRegistry.HandleExternalServiceSync(req.ExternalService)
 	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
