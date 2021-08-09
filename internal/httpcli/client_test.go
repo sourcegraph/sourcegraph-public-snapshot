@@ -306,24 +306,49 @@ func TestErrorResilience(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cli, _ := NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-		),
-		NewErrorResilientTransportOpt(
-			NewRetryPolicy(20),
-			rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
-		),
-	).Doer()
+	t.Run("many", func(t *testing.T) {
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(20),
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
 
-	res, err := cli.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if res.StatusCode != 404 {
-		t.Fatalf("want status code 404, got: %d", res.StatusCode)
-	}
+		if res.StatusCode != 404 {
+			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		}
+	})
+
+	t.Run("max", func(t *testing.T) {
+		atomic.StoreInt64(&failures, 5)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(0), // zero retries
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 429 {
+			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		}
+	})
 }
 
 func TestExpJitterDelay(t *testing.T) {
