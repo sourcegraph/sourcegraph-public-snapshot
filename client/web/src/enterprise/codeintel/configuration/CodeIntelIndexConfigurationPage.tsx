@@ -98,24 +98,16 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         <ErrorAlert prefix="Error fetching index configuration" error={fetchError} />
     ) : (
         <div className="code-intel-index-configuration">
-            <PageTitle title="Code intelligence index configuration" />
+            <PageTitle title="Auto-indexing configuration" />
 
             <PageHeader
                 headingElement="h2"
                 path={[
                     {
-                        text: <>Code intelligence index configuration</>,
+                        text: <>Auto-indexing configuration</>,
                     },
                 ]}
-                description={
-                    <>
-                        Override the inferred configuration when automatically indexing repositories on{' '}
-                        <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
-                            Sourcegraph.com
-                        </a>
-                        .
-                    </>
-                }
+                description="TODO"
                 className="mb-3"
             />
 

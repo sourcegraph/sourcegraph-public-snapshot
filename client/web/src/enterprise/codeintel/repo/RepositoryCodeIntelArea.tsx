@@ -134,7 +134,7 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Precise intelligence', icon: BrainIcon },
+        header: { label: 'Precise intelligence' },
         items: [
             {
                 to: '/uploads',
@@ -142,22 +142,25 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             },
             {
                 to: '/data-retention-configuration',
-                label: 'Data retention configuration',
+                label: 'Configuration',
             },
+        ],
+    },
+    {
+        header: { label: 'Auto-indexing' },
+        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        items: [
             {
                 to: '/indexes',
-                label: 'Auto indexing',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+                label: 'Index jobs',
             },
             {
                 to: '/index-configuration',
-                label: 'Index configuration',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+                label: 'Configuration',
             },
             {
                 to: '/index-schedule-configuration',
-                label: 'Index schedule configuration',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+                label: 'Schedule configuration',
             },
         ],
     },

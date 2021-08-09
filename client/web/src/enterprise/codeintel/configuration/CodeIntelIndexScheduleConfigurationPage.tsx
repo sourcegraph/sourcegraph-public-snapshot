@@ -5,6 +5,8 @@ import { RouteComponentProps } from 'react-router'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { enqueueIndexJob } from './backend'
 
@@ -46,22 +48,39 @@ export const CodeIntelIndexScheduleConfigurationPage: FunctionComponent<CodeInte
     }, [repo, revlike])
 
     return (
-        <div>
-            {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
+        <div className="code-intel-index-configuration">
+            <PageTitle title="Auto-indexing schedule configuration" />
 
-            <input type="text" value={revlike} onChange={event => setRevlike(event.target.value)} />
+            <PageHeader
+                headingElement="h2"
+                path={[
+                    {
+                        text: <>Auto-indexing schedule configuration</>,
+                    },
+                ]}
+                description="TODO"
+                className="mb-3"
+            />
 
-            <button
-                type="button"
-                title="Enqueue thing"
-                disabled={state === State.Queueing}
-                className="btn btn-sm btn-secondary"
-                onClick={onClick}
-            >
-                Enqueue
-            </button>
+            <Container>
+                <div>
+                    {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
 
-            {state === State.Queued && <div className="text-success">Index jobs enqueued</div>}
+                    <input type="text" value={revlike} onChange={event => setRevlike(event.target.value)} />
+
+                    <button
+                        type="button"
+                        title="Enqueue thing"
+                        disabled={state === State.Queueing}
+                        className="btn btn-sm btn-secondary"
+                        onClick={onClick}
+                    >
+                        Enqueue
+                    </button>
+
+                    {state === State.Queued && <div className="text-success">Index jobs enqueued</div>}
+                </div>
+            </Container>
         </div>
     )
 }

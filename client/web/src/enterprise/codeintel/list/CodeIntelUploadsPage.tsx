@@ -111,10 +111,10 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
 
     return (
         <div className="code-intel-uploads">
-            <PageTitle title="Code intelligence uploads" />
+            <PageTitle title="Precise code intelligence uploads" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Code intelligence uploads' }]}
+                path={[{ text: 'Precise code intelligence uploads' }]}
                 description={
                     <>
                         Current uploads provide code intelligence for the latest commit on the default branch and are

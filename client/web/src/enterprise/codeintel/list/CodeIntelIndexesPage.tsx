@@ -77,10 +77,10 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
     return (
         <div className="code-intel-indexes">
-            <PageTitle title="Code intelligence auto-index records" />
+            <PageTitle title="Auto-indexing jobs" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Code intelligence auto-index records' }]}
+                path={[{ text: 'Auto-indexing jobs' }]}
                 description={
                     <>
                         Popular repositories are indexed automatically on{' '}
