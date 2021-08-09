@@ -782,7 +782,23 @@ Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https:/
 
 ## Environment variables
 
-Update the environment variables in the sourcegraph-frontend deployment YAML file
+Update the environment variables in the appropriate deployment manifest.
+For example, the following [patch](#overlays) will update `PGUSER` to have the value `bob`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sourcegraph-frontend
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          env:
+            - name: PGUSER
+              value: bob
+```
 
 ## Troubleshooting
 
