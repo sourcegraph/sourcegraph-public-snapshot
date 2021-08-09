@@ -90,7 +90,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({
 
     const topMargin =
         depth === 0
-            ? '' // Level 0 header ("Package foo")
+            ? ' mt-3' // Level 0 header ("Package foo")
             : depth === 1
             ? ' mt-5' // Level 1 headers ("Constants", "Variables", etc.)
             : isFirstChild
