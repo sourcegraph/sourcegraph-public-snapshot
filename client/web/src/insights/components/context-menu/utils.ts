@@ -1,6 +1,6 @@
 import { getCollisions, Position } from '@reach/popover'
 
-const DEFAULT_VERTICAL_OFFSET = 4
+const DEFAULT_PADDING = 6
 
 /**
  * Custom popover position calculator. Returns position objects (top,left,right,bottom) styles
@@ -29,8 +29,8 @@ export const positionRight: Position = (targetRectangle, popoverRectangle) => {
     return {
         left: `${targetRectangle.right - popoverRectangle.width + window.scrollX}px`,
         top: directionUp
-            ? `${targetRectangle.top - popoverRectangle.height + window.scrollY - DEFAULT_VERTICAL_OFFSET}px`
-            : `${targetRectangle.top + targetRectangle.height + window.scrollY + DEFAULT_VERTICAL_OFFSET}px`,
+            ? `${targetRectangle.top - popoverRectangle.height + window.scrollY - DEFAULT_PADDING}px`
+            : `${targetRectangle.top + targetRectangle.height + window.scrollY + DEFAULT_PADDING}px`,
     }
 }
 
@@ -74,14 +74,14 @@ export const flipRightPosition: Position = (targetRectangle, popoverRectangle) =
 
     if (directionLeft) {
         return {
-            left: `${targetRectangle.right + window.scrollX}px`,
+            left: `${targetRectangle.right + window.scrollX + DEFAULT_PADDING}px`,
             top: `${targetRectangle.top + window.scrollY}px`,
         }
     }
 
     if (directionRight) {
         return {
-            left: `${targetRectangle.left - popoverRectangle.width + window.scrollX}px`,
+            left: `${targetRectangle.left - popoverRectangle.width + window.scrollX - DEFAULT_PADDING}px`,
             top: `${targetRectangle.top + window.scrollY}px`,
         }
     }
@@ -89,7 +89,7 @@ export const flipRightPosition: Position = (targetRectangle, popoverRectangle) =
     return {
         left: `${targetRectangle.right - popoverRectangle.width + window.scrollX}px`,
         top: directionUp
-            ? `${targetRectangle.top - popoverRectangle.height + window.scrollY - DEFAULT_VERTICAL_OFFSET}px`
-            : `${targetRectangle.top + targetRectangle.height + window.scrollY + DEFAULT_VERTICAL_OFFSET}px`,
+            ? `${targetRectangle.top - popoverRectangle.height + window.scrollY - DEFAULT_PADDING}px`
+            : `${targetRectangle.top + targetRectangle.height + window.scrollY + DEFAULT_PADDING}px`,
     }
 }

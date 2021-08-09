@@ -20,6 +20,7 @@ import { InsightErrorContent } from '../insight-card/components/insight-error-co
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
+import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownFilters, EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/types'
 
@@ -39,6 +40,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
     const localReference = useRef<HTMLDivElement>(null)
+    const [isFiltersOpen, setFiltersOpen] = useState(false)
     const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
 
     // Currently we support only regexp filters so extract them in a separate object
@@ -72,16 +74,20 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             hasContextMenu={true}
             actions={
                 <DrillDownFiltersAction
+                    open={isFiltersOpen}
                     targetRef={localReference}
                     filters={filters}
                     onFilterChange={handleDrillDownFiltersChange}
+                    onVisibilityChange={setFiltersOpen}
                 />
             }
             telemetryService={telemetryService}
             onDelete={handleDelete}
             innerRef={localReference}
             {...otherProps}
-            className={classnames('be-insight-card', otherProps.className)}
+            className={classnames('be-insight-card', otherProps.className, {
+                [styles.cardWithFilters]: isFiltersOpen,
+            })}
         >
             {loading || isDeleting ? (
                 <InsightLoadingContent

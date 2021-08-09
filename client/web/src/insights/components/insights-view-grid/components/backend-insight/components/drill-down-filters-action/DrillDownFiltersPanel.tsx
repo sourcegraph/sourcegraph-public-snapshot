@@ -1,7 +1,7 @@
 import Popover from '@reach/popover'
 import classnames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useRef, MouseEvent } from 'react'
 import FocusLock from 'react-focus-lock'
 
 import { flipRightPosition } from '../../../../../context-menu/utils'
@@ -24,37 +24,43 @@ const hasActiveFilters = (filters: DrillDownFilters): boolean => {
 }
 
 interface DrillDownFiltersProps {
+    open: boolean
     filters: DrillDownFilters
     targetRef: React.RefObject<HTMLElement>
     onFilterChange: (filters: DrillDownFilters) => void
+    onVisibilityChange: (open: boolean) => void
 }
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { targetRef, filters, onFilterChange } = props
+    const { open, targetRef, filters, onFilterChange, onVisibilityChange } = props
 
-    const [open, setOpen] = useState(false)
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     const popoverReference = useRef<HTMLDivElement>(null)
 
-    const handleTargetClick = (): void => {
-        setOpen(open => !open)
+    const handleTargetClick = (event: MouseEvent<HTMLButtonElement>): void => {
+        event.stopPropagation()
+
+        onVisibilityChange(!open)
     }
 
-    const handleClickOutside = useCallback((event: Event) => {
-        if (!targetButtonReference.current) {
-            return
-        }
+    const handleClickOutside = useCallback(
+        (event: Event) => {
+            if (!targetButtonReference.current) {
+                return
+            }
 
-        if (targetButtonReference.current.contains(event.target as Node)) {
-            return
-        }
+            if (targetButtonReference.current.contains(event.target as Node)) {
+                return
+            }
 
-        setOpen(false)
-    }, [])
+            onVisibilityChange(false)
+        },
+        [onVisibilityChange]
+    )
 
     const handleEscapePress = useCallback(() => {
-        setOpen(false)
-    }, [])
+        onVisibilityChange(false)
+    }, [onVisibilityChange])
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFilters>): void => {
         if (event.valid) {
