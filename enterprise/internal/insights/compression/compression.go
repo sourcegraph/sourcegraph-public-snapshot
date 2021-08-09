@@ -179,6 +179,7 @@ func (q *QueryExecution) ToQueueJob(seriesID string, query string, cost priority
 		Cost:            int(cost),
 		Priority:        int(jobPriority),
 		DependentFrames: q.SharedRecordings,
+		State:           "queued",
 	}
 }
 
