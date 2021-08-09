@@ -24,6 +24,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -130,6 +136,50 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 		}
 	}
 	return BackfillPlan{Executions: include, RecordCount: count}
+}
+
+func (q *QueryExecution) Times() []time.Time {
+	times := make([]time.Time, 0, q.RecordCount())
+
+	times = append(times, q.RecordingTime)
+	times = append(times, q.SharedRecordings...)
+	return times
+}
+
+func (q *QueryExecution) RecordCount() int {
+	return len(q.SharedRecordings) + 1
+}
+
+func (q *QueryExecution) ToRecording(seriesID string, repoName string, repoID api.RepoID, value float64) []store.RecordSeriesPointArgs {
+	args := make([]store.RecordSeriesPointArgs, 0, q.RecordCount())
+	base := store.RecordSeriesPointArgs{
+		SeriesID: seriesID,
+		Point: store.SeriesPoint{
+			Time:  q.RecordingTime,
+			Value: value,
+		},
+		RepoName: &repoName,
+		RepoID:   &repoID,
+	}
+	args = append(args, base)
+	for _, sharedTime := range q.SharedRecordings {
+		arg := base
+		arg.Point.Time = sharedTime
+		args = append(args, arg)
+	}
+
+	return args
+}
+
+func (q *QueryExecution) ToQueueJob(seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *queryrunner.Job {
+	return &queryrunner.Job{
+		SeriesID:        seriesID,
+		SearchQuery:     query,
+		RecordTime:      &q.RecordingTime,
+		Cost:            int(cost),
+		Priority:        int(jobPriority),
+		DependentFrames: q.SharedRecordings,
+	}
 }
 
 type BackfillPlan struct {

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+
 	"github.com/hexops/autogold"
 
 	"github.com/cockroachdb/errors"
@@ -117,4 +119,49 @@ func TestFilterFrames(t *testing.T) {
 func toTime(date string) time.Time {
 	result, _ := time.Parse("2006-01-02", date)
 	return result
+}
+
+func TestQueryExecution_ToRecording(t *testing.T) {
+	bTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	t.Run("test to recording with dependents", func(t *testing.T) {
+		var exec QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
+
+		got := exec.ToRecording("series1", "repoName1", 1, 5.0)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+
+	t.Run("test to recording without dependents", func(t *testing.T) {
+		var exec QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+
+		got := exec.ToRecording("series1", "repoName1", 1, 5.0)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
+func TestQueryExecution_ToQueueJob(t *testing.T) {
+	bTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	t.Run("test to job with dependents", func(t *testing.T) {
+		var exec QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
+
+		got := exec.ToQueueJob("series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test to job without dependents", func(t *testing.T) {
+		var exec QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+
+		got := exec.ToQueueJob("series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
 }
