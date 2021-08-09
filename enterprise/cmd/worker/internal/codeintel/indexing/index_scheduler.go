@@ -24,11 +24,13 @@ type IndexScheduler struct {
 	settingStore  IndexingSettingStore
 	repoStore     IndexingRepoStore
 	indexEnqueuer IndexEnqueuer
-	operations    *operations
+	operations    *schedulerOperations
 }
 
-var _ goroutine.Handler = &IndexScheduler{}
-var _ goroutine.ErrorHandler = &IndexScheduler{}
+var (
+	_ goroutine.Handler      = &IndexScheduler{}
+	_ goroutine.ErrorHandler = &IndexScheduler{}
+)
 
 func NewIndexScheduler(
 	dbStore DBStore,

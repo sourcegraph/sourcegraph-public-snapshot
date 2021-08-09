@@ -10,14 +10,39 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var CoursierBinary = "coursier"
 
-func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) ([]string, error) {
+var (
+	observationContext *observation.Context
+	operations         *Operations
+)
+
+func init() {
+	observationContext = &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	operations = NewOperationsFromMetrics(observationContext)
+}
+
+func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (_ []string, err error) {
+	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("dependency", dependency.CoursierSyntax()),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if dependency.IsJDK() {
 		output, err := runCoursierCommand(
 			ctx,
@@ -55,7 +80,10 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 	)
 }
 
-func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) ([]string, error) {
+func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (_ []string, err error) {
+	ctx, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	return runCoursierCommand(
 		ctx,
 		config,
@@ -70,11 +98,18 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 }
 
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) bool {
+	var err error
+	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("dependency", dependency.CoursierSyntax()),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if dependency.IsJDK() {
-		sources, err := FetchSources(ctx, config, dependency)
+		var sources []string
+		sources, err = FetchSources(ctx, config, dependency)
 		return err == nil && len(sources) == 1
 	}
-	_, err := runCoursierCommand(
+	_, err = runCoursierCommand(
 		ctx,
 		config,
 		"resolve",
@@ -84,7 +119,13 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 	return err == nil
 }
 
-func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) ([]string, error) {
+func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (_ []string, err error) {
+	ctx, traceLog, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repositories", strings.Join(config.Maven.Repositories, "|")),
+		log.String("args", strings.Join(args, ", ")),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	cmd := exec.CommandContext(ctx, CoursierBinary, args...)
 	if config.Maven.Credentials != "" {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("COURSIER_CREDENTIALS=%v", config.Maven.Credentials))
@@ -101,6 +142,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
+	traceLog(log.String("stdout", stdout.String()), log.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

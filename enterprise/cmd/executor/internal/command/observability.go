@@ -28,9 +28,9 @@ func NewOperations(observationContext *observation.Context) *Operations {
 
 	op := func(opName string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("apiworker.%s", opName),
-			MetricLabels: []string{opName},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("apiworker.%s", opName),
+			MetricLabelValues: []string{opName},
+			Metrics:           metrics,
 		})
 	}
 

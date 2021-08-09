@@ -16,7 +16,7 @@ func RepoUpdater() *monitoring.Container {
 		syncDurationThreshold = 9 * time.Hour
 	)
 
-	var containerMonitoringOptions = &shared.ContainerMonitoringGroupOptions{
+	containerMonitoringOptions := &shared.ContainerMonitoringGroupOptions{
 		MemoryUsage: func(observable shared.Observable) shared.Observable {
 			return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
 		},
@@ -430,6 +430,8 @@ func RepoUpdater() *monitoring.Container {
 			},
 
 			shared.Batches.NewDBStoreGroup(containerName),
+
+			shared.CodeIntelligence.NewCoursierGroup(containerName),
 
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
