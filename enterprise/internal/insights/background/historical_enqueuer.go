@@ -388,7 +388,6 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 // buildSeriesContext describes context/parameters for a call to buildSeries()
 type buildSeriesContext struct {
 	// The timeframe we're building historical data for.
-	// from, to time.Time
 
 	execution *compression.QueryExecution
 
