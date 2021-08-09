@@ -12,7 +12,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { SaveToolbarPropsGenerator, SaveToolbarProps } from '../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
-import { getConfiguration as defaultGetConfiguration, updateConfiguration, enqueueIndexJob } from './backend'
+import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
 import allConfigSchema from './schema.json'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
@@ -21,7 +21,7 @@ export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProp
     getConfiguration?: typeof defaultGetConfiguration
 }
 
-enum CodeIntelIndexEditorState {
+enum State {
     Idle,
     Saving,
     Queueing,
@@ -38,13 +38,15 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
     const [fetchError, setFetchError] = useState<Error>()
     const [saveError, setSaveError] = useState<Error>()
-    const [state, setState] = useState(() => CodeIntelIndexEditorState.Idle)
-    const [configuration, setConfiguration] = useState<string>()
+    const [state, setState] = useState(() => State.Idle)
+    const [configuration, setConfiguration] = useState('')
+    const [inferredConfiguration, setInferredConfiguration] = useState('')
     const [dirty, setDirty] = useState<boolean>()
 
     useEffect(() => {
         const subscription = getConfiguration({ id: repo.id }).subscribe(configuration => {
             setConfiguration(configuration?.indexConfiguration?.configuration || '')
+            setInferredConfiguration(configuration?.indexConfiguration?.inferredConfiguration || '')
         }, setFetchError)
 
         return () => subscription.unsubscribe()
@@ -52,7 +54,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
     const save = useCallback(
         async (content: string) => {
-            setState(CodeIntelIndexEditorState.Saving)
+            setState(State.Saving)
             setSaveError(undefined)
 
             try {
@@ -61,30 +63,22 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
             } catch (error) {
                 setSaveError(error)
             } finally {
-                setState(CodeIntelIndexEditorState.Idle)
+                setState(State.Idle)
             }
         },
         [repo]
     )
-    const enqueue = useCallback(async () => {
-        setState(CodeIntelIndexEditorState.Queueing)
-        setSaveError(undefined)
 
-        try {
-            await enqueueIndexJob(repo.id, 'HEAD').toPromise()
-        } catch (error) {
-            setSaveError(error)
-        } finally {
-            setState(CodeIntelIndexEditorState.Idle)
-        }
-    }, [repo])
+    const infer = useCallback(() => {
+        setConfiguration(inferredConfiguration)
+    }, [inferredConfiguration])
 
     const onDirtyChange = useCallback((dirty: boolean) => {
         setDirty(dirty)
     }, [])
 
-    const saving = state === CodeIntelIndexEditorState.Saving
-    const queueing = state === CodeIntelIndexEditorState.Queueing
+    const saving = state === State.Saving
+    const queueing = state === State.Queueing
 
     const customToolbar: {
         propsGenerator: SaveToolbarPropsGenerator<AutoIndexProps>
@@ -92,8 +86,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     } = {
         propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
             const autoIndexProps: AutoIndexProps = {
-                onQueueJob: enqueue,
-                enqueueing: queueing,
+                onInfer: infer,
             }
 
             const mergedProps = { ...props, ...autoIndexProps }
@@ -137,7 +130,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                     jsonSchema={allConfigSchema}
                     canEdit={true}
                     onSave={save}
-                    saving={saving}
+                    saving={state === State.Saving}
                     height={600}
                     isLightTheme={isLightTheme}
                     history={history}

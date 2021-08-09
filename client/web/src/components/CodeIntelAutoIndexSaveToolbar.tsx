@@ -1,13 +1,10 @@
 import DollyIcon from 'mdi-react/DollyIcon'
 import * as React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-
 import { SaveToolbar, SaveToolbarProps } from './SaveToolbar'
 
 export interface AutoIndexProps {
-    enqueueing: boolean
-    onQueueJob?: () => void
+    onInfer?: () => void
 }
 
 export const CodeIntelAutoIndexSaveToolbar: React.FunctionComponent<SaveToolbarProps & AutoIndexProps> = ({
@@ -16,8 +13,7 @@ export const CodeIntelAutoIndexSaveToolbar: React.FunctionComponent<SaveToolbarP
     error,
     onSave,
     onDiscard,
-    onQueueJob,
-    enqueueing,
+    onInfer,
     saveDiscardDisabled,
 }) => (
     <SaveToolbar
@@ -30,17 +26,11 @@ export const CodeIntelAutoIndexSaveToolbar: React.FunctionComponent<SaveToolbarP
     >
         <button
             type="button"
-            title="Enqueue an Index Job"
-            disabled={enqueueing}
+            title="Infer index configuration from HEAD"
             className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last test-save-toolbar-discard"
-            onClick={onQueueJob}
+            onClick={onInfer}
         >
-            <DollyIcon className="icon-inline" style={{ marginRight: '0.15em' }} /> Queue Job
+            <DollyIcon className="icon-inline" style={{ marginRight: '0.15em' }} /> Infer configuration
         </button>
-        {enqueueing && (
-            <span className="save-toolbar__item save-toolbar__message">
-                <LoadingSpinner className="icon-inline" /> Enqueueing...
-            </span>
-        )}
     </SaveToolbar>
 )
