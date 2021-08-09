@@ -40,20 +40,21 @@ const exampleNotebooks = [
     {
         label: 'Find and reference code across all of your repositories',
         trackEventName: 'HomepageNotebookExampleRepoClicked',
-        query: 'repo:my-org/*',
-        to: '',
+        query: 'repo:sourcegraph/.* Config()',
+        to: '/github.com/sourcegraph/notebooks/-/blob/onboarding/find-code-across-all-of-your-repositories.snb.md',
     },
     {
         label: 'Search and review commits and their code faster than git log and grep ',
         trackEventName: 'HomepageNotebookExampleDiffClicked',
-        query: 'type:diff before:"last week"',
-        to: '',
+        query: 'type:diff before:"last week" TODO',
+        to: '/github.com/sourcegraph/notebooks/-/blob/onboarding/search-and-review-commits.snb.md',
     },
     {
         label: 'Quickly filter by file path, language and other elements of code',
         trackEventName: 'HomepageNotebookExampleFilterClicked',
         query: 'repo:sourcegraph/* lang:go -f:tests',
-        to: '',
+        to:
+            '/github.com/sourcegraph/notebooks/-/blob/onboarding/filter-by-file-language-and-other-elements-of-code.snb.md',
     },
 ]
 
