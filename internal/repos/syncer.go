@@ -504,7 +504,9 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 				s.PermsSyncer.ScheduleRepos(ctx, sourced.ID)
 			}
 		default:
-			// Other possible values for repoState are 1 and 2. Anything else is an impossible state. And in the off chance that any otehr value is encountered, the switch-case on repoState above will already panic and the code will never reach this step.
+			// Other possible values for repoState are 1 and 2. Anything else is an impossible
+			// state. And in the off chance that any other value is encountered, the switch-case on
+			// repoState above will already panic and the code will never reach this step.
 
 			// If an existing repo was public and was now updated to private, we want to trigger a
 			// repo permissions sync.
