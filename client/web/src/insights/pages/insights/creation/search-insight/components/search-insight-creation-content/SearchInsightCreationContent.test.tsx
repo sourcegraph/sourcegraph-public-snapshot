@@ -197,7 +197,7 @@ describe('CreateInsightContent', () => {
             expect(getByText(/repositories is a required/i)).toBeInTheDocument()
         })
 
-        it('with invalid data series field', async () => {
+        it('with invalid data series field', () => {
             const { getByRole, getByText } = renderWithProps({
                 onSubmit: onSubmitMock,
             })
@@ -206,15 +206,11 @@ describe('CreateInsightContent', () => {
             const repositories = within(repoGroup).getByRole('combobox')
             const submitButton = getByRole('button', { name: /create code insight/i })
             const dataSeriesGroup = getByRole('group', { name: /data series/i })
-            const seriesName = within(dataSeriesGroup).getByRole('textbox', { name: /name shown in the legend/i })
+            const seriesName = within(dataSeriesGroup).getByRole('textbox', { name: /name/i })
 
             fireEvent.change(title, { target: { value: 'First code insight' } })
             fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
-
-            // eslint-disable-next-line @typescript-eslint/require-await
-            await act(async () => {
-                fireEvent.click(submitButton)
-            })
+            fireEvent.click(submitButton)
 
             sinon.assert.notCalled(onSubmitMock)
             expect(seriesName).toHaveFocus()
