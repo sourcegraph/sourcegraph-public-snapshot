@@ -30,6 +30,7 @@ export function getConfiguration({ id }: { id: string }): Observable<RepositoryI
             __typename
             indexConfiguration {
                 configuration
+                inferredConfiguration
             }
         }
     `

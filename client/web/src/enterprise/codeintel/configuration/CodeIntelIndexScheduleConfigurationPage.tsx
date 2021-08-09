@@ -1,0 +1,64 @@
+import * as H from 'history'
+import React, { FunctionComponent, useEffect, useCallback, useState } from 'react'
+import { RouteComponentProps } from 'react-router'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+
+import { enqueueIndexJob } from './backend'
+
+export interface CodeIntelIndexScheduleConfigurationPageProps
+    extends RouteComponentProps<{}>,
+        ThemeProps,
+        TelemetryProps {
+    repo: { id: string }
+    history: H.History
+}
+
+enum State {
+    Idle,
+    Queueing,
+}
+
+export const CodeIntelIndexScheduleConfigurationPage: FunctionComponent<CodeIntelIndexScheduleConfigurationPageProps> = ({
+    repo,
+    telemetryService,
+}) => {
+    useEffect(() => telemetryService.logViewEvent('CodeIntelIndexScheduleConfigurationPage'), [telemetryService])
+
+    const [enqueueError, setEnqueueError] = useState<Error>()
+    const [state, setState] = useState(() => State.Idle)
+    const [revlike, setRevlike] = useState('HEAD')
+
+    const onClick = useCallback(async () => {
+        setState(State.Queueing)
+        setEnqueueError(undefined)
+
+        try {
+            await enqueueIndexJob(repo.id, revlike).toPromise()
+        } catch (error) {
+            setEnqueueError(error)
+        } finally {
+            setState(State.Idle)
+        }
+    }, [repo, revlike])
+
+    return (
+        <div>
+            {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
+
+            <input type="text" value={revlike} onChange={event => setRevlike(event.target.value)} />
+
+            <button
+                type="button"
+                title="Enqueue thing"
+                disabled={state === State.Queueing}
+                className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last test-save-toolbar-discard"
+                onClick={onClick}
+            >
+                Enqueue
+            </button>
+        </div>
+    )
+}
