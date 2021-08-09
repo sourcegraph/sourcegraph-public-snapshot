@@ -52,7 +52,7 @@ const exampleNotebooks = [
     {
         label: 'Quickly filter by file path, language and other elements of code',
         trackEventName: 'HomepageNotebookExampleFilterClicked',
-        query: 'repo:sourcegraph/* lang:go -f:tests',
+        query: 'repo:sourcegraph/.* lang:go -f:tests',
         to:
             '/github.com/sourcegraph/notebooks/-/blob/onboarding/filter-by-file-language-and-other-elements-of-code.snb.md',
     },
