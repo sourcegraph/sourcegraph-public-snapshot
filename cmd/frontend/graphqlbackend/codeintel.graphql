@@ -903,4 +903,9 @@ type IndexConfiguration {
     The raw JSON-encoded index configuration.
     """
     configuration: String
+
+    """
+    The raw JSON-encoded index configuration as inferred by the auto-indexer.
+    """
+    inferredConfiguration: String
 }

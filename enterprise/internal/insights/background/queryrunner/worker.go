@@ -116,9 +116,61 @@ func createDBWorkerStore(s *basestore.Store) dbworkerstore.Store {
 	})
 }
 
+func getDependencies(ctx context.Context, workerBaseStore *basestore.Store, jobID int) (_ []time.Time, err error) {
+	q := sqlf.Sprintf(getJobDependencies, jobID)
+	return scanDependencies(workerBaseStore.Query(ctx, q))
+}
+
+func scanDependencies(rows *sql.Rows, queryErr error) (_ []time.Time, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]time.Time, 0)
+	for rows.Next() {
+		var temp time.Time
+		if err := rows.Scan(&temp); err != nil {
+			return nil, err
+		}
+		results = append(results, temp)
+	}
+	return results, nil
+}
+
+func insertDependencies(ctx context.Context, workerBaseStore *basestore.Store, job *Job) error {
+	vals := make([]*sqlf.Query, 0, len(job.DependentFrames))
+	for _, frame := range job.DependentFrames {
+		vals = append(vals, sqlf.Sprintf("(%s, %s)", job.ID, frame))
+	}
+	if len(vals) == 0 {
+		return nil
+	}
+	q := sqlf.Sprintf(insertJobDependencies, sqlf.Join(vals, ","))
+	if err := workerBaseStore.Exec(ctx, q); err != nil {
+		return err
+	}
+	return nil
+}
+
+const getJobDependencies = `
+-- source: enterprise/internal/insights/background/queryrunner/worker.go:getDependencies
+select recording_time from insights_query_runner_jobs_dependencies where job_id = %s;
+`
+
+const insertJobDependencies = `
+-- source: enterprise/internal/insights/background/queryrunner/worker.go:insertDependencies
+INSERT INTO insights_query_runner_jobs_dependencies (job_id, recording_time) VALUES %s;`
+
 // EnqueueJob enqueues a job for the query runner worker to execute later.
 func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job) (id int, err error) {
-	id, _, err = basestore.ScanFirstInt(workerBaseStore.Query(
+	tx, err := workerBaseStore.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	id, _, err = basestore.ScanFirstInt(tx.Query(
 		ctx,
 		sqlf.Sprintf(
 			enqueueJobFmtStr,
@@ -131,7 +183,14 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 			job.Priority,
 		),
 	))
-	return
+	if err != nil {
+		return 0, err
+	}
+	job.ID = id
+	if err := insertDependencies(ctx, tx, job); err != nil {
+		return 0, nil
+	}
+	return id, nil
 }
 
 const enqueueJobFmtStr = `
@@ -148,8 +207,14 @@ INSERT INTO insights_query_runner_jobs (
 RETURNING id
 `
 
-func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (*Job, error) {
-	rows, err := workerBaseStore.Query(ctx, sqlf.Sprintf(dequeueJobFmtStr, recordID))
+func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (_ *Job, err error) {
+	tx, err := workerBaseStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	rows, err := tx.Query(ctx, sqlf.Sprintf(dequeueJobFmtStr, recordID))
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +225,15 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 	if len(jobs) != 1 {
 		return nil, errors.Errorf("expected 1 job to dequeue, found %v", len(jobs))
 	}
-	return jobs[0], nil
+
+	deps, err := getDependencies(ctx, tx, recordID)
+	if err != nil {
+		return nil, err
+	}
+	job := jobs[0]
+	job.DependentFrames = deps
+
+	return job, nil
 }
 
 const dequeueJobFmtStr = `
@@ -232,6 +305,8 @@ type Job struct {
 	RecordTime  *time.Time // If non-nil, record results at this time instead of the time at which search results were found.
 	Cost        int
 	Priority    int
+
+	DependentFrames []time.Time // This field isn't part of the job table, but maps to a table one-many on this job.
 
 	// Standard/required dbworker fields. If enqueuing a job, these may all be zero values except State.
 	//
