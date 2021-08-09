@@ -112,11 +112,12 @@ func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]
 	if err != nil {
 		return nil, false, err
 	}
-	if !exists {
-		return nil, false, nil
+
+	if exists {
+		return configuration.Data, true, nil
 	}
 
-	return configuration.Data, true, nil
+	return nil, false, nil
 }
 
 func (r *resolver) InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error) {

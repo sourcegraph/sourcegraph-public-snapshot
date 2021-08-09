@@ -7,12 +7,12 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
-import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
 import { PageTitle } from '../../../components/PageTitle'
 import { SaveToolbarPropsGenerator, SaveToolbarProps } from '../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
+import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from './CodeIntelAutoIndexSaveToolbar'
 import allConfigSchema from './schema.json'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
@@ -24,7 +24,6 @@ export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProp
 enum State {
     Idle,
     Saving,
-    Queueing,
 }
 
 export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexConfigurationPageProps> = ({
@@ -44,9 +43,9 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     const [dirty, setDirty] = useState<boolean>()
 
     useEffect(() => {
-        const subscription = getConfiguration({ id: repo.id }).subscribe(configuration => {
-            setConfiguration(configuration?.indexConfiguration?.configuration || '')
-            setInferredConfiguration(configuration?.indexConfiguration?.inferredConfiguration || '')
+        const subscription = getConfiguration({ id: repo.id }).subscribe(config => {
+            setConfiguration(config?.indexConfiguration?.configuration || '')
+            setInferredConfiguration(config?.indexConfiguration?.inferredConfiguration || '')
         }, setFetchError)
 
         return () => subscription.unsubscribe()
@@ -59,7 +58,6 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
             try {
                 await updateConfiguration({ id: repo.id, content }).toPromise()
-                setConfiguration(content)
             } catch (error) {
                 setSaveError(error)
             } finally {
@@ -69,29 +67,28 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         [repo]
     )
 
-    const infer = useCallback(() => {
+    const onInfer = useCallback(() => {
+        // TODO: not sure how to make this work: the monaco editor doesn't update, but pressing
+        // discard will set the value back to the "updated" value. Desired behavior would be for
+        // discard to go back to the original value, and the value of the editor be replaced by
+        // inferredConfiguration on button press. Couldn't get this to work previously with
+        // editor actions because it required a non-compile time value.
         setConfiguration(inferredConfiguration)
+        setDirty(true)
     }, [inferredConfiguration])
-
-    const onDirtyChange = useCallback((dirty: boolean) => {
-        setDirty(dirty)
-    }, [])
-
-    const saving = state === State.Saving
-    const queueing = state === State.Queueing
 
     const customToolbar: {
         propsGenerator: SaveToolbarPropsGenerator<AutoIndexProps>
         saveToolbar: React.FunctionComponent<SaveToolbarProps & AutoIndexProps>
     } = {
         propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
-            const autoIndexProps: AutoIndexProps = {
-                onInfer: infer,
+            const mergedProps = {
+                ...props,
+                inferEnabled: configuration !== inferredConfiguration,
+                onInfer,
             }
-
-            const mergedProps = { ...props, ...autoIndexProps }
-            mergedProps.willShowError = (): boolean => !queueing && !mergedProps.saving
-            mergedProps.saveDiscardDisabled = (): boolean => saving || !dirty || queueing
+            mergedProps.willShowError = (): boolean => !mergedProps.saving
+            mergedProps.saveDiscardDisabled = (): boolean => state === State.Saving || !dirty
             return mergedProps
         },
         saveToolbar: CodeIntelAutoIndexSaveToolbar,
@@ -126,7 +123,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                 {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} />}
 
                 <DynamicallyImportedMonacoSettingsEditor
-                    value={configuration || ''}
+                    value={configuration}
                     jsonSchema={allConfigSchema}
                     canEdit={true}
                     onSave={save}
@@ -136,7 +133,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                     history={history}
                     telemetryService={telemetryService}
                     customSaveToolbar={customToolbar}
-                    onDirtyChange={onDirtyChange}
+                    onDirtyChange={setDirty}
                 />
             </Container>
         </div>

@@ -19,6 +19,7 @@ export interface CodeIntelIndexScheduleConfigurationPageProps
 enum State {
     Idle,
     Queueing,
+    Queued,
 }
 
 export const CodeIntelIndexScheduleConfigurationPage: FunctionComponent<CodeIntelIndexScheduleConfigurationPageProps> = ({
@@ -40,7 +41,7 @@ export const CodeIntelIndexScheduleConfigurationPage: FunctionComponent<CodeInte
         } catch (error) {
             setEnqueueError(error)
         } finally {
-            setState(State.Idle)
+            setState(State.Queued)
         }
     }, [repo, revlike])
 
@@ -54,11 +55,13 @@ export const CodeIntelIndexScheduleConfigurationPage: FunctionComponent<CodeInte
                 type="button"
                 title="Enqueue thing"
                 disabled={state === State.Queueing}
-                className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last test-save-toolbar-discard"
+                className="btn btn-sm btn-secondary"
                 onClick={onClick}
             >
                 Enqueue
             </button>
+
+            {state === State.Queued && <div className="text-success">Index jobs enqueued</div>}
         </div>
     )
 }
