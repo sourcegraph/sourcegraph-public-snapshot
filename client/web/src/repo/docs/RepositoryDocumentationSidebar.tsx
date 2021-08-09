@@ -172,7 +172,6 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             node={props.node}
                             pagePathID={props.pagePathID}
                             depth={0}
-                            contentOnly={false}
                             excludingTags={excludingTags}
                         />
                     </div>
