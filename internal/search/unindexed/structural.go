@@ -95,6 +95,17 @@ func streamStructuralSearch(ctx context.Context, args *search.TextParameters, st
 	return runJobs(ctx, jobs)
 }
 
+// retryStructuralSearch runs a structural search with a higher limit file match
+// limit so that Zoekt resolves more potential file matches.
+func retryStructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) error {
+	patternCopy := *(args.PatternInfo)
+	patternCopy.FileMatchLimit = 1000
+	argsCopy := *args
+	argsCopy.PatternInfo = &patternCopy
+	args = &argsCopy
+	return streamStructuralSearch(ctx, args, stream)
+}
+
 func StructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) error {
 	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
@@ -109,16 +120,9 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 	})
 
 	if len(fileMatches) == 0 && err == nil {
-		// No results for structural search? Automatically search again and force Zoekt
-		// to resolve more potential file matches by setting a higher FileMatchLimit.
-		patternCopy := *(args.PatternInfo)
-		patternCopy.FileMatchLimit = 1000
-		argsCopy := *args
-		argsCopy.PatternInfo = &patternCopy
-		args = &argsCopy
-
+		// retry structural search with a higher limit.
 		fileMatches, stats, err = streaming.CollectStream(func(stream streaming.Sender) error {
-			return streamStructuralSearch(ctx, args, stream)
+			return retryStructuralSearch(ctx, args, stream)
 		})
 		if err != nil {
 			return err
