@@ -43,7 +43,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer(), spec.Pkg)
+	dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer, spec.Pkg)
 	if err != nil {
 		return err
 	}

@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic/diff"
+	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff"
 )
 
 const helpMsg string = `
@@ -30,7 +30,7 @@ cd <path>                                             change directory
 `
 
 func main() {
-	var bundles []*semantic.GroupedBundleDataMaps
+	var bundles []*precise.GroupedBundleDataMaps
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Printf("\n> ")
@@ -107,7 +107,7 @@ func main() {
 			bundle, err := conversion.CorrelateLocalGit(context.Background(), dumpPath, projectRoot)
 			if err != nil {
 			}
-			bundles = append(bundles, semantic.GroupedBundleDataChansToMaps(bundle))
+			bundles = append(bundles, precise.GroupedBundleDataChansToMaps(bundle))
 			fmt.Printf("finished indexing dump %v\n", len(bundles)-1)
 			break
 
@@ -158,8 +158,8 @@ func main() {
 	}
 }
 
-func queryBundle(bundle *semantic.GroupedBundleDataMaps, path string, line, character int) error {
-	results, err := semantic.Query(bundle, path, line, character)
+func queryBundle(bundle *precise.GroupedBundleDataMaps, path string, line, character int) error {
+	results, err := precise.Query(bundle, path, line, character)
 	if err != nil {
 		fmt.Printf("No data found at location")
 		return err
@@ -196,13 +196,13 @@ func queryBundle(bundle *semantic.GroupedBundleDataMaps, path string, line, char
 }
 
 // finds all documents which have definition edges pointing into the argument list
-func documentsReferencing(bundle *semantic.GroupedBundleDataMaps, paths []string) (_ []string, err error) {
+func documentsReferencing(bundle *precise.GroupedBundleDataMaps, paths []string) (_ []string, err error) {
 	pathMap := map[string]struct{}{}
 	for _, path := range paths {
 		pathMap[path] = struct{}{}
 	}
 
-	resultIDs := map[semantic.ID]struct{}{}
+	resultIDs := map[precise.ID]struct{}{}
 	for _, resultChunk := range bundle.ResultChunks {
 		for resultID, documentIDRangeIDs := range resultChunk.DocumentIDRangeIDs {
 			for _, documentIDRangeID := range documentIDRangeIDs {

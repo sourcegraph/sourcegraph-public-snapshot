@@ -20,7 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type projectResult struct {
@@ -270,7 +270,7 @@ func validateDump(directory string) (bundleResult, error) {
 	return bundleResult{Valid: true}, nil
 }
 
-func validateTestCases(projectRoot string, bundle *semantic.GroupedBundleDataMaps) (testSuiteResult, error) {
+func validateTestCases(projectRoot string, bundle *precise.GroupedBundleDataMaps) (testSuiteResult, error) {
 	testFiles, err := os.ReadDir(filepath.Join(projectRoot, "lsif_tests"))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -299,7 +299,7 @@ func validateTestCases(projectRoot string, bundle *semantic.GroupedBundleDataMap
 	return testSuiteResult{FileResults: fileResults}, nil
 }
 
-func runOneTestFile(projectRoot, file string, bundle *semantic.GroupedBundleDataMaps) (testFileResult, error) {
+func runOneTestFile(projectRoot, file string, bundle *precise.GroupedBundleDataMaps) (testFileResult, error) {
 	doc, err := os.ReadFile(file)
 	if err != nil {
 		return testFileResult{}, errors.Wrap(err, "Failed to read file")
@@ -378,14 +378,14 @@ func sortPosition(left, right Position) int {
 	return 0
 }
 
-func runOneReferencesRequest(projectRoot string, bundle *semantic.GroupedBundleDataMaps, testCase ReferencesTest, fileResult *testFileResult) error {
+func runOneReferencesRequest(projectRoot string, bundle *precise.GroupedBundleDataMaps, testCase ReferencesTest, fileResult *testFileResult) error {
 	request := testCase.Request
 
 	filePath := request.TextDocument
 	line := request.Position.Line
 	character := request.Position.Character
 
-	results, err := semantic.Query(bundle, filePath, line, character)
+	results, err := precise.Query(bundle, filePath, line, character)
 	if err != nil {
 		return err
 	}
@@ -427,10 +427,10 @@ func runOneReferencesRequest(projectRoot string, bundle *semantic.GroupedBundleD
 		return nil
 	}
 
-	semanticReferences := results[0].References
+	preciseReferences := results[0].References
 
-	actualReferences := make([]Location, len(semanticReferences))
-	for index, ref := range semanticReferences {
+	actualReferences := make([]Location, len(preciseReferences))
+	for index, ref := range preciseReferences {
 		actualReferences[index] = transformLocationToResponse(ref)
 	}
 
@@ -474,14 +474,14 @@ func runOneReferencesRequest(projectRoot string, bundle *semantic.GroupedBundleD
 	return nil
 }
 
-func runOneDefinitionRequest(projectRoot string, bundle *semantic.GroupedBundleDataMaps, testCase DefinitionTest, fileResult *testFileResult) error {
+func runOneDefinitionRequest(projectRoot string, bundle *precise.GroupedBundleDataMaps, testCase DefinitionTest, fileResult *testFileResult) error {
 	request := testCase.Request
 
 	path := request.TextDocument
 	line := request.Position.Line
 	character := request.Position.Character
 
-	results, err := semantic.Query(bundle, path, line, character)
+	results, err := precise.Query(bundle, path, line, character)
 	if err != nil {
 		return err
 	}
@@ -530,7 +530,7 @@ func runOneDefinitionRequest(projectRoot string, bundle *semantic.GroupedBundleD
 	return nil
 }
 
-func transformLocationToResponse(location semantic.LocationData) Location {
+func transformLocationToResponse(location precise.LocationData) Location {
 	return Location{
 		URI: "file://" + location.URI,
 		Range: Range{
@@ -546,13 +546,13 @@ func transformLocationToResponse(location semantic.LocationData) Location {
 	}
 
 }
-func readBundle(root string) (*semantic.GroupedBundleDataMaps, error) {
+func readBundle(root string) (*precise.GroupedBundleDataMaps, error) {
 	bundle, err := conversion.CorrelateLocalGitRelative(context.Background(), path.Join(root, "dump.lsif"), root)
 	if err != nil {
 		return nil, err
 	}
 
-	return semantic.GroupedBundleDataChansToMaps(bundle), nil
+	return precise.GroupedBundleDataChansToMaps(bundle), nil
 }
 
 var filesToContents = make(map[string]string)

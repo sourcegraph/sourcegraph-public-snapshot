@@ -5,6 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
+import InformationIcon from 'mdi-react/InformationIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useMemo } from 'react'
@@ -35,12 +36,15 @@ export interface BatchSpecExecutionDetailsPageProps {
     fetchBatchSpecExecution?: typeof _fetchBatchSpecExecution
     /** For testing only. */
     now?: () => Date
+    /** For testing only. */
+    expandStage?: string
 }
 
 export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
     executionID,
     now = () => new Date(),
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
+    expandStage,
 }) => {
     const batchSpecExecution: BatchSpecExecutionFields | null | undefined = useObservable(
         useMemo(
@@ -92,7 +96,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             </Container>
 
             <h2>Timeline</h2>
-            <ExecutionTimeline execution={batchSpecExecution} now={now} className="mb-3" />
+            <ExecutionTimeline execution={batchSpecExecution} now={now} expandStage={expandStage} className="mb-3" />
 
             {batchSpecExecution.batchSpec && (
                 <>
@@ -115,9 +119,15 @@ interface ExecutionTimelineProps {
 
     /** For testing only. */
     now?: () => Date
+    expandStage?: string
 }
 
-const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ execution, className, now }) => {
+const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({
+    execution,
+    className,
+    now,
+    expandStage,
+}) => {
     const stages = useMemo(
         () => [
             { icon: <TimerSandIcon />, text: 'Queued', date: execution.createdAt, className: 'bg-success' },
@@ -128,20 +138,24 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ ex
                 className: 'bg-success',
             },
 
-            setupStage(execution, now),
-            batchPreviewStage(execution, now),
-            teardownStage(execution, now),
+            setupStage(execution, expandStage === 'setup', now),
+            batchPreviewStage(execution, expandStage === 'srcPreview', now),
+            teardownStage(execution, expandStage === 'teardown', now),
 
             execution.state === BatchSpecExecutionState.COMPLETED
                 ? { icon: <CheckIcon />, text: 'Finished', date: execution.finishedAt, className: 'bg-success' }
                 : { icon: <ErrorIcon />, text: 'Failed', date: execution.finishedAt, className: 'bg-danger' },
         ],
-        [execution, now]
+        [execution, now, expandStage]
     )
     return <Timeline stages={stages.filter(isDefined)} now={now} className={className} />
 }
 
-const setupStage = (execution: BatchSpecExecutionFields, now?: () => Date): TimelineStage | undefined =>
+const setupStage = (
+    execution: BatchSpecExecutionFields,
+    expand: boolean,
+    now?: () => Date
+): TimelineStage | undefined =>
     execution.steps.setup.length === 0
         ? undefined
         : {
@@ -149,10 +163,14 @@ const setupStage = (execution: BatchSpecExecutionFields, now?: () => Date): Time
               details: execution.steps.setup.map(logEntry => (
                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
               )),
-              ...genericStage(execution.steps.setup),
+              ...genericStage(execution.steps.setup, expand),
           }
 
-const batchPreviewStage = (execution: BatchSpecExecutionFields, now?: () => Date): TimelineStage | undefined =>
+const batchPreviewStage = (
+    execution: BatchSpecExecutionFields,
+    expand: boolean,
+    now?: () => Date
+): TimelineStage | undefined =>
     !execution.steps.srcPreview
         ? undefined
         : {
@@ -162,10 +180,14 @@ const batchPreviewStage = (execution: BatchSpecExecutionFields, now?: () => Date
                       {execution.steps.srcPreview.out && <ParsedJsonOutput out={execution.steps.srcPreview.out} />}
                   </ExecutionLogEntry>
               ),
-              ...genericStage(execution.steps.srcPreview),
+              ...genericStage(execution.steps.srcPreview, expand),
           }
 
-const teardownStage = (execution: BatchSpecExecutionFields, now?: () => Date): TimelineStage | undefined =>
+const teardownStage = (
+    execution: BatchSpecExecutionFields,
+    expand: boolean,
+    now?: () => Date
+): TimelineStage | undefined =>
     execution.steps.teardown.length === 0
         ? undefined
         : {
@@ -173,11 +195,12 @@ const teardownStage = (execution: BatchSpecExecutionFields, now?: () => Date): T
               details: execution.steps.teardown.map(logEntry => (
                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
               )),
-              ...genericStage(execution.steps.teardown),
+              ...genericStage(execution.steps.teardown, expand),
           }
 
 const genericStage = <E extends { startTime: string; exitCode: number | null }>(
-    value: E | E[]
+    value: E | E[],
+    expand: boolean
 ): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
     const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
     const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
@@ -186,7 +209,7 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
         icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
         date: isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
-        expanded: !(success || !finished),
+        expanded: expand || !(success || !finished),
     }
 }
 
@@ -199,6 +222,7 @@ enum JSONLogLineOperation {
     DETERMINING_WORKSPACES = 'DETERMINING_WORKSPACES',
     CHECKING_CACHE = 'CHECKING_CACHE',
     EXECUTING_TASKS = 'EXECUTING_TASKS',
+    EXECUTING_TASK = 'EXECUTING_TASK',
     UPLOADING_CHANGESET_SPECS = 'UPLOADING_CHANGESET_SPECS',
     CREATING_BATCH_SPEC = 'CREATING_BATCH_SPEC',
 }
@@ -212,6 +236,7 @@ const prettyOperationNames: Record<JSONLogLineOperation, string> = {
     DETERMINING_WORKSPACES: 'Determining workspaces',
     CHECKING_CACHE: 'Checking cache',
     EXECUTING_TASKS: 'Executing tasks',
+    EXECUTING_TASK: 'Executing task',
     UPLOADING_CHANGESET_SPECS: 'Uploading changeset specs',
     CREATING_BATCH_SPEC: 'Creating batch spec',
 }
@@ -223,11 +248,39 @@ enum JSONLogLineStatus {
     FAILED = 'FAILED',
 }
 
-interface JSONLogLine {
-    operation: JSONLogLineOperation
+interface ExecutingTaskJSONLogLine {
+    operation: JSONLogLineOperation.EXECUTING_TASK
     timestamp: string
     status: JSONLogLineStatus
     message?: string
+    metadata: {
+        task: Task
+    }
+}
+
+type JSONLogLine =
+    | {
+          operation: JSONLogLineOperation
+          timestamp: string
+          status: JSONLogLineStatus
+          message?: string
+          metadata: {
+              task?: Task
+              tasks?: Task[]
+          }
+      }
+    | ExecutingTaskJSONLogLine
+
+interface Step {
+    run: string
+    container: string
+}
+
+interface Task {
+    Repository: string
+    Workspace: string
+    Steps: Step[]
+    CachedStepResultsFound: boolean
 }
 
 const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => {
@@ -243,10 +296,16 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
                         return String(error)
                     }
                 })
-                .filter((line): line is JSONLogLine => typeof line !== 'string')
-                // Don't consider these lines for now.
-                .filter(line => line.status !== JSONLogLineStatus.PROGRESS),
+                .filter((line): line is JSONLogLine => typeof line !== 'string'),
         [out]
+    )
+
+    const parsedExecutingTaskLines = useMemo<ExecutingTaskJSONLogLine[]>(
+        () =>
+            parsed.filter(
+                (line): line is ExecutingTaskJSONLogLine => line.operation === JSONLogLineOperation.EXECUTING_TASK
+            ),
+        [parsed]
     )
 
     return (
@@ -277,6 +336,9 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
                                 )}
                             </span>
                         </div>
+                        {operation === JSONLogLineOperation.EXECUTING_TASKS && (
+                            <ParsedTaskExecutionOutput lines={parsedExecutingTaskLines} />
+                        )}
                         <code className="d-block">
                             {[tuple[0].message, tuple[1]?.message].filter(line => !!line).join('\n')}
                         </code>
@@ -286,6 +348,45 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
         </ul>
     )
 }
+
+const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: ExecutingTaskJSONLogLine[] }> = ({ lines }) => (
+    <ul className="list-group w-100 mt-3">
+        {lines.map((line, index) => {
+            const repo = line.metadata.task.Repository
+            const key = `${repo}-${index}`
+
+            if (line.status === JSONLogLineStatus.STARTED) {
+                return (
+                    <li className="list-group-item p-2" key={key}>
+                        <InformationIcon className="icon-inline mr-1" />
+                        <b>{repo}</b>: Starting execution of {line.metadata?.task?.Steps?.length}
+                    </li>
+                )
+            }
+            if (line.status === JSONLogLineStatus.SUCCESS) {
+                return (
+                    <li className="list-group-item p-2" key={key}>
+                        <CheckCircleIcon className="icon-inline text-success mr-1" />
+                        <b>{repo}</b>: Success! All steps executed.
+                    </li>
+                )
+            }
+            if (line.status === JSONLogLineStatus.FAILED) {
+                return (
+                    <li className="list-group-item p-2" key={key}>
+                        <ErrorIcon className="icon-inline text-danger mr-1" />
+                        <b>{repo}</b>: Failed :(
+                    </li>
+                )
+            }
+            return (
+                <li className="list-group-item p-2" key={key}>
+                    <b>{repo}</b>: <code>{line.message}</code>
+                </li>
+            )
+        })}
+    </ul>
+)
 
 function findLogLine(
     lines: JSONLogLine[],

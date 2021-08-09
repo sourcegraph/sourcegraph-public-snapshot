@@ -71,7 +71,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         setSaveError(undefined)
 
         try {
-            await enqueueIndexJob(repo.id).toPromise()
+            await enqueueIndexJob(repo.id, 'HEAD').toPromise()
         } catch (error) {
             setSaveError(error)
         } finally {

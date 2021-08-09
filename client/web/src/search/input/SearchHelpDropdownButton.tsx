@@ -6,6 +6,8 @@ import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reac
 
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
+import { eventLogger } from '../../tracking/eventLogger'
+
 /**
  * A dropdown button that shows a menu with reference documentation for Sourcegraph search query
  * syntax.
@@ -13,6 +15,10 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 export const SearchHelpDropdownButton: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
+    const onQueryDocumentationLinkClicked = useCallback(() => {
+        eventLogger.log('SearchHelpDropdownQueryDocsLinkClicked')
+        toggleIsOpen()
+    }, [toggleIsOpen])
     const [isRedesignEnabled] = useRedesignToggle()
     const documentationUrlPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
 
@@ -110,7 +116,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     rel="noopener"
                     href={`${documentationUrlPrefix}/code_search/reference/queries`}
                     className="dropdown-item"
-                    onClick={toggleIsOpen}
+                    onClick={onQueryDocumentationLinkClicked}
                 >
                     <ExternalLinkIcon className="icon-inline small" /> All search keywords
                 </a>

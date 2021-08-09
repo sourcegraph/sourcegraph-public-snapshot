@@ -104,7 +104,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
                 />
                 {blameHunks !== LOADING && !isErrorLike(blameHunks) && blameHunks.length > 0 && (
                     <span className="float-right text-muted">
-                        by <PersonLink person={blameHunks[0].author.person} className="font-weight-bold" />{' '}
+                        by <PersonLink person={blameHunks[0].author.person} />{' '}
                         <Link to={blameHunks[0].commit.url}>
                             <Timestamp date={blameHunks[0].author.date} />
                         </Link>

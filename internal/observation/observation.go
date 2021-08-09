@@ -86,7 +86,7 @@ type Op struct {
 	MetricLabels []string
 	// LogFields that apply for for every invocation of this operation.
 	LogFields []log.Field
-	// ErrorFilter returns false for any error that should be converted to nil
+	// ErrorFilter returns true for any error that should be converted to nil
 	// for the purposes of metrics and tracing. If this field is not set then
 	// error values are unaltered.
 	//

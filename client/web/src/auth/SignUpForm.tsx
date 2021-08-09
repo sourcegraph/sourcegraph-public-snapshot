@@ -128,7 +128,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
         (serviceType: string): React.MouseEventHandler<HTMLAnchorElement> => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
-            eventLogger.log('externalAuthSignupClicked', { type: serviceType })
+            eventLogger.log('ExternalAuthSignupClicked', { type: serviceType }, { type: serviceType })
         },
         []
     )

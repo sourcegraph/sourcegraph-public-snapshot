@@ -20,6 +20,7 @@ import { Container } from '@sourcegraph/wildcard'
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
+import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
 import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
 import { routes } from '../../routes'
@@ -61,7 +62,10 @@ interface Props
 const LOADING = 'loading' as const
 
 /** A page that shows a repository's documentation at the current revision. */
-export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ useBreadcrumb, ...props }) => {
+export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React.memo(function Render({
+    useBreadcrumb,
+    ...props
+}) {
     // TODO(slimsag): nightmare: there is _something_ in the props that causes this entire page to
     // rerender whenever you type in the search bar. In fact, this also appears to happen on all other
     // pages!
@@ -75,6 +79,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
+    useScrollToLocationHash(props.location)
 
     const thisPage = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: '' })
     useBreadcrumb(useMemo(() => ({ key: 'node', element: <Link to={thisPage}>API docs</Link> }), [thisPage]))
@@ -197,7 +202,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
                             }`}
                         >
-                            <DocumentationWelcomeAlert />
+                            {/*
+                                TODO(apidocs): Eventually this welcome alert should go away entirely, but for now
+                                it's the best thing we have for the sometimes empty root landing page.
+                            */}
+                            {page.tree.detail.value === '' && <DocumentationWelcomeAlert />}
                             {isExcluded(page.tree, excludingTags) ? (
                                 <div className="m-3">
                                     <h2 className="text-muted">Looks like there's nothing to see here.</h2>
@@ -210,27 +219,13 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 node={page.tree}
                                 pagePathID={pagePathID}
                                 depth={0}
+                                isFirstChild={true}
                                 excludingTags={excludingTags}
                             />
-                        </div>
-                    </div>
-                    <div className="repository-docs-page__feedback-container">
-                        <div className="repository-docs-page__feedback-container-content">
-                            <Badge status="experimental" className="text-uppercase mr-2" />
-                            <a
-                                // eslint-disable-next-line react/jsx-no-target-blank
-                                target="_blank"
-                                rel="noopener"
-                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
-                            >
-                                Learn more
-                            </a>
-                            <FeedbackPrompt routes={routes} />
                         </div>
                     </div>
                 </>
             ) : null}
         </div>
     )
-}
+})

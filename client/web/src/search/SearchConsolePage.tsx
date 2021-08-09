@@ -15,7 +15,7 @@ import { SearchPatternType } from '../graphql-operations'
 import { fetchSuggestions } from './backend'
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
-import { SOURCEGRAPH_SEARCH, useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
+import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -82,7 +82,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         }, [patternType, props.location.search, streamSearch])
     )
 
-    useQueryIntelligence(fetchSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
         patternType,
         globbing,
         interpretComments: true,
@@ -128,7 +128,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     </div>
                     <MonacoEditor
                         {...props}
-                        language={SOURCEGRAPH_SEARCH}
+                        language={sourcegraphSearchLanguageId}
                         options={options}
                         height={600}
                         editorWillMount={noop}

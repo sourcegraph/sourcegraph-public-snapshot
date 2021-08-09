@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -50,7 +51,12 @@ func TestIsLiteralEquality(t *testing.T) {
 			t.Errorf("isLiteralEquality(%s) returned %t, wanted %t", test.Regex, gotOk, test.WantOk)
 		}
 		if gotLiteral != test.WantLiteral {
-			t.Errorf("isLiteralEquality(%s) returned the literal %s, wanted %s", test.Regex, gotLiteral, test.WantLiteral)
+			t.Errorf(
+				"isLiteralEquality(%s) returned the literal %s, wanted %s",
+				test.Regex,
+				gotLiteral,
+				test.WantLiteral,
+			)
 		}
 	}
 }
@@ -80,7 +86,10 @@ func TestService(t *testing.T) {
 	}
 	server := httptest.NewServer(service.Handler())
 	defer server.Close()
-	client := symbolsclient.Client{URL: server.URL}
+	client := symbolsclient.Client{
+		URL:        server.URL,
+		HTTPClient: httpcli.InternalDoer,
+	}
 	x := result.Symbol{Name: "x", Path: "a.js"}
 	y := result.Symbol{Name: "y", Path: "a.js"}
 
@@ -151,7 +160,7 @@ func createTar(files map[string]string) (io.ReadCloser, error) {
 	for name, body := range files {
 		hdr := &tar.Header{
 			Name: name,
-			Mode: 0600,
+			Mode: 0o600,
 			Size: int64(len(body)),
 		}
 		if err := w.WriteHeader(hdr); err != nil {

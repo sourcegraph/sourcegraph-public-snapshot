@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -67,9 +67,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatalf("failed to start profiler: %v", err)
 	}
 
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -107,19 +109,6 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	// Syncing relies on access to frontend and git-server, so wait until they started up.
-	log15.Info("waiting for frontend")
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
-	}
-	log15.Info("detected frontend ready")
-
-	log15.Info("waiting for gitservers")
-	if err := gitserver.DefaultClient.WaitForGitServers(ctx); err != nil {
-		log.Fatalf("gitservers not reachable: %v", err)
-	}
-	log15.Info("detected gitservers ready")
-
 	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		newDSN := conf.Get().ServiceConnections.PostgresDSN
@@ -155,7 +144,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		store.Metrics = m
 	}
 
-	cf := httpcli.NewExternalHTTPClientFactory()
+	cf := httpcli.ExternalClientFactory
 
 	var src repos.Sourcer
 	{

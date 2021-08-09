@@ -104,11 +104,11 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 		// Service structural search via SearchFilesInRepos when we have
 		// an explicit `count` value that differs from the default value
 		// (e.g., user sets higher counts).
-		return unindexed.SearchFilesInRepos(ctx, args, a)
+		return unindexed.StructuralSearchFilesInRepos(ctx, args, a)
 	}
 
 	// For structural search with default limits we retry if we get no results.
-	fileMatches, stats, err := unindexed.SearchFilesInReposBatch(ctx, args)
+	fileMatches, stats, err := unindexed.StructuralSearchFilesInReposBatch(ctx, args)
 
 	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
@@ -119,7 +119,7 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileMatches, stats, err = unindexed.SearchFilesInReposBatch(ctx, args)
+		fileMatches, stats, err = unindexed.StructuralSearchFilesInReposBatch(ctx, args)
 
 		if len(fileMatches) == 0 {
 			// Still no results? Give up.
@@ -195,11 +195,6 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 }
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
 	hasTimeFilter := false
 	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
 		hasTimeFilter = true
@@ -209,10 +204,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	}
 
 	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
 		return &TimeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil

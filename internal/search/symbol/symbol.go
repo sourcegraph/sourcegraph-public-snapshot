@@ -48,12 +48,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		return err
 	}
 
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -291,18 +286,17 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 					continue
 				}
 
-				res = append(res, &result.SymbolMatch{
-					Symbol: result.Symbol{
-						Name:       m.SymbolInfo.Sym,
-						Kind:       m.SymbolInfo.Kind,
-						Parent:     m.SymbolInfo.Parent,
-						ParentKind: m.SymbolInfo.ParentKind,
-						Path:       file.FileName,
-						Line:       l.LineNumber,
-						Language:   file.Language,
-					},
-					File: newFile,
-				})
+				res = append(res, result.NewSymbolMatch(
+					newFile,
+					l.LineNumber,
+					m.SymbolInfo.Sym,
+					m.SymbolInfo.Kind,
+					m.SymbolInfo.Parent,
+					m.SymbolInfo.ParentKind,
+					file.Language,
+					string(l.Line),
+					false,
+				))
 			}
 		}
 	}

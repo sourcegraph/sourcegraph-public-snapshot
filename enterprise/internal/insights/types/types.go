@@ -51,5 +51,6 @@ type InsightSeries struct {
 	OldestHistoricalAt    time.Time
 	LastRecordedAt        time.Time
 	NextRecordingAfter    time.Time
+	BackfillQueuedAt      time.Time
 	RecordingIntervalDays int
 }

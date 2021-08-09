@@ -41,7 +41,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 					err,
 					"trace",
 					traceURL,
-					"traceid",
+					"traceID",
 					traceID,
 				)
 			}

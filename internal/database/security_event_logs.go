@@ -107,6 +107,6 @@ func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) 
 		buf := make([]byte, 2048)
 		runtime.Stack(buf, false)
 
-		log15.Error(string(e.Name), "event", string(j), "traceid", trace.ID(ctx), "stack", string(buf), "err", err)
+		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "stack", string(buf), "err", err)
 	}
 }

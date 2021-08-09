@@ -171,7 +171,8 @@ type ChangesetApplyPreviewConnectionArgs struct {
 	// CurrentState is a value of type btypes.ChangesetState.
 	CurrentState *string
 	// Action is a value of type btypes.ReconcilerOperation.
-	Action *string
+	Action            *string
+	PublicationStates *[]ChangesetSpecPublicationStateInput
 }
 
 type BatchChangeArgs struct {

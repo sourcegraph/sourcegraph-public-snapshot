@@ -70,6 +70,18 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 - The version argument in the YAML file must be the same as in the standard deployment
 - Users should only alter the YAML file to adjust resource limits, or duplicate container entries to add more container replicas
 
+### Enable tracing
+
+To enable [tracing](../../observability/tracing.md), add `SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json` to the `jaeger` container:
+
+```yaml
+jaeger:
+  container_name: jaeger
+  # ...
+  environment:
+    - 'SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json'
+```
+
 ### Git configuration and authentication
 
 Learn more about Git [configuration](../../repo/git_config.md) and [authentication](../../repo/auth.md).
@@ -115,6 +127,19 @@ Also see [debug ports](../../pprof.md#debug-ports) for specific ports that can b
 ### Use an external database
 
 The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence.
+
+## Environment variables
+
+Add/modify the environment variables to all of the sourcegraph-frontend-* services and the sourcegraph-frontend-internal service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml):
+```
+sourcegraph-frontend-0:
+  # ...
+  environment:
+    # ...
+    - (YOUR CODE)
+    # ...
+```
+See [“Environment variables in Compose”](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a .env file, etc.).
 
 ## Upgrade
 

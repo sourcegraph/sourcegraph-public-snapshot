@@ -88,6 +88,7 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps>>
     return (
         <div className={classNames(className, styles.viewGrid)}>
             <ResponsiveGridLayout
+                measureBeforeMount={true}
                 breakpoints={breakpoints}
                 layouts={viewsToReactGridLayouts(viewIds)}
                 cols={columns}

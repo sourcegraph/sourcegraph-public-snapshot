@@ -129,7 +129,7 @@ func createHoneyEvent(
 	}
 	if traceID := trace.ID(ctx); traceID != "" {
 		fields["trace"] = trace.URL(traceID)
-		fields["traceid"] = traceID
+		fields["traceID"] = traceID
 	}
 
 	return honey.EventWithFields("codeintel", fields)

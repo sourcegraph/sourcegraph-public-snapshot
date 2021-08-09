@@ -1,5 +1,5 @@
 .documentation-examples-list-item {
-    border: 1px solid var(--border-color);
+    border: 1.5px solid var(--border-color);
     border-radius: var(--border-radius);
     background-color: var(--code-bg);
 
@@ -7,7 +7,7 @@
         display: inline-block;
     }
     &__code-excerpt {
-        border-top: 1px solid var(--border-color);
+        border-top: 1.5px solid var(--border-color-2);
         text-decoration: none; // don't use cascading link style
         display: flex;
         align-items: center;
@@ -20,14 +20,6 @@
 
         &:hover {
             text-decoration: none;
-        }
-
-        &-code-wrapper {
-            position: relative;
-            overflow-x: auto;
-            &:not(:first-child) {
-                border-top: 1px solid var(--border-color-2);
-            }
         }
 
         // Needed to correct syntax highlighted code blocks so they can have text copied/pasted

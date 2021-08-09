@@ -2588,9 +2588,10 @@ type BatchSpec implements Node {
     description: BatchChangeDescription!
 
     """
-    Generates a preview what operations would be performed if the batch spec would be applied.
-    This preview is not a guarantee, since the state of the changesets can change between the time
-    the preview is generated and when the batch spec is applied.
+    Generates a preview showing the operations that would be performed if the
+    batch spec was applied. This preview is not a guarantee, since the state
+    of the changesets can change between the time the preview is generated and
+    when the batch spec is applied.
     """
     applyPreview(
         """
@@ -2613,6 +2614,20 @@ type BatchSpec implements Node {
         Search for changesets that will have the given action performed.
         """
         action: ChangesetSpecOperation
+        """
+        If set, it will be assumed that these changeset specs will have their
+        UI publication states set to the given values when the batch spec is
+        applied.
+
+        An error will be returned if the same changeset spec ID is included
+        more than once in the array, or if a changeset spec ID returned within
+        this page has a publication state set in its spec.
+
+        Note: Unlike createBatchChange(), this query will not validate that all
+        changeset specs in the array correspond to valid changeset specs within
+        the batch spec, as they may not all be loaded on the current page.
+        """
+        publicationStates: [ChangesetSpecPublicationStateInput!]
     ): ChangesetApplyPreviewConnection!
 
     """

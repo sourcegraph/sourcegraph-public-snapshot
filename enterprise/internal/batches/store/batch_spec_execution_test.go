@@ -21,13 +21,14 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 			BatchSpec:       testBatchSpec,
 			UserID:          int32(i + 123),
 			NamespaceUserID: int32(i + 345),
+			BatchSpecID:     int64(i + 567),
 		}
 
 		execs = append(execs, c)
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for i, exec := range execs {
+		for _, exec := range execs {
 			if err := s.CreateBatchSpecExecution(ctx, exec); err != nil {
 				t.Fatal(err)
 			}
@@ -39,9 +40,10 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 				CreatedAt:       clock.Now(),
 				UpdatedAt:       clock.Now(),
 				State:           btypes.BatchSpecExecutionStateQueued,
-				BatchSpec:       testBatchSpec,
-				UserID:          int32(i + 123),
-				NamespaceUserID: int32(i + 345),
+				BatchSpec:       have.BatchSpec,
+				UserID:          have.UserID,
+				NamespaceUserID: have.NamespaceUserID,
+				BatchSpecID:     have.BatchSpecID,
 			}
 
 			if have.ID == 0 {

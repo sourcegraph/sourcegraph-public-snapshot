@@ -29,6 +29,27 @@ type Symbol struct {
 	FileLimited bool
 }
 
+func NewSymbolMatch(file *File, lineNumber int, name, kind, parent, parentKind, language, line string, fileLimited bool) *SymbolMatch {
+	return &SymbolMatch{
+		Symbol: Symbol{
+			Name:       name,
+			Kind:       kind,
+			Parent:     parent,
+			ParentKind: parentKind,
+			Path:       file.Path,
+			Line:       lineNumber,
+			Language:   language,
+			// symbolRange requires a Pattern /^...$/ containing the line of the symbol to compute the symbol's offsets.
+			// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
+			// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
+			// It must escape `/` or `\` in the line.
+			Pattern:     fmt.Sprintf("/^%s$/", escape(line)),
+			FileLimited: fileLimited,
+		},
+		File: file,
+	}
+}
+
 func (s Symbol) LSPKind() lsp.SymbolKind {
 	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
 	switch strings.ToLower(s.Kind) {
@@ -101,6 +122,38 @@ func (s *Symbol) offset() int {
 		return i
 	}
 	return 0
+}
+
+func escape(s string) string {
+	isSpecial := func(c rune) bool {
+		switch c {
+		case '\\', '/':
+			return true
+		default:
+			return false
+		}
+	}
+
+	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
+	// but is more efficient since it does it via bytes.
+	count := 0
+	for _, c := range s {
+		if isSpecial(c) {
+			count++
+		}
+	}
+	if count == 0 {
+		return s
+	}
+
+	escaped := make([]rune, 0, len(s)+count)
+	for _, c := range s {
+		if isSpecial(c) {
+			escaped = append(escaped, '\\')
+		}
+		escaped = append(escaped, c)
+	}
+	return string(escaped)
 }
 
 // unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes

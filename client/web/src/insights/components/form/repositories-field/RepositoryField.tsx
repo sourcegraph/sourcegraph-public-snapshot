@@ -18,7 +18,6 @@ export const RepositoryField = forwardRef((props: RepositoryFieldProps, referenc
     const inputReference = useRef<HTMLInputElement>(null)
 
     const { searchValue, suggestions } = useRepoSuggestions({
-        excludedItems: [value],
         search: getSanitizedRepositories(value)[0],
     })
 

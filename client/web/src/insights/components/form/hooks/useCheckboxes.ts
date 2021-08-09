@@ -14,6 +14,7 @@ export interface UseCheckboxAPI<FieldValue> {
 interface CheckboxesState<FieldValue> {
     value: FieldValue[]
     touched: boolean
+    dirty: boolean
 }
 
 export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
@@ -26,6 +27,7 @@ export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<Fo
     const [state, setState] = useState<CheckboxesState<string>>({
         value: initialCheckboxesValue,
         touched: false,
+        dirty: false,
     })
 
     // Use useRef for form api handler in order to avoid unnecessary
@@ -36,10 +38,15 @@ export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<Fo
     // Sync field state with the state on form level - useForm hook will use this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
-    useEffect(() => setFieldStateReference.current(name, { ...state, validState: 'VALID', validity: null }), [
-        name,
-        state,
-    ])
+    useEffect(
+        () =>
+            setFieldStateReference.current(name, {
+                ...state,
+                validState: 'VALID',
+                validity: null,
+            }),
+        [name, state]
+    )
 
     return {
         input: {
@@ -49,9 +56,13 @@ export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<Fo
                 const checkboxValue = event.target.value
 
                 if (event.target.checked) {
-                    setState(state => ({ ...state, value: [...state.value, checkboxValue] }))
+                    setState(state => ({ ...state, dirty: true, value: [...state.value, checkboxValue] }))
                 } else {
-                    setState(state => ({ ...state, value: state.value.filter(value => value !== checkboxValue) }))
+                    setState(state => ({
+                        ...state,
+                        dirty: true,
+                        value: state.value.filter(value => value !== checkboxValue),
+                    }))
                 }
             },
         },

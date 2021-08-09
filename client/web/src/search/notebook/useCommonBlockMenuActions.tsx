@@ -30,24 +30,28 @@ export const useCommonBlockMenuActions = ({
         }
         return [
             {
+                type: 'button',
                 label: 'Duplicate',
                 icon: <ContentDuplicateIcon className="icon-inline" />,
                 onClick: onDuplicateBlock,
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
             },
             {
+                type: 'button',
                 label: 'Move Up',
                 icon: <ArrowUpIcon className="icon-inline" />,
                 onClick: id => onMoveBlock(id, 'up'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
             },
             {
+                type: 'button',
                 label: 'Move Down',
                 icon: <ArrowDownIcon className="icon-inline" />,
                 onClick: id => onMoveBlock(id, 'down'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
             },
             {
+                type: 'button',
                 label: 'Delete',
                 icon: <DeleteIcon className="icon-inline" />,
                 onClick: onDeleteBlock,

@@ -11,24 +11,24 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Definitions returns the set of locations defining the symbol at the given position.
 func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
-	extractor := func(r semantic.RangeData) semantic.ID { return r.DefinitionResultID }
+	extractor := func(r precise.RangeData) precise.ID { return r.DefinitionResultID }
 	operation := s.operations.definitions
 	return s.definitionsReferences(ctx, extractor, operation, bundleID, path, line, character, limit, offset)
 }
 
 // References returns the set of locations referencing the symbol at the given position.
 func (s *Store) References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
-	extractor := func(r semantic.RangeData) semantic.ID { return r.ReferenceResultID }
+	extractor := func(r precise.RangeData) precise.ID { return r.ReferenceResultID }
 	operation := s.operations.references
 	return s.definitionsReferences(ctx, extractor, operation, bundleID, path, line, character, limit, offset)
 }
 
-func (s *Store) definitionsReferences(ctx context.Context, extractor func(r semantic.RangeData) semantic.ID, operation *observation.Operation, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
+func (s *Store) definitionsReferences(ctx context.Context, extractor func(r precise.RangeData) precise.ID, operation *observation.Operation, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
 	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -43,7 +43,7 @@ func (s *Store) definitionsReferences(ctx context.Context, extractor func(r sema
 	}
 
 	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
-	ranges := semantic.FindRanges(documentData.Document.Ranges, line, character)
+	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
 	traceLog(log.Int("numIntersectingRanges", len(ranges)))
 
 	orderedResultIDs := extractResultIDs(ranges, extractor)
@@ -64,7 +64,7 @@ func (s *Store) definitionsReferences(ctx context.Context, extractor func(r sema
 // locations queries the locations associated with the given definition or reference identifiers. This
 // method returns a map from result set identifiers to another map from document paths to locations
 // within that document, as well as a total count of locations within the map.
-func (s *Store) locations(ctx context.Context, bundleID int, ids []semantic.ID, limit, offset int) (_ map[semantic.ID][]Location, _ int, err error) {
+func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, limit, offset int) (_ map[precise.ID][]Location, _ int, err error) {
 	ctx, traceLog, endObservation := s.operations.locations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("numIDs", len(ids)),
@@ -118,8 +118,8 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []semantic.ID, 
 // limitResultMap returns a map symmetric to the given rangeIDsByResultID that includes only the
 // location results on the current page specified by limit and offset, as well as a deduplicated
 // and sorted list of paths that exist in the second-level of the returned map.
-func limitResultMap(ids []semantic.ID, rangeIDsByResultID map[semantic.ID]map[string][]semantic.ID, limit, offset int) (limited map[semantic.ID]map[string][]semantic.ID, referencedPaths []string) {
-	limitedRangeIDsByResultID := make(map[semantic.ID]map[string][]semantic.ID, len(rangeIDsByResultID))
+func limitResultMap(ids []precise.ID, rangeIDsByResultID map[precise.ID]map[string][]precise.ID, limit, offset int) (limited map[precise.ID]map[string][]precise.ID, referencedPaths []string) {
+	limitedRangeIDsByResultID := make(map[precise.ID]map[string][]precise.ID, len(rangeIDsByResultID))
 
 	// Get a deduplicated and ordered set of paths that exist in the second-level of the given
 	// map. Iterating by sorted path names here tends to require fewer documents being opened
@@ -136,7 +136,7 @@ outer:
 		for _, id := range ids {
 			rangeIDsByDocument, ok := limitedRangeIDsByResultID[id]
 			if !ok {
-				rangeIDsByDocument = map[string][]semantic.ID{}
+				rangeIDsByDocument = map[string][]precise.ID{}
 				limitedRangeIDsByResultID[id] = rangeIDsByDocument
 			}
 
@@ -182,7 +182,7 @@ outer:
 }
 
 // pathsFromResultMap returns a deduplicated and sorted set of document paths present in the given map.
-func pathsFromResultMap(rangeIDsByResultID map[semantic.ID]map[string][]semantic.ID) []string {
+func pathsFromResultMap(rangeIDsByResultID map[precise.ID]map[string][]precise.ID) []string {
 	pathMap := map[string]struct{}{}
 	for _, rangeIDsByPath := range rangeIDsByResultID {
 		for path := range rangeIDsByPath {
@@ -204,7 +204,7 @@ var ErrNoMetadata = errors.New("no rows in meta table")
 
 // translateIDsToResultChunkIndexes converts a set of result set identifiers within a given bundle into
 // a deduplicated and sorted set of result chunk indexes that compoletely cover those identifiers.
-func (s *Store) translateIDsToResultChunkIndexes(ctx context.Context, bundleID int, ids []semantic.ID) ([]int, error) {
+func (s *Store) translateIDsToResultChunkIndexes(ctx context.Context, bundleID int, ids []precise.ID) ([]int, error) {
 	// Mapping ids to result chunk indexes relies on the number of total result chunks written during
 	// processing so that we can hash identifiers to their parent result chunk in the same deterministic
 	// way.
@@ -218,7 +218,7 @@ func (s *Store) translateIDsToResultChunkIndexes(ctx context.Context, bundleID i
 
 	resultChunkIndexMap := map[int]struct{}{}
 	for _, id := range ids {
-		resultChunkIndexMap[semantic.HashKey(id, numResultChunks)] = struct{}{}
+		resultChunkIndexMap[precise.HashKey(id, numResultChunks)] = struct{}{}
 	}
 
 	indexes := make([]int, 0, len(resultChunkIndexMap))
@@ -243,9 +243,9 @@ const resultChunkBatchSize = 50
 // a map from documents to range identifiers that compose each of the given input result set identifiers. If
 // a non-empty target path is supplied, then any range falling outside that document path will be omitted from
 // the output.
-func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int, ids []semantic.ID, indexes []int, targetPath string) (map[semantic.ID]map[string][]semantic.ID, int, error) {
+func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int, ids []precise.ID, indexes []int, targetPath string) (map[precise.ID]map[string][]precise.ID, int, error) {
 	totalCount := 0
-	rangeIDsByResultID := make(map[semantic.ID]map[string][]semantic.ID, len(ids))
+	rangeIDsByResultID := make(map[precise.ID]map[string][]precise.ID, len(ids))
 
 	// In order to limit the number of parameters we send to Postgres in the result chunk
 	// fetch query, we process the indexes in chunks of maximum size. This will also ensure
@@ -270,14 +270,14 @@ func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int,
 			sqlf.Join(indexQueries, ","),
 		)))
 
-		if err := visitResultChunks(func(index int, resultChunkData semantic.ResultChunkData) {
+		if err := visitResultChunks(func(index int, resultChunkData precise.ResultChunkData) {
 			for _, id := range ids {
 				documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
 				if !exists {
 					continue
 				}
 
-				rangeIDsByDocument := make(map[string][]semantic.ID, len(documentIDRangeIDs))
+				rangeIDsByDocument := make(map[string][]precise.ID, len(documentIDRangeIDs))
 				for _, documentIDRangeID := range documentIDRangeIDs {
 					if path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]; ok {
 						if targetPath != "" && path != targetPath {
@@ -309,9 +309,9 @@ const documentBatchSize = 50
 // readRangesFromDocuments extracts range data from the documents with the given paths. This method returns a map from
 // result set identifiers to the set of locations composing that result set. The output resolves the missing data given
 // via the rangeIDsByResultID parameter. This method also returns a total count of ranges in the result set.
-func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids []semantic.ID, paths []string, rangeIDsByResultID map[semantic.ID]map[string][]semantic.ID, traceLog observation.TraceLogger) (map[semantic.ID][]Location, int, error) {
+func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids []precise.ID, paths []string, rangeIDsByResultID map[precise.ID]map[string][]precise.ID, traceLog observation.TraceLogger) (map[precise.ID][]Location, int, error) {
 	totalCount := 0
-	locationsByResultID := make(map[semantic.ID][]Location, len(ids))
+	locationsByResultID := make(map[precise.ID][]Location, len(ids))
 
 	// In order to limit the number of parameters we send to Postgres in the document
 	// fetch query, we process the paths in chunks of maximum size. This will also ensure
@@ -326,7 +326,7 @@ func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 			batch, paths = paths[:documentBatchSize], paths[documentBatchSize:]
 		}
 
-		visitDocuments := s.makeDocumentVisitor(func(path string, document semantic.DocumentData) {
+		visitDocuments := s.makeDocumentVisitor(func(path string, document precise.DocumentData) {
 			totalCount += s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, document, traceLog)
 		})
 
@@ -363,7 +363,7 @@ WHERE
 // readRangesFromDocument extracts range data from the given document. This method populates the given locationsByResultId
 // map, which resolves the missing data given via the rangeIDsByResultID parameter. This method returns a total count of
 // ranges in the result set.
-func (s *Store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[semantic.ID]map[string][]semantic.ID, locationsByResultID map[semantic.ID][]Location, path string, document semantic.DocumentData, traceLog observation.TraceLogger) int {
+func (s *Store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[precise.ID]map[string][]precise.ID, locationsByResultID map[precise.ID][]Location, path string, document precise.DocumentData, traceLog observation.TraceLogger) int {
 	totalCount := 0
 	for id, rangeIDsByPath := range rangeIDsByResultID {
 		rangeIDs := rangeIDsByPath[path]
@@ -429,7 +429,7 @@ func newRange(startLine, startCharacter, endLine, endCharacter int) Range {
 	}
 }
 
-func idsToString(vs []semantic.ID) string {
+func idsToString(vs []precise.ID) string {
 	strs := make([]string, 0, len(vs))
 	for _, v := range vs {
 		strs = append(strs, string(v))
@@ -440,9 +440,9 @@ func idsToString(vs []semantic.ID) string {
 
 // extractResultIDs extracts result identifiers from each range in the given list.
 // The output list is relative to the input range list, but with duplicates removed.
-func extractResultIDs(ranges []semantic.RangeData, fn func(r semantic.RangeData) semantic.ID) []semantic.ID {
-	resultIDs := make([]semantic.ID, 0, len(ranges))
-	resultIDMap := make(map[semantic.ID]struct{}, len(ranges))
+func extractResultIDs(ranges []precise.RangeData, fn func(r precise.RangeData) precise.ID) []precise.ID {
+	resultIDs := make([]precise.ID, 0, len(ranges))
+	resultIDMap := make(map[precise.ID]struct{}, len(ranges))
 
 	for _, r := range ranges {
 		resultID := fn(r)

@@ -99,7 +99,7 @@ func httpGet(ctx context.Context, op, urlStr string, result interface{}) (err er
 	req.Header.Set("User-Agent", "Sourcegraph registry client v"+APIVersion)
 	req = req.WithContext(ctx)
 
-	resp, err := httpcli.ExternalDoer().Do(req)
+	resp, err := httpcli.ExternalDoer.Do(req)
 	if err != nil {
 		return err
 	}

@@ -28,7 +28,7 @@ func main() {
 	env.HandleHelpFlag()
 
 	logging.Init()
-	trace.Init(false)
+	trace.Init()
 
 	if err := config.Validate(); err != nil {
 		log.Fatalf("failed to read config: %s", err)
@@ -49,7 +49,7 @@ func main() {
 	nameSet := janitor.NewNameSet()
 
 	routines := []goroutine.BackgroundRoutine{
-		worker.NewWorker(nameSet, config.APIWorkerOptions(nil), observationContext),
+		worker.NewWorker(nameSet, config.APIWorkerOptions(), observationContext),
 	}
 	if config.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(

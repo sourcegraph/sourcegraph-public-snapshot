@@ -85,7 +85,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.ExternalClientFactory
 	}
 
 	opts := []httpcli.Opt{

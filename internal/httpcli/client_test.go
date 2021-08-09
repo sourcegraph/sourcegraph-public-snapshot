@@ -16,11 +16,12 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"testing/quick"
 	"time"
 
+	"github.com/PuerkitoBio/rehttp"
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func TestHeadersMiddleware(t *testing.T) {
@@ -278,7 +279,7 @@ func TestNewTimeoutOpt(t *testing.T) {
 	}
 }
 
-func TestExternalHTTPClientErrorResilience(t *testing.T) {
+func TestErrorResilience(t *testing.T) {
 	failures := int64(5)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		status := 0
@@ -298,7 +299,6 @@ func TestExternalHTTPClientErrorResilience(t *testing.T) {
 		w.WriteHeader(status)
 	}))
 
-	rcache.SetupForTest(t)
 	t.Cleanup(srv.Close)
 
 	req, err := http.NewRequest("GET", srv.URL, nil)
@@ -306,13 +306,56 @@ func TestExternalHTTPClientErrorResilience(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res, err := ExternalDoer().Do(req)
+	cli, _ := NewFactory(
+		NewMiddleware(
+			ContextErrorMiddleware,
+		),
+		NewErrorResilientTransportOpt(
+			NewRetryPolicy(20),
+			rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+		),
+	).Doer()
+
+	res, err := cli.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if res.StatusCode != 404 {
 		t.Fatalf("want status code 404, got: %d", res.StatusCode)
+	}
+}
+
+func TestExpJitterDelay(t *testing.T) {
+	prop := func(b, m uint32, a uint16) bool {
+		base := time.Duration(b)
+		max := time.Duration(m)
+		for max < base {
+			max *= 2
+		}
+		attempt := int(a)
+
+		delay := ExpJitterDelay(base, max)(rehttp.Attempt{
+			Index: attempt,
+		})
+
+		t.Logf("base: %v, max: %v, attempt: %v", base, max, attempt)
+
+		switch {
+		case delay > max:
+			t.Logf("delay %v > max %v", delay, max)
+			return false
+		case delay < base:
+			t.Logf("delay %v < base %v", delay, base)
+			return false
+		}
+
+		return true
+	}
+
+	err := quick.Check(prop, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
