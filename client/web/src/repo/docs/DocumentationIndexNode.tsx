@@ -55,7 +55,8 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
     return (
         <div className="documentation-index-node">
             <Link id={'index-' + hash} to={thisPage} className="text-nowrap">
-                <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
+                {depth !== 0 && <DocumentationIcons tags={node.documentation.tags} />}
+                {node.label.value}
             </Link>
             <ul className="pl-3">
                 {node.children?.map(child =>
