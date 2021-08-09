@@ -15,6 +15,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -196,34 +197,37 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		return nil, false, err
 	}
 
-	matches := make([]result.Match, 0, len(searcherMatches))
-	for _, fm := range searcherMatches {
-		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
-		for _, lm := range fm.LineMatches {
-			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
-			for _, ol := range lm.OffsetAndLengths {
-				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
+	toMatches := func(searcherMatches []*protocol.FileMatch) []result.Match {
+		matches := make([]result.Match, 0, len(searcherMatches))
+		for _, fm := range searcherMatches {
+			lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
+			for _, lm := range fm.LineMatches {
+				ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
+				for _, ol := range lm.OffsetAndLengths {
+					ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
+				}
+				lineMatches = append(lineMatches, &result.LineMatch{
+					Preview:          lm.Preview,
+					OffsetAndLengths: ranges,
+					LineNumber:       int32(lm.LineNumber),
+				})
 			}
-			lineMatches = append(lineMatches, &result.LineMatch{
-				Preview:          lm.Preview,
-				OffsetAndLengths: ranges,
-				LineNumber:       int32(lm.LineNumber),
+
+			matches = append(matches, &result.FileMatch{
+				File: result.File{
+					Path:     fm.Path,
+					Repo:     repo,
+					CommitID: commit,
+					InputRev: &rev,
+				},
+				LineMatches: lineMatches,
+				LimitHit:    fm.LimitHit,
 			})
 		}
-
-		matches = append(matches, &result.FileMatch{
-			File: result.File{
-				Path:     fm.Path,
-				Repo:     repo,
-				CommitID: commit,
-				InputRev: &rev,
-			},
-			LineMatches: lineMatches,
-			LimitHit:    fm.LimitHit,
-		})
+		return matches
 	}
 
-	return matches, limitHit, err
+	return toMatches(searcherMatches), limitHit, err
 }
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
