@@ -1,9 +1,7 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -28,7 +26,8 @@ type Resolver interface {
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	DeleteIndexByID(ctx context.Context, id int) error
-	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error)
+	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
+	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int, rev *string) error
@@ -108,30 +107,26 @@ func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
 	return err
 }
 
-func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error) {
+func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error) {
 	configuration, exists, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if exists {
-		return configuration.Data, nil
+		return configuration.Data, true, nil
 	}
 
-	// nothing in DB, prepopulate with a best guess from the inference engine
+	return nil, false, nil
+}
+
+func (r *resolver) InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error) {
 	maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
 	if err != nil || maybeConfig == nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	marshaled, err := config.MarshalJSON(*maybeConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	var indented bytes.Buffer
-	_ = json.Indent(&indented, marshaled, "", "\t")
-	return indented.Bytes(), nil
+	return maybeConfig, true, nil
 }
 
 func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {

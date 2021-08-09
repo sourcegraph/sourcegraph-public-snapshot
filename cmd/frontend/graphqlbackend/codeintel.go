@@ -119,7 +119,8 @@ type LSIFIndexConnectionResolver interface {
 }
 
 type IndexConfigurationResolver interface {
-	Configuration() *string
+	Configuration(ctx context.Context) (*string, error)
+	InferredConfiguration(ctx context.Context) (*string, error)
 }
 
 type UpdateRepositoryIndexConfigurationArgs struct {
