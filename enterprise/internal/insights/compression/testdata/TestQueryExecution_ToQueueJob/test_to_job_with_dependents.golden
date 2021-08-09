@@ -6,4 +6,5 @@
 	Cost:            500,
 	Priority:        1000,
 	DependentFrames: []time.Time{time.Time{ext: 63713520000}},
+	State:           "queued",
 }

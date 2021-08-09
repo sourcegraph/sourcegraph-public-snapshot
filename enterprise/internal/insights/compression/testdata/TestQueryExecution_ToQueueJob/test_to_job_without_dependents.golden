@@ -5,4 +5,5 @@
 	},
 	Cost:     500,
 	Priority: 1000,
+	State:    "queued",
 }
