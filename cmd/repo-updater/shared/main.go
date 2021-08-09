@@ -154,9 +154,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	scheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
-		Store:           store,
-		Scheduler:       scheduler,
-		GitserverClient: gitserver.DefaultClient,
+		Store:                 store,
+		Scheduler:             scheduler,
+		GitserverClient:       gitserver.DefaultClient,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 

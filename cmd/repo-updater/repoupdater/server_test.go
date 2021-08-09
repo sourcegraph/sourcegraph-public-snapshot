@@ -521,7 +521,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			assert: types.Assert.ReposEqual(gitlabRepository),
 		},
 		{
-			name: "found - gitlab.com on Sourcegraph.com already exists",
+			name:   "found - gitlab.com on Sourcegraph.com already exists",
 			args:   protocol.RepoLookupArgs{Repo: gitlabRepository.Name},
 			stored: []*types.Repo{gitlabRepository},
 			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
@@ -558,7 +558,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: githubRepository.Name,
 			},
-			src:    repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
+			src: repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
 			stored: []*types.Repo{githubRepository.With(func(r *types.Repo) {
 				r.UpdatedAt = r.UpdatedAt.Add(-time.Hour)
 			})},
