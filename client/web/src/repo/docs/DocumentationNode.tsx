@@ -65,7 +65,7 @@ interface Props
     onVisibilityChange: (visible: boolean, node: GQLDocumentationNode, top: number) => void
 }
 
-export const DocumentationNode: React.FunctionComponent<Props> = ({
+export const DocumentationNode: React.FunctionComponent<Props> = React.memo(({
     useBreadcrumb,
     node,
     depth,
@@ -199,7 +199,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
-}
+})
 
 const Heading: React.FunctionComponent<{
     level: number

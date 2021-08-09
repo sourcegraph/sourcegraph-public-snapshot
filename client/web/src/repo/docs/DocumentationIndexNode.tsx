@@ -32,7 +32,7 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     excludingTags: Tag[]
 }
 
-export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, depth, activePathID, ...props }) => {
+export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo(({ node, depth, activePathID, ...props }) => {
     const repoRevision = {
         repoName: props.repo.name,
         revision: props.revision || '',
@@ -77,4 +77,4 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
             </ul>
         </div>
     )
-}
+})
