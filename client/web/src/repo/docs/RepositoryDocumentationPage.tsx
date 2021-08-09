@@ -2,7 +2,7 @@ import * as H from 'history'
 import { upperFirst } from 'lodash'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect, useCallback, useMemo, useState } from 'react'
+import React, { useEffect, useCallback, useMemo, useState, useRef, RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
@@ -30,7 +30,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
-import { fetchDocumentationPage, fetchDocumentationPathInfo, isExcluded, Tag } from './graphql'
+import { fetchDocumentationPage, fetchDocumentationPathInfo, GQLDocumentationNode, isExcluded, Tag } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -127,6 +127,23 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     const excludingTags: Tag[] = ['private']
 
+    const containerRef: RefObject<HTMLDivElement|undefined>|null|undefined = useRef();
+
+    // Keep track of all node headers on the page that are visible. When visibility changes, sort
+    // them based on position so we can determine the top-most header that is visible on the page
+    // and update the active node - which is used for various visual effects.
+    const [activePathID, setActivePathID] = useState<string|null>(null)
+    var visiblePathIDs: {top: number, pathID: string}[] = [];
+    const onVisibilityChange = (visible: boolean, node: GQLDocumentationNode, top: number) => {
+        if (!visible || top < 0) {
+            visiblePathIDs = visiblePathIDs.filter(pair => pair.pathID !== node.pathID);
+        } else {
+            visiblePathIDs.push({top, pathID: node.pathID})
+            visiblePathIDs.sort((a, b) => a.top < b.top ? -1 : 1)
+        }
+        if (visiblePathIDs.length > 0 && activePathID !== visiblePathIDs[0].pathID) setActivePathID(() => visiblePathIDs[0].pathID)
+    }
+
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
@@ -194,9 +211,10 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         node={page.tree}
                         pathInfo={pathInfo}
                         pagePathID={pagePathID}
+                        activePathID={activePathID || pagePathID}
                         depth={0}
                     />
-                    <div className="repository-docs-page__container">
+                    <div className="repository-docs-page__container" ref={containerRef}>
                         <div
                             className={`repository-docs-page__container-content${
                                 sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
@@ -221,6 +239,8 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 depth={0}
                                 isFirstChild={true}
                                 excludingTags={excludingTags}
+                                currentScrollTop={() => containerRef && containerRef.current ? containerRef.current.scrollTop : 0}
+                                onVisibilityChange={onVisibilityChange}
                             />
                         </div>
                     </div>

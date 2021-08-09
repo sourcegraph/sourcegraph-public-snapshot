@@ -7,7 +7,7 @@ import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import { DocumentationIcons } from './DocumentationIcons'
+import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
 import { GQLDocumentationNode, isExcluded, Tag } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
@@ -25,11 +25,14 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     /** The pathID of the page containing this documentation node */
     pagePathID: string
 
+    /** The currently active/visible node's path ID */
+    activePathID: string
+
     /** A list of documentation tags, a section will not be rendered if it matches one of these. */
     excludingTags: Tag[]
 }
 
-export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, depth, ...props }) => {
+export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, depth, activePathID, ...props }) => {
     const repoRevision = {
         repoName: props.repo.name,
         revision: props.revision || '',
@@ -52,10 +55,11 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
             return null
         }
     }
+    const isActive = node.pathID === activePathID
     return (
         <div className="documentation-index-node">
-            <Link id={'index-' + hash} to={thisPage} className="text-nowrap">
-                {depth !== 0 && <DocumentationIcons tags={node.documentation.tags} />}
+            <Link id={'index-' + hash} to={thisPage} className={`text-nowrap documentation-index-node-link${isActive ? ' documentation-index-node-link--active' : ''}`}>
+                {isActive && <CircleMediumIcon className="icon-inline" />}
                 {node.label.value}
             </Link>
             <ul className="pl-3">
@@ -64,6 +68,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
                         <DocumentationIndexNode
                             key={`${depth}-${child.node!.pathID}`}
                             {...props}
+                            activePathID={activePathID}
                             node={child.node!}
                             depth={depth + 1}
                         />

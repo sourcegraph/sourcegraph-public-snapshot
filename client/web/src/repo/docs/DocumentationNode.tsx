@@ -2,7 +2,7 @@ import * as H from 'history'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
-import React, { useMemo } from 'react'
+import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
@@ -51,6 +51,18 @@ interface Props
 
     /** A list of documentation tags, a section will not be rendered if it matches one of these. */
     excludingTags: Tag[]
+
+    /** Called to get the current scrollTop position of the scrolling page */
+    currentScrollTop: () => number
+
+    /**
+     * Called when this documentation node becomes visible / scrolled into the screen, or becomes
+     * invisible.
+     *
+     * The provided number indicates the position of the node on the page, with lesser numbers
+     * being at the top and greater numbers being at the bottom.
+     **/
+    onVisibilityChange: (visible: boolean, node: GQLDocumentationNode, top: number) => void
 }
 
 export const DocumentationNode: React.FunctionComponent<Props> = ({
@@ -58,6 +70,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({
     node,
     depth,
     isFirstChild,
+    currentScrollTop,
+    onVisibilityChange,
     ...props
 }) => {
     const repoRevision = {
@@ -86,8 +100,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({
         }
     }
 
-    const Heading = `h${depth + 1 < 4 ? depth + 1 : 4}` as keyof JSX.IntrinsicElements
-
+    const headingLevel = depth + 1 < 4 ? depth + 1 : 4
     const topMargin =
         depth === 0
             ? ' mt-3' // Level 0 header ("Package foo")
@@ -97,9 +110,25 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({
             ? ' mt-4'
             : ' mt-5' // Lowest level headers
 
+    const ref: RefObject<HTMLHeadingElement|undefined>|null|undefined = useRef();
+    const intersectionObserver = new IntersectionObserver(
+        ([entry]) => {
+            if (entry.isIntersecting) {
+                onVisibilityChange(true, node, currentScrollTop() + entry.boundingClientRect.top)
+            } else {
+                onVisibilityChange(false, node, 0)
+            }
+        }
+    )
+    useEffect(() => {
+        if (ref.current) intersectionObserver.observe(ref.current)
+        // Remove the observer as soon as the component is unmounted
+        return () => { intersectionObserver.disconnect() }
+    }, [])
+
     return (
         <div className={`documentation-node mb-5${topMargin}`}>
-            <Heading className="d-flex align-items-center documentation-node__heading">
+            <Heading level={headingLevel} className="d-flex align-items-center documentation-node__heading" innerRef={ref}>
                 <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
                     <LinkVariantIcon className="icon-inline" />
                 </AnchorLink>
@@ -163,9 +192,29 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({
                             depth={depth + 1}
                             isFirstChild={index === 0}
                             useBreadcrumb={useBreadcrumb}
+                            currentScrollTop={currentScrollTop}
+                            onVisibilityChange={onVisibilityChange}
                         />
                     )
             )}
         </div>
+    )
+}
+
+const Heading: React.FunctionComponent<{
+    level: number
+    children: React.ReactNode
+    innerRef: RefObject<any>
+    [x:string]: any;
+}> = ({
+    level,
+    children,
+    innerRef,
+    ...props
+}) => {
+    return React.createElement(
+        `h${level}`,
+        {ref: innerRef, ...props},
+        children,
     )
 }

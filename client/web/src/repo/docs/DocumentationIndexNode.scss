@@ -1,0 +1,8 @@
+.documentation-index-node {
+    &-link {
+        position: relative;
+        &--active {
+            left: -1rem;
+        }
+    }
+}

@@ -24,6 +24,10 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     node: GQLDocumentationNode
     depth: number
     pagePathID: string
+
+    /** The currently active/visible node's path ID */
+    activePathID: string
+
     pathInfo: GQLDocumentationPathInfo
 }
 
