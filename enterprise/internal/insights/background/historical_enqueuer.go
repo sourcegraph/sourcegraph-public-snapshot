@@ -482,7 +482,6 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 			hardErr = errors.Wrap(err, "FindNearestCommit")
 			return
 		}
-		log15.Info("RecentCommits", "commits", recentCommits)
 		var nearestCommit *git.Commit
 		if len(recentCommits) > 0 {
 			nearestCommit = recentCommits[0]
