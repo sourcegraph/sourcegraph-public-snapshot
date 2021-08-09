@@ -287,10 +287,10 @@ function matches<Value, Data>(
         if (value && typeof value === 'object') {
             const keys = Object.getOwnPropertyNames(pattern).filter(key => !specialKeys.has(key))
             if (keys.length > 0) {
-                // TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'unknown'.  No index signature with a parameter of type 'string' was found on type 'unknown'.
-                // TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'WrapperPattern<NoInfer<Value>, NoInfer<Data>> | ...
-                // @ts-expect-error this will properly always error because 'value' and 'pattern' are normally not indexable
                 match = keys.every(
+                    // TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'unknown'.  No index signature with a parameter of type 'string' was found on type 'unknown'.
+                    // TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'WrapperPattern<NoInfer<Value>, NoInfer<Data>> | ...
+                    // @ts-expect-error this will properly always error because 'value' and 'pattern' are normally not indexable
                     property => property in value && matches(context, value[property], pattern[property])
                 )
             }
