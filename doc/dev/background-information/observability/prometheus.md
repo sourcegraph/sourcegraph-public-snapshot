@@ -37,7 +37,8 @@ This *does not* affect the version of Alertmanager that we ship with, the fork e
 
 ## Upgrading Prometheus or Alertmanager
 
-To upgrade Prometheus or Alertmanager:
+When upgrading, it is better to upgrade both at once since the two projects share some common dependencies.
+To perform an upgrade:
 
 1. Make the appropriate version and sum changes to the [`sourcegraph/prometheus` Dockerfile](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+FROM+prom/:%5Bimg%7Eprometheus%7Calertmanager%5D::%5Bversion.%5D+OR+FROM+prom/alertmanager::%5Bversion.%5D+OR+LABEL+com.sourcegraph.:%5Bimg%7Eprometheus%7Calertmanager%5D.version%3D:%5Bversion.%5D&patternType=structural)
 1. Ensure no image update steps are required by checking upstream Dockerfiles where required as noted in the [`sourcegraph/prometheus` Dockerfile](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/prometheus/Dockerfile) where appropriate
@@ -46,4 +47,16 @@ To upgrade Prometheus or Alertmanager:
 1. Ensure the image still builds: `./docker-images/prometheus/build.sh`
 1. [Run the monitoring stack locally](../../how-to/monitoring_local_dev.md) and verify that:
    1. If upgrading Prometheus: all Prometheus rules are evaluated successfully (`localhost:9090/rules`)
-   1. If upgrading Alertmanager: Alertmanager starts up correctly (`localhost:9090/alertmanager/#/status`), and [`observability.alerts` can be configured](../../../admin/observability/alerting.md) via the Sourcegraph web application
+   1. If upgrading Alertmanager: Alertmanager starts up correctly (`localhost:9090/alertmanager/#/status`), and [`observability.alerts` can be configured in site config](../../../admin/observability/alerting.md) (check this by adding an entry, e.g. Slack alerts) via the Sourcegraph web application, e.g:
+
+      ```json
+      "observability.alerts": [
+        {
+          "level": "critical",
+          "notifier": {
+            "type": "slack",
+            "url": "https://sourcegraph.com",
+          }
+        }
+      ]
+      ```
