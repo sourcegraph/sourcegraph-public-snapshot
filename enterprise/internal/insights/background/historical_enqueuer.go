@@ -363,8 +363,6 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 
 				// Build historical data for this unique timeframe+repo+series.
 				hardErr, err := h.buildSeries(ctx, &buildSeriesContext{
-					// from:            currentFrame.From,
-					// to:              currentFrame.To,
 					execution:       queryExecution,
 					repo:            repo,
 					firstHEADCommit: firstHEADCommit,
