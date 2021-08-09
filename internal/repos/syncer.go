@@ -39,6 +39,10 @@ type Syncer struct {
 
 	Registerer prometheus.Registerer
 
+	PermsSyncer interface {
+		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
+	}
+
 	// UserReposMaxPerUser can be used to override the value read from config.
 	// If zero, we'll read from config instead.
 	UserReposMaxPerUser int
@@ -427,7 +431,8 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		return Diff{}, errors.Wrap(err, "syncer: getting repo from the database")
 	}
 
-	switch len(stored) {
+	repoState := len(stored)
+	switch repoState {
 	case 2: // Existing repo with a naming conflict
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
 		// name when we source it from the same code host, and it will be re-created.
@@ -489,6 +494,28 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		d.Added = append(d.Added, sourced)
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
+	}
+
+	// PermsSyncer is available in enterprise mode only.
+	if s.PermsSyncer != nil {
+		switch repoState {
+		case 0: // New repo was created.
+			if sourced.Private {
+				s.PermsSyncer.ScheduleRepos(ctx, sourced.ID)
+			}
+		default:
+			// Other possible values for repoState are 1 and 2. Anything else is an impossible state. And in the off chance that any otehr value is encountered, the switch-case on repoState above will already panic and the code will never reach this step.
+
+			// If an existing repo was public and was now updated to private, we want to trigger a
+			// repo permissions sync.
+			//
+			// We do not need to check if an existing private repo was made public because public
+			// repos are on the quick path of authz checks and will be skipped even if we enqueue it
+			// for permissions syncing.
+			if !stored[0].Private && sourced.Private {
+				s.PermsSyncer.ScheduleRepos(ctx, stored[0].ID)
+			}
+		}
 	}
 
 	return d, nil
