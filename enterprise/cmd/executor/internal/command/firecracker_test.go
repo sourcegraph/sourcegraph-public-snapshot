@@ -159,7 +159,6 @@ func TestTeardownFirecracker(t *testing.T) {
 	}
 
 	expected := []string{
-		"ignite stop deadbeef",
 		"ignite rm -f deadbeef",
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
