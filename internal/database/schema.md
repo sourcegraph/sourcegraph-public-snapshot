@@ -781,6 +781,8 @@ Indexes:
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_state_btree" btree (state)
+Referenced by:
+    TABLE "insights_query_runner_jobs_dependencies" CONSTRAINT "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
 
 ```
 
@@ -789,6 +791,26 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
 **cost**: Integer representing a cost approximation of executing this search query.
 
 **priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
+
+# Table "public.insights_query_runner_jobs_dependencies"
+```
+     Column     |            Type             | Collation | Nullable |                               Default                               
+----------------+-----------------------------+-----------+----------+---------------------------------------------------------------------
+ id             | integer                     |           | not null | nextval('insights_query_runner_jobs_dependencies_id_seq'::regclass)
+ job_id         | integer                     |           | not null | 
+ recording_time | timestamp without time zone |           | not null | 
+Indexes:
+    "insights_query_runner_jobs_dependencies_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
+
+```
+
+Stores data points for a code insight that do not need to be queried directly, but depend on the result of a query at a different point
+
+**job_id**: Foreign key to the job that owns this record.
+
+**recording_time**: The time for which this dependency should be recorded at using the parents value.
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
