@@ -827,6 +827,9 @@ commandsets:
     commands:
       - prometheus
       - grafana
+      # For generated alerts docs
+      - docsite
+      # For the alerting integration with frontend
       - enterprise-frontend
       - enterprise-web
       - caddy
