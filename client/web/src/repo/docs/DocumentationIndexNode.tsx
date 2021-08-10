@@ -1,4 +1,5 @@
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
@@ -10,7 +11,31 @@ import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import { GQLDocumentationNode, isExcluded, Tag } from './graphql'
+import { DocumentationNodeChild, GQLDocumentationNode, isExcluded, Tag } from './graphql'
+
+/**
+ * Mirrors the GraphQL DocumentationNodeChild interface, but swaps the node out with an extended
+ * IndexNode interface.
+ */
+export interface IndexNodeChild extends DocumentationNodeChild {
+    node?: IndexNode
+    pathID?: string
+}
+
+/**
+ * Mirrors the GQLDocumentationNode interface, extending it with whether or not nodes are active
+ * or lead to the active node.
+ */
+export interface IndexNode extends GQLDocumentationNode {
+    /** Children of this node */
+    children: IndexNodeChild[]
+
+    /** Whether or not this node is currently active / being looked at on the screen. */
+    isActive: boolean,
+
+    /** Whether or not this node is in the path of nodes leading to the currently active one. */
+    inActivePath: boolean,
+}
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields
@@ -19,7 +44,7 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     location: H.Location
 
     /** The documentation node to render */
-    node: GQLDocumentationNode
+    node: IndexNode
 
     /** How far deep we are in the tree of documentation nodes */
     depth: number
@@ -27,15 +52,12 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     /** The pathID of the page containing this documentation node */
     pagePathID: string
 
-    /** The currently active/visible node's path ID */
-    activePathID: string
-
     /** A list of documentation tags, a section will not be rendered if it matches one of these. */
     excludingTags: Tag[]
 }
 
 export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo(
-    ({ node, depth, activePathID, ...props }) => {
+    ({ node, depth, ...props }) => {
         const repoRevision = {
             repoName: props.repo.name,
             revision: props.revision || '',
@@ -50,7 +72,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         const [userExpanded, setUserExpanded] = useState(false)
 
         // Keep track of the actual expanded state we will use.
-        const autoExpand = depth === 0 || node.pathID === activePathID || hasDescendent(node, activePathID)
+        const autoExpand = depth === 0 || node.inActivePath
         const [expanded, setExpanded] = useState(autoExpand)
         const toggleExpanded = (): void => {
             setUserExpanded(expanded => !expanded)
@@ -58,12 +80,12 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         }
 
         // If a new node has come into view, automatically expand - or if no longer in view, collapse.
-        const [lastActivePathID, setLastActivePathID] = useState(activePathID)
-        if (activePathID !== lastActivePathID) {
+        const [lastInActivePath, setLastInActivePath] = useState(node.inActivePath)
+        if (node.inActivePath !== lastInActivePath) {
             if (!userExpanded) {
                 setExpanded(autoExpand)
             }
-            setLastActivePathID(activePathID)
+            setLastInActivePath(node.inActivePath)
         }
 
         const excluded = isExcluded(node, props.excludingTags)
@@ -80,7 +102,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
             }
         }
 
-        const styleAsActive = node.children.length === 0 && node.pathID === activePathID
+        const styleAsActive = node.children.length === 0 && node.isActive
         const styleAsExpandable = !styleAsActive && depth !== 0 && node.children.length > 0
         return (
             <div className={`documentation-index-node d-flex flex-column${depth !== 0 ? ' mt-2' : ''}`}>
@@ -115,7 +137,6 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                                 <DocumentationIndexNode
                                     key={`${depth}-${child.node!.pathID}`}
                                     {...props}
-                                    activePathID={activePathID}
                                     node={child.node!}
                                     depth={depth + 1}
                                 />
@@ -126,13 +147,4 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
             </div>
         )
     }
-)
-
-function hasDescendent(node: GQLDocumentationNode, descendentPathID: string): boolean {
-    return !!node.children.find(child => {
-        if (child.pathID === descendentPathID || child.node?.pathID === descendentPathID) {
-            return true
-        }
-        return child.node ? hasDescendent(child.node, descendentPathID) : false
-    })
-}
+, (prevProps, nextProps) => isEqual(prevProps, nextProps))

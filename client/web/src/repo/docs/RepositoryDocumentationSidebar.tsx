@@ -13,7 +13,7 @@ import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import { DocumentationIndexNode } from './DocumentationIndexNode'
+import { DocumentationIndexNode, IndexNode } from './DocumentationIndexNode'
 import { GQLDocumentationNode, GQLDocumentationPathInfo, isExcluded, Tag } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
@@ -108,7 +108,7 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
 /**
  * The sidebar for a specific repo revision that shows the index of all documentation.
  */
-export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({ onToggle, ...props }) => {
+export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({ onToggle, node, activePathID, ...props }) => {
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, SIDEBAR_DEFAULT_VISIBILITY)
     const handleSidebarToggle = useCallback(() => {
         onToggle(!toggleSidebar)
@@ -128,6 +128,23 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
         )
     }
     const excludingTags: Tag[] = useMemo(() => ['private'], [])
+
+    /**
+     * Convert the regular GraphQL node types into IndexNode types. These contain per-node `isActive`
+     * and `inActivePath` fields. We bake nodes in this way because otherwise we would need to pass
+     * the `activePathID` to every `DocumentationIndexNode` recursively, and it would be an almost-always
+     * changing prop to the component - causing scrolling on the page to rerender the entire sidebar
+     * instead of just the elements that would've been affected due to `isActive` changes, etc.
+     */
+    const indexNode = useMemo(() => {
+        const bake = (node: GQLDocumentationNode): IndexNode => ({
+            ...node,
+            children: node.children.map(child => child.pathID ? {pathID: child.pathID} : {node: bake(child.node!)} ),
+            isActive: node.pathID === activePathID,
+            inActivePath: hasDescendent(node, activePathID),
+        })
+        return bake(node)
+    }, [node, activePathID])
 
     return (
         <Resizable
@@ -173,7 +190,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             )}
                         <DocumentationIndexNode
                             {...props}
-                            node={props.node}
+                            node={indexNode}
                             pagePathID={props.pagePathID}
                             depth={0}
                             excludingTags={excludingTags}
@@ -183,4 +200,13 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
             }
         />
     )
+}
+
+function hasDescendent(node: GQLDocumentationNode, descendentPathID: string): boolean {
+    return !!node.children.find(child => {
+        if (child.pathID === descendentPathID || child.node?.pathID === descendentPathID) {
+            return true
+        }
+        return child.node ? hasDescendent(child.node, descendentPathID) : false
+    })
 }
