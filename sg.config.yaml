@@ -3,7 +3,7 @@ env:
   PGHOST: localhost
   PGUSER: sourcegraph
   PGPASSWORD: sourcegraph
-  PGDATABASE: sourcegraph
+  PGDATABASE: sg
   PGSSLMODE: disable
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
