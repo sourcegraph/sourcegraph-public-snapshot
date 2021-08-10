@@ -57,7 +57,7 @@ func (e *Writer) Event(event string, data interface{}) error {
 // EventBytes writes dataLine as an event. dataLine is not allowed to contain
 // a newline.
 func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
-	if payloadSize := len("event: \ndata: \n\n") + len(event) + len(dataLine); payloadSize > maxPayloadSize {
+	if payloadSize := 16 /* event: \ndata: \n\n */ + len(event) + len(dataLine); payloadSize > maxPayloadSize {
 		return errors.Errorf("payload size %d is greater than max payload size %d", payloadSize, maxPayloadSize)
 	}
 
