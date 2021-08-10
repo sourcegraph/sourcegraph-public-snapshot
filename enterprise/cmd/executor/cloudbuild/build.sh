@@ -5,26 +5,11 @@ export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 
-## Install logging agent
-## Reference: https://cloud.google.com/logging/docs/agent/installation
-function install_logging_agent() {
-  curl -sSO https://dl.google.com/cloudagents/add-logging-agent-repo.sh
-  bash ./add-logging-agent-repo.sh
-  rm add-logging-agent-repo.sh
-  apt-get update -y
-  apt-get install -y 'google-fluentd=1.*' google-fluentd-catch-all-config-structured
-  systemctl start google-fluentd
-}
-
-## Install monitoring agent
-## Reference: https://cloud.google.com/monitoring/agent/installation
-function install_monitoring_agent() {
-  curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
-  bash ./add-monitoring-agent-repo.sh
-  rm add-monitoring-agent-repo.sh
-  apt-get update -y
-  apt-get install -y 'stackdriver-agent=6.*'
-  systemctl start stackdriver-agent
+## Install ops agent
+## Reference: https://cloud.google.com/logging/docs/agent/ops-agent/installation
+function install_ops_agent() {
+  curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+  sudo bash add-google-cloud-ops-agent-repo.sh --also-install
 }
 
 ## Install Docker
@@ -112,8 +97,7 @@ function cleanup() {
 }
 
 # Prerequisites
-install_logging_agent
-install_monitoring_agent
+install_ops_agent
 install_docker
 install_git
 install_ignite
