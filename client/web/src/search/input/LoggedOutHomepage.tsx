@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import React, { useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -134,7 +135,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                         title="Search notebooks"
                         subtitle="Three ways code search is more efficient than your IDE"
                         examples={exampleNotebooks}
-                        icon={<NotebookIcon />}
+                        icon={<BookOutlineIcon />}
                         {...props}
                     />
                 ) : (
@@ -195,15 +196,6 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
         </div>
     )
 }
-
-const NotebookIcon = React.memo(() => (
-    <svg width="18" height="21" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-            d="M16 2.5h-1v-2h-2v2H5v-2H3v2H2a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-14a2 2 0 00-2-2zm0 16H2v-10h14v10zM2 6.5v-2h14v2H2zm2 4h10v2H4v-2zm0 4h10v2H4v-2z"
-            fill="currentColor"
-        />
-    </svg>
-))
 
 const MagnifyingGlassSearchIcon = React.memo(() => (
     <svg width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
