@@ -3,6 +3,7 @@ set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
+export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 
 ## Install ops agent
@@ -81,6 +82,14 @@ function generate_ignite_base_image() {
   docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
   ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
   docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
+  # Remove intermediate layers and base image used in ignite-ubuntu.
+  docker system prune --force
+}
+
+## Loads the required kernel image so it doesn't have to happen on the first VM start.
+function preheat_kernel_image() {
+  ignite kernel import --runtime docker "${KERNEL_IMAGE}"
+  docker pull "weaveworks/ignite:${IGNITE_VERSION}"
 }
 
 function cleanup() {
@@ -102,4 +111,5 @@ install_executor
 
 # Service prep and cleanup
 generate_ignite_base_image
+preheat_kernel_image
 cleanup
