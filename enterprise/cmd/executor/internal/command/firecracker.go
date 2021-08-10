@@ -99,15 +99,6 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
 // the given name.
 func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, options Options, operations *Operations) error {
-	stopCommand := command{
-		Key:       "teardown.firecracker.stop",
-		Command:   flatten("ignite", "stop", name),
-		Operation: operations.TeardownFirecrackerStop,
-	}
-	if err := runner.RunCommand(ctx, stopCommand, logger); err != nil {
-		log15.Error("Failed to stop firecracker vm", "name", name, "err", err)
-	}
-
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),

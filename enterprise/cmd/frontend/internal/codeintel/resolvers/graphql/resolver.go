@@ -207,12 +207,7 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.I
 		return nil, err
 	}
 
-	configuration, err := r.resolver.IndexConfiguration(ctx, int(repositoryID))
-	if err != nil {
-		return nil, err
-	}
-
-	return NewIndexConfigurationResolver(configuration), nil
+	return NewIndexConfigurationResolver(r.resolver, int(repositoryID)), nil
 }
 
 func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (*gql.EmptyResponse, error) {

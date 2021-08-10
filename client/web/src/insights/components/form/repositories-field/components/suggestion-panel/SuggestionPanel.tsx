@@ -49,12 +49,6 @@ export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = 
                 </ComboboxOption>
             ))}
 
-            {isValueEmpty && (
-                <span className={styles.suggestionsListItem}>
-                    <i>Start typing</i>
-                </span>
-            )}
-
             {!isValueEmpty && !suggestions.length && (
                 <span className={styles.suggestionsListItem}>No results found</span>
             )}

@@ -349,6 +349,10 @@ func (err HTTPError) Forbidden() bool {
 	return err.code == http.StatusForbidden
 }
 
+func (err HTTPError) IsTemporary() bool {
+	return err.code == http.StatusTooManyRequests
+}
+
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
@@ -360,14 +364,30 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
-// ErrProjectNotFound is when the requested GitLab project is not found.
-var ErrProjectNotFound = errors.New("GitLab project not found")
-
 // ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
 var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
 
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	return errors.IsAny(err, ErrProjectNotFound, ErrMergeRequestNotFound) || HTTPErrorCode(err) == http.StatusNotFound
+	return errors.HasType(err, &ProjectNotFoundError{}) ||
+		errors.Is(err, ErrMergeRequestNotFound) ||
+		HTTPErrorCode(err) == http.StatusNotFound
 }
+
+// ErrProjectNotFound is when the requested GitLab project is not found.
+var ErrProjectNotFound = &ProjectNotFoundError{}
+
+// ProjectNotFoundError is when the requested GitHub repository is not found.
+type ProjectNotFoundError struct {
+	Name string
+}
+
+func (e ProjectNotFoundError) Error() string {
+	if e.Name == "" {
+		return "GitLab project not found"
+	}
+	return fmt.Sprintf("GitLab project %q not found", e.Name)
+}
+
+func (e ProjectNotFoundError) NotFound() bool { return true }

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -215,6 +216,9 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 }) (*GitTreeEntryResolver, error) {
 	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if !stat.Mode().IsRegular() {

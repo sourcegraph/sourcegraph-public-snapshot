@@ -7,7 +7,7 @@ import { WebStory } from '../../../../components/WebStory'
 import { authUser } from '../../../../search/panels/utils'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../core/backend/insights-api'
-import { SETTINGS_CASCADE } from '../../../mocks/settings-cascade'
+import { SETTINGS_CASCADE_MOCK } from '../../../mocks/settings-cascade'
 
 import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
 
@@ -33,7 +33,7 @@ add('Page', () => (
         <InsightsDashboardCreationPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
             platformContext={PLATFORM_CONTEXT}
-            settingsCascade={SETTINGS_CASCADE}
+            settingsCascade={SETTINGS_CASCADE_MOCK}
             authenticatedUser={authUser}
         />
     </InsightsApiContext.Provider>
