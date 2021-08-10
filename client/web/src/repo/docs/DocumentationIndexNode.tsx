@@ -106,12 +106,17 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                     }, 250)
                 } else {
                     nodeReference.current?.scrollIntoView({
-                        behavior: 'smooth',
+                        /**
+                         * It would be nice to use smooth scrolling here, in Firefox it's very nice,
+                         * but unfortunately Chrome seems to do some debouncing of smooth scrolling
+                         * which means the sidebar then doesn't follow as you scroll at all. Lame.
+                         */
+                        behavior: 'auto',
                         block: 'center',
                     });
                 }
             }
-        }, [node.isActive, depth])
+        }, [node.isActive, depth, nodeReference])
 
         const excluded = isExcluded(node, props.excludingTags)
         if (excluded) {
