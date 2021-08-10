@@ -47,7 +47,7 @@ const rules: PatternOf<Token[], Monaco.editor.IMarkerData[]>[] = [
     // Validate the value of each filter
     each({
         type: 'filter',
-        $: (token, context) => {
+        $data: (token, context) => {
             const diagnostics = checkFilter(token as Filter)
             if (!context.data) {
                 context.data = []
@@ -61,5 +61,9 @@ const rules: PatternOf<Token[], Monaco.editor.IMarkerData[]>[] = [
  * Returns the diagnostics for a scanned search query to be displayed in the Monaco query input.
  */
 export function getDiagnostics(tokens: Token[], patternType: SearchPatternType): Monaco.editor.IMarkerData[] {
-    return matchesValue<Token[], Monaco.editor.IMarkerData[]>(tokens, eachOf(...rules)).data ?? []
+    const result = matchesValue<Token[], Monaco.editor.IMarkerData[]>(tokens, eachOf(...rules), [])
+    if (result.success) {
+        return result.data
+    }
+    return []
 }

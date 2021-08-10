@@ -15,17 +15,17 @@
  *
  * For primitive values, the pattern can be a value of the same type, a function
  * taken the value as argument and returning a boolean ("pattern function"), or
- * a "wrapper pattern" which is an object of the form '{_: PatternOf<...>}'. See
- * 'WrapperPattern' below for more information.
+ * a "wrapper pattern" which is an object of the form '{$pattern: PatternOf<...>}'.
+ * See 'WrapperPattern' below for more information.
  *
  *    matchesValue(42, 42)
  *    matchesValue(42, x => x > 0)
- *    matchesValue(42, {_: 42})
+ *    matchesValue(42, {$pattern: 42})
  *
  * Additionally string values can be matched by a regular expression:
  *
  *    matchesValue('foo', /^f/)
- *    matchesValue('foo', {_: /^f/})
+ *    matchesValue('foo', {$pattern: /^f/})
  *
  * Arrays can only be matched by pattern functions.
  *
@@ -63,21 +63,28 @@
  */
 
 /**
- * ObjectPatterns and WrapperPattern can have an additional data annotation ($)
- * to extract information if the corresponding pattern matches. The extracted
- * data is returned from `matchesValue`.
- *
- * Example:
- * matchesValue({a: 100}, {a: x => x > 50, $: {outOfBounds: true}})
- *  => {
- *      success: true,
- *      data: {
- *        outOfBounds: true,
- *      }
- *    }
+ * ObjectPatterns and WrapperPattern can have an additional data annotation
+ * ($data) to extract information if the corresponding pattern matches. The
+ * extracted data is returned from `matchesValue`.
  */
 interface DataAnnotation<Value, Data> {
-    $?: ((value: Value, context: MatchContext<Data>) => void) | (Data extends any[] ? never : DataMapper<Value, Data>)
+    /**
+     * This property allows you to extract/compute data from matched values. The
+     * property can take a function and directly operate on context.data, or a
+     * "mapping object". This data will be returned by `matchesValue`.
+     *
+     * Example:
+     * matchesValue({a: 100}, {a: x => x > 50, $data: {outOfBounds: true}})
+     *  => {
+     *      success: true,
+     *      data: {
+     *        outOfBounds: true,
+     *      }
+     *    }
+     */
+    $data:
+        | ((value: Value, context: MatchContext<Data>) => void)
+        | (Data extends any[] ? never : DataMapper<Value, Data>)
 }
 
 /**
@@ -86,7 +93,7 @@ interface DataAnnotation<Value, Data> {
  *
  * Example:
  * {
- *   $: {
+ *   $data: {
  *     static: 42,
  *     dynamic: value => value.x,
  *   }
@@ -159,10 +166,13 @@ type ObjectPattern<Value, Data> =
  * but in order to avoid precedural logic as much as possible, WrapperPattern
  * allows us to write
  *
- * {type: oneOf("script", {_: "module", $: {module: true}})}
+ * {type: oneOf("script", {$pattern: "module", $: {module: true}})}
  */
 interface WrapperPattern<Value, Data> extends DataAnnotation<Value, Data> {
-    _: PatternFunction<Value, Data> | PrimitivePattern<Value>
+    /**
+     * The pattern to match the input value against.
+     */
+    $pattern: PatternFunction<Value, Data> | PrimitivePattern<Value>
 }
 
 /**
@@ -170,16 +180,12 @@ interface WrapperPattern<Value, Data> extends DataAnnotation<Value, Data> {
  * context (which also holds the extracted data) and the internal match function
  * for convenience. See the combinatorial helper functions below for examples.
  */
-export type PatternFunction<Value, Data> = (
-    value: Value,
-    context: MatchContext<Data>,
-    matchfn: typeof matches
-) => boolean
+export type PatternFunction<Value, Data> = (value: Value, context: MatchContext<Data>, match: typeof matches) => boolean
 
 /**
- * This type is used for matching against primitives. The main reason for it's
- * existence is to allow first class support matching strings with regular
- * expressions.
+ * This type is used for matching against primitives. The main reason for its
+ * existence is to allow first class support for matching strings against
+ * regular expressions.
  */
 type PrimitivePattern<Value> = Value extends string
     ? RegExp | Value
@@ -239,31 +245,49 @@ export type PatternOfNoInfer<Value, Data> = PatternOf<NoInfer<Value>, NoInfer<Da
  * Context that is passed to all pattern functions during a single pattern
  * application. Currently only holds the extracted data.
  */
-export interface MatchContext<Data> {
+interface MatchContext<Data> {
     data?: Data
 }
 
-export interface Result<Data> {
-    success: boolean
-    data?: Data
-}
+type Result<Data> =
+    | {
+          success: true
+          /**
+           * The data extract from the input value by the pattern.
+           */
+          data: Data
+      }
+    | { success: false }
 
 /**
  * "Applies" the 'pattern' to 'value'. It returns whether the pattern matched
  * and all data extracted by patterns.
- * If 'Data' is an object all of it's properties should be optional.
+ * If 'Data' is an object all of its properties should be optional.
  */
+export function matchesValue<Value, Data>(
+    value: Value,
+    pattern: PatternOfNoInfer<Value, Data>
+): Result<Data | undefined>
+// This overload exists so that if an initial value is provided, the success
+// result will always contain data.
+export function matchesValue<Value, Data>(
+    value: Value,
+    pattern: PatternOfNoInfer<Value, Data>,
+    initialData: Data
+): Result<Data>
 export function matchesValue<Value, Data>(
     value: Value,
     pattern: PatternOfNoInfer<Value, Data>,
     initialData?: Data
-): Result<Data> {
+): Result<Data> | Result<Data | undefined> {
     const context = { data: initialData }
-    const result = matches(context, value, pattern)
-    return { success: result, data: context.data }
+    if (matches(context, value, pattern)) {
+        return { success: true, data: context.data ?? initialData }
+    }
+    return { success: false }
 }
 
-const specialKeys: Set<string> = new Set(['_', '$'])
+const specialKeys: Set<string> = new Set(['$pattern', '$data'])
 
 /**
  * Internal match function that does the heavy lifting and is passed to every
@@ -296,26 +320,26 @@ function matches<Value, Data>(
             }
         }
 
-        // In case of object patterns, "real" keys have priority and we only check _
-        // if the real keys match.  Otherwise the context might get polluted with
-        // values that shouldn't exist.
-        if (match && pattern._) {
+        // In case of object patterns, "real" keys have priority and we only
+        // check $pattern if the real keys match.  Otherwise the context might
+        // get polluted with values that shouldn't exist.
+        if (match && pattern.$pattern) {
             // TS2345:  Type 'RegExp' is not assignable to type '[NoInfer<Value>] extends [any[]] ? never : WrapperPattern<NoInfer<Value>, NoInfer<Data>> | ObjectPattern<ObjectMembers<NoInfer<Value>>, NoInfer<Data>> | PrimitivePattern<NoInfer<Value>>'
             // @ts-expect-error TBH I don't know why RegExp is causing problems here
-            match = matches(context, value, pattern._)
+            match = matches(context, value, pattern.$pattern)
         }
 
         // Special property to capture values
-        if (match && pattern.$) {
-            if (typeof pattern.$ === 'function') {
+        if (match && pattern.$data) {
+            if (typeof pattern.$data === 'function') {
                 //  TS2345: Argument of type 'Value' is not assignable to parameter of type 'ObjectMembers<NoInfer<Value>>'
-                // @ts-expect-error due to the type definition above, pattern.$ is a union of two functions
-                pattern.$(value, context)
+                // @ts-expect-error due to the type definition above, pattern.$data is a union of two functions
+                pattern.$data(value, context)
             } else {
                 if (!context.data) {
                     context.data = Object.create(null)
                 }
-                for (const [key, captureValue] of Object.entries(pattern.$)) {
+                for (const [key, captureValue] of Object.entries(pattern.$data)) {
                     // TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'unknown'.  No index signature with a parameter of type 'string' was found on type 'unknown'
                     // @ts-expect-error context.data will likely not be an indexable type
                     context.data[key] =
@@ -336,22 +360,22 @@ function matches<Value, Data>(
  * Matches if any of its elements match the provided pattern.
  */
 export function some<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): PatternFunction<Value[], Data> {
-    return (values, context) => values.some(value => matches(context, value, pattern))
+    return (values, context, matches) => values.some(value => matches(context, value, pattern))
 }
 
 /**
  * Matches if all of the elements match the provided pattern.
  */
 export function every<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): PatternFunction<Value[], Data> {
-    return (values, context) => values.every(value => matches(context, value, pattern))
+    return (values, context, matches) => values.every(value => matches(context, value, pattern))
 }
 
 /**
- * Always matches. It's main purpose is to apply a pattern to multiple input
+ * Always matches. Its main purpose is to apply a pattern to multiple input
  * values to extract data from each of them.
  */
 export function each<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): PatternFunction<Value[], Data> {
-    return (values, context) => {
+    return (values, context, matches): true => {
         for (const value of values) {
             matches(context, value, pattern)
         }
@@ -363,14 +387,14 @@ export function each<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): Patte
  * Matches if the value matches one of the patterns.
  */
 export function oneOf<Value, Data>(...patterns: PatternOfNoInfer<Value, Data>[]): PatternFunction<Value, Data> {
-    return (value, context) => patterns.some(pattern => matches(context, value, pattern))
+    return (value, context, matches) => patterns.some(pattern => matches(context, value, pattern))
 }
 
 /**
  * Matches if the value matches all of the patterns.
  */
 export function allOf<Value, Data>(...patterns: PatternOfNoInfer<Value, Data>[]): PatternFunction<Value, Data> {
-    return (value, context) => patterns.every(pattern => matches(context, value, pattern))
+    return (value, context, matches) => patterns.every(pattern => matches(context, value, pattern))
 }
 
 /**
@@ -378,7 +402,7 @@ export function allOf<Value, Data>(...patterns: PatternOfNoInfer<Value, Data>[])
  * to extract information. Always returns true.
  */
 export function eachOf<Value, Data>(...patterns: PatternOfNoInfer<Value, Data>[]): PatternFunction<Value, Data> {
-    return (value, context) => {
+    return (value, context, matches): true => {
         for (const pattern of patterns) {
             matches(context, value, pattern)
         }
@@ -390,7 +414,7 @@ export function eachOf<Value, Data>(...patterns: PatternOfNoInfer<Value, Data>[]
  * Matches if the value does not match the pattern.
  */
 export function not<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): PatternFunction<Value, Data> {
-    return (value, context) => !matches(context, value, pattern)
+    return (value, context, matches) => !matches(context, value, pattern)
 }
 
 // Misc
@@ -399,7 +423,7 @@ export function not<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): Patter
  * Helper function to debug patterns
  */
 export function debug<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): PatternFunction<Value, Data> {
-    return (value, context) => {
+    return (value, context, matches) => {
         // eslint-disable-next-line no-debugger
         debugger
         const result = matches(context, value, pattern)

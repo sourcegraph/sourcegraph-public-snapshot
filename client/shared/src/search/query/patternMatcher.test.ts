@@ -38,7 +38,7 @@ expect.extend({
                     !result.success
                 )}))\n` +
                 (expectedData
-                    ? `Data received: ${this.utils.printReceived(result.data)}\n` +
+                    ? `Data received: ${this.utils.printReceived(result.success ? result.data : '[no match]')}\n` +
                       `Data expected: ${this.utils.printExpected(expectedData)}\n`
                     : ''),
             pass: result.success && (!expectedData || dataComparisonResult),
@@ -85,11 +85,11 @@ describe('matchValue', () => {
         })
 
         it('allows self reference objects as patterns', () => {
-            expect(42).toBeMatchedBy({ _: 42 })
+            expect(42).toBeMatchedBy({ $pattern: 42, $data: {} })
             // Self referenced objects must use a function as pattern
-            expect({ field1: 0 }).toBeMatchedBy({ _: ({ field1 }) => field1 === 0 })
-            expect({ field1: 0, field2: 21 }).toBeMatchedBy({ _: ({ field1 }) => field1 === 0, field2: 21 })
-            expect({ field1: 0, field2: 21 }).not.toBeMatchedBy({ _: ({ field1 }) => field1 === 0, field2: 42 })
+            expect({ field1: 0 }).toBeMatchedBy({ $pattern: ({ field1 }) => field1 === 0 })
+            expect({ field1: 0, field2: 21 }).toBeMatchedBy({ $pattern: ({ field1 }) => field1 === 0, field2: 21 })
+            expect({ field1: 0, field2: 21 }).not.toBeMatchedBy({ $pattern: ({ field1 }) => field1 === 0, field2: 42 })
         })
     })
 
@@ -132,14 +132,14 @@ describe('matchValue', () => {
 
     describe('data extraction', () => {
         it('extracts data when there is a match', () => {
-            expect(42).toBeMatchedBy({ _: x => x > 0, $: { larger: true } }, { larger: true })
+            expect(42).toBeMatchedBy({ $pattern: x => x > 0, $data: { larger: true } }, { larger: true })
             expect({
                 field1: {
                     field1: 42,
                     field2: [{ field3: 42 }],
                 },
             }).toBeMatchedBy(
-                { field1: { field1: 42, field2: some({ field3: x => x > 0, $: { larger: true } }) } },
+                { field1: { field1: 42, field2: some({ field3: x => x > 0, $data: { larger: true } }) } },
                 { larger: true }
             )
         })
@@ -153,8 +153,8 @@ describe('matchValue', () => {
             }
             expect({ a: 42, b: 21 }).toBeMatchedBy(
                 {
-                    a: { _: 42, $: extractData },
-                    b: { _: 21, $: extractData },
+                    a: { $pattern: 42, $data: extractData },
+                    b: { $pattern: 21, $data: extractData },
                 },
                 new Set([21, 42])
             )
@@ -179,17 +179,17 @@ describe('matchValue', () => {
 
     describe('oneOf()', () => {
         it('matches one or more patterns against a value', () => {
-            expect(42).toBeMatchedBy(oneOf(42, { _: 21 }, value => value > 0))
+            expect(42).toBeMatchedBy(oneOf(42, { $pattern: 21, $data: {} }, value => value > 0))
 
-            expect(42).not.toBeMatchedBy(oneOf(21, { _: 21 }, value => value < 0))
+            expect(42).not.toBeMatchedBy(oneOf(21, { $pattern: 21, $data: {} }, value => value < 0))
         })
     })
 
     describe('allOf()', () => {
         it('matches one ore more patterns against a value', () => {
-            expect(42).toBeMatchedBy(allOf(42, { _: 42 }, value => value > 0))
+            expect(42).toBeMatchedBy(allOf(42, { $pattern: 42, $data: {} }, value => value > 0))
 
-            expect(42).not.toBeMatchedBy(allOf(21, { _: 42 }, value => value < 0))
+            expect(42).not.toBeMatchedBy(allOf(21, { $pattern: 42, $data: {} }, value => value < 0))
         })
     })
 
