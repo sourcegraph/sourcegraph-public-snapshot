@@ -549,7 +549,7 @@ type PermsSyncer struct {
 }
 
 func (p *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
-	if !p.invoked {
+	if p.invoked {
 		p.testing.Errorf("method ScheduleRepos already invoked, should not be called again")
 	}
 
@@ -558,7 +558,7 @@ func (p *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 
 func testSyncerPermsSyncer(s *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
-		servicesPerKind := createExternalServices(t, s)
+		servicesPerKind := createExternalServices(t, s, func(svc *types.ExternalService) { svc.CloudDefault = true })
 
 		githubService := servicesPerKind[extsvc.KindGitHub]
 
