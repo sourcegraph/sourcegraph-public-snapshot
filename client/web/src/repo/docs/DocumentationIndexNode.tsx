@@ -72,7 +72,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         const [userExpanded, setUserExpanded] = useState(false)
 
         // Keep track of the actual expanded state we will use.
-        const autoExpand = depth === 0 || node.inActivePath
+        const autoExpand = depth === 0 || node.isActive || node.inActivePath
         const [expanded, setExpanded] = useState(autoExpand)
         const toggleExpanded = (): void => {
             setUserExpanded(expanded => !expanded)
@@ -80,13 +80,12 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         }
 
         // If a new node has come into view, automatically expand - or if no longer in view, collapse.
-        const [lastInActivePath, setLastInActivePath] = useState(node.inActivePath)
-        if (node.inActivePath !== lastInActivePath) {
+        useEffect(() => {
+            // If the user explicitly expanded, respect them and don't collapse.
             if (!userExpanded) {
                 setExpanded(autoExpand)
             }
-            setLastInActivePath(node.inActivePath)
-        }
+        }, [autoExpand])
 
         // If this node becomes the active one (the one being viewed), scroll this index (sidebar) node
         // into view.
