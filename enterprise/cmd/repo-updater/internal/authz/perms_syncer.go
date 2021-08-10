@@ -177,11 +177,11 @@ func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
 	return providers
 }
 
-// listRepoNamesByExact slices over the `repoSpecs` at pace of 10000 elements at
-// a time to workaround Postgres' limit of 65535 bind parameters using exact
-// name matching. This method only includes private repository names and does
-// not do deduplication on the returned list.
-func (s *PermsSyncer) listRepoNamesByExact(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.RepoName, error) {
+// listPrivateRepoNamesByExact slices over the `repoSpecs` at pace of 10000
+// elements at a time to workaround Postgres' limit of 65535 bind parameters
+// using exact name matching. This method only includes private repository names
+// and does not do deduplication on the returned list.
+func (s *PermsSyncer) listPrivateRepoNamesByExact(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.RepoName, error) {
 	if len(repoSpecs) == 0 {
 		return []types.RepoName{}, nil
 	}
@@ -433,7 +433,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Get corresponding internal database IDs
-	repoNames, err := s.listRepoNamesByExact(ctx, repoSpecs)
+	repoNames, err := s.listPrivateRepoNamesByExact(ctx, repoSpecs)
 	if err != nil {
 		return errors.Wrap(err, "list external repositories by exact matching")
 	}
