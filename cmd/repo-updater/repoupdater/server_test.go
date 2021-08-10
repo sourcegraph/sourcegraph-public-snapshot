@@ -369,6 +369,15 @@ func TestServer_RepoLookup(t *testing.T) {
 			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/a/b"), true),
 		},
 		{
+			name: "not found from non public codehost",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.private.corp/a/b"),
+			},
+			src:    repos.NewFakeSource(&githubSource, nil),
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.private.corp/a/b"), true),
+		},
+		{
 			name: "found - GitHub",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
