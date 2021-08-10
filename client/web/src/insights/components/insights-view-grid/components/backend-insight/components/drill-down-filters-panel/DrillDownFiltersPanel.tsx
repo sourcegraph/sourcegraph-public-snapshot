@@ -6,6 +6,7 @@ import { FormInput } from '../../../../../form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../form/hooks/useField'
 import { FormChangeEvent, useForm } from '../../../../../form/hooks/useForm'
+import { FlexTextArea } from '../../../../../form/repositories-field/components/flex-textarea/FlexTextArea'
 
 import styles from './DrillDownFiltersPanel.module.scss'
 import { DrillDownFilters, DrillDownFiltersMode, EMPTY_DRILLDOWN_FILTERS } from './types'
@@ -128,7 +129,7 @@ export const DrillDownRegExpInput = forwardRef((props: DrillDownRegExpInputProps
     return (
         <span className={classnames(styles.regexpField, 'w-100')}>
             <span className={styles.regexpFieldPrefix}>{prefix}</span>
-            <input
+            <FlexTextArea
                 {...inputProps}
                 className={classnames(inputProps.className, styles.regexpFieldInput)}
                 ref={reference}

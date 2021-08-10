@@ -17,6 +17,11 @@ const withConsoleDecorator: DecoratorFunction<ReactElement> = (storyFn, context)
 export const decorators = [withDesign, withConsoleDecorator]
 
 export const parameters = {
+    options: {
+        storySort: {
+            order: ['wildcard', 'shared', 'branded', '*'],
+        },
+    },
     darkMode: {
         stylePreview: true,
         lightClass: THEME_LIGHT_CLASS,

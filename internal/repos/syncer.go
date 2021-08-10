@@ -4,16 +4,17 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -240,34 +241,150 @@ func (d Diff) Len() int {
 	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
 }
 
-// SyncRepo syncs a single repository with the first cloud default external service found for its type.
-func (s *Syncer) SyncRepo(ctx context.Context, sourced *types.Repo) (err error) {
+// SyncRepo syncs a single repository by name. It's only currently used on sourcegraph.com
+// because we don't sync our "cloud_default" code hosts in the background
+// since there are too many repos. Instead we use an incremental approach where we check for
+// changes everytime a user browses a repo.
+func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.Repo, err error) {
+	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
+	defer tr.Finish()
+
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
+		return nil, &database.RepoNotFoundErr{Name: name}
+	}
+
+	repo, err = s.Store.RepoStore.GetByName(ctx, name)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+
+	if repo == nil {
+		// We don't have this repo yet, so block before returning.
+		return s.syncRepo(ctx, codehost, name, nil)
+	}
+
+	// Only public repos can be individually synced on sourcegraph.com
+	if repo.Private {
+		return nil, &database.RepoNotFoundErr{Name: name}
+	}
+	// Sync the repo in the background if it wasn't updated in 1 minute.
+	if s.Now().Sub(repo.UpdatedAt) >= time.Minute {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+			s.syncRepo(ctx, codehost, name, repo)
+		}()
+	}
+
+	return repo, nil
+}
+
+func (s *Syncer) syncRepo(
+	ctx context.Context,
+	codehost *extsvc.CodeHost,
+	name api.RepoName,
+	stored *types.Repo,
+) (repo *types.Repo, err error) {
 	var svc *types.ExternalService
-	ctx, save := s.observeSync(ctx, "Syncer.SyncRepo", string(sourced.Name))
+	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
 	defer func() { save(svc, err) }()
 
+	lk := locker.NewWithDB(nil, "repos.sync-repo").With(s.Store)
+
+	blocking := stored == nil
+	locked, unlock, err := lk.Lock(ctx, locker.StringKey(string(name)), blocking)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to acquire sync lock for %q", name)
+	}
+
+	if !locked {
+		return stored, nil
+	}
+
+	defer func() { err = unlock(err) }()
+
+	// We may have blocked waiting for another process to sync the repo, so let's fetch it from the database if
+	// it exists and return it.
+	if blocking {
+		repo, err = s.Store.RepoStore.GetByName(ctx, name)
+		if err == nil {
+			return repo, nil
+		}
+	}
+
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
-		Kinds:            []string{extsvc.TypeToKind(sourced.ExternalRepo.ServiceType)},
+		Kinds:            []string{extsvc.TypeToKind(codehost.ServiceType)},
 		OnlyCloudDefault: true,
 		LimitOffset:      &database.LimitOffset{Limit: 1},
 	})
 	if err != nil {
-		return errors.Wrap(err, "listing external services")
+		return nil, errors.Wrap(err, "listing external services")
 	}
 
 	if len(svcs) != 1 {
-		return errors.Wrapf(err, "cloud default external service of type %q not found", sourced.ExternalRepo.ServiceType)
+		return nil, errors.Wrapf(
+			&database.RepoNotFoundErr{Name: name},
+			"cloud default external service of type %q not found", codehost.ServiceType,
+		)
 	}
 
 	svc = svcs[0]
-	_, err = s.sync(ctx, svc, sourced)
-	return err
+
+	src, err := s.Sourcer(svc)
+	if err != nil {
+		return nil, err
+	}
+
+	rg, ok := src.(RepoGetter)
+	if !ok {
+		return nil, errors.Errorf("can't source repo %q", name)
+	}
+
+	path := strings.TrimPrefix(string(name), strings.TrimPrefix(codehost.ServiceID, "https://"))
+
+	if stored != nil {
+		defer func() {
+			if errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
+				errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) {
+				err2 := s.Store.DeleteExternalServiceRepo(ctx, svc, stored.ID)
+				if err2 != nil {
+					s.log().Error(
+						"SyncRepo failed to delete",
+						"svc", svc.DisplayName,
+						"repo", name,
+						"cause", err,
+						"error", err2,
+					)
+				}
+			}
+		}()
+	}
+
+	repo, err = rg.GetRepo(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	if repo.Private {
+		return nil, &database.RepoNotFoundErr{Name: name}
+	}
+
+	if _, err = s.sync(ctx, svc, repo); err != nil {
+		return nil, err
+	}
+
+	return repo, nil
 }
 
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
-func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(
+	ctx context.Context,
+	externalServiceID int64,
+	minSyncInterval time.Duration,
+) (err error) {
 	s.log().Debug("Syncing external service", "serviceID", externalServiceID)
 
 	var svc *types.ExternalService
@@ -526,7 +643,13 @@ func (s *Syncer) log() log15.Logger {
 	return s.Logger
 }
 
-func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Duration, modified bool, err error) time.Duration {
+func calcSyncInterval(
+	now time.Time,
+	lastSync time.Time,
+	minSyncInterval time.Duration,
+	modified bool,
+	err error,
+) time.Duration {
 	const maxSyncInterval = 8 * time.Hour
 
 	// Special case, we've never synced
@@ -547,7 +670,10 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 	return interval
 }
 
-func (s *Syncer) observeSync(ctx context.Context, family, title string) (context.Context, func(*types.ExternalService, error)) {
+func (s *Syncer) observeSync(
+	ctx context.Context,
+	family, title string,
+) (context.Context, func(*types.ExternalService, error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 

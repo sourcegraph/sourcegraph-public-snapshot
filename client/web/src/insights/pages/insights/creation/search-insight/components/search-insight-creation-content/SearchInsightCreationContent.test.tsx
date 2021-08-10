@@ -197,7 +197,7 @@ describe('CreateInsightContent', () => {
             expect(getByText(/repositories is a required/i)).toBeInTheDocument()
         })
 
-        it('with invalid data series field', async () => {
+        it('with invalid data series field', () => {
             const { getByRole, getByText } = renderWithProps({
                 onSubmit: onSubmitMock,
             })
@@ -210,14 +210,9 @@ describe('CreateInsightContent', () => {
 
             fireEvent.change(title, { target: { value: 'First code insight' } })
             fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
-
-            // eslint-disable-next-line @typescript-eslint/require-await
-            await act(async () => {
-                fireEvent.click(submitButton)
-            })
+            fireEvent.click(submitButton)
 
             sinon.assert.notCalled(onSubmitMock)
-
             expect(seriesName).toHaveFocus()
             expect(getByText(/series is invalid/i)).toBeInTheDocument()
         })
