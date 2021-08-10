@@ -43,20 +43,6 @@ func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParamete
 	return g.Wait()
 }
 
-// StructuralSearchFilesInRepoBatch is a convenience function around
-// StructuralSearchFilesInRepos which collects the results from the stream.
-func StructuralSearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
-	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return StructuralSearchFilesInRepos(ctx, args, stream)
-	})
-
-	fms, fmErr := matchesToFileMatches(matches)
-	if fmErr != nil && err == nil {
-		err = errors.Wrap(fmErr, "StructuralSearchFilesInReposBatch failed to convert results")
-	}
-	return fms, stats, err
-}
-
 func StructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) error {
 	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
 		// Service structural search via SearchFilesInRepos when we have
@@ -65,8 +51,15 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 		return StructuralSearchFilesInRepos(ctx, args, stream)
 	}
 
+	searchBatched := func() ([]result.Match, streaming.Stats, error) {
+		matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
+			return StructuralSearchFilesInRepos(ctx, args, stream)
+		})
+		return matches, stats, err
+	}
+
 	// For structural search with default limits we retry if we get no results.
-	fileMatches, stats, err := StructuralSearchFilesInReposBatch(ctx, args)
+	fileMatches, stats, err := searchBatched()
 
 	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
@@ -77,7 +70,7 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileMatches, stats, err = StructuralSearchFilesInReposBatch(ctx, args)
+		fileMatches, stats, err = searchBatched()
 
 		if len(fileMatches) == 0 {
 			// Still no results? Give up.
@@ -88,6 +81,9 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 
 	matches := make([]result.Match, 0, len(fileMatches))
 	for _, fm := range fileMatches {
+		if _, ok := fm.(*result.FileMatch); !ok {
+			return errors.Errorf("StructuralSearch failed to convert results")
+		}
 		matches = append(matches, fm)
 	}
 
