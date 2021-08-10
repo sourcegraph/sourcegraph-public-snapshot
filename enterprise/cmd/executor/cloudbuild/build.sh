@@ -46,11 +46,6 @@ function install_ignite() {
   chmod +x ignite
   mv ignite /usr/local/bin
 
-  # Install ignited
-  curl -sfLo ignited https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignited-amd64
-  chmod +x ignited
-  mv ignited /usr/local/bin
-
   # Install container network interface
   mkdir -p /opt/cni/bin
   curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
