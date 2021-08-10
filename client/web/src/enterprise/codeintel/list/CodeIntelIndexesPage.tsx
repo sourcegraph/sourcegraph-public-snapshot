@@ -16,8 +16,7 @@ import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 import { enqueueIndexJob } from './backend'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Observable, of, Subject } from 'rxjs'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Subject } from 'rxjs'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -69,7 +68,6 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
     now,
-    history,
     telemetryService,
     ...props
 }) => {
@@ -165,7 +163,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         nodeComponent={CodeIntelIndexNode}
                         nodeComponentProps={{ now }}
                         queryConnection={queryIndexes}
-                        history={history}
+                        history={props.history}
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
