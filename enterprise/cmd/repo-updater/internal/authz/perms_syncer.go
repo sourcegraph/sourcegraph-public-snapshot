@@ -177,6 +177,43 @@ func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
 	return providers
 }
 
+// listPrivateRepoNamesByExact slices over the `repoSpecs` at pace of 10000
+// elements at a time to workaround Postgres' limit of 65535 bind parameters
+// using exact name matching. This method only includes private repository names
+// and does not do deduplication on the returned list.
+func (s *PermsSyncer) listPrivateRepoNamesByExact(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.RepoName, error) {
+	if len(repoSpecs) == 0 {
+		return []types.RepoName{}, nil
+	}
+
+	remaining := repoSpecs
+	nextCut := 10000
+	if len(remaining) < nextCut {
+		nextCut = len(remaining)
+	}
+
+	var repoNames []types.RepoName
+	for nextCut > 0 {
+		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+			database.ReposListOptions{
+				ExternalRepos: remaining[:nextCut],
+				OnlyPrivate:   true,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		repoNames = append(repoNames, rs...)
+
+		remaining = remaining[nextCut:]
+		if len(remaining) < nextCut {
+			nextCut = len(remaining)
+		}
+	}
+	return repoNames, nil
+}
+
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool) (err error) {
@@ -396,19 +433,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Get corresponding internal database IDs
-	var repoNames []types.RepoName
-	if len(repoSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
-			database.ReposListOptions{
-				ExternalRepos: repoSpecs,
-				OnlyPrivate:   true,
-			},
-		)
-		if err != nil {
-			return errors.Wrap(err, "list external repositories by exact matching")
-		}
-		repoNames = append(repoNames, rs...)
+	repoNames, err := s.listPrivateRepoNamesByExact(ctx, repoSpecs)
+	if err != nil {
+		return errors.Wrap(err, "list external repositories by exact matching")
 	}
+
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includePrefixSpecs) > 0 {
