@@ -1,4 +1,3 @@
-import BrainIcon from 'mdi-react/BrainIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -11,9 +10,7 @@ import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
 import { lazyComponent } from '../../../util/lazyComponent'
-import { CodeIntelDataRetentionConfigurationPageProps } from '../configuration/CodeIntelDataRetentionConfigurationPage'
 import { CodeIntelIndexConfigurationPageProps } from '../configuration/CodeIntelIndexConfigurationPage'
-import { CodeIntelIndexSchedulerConfigurationPageProps } from '../configuration/CodeIntelIndexSchedulerConfiguration'
 import { CodeIntelIndexPageProps } from '../detail/CodeIntelIndexPage'
 import { CodeIntelUploadPageProps } from '../detail/CodeIntelUploadPage'
 import { CodeIntelIndexesPageProps } from '../list/CodeIntelIndexesPage'
@@ -36,14 +33,6 @@ const CodeIntelUploadPage = lazyComponent<CodeIntelUploadPageProps, 'CodeIntelUp
     'CodeIntelUploadPage'
 )
 
-const CodeIntelDataRetentionConfigurationPage = lazyComponent<
-    CodeIntelDataRetentionConfigurationPageProps,
-    'CodeIntelDataRetentionConfigurationPage'
->(
-    () => import('../../codeintel/configuration/CodeIntelDataRetentionConfigurationPage'),
-    'CodeIntelDataRetentionConfigurationPage'
-)
-
 const CodeIntelIndexesPage = lazyComponent<CodeIntelIndexesPageProps, 'CodeIntelIndexesPage'>(
     () => import('../../codeintel/list/CodeIntelIndexesPage'),
     'CodeIntelIndexesPage'
@@ -57,14 +46,6 @@ const CodeIntelIndexConfigurationPage = lazyComponent<
     CodeIntelIndexConfigurationPageProps,
     'CodeIntelIndexConfigurationPage'
 >(() => import('../../codeintel/configuration/CodeIntelIndexConfigurationPage'), 'CodeIntelIndexConfigurationPage')
-
-const CodeIntelIndexScheduleConfigurationPage = lazyComponent<
-    CodeIntelIndexSchedulerConfigurationPageProps,
-    'CodeIntelIndexScheduleConfigurationPage'
->(
-    () => import('../../codeintel/configuration/CodeIntelIndexScheduleConfigurationPage'),
-    'CodeIntelIndexScheduleConfigurationPage'
-)
 
 export const routes: readonly CodeIntelAreaRoute[] = [
     {
@@ -83,11 +64,6 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         render: props => <CodeIntelUploadPage {...props} />,
     },
     {
-        path: '/data-retention-configuration',
-        exact: true,
-        render: props => <CodeIntelDataRetentionConfigurationPage {...props} />,
-    },
-    {
         path: '/indexes',
         exact: true,
         render: props => <CodeIntelIndexesPage {...props} />,
@@ -104,11 +80,6 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         exact: true,
         render: props => <CodeIntelIndexConfigurationPage {...props} />,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-    },
-    {
-        path: '/index-schedule-configuration',
-        exact: true,
-        render: props => <CodeIntelIndexScheduleConfigurationPage {...props} />,
     },
 ]
 
@@ -140,10 +111,6 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
                 to: '/uploads',
                 label: 'Uploads',
             },
-            {
-                to: '/data-retention-configuration',
-                label: 'Configuration',
-            },
         ],
     },
     {
@@ -157,10 +124,6 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             {
                 to: '/index-configuration',
                 label: 'Configuration',
-            },
-            {
-                to: '/index-schedule-configuration',
-                label: 'Schedule configuration',
             },
         ],
     },

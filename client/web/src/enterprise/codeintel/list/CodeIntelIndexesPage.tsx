@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,6 +14,8 @@ import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 
 import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
+import { enqueueIndexJob } from '../configuration/backend'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -61,6 +63,12 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
+enum State {
+    Idle,
+    Queueing,
+    Queued,
+}
+
 export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
@@ -74,6 +82,27 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         (args: FilteredConnectionQueryArguments) => fetchLsifIndexes({ repository: repo?.id, ...args }),
         [repo?.id, fetchLsifIndexes]
     )
+
+    const [enqueueError, setEnqueueError] = useState<Error>()
+    const [state, setState] = useState(() => State.Idle)
+    const [revlike, setRevlike] = useState('HEAD')
+
+    const onClick = useCallback(async () => {
+        if (!repo) {
+            return
+        }
+
+        setState(State.Queueing)
+        setEnqueueError(undefined)
+
+        try {
+            await enqueueIndexJob(repo.id, revlike).toPromise()
+        } catch (error) {
+            setEnqueueError(error)
+        } finally {
+            setState(State.Queued)
+        }
+    }, [repo, revlike])
 
     return (
         <div className="code-intel-indexes">
@@ -92,6 +121,26 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 }
                 className="mb-3"
             />
+
+            {repo && (
+                <Container>
+                    {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
+
+                    <input type="text" value={revlike} onChange={event => setRevlike(event.target.value)} />
+
+                    <button
+                        type="button"
+                        title="Enqueue thing"
+                        disabled={state === State.Queueing}
+                        className="btn btn-sm btn-secondary"
+                        onClick={onClick}
+                    >
+                        Enqueue
+                    </button>
+
+                    {state === State.Queued && <div className="text-success">Index jobs enqueued</div>}
+                </Container>
+            )}
 
             <Container>
                 <div className="list-group position-relative">

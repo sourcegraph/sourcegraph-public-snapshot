@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,6 +14,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/Dynam
 import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
 import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from './CodeIntelAutoIndexSaveToolbar'
 import allConfigSchema from './schema.json'
+import { editor } from 'monaco-editor'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo: { id: string }
@@ -41,6 +42,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     const [configuration, setConfiguration] = useState('')
     const [inferredConfiguration, setInferredConfiguration] = useState('')
     const [dirty, setDirty] = useState<boolean>()
+    const [editor, setEditor] = useState<editor.ICodeEditor>()
 
     useEffect(() => {
         const subscription = getConfiguration({ id: repo.id }).subscribe(config => {
@@ -67,32 +69,27 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         [repo]
     )
 
-    const onInfer = useCallback(() => {
-        // TODO: not sure how to make this work: the monaco editor doesn't update, but pressing
-        // discard will set the value back to the "updated" value. Desired behavior would be for
-        // discard to go back to the original value, and the value of the editor be replaced by
-        // inferredConfiguration on button press. Couldn't get this to work previously with
-        // editor actions because it required a non-compile time value.
-        setConfiguration(inferredConfiguration)
-        setDirty(true)
-    }, [inferredConfiguration])
+    const onInfer = useCallback(() => editor?.setValue(inferredConfiguration), [editor, inferredConfiguration])
 
     const customToolbar: {
         propsGenerator: SaveToolbarPropsGenerator<AutoIndexProps>
         saveToolbar: React.FunctionComponent<SaveToolbarProps & AutoIndexProps>
-    } = {
-        propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
-            const mergedProps = {
-                ...props,
-                inferEnabled: configuration !== inferredConfiguration,
-                onInfer,
-            }
-            mergedProps.willShowError = (): boolean => !mergedProps.saving
-            mergedProps.saveDiscardDisabled = (): boolean => state === State.Saving || !dirty
-            return mergedProps
-        },
-        saveToolbar: CodeIntelAutoIndexSaveToolbar,
-    }
+    } = useMemo(
+        () => ({
+            propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
+                const mergedProps = {
+                    ...props,
+                    inferEnabled: inferredConfiguration !== '' && configuration !== inferredConfiguration,
+                    onInfer,
+                }
+                mergedProps.willShowError = (): boolean => !mergedProps.saving
+                mergedProps.saveDiscardDisabled = (): boolean => state === State.Saving || !dirty
+                return mergedProps
+            },
+            saveToolbar: CodeIntelAutoIndexSaveToolbar,
+        }),
+        [editor, dirty, inferredConfiguration, onInfer, state]
+    )
 
     return fetchError ? (
         <ErrorAlert prefix="Error fetching index configuration" error={fetchError} />
@@ -126,6 +123,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                     telemetryService={telemetryService}
                     customSaveToolbar={customToolbar}
                     onDirtyChange={setDirty}
+                    onEditor={setEditor}
                 />
             </Container>
         </div>
