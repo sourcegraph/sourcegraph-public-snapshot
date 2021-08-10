@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -88,6 +88,18 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
             setLastInActivePath(node.inActivePath)
         }
 
+        // If this node becomes the active one (the one being viewed), scroll this index (sidebar) node
+        // into view.
+        const nodeReference = React.useRef<HTMLDivElement>(null)
+        useEffect(() => {
+            if (node.isActive) {
+                nodeReference.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                });
+            }
+        }, [node.isActive])
+
         const excluded = isExcluded(node, props.excludingTags)
         if (excluded) {
             return null
@@ -105,7 +117,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         const styleAsActive = node.children.length === 0 && node.isActive
         const styleAsExpandable = !styleAsActive && depth !== 0 && node.children.length > 0
         return (
-            <div className={`documentation-index-node d-flex flex-column${depth !== 0 ? ' mt-2' : ''}`}>
+            <div className={`documentation-index-node d-flex flex-column${depth !== 0 ? ' mt-2' : ''}`} ref={nodeReference}>
                 <span
                     className={`d-flex align-items-center text-nowrap documentation-index-node-row${
                         styleAsActive || styleAsExpandable ? ' documentation-index-node-row--shift-left' : ''
