@@ -66,16 +66,6 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useBreadcrumb,
     ...props
 }) {
-    // TODO(slimsag): nightmare: there is _something_ in the props that causes this entire page to
-    // rerender whenever you type in the search bar. In fact, this also appears to happen on all other
-    // pages!
-    //
-    // 1. Navigate to https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/HEAD~40...HEAD?visible=45
-    // 2. Scroll to the bottom of this page twice and click "Show more"
-    // 3. Try typing in the search bar at the top of the page and the whole thing stutters a ton
-    //
-    // See https://sourcegraph.slack.com/archives/C01C3NCGD40/p1621485604017100
-    // and https://github.com/sourcegraph/sourcegraph/issues/21200
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
