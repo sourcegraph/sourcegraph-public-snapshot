@@ -55,10 +55,12 @@ const FormInput = forwardRef((props, reference) => {
 
     useEffect(() => {
         if (autoFocus) {
-            // In some cases if form input has been rendered within reach/popover element
+            // In some cases if form input has been rendered within reach/portal element
             // react autoFocus set focus too early and in this case we have to
             // call focus explicitly in the next tick to be sure that focus will be
-            // on input element.
+            // on input element. See reach/portal implementation and notice async way to
+            // render children in react portal component.
+            // https://github.com/reach/reach-ui/blob/0ae833201cf842fc00859612cfc6c30a593d593d/packages/portal/src/index.tsx#L45
             requestAnimationFrame(() => {
                 localReference.current?.focus()
             })
