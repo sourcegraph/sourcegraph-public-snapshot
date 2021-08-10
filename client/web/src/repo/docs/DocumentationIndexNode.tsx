@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -8,7 +8,10 @@ import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import { GQLDocumentationNode, isExcluded, Tag } from './graphql'
+import { setUser } from '@sentry/minimal'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields
@@ -55,14 +58,50 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
             return null
         }
     }
-    const isActive = node.pathID === activePathID
+
+    // Keep track of the expanded state the user has requested.
+    const [userExpanded, setUserExpanded] = useState(false)
+
+    // Keep track of the actual expanded state we will use.
+    const autoExpand = depth == 0 || (node.pathID == activePathID || hasDescendent(node, activePathID))
+    const [expanded, setExpanded] = useState(autoExpand)
+    const toggleExpanded = () => {
+        setUserExpanded(expanded => !expanded)
+        setExpanded(expanded => !expanded)
+    }
+
+    // If a new node has come into view, automatically expand - or if no longer in view, collapse.
+    const [lastActivePathID, setLastActivePathID] = useState(activePathID)
+    if (activePathID !== lastActivePathID) {
+        if (!userExpanded) {
+            setExpanded(autoExpand)
+        }
+        setLastActivePathID(activePathID)
+    }
+
+    const styleAsActive = node.children.length === 0 && node.pathID === activePathID
+    const styleAsExpandable = !styleAsActive && depth !== 0 && node.children.length > 0
     return (
-        <div className="documentation-index-node">
-            <Link id={'index-' + hash} to={thisPage} className={`text-nowrap documentation-index-node-link${isActive ? ' documentation-index-node-link--active' : ''}`}>
-                {isActive && <CircleMediumIcon className="icon-inline" />}
-                {node.label.value}
-            </Link>
-            <ul className="pl-3">
+        <div className={`documentation-index-node d-flex flex-column${depth !== 0 ? ' mt-2' : ''}`}>
+            <span className={`d-flex align-items-center text-nowrap documentation-index-node-row${styleAsActive || styleAsExpandable ? ' documentation-index-node-row--shift-left' : ''}`}>
+                {styleAsActive && <CircleMediumIcon className="d-flex flex-shrink-0 icon-inline" />}
+                {styleAsExpandable &&
+                    <button
+                        type="button"
+                        className='d-flex flex-shrink-0 btn btn-icon'
+                        aria-label={expanded ? 'Collapse section' : 'Expand section'}
+                        onClick={toggleExpanded}
+                    >
+                        {expanded ?
+                            <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                            :
+                            <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                        }
+                    </button>
+                }
+                <Link id={'index-' + hash} to={thisPage} className="pr-3">{node.label.value}</Link>
+            </span>
+            {expanded && <ul className="pl-3">
                 {node.children?.map(child =>
                     child.pathID ? null : (
                         <DocumentationIndexNode
@@ -74,7 +113,16 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                         />
                     )
                 )}
-            </ul>
+            </ul>}
         </div>
     )
 })
+
+function hasDescendent(node: GQLDocumentationNode, descendentPathID: string): boolean {
+    return !!node.children.find(child => {
+        if (child.pathID === descendentPathID || child.node?.pathID == descendentPathID) {
+            return true;
+        }
+        return child.node ? hasDescendent(child.node, descendentPathID) : false
+    })
+}

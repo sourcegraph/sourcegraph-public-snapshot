@@ -1,7 +1,7 @@
 .documentation-index-node {
-    &-link {
+    &-row {
         position: relative;
-        &--active {
+        &--shift-left {
             left: -1rem;
         }
     }
