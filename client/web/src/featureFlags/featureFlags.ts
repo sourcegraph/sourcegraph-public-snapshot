@@ -6,6 +6,8 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { FetchFeatureFlagsResult } from '../graphql-operations'
 
+// A union of all feature flags we currently have.
+// If there are no feature flags at the moment, this should be `never`.
 export type FeatureFlagName = 'search-notebook-onboarding'
 
 export type FlagSet = Map<FeatureFlagName, boolean>

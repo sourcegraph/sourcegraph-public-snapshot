@@ -13,7 +13,14 @@ import { HomepageModalVideo } from './HomepageModalVideo'
 import styles from './LoggedOutHomepage.module.scss'
 import { SignUpCta } from './SignUpCta'
 
-const exampleQueries = [
+interface SearchExample {
+    label: string
+    trackEventName: string
+    query: string
+    to: string
+}
+
+const exampleQueries: SearchExample[] = [
     {
         label: 'Search all of your repos, without escaping or regex',
         trackEventName: 'HomepageExampleRepoClicked',
@@ -36,7 +43,7 @@ const exampleQueries = [
     },
 ]
 
-const exampleNotebooks = [
+const exampleNotebooks: SearchExample[] = [
     {
         label: 'Find and reference code across all of your repositories',
         trackEventName: 'HomepageNotebookRepoClicked',
@@ -59,13 +66,6 @@ const exampleNotebooks = [
 ]
 
 export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
-
-interface SearchExample {
-    label: string
-    trackEventName: string
-    query: string
-    to: string
-}
 
 interface SearchExamplesProps extends TelemetryProps {
     title: string
