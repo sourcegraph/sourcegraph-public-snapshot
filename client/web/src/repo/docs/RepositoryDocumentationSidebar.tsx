@@ -1,7 +1,7 @@
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Button } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -127,7 +127,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
             </button>
         )
     }
-    const excludingTags: Tag[] = ['private']
+    const excludingTags: Tag[] = useMemo(() => ['private'], [])
 
     return (
         <Resizable
