@@ -15,7 +15,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, useDebounce } from '@sourcegraph/wildcard'
 
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -115,7 +115,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     const loading = page === LOADING || pathInfo === LOADING
     const error = isErrorLike(page) ? page : isErrorLike(pathInfo) ? pathInfo : null
 
-    const excludingTags: Tag[] = ['private']
+    const excludingTags: Tag[] = useMemo(() => ['private'], [])
 
     const containerReference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
 
@@ -123,19 +123,31 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     // them based on position so we can determine the top-most header that is visible on the page
     // and update the active node - which is used for various visual effects.
     const [activePathID, setActivePathID] = useState<string | null>(null)
-    let visiblePathIDs: { top: number; pathID: string }[] = []
-    const onVisibilityChange = (visible: boolean, node: GQLDocumentationNode, top: number): void => {
-        if (!visible) {
-            visiblePathIDs = visiblePathIDs.filter(pair => pair.pathID !== node.pathID)
-        } else {
-            visiblePathIDs.push({ top, pathID: node.pathID })
-        }
-        visiblePathIDs.sort((a, b) => (a.top < b.top ? -1 : 1))
-        if (visiblePathIDs.length > 0 && activePathID !== visiblePathIDs[0].pathID) {
-            setActivePathID(() => visiblePathIDs[0].pathID)
-        }
-    }
 
+    const [_, setVisiblePathIDs] = useState<{ top: number; pathID: string }[]>([]);
+    const onVisibilityChange = React.useMemo(() =>
+        (visible: boolean, node: GQLDocumentationNode, top: number): void => {
+            setVisiblePathIDs(visiblePathIDs => {
+                let updated = visiblePathIDs;
+                if (!visible) {
+                    updated = updated.filter(pair => pair.pathID !== node.pathID)
+                } else {
+                    updated.push({ top, pathID: node.pathID })
+                    updated.sort((a, b) => (a.top < b.top ? -1 : 1))
+                }
+                if (updated.length > 0) {
+                    setActivePathID(() => updated[0].pathID)
+                }
+                return updated;
+            })
+        },
+        [setVisiblePathIDs, setActivePathID],
+    )
+
+    const currentScrollTop = React.useMemo(() =>
+        () => containerReference?.current?.scrollTop || 0,
+        [containerReference],
+    )
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
@@ -231,9 +243,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 depth={0}
                                 isFirstChild={true}
                                 excludingTags={excludingTags}
-                                currentScrollTop={() =>
-                                    containerReference?.current?.scrollTop || 0
-                                }
+                                currentScrollTop={currentScrollTop}
                                 onVisibilityChange={onVisibilityChange}
                             />
                         </div>
