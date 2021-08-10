@@ -127,6 +127,17 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
             }
         }
 
+        // We do make use of useScrollToLocationHash for navigating to the clicked sidebar node,
+        // but the speed at which a browser URL change occurs, triggers a rerender and can be
+        // picked up by useScrollToLocationHash is noticeably slow. To workaround this, we manually
+        // scroll the element into view as soon as the link is clicked.
+        const scrollToFast = () => {
+            const element = document.getElementById(hash)
+            if (element) {
+                element.scrollIntoView();
+            }
+        }
+
         const styleAsActive = node.children.length === 0 && node.isActive
         const styleAsExpandable = !styleAsActive && depth !== 0 && node.children.length > 0
         return (
@@ -151,7 +162,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                             )}
                         </button>
                     )}
-                    <Link id={'index-' + hash} to={thisPage} className="pr-3">
+                    <Link id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">
                         {node.label.value}
                     </Link>
                 </span>
