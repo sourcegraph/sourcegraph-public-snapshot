@@ -27,6 +27,7 @@ interface PostSignUpPage {
     context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
     onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
+    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 interface Step {
@@ -45,6 +46,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     context,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
+    setSelectedSearchContextSpec,
 }) => {
     const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useLocalStorage(USER_FINISHED_WELCOME_FLOW, false)
     const isOAuthCall = useRef(false)
@@ -162,6 +164,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 onUserExternalServicesOrRepositoriesUpdate={
                                                     onUserExternalServicesOrRepositoriesUpdate
                                                 }
+                                                setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
                                             />
                                         </StepPanel>

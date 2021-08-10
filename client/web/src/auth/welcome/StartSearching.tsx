@@ -17,6 +17,7 @@ interface StartSearching {
     user: AuthenticatedUser
     repoSelectionMode: RepoSelectionMode
     onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
+    setSelectedSearchContextSpec: (spec: string) => void
     onError: (error: ErrorLike) => void
 }
 
@@ -46,6 +47,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     user,
     repoSelectionMode,
     onUserExternalServicesOrRepositoriesUpdate,
+    setSelectedSearchContextSpec,
     onError,
 }) => {
     const { externalServices, errorServices, loadingServices } = useExternalServices(user.id)
@@ -97,13 +99,22 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                     },
                 })
                     .then(() => {
-                        // update the search context
+                        // update the external services and the search context
                         onUserExternalServicesOrRepositoriesUpdate(externalServices.length, selectedRepos.length)
+                        setSelectedSearchContextSpec(`@${user.username}`)
                     })
                     .catch(onError)
             }
         }
-    }, [externalServices, saveSelectedRepos, repoSelectionMode, onUserExternalServicesOrRepositoriesUpdate, onError])
+    }, [
+        externalServices,
+        saveSelectedRepos,
+        repoSelectionMode,
+        onUserExternalServicesOrRepositoriesUpdate,
+        onError,
+        setSelectedSearchContextSpec,
+        user.username,
+    ])
 
     const { showAlert } = useShowAlert(isDoneCloning, fetchError)
     const { currentIndex, setComplete } = useSteps()
