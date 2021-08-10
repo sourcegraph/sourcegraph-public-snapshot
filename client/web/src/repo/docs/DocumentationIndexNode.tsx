@@ -80,12 +80,18 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         }
 
         // If a new node has come into view, automatically expand - or if no longer in view, collapse.
+        const numChildren = node.children.length;
         useEffect(() => {
             // If the user explicitly expanded, respect them and don't collapse.
             if (!userExpanded) {
-                setExpanded(autoExpand)
+                // Don't collapse an area we previously expanded unless there are a large number of
+                // children in it, otherwise all the expanding/collapsing is a lot of moving and
+                // too jarring.
+                if (autoExpand || (!autoExpand && numChildren > 30)) {
+                    setExpanded(autoExpand)
+                }
             }
-        }, [autoExpand])
+        }, [autoExpand, numChildren])
 
         // If this node becomes the active one (the one being viewed), scroll this index (sidebar) node
         // into view.
