@@ -40,9 +40,12 @@ type Syncer struct {
 	// Registerer is the interface to register / unregister prometheus metrics.
 	Registerer prometheus.Registerer
 
-	// PermsSyncer is the embedded interface to schedule permissions syncing without directly having
-	// access to the permissions syncer client.
+	// PermsSyncer is the interface that lets the syncer schedule permissions syncing without
+	// directly having access to the permissions syncer client.
 	PermsSyncer interface {
+		// ScheduleRepos will schedule a repository permissions sync. PermsSyncer can be nil so
+		// callers of syncer.PermsSyncer.ScheduleRepos must ensure to check if the interface is nil
+		// before invoking the method.
 		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
 
@@ -434,8 +437,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		return Diff{}, errors.Wrap(err, "syncer: getting repo from the database")
 	}
 
-	repoState := len(stored)
-	switch repoState {
+	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
 		// name when we source it from the same code host, and it will be re-created.
@@ -500,26 +502,27 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	}
 
 	// PermsSyncer is available in enterprise mode only.
-	if s.PermsSyncer != nil {
-		switch repoState {
-		case 0: // New repo was created.
-			if sourced.Private {
-				s.PermsSyncer.ScheduleRepos(ctx, sourced.ID)
-			}
-		default:
-			// Other possible values for repoState are 1 and 2. Anything else is an impossible
-			// state. And in the off chance that any other value is encountered, the switch-case on
-			// repoState above will already panic and the code will never reach this step.
+	if s.PermsSyncer == nil {
+		return d, nil
+	}
 
-			// If an existing repo was public and was now updated to private, we want to trigger a
-			// repo permissions sync.
-			//
-			// We do not need to check if an existing private repo was made public because public
-			// repos are on the quick path of authz checks and will be skipped even if we enqueue it
-			// for permissions syncing.
-			if !stored[0].Private && sourced.Private {
-				s.PermsSyncer.ScheduleRepos(ctx, stored[0].ID)
-			}
+	// We expect the length of d.Added to be either 0 or 1. Ranging over it is simpler.
+	for _, r := range d.Added {
+		if r.Private {
+			s.PermsSyncer.ScheduleRepos(ctx, r.ID)
+		}
+	}
+
+	// We expect the length of d.Modified to be either 0 or 1. Ranging over it is simpler.
+	for _, r := range d.Modified {
+		// If the modified repo is private but was public before the update, schedule a repository
+		// permissions sync.
+		//
+		// We do not need to check if an existing private repo was made public because public repos
+		// are on the quick path of authz checks and will be skipped even if we enqueue it for
+		// permissions syncing.
+		if r.Private && !stored[0].Private {
+			s.PermsSyncer.ScheduleRepos(ctx, r.ID)
 		}
 	}
 

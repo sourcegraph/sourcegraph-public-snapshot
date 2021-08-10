@@ -238,9 +238,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	if server.PermsSyncer != nil {
-		syncer.PermsSyncer = server.PermsSyncer
-	}
+	syncer.PermsSyncer = server.PermsSyncer
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
