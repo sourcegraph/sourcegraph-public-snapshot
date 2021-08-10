@@ -39,8 +39,8 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
-    const localReference = useRef<HTMLDivElement>(null)
-    const [isFiltersOpen, setFiltersOpen] = useState(false)
+    const insightCardReference = useRef<HTMLDivElement>(null)
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
 
     // Currently we support only regexp filters so extract them in a separate object
@@ -74,16 +74,16 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             hasContextMenu={true}
             actions={
                 <DrillDownFiltersAction
-                    open={isFiltersOpen}
-                    targetRef={localReference}
+                    isOpen={isFiltersOpen}
+                    popoverTargetRef={insightCardReference}
                     filters={filters}
                     onFilterChange={handleDrillDownFiltersChange}
-                    onVisibilityChange={setFiltersOpen}
+                    onVisibilityChange={setIsFiltersOpen}
                 />
             }
             telemetryService={telemetryService}
             onDelete={handleDelete}
-            innerRef={localReference}
+            innerRef={insightCardReference}
             {...otherProps}
             className={classnames('be-insight-card', otherProps.className, {
                 [styles.cardWithFilters]: isFiltersOpen,

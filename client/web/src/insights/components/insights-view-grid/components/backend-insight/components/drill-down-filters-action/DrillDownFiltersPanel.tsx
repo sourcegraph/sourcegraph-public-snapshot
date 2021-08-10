@@ -24,21 +24,21 @@ const hasActiveFilters = (filters: DrillDownFilters): boolean => {
 }
 
 interface DrillDownFiltersProps {
-    open: boolean
+    isOpen: boolean
     filters: DrillDownFilters
-    targetRef: React.RefObject<HTMLElement>
+    popoverTargetRef: React.RefObject<HTMLElement>
     onFilterChange: (filters: DrillDownFilters) => void
     onVisibilityChange: (open: boolean) => void
 }
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { open, targetRef, filters, onFilterChange, onVisibilityChange } = props
+    const { isOpen, popoverTargetRef, filters, onFilterChange, onVisibilityChange } = props
 
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     const popoverReference = useRef<HTMLDivElement>(null)
 
     const handleTargetClick = (): void => {
-        onVisibilityChange(!open)
+        onVisibilityChange(!isOpen)
     }
 
     const handleClickOutside = useCallback(
@@ -87,10 +87,10 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 <FilterOutlineIcon size="1rem" />
             </button>
 
-            {open && (
+            {isOpen && (
                 <Popover
                     ref={popoverReference}
-                    targetRef={targetRef}
+                    targetRef={popoverTargetRef}
                     position={flipRightPosition}
                     className={classnames('dropdown-menu', styles.popover)}
                     // To prevent grid layout position change animation. Attempts to drag

@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, ReactNode, useEffect } from 'react'
+import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode, useEffect } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
@@ -50,13 +50,15 @@ const FormInput = forwardRef((props, reference) => {
         ...otherProps
     } = props
 
-    const localReference = React.useRef<HTMLInputElement>(null)
+    const localReference = useRef<HTMLInputElement>(null)
     const mergedReference = useMergeRefs([localReference, reference])
 
     useEffect(() => {
-        if (localReference.current && autoFocus) {
-            // In some cases if form input is rendered within popover element
-            // we have to call focus explicitly in the next tick.
+        if (autoFocus) {
+            // In some cases if form input has been rendered within reach/popover element
+            // react autoFocus set focus too early and in this case we have to
+            // call focus explicitly in the next tick to be sure that focus will be
+            // on input element.
             requestAnimationFrame(() => {
                 localReference.current?.focus()
             })
