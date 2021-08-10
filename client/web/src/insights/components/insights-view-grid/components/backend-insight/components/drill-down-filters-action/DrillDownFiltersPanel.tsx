@@ -1,7 +1,7 @@
 import Popover from '@reach/popover'
 import classnames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { useCallback, useRef, MouseEvent } from 'react'
+import React, { useCallback, useRef } from 'react'
 import FocusLock from 'react-focus-lock'
 
 import { flipRightPosition } from '../../../../../context-menu/utils'
@@ -37,9 +37,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     const popoverReference = useRef<HTMLDivElement>(null)
 
-    const handleTargetClick = (event: MouseEvent<HTMLButtonElement>): void => {
-        event.stopPropagation()
-
+    const handleTargetClick = (): void => {
         onVisibilityChange(!open)
     }
 
@@ -81,6 +79,9 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
                     [styles.filterButtonActive]: hasActiveFilters(filters),
                 })}
+                // To prevent grid layout position change animation. Attempts to drag
+                // the filter panel should not trigger react-grid-layout events.
+                onMouseDown={event => event.stopPropagation()}
                 onClick={handleTargetClick}
             >
                 <FilterOutlineIcon size="1rem" />
@@ -92,6 +93,9 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                     targetRef={targetRef}
                     position={flipRightPosition}
                     className={classnames('dropdown-menu', styles.popover)}
+                    // To prevent grid layout position change animation. Attempts to drag
+                    // the filter panel should not trigger react-grid-layout events.
+                    onMouseDown={event => event.stopPropagation()}
                 >
                     <FocusLock returnFocus={true}>
                         <DrillDownFiltersPanel
