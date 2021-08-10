@@ -71,18 +71,13 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	running.Inc()
 	defer running.Dec()
 
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, "failed to parse form: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	var p protocol.Request
-	err = decoder.Decode(&p, r.Form)
-	if err != nil {
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&p); err != nil {
 		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	if p.Deadline != "" {
 		var deadline time.Time
 		if err := deadline.UnmarshalText([]byte(p.Deadline)); err != nil {
@@ -98,7 +93,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// search file content in that case.
 		p.PatternMatchesContent = true
 	}
-	if err = validateParams(&p); err != nil {
+	if err := validateParams(&p); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
