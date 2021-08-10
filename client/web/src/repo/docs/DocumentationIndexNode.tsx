@@ -99,7 +99,11 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         useEffect(() => {
             if (node.isActive) {
                 if (depth === 0) {
-                    if (nodeReference.current) { nodeReference.current.scrollTop = 0 }
+                    setTimeout(() => {
+                        if (nodeReference.current?.parentElement) {
+                            nodeReference.current.parentElement.scrollTo({top: 0, behavior: 'smooth'})
+                        }
+                    }, 250)
                 } else {
                     nodeReference.current?.scrollIntoView({
                         behavior: 'smooth',
