@@ -135,12 +135,12 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     const [activePathID, setActivePathID] = useState<string | null>(null)
     let visiblePathIDs: { top: number; pathID: string }[] = []
     const onVisibilityChange = (visible: boolean, node: GQLDocumentationNode, top: number): void => {
-        if (!visible || top < 0) {
+        if (!visible) {
             visiblePathIDs = visiblePathIDs.filter(pair => pair.pathID !== node.pathID)
         } else {
             visiblePathIDs.push({ top, pathID: node.pathID })
-            visiblePathIDs.sort((a, b) => (a.top < b.top ? -1 : 1))
         }
+        visiblePathIDs.sort((a, b) => (a.top < b.top ? -1 : 1))
         if (visiblePathIDs.length > 0 && activePathID !== visiblePathIDs[0].pathID) {
             setActivePathID(() => visiblePathIDs[0].pathID)
         }
