@@ -41,7 +41,7 @@ func Search(
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
 	indexerEndpoints []string,
-	cb func([]*protocol.FileMatch),
+	onMatches func([]*protocol.FileMatch),
 ) (matches []*protocol.FileMatch, limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, commit, p, fetchTimeout)
@@ -97,7 +97,7 @@ func Search(
 	if p.IsNegated {
 		q.Set("IsNegated", "true")
 	}
-	if cb != nil {
+	if onMatches != nil {
 		q.Set("Stream", "true")
 	}
 	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
@@ -137,8 +137,8 @@ func Search(
 
 		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
-		if cb != nil {
-			limitHit, err = textSearchURLStream(ctx, url, cb)
+		if onMatches != nil {
+			limitHit, err = textSearchURLStream(ctx, url, onMatches)
 			if err == nil || errcode.IsTimeout(err) {
 				return nil, limitHit, err
 			}
@@ -187,7 +187,7 @@ func textSearchURLStream(ctx context.Context, url string, cb func([]*protocol.Fi
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}
-		return false, errors.Wrap(err, "searcher request failed")
+		return false, errors.Wrap(err, "streaming searcher request failed")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
