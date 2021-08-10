@@ -1,15 +1,14 @@
-import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import React, { Fragment, useCallback, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
+import { Action, DropdownButton } from '../../DropdownButton'
 import { queryAllChangesetIDs } from '../backend'
 
-import styles from './ChangesetSelectRow.module.scss'
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
@@ -20,15 +19,7 @@ import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
 /**
  * Describes a possible action on the changeset list.
  */
-interface ChangesetListAction {
-    /* The type of action. Used internally. */
-    type: string
-    /* The button label for the action. */
-    buttonLabel: string
-    /* The title in the dropdown menu item. */
-    dropdownTitle: string
-    /* The description in the dropdown menu item. */
-    dropdownDescription: string
+interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
     /* Conditionally display the action based on the given query arguments. */
     isAvailable: (queryArguments: Omit<AllChangesetIDsVariables, 'after'>) => boolean
     /**
@@ -41,7 +32,6 @@ interface ChangesetListAction {
         onDone: () => void,
         onCancel: () => void
     ) => void | JSX.Element
-    experimental?: boolean
 }
 
 const AVAILABLE_ACTIONS: ChangesetListAction[] = [
@@ -174,67 +164,45 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     queryArguments,
     dropDownInitiallyOpen = false,
 }) => {
-    const actions = useMemo(() => AVAILABLE_ACTIONS.filter(action => action.isAvailable(queryArguments)), [
-        queryArguments,
-    ])
-    /* Whether the dropdown menu is expanded. */
-    const [isOpen, setIsOpen] = useState<boolean>(dropDownInitiallyOpen)
-    /* Toggle the dropdown menu */
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
-    const [selectedAction, setSelectedAction] = useState<ChangesetListAction | undefined>(() => {
-        // If there's only one available action, default select that one.
-        if (actions.length === 1) {
-            return actions[0]
-        }
-        return undefined
-    })
-    const onSelectedTypeSelect = useCallback(
-        (type: string) => {
-            setSelectedAction(actions.find(action => action.type === type))
-            setIsOpen(false)
-        },
-        [actions]
-    )
-    const [renderedElement, setRenderedElement] = useState<JSX.Element | undefined>()
-    const onTriggerAction = useCallback(() => {
-        if (!selectedAction) {
-            return
-        }
-        // Depending on the selection, we need to construct a loader function for
-        // the changeset IDs.
-        let ids: () => Promise<Scalars['ID'][]>
-        if (allSelected) {
-            // We asynchronously fetch all the IDs for ALL all.
-            ids = () => queryAllChangesetIDs(queryArguments).toPromise()
-        } else {
-            // We can just pass down the IDs.
-            ids = () => Promise.resolve([...selected])
-        }
-        const element = selectedAction.onTrigger(
-            batchChangeID,
-            ids,
-            onSubmit,
-            // On cancel hide the rendered element.
-            () => {
-                setRenderedElement(undefined)
-            }
-        )
-        if (element !== undefined) {
-            setRenderedElement(element)
-        }
-    }, [allSelected, batchChangeID, onSubmit, queryArguments, selected, selectedAction])
+    const actions = useMemo(
+        () =>
+            AVAILABLE_ACTIONS.filter(action => action.isAvailable(queryArguments)).map(action => {
+                const dropdownAction: Action = {
+                    ...action,
+                    onTrigger: (onDone, onCancel) => {
+                        // Depending on the selection, we need to construct a loader function for
+                        // the changeset IDs.
+                        let ids: () => Promise<Scalars['ID'][]>
+                        if (allSelected) {
+                            // We asynchronously fetch all the IDs for ALL all.
+                            ids = () => queryAllChangesetIDs(queryArguments).toPromise()
+                        } else {
+                            // We can just pass down the IDs.
+                            ids = () => Promise.resolve([...selected])
+                        }
 
-    let buttonLabel = selectedAction === undefined ? 'Select action' : selectedAction.buttonLabel
-    if (selectedAction?.experimental) {
-        buttonLabel += ' (Experimental)'
-    }
+                        return action.onTrigger(
+                            batchChangeID,
+                            ids,
+                            () => {
+                                onSubmit()
+                                onDone()
+                            },
+                            onCancel
+                        )
+                    },
+                }
+
+                return dropdownAction
+            }),
+        [allSelected, batchChangeID, onSubmit, queryArguments, selected]
+    )
 
     // If we have ALL all selected, we take the totalCount in the current connection, otherwise the count of selected changeset IDs.
     const selectedAmount = allSelected ? totalCount : selected.size
 
     return (
         <>
-            {renderedElement}
             <div className="row align-items-center no-gutters">
                 <div className="ml-2 col d-flex align-items-center">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
@@ -249,77 +217,16 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col my-2 ml-0 ml-sm-2">
-                            <div className="btn-group">
-                                <button
-                                    type="button"
-                                    className="btn btn-primary text-nowrap"
-                                    onClick={onTriggerAction}
-                                    disabled={selected.size === 0 || selectedAction === undefined}
-                                >
-                                    {buttonLabel}
-                                </button>
-                                {actions.length > 1 && (
-                                    <>
-                                        <button
-                                            type="button"
-                                            onClick={toggleIsOpen}
-                                            className="btn btn-primary dropdown-toggle dropdown-toggle-split"
-                                        />
-                                        <div
-                                            className={classNames(
-                                                styles.changesetSelectRowDropdownItem,
-                                                'dropdown-menu dropdown-menu-right',
-                                                isOpen && 'show'
-                                            )}
-                                        >
-                                            {actions.map((action, index) => (
-                                                <Fragment key={action.type}>
-                                                    <ActionDropdownItem
-                                                        action={action}
-                                                        setSelectedType={onSelectedTypeSelect}
-                                                    />
-                                                    {index !== actions.length - 1 && (
-                                                        <div className="dropdown-divider" />
-                                                    )}
-                                                </Fragment>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                            <DropdownButton
+                                actions={actions}
+                                dropdownMenuPosition="right"
+                                initiallyOpen={dropDownInitiallyOpen}
+                                placeholder="Select action"
+                            />
                         </div>
                     </div>
                 </div>
             </div>
         </>
-    )
-}
-
-interface ActionDropdownItemProps {
-    setSelectedType: (type: string) => void
-    action: ChangesetListAction
-}
-
-const ActionDropdownItem: React.FunctionComponent<ActionDropdownItemProps> = ({ action, setSelectedType }) => {
-    const onClick = useCallback<React.MouseEventHandler>(() => {
-        setSelectedType(action.type)
-    }, [setSelectedType, action.type])
-    return (
-        <div className="dropdown-item">
-            <button type="button" className="btn text-left" onClick={onClick}>
-                <h4 className="mb-1">
-                    {action.dropdownTitle}
-                    {action.experimental && (
-                        <>
-                            {' '}
-                            <small className="badge badge-info">Experimental</small>
-                        </>
-                    )}
-                </h4>
-                <p className="text-wrap text-muted mb-0">
-                    <small>{action.dropdownDescription}</small>
-                </p>
-            </button>
-        </div>
     )
 }
