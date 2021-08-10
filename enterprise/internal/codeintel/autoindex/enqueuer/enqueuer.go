@@ -182,6 +182,7 @@ func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, comm
 		err = tx.Done(err)
 	}()
 
+	ids := make([]int, 0, len(indexes))
 	for _, index := range indexes {
 		id, err := tx.InsertIndex(ctx, index)
 		if err != nil {
@@ -194,10 +195,16 @@ func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, comm
 			"repository_id", repositoryID,
 			"commit", commit,
 		)
+
+		ids = append(ids, id)
 	}
 
-	// TODO - actually return/rehydrate these things
-	return nil, nil
+	hydratedIndexes, err := tx.GetIndexesByIDs(ctx, ids...)
+	if err != nil {
+		return nil, errors.Wrap(err, "dbstore.GetIndexesByIDs")
+	}
+
+	return hydratedIndexes, err
 }
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.

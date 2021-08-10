@@ -14,6 +14,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/Dynam
 import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
 import allConfigSchema from './schema.json'
 import { editor } from 'monaco-editor'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo: { id: string }
@@ -30,8 +31,8 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexConfigurationPage'), [telemetryService])
 
-    const [configuration, setConfiguration] = useState('')
-    const [inferredConfiguration, setInferredConfiguration] = useState('')
+    const [configuration, setConfiguration] = useState<string>()
+    const [inferredConfiguration, setInferredConfiguration] = useState<string>()
     const [fetchError, setFetchError] = useState<Error>()
 
     useEffect(() => {
@@ -58,8 +59,8 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
             try {
                 await updateConfiguration({ id: repo.id, content }).toPromise()
-                setConfiguration(content)
                 setDirty(false)
+                setConfiguration(content)
             } catch (error) {
                 setSaveError(error)
             } finally {
@@ -71,7 +72,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
     const [dirty, setDirty] = useState<boolean>()
     const [editor, setEditor] = useState<editor.ICodeEditor>()
-    const infer = useCallback(() => editor?.setValue(inferredConfiguration), [editor, inferredConfiguration])
+    const infer = useCallback(() => editor?.setValue(inferredConfiguration || ''), [editor, inferredConfiguration])
 
     const customToolbar = useMemo<{
         saveToolbar: React.FunctionComponent<SaveToolbarProps & AutoIndexProps>
@@ -83,7 +84,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                 const mergedProps = {
                     ...props,
                     onInfer: infer,
-                    inferEnabled: inferredConfiguration !== '' && configuration !== inferredConfiguration,
+                    inferEnabled: !!inferredConfiguration && configuration !== inferredConfiguration,
                 }
                 mergedProps.willShowError = () => !mergedProps.saving
                 mergedProps.saveDiscardDisabled = () => mergedProps.saving || !dirty
@@ -112,22 +113,26 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
             />
 
             <Container>
-                {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} />}
-
-                <DynamicallyImportedMonacoSettingsEditor
-                    value={configuration}
-                    jsonSchema={allConfigSchema}
-                    canEdit={true}
-                    onSave={save}
-                    saving={state === State.Saving}
-                    height={600}
-                    isLightTheme={isLightTheme}
-                    history={history}
-                    telemetryService={telemetryService}
-                    customSaveToolbar={customToolbar}
-                    onDirtyChange={setDirty}
-                    onEditor={setEditor}
-                />
+                {saveError ? (
+                    <ErrorAlert prefix="Error saving index configuration" error={saveError} />
+                ) : configuration === undefined ? (
+                    <LoadingSpinner className="icon-inline" />
+                ) : (
+                    <DynamicallyImportedMonacoSettingsEditor
+                        value={configuration}
+                        jsonSchema={allConfigSchema}
+                        canEdit={true}
+                        onSave={save}
+                        saving={state === State.Saving}
+                        height={600}
+                        isLightTheme={isLightTheme}
+                        history={history}
+                        telemetryService={telemetryService}
+                        customSaveToolbar={customToolbar}
+                        onDirtyChange={setDirty}
+                        onEditor={setEditor}
+                    />
+                )}
             </Container>
         </div>
     )

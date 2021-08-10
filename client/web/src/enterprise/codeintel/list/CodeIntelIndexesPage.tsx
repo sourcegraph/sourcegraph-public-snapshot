@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,6 +16,8 @@ import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 import { enqueueIndexJob } from './backend'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import { Observable, of, Subject } from 'rxjs'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -67,6 +69,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
     now,
+    history,
     telemetryService,
     ...props
 }) => {
@@ -86,8 +89,10 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     const [enqueueError, setEnqueueError] = useState<Error>()
     const [state, setState] = useState(() => State.Idle)
     const [revlike, setRevlike] = useState('HEAD')
+    const [queueResult, setQueueResult] = useState<number>()
+    const querySubject = useMemo(() => new Subject<string>(), [])
 
-    const onClick = useCallback(async () => {
+    const enqueue = useCallback(async () => {
         if (!repo) {
             return
         }
@@ -96,9 +101,14 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         setEnqueueError(undefined)
 
         try {
-            await enqueueIndexJob(repo.id, revlike).toPromise()
+            const indexes = await enqueueIndexJob(repo.id, revlike).toPromise()
+            setQueueResult(indexes.length)
+            if (indexes.length > 0) {
+                querySubject.next(indexes[0].inputCommit)
+            }
         } catch (error) {
             setEnqueueError(error)
+            setQueueResult(undefined)
         } finally {
             setState(State.Queued)
         }
@@ -134,12 +144,14 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                             title="Enqueue thing"
                             disabled={state === State.Queueing}
                             className="btn btn-sm btn-secondary"
-                            onClick={onClick}
+                            onClick={enqueue}
                         >
                             Enqueue
                         </button>
 
-                        {state === State.Queued && <div className="text-success">Index jobs enqueued</div>}
+                        {state === State.Queued && queueResult !== undefined && (
+                            <div className="text-success">{queueResult} index jobs enqueued.</div>
+                        )}
                     </div>
                 )}
 
@@ -149,10 +161,11 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         listClassName="codeintel-indexes__grid mb-3"
                         noun="index"
                         pluralNoun="indexes"
+                        querySubject={querySubject}
                         nodeComponent={CodeIntelIndexNode}
                         nodeComponentProps={{ now }}
                         queryConnection={queryIndexes}
-                        history={props.history}
+                        history={history}
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
