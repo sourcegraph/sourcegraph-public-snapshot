@@ -5,4 +5,10 @@
             left: -1.25rem;
         }
     }
+    &-expand-button {
+        color: var(--gray-06);
+    }
+    &-active-circle {
+        color: var(--purple);
+    }
 }
