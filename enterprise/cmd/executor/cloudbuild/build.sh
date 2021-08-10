@@ -73,7 +73,11 @@ function install_ignite() {
 
 ## Install and configure executor service
 function install_executor() {
-  local SERVICE_CONFIGURATION = <<EOF
+  # Move binary into PATH
+  mv /tmp/executor /usr/local/bin
+
+  # Create configuration file and stub environment file
+  cat <<EOF >/etc/systemd/system/executor.service
 [Unit]
 Description=User code executor
 
@@ -88,12 +92,6 @@ Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 [Install]
 WantedBy=multi-user.target
 EOF
-
-  # Move binary into PATH
-  mv /tmp/executor /usr/local/bin
-
-  # Create configuration fiel and stub environment file
-  echo "${SERVICE_CONFIGURATION}" >>/etc/systemd/system/executor.service
   echo 'THIS_ENV_IS="unconfigured"' >>/etc/systemd/system/executor.env
 }
 
