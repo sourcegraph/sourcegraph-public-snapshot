@@ -25,7 +25,7 @@ Sourcegraph uses a configurable internal rate limiter for API requests made from
 
 ## Repo Updater State
 
-> NOTE: [Instrumentation](https://docs.sourcegraph.com/admin/faq#i-am-getting-error-cluster-information-not-available-in-the-instrumentation-page-what-should-i-do) (where Repo Updater State resides) is only available for Kubernetes instances.
+> NOTE: [Instrumentation](../../admin/faq.md#i-am-getting-error-cluster-information-not-available-in-the-instrumentation-page-what-should-i-do) (where Repo Updater State resides) is only available for Kubernetes instances.
 
 **Repo Updater State** is a useful debugging tool for site admins to monitor:
 
@@ -34,4 +34,3 @@ Sourcegraph uses a configurable internal rate limiter for API requests made from
 - **Sync jobs**: The current list of external service sync jobs, ordered by start date descending
 
 Site admin: Go to **Site admin > Instrumentation (under Maintenance) > repo-updater > Repo Updater State**
-
