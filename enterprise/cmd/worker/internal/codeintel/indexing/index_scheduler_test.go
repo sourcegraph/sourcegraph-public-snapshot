@@ -44,11 +44,11 @@ func TestIndexSchedulerUpdate(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(indexEnqueuer.QueueIndexesForRepositoryFunc.History()) != 6 {
-		t.Errorf("unexpected number of calls to QueueIndexesForRepository. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForRepositoryFunc.History()))
+	if len(indexEnqueuer.QueueIndexesFunc.History()) != 6 {
+		t.Errorf("unexpected number of calls to QueueIndexes. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesFunc.History()))
 	} else {
 		var repositoryIDs []int
-		for _, call := range indexEnqueuer.QueueIndexesForRepositoryFunc.History() {
+		for _, call := range indexEnqueuer.QueueIndexesFunc.History() {
 			repositoryIDs = append(repositoryIDs, call.Arg1)
 		}
 		sort.Ints(repositoryIDs)
@@ -92,7 +92,7 @@ func TestDisabledAutoindexConfiguration(t *testing.T) {
 	}
 
 	var repositoryIDs []int
-	for _, call := range indexEnqueuer.QueueIndexesForRepositoryFunc.History() {
+	for _, call := range indexEnqueuer.QueueIndexesFunc.History() {
 		repositoryIDs = append(repositoryIDs, call.Arg1)
 	}
 	sort.Ints(repositoryIDs)

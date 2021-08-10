@@ -241,7 +241,7 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeInte
 	return r.resolver.CommitGraph(ctx, int(repositoryID))
 }
 
-func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, args *gql.QueueAutoIndexJobForRepoArgs) (*gql.EmptyResponse, error) {
+func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.QueueAutoIndexJobsForRepoArgs) ([]gql.LSIFIndexResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
@@ -251,7 +251,30 @@ func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, args *gql.Queue
 		return nil, err
 	}
 
-	return &gql.EmptyResponse{}, r.resolver.QueueAutoIndexJobForRepo(ctx, int(repositoryID), args.Rev)
+	rev := "HEAD"
+	if args.Rev != nil {
+		rev = *args.Rev
+	}
+
+	configuration := ""
+	if args.Configuration != nil {
+		configuration = *args.Configuration
+	}
+
+	indexes, err := r.resolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new prefetcher here as we only want to cache upload and index records in
+	// the same graphQL request, not across different request.
+	prefetcher := NewPrefetcher(r.resolver)
+
+	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
+	for i := range indexes {
+		resolvers = append(resolvers, NewIndexResolver(indexes[i], prefetcher, r.locationResolver))
+	}
+	return resolvers, nil
 }
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {

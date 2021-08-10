@@ -95,7 +95,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	var queueErr error
 	for _, repositoryID := range repositoryIDs {
-		if err := s.indexEnqueuer.QueueIndexesForRepository(ctx, repositoryID); err != nil {
+		if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, "HEAD", "", false); err != nil {
 			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 				continue
 			}

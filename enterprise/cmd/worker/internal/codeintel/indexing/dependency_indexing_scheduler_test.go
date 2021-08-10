@@ -42,7 +42,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	}
 
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 6 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForRepositoryFunc.History()))
+		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesFunc.History()))
 	} else {
 		var packages []precise.Package
 		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
@@ -101,6 +101,6 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	}
 
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesForRepositoryFunc.History()))
+		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesFunc.History()))
 	}
 }
