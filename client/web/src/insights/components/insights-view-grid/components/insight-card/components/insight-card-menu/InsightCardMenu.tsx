@@ -13,14 +13,14 @@ export interface InsightCardMenuProps {
     menuButtonClassName?: string
     onDelete: (insightID: string) => void
     insightID: string
+    toggleZeroYAxisMin?: () => void
 }
 
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insightID, menuButtonClassName, onDelete } = props
-    const { toggleZeroYAxisMin } = useContext(LineChartSettingsContext)
+    const { insightID, menuButtonClassName, onDelete, toggleZeroYAxisMin } = props
     const history = useHistory()
 
     const handleEditClick = (event: MouseEvent): void => {

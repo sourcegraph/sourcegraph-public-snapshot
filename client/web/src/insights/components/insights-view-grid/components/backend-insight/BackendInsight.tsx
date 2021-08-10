@@ -15,7 +15,6 @@ import { SearchBackendBasedInsight } from '../../../../core/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
-import { LineChartSettingsContext } from '../../../insight-view-content/chart-view-content/charts/line/line-chart-settings-provider'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
@@ -39,7 +38,6 @@ interface BackendInsightProps
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
     const { getBackendInsightById } = useContext(InsightsApiContext)
-    const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
@@ -71,53 +69,49 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     }
 
     return (
-        <LineChartSettingsContext.Provider
-            value={{ zeroYAxisMin, toggleZeroYAxisMin: () => setZeroYAxisMin(!zeroYAxisMin) }}
+        <InsightContentCard
+            insight={{ id: insight.id, view: data?.view }}
+            hasContextMenu={true}
+            actions={
+                <DrillDownFiltersAction
+                    isOpen={isFiltersOpen}
+                    popoverTargetRef={insightCardReference}
+                    filters={filters}
+                    onFilterChange={handleDrillDownFiltersChange}
+                    onVisibilityChange={setIsFiltersOpen}
+                />
+            }
+            telemetryService={telemetryService}
+            onDelete={handleDelete}
+            innerRef={insightCardReference}
+            {...otherProps}
+            className={classnames('be-insight-card', otherProps.className, {
+                [styles.cardWithFilters]: isFiltersOpen,
+            })}
         >
-            <InsightContentCard
-                insight={{ id: insight.id, view: data?.view }}
-                hasContextMenu={true}
-                actions={
-                    <DrillDownFiltersAction
-                        isOpen={isFiltersOpen}
-                        popoverTargetRef={insightCardReference}
-                        filters={filters}
-                        onFilterChange={handleDrillDownFiltersChange}
-                        onVisibilityChange={setIsFiltersOpen}
+            {loading || isDeleting ? (
+                <InsightLoadingContent
+                    text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
+                    subTitle={insight.id}
+                    icon={DatabaseIcon}
+                />
+            ) : isErrorLike(error) ? (
+                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon} />
+            ) : (
+                data && (
+                    <InsightViewContent
+                        telemetryService={telemetryService}
+                        viewContent={data.view.content}
+                        viewID={insight.id}
+                        containerClassName="be-insight-card"
                     />
-                }
-                telemetryService={telemetryService}
-                onDelete={handleDelete}
-                innerRef={insightCardReference}
-                {...otherProps}
-                className={classnames('be-insight-card', otherProps.className, {
-                    [styles.cardWithFilters]: isFiltersOpen,
-                })}
-            >
-                {loading || isDeleting ? (
-                    <InsightLoadingContent
-                        text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
-                        subTitle={insight.id}
-                        icon={DatabaseIcon}
-                    />
-                ) : isErrorLike(error) ? (
-                    <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon} />
-                ) : (
-                    data && (
-                        <InsightViewContent
-                            telemetryService={telemetryService}
-                            viewContent={data.view.content}
-                            viewID={insight.id}
-                            containerClassName="be-insight-card"
-                        />
-                    )
-                )}
-                {
-                    // Passing children props explicitly to render any top-level content like
-                    // resize-handler from the react-grid-layout library
-                    otherProps.children
-                }
-            </InsightContentCard>
-        </LineChartSettingsContext.Provider>
+                )
+            )}
+            {
+                // Passing children props explicitly to render any top-level content like
+                // resize-handler from the react-grid-layout library
+                otherProps.children
+            }
+        </InsightContentCard>
     )
 }

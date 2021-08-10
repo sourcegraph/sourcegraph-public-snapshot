@@ -50,8 +50,7 @@ interface UseScalesOutput {
  */
 export function useScales<Datum>(props: UseScalesProps<Datum>): UseScalesOutput {
     const { config, accessors, width, height, data } = props
-    const context = useContext(LineChartSettingsContext)
-    const { zeroYAxisMin } = context
+    const { zeroYAxisMin } = useContext(LineChartSettingsContext)
 
     // Extend origin config with calculated domain with vertical padding
     const scalesConfig = useMemo(() => {
