@@ -22,7 +22,10 @@ type Worker struct {
 	store            Store
 	handler          Handler
 	options          WorkerOptions
-	clock            glock.Clock
+	dequeueClock     glock.Clock
+	heartbeatClock   glock.Clock
+	shutdownClock    glock.Clock
+	numDequeues      int             // tracks number of dequeue attempts
 	handlerSemaphore chan struct{}   // tracks available handler slots
 	ctx              context.Context // root context passed to the handler
 	cancel           func()          // cancels the root context
@@ -47,6 +50,18 @@ type WorkerOptions struct {
 	// number of handlers exceeds this value.
 	NumHandlers int
 
+	// NumTotalJobs is the maximum number of jobs that will be dequeued by the worker.
+	// After this number of dequeue attempts has been made, no more dequeues will be
+	// attempted. Currently dequeued jobs will finish, and the Start method of the
+	// worker will unblock. If not set, there is no limit.
+	NumTotalJobs int
+
+	// MaxActiveTime is the maximum time that can be spent by the worker dequeueing
+	// records to be handled. After this duration has elapsed, no more dequeues will
+	// be attempted. Currently dequeued jobs will finish, and the Start method of the
+	// worker will unblock. If not set, there is no limit.
+	MaxActiveTime time.Duration
+
 	// Interval is the frequency to poll the underlying store for new work.
 	Interval time.Duration
 
@@ -60,10 +75,11 @@ type WorkerOptions struct {
 }
 
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
-	return newWorker(ctx, store, handler, options, glock.NewRealClock())
+	clock := glock.NewRealClock()
+	return newWorker(ctx, store, handler, options, clock, clock, clock)
 }
 
-func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, clock glock.Clock) *Worker {
+func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
@@ -83,7 +99,9 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		store:            store,
 		handler:          handler,
 		options:          options,
-		clock:            clock,
+		dequeueClock:     mainClock,
+		heartbeatClock:   heartbeatClock,
+		shutdownClock:    shutdownClock,
 		handlerSemaphore: handlerSemaphore,
 		ctx:              ctx,
 		cancel:           cancel,
@@ -104,7 +122,7 @@ func (w *Worker) Start() {
 			select {
 			case <-w.ctx.Done():
 				return
-			case <-w.clock.After(w.options.HeartbeatInterval):
+			case <-w.heartbeatClock.After(w.options.HeartbeatInterval):
 			}
 
 			ids := w.runningIDSet.Slice()
@@ -126,8 +144,15 @@ func (w *Worker) Start() {
 		}
 	}()
 
+	var shutdownChan <-chan time.Time
+	if w.options.MaxActiveTime > 0 {
+		shutdownChan = w.shutdownClock.After(w.options.MaxActiveTime)
+	} else {
+		shutdownChan = make(chan time.Time)
+	}
+
 loop:
-	for {
+	for ; w.options.NumTotalJobs == 0 || w.numDequeues < w.options.NumTotalJobs; w.numDequeues++ {
 		ok, err := w.dequeueAndHandle()
 		if err != nil {
 			if w.ctx.Err() != nil && errors.Is(err, w.ctx.Err()) {
@@ -147,12 +172,15 @@ loop:
 		}
 
 		select {
-		case <-w.clock.After(delay):
+		case <-w.dequeueClock.After(delay):
 		case <-w.ctx.Done():
+			break loop
+		case <-shutdownChan:
 			break loop
 		}
 	}
 
+	log15.Info("Shutting down dequeue loop", "name", w.options.Name)
 	w.wg.Wait()
 }
 
