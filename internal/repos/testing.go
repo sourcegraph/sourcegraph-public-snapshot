@@ -2,28 +2,21 @@ package repos
 
 import (
 	"context"
+	"strings"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// NewFakeSourcer returns a Sourcer which always returns the given error and sources,
+// NewFakeSourcer returns a Sourcer which always returns the given error and source,
 // ignoring the given external services.
-func NewFakeSourcer(err error, srcs ...Source) Sourcer {
-	return func(svcs ...*types.ExternalService) (Sources, error) {
-		var errs *multierror.Error
-
+func NewFakeSourcer(err error, src Source) Sourcer {
+	return func(svc *types.ExternalService) (Source, error) {
 		if err != nil {
-			for _, svc := range svcs {
-				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
-			}
-			if len(svcs) == 0 {
-				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: nil})
-			}
+			return nil, &SourceError{Err: err, ExtSvc: svc}
 		}
-
-		return srcs, errs.ErrorOrNil()
+		return src, nil
 	}
 }
 
@@ -51,6 +44,20 @@ func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	for _, r := range s.repos {
 		results <- SourceResult{Source: s, Repo: r.With(types.Opt.RepoSources(s.svc.URN()))}
 	}
+}
+
+func (s FakeSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
+	for _, r := range s.repos {
+		if strings.HasSuffix(string(r.Name), name) {
+			return r, s.err
+		}
+	}
+
+	if s.err == nil {
+		return nil, errors.New("not found")
+	}
+
+	return nil, s.err
 }
 
 // ExternalServices returns a singleton slice containing the external service.

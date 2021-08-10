@@ -231,3 +231,4 @@
 
 /admin/install/docker-compose/update /admin/install/docker-compose/operations#upgrade 308
 /admin/install/docker-compose/configure /admin/install/docker-compose/operations#configure 308
+/admin/install/kubernetes/overlays /admin/install/kubernetes/configure 308

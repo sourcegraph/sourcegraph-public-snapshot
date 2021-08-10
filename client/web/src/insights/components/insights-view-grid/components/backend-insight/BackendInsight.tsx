@@ -1,6 +1,6 @@
 import classnames from 'classnames'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
-import React, { useCallback, useContext, useState } from 'react'
+import React, { useCallback, useContext, useRef, useState } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -20,6 +20,7 @@ import { InsightErrorContent } from '../insight-card/components/insight-error-co
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
+import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownFilters, EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/types'
 
@@ -27,7 +28,7 @@ interface BackendInsightProps
     extends TelemetryProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps<'updateSettings'>,
-        React.HTMLAttributes<HTMLElement> {
+        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: SearchBackendBasedInsight
 }
 
@@ -35,9 +36,11 @@ interface BackendInsightProps
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, ...otherProps } = props
+    const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
+    const insightCardReference = useRef<HTMLDivElement>(null)
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
 
     // Currently we support only regexp filters so extract them in a separate object
@@ -69,11 +72,22 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
-            actions={<DrillDownFiltersAction filters={filters} onFilterChange={handleDrillDownFiltersChange} />}
+            actions={
+                <DrillDownFiltersAction
+                    isOpen={isFiltersOpen}
+                    popoverTargetRef={insightCardReference}
+                    filters={filters}
+                    onFilterChange={handleDrillDownFiltersChange}
+                    onVisibilityChange={setIsFiltersOpen}
+                />
+            }
             telemetryService={telemetryService}
             onDelete={handleDelete}
+            innerRef={insightCardReference}
             {...otherProps}
-            className={classnames('be-insight-card', otherProps.className)}
+            className={classnames('be-insight-card', otherProps.className, {
+                [styles.cardWithFilters]: isFiltersOpen,
+            })}
         >
             {loading || isDeleting ? (
                 <InsightLoadingContent

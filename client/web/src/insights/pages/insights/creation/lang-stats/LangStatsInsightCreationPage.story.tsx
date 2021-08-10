@@ -6,7 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../components/WebStory'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../core/backend/insights-api'
-import { SETTINGS_CASCADE } from '../../../../mocks/settings-cascade'
+import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
 import { LangStatsInsightCreationPage, LangStatsInsightCreationPageProps } from './LangStatsInsightCreationPage'
@@ -53,7 +53,7 @@ add('Page', () => (
         <LangStatsInsightCreationPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
             platformContext={PLATFORM_CONTEXT}
-            settingsCascade={SETTINGS_CASCADE}
+            settingsCascade={SETTINGS_CASCADE_MOCK}
         />
     </InsightsApiContext.Provider>
 ))
