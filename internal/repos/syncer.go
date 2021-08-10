@@ -241,7 +241,8 @@ func (d Diff) Len() int {
 	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
 }
 
-// On sourcegraph.com we don't sync our "cloud_default" code hosts in the background
+// SyncRepo syncs a single repository by name. It's only currently used on sourcegraph.com
+// because we don't sync our "cloud_default" code hosts in the background
 // since there are too many repos. Instead we use an incremental approach where we check for
 // changes everytime a user browses a repo.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.Repo, err error) {

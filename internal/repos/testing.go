@@ -2,8 +2,9 @@ package repos
 
 import (
 	"context"
-	"errors"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
