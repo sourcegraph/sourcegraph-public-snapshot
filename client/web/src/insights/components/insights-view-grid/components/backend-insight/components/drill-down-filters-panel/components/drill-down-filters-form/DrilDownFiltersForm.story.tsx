@@ -1,12 +1,12 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { WebStory } from 'src/components/WebStory'
 
-import { DrillDownFiltersPanel } from './DrillDownFiltersPanel'
+import { DrillDownFiltersForm } from './DrillDownFiltersForm'
 
 const { add } = storiesOf('web/insights/DrillDownFilters', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
 ))
 
-add('DrillDownFilters panel', () => <DrillDownFiltersPanel />)
+add('DrillDownFiltersForm', () => <DrillDownFiltersForm />)

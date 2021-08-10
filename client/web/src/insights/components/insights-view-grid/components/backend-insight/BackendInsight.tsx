@@ -40,6 +40,8 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { getBackendInsightById } = useContext(InsightsApiContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
+
+    // Drill-down filters
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
 
@@ -51,6 +53,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     })
     const debouncedFilters = useDebounce(regexpFilters, 500)
 
+    const handleDrillDownFiltersChange = (filters: DrillDownFilters): void => {
+        setFilters(filters)
+    }
+
+    // Loading the insight backend data
     const { data, loading, error } = useParallelRequests(
         useCallback(() => getBackendInsightById(insight.id, debouncedFilters), [
             insight.id,
@@ -59,14 +66,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         ])
     )
 
+    // Handle insight delete action
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
         settingsCascade,
         platformContext,
     })
-
-    const handleDrillDownFiltersChange = (filters: DrillDownFilters): void => {
-        setFilters(filters)
-    }
 
     return (
         <InsightContentCard

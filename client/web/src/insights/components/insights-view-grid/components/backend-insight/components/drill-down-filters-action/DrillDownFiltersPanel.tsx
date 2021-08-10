@@ -6,7 +6,7 @@ import FocusLock from 'react-focus-lock'
 
 import { flipRightPosition } from '../../../../../context-menu/utils'
 import { FormChangeEvent } from '../../../../../form/hooks/useForm'
-import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
+import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel';
 import { DrillDownFilters, DrillDownFiltersMode } from '../drill-down-filters-panel/types'
 
 import styles from './DrillDownFiltersPanel.module.scss'
@@ -100,7 +100,6 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                     <FocusLock returnFocus={true}>
                         <DrillDownFiltersPanel
                             initialFiltersValue={filters}
-                            className={classnames(styles.filterPanel)}
                             onFiltersChange={handleFilterChange}
                         />
                     </FocusLock>

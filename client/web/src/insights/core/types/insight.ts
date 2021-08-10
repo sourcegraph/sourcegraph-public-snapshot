@@ -15,7 +15,7 @@ export type InsightConfiguration = SearchBasedInsightSettings | LangStatsInsight
 /**
  * Visibility setting which responsible for where insight will appear.
  * possible value 'personal' | '<org id 1> ... | ... <org id N>'
- * */
+ */
 export type InsightVisibility = string
 
 /**
@@ -24,12 +24,12 @@ export type InsightVisibility = string
 export interface SyntheticInsightFields {
     /**
      * ID of insight <type of insight>.insight.<name of insight>
-     * */
+     */
     id: string
 
     /**
      * Visibility of insight. Personal or organization setting cascade subject.
-     * */
+     */
     visibility: InsightVisibility
 }
 
@@ -71,7 +71,7 @@ export interface SearchBasedInsightSettings {
  * Extended Lang Stats Insight.
  * Some fields and settings (id, visibility) do not exist implicitly in user/org settings but
  * we have to have these to operate with insight properly.
- * */
+ */
 export interface LangStatsInsight extends LangStatsInsightSettings, SyntheticInsightFields {
     type: InsightType.Extension
 }
