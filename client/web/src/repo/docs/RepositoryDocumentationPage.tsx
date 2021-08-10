@@ -119,35 +119,15 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     const containerReference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
 
-    // Keep track of all node headers on the page that are visible. When visibility changes, sort
-    // them based on position so we can determine the top-most header that is visible on the page
-    // and update the active node - which is used for various visual effects.
-    const [activePathID, setActivePathID] = useState<string | null>(null)
-
-    const [_, setVisiblePathIDs] = useState<{ top: number; pathID: string }[]>([]);
-    const onVisibilityChange = React.useMemo(() =>
-        (visible: boolean, node: GQLDocumentationNode, top: number): void => {
-            setVisiblePathIDs(visiblePathIDs => {
-                let updated = visiblePathIDs;
-                if (!visible) {
-                    updated = updated.filter(pair => pair.pathID !== node.pathID)
-                } else {
-                    updated.push({ top, pathID: node.pathID })
-                    updated.sort((a, b) => (a.top < b.top ? -1 : 1))
-                }
-                if (updated.length > 0) {
-                    setActivePathID(() => updated[0].pathID)
-                }
-                return updated;
-            })
-        },
-        [setVisiblePathIDs, setActivePathID],
+    // Keep track of which node on the page is most visible, so that when visibility changes we can
+    // know the active node and can apply various visual effects (like scrolling to it in the
+    // sidebar.)
+    const [visiblePathID, setVisiblePathID] = useState<string|null>(null);
+    const onVisible = React.useMemo(() =>
+        (node: GQLDocumentationNode): void => setVisiblePathID(node.pathID),
+        [setVisiblePathID],
     )
 
-    const currentScrollTop = React.useMemo(() =>
-        () => containerReference?.current?.scrollTop || 0,
-        [containerReference],
-    )
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
@@ -215,7 +195,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         node={page.tree}
                         pathInfo={pathInfo}
                         pagePathID={pagePathID}
-                        activePathID={activePathID || pagePathID}
+                        activePathID={visiblePathID || pagePathID}
                         depth={0}
                     />
                     <div className="repository-docs-page__container" ref={containerReference}>
@@ -243,8 +223,8 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 depth={0}
                                 isFirstChild={true}
                                 excludingTags={excludingTags}
-                                currentScrollTop={currentScrollTop}
-                                onVisibilityChange={onVisibilityChange}
+                                scrollingRoot={containerReference}
+                                onVisible={onVisible}
                             />
                         </div>
                     </div>

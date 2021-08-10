@@ -52,21 +52,17 @@ interface Props
     /** A list of documentation tags, a section will not be rendered if it matches one of these. */
     excludingTags: Tag[]
 
-    /** Called to get the current scrollTop position of the scrolling page */
-    currentScrollTop: () => number
+    /** The root scrolling area that this documentation node lives in. */
+    scrollingRoot: RefObject<HTMLElement|undefined>
 
     /**
-     * Called when this documentation node becomes visible / scrolled into the screen, or becomes
-     * invisible.
-     *
-     * The provided number indicates the position of the node on the page, with lesser numbers
-     * being at the top and greater numbers being at the bottom.
-     **/
-    onVisibilityChange: (visible: boolean, node: GQLDocumentationNode, top: number) => void
+     * Called when this documentation node becomes visible / scrolled into.
+     */
+    onVisible: (node: GQLDocumentationNode) => void
 }
 
 export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
-    ({ useBreadcrumb, node, depth, isFirstChild, currentScrollTop, onVisibilityChange, ...props }) => {
+    ({ useBreadcrumb, node, depth, isFirstChild, scrollingRoot, onVisible, ...props }) => {
         const repoRevision = {
             repoName: props.repo.name,
             revision: props.revision || '',
@@ -87,20 +83,19 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
             )
         )
 
-        const reference: RefObject<HTMLHeadingElement | undefined> | null | undefined = useRef()
+        const reference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
         const intersectionObserver = new IntersectionObserver(([entry]) => {
             if (entry.isIntersecting) {
-                onVisibilityChange(true, node, currentScrollTop() + entry.boundingClientRect.top)
-            } else {
-                onVisibilityChange(false, node, 0)
+                onVisible(node)
             }
+        }, {
+            root: scrollingRoot?.current,
+            threshold: 1.0,
         })
         useEffect(() => {
             if (reference.current) { intersectionObserver.observe(reference.current) }
             // Remove the observer as soon as the component is unmounted
-            return () => {
-                intersectionObserver.disconnect()
-            }
+            return () => intersectionObserver.disconnect()
         })
 
         if (node.detail.value === '') {
@@ -126,8 +121,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
             <div className={`documentation-node mb-5${topMargin}`}>
                 <Heading
                     level={headingLevel}
-                    className="d-flex align-items-center documentation-node__heading"
                     innerRef={reference}
+                    className="d-flex align-items-center documentation-node__heading"
                 >
                     <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
                         <LinkVariantIcon className="icon-inline" />
@@ -192,8 +187,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                 depth={depth + 1}
                                 isFirstChild={index === 0}
                                 useBreadcrumb={useBreadcrumb}
-                                currentScrollTop={currentScrollTop}
-                                onVisibilityChange={onVisibilityChange}
+                                scrollingRoot={scrollingRoot}
+                                onVisible={onVisible}
                             />
                         )
                 )}

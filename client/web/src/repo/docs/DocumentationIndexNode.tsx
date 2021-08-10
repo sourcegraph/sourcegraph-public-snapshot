@@ -92,12 +92,16 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         const nodeReference = React.useRef<HTMLDivElement>(null)
         useEffect(() => {
             if (node.isActive) {
-                nodeReference.current?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                });
+                if (depth === 0) {
+                    if (nodeReference.current) { nodeReference.current.scrollTop = 0 }
+                } else {
+                    nodeReference.current?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                    });
+                }
             }
-        }, [node.isActive])
+        }, [node.isActive, depth])
 
         const excluded = isExcluded(node, props.excludingTags)
         if (excluded) {
