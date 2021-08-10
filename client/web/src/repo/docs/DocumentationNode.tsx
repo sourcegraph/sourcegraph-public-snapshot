@@ -56,9 +56,9 @@ interface Props
     scrollingRoot: RefObject<HTMLElement|undefined>
 
     /**
-     * Called when this documentation node becomes visible / scrolled into.
+     * Called when the visibility of this documentation node changes.
      */
-    onVisible: (node: GQLDocumentationNode) => void
+    onVisible: (node: GQLDocumentationNode, entry?: IntersectionObserverEntry) => void
 }
 
 export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
@@ -85,17 +85,18 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
 
         const reference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
         const intersectionObserver = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting) {
-                onVisible(node)
-            }
+            onVisible(node, entry)
         }, {
             root: scrollingRoot?.current,
-            threshold: 1.0,
+            threshold: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
         })
         useEffect(() => {
             if (reference.current) { intersectionObserver.observe(reference.current) }
             // Remove the observer as soon as the component is unmounted
-            return () => intersectionObserver.disconnect()
+            return () => {
+                onVisible(node)
+                intersectionObserver.disconnect()
+            }
         })
 
         if (node.detail.value === '') {
@@ -119,62 +120,63 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
 
         return (
             <div className={`documentation-node mb-5${topMargin}`}>
-                <Heading
-                    level={headingLevel}
-                    innerRef={reference}
-                    className="d-flex align-items-center documentation-node__heading"
-                >
-                    <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
-                        <LinkVariantIcon className="icon-inline" />
-                    </AnchorLink>
-                    {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
-                    <Link className="h" id={hash} to={thisPage}>
-                        {node.label.value}
-                    </Link>
-                </Heading>
-                {depth === 0 && (
-                    <>
-                        <div className="d-flex align-items-center mb-3">
-                            <span className="documentation-node__pill d-flex justify-content-center align-items-center px-2">
-                                <BookOpenVariantIcon className="icon-inline text-muted mr-1" /> Generated API docs
-                                <span className="documentation-node__pill-divider mx-2" />
-                                <a
-                                    // eslint-disable-next-line react/jsx-no-target-blank
-                                    target="_blank"
-                                    rel="noopener"
-                                    href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                >
-                                    Learn more
-                                </a>
-                            </span>
-                            {/*
-                        TODO(apidocs): add support for indicating time the API docs were updated
-                        <span className="ml-2">Last updated 2 days ago</span>
-                    */}
-                            <Badge status="experimental" className="text-uppercase ml-2" />
-                        </div>
-                        <hr />
-                    </>
-                )}
-                {node.detail.value !== '' && (
-                    <div className="pt-2">
-                        <Markdown dangerousInnerHTML={renderMarkdown(node.detail.value)} />
-                    </div>
-                )}
-
-                {!isExcluded(node, ['test', 'benchmark', 'example', 'license', 'owner', 'package']) &&
-                    node.documentation.tags.length !== 0 && (
+                <div ref={reference}>
+                    <Heading
+                        level={headingLevel}
+                        className="d-flex align-items-center documentation-node__heading"
+                    >
+                        <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
+                            <LinkVariantIcon className="icon-inline" />
+                        </AnchorLink>
+                        {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
+                        <Link className="h" id={hash} to={thisPage}>
+                            {node.label.value}
+                        </Link>
+                    </Heading>
+                    {depth === 0 && (
                         <>
-                            <h4 className="mt-4">
-                                Usage examples
-                                <HelpCircleOutlineIcon
-                                    className="icon-inline ml-1"
-                                    data-tooltip="Usage examples from precise LSIF code intelligence index"
-                                />
-                            </h4>
-                            <DocumentationExamples {...props} pathID={node.pathID} />
+                            <div className="d-flex align-items-center mb-3">
+                                <span className="documentation-node__pill d-flex justify-content-center align-items-center px-2">
+                                    <BookOpenVariantIcon className="icon-inline text-muted mr-1" /> Generated API docs
+                                    <span className="documentation-node__pill-divider mx-2" />
+                                    <a
+                                        // eslint-disable-next-line react/jsx-no-target-blank
+                                        target="_blank"
+                                        rel="noopener"
+                                        href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                    >
+                                        Learn more
+                                    </a>
+                                </span>
+                                {/*
+                            TODO(apidocs): add support for indicating time the API docs were updated
+                            <span className="ml-2">Last updated 2 days ago</span>
+                        */}
+                                <Badge status="experimental" className="text-uppercase ml-2" />
+                            </div>
+                            <hr />
                         </>
                     )}
+                    {node.detail.value !== '' && (
+                        <div className="pt-2">
+                            <Markdown dangerousInnerHTML={renderMarkdown(node.detail.value)} />
+                        </div>
+                    )}
+
+                    {!isExcluded(node, ['test', 'benchmark', 'example', 'license', 'owner', 'package']) &&
+                        node.documentation.tags.length !== 0 && (
+                            <>
+                                <h4 className="mt-4">
+                                    Usage examples
+                                    <HelpCircleOutlineIcon
+                                        className="icon-inline ml-1"
+                                        data-tooltip="Usage examples from precise LSIF code intelligence index"
+                                    />
+                                </h4>
+                                <DocumentationExamples {...props} pathID={node.pathID} />
+                            </>
+                        )}
+                </div>
 
                 {node.children?.map(
                     (child, index) =>
@@ -200,7 +202,6 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
 const Heading: React.FunctionComponent<{
     level: number
     children: React.ReactNode
-    innerRef: RefObject<any>
     [x: string]: any
-}> = ({ level, children, innerRef, ...props }) =>
-    React.createElement(`h${level}`, { ref: innerRef, ...props }, children)
+}> = ({ level, children, ...props }) =>
+    React.createElement(`h${level}`, props, children)
