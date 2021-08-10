@@ -18,7 +18,9 @@ import styles from './InsightCard.module.scss'
 
 const ASYNC_NOOP = (): Promise<void> => Promise.resolve()
 
-export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
+export interface InsightCardProps
+    extends TelemetryProps,
+        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     /**
      * Insight data (title, chart content)
      */
@@ -45,6 +47,11 @@ export interface InsightCardProps extends TelemetryProps, React.HTMLAttributes<H
      * Deleting handler fires when the user clicks delete in the insight menu.
      */
     onDelete?: (id: string) => void
+
+    /**
+     * Ref prop for root element (section) of insight content card.
+     */
+    innerRef?: React.RefObject<HTMLElement>
 }
 
 /**
@@ -59,6 +66,7 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
         onDelete = ASYNC_NOOP,
         telemetryService,
         children,
+        innerRef,
         ...otherProps
     } = props
 
@@ -82,6 +90,7 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
             data-testid={`insight-card.${id}`}
             /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
             tabIndex={0}
+            ref={innerRef}
             className={classnames('card', otherProps.className, styles.insightCard)}
         >
             <ErrorBoundary
