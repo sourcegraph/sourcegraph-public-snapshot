@@ -76,8 +76,8 @@ EOF
   echo 'THIS_ENV_IS="unconfigured"' >>/etc/systemd/system/executor.env
 }
 
-# Build the ignite-ubuntu image for use in firecracker.
-# Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
+## Build the ignite-ubuntu image for use in firecracker.
+## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
 function generate_ignite_base_image() {
   docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
   ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
@@ -86,7 +86,7 @@ function generate_ignite_base_image() {
   docker system prune --force
 }
 
-# Loads the required kernel image so it doesn't have to happen on the first VM start.
+## Loads the required kernel image so it doesn't have to happen on the first VM start.
 function preheat_kernel_image() {
   ignite kernel import --runtime docker "${KERNEL_IMAGE}"
   docker pull "weaveworks/ignite:${IGNITE_VERSION}"
