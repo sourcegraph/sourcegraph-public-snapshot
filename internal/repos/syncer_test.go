@@ -692,11 +692,16 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 			}
 		}
 
-		// Our test will have 1 initial repo, and discover a new repo on sourcing.
+		// Our test will have 1 initial repo, and discover two new repos on sourcing - the first
+		// public, and the second private.
+		privateRepo := mk("private")
+		privateRepo.Private = true
+
 		stored := types.Repos{mk("initial")}.With(types.Opt.RepoSources(svc.URN()))
 		sourced := types.Repos{
 			mk("initial").With(func(r *types.Repo) { r.Description = "updated" }),
 			mk("new"),
+			privateRepo,
 		}
 
 		syncer := &repos.Syncer{
@@ -736,16 +741,22 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
 
-		// Then the new repo.
+		// Then the new public repo.
 		diff = <-syncer.Synced
-		if d := cmp.Diff(repos.Diff{Added: sourced[1:]}, diff, ignore); d != "" {
+		if d := cmp.Diff(repos.Diff{Added: sourced[1:2]}, diff, ignore); d != "" {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
 
-		// We check synced again to test us going around the Run loop 2 times in
+		// Then the new private repo.
+		diff = <-syncer.Synced
+		if d := cmp.Diff(repos.Diff{Added: sourced[2:]}, diff, ignore); d != "" {
+			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+		}
+
+		// We check synced again to test us going around the Run loop 3 times in
 		// total.
 		diff = <-syncer.Synced
-		if d := cmp.Diff(repos.Diff{Unmodified: sourced[:1]}, diff, ignore); d != "" {
+		if d := cmp.Diff(repos.Diff{Unmodified: sourced[:2]}, diff, ignore); d != "" {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
 
@@ -1679,6 +1690,22 @@ func testDeleteExternalService(store *repos.Store) func(*testing.T) {
 		assertDeletedRepoCount(ctx, t, store, 1)
 	}
 }
+
+// func testSyncerPermsSync(t *testing.T) func(t *testing.T) {
+// 	return func(t *testing.T) {
+// 		ctx, cancel := context.WithCancel(context.Background())
+// 		defer cancel()
+
+// 		svc := &types.ExternalService{
+// 			Config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+// 			Kind:   extsvc.KindGitHub,
+// 		}
+
+// 		if err := store.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 	}
+// }
 
 func assertSourceCount(ctx context.Context, t *testing.T, store *repos.Store, want int) {
 	t.Helper()
