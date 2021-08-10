@@ -1,26 +1,9 @@
 #!/usr/bin/env bash
 set -ex -o nounset -o pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
-
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
-
-function cleanup() {
-  apt-get -y autoremove
-  apt-get clean
-  rm -rf /var/cache/*
-  rm -rf /var/lib/apt/lists/*
-  history -c
-}
-
-## Install git >=2.18 (to enable -c protocol.version=2)
-function install_git() {
-  add-apt-repository ppa:git-core/ppa
-  apt-get update -y
-  apt-get install -y git
-}
 
 ## Install logging agent
 ## Reference: https://cloud.google.com/logging/docs/agent/installation
@@ -44,13 +27,6 @@ function install_monitoring_agent() {
   systemctl start stackdriver-agent
 }
 
-function increase_inotify_limit() {
-  if [ ! -f "/etc/sysctl.d/local.conf" ]; then
-    # Configure inotify limits
-    echo -e "\nfs.inotify.max_user_watches = 128000\n" >>/etc/sysctl.d/local.conf
-  fi
-}
-
 ## Install Docker
 function install_docker() {
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -66,8 +42,15 @@ function install_docker() {
     echo '{"log-driver": "journald"}' >"${DOCKER_DAEMON_CONFIG_FILE}"
   fi
 
-  ## Restart Docker daemon to pick up our changes.
+  # Restart Docker daemon to pick up our changes.
   systemctl restart --now docker
+}
+
+## Install git >=2.18 (to enable -c protocol.version=2)
+function install_git() {
+  add-apt-repository ppa:git-core/ppa
+  apt-get update -y
+  apt-get install -y git
 }
 
 ## Install Weaveworks Ignite
@@ -88,27 +71,9 @@ function install_ignite() {
   curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
 }
 
-## Install executor service
+## Install and configure executor service
 function install_executor() {
-  # Copy the executor binary into /usr/local/bin
-  mv /tmp/executor /usr/local/bin
-}
-
-# Build the ignite-ubuntu image for use in firecracker. Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go.
-function generate_ignite_base_image() {
-  docker build -t "$EXECUTOR_FIRECRACKER_IMAGE" --build-arg SRC_CLI_VERSION="$SRC_CLI_VERSION" /tmp/ignite-ubuntu
-  ignite image import --runtime docker "$EXECUTOR_FIRECRACKER_IMAGE"
-  docker image rm "$EXECUTOR_FIRECRACKER_IMAGE"
-}
-
-# Write systemd unit file for indexer service
-function install_executor_service() {
-  # Create stub environment file.
-  cat <<EOF >/etc/systemd/system/executor.env
-THIS_ENV_IS="unconfigured"
-EOF
-
-  cat <<EOF >/etc/systemd/system/executor.service
+  local SERVICE_CONFIGURATION = <<EOF
 [Unit]
 Description=User code executor
 
@@ -123,18 +88,41 @@ Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 [Install]
 WantedBy=multi-user.target
 EOF
+
+  # Move binary into PATH
+  mv /tmp/executor /usr/local/bin
+
+  # Create configuration fiel and stub environment file
+  echo "${SERVICE_CONFIGURATION}" >>/etc/systemd/system/executor.service
+  echo 'THIS_ENV_IS="unconfigured"' >>/etc/systemd/system/executor.env
 }
 
-###############################
-## THE PLAYBOOK STARTS HERE. ##
-###############################
-install_git
+## Build the ignite-ubuntu image for use in firecracker.
+## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
+function generate_ignite_base_image() {
+  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
+  ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
+  docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
+}
+
+function cleanup() {
+  apt-get -y autoremove
+  apt-get clean
+  rm -rf /var/cache/*
+  rm -rf /var/lib/apt/lists/*
+  history -c
+}
+
+# Prerequisites
 install_logging_agent
 install_monitoring_agent
-increase_inotify_limit
 install_docker
+install_git
 install_ignite
+
+# Services
 install_executor
+
+# Service prep and cleanup
 generate_ignite_base_image
-install_executor_service
 cleanup
