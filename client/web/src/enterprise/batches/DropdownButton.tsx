@@ -40,10 +40,9 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     dropdownMenuPosition,
     initiallyOpen,
     onLabel,
-    placeholder,
+    placeholder = 'Select action',
     tooltip,
 }) => {
-    placeholder ??= 'Select action'
 
     const [isDisabled, setIsDisabled] = useState(!!disabled)
 
