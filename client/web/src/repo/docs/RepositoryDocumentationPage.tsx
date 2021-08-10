@@ -127,21 +127,23 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     const excludingTags: Tag[] = ['private']
 
-    const containerRef: RefObject<HTMLDivElement|undefined>|null|undefined = useRef();
+    const containerReference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
 
     // Keep track of all node headers on the page that are visible. When visibility changes, sort
     // them based on position so we can determine the top-most header that is visible on the page
     // and update the active node - which is used for various visual effects.
-    const [activePathID, setActivePathID] = useState<string|null>(null)
-    var visiblePathIDs: {top: number, pathID: string}[] = [];
-    const onVisibilityChange = (visible: boolean, node: GQLDocumentationNode, top: number) => {
+    const [activePathID, setActivePathID] = useState<string | null>(null)
+    let visiblePathIDs: { top: number; pathID: string }[] = []
+    const onVisibilityChange = (visible: boolean, node: GQLDocumentationNode, top: number): void => {
         if (!visible || top < 0) {
-            visiblePathIDs = visiblePathIDs.filter(pair => pair.pathID !== node.pathID);
+            visiblePathIDs = visiblePathIDs.filter(pair => pair.pathID !== node.pathID)
         } else {
-            visiblePathIDs.push({top, pathID: node.pathID})
-            visiblePathIDs.sort((a, b) => a.top < b.top ? -1 : 1)
+            visiblePathIDs.push({ top, pathID: node.pathID })
+            visiblePathIDs.sort((a, b) => (a.top < b.top ? -1 : 1))
         }
-        if (visiblePathIDs.length > 0 && activePathID !== visiblePathIDs[0].pathID) setActivePathID(() => visiblePathIDs[0].pathID)
+        if (visiblePathIDs.length > 0 && activePathID !== visiblePathIDs[0].pathID) {
+            setActivePathID(() => visiblePathIDs[0].pathID)
+        }
     }
 
     return (
@@ -214,7 +216,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         activePathID={activePathID || pagePathID}
                         depth={0}
                     />
-                    <div className="repository-docs-page__container" ref={containerRef}>
+                    <div className="repository-docs-page__container" ref={containerReference}>
                         <div
                             className={`repository-docs-page__container-content${
                                 sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
@@ -239,7 +241,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 depth={0}
                                 isFirstChild={true}
                                 excludingTags={excludingTags}
-                                currentScrollTop={() => containerRef && containerRef.current ? containerRef.current.scrollTop : 0}
+                                currentScrollTop={() =>
+                                    containerReference?.current?.scrollTop || 0
+                                }
                                 onVisibilityChange={onVisibilityChange}
                             />
                         </div>
