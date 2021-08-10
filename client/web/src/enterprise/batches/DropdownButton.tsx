@@ -43,7 +43,6 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     placeholder = 'Select action',
     tooltip,
 }) => {
-
     const [isDisabled, setIsDisabled] = useState(!!disabled)
 
     const [isOpen, setIsOpen] = useState(!!initiallyOpen)
