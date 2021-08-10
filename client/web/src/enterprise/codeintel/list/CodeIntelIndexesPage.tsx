@@ -14,7 +14,7 @@ import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 
 import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
-import { enqueueIndexJob } from '../configuration/backend'
+import { enqueueIndexJob } from './backend'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
@@ -63,12 +63,6 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-enum State {
-    Idle,
-    Queueing,
-    Queued,
-}
-
 export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
@@ -82,6 +76,12 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         (args: FilteredConnectionQueryArguments) => fetchLsifIndexes({ repository: repo?.id, ...args }),
         [repo?.id, fetchLsifIndexes]
     )
+
+    enum State {
+        Idle,
+        Queueing,
+        Queued,
+    }
 
     const [enqueueError, setEnqueueError] = useState<Error>()
     const [state, setState] = useState(() => State.Idle)
@@ -122,27 +122,27 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 className="mb-3"
             />
 
-            {repo && (
-                <Container>
-                    {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
-
-                    <input type="text" value={revlike} onChange={event => setRevlike(event.target.value)} />
-
-                    <button
-                        type="button"
-                        title="Enqueue thing"
-                        disabled={state === State.Queueing}
-                        className="btn btn-sm btn-secondary"
-                        onClick={onClick}
-                    >
-                        Enqueue
-                    </button>
-
-                    {state === State.Queued && <div className="text-success">Index jobs enqueued</div>}
-                </Container>
-            )}
-
             <Container>
+                {repo && (
+                    <div>
+                        {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
+
+                        <input type="text" value={revlike} onChange={event => setRevlike(event.target.value)} />
+
+                        <button
+                            type="button"
+                            title="Enqueue thing"
+                            disabled={state === State.Queueing}
+                            className="btn btn-sm btn-secondary"
+                            onClick={onClick}
+                        >
+                            Enqueue
+                        </button>
+
+                        {state === State.Queued && <div className="text-success">Index jobs enqueued</div>}
+                    </div>
+                )}
+
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                         listComponent="div"
