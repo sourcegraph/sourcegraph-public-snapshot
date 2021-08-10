@@ -11,9 +11,9 @@ See the [how-to guides](../how-to/index.md) to get started with precise code int
 
 ## Cross-repository code intelligence
 
-Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data at the referenced commits or versions. When the current file has LSIF data and the other repository doesn't, the missing precise results will be supplemented with imprecise search-based code intelligence. This also applies when both repositories have LSIF data for some versions, but repository A doesn't have an index for the commit that is referenced by repository B.
+Cross-repositroy code intelligence works out-of-the-box when both the dependent repository and the dependency repository has LSIF data _at the correct commits or versions_. We are working on relaxing this constraint so that nearest-commit functionality works on a cross-repository basis as well.
 
-In the case of a repository referencing a dependency, for a repository to get precise results cross-dependency results there the dependency needs to have an LSIF index at the referenced commit.
+When the current repository has LSIF data and a dependent doesn't, the missing precise results will be supplemented with imprecise search-based code intelligence. This also applies when both repositories have LSIF data, but for a different set of versions. For example, if repository A@v1 depends on B@v2, then we will get precise cross-repository intelligence when we have LSIF data for both A@v1 and B@v2, but would not get a precise result we instead have LISF data for A@v1 and B@v1.
 
 ## Why are my results sometimes incorrect?
 
