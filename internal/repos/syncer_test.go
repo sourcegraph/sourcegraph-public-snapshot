@@ -543,6 +543,65 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 	}
 }
 
+type PermsSyncer struct {
+	testing *testing.T
+	invoked bool
+}
+
+func (p *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
+	if !p.invoked {
+		p.testing.Errorf("method ScheduleRepos already invoked, should not be called again")
+	}
+
+	p.invoked = true
+}
+
+func testSyncerPermsSyncer(s *repos.Store) func(t *testing.T) {
+	return func(t *testing.T) {
+		servicesPerKind := createExternalServices(t, s)
+
+		githubService := servicesPerKind[extsvc.KindGitHub]
+
+		githubRepo := (&types.Repo{
+			Name:     "github.com/org/foo",
+			Metadata: &github.Repository{},
+			Private:  true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}).With(
+			types.Opt.RepoSources(githubService.URN()),
+		)
+
+		sourcer := repos.NewFakeSourcer(nil,
+			repos.NewFakeSource(githubService.Clone(), nil, githubRepo.Clone()),
+		)
+
+		permsSyncer := &PermsSyncer{testing: t}
+
+		clock := timeutil.NewFakeClock(time.Now(), 0)
+
+		syncer := &repos.Syncer{
+			Sourcer:     sourcer,
+			Store:       s,
+			Now:         clock.Now,
+			PermsSyncer: permsSyncer,
+		}
+
+		if permsSyncer.invoked {
+			t.Errorf("initialisation error, PermsSyncer.invoked is already true")
+		}
+
+		syncer.SyncRepo(context.Background(), githubRepo)
+
+		if !permsSyncer.invoked {
+			t.Errorf("syncer.PermsSyncer.SchedulerRepos was not invoked")
+		}
+	}
+}
+
 func testSyncRepo(s *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		clock := timeutil.NewFakeClock(time.Now(), time.Second)
