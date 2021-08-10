@@ -4,7 +4,7 @@ You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For ex
 
 ## General recommendations
 
-If you choose to set up your own PostgreSQL server, please note **we do not recommend using the same PostgreSQL instance for different databases**. Although it is technically possible to point both databases at the same PostgreSQL instance, we suggest either:
+If you choose to set up your own PostgreSQL server, please note **we strongly recommend each database to be set up in different servers and/or hosts**. We suggest either:
 
 1. Deploy _codeintel-db_ alongside the other Sourcegraph containers, i.e. not as a managed PostgreSQL instance.
 2. Deploy a separate PostgreSQL instance. The primary reason to not use the same Postgres instance for this data is because precise code intelligence data can take up a significant of space (given the amount of indexed repositories is large) and the performance of the database may impact the performance of the general application database. You'll most likely want to be able to scale their resources independently.
