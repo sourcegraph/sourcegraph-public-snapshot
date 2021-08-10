@@ -147,11 +147,11 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                         styleAsActive || styleAsExpandable ? ' documentation-index-node-row--shift-left' : ''
                     }`}
                 >
-                    {styleAsActive && <CircleMediumIcon className="d-flex flex-shrink-0 icon-inline" />}
+                    {styleAsActive && <CircleMediumIcon className="d-flex flex-shrink-0 mr-1 icon-inline" />}
                     {styleAsExpandable && (
                         <button
                             type="button"
-                            className="d-flex flex-shrink-0 btn btn-icon"
+                            className="d-flex flex-shrink-0 mr-1 btn btn-icon"
                             aria-label={expanded ? 'Collapse section' : 'Expand section'}
                             onClick={toggleExpanded}
                         >

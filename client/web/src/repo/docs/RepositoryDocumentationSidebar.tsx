@@ -169,7 +169,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             <>
                                 <h4 className="text-nowrap">Index</h4>
                                 {props.pathInfo.children.length > 0 ? (
-                                    <SubpagesList onToggle={onToggle} {...props} />
+                                    <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
                                 ) : (
                                     <p>Looks like there's nothing to see here..</p>
                                 )}
@@ -178,12 +178,12 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                         {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
                             <>
                                 <h4 className="text-nowrap">Subpages</h4>
-                                <SubpagesList onToggle={onToggle} {...props} />
+                                <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
                             </>
                         )}
                         {!props.pathInfo.isIndex &&
                             props.pathInfo.children.length === 0 &&
-                            isExcluded(props.node, excludingTags) && (
+                            isExcluded(node, excludingTags) && (
                                 <>
                                     <p>Looks like there's nothing to see here..</p>
                                 </>
