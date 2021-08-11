@@ -297,7 +297,7 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, li
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender *limitedStreamCollector) error {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
 	var err error
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")
