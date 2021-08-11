@@ -11,7 +11,8 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 
 import { AuthenticatedUser } from '../../auth'
 
-import { InsightTypePrefix, SearchBasedInsightSettings } from './types'
+import { InsightTypePrefix } from './types'
+import { SearchBasedExtensionInsightSettings } from './types/insight/search-insight'
 
 export function logInsightMetrics(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,
@@ -76,7 +77,7 @@ export function getGroupedStepSizes(settings: Settings): number[] {
     return Object.keys(settings)
         .filter(key => key.startsWith(InsightTypePrefix.search))
         .reduce<number[]>((stepsInDays, key) => {
-            const insight = settings[key] as SearchBasedInsightSettings
+            const insight = settings[key] as SearchBasedExtensionInsightSettings
 
             return [...stepsInDays, getDaysFromInsightStep(insight.step)]
         }, [])

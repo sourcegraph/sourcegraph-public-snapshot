@@ -508,6 +508,7 @@
       }
     },
     "InsightFilters": {
+      "type": "object",
       "anyOf": [
         {
           "type": "object",
