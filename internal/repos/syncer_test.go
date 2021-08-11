@@ -562,78 +562,88 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 
 		githubService := servicesPerKind[extsvc.KindGitHub]
 
-		githubRepo := (&types.Repo{
-			Name:     "github.com/org/foo",
-			Metadata: &github.Repository{},
-			Private:  true,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "foo-external-12345",
-				ServiceID:   "https://github.com/",
-				ServiceType: extsvc.TypeGitHub,
+		testCases := []struct {
+			name                 string
+			private              bool
+			expectedInvokedState bool
+			testSetup            func(r *types.Repo) (*types.Repo, error)
+		}{
+			{
+				name:                 "new private repo triggers permissions sync",
+				private:              true,
+				expectedInvokedState: true,
 			},
-		}).With(
-			types.Opt.RepoSources(githubService.URN()),
-		)
+			{
+				name:                 "existing public repo is made private and triggers permissions sync",
+				private:              false,
+				expectedInvokedState: true,
+				testSetup: func(r *types.Repo) (*types.Repo, error) {
+					// Ensure that the repo already exists.
+					if err := store.RepoStore.Create(context.Background(), r); err != nil {
+						return nil, err
+					}
 
-		sourcer := repos.NewFakeSourcer(nil,
-			repos.NewFakeSource(githubService.Clone(), nil, githubRepo.Clone()),
-		)
+					// Modify the "sourced" repo as private.
+					r.Private = true
 
-		storedRepo := (&types.Repo{
-			Name:     "github.com/org/bar",
-			Metadata: &github.Repository{},
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "bar-external-12345",
-				ServiceID:   "https://github.com/",
-				ServiceType: extsvc.TypeGitHub,
+					return r, nil
+				},
 			},
-		}).With(
-			types.Opt.RepoSources(githubService.URN()),
-		)
-
-		if err := store.RepoStore.Create(context.Background(), storedRepo); err != nil {
-			t.Fatal(err)
+			{
+				name:                 "new public repo does not triggers permissions sync",
+				private:              false,
+				expectedInvokedState: false,
+			},
 		}
 
-		t.Run("new private repo triggers permissions sync", func(t *testing.T) {
-			permsSyncer := &mockPermsSyncer{testing: t}
+		for i, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				name := fmt.Sprintf("github.com/org/foo-%d", i)
 
-			clock := timeutil.NewFakeClock(time.Now(), 0)
+				repo := (&types.Repo{
+					Name:     api.RepoName(name),
+					Metadata: &github.Repository{},
+					Private:  tc.private,
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          fmt.Sprintf("foo-%d", i),
+						ServiceID:   "https://github.com/",
+						ServiceType: extsvc.TypeGitHub,
+					},
+				}).With(
+					types.Opt.RepoSources(githubService.URN()),
+				)
 
-			syncer := &repos.Syncer{
-				Sourcer:     sourcer,
-				Store:       store,
-				Now:         clock.Now,
-				PermsSyncer: permsSyncer,
-			}
+				sourcer := repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(githubService.Clone(), nil, repo.Clone()),
+				)
 
-			syncer.SyncRepo(context.Background(), githubRepo)
+				if tc.testSetup != nil {
+					var err error
+					if repo, err = tc.testSetup(repo); err != nil {
+						t.Fatal(err)
+					}
+				}
 
-			if !permsSyncer.invoked {
-				t.Errorf("syncer.PermsSyncer.SchedulerRepos was not invoked")
-			}
-		})
+				clock := timeutil.NewFakeClock(time.Now(), 0)
+				permsSyncer := &mockPermsSyncer{testing: t}
 
-		t.Run("existing public repo is made private and triggers permissions sync", func(t *testing.T) {
-			permsSyncer := &mockPermsSyncer{testing: t}
+				syncer := &repos.Syncer{
+					Sourcer:     sourcer,
+					Store:       store,
+					Now:         clock.Now,
+					PermsSyncer: permsSyncer,
+				}
 
-			clock := timeutil.NewFakeClock(time.Now(), 0)
+				syncer.SyncRepo(context.Background(), repo)
 
-			syncer := &repos.Syncer{
-				Sourcer:     sourcer,
-				Store:       store,
-				Now:         clock.Now,
-				PermsSyncer: permsSyncer,
-			}
-
-			storedRepo.Private = true
-			syncer.SyncRepo(context.Background(), storedRepo)
-
-			if !permsSyncer.invoked {
-				t.Errorf("syncer.PermsSyncer.SchedulerRepos was not invoked")
-			}
-		})
-
+				if permsSyncer.invoked != tc.expectedInvokedState {
+					t.Errorf(
+						"mismatch in state of syncer.PermsSyncer.invoked, want %v, got %v",
+						tc.expectedInvokedState, permsSyncer.invoked,
+					)
+				}
+			})
+		}
 	}
 }
 
