@@ -23,15 +23,29 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const history = useHistory()
 
     const insightFormValues = useMemo<CreateInsightFormFields>(
-        () => ({
-            title: insight.title,
-            visibility: insight.visibility,
-            repositories: insight.repositories.join(', '),
-            series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
-            stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
-            step: Object.keys(insight.step)[0] as InsightStep,
-            allRepos: insight.type === InsightType.Backend,
-        }),
+        () => {
+            if (insight.type === InsightType.Backend) {
+                return {
+                    title: insight.title,
+                    visibility: insight.visibility,
+                    repositories: '',
+                    series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
+                    stepValue: '2',
+                    step: 'weeks',
+                    allRepos: true,
+                }
+            }
+
+            return ({
+                title: insight.title,
+                visibility: insight.visibility,
+                repositories: insight.repositories.join(', '),
+                series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
+                stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
+                step: Object.keys(insight.step)[0] as InsightStep,
+                allRepos: false,
+            })
+        },
         [insight]
     )
 

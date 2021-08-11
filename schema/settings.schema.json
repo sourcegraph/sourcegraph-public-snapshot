@@ -432,10 +432,14 @@
         "pointer": true
       }
     },
-    "insights": {
-      "description": "EXPERIMENTAL: Code Insights",
-      "type": "array",
-      "items": {
+    "insights.allrepos": {
+      "type": "object",
+      "description": "EXPERIMENTAL: Backend-based Code Insights",
+      "propertyNames": {
+        "type": "string",
+        "description": "A valid insight ID."
+      },
+      "additionalProperties": {
         "$ref": "#/definitions/Insight"
       }
     },
@@ -455,7 +459,7 @@
     "Insight": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["title", "description", "series", "id"],
+      "required": ["title", "series"],
       "properties": {
         "title": {
           "type": "string",
@@ -467,37 +471,29 @@
         },
         "series": {
           "type": "array",
-          "description": "Series of data to show for this insight",
+          "description": "Each query will be represented by one line on the chart.",
           "items": {
             "$ref": "#/definitions/InsightSeries"
           }
-        },
-        "id": {
-          "type": "string",
-          "description": "A globally  unique identifier for this insight."
         }
       }
     },
     "InsightSeries": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["label"],
+      "required": ["name", "query"],
       "properties": {
-        "label": {
+        "name" : {
           "type": "string",
-          "description": "The label to use for the series in the graph."
+          "description": "The name to use for the series in the graph."
         },
-        "repositoriesList": {
-          "type": "array",
-          "description": "Performs a search query and shows the number of results returned."
-        },
-        "search": {
+        "query": {
           "type": "string",
           "description": "Performs a search query and shows the number of results returned."
         },
-        "webhook": {
+        "stroke": {
           "type": "string",
-          "description": "(not yet supported) Fetch data from a webhook URL."
+          "description": "The color of the line for the series."
         }
       }
     },
