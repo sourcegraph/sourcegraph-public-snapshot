@@ -61,6 +61,14 @@ func structuralSearchJob(args *search.TextParameters, stream streaming.Sender, r
 	}
 }
 
+func runJobs(ctx context.Context, jobs []withContext) error {
+	g, ctx := errgroup.WithContext(ctx)
+	for _, job := range jobs {
+		g.Go(job(ctx))
+	}
+	return g.Wait()
+}
+
 // StructuralSearchFilesInRepos searches a set of repos for a structural pattern.
 func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
@@ -78,13 +86,7 @@ func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParamete
 	}
 	// Job for unindexed repositories.
 	jobs = append(jobs, structuralSearchJob(args, stream, UnindexedList(indexed.Unindexed)))
-
-	g, ctx := errgroup.WithContext(ctx)
-	for _, job := range jobs {
-		g.Go(job(ctx))
-	}
-
-	return g.Wait()
+	return runJobs(ctx, jobs)
 }
 
 func StructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) error {
