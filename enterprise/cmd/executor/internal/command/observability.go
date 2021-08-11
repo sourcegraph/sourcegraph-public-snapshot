@@ -14,7 +14,6 @@ type Operations struct {
 	SetupGitCheckout          *observation.Operation
 	SetupFirecrackerStart     *observation.Operation
 	SetupStartupScript        *observation.Operation
-	TeardownFirecrackerStop   *observation.Operation
 	TeardownFirecrackerRemove *observation.Operation
 	Exec                      *observation.Operation
 }
@@ -42,7 +41,6 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		SetupGitCheckout:          op("setup.git.checkout"),
 		SetupFirecrackerStart:     op("setup.firecracker.start"),
 		SetupStartupScript:        op("setup.startup-script"),
-		TeardownFirecrackerStop:   op("teardown.firecracker.stop"),
 		TeardownFirecrackerRemove: op("teardown.firecracker.remove"),
 		Exec:                      op("exec"),
 	}

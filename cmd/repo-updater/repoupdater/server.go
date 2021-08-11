@@ -33,16 +33,7 @@ type Server struct {
 	*repos.Store
 	*repos.Syncer
 	SourcegraphDotComMode bool
-	GithubDotComSource    interface {
-		GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error)
-	}
-	GitLabDotComSource interface {
-		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
-	}
-	JVMPackagesSource interface {
-		GetRepo(ctx context.Context, artifactName string) (*types.Repo, error)
-	}
-	Scheduler interface {
+	Scheduler             interface {
 		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
@@ -313,151 +304,25 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{
-		Names: []string{string(args.Repo)},
-	})
-	if err != nil {
-		return nil, err
-	}
 	var repo *types.Repo
-	if len(list) > 0 {
-		repo = list[0]
+	if s.SourcegraphDotComMode {
+		repo, err = s.Syncer.SyncRepo(ctx, args.Repo)
+	} else {
+		// TODO: Remove all call sites that RPC into repo-updater to just look-up
+		// a repo. They can simply ask the database instead.
+		repo, err = s.Store.RepoStore.GetByName(ctx, args.Repo)
 	}
 
-	// If we are sourcegraph.com we don't sync our "cloud_default" code hosts in the background
-	// since there are too many repos. Instead we use an incremental approach where we check for
-	// changes everytime a user browses a repo. RepoLookup is the signal we rely on to check
-	// metadata.
-
-	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
-	if s.SourcegraphDotComMode && codehost != nil {
-		if repo == nil {
-			// Try and find this repo on the remote host. Block on the remote
-			// request.
-			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
-		}
-
-		// TODO a queue with single flighting to speak to remote for args.Repo?
-
-		// We have (potentially stale) data we can return to the user right now. Do that
-		// rather than blocking. This should only happen for public repos, private repos
-		// are ignored since if they do exist in our DB they would have been added by a
-		// user owned code host connection in which case they'll be kept up to date by
-		// our background syncer.
-		if !repo.Private {
-			go func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-				defer cancel()
-				repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
-				if err != nil {
-					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
-					return
-				}
-
-				// Since we are only dealing with public repos here we can safely assume that
-				// when a repository stored in the database is not accessible anymore, no other
-				// external service should have access to it, we can then remove it.
-				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					err = s.Store.RepoStore.Delete(ctx, repo.ID)
-					if err != nil {
-						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
-					}
-				}
-			}()
-		}
-	}
-
-	if repo == nil {
-		return &protocol.RepoLookupResult{
-			ErrorNotFound: true,
-		}, nil
-	}
-
-	repoInfo, err := newRepoInfo(repo)
-	if err != nil {
-		return nil, err
-	}
-
-	return &protocol.RepoLookupResult{
-		Repo: repoInfo,
-	}, nil
-}
-
-// remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
-// for remoteName on codehost.
-func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
-	var repo *types.Repo
-	var err error
-	switch codehost {
-	case extsvc.GitHubDotCom:
-		nameWithOwner := strings.TrimPrefix(remoteName, "github.com/")
-		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
-		if err != nil {
-			if github.IsNotFound(err) {
-				return &protocol.RepoLookupResult{
-					ErrorNotFound: true,
-				}, nil
-			}
-			// This check needs to come before isUnauthorized since GitHub returns 403 when
-			// rate limit has been exceeded.
-			if isTemporarilyUnavailable(err) {
-				return &protocol.RepoLookupResult{
-					ErrorTemporarilyUnavailable: true,
-				}, nil
-			}
-			if isUnauthorized(err) {
-				return &protocol.RepoLookupResult{
-					ErrorUnauthorized: true,
-				}, nil
-			}
-			return nil, err
-		}
-
-	case extsvc.GitLabDotCom:
-		projectWithNamespace := strings.TrimPrefix(remoteName, "gitlab.com/")
-		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
-		if err != nil {
-			if gitlab.IsNotFound(err) {
-				return &protocol.RepoLookupResult{
-					ErrorNotFound: true,
-				}, nil
-			}
-			if isUnauthorized(err) {
-				return &protocol.RepoLookupResult{
-					ErrorUnauthorized: true,
-				}, nil
-			}
-			return nil, err
-		}
-	case extsvc.JVMPackages:
-		if s.JVMPackagesSource != nil {
-			repo, err = s.JVMPackagesSource.GetRepo(ctx, remoteName)
-			if err != nil {
-				if errcode.IsNotFound(err) {
-					return &protocol.RepoLookupResult{
-						ErrorNotFound: true,
-					}, nil
-				}
-				return nil, err
-			}
-		} else {
-			log15.Error(
-				"JVMPackagesSource is nil: doing nothing. To fix this problem, make sure that cloud_default is true for the JVM Dependencies external service type.",
-				"remoteName", remoteName)
-			return &protocol.RepoLookupResult{
-				ErrorNotFound: true,
-			}, nil
-		}
-	}
-
-	if repo.Private {
-		return &protocol.RepoLookupResult{
-			ErrorNotFound: true,
-		}, nil
-	}
-
-	err = s.Syncer.SyncRepo(ctx, repo)
-	if err != nil {
+	switch {
+	case err == nil:
+		break
+	case errcode.IsNotFound(err):
+		return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
+	case errcode.IsUnauthorized(err) || errcode.IsForbidden(err):
+		return &protocol.RepoLookupResult{ErrorUnauthorized: true}, nil
+	case errcode.IsTemporary(err):
+		return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
+	default:
 		return nil, err
 	}
 
@@ -466,9 +331,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		return nil, err
 	}
 
-	return &protocol.RepoLookupResult{
-		Repo: repoInfo,
-	}, nil
+	return &protocol.RepoLookupResult{Repo: repoInfo}, nil
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
@@ -591,16 +454,4 @@ func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 
 func pathAppend(base, p string) string {
 	return strings.TrimRight(base, "/") + p
-}
-
-func isUnauthorized(err error) bool {
-	code := github.HTTPErrorCode(err)
-	if code == 0 {
-		code = gitlab.HTTPErrorCode(err)
-	}
-	return code == http.StatusUnauthorized || code == http.StatusForbidden
-}
-
-func isTemporarilyUnavailable(err error) bool {
-	return github.IsRateLimitExceeded(err)
 }

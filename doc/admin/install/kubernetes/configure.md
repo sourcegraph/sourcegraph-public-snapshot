@@ -2,33 +2,295 @@
 
 Configuring a [Sourcegraph Kubernetes cluster](./index.md) is done by applying manifest files and with simple
 `kubectl` commands. You can configure Sourcegraph as flexibly as you need to meet the requirements
-of your deployment environment.  We provide simple instructions for common things like setting up
-TLS, enabling code intelligence, and exposing Sourcegraph to external traffic below.
+of your deployment environment.
+
+## Featured guides
+
+<div class="getting-started">
+  <a href="#getting-started" class="btn btn-primary" alt="Configure">
+   <span>Getting started</span>
+   </br>
+   Get started with configuring Sourcegraph with Kubernetes.
+  </a>
+
+  <a href="#overlays" class="btn" alt="Overlays">
+   <span>Overlays</span>
+   </br>
+   Learn about Kustomize, how to use our provided overlays, and how to create your own.
+  </a>
+
+  <!-- <a href="#configure-external-databases" class="btn" alt="Configure external databases">
+   <span>External databases</span>
+   </br>
+   Learn about setting up an external database for Sourcegraph with Kubernetes.
+  </a> -->
+</div>
 
 ## Getting started
 
-We **strongly** recommend you fork the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to track your configuration changes in Git.
+We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference repository](./index.md#reference-repository) to track your configuration changes in Git.
 **This will make upgrades far easier** and is a good practice not just for Sourcegraph, but for any Kubernetes application.
 
 - Create a fork of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
 
-> WARNING: Set it to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
+    > WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
 
-> NOTE: We do not recommend storing secrets in the repository itself and these instructions document how.
+    <span class="virtual-br"></span>
 
-- Create a `release` branch to track all of your customizations to Sourcegraph.
-> NOTE: When you upgrade Sourcegraph, you will merge upstream into this branch.
+    > NOTE: We do not recommend storing secrets in the repository itself. TODO
 
-```bash
-export SOURCEGRAPH_VERSION="v3.30.3"
-git checkout $SOURCEGRAPH_VERSION -b release
-```
+- Clone your fork using the repository's URL.
+
+    > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
+
+  ```bash
+  git clone $FORK_URL
+  ```
+
+- Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](update.md).
+
+  ```bash
+  git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
+  ```
+
+- Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
+
+  ```bash
+  export SOURCEGRAPH_VERSION="v3.30.3"
+  git checkout $SOURCEGRAPH_VERSION -b release
+  ```
 
 Some of the following instructions require cluster access. Ensure you can [access your Kubernetes cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 
-## Customizations
+### Customizations
 
-To make customizations to the Sourcegraph deployment such as resources, replicas or other changes follow [Customizing your Sourcegraph Deployment](./overlays.md) before proceeding. 
+To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](./index.md#kustomize) and [overlays](./index.md#overlays).
+This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](#applying-manifests).
+
+In general, we recommend that customizations works like this:
+
+1. [Create, customize, and apply overlays](#overlays) for your deployment
+2. Ensure the services came up correctly, then commit all the customizations to the new branch
+
+  ```sh
+  git add /overlays/$MY_OVERLAY/*
+  # Keeping all overlays contained to a single commit allows for easier cherry-picking
+  git commit amend -m "overlays: update $MY_OVERLAY"
+  ```
+
+See the [overlays guide](#overlays) to learn about the [overlays we provide](#provided-overlays) and [how to create your own overlays](#custom-overlays).
+
+### Applying manifests
+
+Most of our guides will reference a `kubectl-apply-all.sh` script that you run to apply changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster, for example:
+
+```sh
+./kubectl-apply-all.sh
+```
+
+By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
+
+If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
+For example, if you use [overlays to make changes to the manifests](#overlays), you should modify this script to apply your generated cluster instead.
+
+## Overlays
+
+Kustomize overlays are our recommended way to [customize Sourcegraph with Kubernetes](#customization).
+
+> NOTE: If you have not worked with [Kustomize](./index.md#kustomize) or overlays before, please refer to our [Kustomize introduction](./index.md#kustomize).
+
+To generate Kubernetes manifests from an overlay, run the `overlay-generate-cluster.sh` with two arguments:
+
+- the name of the overlay
+- and a path to an output directory where the generated manifests will be
+
+For example:
+
+```sh
+#                overlay directory name    output directory
+#                                 |             |
+./overlay-generate-cluster.sh my-overlay generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the `generated-cluster` directory:
+
+```sh
+kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+We recommend that you:
+
+- [Update the `./overlay-generate-cluster` script](#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
+- Commit your overlays changes separately - see our [customization guide](#customizations) for more details.
+
+You can now get started with using overlays:
+
+- [Provided overlays](#provided-overlays)
+- [Custom overlays](#custom-overlays)
+
+### Provided overlays
+
+Overlays provided out-of-the-box are in the subdirectories of [`deploy-sourcegraph/overlays`](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) and are documented here.
+
+#### Namespaced overlay
+
+This overlay adds a namespace declaration to all the manifests.
+
+1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice everywhere within the
+[overlays/namespaced/](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/) directory. 
+
+1. Generate the overlay by running this command from the `root` directory:
+
+    ```
+    ./overlay-generate-cluster.sh namespaced generated-cluster
+    ```
+
+1. Create the namespace if it doesn't exist yet:
+
+    ```
+    kubectl create namespace ns-<EXAMPLE NAMESPACE>
+    kubectl label namespace ns-<EXAMPLE NAMESPACE> name=ns-sourcegraph
+    ```
+
+1. Apply the generated manifests (from the `generated-cluster` directory) by running this command from the `root` directory:
+
+  ```
+  kubectl apply -n ns-<EXAMPLE NAMESPACE> --prune -l deploy=sourcegraph -f generated-cluster --recursive
+  ```
+
+1. Check for the namespaces and their status with:
+
+  ```
+  kubectl get pods -A
+  ```
+
+#### Non-privileged create cluster overlay
+
+This kustomization is for Sourcegraph installations in clusters with security restrictions. It runs all containers as a non root users, as well removing cluster roles and cluster role bindings and does all the rolebinding in a namespace. It configures Prometheus to work in the namespace and not require ClusterRole wide privileges when doing service discovery for scraping targets. It also disables cAdvisor.
+
+This version and `non-privileged` need to stay in sync. This version is only used for cluster creation.
+
+To use it, execute the following command from the `root` directory:
+
+```
+./overlay-generate-cluster.sh non-privileged-create-cluster generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```
+kubectl create namespace ns-sourcegraph
+kubectl apply -n ns-sourcegraph --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+#### Non-privileged overlay
+
+This overlay is for continued use after you have successfully deployed the `non-privileged-create-cluster`. It runs all containers as a non root users, as well removing cluster roles and cluster role bindings and does all the rolebinding in a namespace. It configures Prometheus to work in the namespace and not require ClusterRole wide privileges when doing service discovery for scraping targets. It also disables cAdvisor.
+
+To use it, execute the following command from the `root` directory:
+
+```shell script
+./overlay-generate-cluster.sh non-privileged generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```shell script
+kubectl apply -n ns-sourcegraph --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+If you are starting a fresh installation use the overlay `non-privileged-create-cluster`. After creation you can use the overlay
+`non-privileged`.
+
+#### Migrate-to-nonprivileged overlay
+
+If you already are running a Sourcegraph instance using user `root` and want to convert to running with non-root user then
+you need to apply a migration step that will change the permissions of all persistent volumes so that the volumes can be
+used by the non-root user. This migration is provided as overlay `migrate-to-nonprivileged`. After the migration you can use
+overlay `non-privileged`. If you have previously deployed your cluster in a non-default namespace, be sure to edit the `kustomization.yaml` file in the overlays directly to ensure the files are generated with the correct namespace. 
+
+This kustomization injects initContainers in all pods with persistent volumes to transfer ownership of directories to specified non-root users. It is used for migrating existing installations to a non-privileged environment.
+
+```
+./overlay-generate-cluster.sh migrate-to-nonprivileged generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```
+kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+#### minikube overlay
+
+This kustomization deletes resource declarations and storage classnames to enable running Sourcegraph on minikube.
+
+To use it, execute the following command from the `root` directory:
+
+```sh
+./overlay-generate-cluster.sh minikube generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```sh
+minikube start
+kubectl create namespace ns-sourcegraph
+kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
+minikube service list
+```
+
+To tear it down:
+
+```sh
+kubectl delete namespaces ns-sourcegraph
+minikube stop
+```
+
+### Custom overlays
+
+To create your own [overlays](#overlays), first [set up your deployment reference repository to enable customizations](#getting-started).
+
+Then, within the `overlays` directory of the [reference repository](./index.md#reference-repository), create a new directory for your overlay along with a `kustomization.yaml`.
+
+```text
+deploy-sourcegraph
+ |-- overlays
+ |    |-- my-new-overlay
+ |    |    +-- kustomization.yaml
+ |    |-- bases
+ |    +-- ...
+ +-- ...
+```
+
+Within `kustomization.yaml`:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Only include resources from 'overlays/bases' you are interested in modifying
+# To learn more about bases: https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#base
+resources:
+  - ../bases/deployments
+  - ../bases/rbac-roles
+  - ../bases/pvcs
+```
+
+You can then define patches, transformations, and more. A complete reference is available [here](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/).
+To get started, we recommend you explore writing your own [`patches`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/), or the more specific variants:
+
+- [`patchesStrategicMerge`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patchesstrategicmerge/)
+- [`patchesJson6902`](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patchesjson6902/)
+
+To avoid complications with reference cycles an overlay can only reference resources inside the directory subtree of the directory it resides in (symlinks are not allowed either).
+
+Learn more in the [`kustomization` documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/).
+You can also explore how our [provided overlays](#provided-overlays) use patches, for reference: [`deploy-sourcegraph` usage of patches](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+lang:YAML+patches:+:%5B_%5D+OR+patchesStrategicMerge:+:%5B_%5D+OR+patchesJson6902:+:%5B_%5D+count:999&patternType=structural).
+
+Once you have created your overlays, refer to our [overlays guide](#overlays).
+
+<br />
 
 ## Configure a storage class
 
@@ -231,8 +493,7 @@ for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
 for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
 ```
 
-
-## Security - Configure network access
+## Configure network access
 
 You need to make the main web server accessible over the network to external users.
 
@@ -267,6 +528,15 @@ kubectl -n ingress-nginx get svc
 ```
 
 If you are having trouble accessing Sourcegraph, ensure ingress-nginx IP is accessible above. Otherwise see [Troubleshooting ingress-nginx](https://kubernetes.github.io/ingress-nginx/troubleshooting/). The namespace of the ingress-controller is `ingress-nginx`.
+
+Once you have [installed Sourcegraph](./index.md#installation), run the following command, and ensure an IP address has been assigned to your ingress resource. Then browse to the IP or configured URL.
+
+```sh
+kubectl get ingress sourcegraph-frontend
+
+NAME                   CLASS    HOSTS             ADDRESS     PORTS     AGE
+sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
+```
 
 #### Configuration
 
@@ -343,7 +613,7 @@ Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL
 
 Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
 other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace (as described in our [Overlays docs](overlays.md) or below in the
+then we recommend running Sourcegraph in a namespace (as described in our [Overlays guide](#overlays) or below in the
 [Using NetworkPolicy with Namespaced Overlay Example](#using-networkpolicy-with-namespaced-overlay)).
 You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
 When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
@@ -395,8 +665,7 @@ spec:
           name: ns-sourcegraph
 ```
 
-
-## Sourcegraph Databases
+## Configure external databases
 
 We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcgraph databases, see [this guide](../../postgres.md).
 
@@ -513,7 +782,23 @@ Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https:/
 
 ## Environment variables
 
-Update the environment variables in the sourcegraph-frontend deployment YAML file
+Update the environment variables in the appropriate deployment manifest.
+For example, the following [patch](#overlays) will update `PGUSER` to have the value `bob`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sourcegraph-frontend
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          env:
+            - name: PGUSER
+              value: bob
+```
 
 ## Troubleshooting
 

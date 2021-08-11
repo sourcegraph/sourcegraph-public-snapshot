@@ -1,54 +1,16 @@
 #!/usr/bin/env bash
 set -ex -o nounset -o pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
-
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
+export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 
-function cleanup() {
-  apt-get -y autoremove
-  apt-get clean
-  rm -rf /var/cache/*
-  rm -rf /var/lib/apt/lists/*
-  history -c
-}
-
-## Install git >=2.18 (to enable -c protocol.version=2)
-function install_git() {
-  add-apt-repository ppa:git-core/ppa
-  apt-get update -y
-  apt-get install -y git
-}
-
-## Install logging agent
-## Reference: https://cloud.google.com/logging/docs/agent/installation
-function install_logging_agent() {
-  curl -sSO https://dl.google.com/cloudagents/add-logging-agent-repo.sh
-  bash ./add-logging-agent-repo.sh
-  rm add-logging-agent-repo.sh
-  apt-get update -y
-  apt-get install -y 'google-fluentd=1.*' google-fluentd-catch-all-config-structured
-  systemctl start google-fluentd
-}
-
-## Install monitoring agent
-## Reference: https://cloud.google.com/monitoring/agent/installation
-function install_monitoring_agent() {
-  curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
-  bash ./add-monitoring-agent-repo.sh
-  rm add-monitoring-agent-repo.sh
-  apt-get update -y
-  apt-get install -y 'stackdriver-agent=6.*'
-  systemctl start stackdriver-agent
-}
-
-function increase_inotify_limit() {
-  if [ ! -f "/etc/sysctl.d/local.conf" ]; then
-    # Configure inotify limits
-    echo -e "\nfs.inotify.max_user_watches = 128000\n" >>/etc/sysctl.d/local.conf
-  fi
+## Install ops agent
+## Reference: https://cloud.google.com/logging/docs/agent/ops-agent/installation
+function install_ops_agent() {
+  curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+  sudo bash add-google-cloud-ops-agent-repo.sh --also-install
 }
 
 ## Install Docker
@@ -66,8 +28,15 @@ function install_docker() {
     echo '{"log-driver": "journald"}' >"${DOCKER_DAEMON_CONFIG_FILE}"
   fi
 
-  ## Restart Docker daemon to pick up our changes.
+  # Restart Docker daemon to pick up our changes.
   systemctl restart --now docker
+}
+
+## Install git >=2.18 (to enable -c protocol.version=2)
+function install_git() {
+  add-apt-repository ppa:git-core/ppa
+  apt-get update -y
+  apt-get install -y git
 }
 
 ## Install Weaveworks Ignite
@@ -78,36 +47,17 @@ function install_ignite() {
   chmod +x ignite
   mv ignite /usr/local/bin
 
-  # Install ignited
-  curl -sfLo ignited https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignited-amd64
-  chmod +x ignited
-  mv ignited /usr/local/bin
-
   # Install container network interface
   mkdir -p /opt/cni/bin
   curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
 }
 
-## Install executor service
+## Install and configure executor service
 function install_executor() {
-  # Copy the executor binary into /usr/local/bin
+  # Move binary into PATH
   mv /tmp/executor /usr/local/bin
-}
 
-# Build the ignite-ubuntu image for use in firecracker. Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go.
-function generate_ignite_base_image() {
-  docker build -t "$EXECUTOR_FIRECRACKER_IMAGE" --build-arg SRC_CLI_VERSION="$SRC_CLI_VERSION" /tmp/ignite-ubuntu
-  ignite image import --runtime docker "$EXECUTOR_FIRECRACKER_IMAGE"
-  docker image rm "$EXECUTOR_FIRECRACKER_IMAGE"
-}
-
-# Write systemd unit file for indexer service
-function install_executor_service() {
-  # Create stub environment file.
-  cat <<EOF >/etc/systemd/system/executor.env
-THIS_ENV_IS="unconfigured"
-EOF
-
+  # Create configuration file and stub environment file
   cat <<EOF >/etc/systemd/system/executor.service
 [Unit]
 Description=User code executor
@@ -123,18 +73,43 @@ Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 [Install]
 WantedBy=multi-user.target
 EOF
+  echo 'THIS_ENV_IS="unconfigured"' >>/etc/systemd/system/executor.env
 }
 
-###############################
-## THE PLAYBOOK STARTS HERE. ##
-###############################
-install_git
-install_logging_agent
-install_monitoring_agent
-increase_inotify_limit
+## Build the ignite-ubuntu image for use in firecracker.
+## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
+function generate_ignite_base_image() {
+  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
+  ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
+  docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
+  # Remove intermediate layers and base image used in ignite-ubuntu.
+  docker system prune --force
+}
+
+## Loads the required kernel image so it doesn't have to happen on the first VM start.
+function preheat_kernel_image() {
+  ignite kernel import --runtime docker "${KERNEL_IMAGE}"
+  docker pull "weaveworks/ignite:${IGNITE_VERSION}"
+}
+
+function cleanup() {
+  apt-get -y autoremove
+  apt-get clean
+  rm -rf /var/cache/*
+  rm -rf /var/lib/apt/lists/*
+  history -c
+}
+
+# Prerequisites
+install_ops_agent
 install_docker
+install_git
 install_ignite
+
+# Services
 install_executor
+
+# Service prep and cleanup
 generate_ignite_base_image
-install_executor_service
+preheat_kernel_image
 cleanup

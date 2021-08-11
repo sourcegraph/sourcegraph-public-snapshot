@@ -83,15 +83,6 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
         },
         teardown: [
             {
-                key: 'teardown.firecracker.stop',
-                command: ['ignite', 'stop', 'USERNAME_REMOVED-c70e5459-a30d-43fe-ae6e-7a17b3adec51'],
-                startTime,
-                exitCode: 0,
-                durationMilliseconds: 2067,
-                out:
-                    'stdout: time="2021-08-02T18:02:21+02:00" level=info msg="Removing the container with ID \\"2dc3f3334dab94176aaed5b20e5ecefff383223ff1a63c3f9ea3b53130f18f2e\\" from the \\"docker-bridge\\" network"\nstdout: time="2021-08-02T18:02:23+02:00" level=info msg="Stopped VM with name \\"USERNAME_REMOVED-c70e5459-a30d-43fe-ae6e-7a17b3adec51\\" and ID \\"7c60f09688abdca1\\""\n',
-            },
-            {
                 key: 'teardown.firecracker.remove',
                 command: ['ignite', 'rm', '-f', 'USERNAME_REMOVED-c70e5459-a30d-43fe-ae6e-7a17b3adec51'],
                 startTime,
@@ -173,15 +164,6 @@ const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
                 'stdout: {"operation":"BATCH_SPEC_EXECUTION","timestamp":"2021-08-02T14:50:21.68Z","status":"FAILURE","message":"failed to query Sourcegraph version to check for available features: Post \\"https://USERNAME_REMOVED:***@sourcegraph.test:3443/.api/graphql\\": dial tcp: lookup sourcegraph.test on 192.168.1.1:53: no such host"}\nstdout: time="2021-08-02T16:50:21+02:00" level=error msg="Process exited with status 1\\n"\n',
         },
         teardown: [
-            {
-                key: 'teardown.firecracker.stop',
-                command: ['ignite', 'stop', 'USERNAME_REMOVED-1c25d857-837e-4d16-bfd6-12b9034fcad3'],
-                startTime,
-                exitCode: 0,
-                durationMilliseconds: 701,
-                out:
-                    'stdout: time="2021-08-02T16:50:21+02:00" level=info msg="Removing the container with ID \\"e142627b331e3f0ff4fb2e0092c356fd8febd3cea9eb547b699e09c451d77ead\\" from the \\"docker-bridge\\" network"\nstdout: time="2021-08-02T16:50:22+02:00" level=info msg="Stopped VM with name \\"USERNAME_REMOVED-1c25d857-837e-4d16-bfd6-12b9034fcad3\\" and ID \\"32cc4f205cd58550\\""\n',
-            },
             {
                 key: 'teardown.firecracker.remove',
                 command: ['ignite', 'rm', '-f', 'USERNAME_REMOVED-1c25d857-837e-4d16-bfd6-12b9034fcad3'],
