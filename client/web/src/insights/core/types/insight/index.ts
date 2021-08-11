@@ -1,10 +1,10 @@
-import { isLangStatsdInsightId, LangStatsInsight, LangStatsInsightConfiguration } from './lang-stat-insight';
+import { isLangStatsdInsightId, LangStatsInsight, LangStatsInsightConfiguration } from './lang-stat-insight'
 import {
     isSearchBasedInsightId,
     SearchBasedInsight,
     SearchBasedInsightConfiguration,
-    SearchBasedExtensionInsightSettings
-} from './search-insight';
+    SearchBasedExtensionInsightSettings,
+} from './search-insight'
 
 export * from './common'
 
@@ -14,8 +14,7 @@ export type Insight = SearchBasedInsight | LangStatsInsight
 
 export type InsightExtensionBasedConfiguration =
     // Since lang stat insight doesn't have be version
-    | LangStatsInsightConfiguration
-    | SearchBasedExtensionInsightSettings
+    LangStatsInsightConfiguration | SearchBasedExtensionInsightSettings
 
 export type InsightConfiguration = SearchBasedInsightConfiguration | LangStatsInsightConfiguration
 export type { SearchBasedInsight, LangStatsInsight }

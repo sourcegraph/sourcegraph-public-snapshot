@@ -432,6 +432,13 @@
         "pointer": true
       }
     },
+    "insights": {
+      "description": "EXPERIMENTAL: Code Insights",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Insight"
+      }
+    },
     "insights.allrepos": {
       "type": "object",
       "description": "EXPERIMENTAL: Backend-based Code Insights",
@@ -458,7 +465,7 @@
   "definitions": {
     "Insight": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["title", "series"],
       "properties": {
         "title": {
@@ -475,6 +482,9 @@
           "items": {
             "$ref": "#/definitions/InsightSeries"
           }
+        },
+        "filters": {
+          "$ref": "#/definitions/InsightFilters"
         }
       }
     },
@@ -483,7 +493,7 @@
       "additionalProperties": false,
       "required": ["name", "query"],
       "properties": {
-        "name" : {
+        "name": {
           "type": "string",
           "description": "The name to use for the series in the graph."
         },
@@ -496,6 +506,38 @@
           "description": "The color of the line for the series."
         }
       }
+    },
+    "InsightFilters": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "includeRepoRegexp", "excludeRepoRegexp"],
+          "properties": {
+            "type": {
+              "const": "regexp"
+            },
+            "includeRepoRegexp": { "type": "string" },
+            "excludeRepoRegexp": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "repositories"],
+          "properties": {
+            "type": {
+              "const": "repolist"
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
     },
     "InsightDashboard": {
       "type": "object",
@@ -514,6 +556,55 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "OldBackendInsight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "description", "series", "id"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The short title of this insight"
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of this insight"
+        },
+        "series": {
+          "type": "array",
+          "description": "Series of data to show for this insight",
+          "items": {
+            "$ref": "#/definitions/InsightSeries"
+          }
+        },
+        "id": {
+          "type": "string",
+          "description": "A globally  unique identifier for this insight."
+        }
+      }
+    },
+    "OldInsightSeries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "The label to use for the series in the graph."
+        },
+        "repositoriesList": {
+          "type": "array",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "search": {
+          "type": "string",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "webhook": {
+          "type": "string",
+          "description": "(not yet supported) Fetch data from a webhook URL."
         }
       }
     },

@@ -7,7 +7,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { InsightSeries } from '../../../schema/settings.schema';
+import { InsightSeries } from '../../../schema/settings.schema'
 
 import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
 
@@ -50,9 +50,14 @@ export interface SearchInsightSettings {
     repositories: string[]
 }
 
+/**
+ * Backend insight filters is subset of search based backend filters.
+ * We don't have repo list filter support yet. Only regexp filters are
+ * supported.
+ */
 export interface BackendInsightFilters {
-    excludeRepoRegexp: string
-    includeRepoRegexp: string
+    excludeRepoRegexp: string | null
+    includeRepoRegexp: string | null
 }
 
 export interface LangStatsInsightsSettings {

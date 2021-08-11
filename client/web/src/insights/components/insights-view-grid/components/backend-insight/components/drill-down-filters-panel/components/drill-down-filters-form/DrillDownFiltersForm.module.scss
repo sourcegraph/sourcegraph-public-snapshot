@@ -1,5 +1,7 @@
 .drilldown-filters {
     padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .header {
@@ -10,6 +12,7 @@
     display: flex;
 
     &__prefix {
+        font-family: monospace;
         flex-shrink: 0;
         padding: 0.25rem 0.5rem;
         height: 100%;

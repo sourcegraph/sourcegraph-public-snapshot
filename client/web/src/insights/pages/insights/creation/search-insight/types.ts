@@ -1,4 +1,3 @@
-
 import { InsightVisibility } from '../../../../core/types'
 import { SearchInsightSeries } from '../../../../core/types/insight/search-insight'
 

@@ -1,73 +1,71 @@
 import classnames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
 
+import { ErrorAlert } from '../../../../../../../../../components/alerts'
+import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { TruncatedText } from '../../../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components/trancated-text/TrancatedText'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
-import { FormRadioInput } from '../../../../../../../form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../../../form/hooks/useField'
-import { FormChangeEvent, useForm } from '../../../../../../../form/hooks/useForm'
+import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
 import { FlexTextArea } from '../../../../../../../form/repositories-field/components/flex-textarea/FlexTextArea'
-import { DrillDownFilters, DrillDownFiltersMode, EMPTY_DRILLDOWN_FILTERS } from '../../types'
-import { validRegexp } from './validators'
 
 import styles from './DrillDownFiltersForm.module.scss'
+import { validRegexp } from './validators'
+
+export interface DrillDownFiltersFormValues {
+    includeRepoRegexp: string
+    excludeRepoRegexp: string
+}
+
+const INITIAL_FORM_VALUES: DrillDownFiltersFormValues = {
+    includeRepoRegexp: '',
+    excludeRepoRegexp: '',
+}
 
 interface DrillDownFiltersFormProps {
     className?: string
-    initialFiltersValue?: DrillDownFilters
-    onFiltersChange?: (filters: FormChangeEvent<DrillDownFilters>) => void
+    initialFiltersValue?: DrillDownFiltersFormValues
+    onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
+    onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
 }
 
 export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormProps> = props => {
-    const { className, initialFiltersValue = EMPTY_DRILLDOWN_FILTERS, onFiltersChange } = props
+    const { className, initialFiltersValue = INITIAL_FORM_VALUES, onFiltersChange, onFilterSave } = props
 
-    const { ref, formAPI } = useForm<DrillDownFilters>({
+    const { ref, formAPI, handleSubmit } = useForm<DrillDownFiltersFormValues>({
         initialValues: initialFiltersValue,
         onChange: onFiltersChange,
-    })
-
-    const mode = useField({
-        name: 'mode',
-        formApi: formAPI,
+        onSubmit: onFilterSave,
     })
 
     const includeRegex = useField({
-        name: 'includeRepoRegex',
+        name: 'includeRepoRegexp',
         formApi: formAPI,
         validators: { sync: validRegexp },
     })
 
     const excludeRegex = useField({
-        name: 'excludeRepoRegex',
+        name: 'excludeRepoRegexp',
         formApi: formAPI,
         validators: { sync: validRegexp },
     })
 
-    const handleFiltersReset = (): void => {
-        includeRegex.input.onChange('')
-        excludeRegex.input.onChange('')
-    }
-
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} className={classnames(className, styles.drilldownFilters)}>
-            <header className="d-flex align-items-center">
-                <h4 className="m-0">Filters by Repositories</h4>
-                <button type="button" className="btn btn-link ml-auto" onClick={handleFiltersReset}>
-                    Clear filters
-                </button>
+        <form ref={ref} className={classnames(className, styles.drilldownFilters)} onSubmit={handleSubmit}>
+            <header className="">
+                <h4 className="mb-2">Filters by Repositories</h4>
+                <p className="text-muted mb-2">
+                    Default filters applied.{' '}
+                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                        Learn more.
+                    </a>
+                </p>
             </header>
 
             <hr className="ml-n3 mr-n3" />
 
-            <FormRadioInput
-                title="Regular expression"
-                className="pt-3 pb-3"
-                name="mode"
-                value={DrillDownFiltersMode.Regex}
-                checked={mode.input.value === DrillDownFiltersMode.Regex}
-                onChange={mode.input.onChange}
-            />
+            <h4 className="mt-3 mb-3">Regular expression</h4>
 
             <FormInput
                 as={DrillDownRegExpInput}
@@ -78,7 +76,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                         Include repositories
                     </LabelWithReset>
                 }
-                placeholder="regexp-pattern"
+                placeholder="^github\.com/sourcegraph/sourcegraph$"
                 className="mb-4"
                 valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
                 error={includeRegex.meta.dirty && includeRegex.meta.error}
@@ -93,10 +91,27 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                         Exclude repositories
                     </LabelWithReset>
                 }
-                placeholder="regexp-pattern"
+                placeholder="^github\.com/sourcegraph/sourcegraph$"
                 valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
                 error={excludeRegex.meta.dirty && excludeRegex.meta.error}
+                className="mb-4"
                 {...excludeRegex.input}
+            />
+
+            <hr className="ml-n3 mr-n3" />
+
+            {formAPI.submitErrors?.[FORM_ERROR] && (
+                <ErrorAlert className="mt-3 mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
+            )}
+
+            <LoaderButton
+                alwaysShowLabel={true}
+                loading={formAPI.submitting}
+                label={formAPI.submitting ? 'Updating' : 'Update default filters'}
+                spinnerClassName="mr-2"
+                type="submit"
+                disabled={formAPI.submitting}
+                className="d-flex btn btn-outline-secondary ml-auto mt-3"
             />
         </form>
     )

@@ -4,35 +4,40 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useCallback, useRef } from 'react'
 import FocusLock from 'react-focus-lock'
 
+import {
+    SearchBasedBackendFilters,
+    SearchBackendBasedInsightFiltersType,
+} from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
-import { FormChangeEvent } from '../../../../../form/hooks/useForm'
-import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel';
-import { DrillDownFilters, DrillDownFiltersMode } from '../drill-down-filters-panel/types'
+import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
 import styles from './DrillDownFiltersPanel.module.scss'
 import { useKeyboard } from './hooks/use-keyboard'
 import { useOnClickOutside } from './hooks/use-outside-click'
 
-const hasActiveFilters = (filters: DrillDownFilters): boolean => {
-    switch (filters.mode) {
-        case DrillDownFiltersMode.Regex:
-            return filters.excludeRepoRegex.trim() !== '' || filters.includeRepoRegex.trim() !== ''
-        case DrillDownFiltersMode.Repolist:
+const hasActiveFilters = (filters: SearchBasedBackendFilters): boolean => {
+    switch (filters.type) {
+        case SearchBackendBasedInsightFiltersType.Regex:
+            return filters.excludeRepoRegexp.trim() !== '' || filters.includeRepoRegexp.trim() !== ''
+        case SearchBackendBasedInsightFiltersType.Repolist:
             // We don't have the repo list mode support yet
             return false
     }
+
+    return false
 }
 
 interface DrillDownFiltersProps {
     isOpen: boolean
-    filters: DrillDownFilters
+    filters: SearchBasedBackendFilters
     popoverTargetRef: React.RefObject<HTMLElement>
-    onFilterChange: (filters: DrillDownFilters) => void
+    onFilterChange: (filters: SearchBasedBackendFilters) => void
+    onFilterSave: (filters: SearchBasedBackendFilters) => void
     onVisibilityChange: (open: boolean) => void
 }
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { isOpen, popoverTargetRef, filters, onFilterChange, onVisibilityChange } = props
+    const { isOpen, popoverTargetRef, filters, onVisibilityChange, onFilterChange, onFilterSave } = props
 
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     const popoverReference = useRef<HTMLDivElement>(null)
@@ -59,12 +64,6 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
     const handleEscapePress = useCallback(() => {
         onVisibilityChange(false)
     }, [onVisibilityChange])
-
-    const handleFilterChange = (event: FormChangeEvent<DrillDownFilters>): void => {
-        if (event.valid) {
-            onFilterChange(event.values)
-        }
-    }
 
     // Catch any outside click of popover element
     useOnClickOutside(popoverReference, handleClickOutside)
@@ -100,7 +99,8 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                     <FocusLock returnFocus={true}>
                         <DrillDownFiltersPanel
                             initialFiltersValue={filters}
-                            onFiltersChange={handleFilterChange}
+                            onFiltersChange={onFilterChange}
+                            onFilterSave={onFilterSave}
                         />
                     </FocusLock>
                 </Popover>

@@ -1,4 +1,3 @@
-
 export enum InsightTypePrefix {
     search = 'searchInsights.insight',
     langStats = 'codeStatsInsights.insight',
@@ -43,4 +42,3 @@ export interface SyntheticInsightFields {
  * possible value '<user subject id>' | '<org id 1> ... | ... <org id N> | <global subject id>'
  */
 export type InsightVisibility = string
-

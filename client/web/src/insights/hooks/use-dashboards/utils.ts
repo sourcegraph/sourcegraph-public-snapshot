@@ -23,7 +23,8 @@ export function getInsightIdsFromSettings(settings: Settings): string[] {
         .filter(isInsightSettingKey)
         .filter(id => {
             if (isSearchBasedInsightId(id)) {
-                const searchBasedInsightRepositories = (settings[id] as SearchBasedExtensionInsightSettings)?.repositories
+                const searchBasedInsightRepositories = (settings[id] as SearchBasedExtensionInsightSettings)
+                    ?.repositories
 
                 // Since dashboards currently work only with the insights page
                 // Filter out all insights that are not supposed to be on insights page

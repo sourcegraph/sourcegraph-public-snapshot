@@ -6,7 +6,8 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../schema/settings.schema'
 import {
-    Insight, InsightExtensionBasedConfiguration,
+    Insight,
+    InsightExtensionBasedConfiguration,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightType,
 } from '../../core/types'
@@ -65,7 +66,7 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
         }
     }
 
-    const allReposInsights = subject.settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {};
+    const allReposInsights = subject.settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
 
     // Match in all repos object means that we are dealing with backend search based insight.
     if (allReposInsights[insightId]) {

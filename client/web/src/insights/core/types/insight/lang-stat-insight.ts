@@ -1,4 +1,4 @@
-import { InsightType, InsightTypePrefix, SyntheticInsightFields } from './common';
+import { InsightType, InsightTypePrefix, SyntheticInsightFields } from './common'
 
 /**
  * Extended Lang Stats Insight.

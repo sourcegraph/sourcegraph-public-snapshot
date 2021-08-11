@@ -32,7 +32,6 @@ export function getSanitizedSeries(rawSeries: EditableDataSeries[]): SearchInsig
  * presented in user/org settings.
  */
 export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): SearchBasedInsight {
-
     // Backend type of insight.
     if (rawInsight.allRepos) {
         return {

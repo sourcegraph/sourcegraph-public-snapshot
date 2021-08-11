@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React, { ReactElement } from 'react'
 
-import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput';
+import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
 
 import styles from './SeriesCard.module.scss'
 
