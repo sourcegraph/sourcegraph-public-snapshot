@@ -31,10 +31,10 @@ export interface IndexNode extends GQLDocumentationNode {
     children: IndexNodeChild[]
 
     /** Whether or not this node is currently active / being looked at on the screen. */
-    isActive: boolean,
+    isActive: boolean
 
     /** Whether or not this node is in the path of nodes leading to the currently active one. */
-    inActivePath: boolean,
+    inActivePath: boolean
 }
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
@@ -80,18 +80,18 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         }
 
         // If a new node has come into view, automatically expand - or if no longer in view, collapse.
-        const numChildren = node.children.length;
+        const numberChildren = node.children.length
         useEffect(() => {
             // If the user explicitly expanded, respect them and don't collapse.
             if (!userExpanded) {
                 // Don't collapse an area we previously expanded unless there are a large number of
                 // children in it, otherwise all the expanding/collapsing is a lot of moving and
                 // too jarring.
-                if (autoExpand || (!autoExpand && numChildren > 30)) {
+                if (autoExpand || (!autoExpand && numberChildren > 30)) {
                     setExpanded(autoExpand)
                 }
             }
-        }, [autoExpand, numChildren])
+        }, [autoExpand, userExpanded, numberChildren])
 
         // If this node becomes the active one (the one being viewed), scroll this index (sidebar) node
         // into view.
@@ -101,7 +101,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                 if (depth === 0) {
                     setTimeout(() => {
                         if (nodeReference.current?.parentElement) {
-                            nodeReference.current.parentElement.scrollTo({top: 0, behavior: 'smooth'})
+                            nodeReference.current.parentElement.scrollTo({ top: 0, behavior: 'smooth' })
                         }
                     }, 250)
                 } else {
@@ -113,7 +113,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                          */
                         behavior: 'auto',
                         block: 'center',
-                    });
+                    })
                 }
             }
         }, [node.isActive, depth, nodeReference])
@@ -136,23 +136,29 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         // but the speed at which a browser URL change occurs, triggers a rerender and can be
         // picked up by useScrollToLocationHash is noticeably slow. To workaround this, we manually
         // scroll the element into view as soon as the link is clicked.
-        const scrollToFast = () => {
+        const scrollToFast = (): void => {
+            // eslint-disable-next-line unicorn/prefer-query-selector
             const element = document.getElementById(hash)
             if (element) {
-                element.scrollIntoView();
+                element.scrollIntoView()
             }
         }
 
         const styleAsActive = node.children.length === 0 && node.isActive
         const styleAsExpandable = !styleAsActive && depth !== 0 && node.children.length > 0
         return (
-            <div className={`documentation-index-node d-flex flex-column${depth !== 0 ? ' mt-2' : ''}`} ref={nodeReference}>
+            <div
+                className={`documentation-index-node d-flex flex-column${depth !== 0 ? ' mt-2' : ''}`}
+                ref={nodeReference}
+            >
                 <span
                     className={`d-flex align-items-center text-nowrap documentation-index-node-row${
                         styleAsActive || styleAsExpandable ? ' documentation-index-node-row--shift-left' : ''
                     }`}
                 >
-                    {styleAsActive && <CircleMediumIcon className="d-flex flex-shrink-0 mr-1 icon-inline documentation-index-node-active-circle" />}
+                    {styleAsActive && (
+                        <CircleMediumIcon className="d-flex flex-shrink-0 mr-1 icon-inline documentation-index-node-active-circle" />
+                    )}
                     {styleAsExpandable && (
                         <button
                             type="button"
@@ -187,5 +193,6 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                 )}
             </div>
         )
-    }
-, (prevProps, nextProps) => isEqual(prevProps, nextProps))
+    },
+    (previousProps, nextProps) => isEqual(previousProps, nextProps)
+)

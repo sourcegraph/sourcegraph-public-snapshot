@@ -53,7 +53,7 @@ interface Props
     excludingTags: Tag[]
 
     /** The root scrolling area that this documentation node lives in. */
-    scrollingRoot: RefObject<HTMLElement|undefined>
+    scrollingRoot: RefObject<HTMLElement | undefined>
 
     /**
      * Called when the visibility of this documentation node changes.
@@ -84,14 +84,19 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
         )
 
         const reference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
-        const intersectionObserver = new IntersectionObserver(([entry]) => {
-            onVisible(node, entry)
-        }, {
-            root: scrollingRoot?.current,
-            threshold: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        })
+        const intersectionObserver = new IntersectionObserver(
+            ([entry]) => {
+                onVisible(node, entry)
+            },
+            {
+                root: scrollingRoot?.current,
+                threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+            }
+        )
         useEffect(() => {
-            if (reference.current) { intersectionObserver.observe(reference.current) }
+            if (reference.current) {
+                intersectionObserver.observe(reference.current)
+            }
             // Remove the observer as soon as the component is unmounted
             return () => {
                 onVisible(node)
@@ -121,10 +126,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
         return (
             <div className={`documentation-node mb-5${topMargin}`}>
                 <div ref={reference}>
-                    <Heading
-                        level={headingLevel}
-                        className="d-flex align-items-center documentation-node__heading"
-                    >
+                    <Heading level={headingLevel} className="d-flex align-items-center documentation-node__heading">
                         <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
                             <LinkVariantIcon className="icon-inline" />
                         </AnchorLink>
@@ -203,5 +205,4 @@ const Heading: React.FunctionComponent<{
     level: number
     children: React.ReactNode
     [x: string]: any
-}> = ({ level, children, ...props }) =>
-    React.createElement(`h${level}`, props, children)
+}> = ({ level, children, ...props }) => React.createElement(`h${level}`, props, children)

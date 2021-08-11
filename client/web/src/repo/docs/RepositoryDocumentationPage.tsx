@@ -122,18 +122,19 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     // Keep track of which node on the page is most visible, so that when visibility changes we can
     // know the active node and can apply various visual effects (like scrolling to it in the
     // sidebar.)
-    const [visiblePathID, setVisiblePathID] = useState<string|null>(null);
-    const [_, setVisibilityEvents] = useState<{pathID: string, intersectionRatio: number, element: Element}[]>([]);
-    const onVisible = React.useMemo(() =>
-        (node: GQLDocumentationNode, entry?: IntersectionObserverEntry): void =>
+    const [visiblePathID, setVisiblePathID] = useState<string | null>(null)
+    const [, setVisibilityEvents] = useState<{ pathID: string; intersectionRatio: number; element: Element }[]>([])
+    const onVisible = React.useMemo(
+        // eslint-disable-next-line unicorn/consistent-function-scoping
+        () => (node: GQLDocumentationNode, entry?: IntersectionObserverEntry): void =>
             setVisibilityEvents(visibilityEvents => {
                 // Update the list of currently-visible nodes.
                 if (!entry || !entry.isIntersecting) {
                     // Remove all events for the now non-visible node.
-                    visibilityEvents = visibilityEvents.filter(ev => ev.pathID !== node.pathID)
+                    visibilityEvents = visibilityEvents.filter(event => event.pathID !== node.pathID)
                 } else {
                     // Add the new event.
-                    visibilityEvents = visibilityEvents.filter(ev => ev.pathID !== node.pathID)
+                    visibilityEvents = visibilityEvents.filter(event => event.pathID !== node.pathID)
                     visibilityEvents.push({
                         pathID: node.pathID,
                         intersectionRatio: entry.intersectionRatio,
@@ -147,9 +148,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     // when scrolling very fast. I think that the IntersectionObserver v2 API solves
                     // this using the trackVisibility option, but we cannot use it except in Chrome:
                     // https://caniuse.com/intersectionobserver-v2
-                    visibilityEvents = visibilityEvents.filter(ev => {
-                        return isElementInView(ev.element, containerReference.current!, true)
-                    })
+                    visibilityEvents = visibilityEvents.filter(event =>
+                        isElementInView(event.element, containerReference.current!, true)
+                    )
 
                     // Sort events by distance to the center of the screen. This way the "visible" node
                     // is always what's in the middle of your screen.
@@ -163,9 +164,8 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     setVisiblePathID(visibilityEvents[0].pathID)
                 }
                 return visibilityEvents
-            })
-        ,
-        [setVisiblePathID, setVisibilityEvents],
+            }),
+        [setVisiblePathID, setVisibilityEvents]
     )
 
     return (
@@ -275,19 +275,20 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 })
 
 /** Checks if an element is in view of the scrolling container. */
-function isElementInView(element: Element, container: Element, partial: boolean): boolean {
+function isElementInView(element: HTMLElement, container: HTMLElement, partial: boolean): boolean {
     const containerTop = container.scrollTop
     const containerBottom = containerTop + container.clientHeight
 
-    const elementTop = element.offsetTop
+    const elementTop = element.offsetTop as number
     const elementBottom = elementTop + element.clientHeight
 
     if (elementTop >= containerTop && elementBottom <= containerBottom) {
         return true
     }
-    return partial
-        && (elementTop < containerTop && elementBottom > containerTop)
-        || (elementBottom > containerBottom && elementTop < containerBottom)
+    return (
+        (partial && elementTop < containerTop && elementBottom > containerTop) ||
+        (elementBottom > containerBottom && elementTop < containerBottom)
+    )
 }
 
 /**
@@ -295,23 +296,23 @@ function isElementInView(element: Element, container: Element, partial: boolean)
  * container's viewport center. i.e., how far away the element is from being in the middle of the
  * scrolling container's viewport.
  */
-function distanceToCenter(element: Element, container: Element): number {
+function distanceToCenter(element: HTMLElement, container: HTMLElement): number {
     const containerTop = container.scrollTop
     const containerBottom = containerTop + container.clientHeight
     const containerHeight = containerBottom - containerTop
-    const containerCenter = containerTop + (containerHeight / 2)
+    const containerCenter = containerTop + containerHeight / 2
 
     const elementTop = element.offsetTop
     const elementBottom = elementTop + element.clientHeight
     const elementHeight = elementBottom - elementTop
-    const elementCenter = elementTop + (elementHeight / 2)
+    const elementCenter = elementTop + elementHeight / 2
 
     if (elementTop < containerCenter && elementBottom > containerCenter) {
         return 0
     }
-    return absolute(containerCenter-elementCenter)
+    return absolute(containerCenter - elementCenter)
 }
 
-function absolute(x: number): number {
-    return x < 0 ? -x : x
+function absolute(value: number): number {
+    return value < 0 ? - value : value
 }

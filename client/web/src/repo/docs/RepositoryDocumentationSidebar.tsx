@@ -108,12 +108,38 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
 /**
  * The sidebar for a specific repo revision that shows the index of all documentation.
  */
-export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({ onToggle, node, activePathID, ...props }) => {
+export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
+    onToggle,
+    node,
+    activePathID,
+    ...props
+}) => {
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, SIDEBAR_DEFAULT_VISIBILITY)
     const handleSidebarToggle = useCallback(() => {
         onToggle(!toggleSidebar)
         setToggleSidebar(!toggleSidebar)
     }, [setToggleSidebar, toggleSidebar, onToggle])
+
+    /**
+     * Convert the regular GraphQL node types into IndexNode types. These contain per-node `isActive`
+     * and `inActivePath` fields. We bake nodes in this way because otherwise we would need to pass
+     * the `activePathID` to every `DocumentationIndexNode` recursively, and it would be an almost-always
+     * changing prop to the component - causing scrolling on the page to rerender the entire sidebar
+     * instead of just the elements that would've been affected due to `isActive` changes, etc.
+     */
+    const indexNode = useMemo(() => {
+        const bake = (node: GQLDocumentationNode): IndexNode => ({
+            ...node,
+            children: node.children.map(child =>
+                child.pathID ? { pathID: child.pathID } : { node: bake(child.node!) }
+            ),
+            isActive: node.pathID === activePathID,
+            inActivePath: hasDescendent(node, activePathID),
+        })
+        return bake(node)
+    }, [node, activePathID])
+
+    const excludingTags: Tag[] = useMemo(() => ['private'], [])
 
     if (!toggleSidebar) {
         return (
@@ -127,24 +153,6 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
             </button>
         )
     }
-    const excludingTags: Tag[] = useMemo(() => ['private'], [])
-
-    /**
-     * Convert the regular GraphQL node types into IndexNode types. These contain per-node `isActive`
-     * and `inActivePath` fields. We bake nodes in this way because otherwise we would need to pass
-     * the `activePathID` to every `DocumentationIndexNode` recursively, and it would be an almost-always
-     * changing prop to the component - causing scrolling on the page to rerender the entire sidebar
-     * instead of just the elements that would've been affected due to `isActive` changes, etc.
-     */
-    const indexNode = useMemo(() => {
-        const bake = (node: GQLDocumentationNode): IndexNode => ({
-            ...node,
-            children: node.children.map(child => child.pathID ? {pathID: child.pathID} : {node: bake(child.node!)} ),
-            isActive: node.pathID === activePathID,
-            inActivePath: hasDescendent(node, activePathID),
-        })
-        return bake(node)
-    }, [node, activePathID])
 
     return (
         <Resizable
@@ -169,7 +177,12 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             <>
                                 <h4 className="text-nowrap">Index</h4>
                                 {props.pathInfo.children.length > 0 ? (
-                                    <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
+                                    <SubpagesList
+                                        onToggle={onToggle}
+                                        {...props}
+                                        node={node}
+                                        activePathID={activePathID}
+                                    />
                                 ) : (
                                     <p>Looks like there's nothing to see here..</p>
                                 )}
