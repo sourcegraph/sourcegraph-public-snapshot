@@ -212,15 +212,26 @@ func inform(client v1.EndpointsInterface, m *Map, u *k8sURL) error {
 
 func endpointsToMap(u *k8sURL, eps corev1.Endpoints) (*hashMap, error) {
 	var urls []string
+	add := func(addr *corev1.EndpointAddress) {
+		if addr.Hostname != "" {
+			urls = append(urls, u.endpointURL(addr.Hostname+"."+u.Service))
+		} else if addr.IP != "" {
+			urls = append(urls, u.endpointURL(addr.IP))
+		}
+	}
+
 	for _, subset := range eps.Subsets {
 		for _, addr := range subset.Addresses {
-			if addr.Hostname != "" {
-				urls = append(urls, u.endpointURL(addr.Hostname+"."+u.Service))
-			} else if addr.IP != "" {
-				urls = append(urls, u.endpointURL(addr.IP))
+			add(&addr)
+		}
+
+		if u.IncludeNotReady {
+			for _, addr := range subset.NotReadyAddresses {
+				add(&addr)
 			}
 		}
 	}
+
 	sort.Strings(urls)
 	log15.Debug("kubernetes endpoints", "service", u.Service, "urls", urls)
 	metricEndpointSize.WithLabelValues(u.Service).Set(float64(len(urls)))
@@ -235,6 +246,11 @@ type k8sURL struct {
 
 	Service   string
 	Namespace string
+
+	// IncludeNotReady, if true, will make us include not ready endpoints. Defaults to false.
+	// This is desirable for sharded services like gitserver and indexed-search so that we
+	// don't shuffle things around during unavailability events.
+	IncludeNotReady bool
 }
 
 func (u *k8sURL) endpointURL(endpoint string) string {
@@ -266,9 +282,10 @@ func parseURL(rawurl string) (*k8sURL, error) {
 		return nil, errors.Errorf("invalid k8s url. expected k8s+http://service.namespace:port/path, got %s", rawurl)
 	}
 	return &k8sURL{
-		URL:       *u,
-		Service:   svc,
-		Namespace: ns,
+		URL:             *u,
+		Service:         svc,
+		Namespace:       ns,
+		IncludeNotReady: u.Query().Get("include_not_ready") == "true",
 	}, nil
 }
 
