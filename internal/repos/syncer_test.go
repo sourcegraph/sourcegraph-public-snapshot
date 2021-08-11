@@ -607,10 +607,6 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 				PermsSyncer: permsSyncer,
 			}
 
-			if permsSyncer.invoked {
-				t.Errorf("initialisation error, PermsSyncer.invoked is already true")
-			}
-
 			storedRepo.Private = true
 
 			syncer.SyncRepo(context.Background(), githubRepo)
@@ -630,10 +626,6 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 				Store:       store,
 				Now:         clock.Now,
 				PermsSyncer: permsSyncer,
-			}
-
-			if permsSyncer.invoked {
-				t.Errorf("initialisation error, PermsSyncer.invoked is already true")
 			}
 
 			syncer.SyncRepo(context.Background(), storedRepo)
