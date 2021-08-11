@@ -97,7 +97,8 @@ body,
 @import './tree/Tree';
 @import './insights/insights-global-styles';
 @import './nav/GlobalNavbar';
-@import './nav/NavLinks';
+@import './nav/Feedback/FeedbackPrompt.scss';
+@import './nav/UserNavItem.scss';
 @import './auth/ResetPasswordPage';
 @import './auth/SignInPage';
 @import './auth/SignUpPage';
