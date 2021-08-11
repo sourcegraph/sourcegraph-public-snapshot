@@ -480,7 +480,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 	}
 
 	// Might dequeue 5 or 6 based on timing
-	if callCount := len(store.DequeueFunc.History()); callCount > 5 {
-		t.Errorf("unexpected call count. want<=%d have=%d", 5, callCount)
+	if callCount := len(store.DequeueFunc.History()); callCount != 5 && callCount != 6 {
+		t.Errorf("unexpected call count. want=5 or 6 have=%d", callCount)
 	}
 }
