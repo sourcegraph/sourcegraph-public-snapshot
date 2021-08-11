@@ -607,8 +607,6 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 				PermsSyncer: permsSyncer,
 			}
 
-			storedRepo.Private = true
-
 			syncer.SyncRepo(context.Background(), githubRepo)
 
 			if !permsSyncer.invoked {
@@ -628,6 +626,7 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 				PermsSyncer: permsSyncer,
 			}
 
+			storedRepo.Private = true
 			syncer.SyncRepo(context.Background(), storedRepo)
 
 			if !permsSyncer.invoked {
