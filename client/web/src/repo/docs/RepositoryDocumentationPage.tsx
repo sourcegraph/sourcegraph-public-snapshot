@@ -2,7 +2,7 @@ import * as H from 'history'
 import { upperFirst } from 'lodash'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect, useCallback, useMemo, useState, useRef, RefObject } from 'react'
+import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
@@ -123,7 +123,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     // know the active node and can apply various visual effects (like scrolling to it in the
     // sidebar.)
     const [visiblePathID, setVisiblePathID] = useState<string | null>(null)
-    const [, setVisibilityEvents] = useState<{ pathID: string; intersectionRatio: number; element: Element }[]>([])
+    const [, setVisibilityEvents] = useState<{ pathID: string; intersectionRatio: number; element: HTMLElement }[]>([])
     const onVisible = React.useMemo(
         // eslint-disable-next-line unicorn/consistent-function-scoping
         () => (node: GQLDocumentationNode, entry?: IntersectionObserverEntry): void =>
@@ -138,7 +138,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     visibilityEvents.push({
                         pathID: node.pathID,
                         intersectionRatio: entry.intersectionRatio,
-                        element: entry.target,
+                        element: entry.target as HTMLElement,
                     })
                 }
 
@@ -314,5 +314,5 @@ function distanceToCenter(element: HTMLElement, container: HTMLElement): number 
 }
 
 function absolute(value: number): number {
-    return value < 0 ? - value : value
+    return value < 0 ? -value : value
 }
