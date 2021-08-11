@@ -19,6 +19,8 @@ import {
     LsifUploadsVariables,
     CodeIntelligenceCommitGraphMetadataResult,
     CodeIntelligenceCommitGraphMetadataVariables,
+    QueueAutoIndexJobsForRepoResult,
+    QueueAutoIndexJobsForRepoVariables,
 } from '../../../graphql-operations'
 import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../shared/backend'
 
@@ -275,5 +277,25 @@ export function fetchLsifIndexes({
     return requestGraphQL<LsifIndexesResult, LsifIndexesVariables>(gqlQuery, vars).pipe(
         map(dataOrThrowErrors),
         map(({ lsifIndexes }) => lsifIndexes)
+    )
+}
+
+export function enqueueIndexJob(id: string, revision: string): Observable<LsifIndexFields[]> {
+    const query = gql`
+        mutation QueueAutoIndexJobsForRepo($id: ID!, $rev: String) {
+            queueAutoIndexJobsForRepo(repository: $id, rev: $rev) {
+                ...LsifIndexFields
+            }
+        }
+
+        ${lsifIndexFieldsFragment}
+    `
+
+    return requestGraphQL<QueueAutoIndexJobsForRepoResult, QueueAutoIndexJobsForRepoVariables>(query, {
+        id,
+        rev: revision,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(({ queueAutoIndexJobsForRepo }) => queueAutoIndexJobsForRepo)
     )
 }

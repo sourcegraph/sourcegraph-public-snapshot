@@ -48,6 +48,6 @@ type GitserverClient interface {
 }
 
 type IndexEnqueuer interface {
-	QueueIndexesForRepository(ctx context.Context, repositoryID int) error
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) ([]dbstore.Index, error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 }

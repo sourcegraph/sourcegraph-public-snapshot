@@ -60,7 +60,6 @@ func initQueues(db dbutil.DB, observationContext *observation.Context, queueOpti
 			Help:        "Total number of jobs in the queued state.",
 			ConstLabels: map[string]string{"queue": queueName},
 		}, func() float64 {
-			// TODO(efritz) - do not count soft-deleted code intel index records
 			count, err := store.QueuedCount(context.Background(), nil)
 			if err != nil {
 				log15.Error("Failed to get queued job count", "queue", queueName, "error", err)
@@ -68,6 +67,10 @@ func initQueues(db dbutil.DB, observationContext *observation.Context, queueOpti
 
 			return float64(count)
 		}))
+
+		//
+		// TODO - stack driver (if configured)
+		//
 	}
 
 	handler.SetupRoutes(queueOptions, router)

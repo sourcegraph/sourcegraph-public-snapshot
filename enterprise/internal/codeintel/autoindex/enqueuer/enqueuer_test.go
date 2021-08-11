@@ -22,7 +22,7 @@ var testConfig = Config{
 	MaximumIndexJobsPerInferredConfiguration: 50,
 }
 
-func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
+func TestQueueIndexesInDatabase(t *testing.T) {
 	indexConfiguration := store.IndexConfiguration{
 		ID:           1,
 		RepositoryID: 42,
@@ -70,7 +70,7 @@ func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
 	})
 
 	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
-	_ = scheduler.QueueIndexesForRepository(context.Background(), 42)
+	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to GetIndexConfigurationByRepositoryID. want=%d have=%d", 1, len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()))
@@ -173,7 +173,7 @@ index_jobs:
     outfile: lsif.dump
 `)
 
-func TestQueueIndexesForRepositoryInRepository(t *testing.T) {
+func TestQueueIndexesInRepository(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
@@ -190,7 +190,7 @@ func TestQueueIndexesForRepositoryInRepository(t *testing.T) {
 
 	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 
-	if err := scheduler.QueueIndexesForRepository(context.Background(), 42); err != nil {
+	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -258,7 +258,7 @@ func TestQueueIndexesForRepositoryInRepository(t *testing.T) {
 	}
 }
 
-func TestQueueIndexesForRepositoryInferred(t *testing.T) {
+func TestQueueIndexesInferred(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
@@ -281,7 +281,7 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 
 	for _, id := range []int{41, 42, 43, 44} {
-		if err := scheduler.QueueIndexesForRepository(context.Background(), id); err != nil {
+		if _, err := scheduler.QueueIndexes(context.Background(), id, "HEAD", "", false); err != nil {
 			t.Fatalf("unexpected error performing update: %s", err)
 		}
 	}
@@ -318,7 +318,7 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 	}
 }
 
-func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
+func TestQueueIndexesInferredTooLarge(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
@@ -344,7 +344,7 @@ func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
 	config.MaximumIndexJobsPerInferredConfiguration = 20
 	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &config, &observation.TestContext)
 
-	if err := scheduler.QueueIndexesForRepository(context.Background(), 42); err != nil {
+	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
