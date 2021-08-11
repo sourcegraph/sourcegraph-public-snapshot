@@ -101,11 +101,8 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 	fileMatches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
 		return StructuralSearchFilesInRepos(ctx, args, stream)
 	})
-	if err != nil {
-		return err
-	}
 
-	if len(fileMatches) == 0 {
+	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
 		patternCopy := *(args.PatternInfo)
