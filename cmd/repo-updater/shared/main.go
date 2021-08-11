@@ -232,13 +232,12 @@ func Main(enterpriseInit EnterpriseInit) {
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
-		Synced:     make(chan repos.Diff),
-		Logger:     log15.Root(),
-		Now:        clock,
-		Registerer: prometheus.DefaultRegisterer,
+		Synced:      make(chan repos.Diff),
+		Logger:      log15.Root(),
+		Now:         clock,
+		Registerer:  prometheus.DefaultRegisterer,
+		PermsSyncer: server.PermsSyncer,
 	}
-
-	syncer.PermsSyncer = server.PermsSyncer
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
