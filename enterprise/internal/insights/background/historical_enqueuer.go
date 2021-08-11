@@ -330,8 +330,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
 
-			duration := h.now().Sub(series.OldestHistoricalAt) / time.Duration(h.framesToBackfill())
-			frames := Frames(h.framesToBackfill(), duration, series.CreatedAt)
+			frames := FirstOfMonthFrames(12, series.CreatedAt.Truncate(time.Hour*24))
 
 			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 			plan := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
@@ -400,18 +399,29 @@ type buildSeriesContext struct {
 	series   itypes.InsightSeries
 }
 
-func Frames(numFrames int, frameLength time.Duration, current time.Time) []compression.Frame {
-	frames := make([]compression.Frame, 0)
+// FirstOfMonthFrames builds a set of frames with a specific number of elements, such that all of the
+// starting times of each frame < current will fall on the first of a month.
+func FirstOfMonthFrames(numPoints int, current time.Time) []compression.Frame {
+	if numPoints < 1 {
+		return nil
+	}
+	times := make([]time.Time, 0, numPoints)
+	year, month, _ := current.Date()
+	firstOfCurrent := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
 
-	for frame := 0; frame < numFrames; frame++ {
-		// Determine the exact start and end time of this timeframe.
-		from := current.Add(-time.Duration(frame+1) * frameLength)
-		to := current.Add(-time.Duration(frame) * frameLength)
+	for i := 0 - numPoints + 1; i < 0; i++ {
+		times = append(times, firstOfCurrent.AddDate(0, i, 0))
+	}
+	times = append(times, firstOfCurrent)
+	times = append(times, current)
 
-		frames = append([]compression.Frame{{
-			From: from,
-			To:   to,
-		}}, frames...)
+	frames := make([]compression.Frame, 0, len(times)-1)
+	for i := 1; i < len(times); i++ {
+		prev := times[i-1]
+		frames = append(frames, compression.Frame{
+			From: prev,
+			To:   times[i],
+		})
 	}
 	return frames
 }
