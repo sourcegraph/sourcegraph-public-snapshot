@@ -56,6 +56,7 @@ func IgnoreContextCancellation(parent context.Context, reason mutValueCtxKey) (c
 	ctx := &ignoreCancelCtx{Context: parent, d: done}
 
 	go func() {
+		var err error
 		select {
 		case <-parent.Done():
 			// Check if any parent context has a key:value pair ctx.reason=true.
@@ -63,19 +64,18 @@ func IgnoreContextCancellation(parent context.Context, reason mutValueCtxKey) (c
 			if b, ok := val.(bool); ok && b {
 				// "done" will only be closed if the func() returned by IgnoreContextCancellation is called
 				// explicitly.
-				return
+				<-c
+				err = context.Canceled
+			} else {
+				err = parent.Err()
 			}
-			ctx.mu.Lock()
-			ctx.err = parent.Err()
-			ctx.mu.Unlock()
 		case <-c:
-			ctx.mu.Lock()
-			if ctx.err == nil {
-				ctx.err = context.Canceled
-			}
-			ctx.mu.Unlock()
+			err = context.Canceled
 		}
+		ctx.mu.Lock()
+		ctx.err = err
 		close(done)
+		ctx.mu.Unlock()
 	}()
 	return ctx, func() { once.Do(func() { close(c) }) }
 }

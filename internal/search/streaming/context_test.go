@@ -20,7 +20,7 @@ func TestCancelWithReason(t *testing.T) {
 
 	select {
 	case <-parentCtx.Done():
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(5 * time.Second):
 		t.Fatalf("parent context should have been canceled")
 	}
 
@@ -49,13 +49,13 @@ func TestCancelWithoutReason(t *testing.T) {
 
 	select {
 	case <-childCtx.Done():
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(5 * time.Second):
 		t.Fatalf("child context should have been canceled")
 	}
 
 	select {
 	case <-grandchildCtx.Done():
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(5 * time.Second):
 		t.Fatalf("child context should have been canceled")
 	}
 
@@ -77,7 +77,7 @@ func TestDeadlineExceeded(t *testing.T) {
 
 	select {
 	case <-childCtx.Done():
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(5 * time.Second):
 		t.Fatalf("child context should have been canceled")
 	}
 
@@ -100,7 +100,7 @@ func TestCancelChildContext(t *testing.T) {
 
 	select {
 	case <-childCtx.Done():
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(5 * time.Second):
 		t.Fatalf("child context should have been canceled")
 	}
 
