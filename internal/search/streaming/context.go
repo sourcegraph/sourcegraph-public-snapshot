@@ -42,17 +42,18 @@ func (ctx *mutValueCtx) Value(key interface{}) interface{} {
 	return ctx.Context.Value(key)
 }
 
-// PickyContext wraps a context and ignores context cancellations if any of the
-// parent contexts store a key:value pair with key=reason and value=true. Always
-// call defer cleanup() to clean up the goroutine created in Done().
-func PickyContext(parent context.Context, reason mutValueCtxKey) (context.Context, func()) {
+// IgnoreContextCancellation wraps a context and ignores context cancellations
+// if any of the parent contexts store a key:value pair with key=reason and
+// value=true. Always call defer cleanup() to clean up the goroutine created in
+// Done().
+func IgnoreContextCancellation(parent context.Context, reason mutValueCtxKey) (context.Context, func()) {
 	done := make(chan struct{})
 
 	// once protects c from being closed twice.
 	once := sync.Once{}
 	c := make(chan struct{})
 
-	ctx := &pickyCtx{Context: parent, d: done}
+	ctx := &ignoreCancelCtx{Context: parent, d: done}
 
 	go func() {
 		select {
@@ -60,7 +61,7 @@ func PickyContext(parent context.Context, reason mutValueCtxKey) (context.Contex
 			// Check if any parent context has a key:value pair ctx.reason=true.
 			val := parent.Value(reason)
 			if b, ok := val.(bool); ok && b {
-				// "done" will only be closed if the func() returned by PickyContext is called
+				// "done" will only be closed if the func() returned by IgnoreContextCancellation is called
 				// explicitly.
 				return
 			}
@@ -79,7 +80,7 @@ func PickyContext(parent context.Context, reason mutValueCtxKey) (context.Contex
 	return ctx, func() { once.Do(func() { close(c) }) }
 }
 
-type pickyCtx struct {
+type ignoreCancelCtx struct {
 	context.Context
 	d chan struct{}
 
@@ -87,11 +88,11 @@ type pickyCtx struct {
 	err error
 }
 
-func (ctx *pickyCtx) Done() <-chan struct{} {
+func (ctx *ignoreCancelCtx) Done() <-chan struct{} {
 	return ctx.d
 }
 
-func (ctx *pickyCtx) Err() error {
+func (ctx *ignoreCancelCtx) Err() error {
 	ctx.mu.Lock()
 	err := ctx.err
 	ctx.mu.Unlock()

@@ -269,7 +269,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 	// To send back proper search stats, we want to finish repository resolution
 	// even if we have already found enough results and the parent context was
 	// cancelled because we hit the limit.
-	ctx, cleanup := streaming.PickyContext(ctx, streaming.CanceledLimitHit)
+	ctx, cleanup := streaming.IgnoreContextCancellation(ctx, streaming.CanceledLimitHit)
 	defer cleanup()
 
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("options: %+v", options))

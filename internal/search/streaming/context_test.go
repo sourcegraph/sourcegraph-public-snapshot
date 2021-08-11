@@ -11,7 +11,7 @@ import (
 func TestCancelWithReason(t *testing.T) {
 	parentCtx, cancel := context.WithCancel(context.Background())
 	mutCtx := WithMutableValue(parentCtx)
-	childCtx, cancelChildCtx := PickyContext(mutCtx, CanceledLimitHit)
+	childCtx, cancelChildCtx := IgnoreContextCancellation(mutCtx, CanceledLimitHit)
 	defer cancelChildCtx()
 
 	// Cancel with reason.
@@ -38,7 +38,7 @@ func TestCancelWithReason(t *testing.T) {
 func TestCancelWithoutReason(t *testing.T) {
 	parentCtx, cancel := context.WithCancel(context.Background())
 	mutCtx := WithMutableValue(parentCtx)
-	childCtx, cancelChildCtx := PickyContext(mutCtx, CanceledLimitHit)
+	childCtx, cancelChildCtx := IgnoreContextCancellation(mutCtx, CanceledLimitHit)
 	defer cancelChildCtx()
 	// Check propagation to children.
 	type tmpType string
@@ -72,7 +72,7 @@ func TestDeadlineExceeded(t *testing.T) {
 	parentCtx, cancel := context.WithDeadline(context.Background(), time.Now())
 	defer cancel()
 	mutCtx := WithMutableValue(parentCtx)
-	childCtx, cleanup := PickyContext(mutCtx, CanceledLimitHit)
+	childCtx, cleanup := IgnoreContextCancellation(mutCtx, CanceledLimitHit)
 	defer cleanup()
 
 	select {
@@ -89,7 +89,7 @@ func TestDeadlineExceeded(t *testing.T) {
 func TestCancelChildContext(t *testing.T) {
 	parentCtx := context.Background()
 	mutCtx := WithMutableValue(parentCtx)
-	childCtx, cancelChildCtx := PickyContext(mutCtx, CanceledLimitHit)
+	childCtx, cancelChildCtx := IgnoreContextCancellation(mutCtx, CanceledLimitHit)
 	cancelChildCtx()
 
 	select {
