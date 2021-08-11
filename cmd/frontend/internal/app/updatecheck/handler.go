@@ -420,10 +420,13 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		eventSummaries = append(eventSummaries, translateEventSummary(es))
 	}
 
-	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, codeIntelUsage.CountsByLanguage)
+	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, len(codeIntelUsage.CountsByLanguage))
 	for language, counts := range codeIntelUsage.CountsByLanguage {
+		// note: do not capture loop var by ref
+		languageID := language
+
 		countsByLanguage = append(countsByLanguage, jsonCodeIntelRepositoryCountsByLanguage{
-			LanguageID:                            language,
+			LanguageID:                            &languageID,
 			NumRepositoriesWithUploadRecords:      counts.NumRepositoriesWithUploadRecords,
 			NumRepositoriesWithFreshUploadRecords: counts.NumRepositoriesWithFreshUploadRecords,
 			NumRepositoriesWithIndexRecords:       counts.NumRepositoriesWithIndexRecords,
@@ -501,23 +504,23 @@ func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 }
 
 type jsonCodeIntelUsage struct {
-	StartOfWeek                                  time.Time                                          `json:"start_time"`
-	WAUs                                         *int32                                             `json:"waus"`
-	PreciseWAUs                                  *int32                                             `json:"precise_waus"`
-	SearchBasedWAUs                              *int32                                             `json:"search_waus"`
-	CrossRepositoryWAUs                          *int32                                             `json:"xrepo_waus"`
-	PreciseCrossRepositoryWAUs                   *int32                                             `json:"precise_xrepo_waus"`
-	SearchBasedCrossRepositoryWAUs               *int32                                             `json:"search_xrepo_waus"`
-	EventSummaries                               []jsonEventSummary                                 `json:"event_summaries"`
-	NumRepositories                              *int32                                             `json:"num_repositories"`
-	NumRepositoriesWithUploadRecords             *int32                                             `json:"num_repositories_with_upload_records"`
-	NumRepositoriesWithoutUploadRecords          *int32                                             `json:"num_repositories_without_upload_records"`
-	NumRepositoriesWithFreshUploadRecords        *int32                                             `json:"num_repositories_with_fresh_upload_records"`
-	NumRepositoriesWithIndexRecords              *int32                                             `json:"num_repositories_with_index_records"`
-	NumRepositoriesWithFreshIndexRecords         *int32                                             `json:"num_repositories_with_fresh_index_records"`
-	NumRepositoriesWithIndexConfigurationRecords *int32                                             `json:"num_repositories_with_index_configuration_records"`
-	CountsByLanguage                             map[string]jsonCodeIntelRepositoryCountsByLanguage `json:"counts_by_language"`
-	SettingsPageViewCount                        *int32                                             `json:"settings_page_view_count"`
+	StartOfWeek                                  time.Time                                 `json:"start_time"`
+	WAUs                                         *int32                                    `json:"waus"`
+	PreciseWAUs                                  *int32                                    `json:"precise_waus"`
+	SearchBasedWAUs                              *int32                                    `json:"search_waus"`
+	CrossRepositoryWAUs                          *int32                                    `json:"xrepo_waus"`
+	PreciseCrossRepositoryWAUs                   *int32                                    `json:"precise_xrepo_waus"`
+	SearchBasedCrossRepositoryWAUs               *int32                                    `json:"search_xrepo_waus"`
+	EventSummaries                               []jsonEventSummary                        `json:"event_summaries"`
+	NumRepositories                              *int32                                    `json:"num_repositories"`
+	NumRepositoriesWithUploadRecords             *int32                                    `json:"num_repositories_with_upload_records"`
+	NumRepositoriesWithoutUploadRecords          *int32                                    `json:"num_repositories_without_upload_records"`
+	NumRepositoriesWithFreshUploadRecords        *int32                                    `json:"num_repositories_with_fresh_upload_records"`
+	NumRepositoriesWithIndexRecords              *int32                                    `json:"num_repositories_with_index_records"`
+	NumRepositoriesWithFreshIndexRecords         *int32                                    `json:"num_repositories_with_fresh_index_records"`
+	NumRepositoriesWithIndexConfigurationRecords *int32                                    `json:"num_repositories_with_index_configuration_records"`
+	CountsByLanguage                             []jsonCodeIntelRepositoryCountsByLanguage `json:"counts_by_language"`
+	SettingsPageViewCount                        *int32                                    `json:"settings_page_view_count"`
 }
 
 type jsonCodeIntelRepositoryCountsByLanguage struct {

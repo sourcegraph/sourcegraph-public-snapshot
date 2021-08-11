@@ -530,20 +530,22 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 			"num_repositories_with_index_records": 30,
 			"num_repositories_with_fresh_index_records": 20,
 			"num_repositories_with_index_configuration_records": 7,
-			"counts_by_language": {
-				"go": {
+			"counts_by_language": [
+				{
+					"language_id": "go",
 					"num_repositories_with_upload_records": 10,
 					"num_repositories_with_fresh_upload_records": 20,
 					"num_repositories_with_index_records": 30,
 					"num_repositories_with_fresh_index_records": 40
 				},
-				"typescript": {
+				{
+					"language_id": "typescript",
 					"num_repositories_with_upload_records": 15,
 					"num_repositories_with_fresh_upload_records": 25,
 					"num_repositories_with_index_records": 35,
 					"num_repositories_with_fresh_index_records": 45
 				}
-			},
+			],
 			"settings_page_view_count": 1489
 		},
 		"code_monitoring_usage": null,
