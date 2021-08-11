@@ -620,7 +620,7 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 			}
 		})
 
-		t.Run("existing public repo is made private and triggers permsisions sync", func(t *testing.T) {
+		t.Run("existing public repo is made private and triggers permissions sync", func(t *testing.T) {
 			permsSyncer := &PermsSyncer{testing: t}
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
