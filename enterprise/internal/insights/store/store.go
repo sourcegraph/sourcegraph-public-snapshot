@@ -22,6 +22,7 @@ import (
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
+	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 }
 
@@ -33,6 +34,18 @@ type Store struct {
 	*basestore.Store
 	now       func() time.Time
 	permStore InsightPermissionStore
+}
+
+func (s *Store) Transact(ctx context.Context) (*Store, error) {
+	txBase, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &Store{
+		Store:     txBase,
+		now:       s.now,
+		permStore: s.permStore,
+	}, nil
 }
 
 // New returns a new Store backed by the given Timescale db.
@@ -319,7 +332,7 @@ type RecordSeriesPointArgs struct {
 func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) (err error) {
 	// Start transaction.
 	var txStore *basestore.Store
-	txStore, err = s.Transact(ctx)
+	txStore, err = s.Store.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -372,6 +385,23 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		repoNameID,         // repo_name_id
 		repoNameID,         // original_repo_name_id
 	))
+}
+
+// RecordSeriesPoints stores multiple data points atomically.
+func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, pt := range pts {
+		// this is a pretty naive implementation, this can be refactored to reduce db calls
+		if err := s.RecordSeriesPoint(ctx, pt); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 const upsertRepoNameFmtStr = `

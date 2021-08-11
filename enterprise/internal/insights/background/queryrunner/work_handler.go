@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
 	"github.com/hashicorp/go-multierror"
 
 	"golang.org/x/time/rate"
@@ -131,17 +133,31 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
 			continue
 		}
-		if recordErr := r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
-			SeriesID: job.SeriesID,
-			Point: store.SeriesPoint{
-				Time:  recordTime,
-				Value: float64(matchCount),
-			},
-			RepoName: &repoName,
-			RepoID:   &dbRepoID,
-		}); recordErr != nil {
-			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoint"))
+		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
+		if recordErr := r.insightsStore.RecordSeriesPoints(ctx, args); recordErr != nil {
+			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
 	}
 	return err
+}
+
+func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID) []store.RecordSeriesPointArgs {
+	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
+	base := store.RecordSeriesPointArgs{
+		SeriesID: record.SeriesID,
+		Point: store.SeriesPoint{
+			SeriesID: record.SeriesID,
+			Time:     recordTime,
+			Value:    value,
+		},
+		RepoName: &repoName,
+		RepoID:   &repoID,
+	}
+	args = append(args, base)
+	for _, dependent := range record.DependentFrames {
+		arg := base
+		arg.Point.Time = dependent
+		args = append(args, arg)
+	}
+	return args
 }

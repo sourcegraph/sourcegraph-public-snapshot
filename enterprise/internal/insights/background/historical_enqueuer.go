@@ -312,6 +312,20 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				return nil
 			}
 		}
+		// Find the first commit made to the repository on the default branch.
+		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
+		if err != nil {
+			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
+			}
+			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+				return nil // repository is empty
+			}
+			// soft error, repo may be in a bad state but others might be OK.
+			softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
+			return nil
+		}
+
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
@@ -320,36 +334,23 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 			frames := Frames(h.framesToBackfill(), duration, series.CreatedAt)
 
 			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
-			filtered := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
+			plan := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
 			log15.Debug("insights: sampling historical data frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 
-			// Find the first commit made to the repository on the default branch.
-			firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
-			if err != nil {
-				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
-					return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
-				}
-				if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
-					return nil // repository is empty
-				}
-				// soft error, repo may be in a bad state but others might be OK.
-				softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
-				return nil
-			}
-
-			for i := len(filtered) - 1; i >= 0; i-- {
-				currentFrame := filtered[i]
+			for i := len(plan.Executions) - 1; i >= 0; i-- {
+				queryExecution := plan.Executions[i]
 
 				err := h.limiter.Wait(ctx)
 				if err != nil {
 					return err
 				}
 
+				to := queryExecution.RecordingTime.Add(time.Hour * 24)
 				// If we already have data for this frame+repo+series, then there's nothing to do.
 				var numDataPoints int
 				numDataPoints, err = h.insightsStore.CountData(ctx, store.CountDataOpts{
-					From:     &currentFrame.From,
-					To:       &currentFrame.To,
+					From:     &queryExecution.RecordingTime,
+					To:       &to,
 					SeriesID: &seriesID,
 					RepoID:   &repo.ID,
 				})
@@ -362,8 +363,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 
 				// Build historical data for this unique timeframe+repo+series.
 				hardErr, err := h.buildSeries(ctx, &buildSeriesContext{
-					from:            currentFrame.From,
-					to:              currentFrame.To,
+					execution:       queryExecution,
 					repo:            repo,
 					firstHEADCommit: firstHEADCommit,
 					seriesID:        seriesID,
@@ -386,7 +386,8 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 // buildSeriesContext describes context/parameters for a call to buildSeries()
 type buildSeriesContext struct {
 	// The timeframe we're building historical data for.
-	from, to time.Time
+
+	execution *compression.QueryExecution
 
 	// The repository we're building historical data for.
 	repo *types.Repo
@@ -439,17 +440,10 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	// repository, then we know there are no results (the repository didn't have any commits at all
 	// at that point in time.)
 	repoName := string(bctx.repo.Name)
-	if bctx.from.Before(bctx.firstHEADCommit.Author.Date) {
-		if err := h.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
-			SeriesID: bctx.seriesID,
-			Point: store.SeriesPoint{
-				Time:  bctx.from,
-				Value: 0, // no matches
-			},
-			RepoName: &repoName,
-			RepoID:   &bctx.repo.ID,
-		}); err != nil {
-			hardErr = errors.Wrap(err, "RecordSeriesPoint")
+	if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
+		args := bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.repo.ID, 0.0)
+		if err := h.insightsStore.RecordSeriesPoints(ctx, args); err != nil {
+			hardErr = errors.Wrap(err, "RecordSeriesPoints Zero Value")
 			return // DB error
 		}
 		return // success - nothing else to do
@@ -473,40 +467,43 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	//
 	// We do the 2nd, and start by trying to locate the commit most recent to the start of the
 	// timeframe we're trying to fill in historical data for.
-	recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repo.Name, bctx.from)
-	if err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
-			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
+	// If we have a revision already derived from the execution plan, we will use that revision. Otherwise we will
+	// look it up from gitserver.
+	var revision string
+
+	if len(bctx.execution.Revision) > 0 {
+		revision = bctx.execution.Revision
+	} else {
+		recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repo.Name, bctx.execution.RecordingTime)
+		if err != nil {
+			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+				return // no error - repo may not be cloned yet (or not even pushed to code host yet)
+			}
+			hardErr = errors.Wrap(err, "FindNearestCommit")
+			return
 		}
-		hardErr = errors.Wrap(err, "FindNearestCommit")
-		return
+		var nearestCommit *git.Commit
+		if len(recentCommits) > 0 {
+			nearestCommit = recentCommits[0]
+		}
+		if nearestCommit == nil {
+			log15.Error("null commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			return // repository has no commits / is empty. Maybe not yet pushed to code host.
+		}
+		if nearestCommit.Committer == nil {
+			log15.Error("null committer", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			return
+		}
+		log15.Debug("nearest_commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
+		revision = string(nearestCommit.ID)
 	}
-	var nearestCommit *git.Commit
-	if len(recentCommits) > 0 {
-		nearestCommit = recentCommits[0]
-	}
-	if nearestCommit == nil {
-		log15.Error("null commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.from, "to", bctx.to)
-		return // repository has no commits / is empty. Maybe not yet pushed to code host.
-	}
-	if nearestCommit.Committer == nil {
-		log15.Error("null committer", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.from, "to", bctx.to)
-		return
-	}
-	log15.Debug("nearest_commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.from, "to", bctx.to, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
 
 	// Build the search query we will run. The most important part here is
 	query = withCountUnlimited(query)
-	query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repoName), string(nearestCommit.ID))
+	query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repoName), revision)
 
-	hardErr = h.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
-		SeriesID:    bctx.seriesID,
-		SearchQuery: query,
-		RecordTime:  &bctx.from,
-		State:       "queued",
-		Priority:    int(priority.FromTimeInterval(bctx.from, bctx.series.CreatedAt)),
-		Cost:        int(priority.Unindexed),
-	})
+	job := bctx.execution.ToQueueJob(bctx.seriesID, query, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
+	hardErr = h.enqueueQueryRunnerJob(ctx, job)
 	return
 }
 

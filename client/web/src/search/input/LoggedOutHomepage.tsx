@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import React, { useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -6,13 +7,21 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
 import { HomepageModalVideo } from './HomepageModalVideo'
 import styles from './LoggedOutHomepage.module.scss'
 import { SignUpCta } from './SignUpCta'
 
-const exampleQueries = [
+interface SearchExample {
+    label: string
+    trackEventName: string
+    query: string
+    to: string
+}
+
+const exampleQueries: SearchExample[] = [
     {
         label: 'Search all of your repos, without escaping or regex',
         trackEventName: 'HomepageExampleRepoClicked',
@@ -35,14 +44,81 @@ const exampleQueries = [
     },
 ]
 
-export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps {}
+const exampleNotebooks: SearchExample[] = [
+    {
+        label: 'Find and reference code across all of your repositories',
+        trackEventName: 'HomepageNotebookRepoClicked',
+        query: 'repo:sourcegraph/.* Config()',
+        to: '/github.com/sourcegraph/notebooks/-/blob/onboarding/find-code-across-all-of-your-repositories.snb.md',
+    },
+    {
+        label: 'Search and review commits and their code faster than git log and grep ',
+        trackEventName: 'HomepageNotebookDiffClicked',
+        query: 'type:diff before:"last week" TODO',
+        to: '/github.com/sourcegraph/notebooks/-/blob/onboarding/search-and-review-commits.snb.md',
+    },
+    {
+        label: 'Quickly filter by file path, language and other elements of code',
+        trackEventName: 'HomepageNotebookFiltersClicked',
+        query: 'repo:sourcegraph/.* lang:go -f:tests',
+        to:
+            '/github.com/sourcegraph/notebooks/-/blob/onboarding/filter-by-file-language-and-other-elements-of-code.snb.md',
+    },
+]
 
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
+export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
+
+interface SearchExamplesProps extends TelemetryProps {
+    title: string
+    subtitle: string
+    examples: SearchExample[]
+    icon: JSX.Element
+}
+
+const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
+    title,
+    subtitle,
+    telemetryService,
+    examples,
+    icon,
+}) => {
     const searchExampleClicked = useCallback(
-        (trackEventName: string) => (): void => props.telemetryService.log(trackEventName),
-        [props.telemetryService]
+        (trackEventName: string) => (): void => telemetryService.log(trackEventName),
+        [telemetryService]
     )
 
+    return (
+        <div className={styles.searchExamplesWrapper}>
+            <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
+                <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>{title}</div>
+                <div className="font-weight-normal text-muted">{subtitle}</div>
+            </div>
+            <div className={styles.searchExamples}>
+                {examples.map(example => (
+                    <div key={example.query} className={styles.searchExampleCardWrapper}>
+                        <Link
+                            to={example.to}
+                            className={classNames('card', styles.searchExampleCard)}
+                            onClick={searchExampleClicked(example.trackEventName)}
+                        >
+                            <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
+                            <div className={styles.searchExampleQueryWrapper}>
+                                <div className={styles.searchExampleQuery}>
+                                    <SyntaxHighlightedSearchQuery query={example.query} />
+                                </div>
+                            </div>
+                        </Link>
+                        <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
+                            {example.label}
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
     const onClickInstallSubtext = useCallback(() => {
         props.telemetryService.log(
             'HomepageInstallSourcegraphCTAClicked',
@@ -54,39 +130,23 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     return (
         <div className={styles.loggedOutHomepage}>
             <div className={styles.helpContent}>
-                <div className={styles.searchExamplesWrapper}>
-                    <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
-                        <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>
-                            Search examples
-                        </div>
-                        <div className="font-weight-normal text-muted">
-                            Find answers faster with code search across multiple repos and commits
-                        </div>
-                    </div>
-                    <div className={styles.searchExamples}>
-                        {exampleQueries.map(example => (
-                            <div key={example.query} className={styles.searchExampleCardWrapper}>
-                                <Link
-                                    to={example.to}
-                                    className={classNames('card', styles.searchExampleCard)}
-                                    onClick={searchExampleClicked(example.trackEventName)}
-                                >
-                                    <div className={classNames(styles.searchExampleIcon)}>
-                                        <MagnifyingGlassSearchIcon />
-                                    </div>
-                                    <div className={styles.searchExampleQueryWrapper}>
-                                        <div className={styles.searchExampleQuery}>
-                                            <SyntaxHighlightedSearchQuery query={example.query} />
-                                        </div>
-                                    </div>
-                                </Link>
-                                <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
-                                    {example.label}
-                                </Link>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {props.featureFlags.get('search-notebook-onboarding') ? (
+                    <SearchExamples
+                        title="Search notebooks"
+                        subtitle="Three ways code search is more efficient than your IDE"
+                        examples={exampleNotebooks}
+                        icon={<BookOutlineIcon />}
+                        {...props}
+                    />
+                ) : (
+                    <SearchExamples
+                        title="Search examples"
+                        subtitle="Find answers faster with code search across multiple repos and commits"
+                        examples={exampleQueries}
+                        icon={<MagnifyingGlassSearchIcon />}
+                        {...props}
+                    />
+                )}
                 <div className={styles.thumbnail}>
                     <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
                     <HomepageModalVideo {...props} />

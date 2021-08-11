@@ -1,25 +1,18 @@
 # Updating Sourcegraph
 
-> IMPORTANT: Please check [Upgrading docs](../../updates/kubernetes.md) before upgrading to any particular
-> version of Sourcegraph to check if any manual migrations are necessary.
-
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
+
+> WARNING: Please check the [Kubernetes update notes](../../updates/kubernetes.md) before upgrading to any particular version of Sourcegraph to check if any manual migrations are necessary.
 
 ## Steps
 
-**These steps assume that you have created a `release` branch following the [forking instructions in docs/configure.md](configure.md#fork-this-repository)**
-
-1. Merge the corresponding `upstream release` tag into your `release` branch _(created from the [forking instructions](#fork-this-repository) step)_. 
-
-   ```bash
-   # to add the upstream remote.
-   git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
-   ```
+**These steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
 
 1. Merge the new version of Sourcegraph into your release branch.
 
    ```bash
    cd $DEPLOY_SOURCEGRAPH_FORK
+   # get updates
    git fetch upstream
    # to merge the upstream release tag into your release branch.
    git checkout release
@@ -27,15 +20,15 @@ A new version of Sourcegraph is released every month (with patch releases in bet
    git merge $NEW_VERSION
    ```
 
-1. Deploy the updated version of Sourcegraph to your Kubernetes cluster:
+2. Deploy the updated version of Sourcegraph to your Kubernetes cluster:
 
-   ```
+   ```bash
    ./kubectl-apply-all.sh
    ```
 
-1. Monitor the status of the deployment.
+3. Monitor the status of the deployment.
 
-   ```
+   ```bash
    kubectl get pods -o wide --watch
    ```
 
