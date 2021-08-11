@@ -22,7 +22,7 @@ import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
 
 export interface EventLogger {
-    log: (eventLabel: string, eventProperties?: any) => void
+    log: (eventLabel: string, eventProperties?: any, publicEventProperties?: any) => void
 }
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
@@ -108,7 +108,11 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         onFirstResultLoad()
                     }
                     if (eventLogger) {
-                        eventLogger.log('search.latencies.frontend.code-load', { durationMs: Date.now() - startTime })
+                        eventLogger.log(
+                            'search.latencies.frontend.code-load',
+                            { durationMs: Date.now() - startTime },
+                            { durationMs: Date.now() - startTime }
+                        )
                     }
                     return optimizeHighlighting
                         ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
