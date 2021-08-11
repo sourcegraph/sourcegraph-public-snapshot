@@ -14,6 +14,6 @@ BEGIN;
 -- but customer instances are going to be full of millions of records that will need processing before we can start
 -- fresh. To avoid this problem, we are going to ship a 'reset' in 3.31 that will clear this queue entirely.
 -- Note: This data is by design ephemeral, so there is no risk of permanent data loss here.
-TRUNCATE insights_query_runner_jobs;
 
+TRUNCATE insights_query_runner_jobs CASCADE;
 COMMIT;
