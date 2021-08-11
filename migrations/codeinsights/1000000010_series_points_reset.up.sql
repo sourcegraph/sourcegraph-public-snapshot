@@ -19,13 +19,11 @@ BEGIN;
 SELECT drop_chunks('series_points', CURRENT_TIMESTAMP::DATE);
 
 -- Clean up the remaining records if any exist.
-TRUNCATE series_points;
+TRUNCATE series_points CASCADE;
 
 -- There is the possibility that the commit index has fallen out of sync with the primary postgres database in 3.30 due
 -- to a data corruption issue. We will regenerate it to be sure it is healthy for beta.
 TRUNCATE commit_index;
 TRUNCATE commit_index_metadata;
 
--- I feel like Thanos
-TRUNCATE repo_names;
 COMMIT;
