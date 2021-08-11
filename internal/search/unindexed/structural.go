@@ -12,6 +12,55 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// repoData represents an object of repository revisions to search.
+type repoData interface {
+	AsList() []*search.RepositoryRevisions
+	IsIndexed() bool
+}
+
+type IndexedMap map[string]*search.RepositoryRevisions
+
+func (m IndexedMap) AsList() []*search.RepositoryRevisions {
+	reposList := make([]*search.RepositoryRevisions, 0, len(m))
+	for _, repo := range m {
+		reposList = append(reposList, repo)
+	}
+	return reposList
+}
+
+func (IndexedMap) IsIndexed() bool {
+	return true
+}
+
+type UnindexedList []*search.RepositoryRevisions
+
+func (ul UnindexedList) AsList() []*search.RepositoryRevisions {
+	return ul
+}
+
+func (UnindexedList) IsIndexed() bool {
+	return false
+}
+
+// The following type definitions compose separable concerns for running structural search.
+
+// searchJob is a function that may run in its own Go routine.
+type searchJob func() error
+
+// withContext parameterizes a searchJob by context, making it easy to add ctx for multiple jobs part of an errgroup.
+type withContext func(context.Context) searchJob
+
+// structuralSearchJob creates a composable function for running structural
+// search. It unrolls the context parameter so that multiple jobs can be
+// parameterized by the errgroup context.
+func structuralSearchJob(args *search.TextParameters, stream streaming.Sender, repoData repoData) withContext {
+	return func(ctx context.Context) searchJob {
+		return func() error {
+			return callSearcherOverRepos(ctx, args, stream, repoData.AsList(), repoData.IsIndexed())
+		}
+	}
+}
+
 // StructuralSearchFilesInRepos searches a set of repos for a structural pattern.
 func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
@@ -22,23 +71,18 @@ func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParamete
 		return err
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
-
+	jobs := []withContext{}
 	if args.Mode != search.SearcherOnly {
-		// Run structural search on indexed repositories (fulfilled via searcher).
-		g.Go(func() error {
-			repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
-			for _, repo := range indexed.Repos() {
-				repos = append(repos, repo)
-			}
-			return callSearcherOverRepos(ctx, args, stream, repos, true)
-		})
+		// Job for indexed repositories (fulfilled via searcher).
+		jobs = append(jobs, structuralSearchJob(args, stream, IndexedMap(indexed.Repos())))
 	}
+	// Job for unindexed repositories.
+	jobs = append(jobs, structuralSearchJob(args, stream, UnindexedList(indexed.Unindexed)))
 
-	// Concurrently run over all unindexed repos for structural search.
-	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
-	})
+	g, ctx := errgroup.WithContext(ctx)
+	for _, job := range jobs {
+		g.Go(job(ctx))
+	}
 
 	return g.Wait()
 }
