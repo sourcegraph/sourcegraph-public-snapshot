@@ -111,29 +111,21 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
 
     return (
         <div className="code-intel-uploads">
-            <PageTitle title="Code intelligence uploads" />
-            <PageHeader
-                headingElement="h2"
-                path={[{ text: 'Code intelligence uploads' }]}
-                description={
-                    <>
-                        Current uploads provide code intelligence for the latest commit on the default branch and are
-                        used in cross-repository <em>Find References</em> requests. Non-current uploads may still
-                        provide code intelligence for historic and branch commits.
-                    </>
-                }
-                className="mb-3"
-            />
+            <PageTitle title="Precise code intelligence uploads" />
+            <PageHeader headingElement="h2" path={[{ text: 'Precise code intelligence uploads' }]} className="mb-3" />
 
-            <Container>
-                {repo && commitGraphMetadata && (
+            {repo && commitGraphMetadata && (
+                <Container className="mb-2">
                     <CommitGraphMetadata
                         stale={commitGraphMetadata.stale}
                         updatedAt={commitGraphMetadata.updatedAt}
+                        className="mb-0"
                         now={now}
                     />
-                )}
+                </Container>
+            )}
 
+            <Container>
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"

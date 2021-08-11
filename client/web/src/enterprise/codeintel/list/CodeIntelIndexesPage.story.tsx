@@ -16,56 +16,30 @@ const { add } = storiesOf('web/codeintel/list/CodeIntelIndexesPage', module)
         },
     })
 
-add('Page', () => {
-    const fetchLsifIndexes = fetch(
-        {
-            id: '1',
-            state: LSIFIndexState.QUEUED,
-            queuedAt: '2020-06-15T12:20:30+00:00',
-            startedAt: null,
-            finishedAt: null,
-            placeInQueue: 3,
-            failure: null,
-            associatedUpload: null,
-        },
-        {
-            id: '2',
-            state: LSIFIndexState.PROCESSING,
-            queuedAt: '2020-06-15T12:20:30+00:00',
-            startedAt: '2020-06-15T12:25:30+00:00',
-            finishedAt: null,
-            failure: null,
-            placeInQueue: null,
-            associatedUpload: null,
-        },
-        {
-            id: '3',
-            state: LSIFIndexState.COMPLETED,
-            queuedAt: '2020-06-15T12:20:30+00:00',
-            startedAt: '2020-06-15T12:25:30+00:00',
-            finishedAt: '2020-06-15T12:30:30+00:00',
-            failure: null,
-            placeInQueue: null,
-            associatedUpload: null,
-        },
-        {
-            id: '4',
-            state: LSIFIndexState.ERRORED,
-            queuedAt: '2020-06-15T12:20:30+00:00',
-            startedAt: '2020-06-15T12:25:30+00:00',
-            finishedAt: '2020-06-15T12:30:30+00:00',
-            failure: 'Whoops! The server encountered a boo-boo handling this input.',
-            placeInQueue: null,
-            associatedUpload: null,
-        }
-    )
+add('SiteAdminPage', () => (
+    <EnterpriseWebStory>
+        {props => <CodeIntelIndexesPage {...props} now={now} fetchLsifIndexes={fetchLsifIndexes} />}
+    </EnterpriseWebStory>
+))
 
-    return (
-        <EnterpriseWebStory>
-            {props => <CodeIntelIndexesPage {...props} now={now} fetchLsifIndexes={fetchLsifIndexes} />}
-        </EnterpriseWebStory>
-    )
-})
+add('Empty', () => (
+    <EnterpriseWebStory>
+        {props => <CodeIntelIndexesPage {...props} now={now} fetchLsifIndexes={fetchEmptyLsifIndexes} />}
+    </EnterpriseWebStory>
+))
+
+add('RepositoryPage', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelIndexesPage
+                {...props}
+                repo={{ id: 'sourcegraph' }}
+                now={now}
+                fetchLsifIndexes={fetchLsifIndexes}
+            />
+        )}
+    </EnterpriseWebStory>
+))
 
 const fetch = (
     ...indexes: Omit<
@@ -108,15 +82,13 @@ const fetch = (
             },
             ...index,
         })),
-        totalCount: 10,
+        totalCount: indexes.length > 0 ? indexes.length + 5 : 0,
         pageInfo: {
             __typename: 'PageInfo',
-            endCursor: 'fakenextpage',
-            hasNextPage: true,
+            endCursor: indexes.length > 0 ? 'fakenextpage' : null,
+            hasNextPage: indexes.length > 0,
         },
     })
-
-const now = () => new Date('2020-06-15T15:25:00+00:00')
 
 const executionLog = {
     key: 'log',
@@ -126,3 +98,50 @@ const executionLog = {
     out: 'foo\nbar\baz\n',
     durationMilliseconds: 123456,
 }
+
+const fetchLsifIndexes = fetch(
+    {
+        id: '1',
+        state: LSIFIndexState.QUEUED,
+        queuedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: null,
+        finishedAt: null,
+        placeInQueue: 3,
+        failure: null,
+        associatedUpload: null,
+    },
+    {
+        id: '2',
+        state: LSIFIndexState.PROCESSING,
+        queuedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: '2020-06-15T12:25:30+00:00',
+        finishedAt: null,
+        failure: null,
+        placeInQueue: null,
+        associatedUpload: null,
+    },
+    {
+        id: '3',
+        state: LSIFIndexState.COMPLETED,
+        queuedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: '2020-06-15T12:25:30+00:00',
+        finishedAt: '2020-06-15T12:30:30+00:00',
+        failure: null,
+        placeInQueue: null,
+        associatedUpload: null,
+    },
+    {
+        id: '4',
+        state: LSIFIndexState.ERRORED,
+        queuedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: '2020-06-15T12:25:30+00:00',
+        finishedAt: '2020-06-15T12:30:30+00:00',
+        failure: 'Whoops! The server encountered a boo-boo handling this input.',
+        placeInQueue: null,
+        associatedUpload: null,
+    }
+)
+
+const fetchEmptyLsifIndexes = fetch()
+
+const now = () => new Date('2020-06-15T15:25:00+00:00')
