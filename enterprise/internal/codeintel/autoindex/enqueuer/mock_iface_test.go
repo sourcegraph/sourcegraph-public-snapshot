@@ -38,9 +38,9 @@ type MockDBStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *DBStoreHandleFunc
-	// InsertIndexFunc is an instance of a mock function object controlling
-	// the behavior of the method InsertIndex.
-	InsertIndexFunc *DBStoreInsertIndexFunc
+	// InsertIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertIndexes.
+	InsertIndexesFunc *DBStoreInsertIndexesFunc
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
 	IsQueuedFunc *DBStoreIsQueuedFunc
@@ -83,9 +83,9 @@ func NewMockDBStore() *MockDBStore {
 				return nil
 			},
 		},
-		InsertIndexFunc: &DBStoreInsertIndexFunc{
-			defaultHook: func(context.Context, dbstore.Index) (int, error) {
-				return 0, nil
+		InsertIndexesFunc: &DBStoreInsertIndexesFunc{
+			defaultHook: func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
+				return nil, nil
 			},
 		},
 		IsQueuedFunc: &DBStoreIsQueuedFunc{
@@ -123,8 +123,8 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		HandleFunc: &DBStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		InsertIndexFunc: &DBStoreInsertIndexFunc{
-			defaultHook: i.InsertIndex,
+		InsertIndexesFunc: &DBStoreInsertIndexesFunc{
+			defaultHook: i.InsertIndexes,
 		},
 		IsQueuedFunc: &DBStoreIsQueuedFunc{
 			defaultHook: i.IsQueued,
@@ -786,35 +786,35 @@ func (c DBStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// DBStoreInsertIndexFunc describes the behavior when the InsertIndex method
-// of the parent MockDBStore instance is invoked.
-type DBStoreInsertIndexFunc struct {
-	defaultHook func(context.Context, dbstore.Index) (int, error)
-	hooks       []func(context.Context, dbstore.Index) (int, error)
-	history     []DBStoreInsertIndexFuncCall
+// DBStoreInsertIndexesFunc describes the behavior when the InsertIndexes
+// method of the parent MockDBStore instance is invoked.
+type DBStoreInsertIndexesFunc struct {
+	defaultHook func(context.Context, []dbstore.Index) ([]dbstore.Index, error)
+	hooks       []func(context.Context, []dbstore.Index) ([]dbstore.Index, error)
+	history     []DBStoreInsertIndexesFuncCall
 	mutex       sync.Mutex
 }
 
-// InsertIndex delegates to the next hook function in the queue and stores
+// InsertIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDBStore) InsertIndex(v0 context.Context, v1 dbstore.Index) (int, error) {
-	r0, r1 := m.InsertIndexFunc.nextHook()(v0, v1)
-	m.InsertIndexFunc.appendCall(DBStoreInsertIndexFuncCall{v0, v1, r0, r1})
+func (m *MockDBStore) InsertIndexes(v0 context.Context, v1 []dbstore.Index) ([]dbstore.Index, error) {
+	r0, r1 := m.InsertIndexesFunc.nextHook()(v0, v1)
+	m.InsertIndexesFunc.appendCall(DBStoreInsertIndexesFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the InsertIndex method
+// SetDefaultHook sets function that is called when the InsertIndexes method
 // of the parent MockDBStore instance is invoked and the hook queue is
 // empty.
-func (f *DBStoreInsertIndexFunc) SetDefaultHook(hook func(context.Context, dbstore.Index) (int, error)) {
+func (f *DBStoreInsertIndexesFunc) SetDefaultHook(hook func(context.Context, []dbstore.Index) ([]dbstore.Index, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertIndex method of the parent MockDBStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
+// InsertIndexes method of the parent MockDBStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreInsertIndexFunc) PushHook(hook func(context.Context, dbstore.Index) (int, error)) {
+func (f *DBStoreInsertIndexesFunc) PushHook(hook func(context.Context, []dbstore.Index) ([]dbstore.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -822,21 +822,21 @@ func (f *DBStoreInsertIndexFunc) PushHook(hook func(context.Context, dbstore.Ind
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreInsertIndexFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.Index) (int, error) {
+func (f *DBStoreInsertIndexesFunc) SetDefaultReturn(r0 []dbstore.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreInsertIndexFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, dbstore.Index) (int, error) {
+func (f *DBStoreInsertIndexesFunc) PushReturn(r0 []dbstore.Index, r1 error) {
+	f.PushHook(func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreInsertIndexFunc) nextHook() func(context.Context, dbstore.Index) (int, error) {
+func (f *DBStoreInsertIndexesFunc) nextHook() func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -849,35 +849,35 @@ func (f *DBStoreInsertIndexFunc) nextHook() func(context.Context, dbstore.Index)
 	return hook
 }
 
-func (f *DBStoreInsertIndexFunc) appendCall(r0 DBStoreInsertIndexFuncCall) {
+func (f *DBStoreInsertIndexesFunc) appendCall(r0 DBStoreInsertIndexesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBStoreInsertIndexFuncCall objects
+// History returns a sequence of DBStoreInsertIndexesFuncCall objects
 // describing the invocations of this function.
-func (f *DBStoreInsertIndexFunc) History() []DBStoreInsertIndexFuncCall {
+func (f *DBStoreInsertIndexesFunc) History() []DBStoreInsertIndexesFuncCall {
 	f.mutex.Lock()
-	history := make([]DBStoreInsertIndexFuncCall, len(f.history))
+	history := make([]DBStoreInsertIndexesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBStoreInsertIndexFuncCall is an object that describes an invocation of
-// method InsertIndex on an instance of MockDBStore.
-type DBStoreInsertIndexFuncCall struct {
+// DBStoreInsertIndexesFuncCall is an object that describes an invocation of
+// method InsertIndexes on an instance of MockDBStore.
+type DBStoreInsertIndexesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 dbstore.Index
+	Arg1 []dbstore.Index
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int
+	Result0 []dbstore.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -885,13 +885,13 @@ type DBStoreInsertIndexFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBStoreInsertIndexFuncCall) Args() []interface{} {
+func (c DBStoreInsertIndexesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBStoreInsertIndexFuncCall) Results() []interface{} {
+func (c DBStoreInsertIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

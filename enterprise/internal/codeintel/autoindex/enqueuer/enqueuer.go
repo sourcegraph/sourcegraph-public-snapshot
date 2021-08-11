@@ -169,42 +169,7 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 	}
 	traceLog(log.Int("numIndexes", len(indexes)))
 
-	return s.queueIndexes(ctx, repositoryID, commit, indexes)
-}
-
-// queueIndexes inserts a set of index records into the database.
-func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, commit string, indexes []store.Index) (_ []store.Index, err error) {
-	tx, err := s.dbStore.Transact(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "dbstore.Transact")
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
-
-	ids := make([]int, 0, len(indexes))
-	for _, index := range indexes {
-		id, err := tx.InsertIndex(ctx, index)
-		if err != nil {
-			return nil, errors.Wrap(err, "dbstore.QueueIndex")
-		}
-
-		log15.Info(
-			"Enqueued index",
-			"id", id,
-			"repository_id", repositoryID,
-			"commit", commit,
-		)
-
-		ids = append(ids, id)
-	}
-
-	hydratedIndexes, err := tx.GetIndexesByIDs(ctx, ids...)
-	if err != nil {
-		return nil, errors.Wrap(err, "dbstore.GetIndexesByIDs")
-	}
-
-	return hydratedIndexes, err
+	return s.dbStore.InsertIndexes(ctx, indexes)
 }
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.

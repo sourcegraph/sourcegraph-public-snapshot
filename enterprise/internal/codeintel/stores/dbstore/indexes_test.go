@@ -370,42 +370,48 @@ func TestIsQueued(t *testing.T) {
 	}
 }
 
-func TestInsertIndex(t *testing.T) {
+func TestInsertIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	insertRepo(t, db, 50, "")
 
-	id, err := store.InsertIndex(context.Background(), Index{
-		State:        "queued",
-		Commit:       makeCommit(1),
-		RepositoryID: 50,
-		DockerSteps: []DockerStep{
-			{
-				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+	indexes, err := store.InsertIndexes(ctx, []Index{
+		{
+			State:        "queued",
+			Commit:       makeCommit(1),
+			RepositoryID: 50,
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/node:12.16",
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+				},
 			},
-		},
-		LocalSteps:  []string{"echo hello"},
-		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/lsif-tsc:latest",
-		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
-		Outfile:     "dump.lsif",
-		ExecutionLogs: []workerutil.ExecutionLogEntry{
-			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+			LocalSteps:  []string{"echo hello"},
+			Root:        "/foo/bar",
+			Indexer:     "sourcegraph/lsif-tsc:latest",
+			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+			},
 		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
 	}
+	if len(indexes) != 1 {
+		t.Fatalf("Unexpected number of records. want=%d have=%d", 1, len(indexes))
+	}
 
 	rank := 1
 	expected := Index{
-		ID:             id,
+		ID:             1,
 		Commit:         makeCommit(1),
 		QueuedAt:       time.Time{},
 		State:          "queued",
@@ -432,7 +438,9 @@ func TestInsertIndex(t *testing.T) {
 		Rank: &rank,
 	}
 
-	if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
+	// TODO - try another one as well
+
+	if index, exists, err := store.GetIndexByID(context.Background(), indexes[0].ID); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
