@@ -465,7 +465,6 @@
   "definitions": {
     "BackendInsight": {
       "type": "object",
-      "additionalProperties": true,
       "required": ["title", "series"],
       "properties": {
         "title": {
