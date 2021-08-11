@@ -595,7 +595,7 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		t.Run("new private repo triggers permsisions sync", func(t *testing.T) {
+		t.Run("new private repo triggers permissions sync", func(t *testing.T) {
 			permsSyncer := &PermsSyncer{testing: t}
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
