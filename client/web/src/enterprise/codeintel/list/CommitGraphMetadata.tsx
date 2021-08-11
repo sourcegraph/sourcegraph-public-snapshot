@@ -6,12 +6,18 @@ import { Timestamp } from '../../../components/time/Timestamp'
 export interface CommitGraphMetadataProps {
     stale: boolean
     updatedAt: Date | null
+    className?: string
     now?: () => Date
 }
 
-export const CommitGraphMetadata: FunctionComponent<CommitGraphMetadataProps> = ({ stale, updatedAt, now }) => (
+export const CommitGraphMetadata: FunctionComponent<CommitGraphMetadataProps> = ({
+    stale,
+    updatedAt,
+    className,
+    now,
+}) => (
     <>
-        <div className={classNames('alert', stale ? 'alert-primary' : 'alert-success')}>
+        <div className={classNames('alert', stale ? 'alert-primary' : 'alert-success', className)}>
             {stale ? <StaleRepository /> : <FreshRepository />}{' '}
             {updatedAt && <LastUpdated updatedAt={updatedAt} now={now} />}
         </div>

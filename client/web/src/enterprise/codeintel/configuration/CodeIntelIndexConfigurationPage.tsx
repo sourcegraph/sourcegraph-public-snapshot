@@ -108,14 +108,13 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                         text: <>Auto-indexing configuration</>,
                     },
                 ]}
-                description="TODO"
                 className="mb-3"
             />
 
             <Container>
-                {saveError ? (
-                    <ErrorAlert prefix="Error saving index configuration" error={saveError} />
-                ) : configuration === undefined ? (
+                {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} />}
+
+                {configuration === undefined ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : (
                     <DynamicallyImportedMonacoSettingsEditor

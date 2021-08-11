@@ -97,11 +97,13 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
         setState(State.Queueing)
         setEnqueueError(undefined)
+        setQueueResult(undefined)
 
         try {
             const indexes = await enqueueIndexJob(repo.id, revlike).toPromise()
             setQueueResult(indexes.length)
             if (indexes.length > 0) {
+                console.log('k', { commit: indexes[0].inputCommit })
                 querySubject.next(indexes[0].inputCommit)
             }
         } catch (error) {
@@ -115,44 +117,40 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     return (
         <div className="code-intel-indexes">
             <PageTitle title="Auto-indexing jobs" />
-            <PageHeader
-                headingElement="h2"
-                path={[{ text: 'Auto-indexing jobs' }]}
-                description={
-                    <>
-                        Popular repositories are indexed automatically on{' '}
-                        <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
-                            Sourcegraph.com
-                        </a>
-                        .
-                    </>
-                }
-                className="mb-3"
-            />
+            <PageHeader headingElement="h2" path={[{ text: 'Auto-indexing jobs' }]} className="mb-3" />
 
-            <Container>
-                {repo && (
-                    <div>
-                        {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
+            {repo && (
+                <Container className="mb-2">
+                    {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
 
-                        <input type="text" value={revlike} onChange={event => setRevlike(event.target.value)} />
+                    <div className="form-inline">
+                        <label>Git revlike</label>
+
+                        <input
+                            type="text"
+                            className="form-control ml-2"
+                            value={revlike}
+                            onChange={event => setRevlike(event.target.value)}
+                        />
 
                         <button
                             type="button"
                             title="Enqueue thing"
                             disabled={state === State.Queueing}
-                            className="btn btn-sm btn-secondary"
+                            className="btn btn-primary ml-2"
                             onClick={enqueue}
                         >
                             Enqueue
                         </button>
-
-                        {state === State.Queued && queueResult !== undefined && (
-                            <div className="text-success">{queueResult} index jobs enqueued.</div>
-                        )}
                     </div>
-                )}
 
+                    {state === State.Queued && queueResult !== undefined && (
+                        <div className="alert alert-success mt-3 mb-0">{queueResult} index jobs enqueued.</div>
+                    )}
+                </Container>
+            )}
+
+            <Container>
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                         listComponent="div"
