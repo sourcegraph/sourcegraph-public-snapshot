@@ -403,7 +403,7 @@ type buildSeriesContext struct {
 // starting times of each frame < current will fall on the first of a month.
 func FirstOfMonthFrames(numPoints int, current time.Time) []compression.Frame {
 	if numPoints < 1 {
-		return []compression.Frame{}
+		return nil
 	}
 	times := make([]time.Time, 0, numPoints)
 	year, month, _ := current.Date()
