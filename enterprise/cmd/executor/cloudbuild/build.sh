@@ -64,7 +64,8 @@ Description=User code executor
 
 [Service]
 ExecStart=/usr/local/bin/executor
-Restart=always
+ExecStopPost=/shutdown_executor.sh
+Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"
 Environment=SRC_LOG_LEVEL=dbug
@@ -73,7 +74,31 @@ Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 [Install]
 WantedBy=multi-user.target
 EOF
-  echo 'THIS_ENV_IS="unconfigured"' >>/etc/systemd/system/executor.env
+
+  # Create empty environment file (overwritten on VM startup)
+  cat <<EOF >/etc/systemd/system/executor.env
+THIS_ENV_IS="unconfigured"
+EOF
+
+  # Write a script to shutdown the host after clean exit from executor.
+  # This is meant to support our scaling pattern, where each executor will
+  # run for a pre-determined amount of time before exiting. We only need to
+  # scale up in this situation, as executors will naturally exit and not be
+  # replaced during periods of lighter loads.
+
+  cat <<EOF >/shutdown_executor.sh
+#!/usr/bin/env/sh
+
+if [ -z "${EXIT_CODE}" ]; then
+  echo 'Executor has exited cleanly. Shutting down host.'
+  shutdown
+else
+  echo 'Executor has exited with an error. Service will restart.'
+fi
+EOF
+
+  # Ensure systemd can execute shutdown script
+  chmod +x /shutdown_executor.sh
 }
 
 ## Build the ignite-ubuntu image for use in firecracker.
