@@ -83,7 +83,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
             )
         )
 
-        const reference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
+        const reference = useRef<HTMLDivElement>(null)
         const intersectionObserver = new IntersectionObserver(
             ([entry]) => {
                 onVisible(node, entry)

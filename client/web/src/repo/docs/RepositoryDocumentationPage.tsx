@@ -117,7 +117,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     const excludingTags: Tag[] = useMemo(() => ['private'], [])
 
-    const containerReference: RefObject<HTMLDivElement | undefined> | null | undefined = useRef()
+    const containerReference = useRef<HTMLDivElement>(null)
 
     // Keep track of which node on the page is most visible, so that when visibility changes we can
     // know the active node and can apply various visual effects (like scrolling to it in the
