@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ListGroup, ListGroupItem } from 'reactstrap'
 
 import { BatchChangesProps } from '../batches'
-import { SidebarCollapseItems, SidebarGroupItems, SidebarNavItem } from '../components/Sidebar'
+import { SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
@@ -33,7 +33,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                     (items.length > 1 ? (
                         <ListGroupItem className="p-0" key={index}>
                             <SidebarCollapseItems icon={header?.icon} label={header?.label} openByDefault={true}>
-                                <SidebarGroupItems>
+                                <>
                                     {items.map(
                                         ({ label, to, source = 'client', condition = () => true }) =>
                                             condition(props) && (
@@ -42,7 +42,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                                                 </SidebarNavItem>
                                             )
                                     )}
-                                </SidebarGroupItems>
+                                </>
                             </SidebarCollapseItems>
                         </ListGroupItem>
                     ) : (

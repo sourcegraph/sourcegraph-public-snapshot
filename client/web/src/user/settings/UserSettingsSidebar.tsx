@@ -1,13 +1,11 @@
-import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import AddIcon from 'mdi-react/AddIcon'
-import DomainIcon from 'mdi-react/DomainIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { Badge, BadgeStatus } from '../../components/Badge'
-import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { UserAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { OnboardingTourProps } from '../../search'
@@ -60,32 +58,28 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     return (
         <div className={props.className}>
             <SidebarGroup>
-                <SidebarGroupHeader label="User account" icon={AccountCircleIcon} />
-                <SidebarGroupItems>
-                    {props.items.map(
-                        ({ label, to, exact, status, condition = () => true }) =>
-                            condition(context) && (
-                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                    {label} {status && <Badge className="ml-1" status={status} />}
-                                </SidebarNavItem>
-                            )
-                    )}
-                </SidebarGroupItems>
+                <SidebarGroupHeader label="User account" />
+                {props.items.map(
+                    ({ label, to, exact, status, condition = () => true }) =>
+                        condition(context) && (
+                            <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
+                                {label} {status && <Badge className="ml-1" status={status} />}
+                            </SidebarNavItem>
+                        )
+                )}
             </SidebarGroup>
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
-                    <SidebarGroupHeader label="Organizations" icon={DomainIcon} />
-                    <SidebarGroupItems>
-                        {props.user.organizations.nodes.map(org => (
-                            <SidebarNavItem
-                                key={org.id}
-                                to={`/organizations/${org.name}/settings`}
-                                className="text-truncate text-nowrap align-items-center"
-                            >
-                                <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
-                            </SidebarNavItem>
-                        ))}
-                    </SidebarGroupItems>
+                    <SidebarGroupHeader label="Organizations" />
+                    {props.user.organizations.nodes.map(org => (
+                        <SidebarNavItem
+                            key={org.id}
+                            to={`/organizations/${org.name}/settings`}
+                            className="text-truncate text-nowrap align-items-center"
+                        >
+                            <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
+                        </SidebarNavItem>
+                    ))}
                     {!siteAdminViewingOtherUser && (
                         <div className="user-settings-sidebar__new-org-btn-wrapper">
                             <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
@@ -97,19 +91,17 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
             )}
             <SidebarGroup>
                 <SidebarGroupHeader label="Other actions" />
-                <SidebarGroupItems>
-                    {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
-                    {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                    {props.showOnboardingTour && (
-                        <button
-                            type="button"
-                            className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-                            onClick={reEnableSearchTour}
-                        >
-                            Show search tour
-                        </button>
-                    )}
-                </SidebarGroupItems>
+                {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
+                {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
+                {props.showOnboardingTour && (
+                    <button
+                        type="button"
+                        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+                        onClick={reEnableSearchTour}
+                    >
+                        Show search tour
+                    </button>
+                )}
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>

@@ -17,7 +17,7 @@ import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 import { BatchSpecExecutionCreateFields } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
@@ -119,17 +119,15 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
             <div className="d-flex mb-3">
                 <div className="flex-shrink-0">
                     <SidebarGroup>
-                        <SidebarGroupItems>
-                            <SidebarGroupHeader label="Examples" />
-                            {samples.map(sample => (
-                                <SampleTabHeader
-                                    key={sample.name}
-                                    sample={sample}
-                                    active={selectedSample.name === sample.name}
-                                    setSelectedSample={setSelectedSample}
-                                />
-                            ))}
-                        </SidebarGroupItems>
+                        <SidebarGroupHeader label="Examples" />
+                        {samples.map(sample => (
+                            <SampleTabHeader
+                                key={sample.name}
+                                sample={sample}
+                                active={selectedSample.name === sample.name}
+                                setSelectedSample={setSelectedSample}
+                            />
+                        ))}
                     </SidebarGroup>
                 </div>
                 <Container className="ml-3 flex-grow-1">

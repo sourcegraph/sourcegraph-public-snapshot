@@ -14,7 +14,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
@@ -252,8 +251,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const breadcrumbProps = useBreadcrumbs()
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
     // Control browser extension discoverability animation here.
     // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
     const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
@@ -271,7 +268,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...props,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
-        isRedesignEnabled,
         isMacPlatform,
     }
 
