@@ -75,14 +75,16 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                     <p>Follow the URL printed in your terminal to preview your batch change.</p>
                     <hr className="mb-3" />
                     <p>
-                        This is the <strong>classic</strong> way to execute a batch spec. Choose this option if:
+                        This is the <strong>classic, existing</strong> way to execute a batch spec. Choose this option
+                        if:
                     </p>
                     <ul>
                         <li>You prefer to execute the spec on your personal system</li>
+                        <li>You want better debugging capabilities</li>
                         <li>
                             You enjoy reminiscing about the "good old days" of Visual Basic, dial-up internet, and
-                            burning CDs, you still use Yahoo as your search engine of choice, or you're still not sold
-                            on this "newfangled MySpace thing" all the kids are using these days
+                            burning CDs, you still use Yahoo as your search engine of choice, or you're not yet sold on
+                            this "newfangled MySpace thing" all the kids are using these days
                         </li>
                         <li>
                             You strongly relate to{' '}
@@ -123,7 +125,8 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                     {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
                     <hr className="mb-3" />
                     <p>
-                        This is the <strong>recommended</strong> way to execute a batch spec. Choose this option if:
+                        This is the <strong>recommended, new</strong> way to execute a batch spec. Choose this option
+                        if:
                     </p>
                     <ul>
                         <li>You're trying out batch changes for the first time</li>
@@ -132,6 +135,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                         </li>
                         <li>Your batch spec takes a lot of time or resources to execute</li>
                         <li>You swoon anytime you hear the phrase "cloud infrastructure" ☁️☁️☁️</li>
+                        <li>You get nervous when you hear the fans of your computer turn on</li>
                     </ul>
                 </div>
             </div>
