@@ -556,9 +556,9 @@ func (p *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 	p.invoked = true
 }
 
-func testSyncerPermsSyncer(s *repos.Store) func(t *testing.T) {
+func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
-		servicesPerKind := createExternalServices(t, s, func(svc *types.ExternalService) { svc.CloudDefault = true })
+		servicesPerKind := createExternalServices(t, store, func(svc *types.ExternalService) { svc.CloudDefault = true })
 
 		githubService := servicesPerKind[extsvc.KindGitHub]
 
@@ -579,26 +579,70 @@ func testSyncerPermsSyncer(s *repos.Store) func(t *testing.T) {
 			repos.NewFakeSource(githubService.Clone(), nil, githubRepo.Clone()),
 		)
 
-		permsSyncer := &PermsSyncer{testing: t}
+		storedRepo := (&types.Repo{
+			Name:     "github.com/org/bar",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "bar-external-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}).With(
+			types.Opt.RepoSources(githubService.URN()),
+		)
 
-		clock := timeutil.NewFakeClock(time.Now(), 0)
-
-		syncer := &repos.Syncer{
-			Sourcer:     sourcer,
-			Store:       s,
-			Now:         clock.Now,
-			PermsSyncer: permsSyncer,
+		if err := store.RepoStore.Create(context.Background(), storedRepo); err != nil {
+			t.Fatal(err)
 		}
 
-		if permsSyncer.invoked {
-			t.Errorf("initialisation error, PermsSyncer.invoked is already true")
-		}
+		t.Run("new private repo triggers permsisions sync", func(t *testing.T) {
+			permsSyncer := &PermsSyncer{testing: t}
 
-		syncer.SyncRepo(context.Background(), githubRepo)
+			clock := timeutil.NewFakeClock(time.Now(), 0)
 
-		if !permsSyncer.invoked {
-			t.Errorf("syncer.PermsSyncer.SchedulerRepos was not invoked")
-		}
+			syncer := &repos.Syncer{
+				Sourcer:     sourcer,
+				Store:       store,
+				Now:         clock.Now,
+				PermsSyncer: permsSyncer,
+			}
+
+			if permsSyncer.invoked {
+				t.Errorf("initialisation error, PermsSyncer.invoked is already true")
+			}
+
+			storedRepo.Private = true
+
+			syncer.SyncRepo(context.Background(), githubRepo)
+
+			if !permsSyncer.invoked {
+				t.Errorf("syncer.PermsSyncer.SchedulerRepos was not invoked")
+			}
+		})
+
+		t.Run("existing public repo is made private and triggers permsisions sync", func(t *testing.T) {
+			permsSyncer := &PermsSyncer{testing: t}
+
+			clock := timeutil.NewFakeClock(time.Now(), 0)
+
+			syncer := &repos.Syncer{
+				Sourcer:     sourcer,
+				Store:       store,
+				Now:         clock.Now,
+				PermsSyncer: permsSyncer,
+			}
+
+			if permsSyncer.invoked {
+				t.Errorf("initialisation error, PermsSyncer.invoked is already true")
+			}
+
+			syncer.SyncRepo(context.Background(), storedRepo)
+
+			if !permsSyncer.invoked {
+				t.Errorf("syncer.PermsSyncer.SchedulerRepos was not invoked")
+			}
+		})
+
 	}
 }
 
