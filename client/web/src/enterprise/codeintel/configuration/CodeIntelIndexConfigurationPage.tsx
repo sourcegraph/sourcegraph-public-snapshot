@@ -1,25 +1,30 @@
 import * as H from 'history'
+import { editor } from 'monaco-editor'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { SaveToolbarPropsGenerator, SaveToolbarProps, SaveToolbar } from '../../../components/SaveToolbar'
+import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
 import allConfigSchema from './schema.json'
-import { editor } from 'monaco-editor'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo: { id: string }
     history: H.History
     getConfiguration?: typeof defaultGetConfiguration
+}
+
+enum State {
+    Idle,
+    Saving,
 }
 
 export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexConfigurationPageProps> = ({
@@ -43,11 +48,6 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
         return () => subscription.unsubscribe()
     }, [repo, getConfiguration])
-
-    enum State {
-        Idle,
-        Saving,
-    }
 
     const [saveError, setSaveError] = useState<Error>()
     const [state, setState] = useState(() => State.Idle)
@@ -92,7 +92,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                 return mergedProps
             },
         }),
-        [editor, dirty, inferredConfiguration, infer, state]
+        [dirty, configuration, inferredConfiguration, infer]
     )
 
     return fetchError ? (

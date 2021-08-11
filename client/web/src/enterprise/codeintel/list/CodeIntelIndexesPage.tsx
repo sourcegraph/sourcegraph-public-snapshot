@@ -1,7 +1,9 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Subject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import {
@@ -12,11 +14,8 @@ import {
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 
-import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
+import { enqueueIndexJob, fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
-import { enqueueIndexJob } from './backend'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Subject } from 'rxjs'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -64,6 +63,12 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
+enum State {
+    Idle,
+    Queueing,
+    Queued,
+}
+
 export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
@@ -77,12 +82,6 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         (args: FilteredConnectionQueryArguments) => fetchLsifIndexes({ repository: repo?.id, ...args }),
         [repo?.id, fetchLsifIndexes]
     )
-
-    enum State {
-        Idle,
-        Queueing,
-        Queued,
-    }
 
     const [enqueueError, setEnqueueError] = useState<Error>()
     const [state, setState] = useState(() => State.Idle)
@@ -103,7 +102,6 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
             const indexes = await enqueueIndexJob(repo.id, revlike).toPromise()
             setQueueResult(indexes.length)
             if (indexes.length > 0) {
-                console.log('k', { commit: indexes[0].inputCommit })
                 querySubject.next(indexes[0].inputCommit)
             }
         } catch (error) {
@@ -112,7 +110,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         } finally {
             setState(State.Queued)
         }
-    }, [repo, revlike])
+    }, [repo, revlike, querySubject])
 
     return (
         <div className="code-intel-indexes">
@@ -124,10 +122,11 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                     {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
 
                     <div className="form-inline">
-                        <label>Git revlike</label>
+                        <label htmlFor="revlike">Git revlike</label>
 
                         <input
                             type="text"
+                            id="revlike"
                             className="form-control ml-2"
                             value={revlike}
                             onChange={event => setRevlike(event.target.value)}
