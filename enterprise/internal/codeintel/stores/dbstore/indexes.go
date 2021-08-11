@@ -225,6 +225,7 @@ LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE u.id IN (%s) AND %s
+ORDER BY u.id
 `
 
 type GetIndexesOptions struct {

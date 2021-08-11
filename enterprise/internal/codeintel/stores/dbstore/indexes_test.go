@@ -401,56 +401,100 @@ func TestInsertIndexes(t *testing.T) {
 				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
 		},
+		{
+			State:        "queued",
+			Commit:       makeCommit(2),
+			RepositoryID: 50,
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/rust:nightly",
+					Commands: []string{"cargo install"},
+				},
+			},
+			LocalSteps:  nil,
+			Root:        "/baz",
+			Indexer:     "sourcegraph/lsif-rust:15",
+			IndexerArgs: []string{"-v"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+			},
+		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
 	}
-	if len(indexes) != 1 {
-		t.Fatalf("Unexpected number of records. want=%d have=%d", 1, len(indexes))
+	if len(indexes) == 0 {
+		t.Fatalf("expected records to be inserted")
 	}
 
-	rank := 1
-	expected := Index{
-		ID:             1,
-		Commit:         makeCommit(1),
-		QueuedAt:       time.Time{},
-		State:          "queued",
-		FailureMessage: nil,
-		StartedAt:      nil,
-		FinishedAt:     nil,
-		RepositoryID:   50,
-		RepositoryName: "n-50",
-		DockerSteps: []DockerStep{
-			{
-				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+	rank1 := 1
+	rank2 := 2
+	expected := []Index{
+		{
+			ID:             1,
+			Commit:         makeCommit(1),
+			QueuedAt:       time.Time{},
+			State:          "queued",
+			FailureMessage: nil,
+			StartedAt:      nil,
+			FinishedAt:     nil,
+			RepositoryID:   50,
+			RepositoryName: "n-50",
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/node:12.16",
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+				},
 			},
+			LocalSteps:  []string{"echo hello"},
+			Root:        "/foo/bar",
+			Indexer:     "sourcegraph/lsif-tsc:latest",
+			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+			},
+			Rank: &rank1,
 		},
-		LocalSteps:  []string{"echo hello"},
-		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/lsif-tsc:latest",
-		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
-		Outfile:     "dump.lsif",
-		ExecutionLogs: []workerutil.ExecutionLogEntry{
-			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+		{
+			ID:             2,
+			Commit:         makeCommit(2),
+			QueuedAt:       time.Time{},
+			State:          "queued",
+			FailureMessage: nil,
+			StartedAt:      nil,
+			FinishedAt:     nil,
+			RepositoryID:   50,
+			RepositoryName: "n-50",
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/rust:nightly",
+					Commands: []string{"cargo install"},
+				},
+			},
+			LocalSteps:  []string{},
+			Root:        "/baz",
+			Indexer:     "sourcegraph/lsif-rust:15",
+			IndexerArgs: []string{"-v"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+			},
+			Rank: &rank2,
 		},
-		Rank: &rank,
 	}
 
-	// TODO - try another one as well
-
-	if index, exists, err := store.GetIndexByID(context.Background(), indexes[0].ID); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else {
+	for i := range expected {
 		// Update auto-generated timestamp
-		expected.QueuedAt = index.QueuedAt
+		expected[i].QueuedAt = indexes[0].QueuedAt
+	}
 
-		if diff := cmp.Diff(expected, index); diff != "" {
-			t.Errorf("unexpected index (-want +got):\n%s", diff)
-		}
+	if diff := cmp.Diff(expected, indexes); diff != "" {
+		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
 
