@@ -2555,9 +2555,9 @@ type MockEnqueuerDBStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *EnqueuerDBStoreHandleFunc
-	// InsertIndexFunc is an instance of a mock function object controlling
-	// the behavior of the method InsertIndex.
-	InsertIndexFunc *EnqueuerDBStoreInsertIndexFunc
+	// InsertIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertIndexes.
+	InsertIndexesFunc *EnqueuerDBStoreInsertIndexesFunc
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
 	IsQueuedFunc *EnqueuerDBStoreIsQueuedFunc
@@ -2601,9 +2601,9 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 				return nil
 			},
 		},
-		InsertIndexFunc: &EnqueuerDBStoreInsertIndexFunc{
-			defaultHook: func(context.Context, dbstore.Index) (int, error) {
-				return 0, nil
+		InsertIndexesFunc: &EnqueuerDBStoreInsertIndexesFunc{
+			defaultHook: func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
+				return nil, nil
 			},
 		},
 		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
@@ -2642,8 +2642,8 @@ func NewMockEnqueuerDBStoreFrom(i EnqueuerDBStore) *MockEnqueuerDBStore {
 		HandleFunc: &EnqueuerDBStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		InsertIndexFunc: &EnqueuerDBStoreInsertIndexFunc{
-			defaultHook: i.InsertIndex,
+		InsertIndexesFunc: &EnqueuerDBStoreInsertIndexesFunc{
+			defaultHook: i.InsertIndexes,
 		},
 		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
 			defaultHook: i.IsQueued,
@@ -3314,35 +3314,36 @@ func (c EnqueuerDBStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// EnqueuerDBStoreInsertIndexFunc describes the behavior when the
-// InsertIndex method of the parent MockEnqueuerDBStore instance is invoked.
-type EnqueuerDBStoreInsertIndexFunc struct {
-	defaultHook func(context.Context, dbstore.Index) (int, error)
-	hooks       []func(context.Context, dbstore.Index) (int, error)
-	history     []EnqueuerDBStoreInsertIndexFuncCall
+// EnqueuerDBStoreInsertIndexesFunc describes the behavior when the
+// InsertIndexes method of the parent MockEnqueuerDBStore instance is
+// invoked.
+type EnqueuerDBStoreInsertIndexesFunc struct {
+	defaultHook func(context.Context, []dbstore.Index) ([]dbstore.Index, error)
+	hooks       []func(context.Context, []dbstore.Index) ([]dbstore.Index, error)
+	history     []EnqueuerDBStoreInsertIndexesFuncCall
 	mutex       sync.Mutex
 }
 
-// InsertIndex delegates to the next hook function in the queue and stores
+// InsertIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) InsertIndex(v0 context.Context, v1 dbstore.Index) (int, error) {
-	r0, r1 := m.InsertIndexFunc.nextHook()(v0, v1)
-	m.InsertIndexFunc.appendCall(EnqueuerDBStoreInsertIndexFuncCall{v0, v1, r0, r1})
+func (m *MockEnqueuerDBStore) InsertIndexes(v0 context.Context, v1 []dbstore.Index) ([]dbstore.Index, error) {
+	r0, r1 := m.InsertIndexesFunc.nextHook()(v0, v1)
+	m.InsertIndexesFunc.appendCall(EnqueuerDBStoreInsertIndexesFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the InsertIndex method
+// SetDefaultHook sets function that is called when the InsertIndexes method
 // of the parent MockEnqueuerDBStore instance is invoked and the hook queue
 // is empty.
-func (f *EnqueuerDBStoreInsertIndexFunc) SetDefaultHook(hook func(context.Context, dbstore.Index) (int, error)) {
+func (f *EnqueuerDBStoreInsertIndexesFunc) SetDefaultHook(hook func(context.Context, []dbstore.Index) ([]dbstore.Index, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertIndex method of the parent MockEnqueuerDBStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *EnqueuerDBStoreInsertIndexFunc) PushHook(hook func(context.Context, dbstore.Index) (int, error)) {
+// InsertIndexes method of the parent MockEnqueuerDBStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnqueuerDBStoreInsertIndexesFunc) PushHook(hook func(context.Context, []dbstore.Index) ([]dbstore.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3350,21 +3351,21 @@ func (f *EnqueuerDBStoreInsertIndexFunc) PushHook(hook func(context.Context, dbs
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *EnqueuerDBStoreInsertIndexFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.Index) (int, error) {
+func (f *EnqueuerDBStoreInsertIndexesFunc) SetDefaultReturn(r0 []dbstore.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *EnqueuerDBStoreInsertIndexFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, dbstore.Index) (int, error) {
+func (f *EnqueuerDBStoreInsertIndexesFunc) PushReturn(r0 []dbstore.Index, r1 error) {
+	f.PushHook(func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *EnqueuerDBStoreInsertIndexFunc) nextHook() func(context.Context, dbstore.Index) (int, error) {
+func (f *EnqueuerDBStoreInsertIndexesFunc) nextHook() func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3377,35 +3378,35 @@ func (f *EnqueuerDBStoreInsertIndexFunc) nextHook() func(context.Context, dbstor
 	return hook
 }
 
-func (f *EnqueuerDBStoreInsertIndexFunc) appendCall(r0 EnqueuerDBStoreInsertIndexFuncCall) {
+func (f *EnqueuerDBStoreInsertIndexesFunc) appendCall(r0 EnqueuerDBStoreInsertIndexesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of EnqueuerDBStoreInsertIndexFuncCall objects
-// describing the invocations of this function.
-func (f *EnqueuerDBStoreInsertIndexFunc) History() []EnqueuerDBStoreInsertIndexFuncCall {
+// History returns a sequence of EnqueuerDBStoreInsertIndexesFuncCall
+// objects describing the invocations of this function.
+func (f *EnqueuerDBStoreInsertIndexesFunc) History() []EnqueuerDBStoreInsertIndexesFuncCall {
 	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreInsertIndexFuncCall, len(f.history))
+	history := make([]EnqueuerDBStoreInsertIndexesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// EnqueuerDBStoreInsertIndexFuncCall is an object that describes an
-// invocation of method InsertIndex on an instance of MockEnqueuerDBStore.
-type EnqueuerDBStoreInsertIndexFuncCall struct {
+// EnqueuerDBStoreInsertIndexesFuncCall is an object that describes an
+// invocation of method InsertIndexes on an instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreInsertIndexesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 dbstore.Index
+	Arg1 []dbstore.Index
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int
+	Result0 []dbstore.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3413,13 +3414,13 @@ type EnqueuerDBStoreInsertIndexFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c EnqueuerDBStoreInsertIndexFuncCall) Args() []interface{} {
+func (c EnqueuerDBStoreInsertIndexesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c EnqueuerDBStoreInsertIndexFuncCall) Results() []interface{} {
+func (c EnqueuerDBStoreInsertIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
