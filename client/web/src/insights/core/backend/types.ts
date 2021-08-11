@@ -7,7 +7,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { InsightSeries } from '../../../schema/settings.schema'
+import { SearchBasedInsightSeries } from '../types/insight/search-insight'
 
 import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
 
@@ -45,7 +45,7 @@ export interface SubjectSettingsResult {
 }
 
 export interface SearchInsightSettings {
-    series: InsightSeries[]
+    series: SearchBasedInsightSeries[]
     step: Duration
     repositories: string[]
 }

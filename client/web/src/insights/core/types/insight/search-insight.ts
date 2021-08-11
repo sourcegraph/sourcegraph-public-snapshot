@@ -3,9 +3,9 @@ import { Duration } from 'date-fns'
 // Backend based settings lives in main settings.schema.json file so we can use generated types
 // from these settings and insight schema json definitions.
 import {
-    Insight as SearchBasedBackendInsightSettings,
+    BackendInsight as SearchBasedBackendInsightSettings,
+    BackendInsightSeries as SearchBasedInsightSeries,
     InsightFilters as SearchBasedBackendFilters,
-    InsightSeries,
 } from '../../../../schema/settings.schema'
 
 import { InsightType, InsightTypePrefix, SyntheticInsightFields } from './common'
@@ -38,7 +38,7 @@ export interface SearchExtensionBasedInsight extends SearchBasedExtensionInsight
 export interface SearchBasedExtensionInsightSettings {
     title: string
     repositories: string[]
-    series: InsightSeries[]
+    series: SearchBasedInsightSeries[]
     step: Duration
 }
 
@@ -67,7 +67,7 @@ export enum SearchBackendBasedInsightFiltersType {
  * Note: In the same time extensions also have this type in their public API
  * Search based insight extension - https://github.com/sourcegraph/sourcegraph-search-insights/blob/1b204a579160bab4208a1266cf4ad6e735cdd774/package.json#L50
  */
-export type { InsightSeries as SearchInsightSeries, SearchBasedBackendFilters }
+export type { SearchBasedInsightSeries, SearchBasedBackendFilters }
 
 /**
  * Since we use insight name conventions to distinguish between insight types.

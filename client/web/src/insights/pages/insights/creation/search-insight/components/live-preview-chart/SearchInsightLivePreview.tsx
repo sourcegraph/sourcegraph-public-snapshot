@@ -6,7 +6,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
 import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
-import { SearchInsightSeries } from '../../../../../../core/types/insight/search-insight'
+import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine, getSanitizedRepositories } from '../../utils/insight-sanitizer'
@@ -52,7 +52,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             // Cut off all unnecessary for live preview fields in order to
             // not trigger live preview update if any of unnecessary has been updated
             // Example: edit true => false - chart shouldn't re-fetch data
-            .map<SearchInsightSeries>(getSanitizedLine)
+            .map<SearchBasedInsightSeries>(getSanitizedLine)
     )
 
     const liveSettings = useMemo(

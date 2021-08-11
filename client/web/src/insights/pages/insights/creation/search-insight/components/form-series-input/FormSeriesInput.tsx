@@ -6,7 +6,7 @@ import { FormInput } from '../../../../../../components/form/form-input/FormInpu
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { SearchInsightSeries } from '../../../../../../core/types/insight/search-insight'
+import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
@@ -32,11 +32,11 @@ interface FormSeriesInputProps {
     /** Custom class name for root element of form series. */
     className?: string
     /** On submit handler of series form. */
-    onSubmit?: (series: SearchInsightSeries) => void
+    onSubmit?: (series: SearchBasedInsightSeries) => void
     /** On cancel handler. */
     onCancel?: () => void
     /** Change handler in order to listen last values of series form. */
-    onChange?: (formValues: SearchInsightSeries, valid: boolean) => void
+    onChange?: (formValues: SearchBasedInsightSeries, valid: boolean) => void
 }
 
 /** Displays form series input (three field - name field, query field and color picker). */

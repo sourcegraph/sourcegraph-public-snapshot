@@ -1,7 +1,7 @@
 import { camelCase } from 'lodash'
 
 import { InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
-import { SearchInsightSeries } from '../../../../../core/types/insight/search-insight'
+import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
 export function getSanitizedRepositories(rawRepositories: string): string[] {
@@ -11,7 +11,7 @@ export function getSanitizedRepositories(rawRepositories: string): string[] {
         .filter(repo => repo)
 }
 
-export function getSanitizedLine(line: EditableDataSeries): SearchInsightSeries {
+export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
     return {
         name: line.name.trim(),
         stroke: line.stroke,
@@ -23,7 +23,7 @@ export function getSanitizedLine(line: EditableDataSeries): SearchInsightSeries 
     }
 }
 
-export function getSanitizedSeries(rawSeries: EditableDataSeries[]): SearchInsightSeries[] {
+export function getSanitizedSeries(rawSeries: EditableDataSeries[]): SearchBasedInsightSeries[] {
     return rawSeries.map(getSanitizedLine)
 }
 
