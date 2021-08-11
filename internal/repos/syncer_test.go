@@ -543,12 +543,12 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 	}
 }
 
-type PermsSyncer struct {
+type mockPermsSyncer struct {
 	testing *testing.T
 	invoked bool
 }
 
-func (p *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
+func (p *mockPermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
 	if p.invoked {
 		p.testing.Errorf("method ScheduleRepos already invoked, should not be called again")
 	}
@@ -596,7 +596,7 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 		}
 
 		t.Run("new private repo triggers permissions sync", func(t *testing.T) {
-			permsSyncer := &PermsSyncer{testing: t}
+			permsSyncer := &mockPermsSyncer{testing: t}
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 
@@ -621,7 +621,7 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 		})
 
 		t.Run("existing public repo is made private and triggers permissions sync", func(t *testing.T) {
-			permsSyncer := &PermsSyncer{testing: t}
+			permsSyncer := &mockPermsSyncer{testing: t}
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 
