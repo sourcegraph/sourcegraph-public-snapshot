@@ -24,7 +24,7 @@ import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
-import { EMPTY_DRILLDOWN_FILTERS, getBackendFilters } from './components/drill-down-filters-panel/utils'
+import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -47,7 +47,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [filters, setFilters] = useState<SearchBasedBackendFilters>(insight.filters ?? EMPTY_DRILLDOWN_FILTERS)
 
-    const debouncedFilters = useDebounce(useDistinctValue<BackendInsightFilters>(getBackendFilters(filters)), 500)
+    const debouncedFilters = useDebounce(useDistinctValue<BackendInsightFilters>(filters), 500)
 
     const handleDrillDownFiltersChange = (filters: SearchBasedBackendFilters): void => {
         setFilters(filters)

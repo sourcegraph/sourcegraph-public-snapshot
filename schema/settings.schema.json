@@ -508,34 +508,18 @@
     },
     "InsightFilters": {
       "type": "object",
-      "anyOf": [
-        {
-          "type": "object",
-          "required": ["type", "includeRepoRegexp", "excludeRepoRegexp"],
-          "properties": {
-            "type": {
-              "const": "regexp"
-            },
-            "includeRepoRegexp": { "type": "string" },
-            "excludeRepoRegexp": { "type": "string" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["type", "repositories"],
-          "properties": {
-            "type": {
-              "const": "repolist"
-            },
-            "repositories": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
+      "description": "Performs a filter",
+      "required": ["includeRepoRegexp", "excludeRepoRegexp"],
+      "properties": {
+        "includeRepoRegexp": { "type": "string" },
+        "excludeRepoRegexp": { "type": "string" },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
-      ]
+      }
     },
     "InsightDashboard": {
       "type": "object",

@@ -4,10 +4,7 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useCallback, useRef } from 'react'
 import FocusLock from 'react-focus-lock'
 
-import {
-    SearchBasedBackendFilters,
-    SearchBackendBasedInsightFiltersType,
-} from '../../../../../../core/types/insight/search-insight'
+import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
@@ -15,17 +12,9 @@ import styles from './DrillDownFiltersPanel.module.scss'
 import { useKeyboard } from './hooks/use-keyboard'
 import { useOnClickOutside } from './hooks/use-outside-click'
 
-const hasActiveFilters = (filters: SearchBasedBackendFilters): boolean => {
-    switch (filters.type) {
-        case SearchBackendBasedInsightFiltersType.Regex:
-            return filters.excludeRepoRegexp.trim() !== '' || filters.includeRepoRegexp.trim() !== ''
-        case SearchBackendBasedInsightFiltersType.Repolist:
-            // We don't have the repo list mode support yet
-            return false
-    }
-
-    return false
-}
+const hasActiveFilters = (filters: SearchBasedBackendFilters): boolean =>
+    // We don't have the repo list mode support yet
+    filters.excludeRepoRegexp.trim() !== '' || filters.includeRepoRegexp.trim() !== ''
 
 interface DrillDownFiltersProps {
     isOpen: boolean

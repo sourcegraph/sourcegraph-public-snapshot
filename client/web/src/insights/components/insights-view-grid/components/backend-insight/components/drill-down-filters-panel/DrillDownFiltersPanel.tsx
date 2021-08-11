@@ -1,9 +1,6 @@
 import React, { useState } from 'react'
 
-import {
-    SearchBackendBasedInsightFiltersType,
-    SearchBasedBackendFilters,
-} from '../../../../../../core/types/insight/search-insight'
+import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 
 import {
@@ -11,7 +8,6 @@ import {
     DrillDownFiltersFormValues,
 } from './components/drill-down-filters-form/DrillDownFiltersForm'
 import styles from './DrillDownFiltersPanel.module.scss'
-import { getDrillDownFormValues } from './utils'
 
 enum DrillDownFiltersStep {
     Filters = 'filters',
@@ -30,7 +26,6 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {
             onFiltersChange({
-                type: SearchBackendBasedInsightFiltersType.Regex,
                 includeRepoRegexp: event.values.includeRepoRegexp,
                 excludeRepoRegexp: event.values.excludeRepoRegexp,
             })
@@ -39,7 +34,6 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
 
     const handleFilterSave = (values: DrillDownFiltersFormValues): SubmissionResult =>
         onFilterSave({
-            type: SearchBackendBasedInsightFiltersType.Regex,
             includeRepoRegexp: values.includeRepoRegexp,
             excludeRepoRegexp: values.excludeRepoRegexp,
         })
@@ -51,7 +45,7 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
         return (
             <DrillDownFiltersForm
                 className={styles.filtersForm}
-                initialFiltersValue={getDrillDownFormValues(initialFiltersValue)}
+                initialFiltersValue={initialFiltersValue}
                 onFiltersChange={handleFilterChange}
                 onFilterSave={handleFilterSave}
             />
