@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -96,6 +94,50 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 	return results, nil
 }
 
+func (s *InsightStore) InsertDirtyQuery(ctx context.Context, series *types.InsightSeries, query *types.DirtyQuery) error {
+	q := sqlf.Sprintf(insertDirtyQuerySql, series.ID, query.Query, query.Reason, query.ForTime, s.Now())
+	return s.Exec(ctx, q)
+}
+
+func (s *InsightStore) GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error) {
+	q := sqlf.Sprintf(getDirtyQueriesSql, series.ID)
+	return scanDirtyQueries(s.Query(ctx, q))
+}
+
+func scanDirtyQueries(rows *sql.Rows, queryErr error) (_ []*types.DirtyQuery, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]*types.DirtyQuery, 0)
+	for rows.Next() {
+		var temp types.DirtyQuery
+		if err := rows.Scan(
+			&temp.ID,
+			&temp.Query,
+			&temp.Reason,
+			&temp.ForTime,
+			&temp.DirtyAt,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, &temp)
+	}
+	return results, nil
+}
+
+const insertDirtyQuerySql = `
+-- source: enterprise/internal/insights/store/insight_store.go:InsertDirtyQuery
+INSERT INTO insight_dirty_queries (insight_series_id, query, reason, for_time, dirty_at)
+VALUES (%s, %s, %s, %s, %s);
+`
+
+const getDirtyQueriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueries
+select id, query, reason, for_time, dirty_at from insight_dirty_queries
+where insight_series_id = %s;`
+
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
@@ -146,7 +188,6 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
-		log15.Info("temp", "temp", temp)
 		results = append(results, temp)
 	}
 	return results, nil
@@ -250,6 +291,7 @@ type DataSeriesStore interface {
 
 type InsightMetadataStore interface {
 	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
+	GetDirtyQueries(ctx context.Context, series types.InsightSeries) ([]types.DirtyQuery, error)
 }
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.

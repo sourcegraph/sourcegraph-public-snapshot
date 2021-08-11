@@ -468,3 +468,71 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 		}
 	})
 }
+
+func TestDirtyQueries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test read with no inserts", func(t *testing.T) {
+		series := types.InsightSeries{
+			ID:       1,
+			SeriesID: "asdf",
+			Query:    "qwerwre",
+		}
+		queries, err := store.GetDirtyQueries(ctx, &series)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(queries) != 0 {
+			t.Fatal("unexpected results of dirty queries")
+		}
+	})
+
+	t.Run("write and read back", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID: "asdf",
+			Query:    "qwerwre",
+		}
+
+		created, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		at := time.Date(2020, 1, 1, 5, 5, 5, 5, time.UTC).Truncate(time.Microsecond)
+
+		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
+			ID:      1,
+			Query:   created.Query,
+			ForTime: at,
+			Reason:  "this is a reason",
+		}); err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := store.GetDirtyQueries(ctx, &created)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*types.DirtyQuery{
+			{
+				ID:      1,
+				Query:   created.Query,
+				ForTime: at,
+				DirtyAt: now,
+				Reason:  "this is a reason",
+			},
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatched dirty query (want/got): %v", diff)
+		}
+	})
+}
