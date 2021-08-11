@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../auth'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { LogoAscii } from '../LogoAscii'
 import { RepoSelectionMode } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
@@ -13,17 +16,20 @@ import { selectedReposVar, useSaveSelectedRepos } from '../useSelectedRepos'
 interface StartSearching {
     user: AuthenticatedUser
     repoSelectionMode: RepoSelectionMode
+    onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
+    setSelectedSearchContextSpec: (spec: string) => void
+    onError: (error: ErrorLike) => void
 }
 
 const SIXTY_SECONDS = 60000
 
-export const useShowAlert = (isDoneCloning: boolean): { showAlert: boolean } => {
+export const useShowAlert = (isDoneCloning: boolean, fetchError: ErrorLike | undefined): { showAlert: boolean } => {
     const [showAlert, setShowAlert] = useState(false)
 
     useEffect(() => {
         const timer = setTimeout(() => setShowAlert(true), SIXTY_SECONDS)
 
-        if (isDoneCloning) {
+        if (isDoneCloning || isErrorLike(fetchError)) {
             clearTimeout(timer)
             setShowAlert(false)
         }
@@ -32,13 +38,19 @@ export const useShowAlert = (isDoneCloning: boolean): { showAlert: boolean } => 
             clearTimeout(timer)
             setShowAlert(false)
         }
-    }, [isDoneCloning])
+    }, [isDoneCloning, fetchError])
 
     return { showAlert }
 }
 
-export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, repoSelectionMode }) => {
-    const { externalServices } = useExternalServices(user.id)
+export const StartSearching: React.FunctionComponent<StartSearching> = ({
+    user,
+    repoSelectionMode,
+    onUserExternalServicesOrRepositoriesUpdate,
+    setSelectedSearchContextSpec,
+    onError,
+}) => {
+    const { externalServices, errorServices, loadingServices } = useExternalServices(user.id)
     const saveSelectedRepos = useSaveSelectedRepos()
 
     const {
@@ -46,18 +58,28 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
         statusSummary,
         loading: cloningStatusLoading,
         isDoneCloning,
+        error: cloningStatusError,
+        stopPolling: stopPollingCloningStatus,
     } = useRepoCloningStatus({
         userId: user.id,
         pollInterval: 2000,
         selectedReposVar,
     })
 
+    const isLoading = loadingServices || cloningStatusLoading
+    const fetchError = cloningStatusError || errorServices
+
+    useEffect(() => {
+        if (fetchError) {
+            stopPollingCloningStatus()
+            onError(fetchError)
+        }
+    }, [fetchError, onError, stopPollingCloningStatus])
+
     useEffect(() => {
         const selectedRepos = selectedReposVar()
 
         if (externalServices && selectedRepos) {
-            const codeHostRepoPromises = []
-
             for (const host of externalServices) {
                 const repos: string[] = []
                 for (const repo of selectedRepos) {
@@ -69,29 +91,41 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
                     repos.push(nameWithoutService)
                 }
 
-                codeHostRepoPromises.push(
-                    saveSelectedRepos({
-                        variables: {
-                            id: host.id,
-                            allRepos: repoSelectionMode === 'all',
-                            repos: (repoSelectionMode === 'selected' && repos) || null,
-                        },
+                saveSelectedRepos({
+                    variables: {
+                        id: host.id,
+                        allRepos: repoSelectionMode === 'all',
+                        repos: (repoSelectionMode === 'selected' && repos) || null,
+                    },
+                })
+                    .then(() => {
+                        // update the external services and the search context
+                        onUserExternalServicesOrRepositoriesUpdate(externalServices.length, selectedRepos.length)
+                        setSelectedSearchContextSpec(`@${user.username}`)
                     })
-                )
+                    .catch(onError)
             }
         }
-    }, [externalServices, saveSelectedRepos, repoSelectionMode])
+    }, [
+        externalServices,
+        saveSelectedRepos,
+        repoSelectionMode,
+        onUserExternalServicesOrRepositoriesUpdate,
+        onError,
+        setSelectedSearchContextSpec,
+        user.username,
+    ])
 
-    const { showAlert } = useShowAlert(isDoneCloning)
+    const { showAlert } = useShowAlert(isDoneCloning, fetchError)
     const { currentIndex, setComplete } = useSteps()
 
     useEffect(() => {
         if (showAlert) {
             setComplete(currentIndex, true)
         } else {
-            setComplete(currentIndex, isDoneCloning)
+            setComplete(currentIndex, isDoneCloning || isErrorLike(fetchError))
         }
-    }, [currentIndex, setComplete, showAlert, isDoneCloning])
+    }, [currentIndex, setComplete, showAlert, isDoneCloning, fetchError])
 
     return (
         <div className="mt-5">
@@ -112,14 +146,21 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({ user, 
                             <code className="mb-2 post-signup-page__loading">Cloning Repositories</code>
                         </TerminalLine>
                     )}
-                    {cloningStatusLoading && (
+                    {isLoading && (
                         <TerminalLine>
                             <TerminalTitle>
                                 <code className="mb-2 post-signup-page__loading">Loading</code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}
-                    {!cloningStatusLoading &&
+                    {fetchError && (
+                        <TerminalLine>
+                            <TerminalTitle>
+                                <code className="mb-2">Unexpected error</code>
+                            </TerminalTitle>
+                        </TerminalLine>
+                    )}
+                    {!isLoading &&
                         !isDoneCloning &&
                         cloningStatusLines?.map(({ id, title, details, progress }) => (
                             <div key={id} className="mb-2">

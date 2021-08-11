@@ -149,7 +149,28 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		}
 	}
 
-	toMatches := func(searcherMatches []*protocol.FileMatch) []result.Match {
+	toMatches := newToMatches(repo, commit, &rev)
+
+	var onMatches func([]*protocol.FileMatch)
+	if stream != nil {
+		onMatches = func(searcherMatches []*protocol.FileMatch) {
+			stream.Send(streaming.SearchEvent{
+				Results: toMatches(searcherMatches),
+			})
+		}
+	}
+
+	searcherMatches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return toMatches(searcherMatches), limitHit, err
+}
+
+// newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
+func newToMatches(repo types.RepoName, commit api.CommitID, rev *string) func([]*protocol.FileMatch) []result.Match {
+	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
 			lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
@@ -170,7 +191,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 					Path:     fm.Path,
 					Repo:     repo,
 					CommitID: commit,
-					InputRev: &rev,
+					InputRev: rev,
 				},
 				LineMatches: lineMatches,
 				LimitHit:    fm.LimitHit,
@@ -178,22 +199,6 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		}
 		return matches
 	}
-
-	var cb func([]*protocol.FileMatch)
-	if stream != nil {
-		cb = func(searcherMatches []*protocol.FileMatch) {
-			stream.Send(streaming.SearchEvent{
-				Results: toMatches(searcherMatches),
-			})
-		}
-	}
-
-	searcherMatches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, index, info, fetchTimeout, indexerEndpoints, cb)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return toMatches(searcherMatches), limitHit, err
 }
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
