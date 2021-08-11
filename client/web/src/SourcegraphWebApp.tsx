@@ -217,11 +217,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     enableAPIDocs: boolean
 
     /**
-     * Whether the design refresh toggle is enabled.
-     */
-    designRefreshToggleEnabled: boolean
-
-    /**
      * Evaluated feature flags for the current viewer
      */
     featureFlags: FlagSet
@@ -316,7 +311,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
-            designRefreshToggleEnabled: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
