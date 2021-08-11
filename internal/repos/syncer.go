@@ -437,6 +437,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		return Diff{}, errors.Wrap(err, "syncer: getting repo from the database")
 	}
 
+	scheduleRepoPermsSync := false
 	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
@@ -460,6 +461,16 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		stored = types.Repos{existing}
 		fallthrough
 	case 1: // Existing repo, update.
+		// If the repo is public and is being made private, we want to schedule a repository
+		// permissions sync.
+		//
+		// We do not need to check if an existing private repo was made public because public repos
+		// are on the quick path of authz checks and will be skipped even if we enqueue it for
+		// permissions syncing.
+		if !stored[0].Private && sourced.Private {
+			scheduleRepoPermsSync = true
+		}
+
 		if !stored[0].Update(sourced) {
 			d.Unmodified = append(d.Unmodified, stored[0])
 			break
@@ -471,6 +482,10 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		d.Modified = append(d.Modified, stored[0])
 	case 0: // New repo, create.
+		if sourced.Private {
+			scheduleRepoPermsSync = true
+		}
+
 		if svc.NamespaceUserID != 0 { // enforce user repo limits
 			siteAdded, err := tx.CountUserAddedRepos(ctx)
 			if err != nil {
@@ -502,28 +517,19 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	}
 
 	// PermsSyncer is available in enterprise mode only.
-	if s.PermsSyncer == nil {
+	// Even in enterprise mode, only trigger repo permissions sync if we need to.
+	if s.PermsSyncer == nil || !scheduleRepoPermsSync {
 		return d, nil
 	}
 
 	// We expect the length of d.Added to be either 0 or 1. Ranging over it is simpler.
 	for _, r := range d.Added {
-		if r.Private {
-			s.PermsSyncer.ScheduleRepos(ctx, r.ID)
-		}
+		s.PermsSyncer.ScheduleRepos(ctx, r.ID)
 	}
 
 	// We expect the length of d.Modified to be either 0 or 1. Ranging over it is simpler.
 	for _, r := range d.Modified {
-		// If the modified repo is private but was public before the update, schedule a repository
-		// permissions sync.
-		//
-		// We do not need to check if an existing private repo was made public because public repos
-		// are on the quick path of authz checks and will be skipped even if we enqueue it for
-		// permissions syncing.
-		if r.Private && !stored[0].Private {
-			s.PermsSyncer.ScheduleRepos(ctx, r.ID)
-		}
+		s.PermsSyncer.ScheduleRepos(ctx, r.ID)
 	}
 
 	return d, nil
