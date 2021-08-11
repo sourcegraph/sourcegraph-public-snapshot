@@ -420,14 +420,15 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		eventSummaries = append(eventSummaries, translateEventSummary(es))
 	}
 
-	countsByLanguage := map[string]jsonCodeIntelRepositoryCountsByLanguage{}
+	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, codeIntelUsage.CountsByLanguage)
 	for language, counts := range codeIntelUsage.CountsByLanguage {
-		countsByLanguage[language] = jsonCodeIntelRepositoryCountsByLanguage{
+		countsByLanguage = append(countsByLanguage, jsonCodeIntelRepositoryCountsByLanguage{
+			LanguageID:                            language,
 			NumRepositoriesWithUploadRecords:      counts.NumRepositoriesWithUploadRecords,
 			NumRepositoriesWithFreshUploadRecords: counts.NumRepositoriesWithFreshUploadRecords,
 			NumRepositoriesWithIndexRecords:       counts.NumRepositoriesWithIndexRecords,
 			NumRepositoriesWithFreshIndexRecords:  counts.NumRepositoriesWithFreshIndexRecords,
-		}
+		})
 	}
 
 	numRepositories := codeIntelUsage.NumRepositories
@@ -520,10 +521,11 @@ type jsonCodeIntelUsage struct {
 }
 
 type jsonCodeIntelRepositoryCountsByLanguage struct {
-	NumRepositoriesWithUploadRecords      *int32 `json:"num_repositories_with_upload_records"`
-	NumRepositoriesWithFreshUploadRecords *int32 `json:"num_repositories_with_fresh_upload_records"`
-	NumRepositoriesWithIndexRecords       *int32 `json:"num_repositories_with_index_records"`
-	NumRepositoriesWithFreshIndexRecords  *int32 `json:"num_repositories_with_fresh_index_records"`
+	LanguageID                            *string `json:"language_id"`
+	NumRepositoriesWithUploadRecords      *int32  `json:"num_repositories_with_upload_records"`
+	NumRepositoriesWithFreshUploadRecords *int32  `json:"num_repositories_with_fresh_upload_records"`
+	NumRepositoriesWithIndexRecords       *int32  `json:"num_repositories_with_index_records"`
+	NumRepositoriesWithFreshIndexRecords  *int32  `json:"num_repositories_with_fresh_index_records"`
 }
 
 type jsonEventSummary struct {
