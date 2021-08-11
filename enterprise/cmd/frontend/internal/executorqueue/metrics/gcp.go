@@ -14,6 +14,7 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -66,7 +67,7 @@ const (
 
 func makeGCPMetricRequest(config *GCPConfig, queueName string, count int) *monitoringpb.CreateTimeSeriesRequest {
 	pbMetric := &metricpb.Metric{Type: gcpMetricType, Labels: map[string]string{"queueName": queueName}}
-	now := &timestamp.Timestamp{Seconds: time.Now().UTC().Unix()}
+	now := &timestamp.Timestamp{Seconds: timeutil.Now().Unix()}
 	pbInterval := &monitoringpb.TimeInterval{StartTime: now, EndTime: now}
 	pbValue := &monitoringpb.TypedValue{Value: &monitoringpb.TypedValue_Int64Value{Int64Value: int64(count)}}
 	pbTimeSeriesPoints := []*monitoringpb.Point{{Interval: pbInterval, Value: pbValue}}
