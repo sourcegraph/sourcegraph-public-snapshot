@@ -47,7 +47,7 @@ export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({
  * Sidebar with collapsible items
  */
 export const SidebarCollapseItems: React.FunctionComponent<{
-    children: JSX.Element
+    children: React.ReactNode
     icon?: React.ComponentType<{ className?: string }>
     label?: string
     openByDefault?: boolean

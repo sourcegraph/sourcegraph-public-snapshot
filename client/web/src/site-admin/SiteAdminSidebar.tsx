@@ -33,16 +33,14 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                     (items.length > 1 ? (
                         <ListGroupItem className="p-0" key={index}>
                             <SidebarCollapseItems icon={header?.icon} label={header?.label} openByDefault={true}>
-                                <>
-                                    {items.map(
-                                        ({ label, to, source = 'client', condition = () => true }) =>
-                                            condition(props) && (
-                                                <SidebarNavItem to={to} exact={true} key={label} source={source}>
-                                                    {label}
-                                                </SidebarNavItem>
-                                            )
-                                    )}
-                                </>
+                                {items.map(
+                                    ({ label, to, source = 'client', condition = () => true }) =>
+                                        condition(props) && (
+                                            <SidebarNavItem to={to} exact={true} key={label} source={source}>
+                                                {label}
+                                            </SidebarNavItem>
+                                        )
+                                )}
                             </SidebarCollapseItems>
                         </ListGroupItem>
                     ) : (
