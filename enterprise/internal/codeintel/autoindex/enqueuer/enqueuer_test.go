@@ -22,6 +22,114 @@ var testConfig = Config{
 	MaximumIndexJobsPerInferredConfiguration: 50,
 }
 
+func TestQueueIndexesExplicit(t *testing.T) {
+	config := `{
+		"shared_steps": [
+			{
+				"root": "/",
+				"image": "node:12",
+				"commands": [
+					"yarn install --frozen-lockfile --non-interactive",
+				],
+			}
+		],
+		"index_jobs": [
+			{
+				"steps": [
+					{
+						// Comments are the future
+						"image": "go:latest",
+						"commands": ["go mod vendor"],
+					}
+				],
+				"indexer": "lsif-go",
+				"indexer_args": ["--no-animation"],
+			},
+			{
+				"root": "web/",
+				"indexer": "lsif-tsc",
+				"indexer_args": ["-p", "."],
+				"outfile": "lsif.dump",
+			},
+		]
+	}`
+
+	mockDBStore := NewMockDBStore()
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
+	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
+	})
+
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
+	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", config, false)
+
+	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
+	} else {
+		var commits []string
+		for _, call := range mockDBStore.IsQueuedFunc.History() {
+			commits = append(commits, call.Arg2)
+		}
+		sort.Strings(commits)
+
+		if diff := cmp.Diff([]string{"c42"}, commits); diff != "" {
+			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+		}
+	}
+
+	if len(mockDBStore.InsertIndexFunc.History()) != 2 {
+		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 2, len(mockDBStore.InsertIndexFunc.History()))
+	} else {
+		var indexes []store.Index
+		for _, call := range mockDBStore.InsertIndexFunc.History() {
+			indexes = append(indexes, call.Arg1)
+		}
+
+		expectedIndexes := []store.Index{
+			{
+				RepositoryID: 42,
+				Commit:       "c42",
+				State:        "queued",
+				DockerSteps: []store.DockerStep{
+					{
+						Root:     "/",
+						Image:    "node:12",
+						Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					},
+					{
+						Image:    "go:latest",
+						Commands: []string{"go mod vendor"},
+					},
+				},
+				Indexer:     "lsif-go",
+				IndexerArgs: []string{"--no-animation"},
+			},
+			{
+				RepositoryID: 42,
+				Commit:       "c42",
+				State:        "queued",
+				DockerSteps: []store.DockerStep{
+					{
+						Root:     "/",
+						Image:    "node:12",
+						Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
+					},
+				},
+				Root:        "web/",
+				Indexer:     "lsif-tsc",
+				IndexerArgs: []string{"-p", "."},
+				Outfile:     "lsif.dump",
+			},
+		}
+		if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
+			t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+		}
+	}
+}
+
 func TestQueueIndexesInDatabase(t *testing.T) {
 	indexConfiguration := store.IndexConfiguration{
 		ID:           1,
