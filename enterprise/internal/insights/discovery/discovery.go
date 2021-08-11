@@ -204,6 +204,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			SeriesID:              Encode(timeSeries),
 			Query:                 timeSeries.Query,
 			RecordingIntervalDays: 1,
+			NextRecordingAfter:    insights.NextRecording(time.Now()),
 		}
 		result, err := tx.CreateSeries(ctx, temp)
 		if err != nil {

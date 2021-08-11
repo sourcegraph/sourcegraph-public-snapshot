@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/cockroachdb/errors"
@@ -255,7 +257,7 @@ type InsightMetadataStore interface {
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := current.Add(time.Hour * 24 * time.Duration(series.RecordingIntervalDays))
+	next := insights.NextRecording(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
