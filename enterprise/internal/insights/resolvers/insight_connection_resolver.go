@@ -41,6 +41,7 @@ func (r *insightConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 			insightsStore:   r.insightsStore,
 			workerBaseStore: r.workerBaseStore,
 			insight:         insight,
+			metadataStore:   r.insightMetadataStore,
 		})
 	}
 	return resolvers, nil
@@ -81,6 +82,7 @@ var _ graphqlbackend.InsightResolver = &insightResolver{}
 type insightResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
+	metadataStore   store.InsightMetadataStore
 	insight         types.Insight
 }
 
@@ -100,6 +102,7 @@ func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
 			insightsStore:   r.insightsStore,
 			workerBaseStore: r.workerBaseStore,
 			series:          series,
+			metadataStore:   r.metadataStore,
 		})
 	}
 	return resolvers
