@@ -7,17 +7,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -102,7 +98,11 @@ func Commit(ctx context.Context, db dbutil.DB, repo *types.Repo, commitID api.Co
 //
 // It logs errors to the trace but does not return errors, because external links are not worth
 // failing any request for.
-func linksForRepository(ctx context.Context, db dbutil.DB, repo *types.Repo) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
+func linksForRepository(
+	ctx context.Context,
+	db dbutil.DB,
+	repo *types.Repo,
+) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
 	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
 	span.SetTag("Repo", repo.Name)
@@ -115,25 +115,7 @@ func linksForRepository(ctx context.Context, db dbutil.DB, repo *types.Repo) (ph
 		span.SetTag("phabErr", err.Error())
 	}
 
-	// Look up repo links in the repo-updater. This supplies links from code host APIs.
-	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo: repo.Name,
-	})
-	if err != nil {
-		ext.Error.Set(span, true)
-		span.SetTag("repoUpdaterErr", err.Error())
-		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.Name, "error", err)
-		linksForRepositoryFailed.Inc()
-	}
-	if info != nil && info.Repo != nil {
-		link = info.Repo.Links
-		serviceType = info.Repo.ExternalRepo.ServiceType
-	}
+	repoInfo := protocol.NewRepoInfo(repo)
 
-	return phabRepo, link, serviceType
+	return phabRepo, repoInfo.Links, repoInfo.ExternalRepo.ServiceType
 }
-
-var linksForRepositoryFailed = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_graphql_links_for_repository_failed_total",
-	Help: "The total number of times the GraphQL field LinksForRepository failed.",
-})
