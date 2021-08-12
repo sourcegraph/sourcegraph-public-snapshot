@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -257,24 +255,6 @@ VALUES (%s, %s, NULLIF(%s, 0), '')
 	}
 }
 
-func createGitHubExternalService(t *testing.T, db dbutil.DB, userID int32) *types.ExternalService {
-	now := time.Now()
-	svc := &types.ExternalService{
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "Github - Test",
-		Config:          `{"url": "https://github.com", "authorization": {}}`,
-		NamespaceUserID: userID,
-		CreatedAt:       now,
-		UpdatedAt:       now,
-	}
-
-	if err := ExternalServices(db).Upsert(context.Background(), svc); err != nil {
-		t.Fatal(err)
-	}
-
-	return svc
-}
-
 // 🚨 SECURITY: Tests are necessary to ensure security.
 func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	if testing.Short() {
@@ -324,8 +304,6 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	siteLevelGitHubService := createGitHubExternalService(t, db, 0)
-
 	// Set up some repositories: public and private for both alice and bob
 	internalCtx := actor.WithInternalActor(ctx)
 	alicePublicRepo := mustCreate(internalCtx, t, db,
@@ -338,12 +316,6 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	alicePublicRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
 	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "alice_private_repo",
@@ -355,12 +327,6 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
 	bobPublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "bob_public_repo",
@@ -371,12 +337,6 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	bobPublicRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
 	bobPrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "bob_private_repo",
@@ -388,31 +348,6 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
-	// Make sure that alicePublicRepo, alicePrivateRepo, bobPublicRepo and bobPrivateRepo have an
-	// entry in external_service_repos table.
-	repoIDs := []api.RepoID{
-		alicePublicRepo.ID,
-		alicePrivateRepo.ID,
-		bobPublicRepo.ID,
-		bobPrivateRepo.ID,
-	}
-
-	for _, id := range repoIDs {
-		q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%s, %s, '')
-`, siteLevelGitHubService.ID, id)
-		_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
 
 	// Set up another unrestricted private repo from cindy
 	confGet := func() *conf.Unified {
@@ -583,8 +518,6 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	siteLevelGitHubService := createGitHubExternalService(t, db, 0)
-
 	// Set up some repositories: public and private for both alice and bob
 	internalCtx := actor.WithInternalActor(ctx)
 	alicePublicRepo := mustCreate(internalCtx, t, db,
@@ -597,12 +530,6 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	alicePublicRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
 	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "alice_private_repo",
@@ -614,12 +541,6 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
 	bobPublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "bob_public_repo",
@@ -630,12 +551,6 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	bobPublicRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
 	bobPrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "bob_private_repo",
@@ -647,31 +562,6 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
-		siteLevelGitHubService.URN(): {
-			ID: siteLevelGitHubService.URN(),
-		},
-	}
-
-	// Make sure that alicePublicRepo, alicePrivateRepo, bobPublicRepo and bobPrivateRepo have an
-	// entry in external_service_repos table.
-	repoIDs := []api.RepoID{
-		alicePublicRepo.ID,
-		alicePrivateRepo.ID,
-		bobPublicRepo.ID,
-		bobPrivateRepo.ID,
-	}
-
-	for _, id := range repoIDs {
-		q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%s, %s, '')
-`, siteLevelGitHubService.ID, id)
-		_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
 
 	// Set up permissions: alice and bob have access to their own private repositories
 	q := sqlf.Sprintf(`
