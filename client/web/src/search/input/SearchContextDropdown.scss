@@ -48,7 +48,7 @@
         &:active:disabled,
         &:focus:disabled {
             background-color: var(--color-bg-3);
-            color: var(--text-disabled);
+            color: var(--text-muted);
             border-color: transparent;
             opacity: 1;
             pointer-events: auto; // Required to show tooltip on hover
@@ -59,7 +59,7 @@
 
             .search-filter-keyword,
             .search-keyword {
-                color: var(--text-disabled);
+                color: var(--text-muted);
             }
         }
 
