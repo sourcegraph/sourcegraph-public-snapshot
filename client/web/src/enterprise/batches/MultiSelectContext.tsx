@@ -17,6 +17,7 @@ export interface MultiSelectContextState {
     totalCount?: number
     visible: Set<string>
 
+    // Convenience getters that abstract over the possible values of selected.
     areAllVisibleSelected: () => boolean
     isSelected: (id: string) => boolean
 
@@ -67,6 +68,11 @@ const defaultState = (): MultiSelectContextState => ({
  */
 export const MultiSelectContext = React.createContext<MultiSelectContextState>(defaultState())
 
+/**
+ * MultiSelectContextProvider returns a pre-canned <MultiSelectContext.Provider>
+ * that has the correct state handling for normal use, including providing the
+ * various callbacks that are used by consumers.
+ */
 export const MultiSelectContextProvider: React.FunctionComponent<{
     initialVisible?: string[]
 }> = ({ children, initialVisible }) => {
@@ -76,15 +82,18 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
         setVisibleInternal(new Set(ids))
     }, [])
 
+    // Now for selected items.
     const [selected, setSelected] = useState<MultiSelectContextSelected>(new Set(initialVisible ?? []))
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
 
+    // Total count handling.
     const [totalCount, setTotalCountInternal] = useState<number | undefined>(undefined)
     const setTotalCount = useCallback((totalCount?: number) => {
         setTotalCountInternal(totalCount)
     }, [])
 
+    // Callbacks to select and deselect items.
     const selectVisible = useCallback(() => {
         if (selected === 'all') {
             // If all items are currently selected, we're going to switch to
@@ -111,6 +120,13 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
 
     const selectSingle = useCallback(
         (id: string) => {
+            if (selected === 'all') {
+                // If all items are selected, then... we don't need to do
+                // anything, because this item is selected by definition.
+                // (Although it's probably a bug in the UI component.)
+                return
+            }
+
             const updated = new Set(selected)
             updated.add(id)
 
@@ -121,14 +137,24 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
 
     const deselectSingle = useCallback(
         (id: string) => {
-            const updated = new Set(selected)
-            updated.delete(id)
+            let updated: Set<string> | undefined
+            if (selected === 'all') {
+                // If all items are currently selected, there isn't a sensible
+                // way to say "except for this specific subset" within the
+                // current data model, so we'll just interpret that as "select
+                // visible, then deselect this particular item".
+                updated = new Set(visible)
+            } else {
+                updated = new Set(selected)
+            }
 
+            updated.delete(id)
             setSelected(updated)
         },
-        [selected]
+        [selected, visible]
     )
 
+    // Helper functions to access the current selection state.
     const areAllVisibleSelected = useCallback(() => {
         if (selected === 'all') {
             return true

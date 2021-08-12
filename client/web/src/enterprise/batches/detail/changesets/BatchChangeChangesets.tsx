@@ -77,50 +77,33 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     expandByDefault,
     onlyArchived,
 }) => {
+    // You might look at this destructuring statement and wonder why this isn't
+    // just a single context consumer object. The reason is because making it a
+    // single object makes it hard to have hooks that depend on individual
+    // callbacks and objects within the context. Therefore, we'll have a nice,
+    // ugly destructured set of variables here.
     const {
         selected,
         deselectAll,
         deselectSingle,
+        deselectVisible,
         areAllVisibleSelected,
         isSelected,
-        selectAll,
         selectSingle,
         selectVisible,
         setTotalCount,
         setVisible,
     } = useContext(MultiSelectContext)
 
-    // Whether all the changesets are selected, beyond the scope of what's on screen right now.
-    // const [allSelected, setAllSelected] = useState<boolean>(false)
-    // The overall amount of all changesets in the connection.
-    // const [totalChangesetCount, setTotalChangesetCount] = useState<number>(0)
-    // All changesets that are currently in view and can be selected. That currently
-    // just means they are visible.
-    // const [availableChangesets, setAvailableChangesets] = useState<Set<Scalars['ID']>>(new Set())
-    // The list of all selected changesets. This list does not reflect the selection
-    // when `allSelected` is true.
-    // const [selectedChangesets, setSelectedChangesets] = useState<Set<Scalars['ID']>>(new Set())
-
     const onSelect = useCallback(
         (id: string, isSelected: boolean): void => {
-            // If all items are currently selected, we'll treat a click on a single
-            // item as deselecting all, selecting visible, and then deselecting this
-            // item, since we can't easily represent "all except this".
-            if (selected === 'all') {
-                deselectAll()
-                selectVisible()
-                deselectSingle(id)
-
-                return
-            }
-
             if (isSelected) {
                 selectSingle(id)
             } else {
                 deselectSingle(id)
             }
         },
-        [deselectAll, deselectSingle, selectSingle, selectVisible, selected]
+        [deselectSingle, selectSingle]
     )
 
     const toggleSelectVisible = useCallback(() => {
@@ -129,7 +112,7 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
         } else {
             selectVisible()
         }
-    }, [areAllVisibleSelected, deselectAll, selectVisible])
+    }, [areAllVisibleSelected, deselectVisible, selectVisible])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,

@@ -191,9 +191,6 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         [batchChangeID, onSubmit, queryArguments, selected]
     )
 
-    // If we have ALL all selected, we take the totalCount in the current connection, otherwise the count of selected changeset IDs.
-    const selectedAmount = selected === 'all' ? totalCount : selected.size
-
     return (
         <>
             <div className="row align-items-center no-gutters">
