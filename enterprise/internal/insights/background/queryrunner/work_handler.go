@@ -3,7 +3,10 @@ package queryrunner
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -28,7 +31,34 @@ var _ workerutil.Handler = &workHandler{}
 type workHandler struct {
 	workerBaseStore *basestore.Store
 	insightsStore   *store.Store
+	metadadataStore *store.InsightStore
 	limiter         *rate.Limiter
+
+	mu          sync.Mutex
+	seriesCache map[string]*types.InsightSeries
+}
+
+func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if val, ok := r.seriesCache[seriesID]; !ok {
+		series, err := r.fetchSeries(ctx, seriesID)
+		if err != nil {
+			return nil, err
+		}
+		r.seriesCache[seriesID] = series
+		return series, nil
+	} else {
+		return val, nil
+	}
+}
+
+func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
+	result, err := r.metadadataStore.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: seriesID})
+	if err != nil || len(result) < 1 {
+		return nil, err
+	}
+	return &result[0], nil
 }
 
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -48,6 +78,12 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+
+	series, err := r.fetchSeries(ctx, job.SeriesID)
+	if err != nil {
+		return err
+	}
+
 	// Actually perform the search query.
 	//
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
@@ -85,6 +121,15 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	if results.Data.Search.Results.LimitHit {
 		log15.Error("insights query issue", "problem", "limit hit", "query", job.SearchQuery)
+		dq := types.DirtyQuery{
+			Query:   job.SearchQuery,
+			ForTime: *job.RecordTime,
+			Reason:  "limit hit",
+		}
+		if err := r.metadadataStore.InsertDirtyQuery(ctx, series, &dq); err != nil {
+			return errors.Wrap(err, "failed to write dirty query record")
+		}
+		log15.Info("wrote dirty query", "dq", dq)
 	}
 	if cloning := len(results.Data.Search.Results.Cloning); cloning > 0 {
 		log15.Error("insights query issue", "cloning_repos", cloning, "query", job.SearchQuery)

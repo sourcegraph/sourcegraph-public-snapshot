@@ -99,8 +99,11 @@ func (s *InsightStore) InsertDirtyQuery(ctx context.Context, series *types.Insig
 	return s.Exec(ctx, q)
 }
 
+// GetDirtyQueries returns up to 100 dirty queries for a given insight series.
 func (s *InsightStore) GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error) {
-	q := sqlf.Sprintf(getDirtyQueriesSql, series.ID)
+	// We are going to limit this for now to some fixed value, and in the future if necessary add pagination.
+	limit := 100
+	q := sqlf.Sprintf(getDirtyQueriesSql, series.ID, limit)
 	return scanDirtyQueries(s.Query(ctx, q))
 }
 
@@ -136,13 +139,15 @@ VALUES (%s, %s, %s, %s, %s);
 const getDirtyQueriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueries
 select id, query, reason, for_time, dirty_at from insight_dirty_queries
-where insight_series_id = %s;`
+where insight_series_id = %s
+limit %s;`
 
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
 	Deleted             bool
 	BackfillIncomplete  bool
+	SeriesID            string
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -161,6 +166,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if args.BackfillIncomplete {
 		preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
+	}
+	if len(args.SeriesID) > 0 {
+		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -291,7 +299,7 @@ type DataSeriesStore interface {
 
 type InsightMetadataStore interface {
 	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
-	GetDirtyQueries(ctx context.Context, series types.InsightSeries) ([]types.DirtyQuery, error)
+	GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error)
 }
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.

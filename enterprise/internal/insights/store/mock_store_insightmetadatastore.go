@@ -28,7 +28,7 @@ type MockInsightMetadataStore struct {
 func NewMockInsightMetadataStore() *MockInsightMetadataStore {
 	return &MockInsightMetadataStore{
 		GetDirtyQueriesFunc: &InsightMetadataStoreGetDirtyQueriesFunc{
-			defaultHook: func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error) {
+			defaultHook: func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error) {
 				return nil, nil
 			},
 		},
@@ -58,15 +58,15 @@ func NewMockInsightMetadataStoreFrom(i InsightMetadataStore) *MockInsightMetadat
 // GetDirtyQueries method of the parent MockInsightMetadataStore instance is
 // invoked.
 type InsightMetadataStoreGetDirtyQueriesFunc struct {
-	defaultHook func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error)
-	hooks       []func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error)
+	defaultHook func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error)
+	hooks       []func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error)
 	history     []InsightMetadataStoreGetDirtyQueriesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDirtyQueries delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockInsightMetadataStore) GetDirtyQueries(v0 context.Context, v1 types.InsightSeries) ([]types.DirtyQuery, error) {
+func (m *MockInsightMetadataStore) GetDirtyQueries(v0 context.Context, v1 *types.InsightSeries) ([]*types.DirtyQuery, error) {
 	r0, r1 := m.GetDirtyQueriesFunc.nextHook()(v0, v1)
 	m.GetDirtyQueriesFunc.appendCall(InsightMetadataStoreGetDirtyQueriesFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -75,7 +75,7 @@ func (m *MockInsightMetadataStore) GetDirtyQueries(v0 context.Context, v1 types.
 // SetDefaultHook sets function that is called when the GetDirtyQueries
 // method of the parent MockInsightMetadataStore instance is invoked and the
 // hook queue is empty.
-func (f *InsightMetadataStoreGetDirtyQueriesFunc) SetDefaultHook(hook func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error)) {
+func (f *InsightMetadataStoreGetDirtyQueriesFunc) SetDefaultHook(hook func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error)) {
 	f.defaultHook = hook
 }
 
@@ -84,7 +84,7 @@ func (f *InsightMetadataStoreGetDirtyQueriesFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *InsightMetadataStoreGetDirtyQueriesFunc) PushHook(hook func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error)) {
+func (f *InsightMetadataStoreGetDirtyQueriesFunc) PushHook(hook func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -92,21 +92,21 @@ func (f *InsightMetadataStoreGetDirtyQueriesFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *InsightMetadataStoreGetDirtyQueriesFunc) SetDefaultReturn(r0 []types.DirtyQuery, r1 error) {
-	f.SetDefaultHook(func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error) {
+func (f *InsightMetadataStoreGetDirtyQueriesFunc) SetDefaultReturn(r0 []*types.DirtyQuery, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *InsightMetadataStoreGetDirtyQueriesFunc) PushReturn(r0 []types.DirtyQuery, r1 error) {
-	f.PushHook(func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error) {
+func (f *InsightMetadataStoreGetDirtyQueriesFunc) PushReturn(r0 []*types.DirtyQuery, r1 error) {
+	f.PushHook(func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error) {
 		return r0, r1
 	})
 }
 
-func (f *InsightMetadataStoreGetDirtyQueriesFunc) nextHook() func(context.Context, types.InsightSeries) ([]types.DirtyQuery, error) {
+func (f *InsightMetadataStoreGetDirtyQueriesFunc) nextHook() func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -145,10 +145,10 @@ type InsightMetadataStoreGetDirtyQueriesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.InsightSeries
+	Arg1 *types.InsightSeries
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.DirtyQuery
+	Result0 []*types.DirtyQuery
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
