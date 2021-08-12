@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -137,20 +138,21 @@ func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *typ
 
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
 type StoreMetrics struct {
-	Transact                        *metrics.OperationMetrics
-	Done                            *metrics.OperationMetrics
-	CreateExternalServiceRepo       *metrics.OperationMetrics
-	UpdateExternalServiceRepo       *metrics.OperationMetrics
-	DeleteExternalServiceRepo       *metrics.OperationMetrics
-	DeleteExternalServiceReposNotIn *metrics.OperationMetrics
-	UpsertRepos                     *metrics.OperationMetrics
-	UpsertSources                   *metrics.OperationMetrics
-	ListExternalRepoSpecs           *metrics.OperationMetrics
-	GetExternalService              *metrics.OperationMetrics
-	SetClonedRepos                  *metrics.OperationMetrics
-	CountNotClonedRepos             *metrics.OperationMetrics
-	CountUserAddedRepos             *metrics.OperationMetrics
-	EnqueueSyncJobs                 *metrics.OperationMetrics
+	Transact                           *metrics.OperationMetrics
+	Done                               *metrics.OperationMetrics
+	CreateExternalServiceRepo          *metrics.OperationMetrics
+	UpdateExternalServiceRepo          *metrics.OperationMetrics
+	DeleteExternalServiceRepo          *metrics.OperationMetrics
+	DeleteExternalServiceReposNotIn    *metrics.OperationMetrics
+	UpsertRepos                        *metrics.OperationMetrics
+	UpsertSources                      *metrics.OperationMetrics
+	ListExternalRepoSpecs              *metrics.OperationMetrics
+	ListExternalServiceUserIDsByRepoID *metrics.OperationMetrics
+	GetExternalService                 *metrics.OperationMetrics
+	SetClonedRepos                     *metrics.OperationMetrics
+	CountNotClonedRepos                *metrics.OperationMetrics
+	CountUserAddedRepos                *metrics.OperationMetrics
+	EnqueueSyncJobs                    *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given

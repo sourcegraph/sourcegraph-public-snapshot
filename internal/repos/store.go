@@ -273,41 +273,35 @@ WHERE id = %s AND NOT EXISTS (
 )
 `
 
-// todo
-func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) ([]int32, error) {
+const listExternalServiceUserIDsByRepoIDQuery = `
+SELECT user_id FROM external_service_repos
+WHERE repo_id = %s AND user_id IS NOT NULL
+`
+
+// ListExternalServiceUserIDsByRepoID returns the users associated with a given
+// repository. These users have proven that they have read access to the repository
+// given their presence in our external_service_repos table.
+func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
 	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
 		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
 	}
 
-	// TODO: fix tracing
-	// tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
-	// tr.LogFields(
-	// 	otlog.String("name", string(r.Name)),
-	// 	otlog.Int64("external_service_id", svc.ID),
-	// 	otlog.String("external_repo_spec", r.ExternalRepo.String()),
-	// )
-	//
-	// defer func(began time.Time) {
-	// 	secs := time.Since(began).Seconds()
-	//
-	// 	s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
-	// 	logging.Log(s.Log, "store.create-external-service-repo", &err,
-	// 		"external-service-id", svc.ID,
-	// 		"name", r.Name,
-	// 		"external-repo-spec", r.ExternalRepo.String(),
-	// 	)
-	//
-	// 	tr.SetError(err)
-	// 	tr.Finish()
-	// }(time.Now())
+	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
+	tr.LogFields(
+		otlog.Int32("repo_id", int32(repoID)),
+	)
 
-	var userIDs []int32
-	q := sqlf.Sprintf(`
-SELECT user_id FROM external_service_repos
-WHERE
-	repo_id = %s
-AND user_id IS NOT NULL
-`, repoID)
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		s.Metrics.ListExternalServiceUserIDsByRepoID.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.list-external-service-user-ids-by-repo-id", &err,
+			"repo-id", repoID,
+		)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	q := sqlf.Sprintf(listExternalServiceUserIDsByRepoIDQuery, repoID)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
