@@ -14,7 +14,7 @@
  * Here is a summary of possible pattern values:
  *
  * For primitive values, the pattern can be a value of the same type, a function
- * taken the value as argument and returning a boolean ("pattern function"), or
+ * taking the value as argument and returning a boolean ("pattern function"), or
  * a "wrapper pattern" which is an object of the form '{$pattern: PatternOf<...>}'.
  * See 'WrapperPattern' below for more information.
  *
@@ -246,7 +246,7 @@ export type PatternOfNoInfer<Value, Data> = PatternOf<NoInfer<Value>, NoInfer<Da
  * application. Currently only holds the extracted data.
  */
 interface MatchContext<Data> {
-    data?: Data
+    data: Data
 }
 
 type Result<Data> =
@@ -266,21 +266,10 @@ type Result<Data> =
  */
 export function matchesValue<Value, Data>(
     value: Value,
-    pattern: PatternOfNoInfer<Value, Data>
-): Result<Data | undefined>
-// This overload exists so that if an initial value is provided, the success
-// result will always contain data.
-export function matchesValue<Value, Data>(
-    value: Value,
     pattern: PatternOfNoInfer<Value, Data>,
-    initialData: Data
-): Result<Data>
-export function matchesValue<Value, Data>(
-    value: Value,
-    pattern: PatternOfNoInfer<Value, Data>,
-    initialData?: Data
-): Result<Data> | Result<Data | undefined> {
-    const context = { data: initialData }
+    initialData: Data = Object.create(null)
+): Result<Data> {
+    const context = { data: initialData ?? Object.create(null) }
     if (matches(context, value, pattern)) {
         return { success: true, data: context.data ?? initialData }
     }
@@ -336,9 +325,6 @@ function matches<Value, Data>(
                 // @ts-expect-error due to the type definition above, pattern.$data is a union of two functions
                 pattern.$data(value, context)
             } else {
-                if (!context.data) {
-                    context.data = Object.create(null)
-                }
                 for (const [key, captureValue] of Object.entries(pattern.$data)) {
                     // TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'unknown'.  No index signature with a parameter of type 'string' was found on type 'unknown'
                     // @ts-expect-error context.data will likely not be an indexable type
@@ -426,6 +412,8 @@ export function debug<Value, Data>(pattern: PatternOfNoInfer<Value, Data>): Patt
     return (value, context, matches) => {
         // eslint-disable-next-line no-debugger
         debugger
+        // These are intentially two statements to make it easier to inspect the
+        // result of calling `matches` in the debugger.
         const result = matches(context, value, pattern)
         return result
     }

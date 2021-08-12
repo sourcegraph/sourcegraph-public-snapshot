@@ -10,19 +10,19 @@ declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
         interface Matchers<R, T> {
-            toBeMatchedBy<Data>(pattern: PatternOfNoInfer<T, Data>, expectedData?: Data): R
+            toBeMatchedBy<Data>(pattern: PatternOfNoInfer<T, Data>, expectedData?: Data, initialData?: Data): R
         }
     }
 }
 
 expect.extend({
-    toBeMatchedBy(actual, pattern, expectedData) {
+    toBeMatchedBy(actual, pattern, expectedData, initialData) {
         const options = {
             comment: 'Pattern matching',
             isNot: this.isNot,
             promise: this.promise,
         }
-        const result = matchesValue(actual, pattern)
+        const result = matchesValue(actual, pattern, initialData)
         let dataComparisonResult = false
         if (result.success && expectedData) {
             dataComparisonResult = this.equals(result.data, expectedData)
@@ -145,10 +145,7 @@ describe('matchValue', () => {
         })
 
         it('allows functions as data extractor', () => {
-            const extractData = (value: number, context: { data?: Set<number> }): void => {
-                if (!context.data) {
-                    context.data = new Set()
-                }
+            const extractData = (value: number, context: { data: Set<number> }): void => {
                 context.data.add(value)
             }
             expect({ a: 42, b: 21 }).toBeMatchedBy(
@@ -156,7 +153,8 @@ describe('matchValue', () => {
                     a: { $pattern: 42, $data: extractData },
                     b: { $pattern: 21, $data: extractData },
                 },
-                new Set([21, 42])
+                new Set([21, 42]),
+                new Set()
             )
         })
     })

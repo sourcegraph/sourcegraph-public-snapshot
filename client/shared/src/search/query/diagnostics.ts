@@ -48,11 +48,7 @@ const rules: PatternOf<Token[], Monaco.editor.IMarkerData[]>[] = [
     each({
         type: 'filter',
         $data: (token, context) => {
-            const diagnostics = checkFilter(token as Filter)
-            if (!context.data) {
-                context.data = []
-            }
-            context.data.push(...diagnostics)
+            context.data.push(...checkFilter(token as Filter))
         },
     }),
 ]
