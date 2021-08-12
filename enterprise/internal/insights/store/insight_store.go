@@ -7,8 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
