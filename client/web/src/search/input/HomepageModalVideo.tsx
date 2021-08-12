@@ -37,15 +37,6 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
                         <PlayIcon />
                     </div>
                 </button>
-                <div className="text-center mt-2">
-                    <button
-                        className="btn btn-link font-weight-normal p-0"
-                        type="button"
-                        onClick={() => toggleDialog(true)}
-                    >
-                        Three ways to search
-                    </button>
-                </div>
             </div>
             {isOpen && (
                 <Dialog
