@@ -89,9 +89,9 @@ EOF
   cat <<EOF >/shutdown_executor.sh
 #!/usr/bin/env sh
 
-if [ -z "\${EXIT_CODE}" ]; then
+if [ -z "\${EXIT_STATUS}" ]; then
   echo 'Executor has exited cleanly. Shutting down host.'
-  shutdown
+  systemctl shutdown
 else
   echo 'Executor has exited with an error. Service will restart.'
 fi
