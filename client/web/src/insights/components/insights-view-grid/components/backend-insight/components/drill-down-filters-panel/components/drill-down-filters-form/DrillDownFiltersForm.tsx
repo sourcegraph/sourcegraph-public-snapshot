@@ -111,7 +111,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                 spinnerClassName="mr-2"
                 type="submit"
                 disabled={formAPI.submitting}
-                className="d-flex btn btn-outline-secondary ml-auto mt-3"
+                className="d-flex btn btn-outline-secondary ml-auto mt-3 mb-1"
             />
         </form>
     )
