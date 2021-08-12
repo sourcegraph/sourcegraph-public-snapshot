@@ -5,7 +5,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { MouseEvent, useContext } from 'react'
 import { useHistory } from 'react-router'
 
-import { isSearchBasedInsightId } from '../../../../../../core/types'
+import { isSearchBasedInsightId } from '../../../../../../core/types/insight/search-insight'
 import { positionRight } from '../../../../../context-menu/utils'
 import { LineChartSettingsContext } from '../../../../../insight-view-content/chart-view-content/charts/line/line-chart-settings-provider'
 
@@ -59,16 +59,16 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                                 Edit
                             </MenuLink>
 
-                    {showYAxisToggleMenu && (
-                        <MenuLink
-                            data-testid="InsightContextMenuEditLink"
-                            className={classnames('btn btn-outline border-bottom', styles.item)}
-                            onClick={onToggleZeroYAxisMin}
-                        >
-                            <CheckIcon size={16} className={classnames('mr-2', { 'd-none': !zeroYAxisMin })} /> Start Y
-                            Axis at 0
-                        </MenuLink>
-                    )}
+                            {showYAxisToggleMenu && (
+                                <MenuLink
+                                    data-testid="InsightContextMenuEditLink"
+                                    className={classnames('btn btn-outline border-bottom', styles.item)}
+                                    onClick={onToggleZeroYAxisMin}
+                                >
+                                    <CheckIcon size={16} className={classnames('mr-2', { 'd-none': !zeroYAxisMin })} />{' '}
+                                    Start Y Axis at 0
+                                </MenuLink>
+                            )}
 
                             <MenuItem
                                 data-testid="insight-context-menu-delete-button"
