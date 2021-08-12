@@ -11,7 +11,6 @@ describe('MultiSelectContextProvider', () => {
         const { selected } = getContext()
         if (selected === 'all') {
             fail()
-            return
         }
 
         expect(selected.size).toBe(0)
@@ -29,7 +28,6 @@ describe('MultiSelectContextProvider', () => {
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
-                    return
                 }
 
                 expect(selected.size).toBe(1)
@@ -45,7 +43,6 @@ describe('MultiSelectContextProvider', () => {
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
-                    return
                 }
 
                 expect(selected.size).toBe(2)
@@ -61,7 +58,6 @@ describe('MultiSelectContextProvider', () => {
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
-                    return
                 }
 
                 expect(selected.size).toBe(1)
@@ -81,7 +77,6 @@ describe('MultiSelectContextProvider', () => {
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
-                    return
                 }
 
                 expect(selected.size).toBe(0)
@@ -99,7 +94,6 @@ describe('MultiSelectContextProvider', () => {
                 ({ areAllVisibleSelected, isSelected, selected }) => {
                     if (selected === 'all') {
                         fail()
-                        return
                     }
 
                     expect(selected.size).toBe(2)
@@ -117,7 +111,6 @@ describe('MultiSelectContextProvider', () => {
                 ({ areAllVisibleSelected, isSelected, selected }) => {
                     if (selected === 'all') {
                         fail()
-                        return
                     }
 
                     expect(selected.size).toBe(0)
@@ -160,7 +153,6 @@ describe('MultiSelectContextProvider', () => {
                 ({ areAllVisibleSelected, isSelected, selected }) => {
                     if (selected === 'all') {
                         fail()
-                        return
                     }
 
                     expect(selected.size).toBe(0)
@@ -181,7 +173,6 @@ describe('MultiSelectContextProvider', () => {
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
-                    return
                 }
 
                 expect(selected.size).toBe(0)
@@ -198,7 +189,6 @@ describe('MultiSelectContextProvider', () => {
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
-                    return
                 }
 
                 expect(selected.size).toBe(2)
@@ -215,7 +205,6 @@ describe('MultiSelectContextProvider', () => {
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
-                    return
                 }
 
                 expect(selected.size).toBe(1)
