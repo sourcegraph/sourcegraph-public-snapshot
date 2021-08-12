@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -69,12 +68,8 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		return err
 	}
 
-	queueHandler, err := newExecutorQueueHandler(queueOptions, handler)
+	queueHandler, err := newExecutorQueueHandler(db, observationContext, queueOptions, handler)
 	if err != nil {
-		return err
-	}
-
-	if err := metrics.Init(observationContext, queueOptions); err != nil {
 		return err
 	}
 
