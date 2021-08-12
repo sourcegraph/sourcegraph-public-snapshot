@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"testing"
-	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
@@ -14,20 +13,6 @@ import (
 	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestFeatureFlagStore(t *testing.T) {
-	t.Parallel()
-	t.Run("NewFeatureFlag", testNewFeatureFlagRoundtrip)
-	t.Run("ListFeatureFlags", testListFeatureFlags)
-	t.Run("Overrides", func(t *testing.T) {
-		t.Run("NewOverride", testNewOverrideRoundtrip)
-		t.Run("ListUserOverrides", testListUserOverrides)
-		t.Run("ListOrgOverrides", testListOrgOverrides)
-	})
-	t.Run("UserFlags", testUserFlags)
-	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
-	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
-}
 
 func errorContains(s string) require.ErrorAssertionFunc {
 	return func(t require.TestingT, err error, msg ...interface{}) {
@@ -101,40 +86,6 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 			require.Equal(t, tc.flag.Rollout, res.Rollout)
 		})
 	}
-}
-
-func testListFeatureFlags(t *testing.T) {
-	t.Parallel()
-	flagStore := FeatureFlags(dbtest.NewDB(t, ""))
-	ctx := actor.WithInternalActor(context.Background())
-
-	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
-	flag2 := &ff.FeatureFlag{Name: "bool_false", Bool: &ff.FeatureFlagBool{Value: false}}
-	flag3 := &ff.FeatureFlag{Name: "mid_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 3124}}
-	flag4 := &ff.FeatureFlag{Name: "deletable", Rollout: &ff.FeatureFlagRollout{Rollout: 3125}}
-	flags := []*ff.FeatureFlag{flag1, flag2, flag3, flag4}
-
-	for _, flag := range flags {
-		_, err := flagStore.CreateFeatureFlag(ctx, flag)
-		require.NoError(t, err)
-	}
-
-	// Deleted flag4
-	err := flagStore.Exec(ctx, sqlf.Sprintf("DELETE FROM feature_flags WHERE flag_name = 'deletable';"))
-	require.NoError(t, err)
-
-	expected := []*ff.FeatureFlag{flag1, flag2, flag3}
-
-	res, err := flagStore.GetFeatureFlags(ctx)
-	require.NoError(t, err)
-	for _, flag := range res {
-		// Unset any timestamps
-		flag.CreatedAt = time.Time{}
-		flag.UpdatedAt = time.Time{}
-		flag.DeletedAt = nil
-	}
-
-	require.EqualValues(t, res, expected)
 }
 
 func testNewOverrideRoundtrip(t *testing.T) {
