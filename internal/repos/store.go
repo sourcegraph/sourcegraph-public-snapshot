@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -271,6 +272,112 @@ WHERE id = %s AND NOT EXISTS (
 	WHERE repo_id = %s LIMIT 1
 )
 `
+
+// todo
+func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) ([]int32, error) {
+	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
+		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+	}
+
+	// TODO: fix tracing
+	// tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
+	// tr.LogFields(
+	// 	otlog.String("name", string(r.Name)),
+	// 	otlog.Int64("external_service_id", svc.ID),
+	// 	otlog.String("external_repo_spec", r.ExternalRepo.String()),
+	// )
+	//
+	// defer func(began time.Time) {
+	// 	secs := time.Since(began).Seconds()
+	//
+	// 	s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
+	// 	logging.Log(s.Log, "store.create-external-service-repo", &err,
+	// 		"external-service-id", svc.ID,
+	// 		"name", r.Name,
+	// 		"external-repo-spec", r.ExternalRepo.String(),
+	// 	)
+	//
+	// 	tr.SetError(err)
+	// 	tr.Finish()
+	// }(time.Now())
+
+	var userIDs []int32
+	q := sqlf.Sprintf(`
+SELECT user_id FROM external_service_repos
+WHERE
+	repo_id = %s
+AND user_id IS NOT NULL
+`, repoID)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var userID int32
+		err = rows.Scan(userID)
+		if err != nil {
+			return nil, err
+		}
+
+		userIDs = append(userIDs, userID)
+	}
+
+	return userIDs, nil
+}
+
+// todo
+func (s *Store) ListExternalServiceRepoIDsByUserID(ctx context.Context, userID int32) ([]api.RepoID, error) {
+	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
+		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
+	}
+
+	// TODO: fix tracing
+	// tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
+	// tr.LogFields(
+	// 	otlog.String("name", string(r.Name)),
+	// 	otlog.Int64("external_service_id", svc.ID),
+	// 	otlog.String("external_repo_spec", r.ExternalRepo.String()),
+	// )
+	//
+	// defer func(began time.Time) {
+	// 	secs := time.Since(began).Seconds()
+	//
+	// 	s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
+	// 	logging.Log(s.Log, "store.create-external-service-repo", &err,
+	// 		"external-service-id", svc.ID,
+	// 		"name", r.Name,
+	// 		"external-repo-spec", r.ExternalRepo.String(),
+	// 	)
+	//
+	// 	tr.SetError(err)
+	// 	tr.Finish()
+	// }(time.Now())
+
+	var repoIDs []api.RepoID
+	q := sqlf.Sprintf(`
+SELECT repo_id FROM external_service_repos
+WHERE user_id = %s
+`, userID)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var repoID api.RepoID
+		err = rows.Scan(repoID)
+		if err != nil {
+			return nil, err
+		}
+
+		repoIDs = append(repoIDs, repoID)
+	}
+
+	return repoIDs, nil
+}
 
 // CreateExternalServiceRepo inserts a single repo and its association to an external service, respectively in the repo and
 // external_service_repos table. The associated external service must already exist.
