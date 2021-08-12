@@ -649,6 +649,85 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 	}
 }
 
+func testSyncExternalServicePermsSync(store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T) {
+		servicesPerKind := createExternalServices(t, store, func(svc *types.ExternalService) { svc.CloudDefault = true })
+
+		githubService := servicesPerKind[extsvc.KindGitHub]
+
+		testCases := []struct {
+			name                 string
+			private              bool
+			expectedInvokedState bool
+			testSetup            func(r *types.Repo) (*types.Repo, error)
+		}{
+			{
+				name:                 "new private repo triggers permissions sync",
+				private:              true,
+				expectedInvokedState: true,
+			},
+			{
+				name:                 "new public repo does not triggers permissions sync",
+				private:              false,
+				expectedInvokedState: false,
+			},
+		}
+
+		for i, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				name := fmt.Sprintf("github.com/org/foo-%d", i)
+
+				repo := (&types.Repo{
+					Name:     api.RepoName(name),
+					Metadata: &github.Repository{},
+					Private:  tc.private,
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          fmt.Sprintf("foo-%d", i),
+						ServiceID:   "https://github.com/",
+						ServiceType: extsvc.TypeGitHub,
+					},
+				}).With(
+					types.Opt.RepoSources(githubService.URN()),
+				)
+
+				sourcer := repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(githubService.Clone(), nil, repo.Clone()),
+				)
+
+				if tc.testSetup != nil {
+					var err error
+					if repo, err = tc.testSetup(repo); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				clock := timeutil.NewFakeClock(time.Now(), 0)
+				permsSyncer := &mockPermsSyncer{testing: t}
+
+				syncer := &repos.Syncer{
+					Sourcer:     sourcer,
+					Store:       store,
+					Now:         clock.Now,
+					PermsSyncer: permsSyncer,
+				}
+
+				if err := syncer.SyncExternalService(context.Background(), githubService.ID, 10*time.Second); err != nil {
+					t.Fatal(err)
+				}
+
+				if permsSyncer.invoked != tc.expectedInvokedState {
+					t.Errorf(
+						"mismatch in state of syncer.PermsSyncer.invoked, want %v, got %v",
+						tc.expectedInvokedState, permsSyncer.invoked,
+					)
+				}
+
+			})
+		}
+
+	}
+}
+
 func testSyncRepo(s *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		clock := timeutil.NewFakeClock(time.Now(), time.Second)
