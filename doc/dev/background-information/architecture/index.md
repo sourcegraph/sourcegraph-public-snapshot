@@ -125,6 +125,9 @@ If you want to learn more about code insights:
   - Commit search to find historical commits to search over
 - [Repository Syncing](#repository-syncing)
   - The WIP code insights backend has direct dependencies on `gitserver` and `repo-updater`
+- [Settings cascade](#settings-cascade)
+  - Insights and dashboard configuration is currently stored in user, organization and global settings. This will change in the future and is planned to be moved to the database.
+  - Insights contributed by extensions are configured through settings (this will stay the same).
 - Future: [Batch Changes](#batch-changes)
   - "Create a batch change from a code insight" flow
 - Future: [Code monitoring](#code-monitoring)
@@ -198,6 +201,8 @@ If you want to learn more about our extension API:
 
 - [Search](#search)
   - Query transformer API hooks into search in the web app
+- [Settings cascade](#settings-cascade)
+  - Which extensions are enabled and configuration for extensions are stored in settings. Extensions may also change settings.
 
 ## src-cli
 
