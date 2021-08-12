@@ -2,14 +2,28 @@
 
 This document provides a high level overview of Sourcegraph's architecture so you can understand how our systems fit together.
 
-## Code syncing
+The **"Dependencies"** sections give a short, high-level overview of dependencies on other architecture components and the most important aspects of _how_ they are used.
 
-At its core, Sourcegraph maintains a persistent cache of all the code that is connected to it. It is persistent, because this data is critical for Sourcegraph to function, but it is ultimately a cache because the code host is the source of truth and our cache is eventually consistent.
+## Repository syncing
 
-- [gitserver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver/README.md) is the sharded service that stores the code and makes it accessible to other Sourcegraph services.
-- [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all the code in gitserver is as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing code repository metadata from the code host that is stored in the `repo` table of our Postgres database.
+At its core, Sourcegraph maintains a persistent cache of all repositories that are connected to it. It is persistent, because this data is critical for Sourcegraph to function, but it is ultimately a cache because the code host is the source of truth and our cache is eventually consistent.
 
-If you want to learn more about how code is synchronized, read [Life of a repository](life-of-a-repository.md).
+- [gitserver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver/README.md) is the sharded service that stores repositories and makes them accessible to other Sourcegraph services.
+- [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all repositories in gitserver are as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing repository metadata from the code host that is stored in the `repo` table of our Postgres database.
+
+If you want to learn more about how repositories are synchronized, read [Life of a repository](life-of-a-repository.md).
+
+## Permission syncing
+
+Repository permissions are by default being mirrored from code hosts to Sourcegraph, it builds the fundantion of Sourcegraph authorization for repositories to ensure users see consistent content as on code hosts. Currently, the background permissions syncer resides in the [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md).
+
+If you want to learn more about how repository permissions are synchronized in the background, read [Background permissions syncing](../../../admin/repo/permissions.md#background-permissions-syncing).
+
+## Settings cascade
+
+<small>Last updated: 2021-08-12</small>
+
+Sourcegraph offers the flexibility of customizing settings by users. The settings of a single user is generally the result of merging user settings, organization settings and global settings. Each of these are referred to as a _settings subject_, which are part of the _settings cascade_. They are all exposed over GraphQL.
 
 ## Search
 
@@ -45,6 +59,17 @@ If you want to learn more about code intelligence:
 - [Code intelligence developer documentation](../codeintel/index.md)
 - [Available indexers](../../../code_intelligence/references/indexers.md)
 
+### Dependencies
+
+<small>Last updated: 2021-07-05</small>
+
+- [Search](#search)
+  - Symbol search is used for basic code intel
+- [Sourcegraph extension API](#sourcegraph-extension-api)
+  - Hover and definition providers
+- [Native integrations (for code hosts)](#native-integrations-for-code-hosts)
+  - UI of hover tooltips on code hosts
+
 ## Batch Changes
 
 Batch Changes (formerly known as [campaigns](../../../batch_changes/references/name-change.md)) creates and manages large scale code changes across projects, repositories, and code hosts.
@@ -59,6 +84,15 @@ If you want to learn more about batch changes:
 - [Batch Changes design principles](../../../batch_changes/explanations/batch_changes_design.md)
 - [Batch Changes developer documentation](../batch_changes/index.md)
 - [How `src` executes a batch spec](../../../batch_changes/explanations/how_src_executes_a_batch_spec.md)
+
+### Dependencies
+
+<small>Last updated: 2021-07-05</small>
+
+- [src-cli](#src-cli)
+  - Batch changes are currently executed client-side through the `src` CLI
+- [Search](#search)
+  - Repositories in which batch specs need to be executed are resolved through the search API
 
 ## Code insights
 
@@ -87,6 +121,28 @@ If you want to learn more about code insights:
 - [Code insights product document (PD)](https://docs.google.com/document/d/1d34gCpt_rUOMAun8phcjNsFofGaaA_N_8znmgaugdKw/edit)
 - [Original code insights RFC](https://docs.google.com/document/d/1EHzor6I1GhVVIpl70mH-c10b1tNEl_p1xRMJ9qHQfoc/edit)
 
+### Dependencies
+
+<small>Last updated: 2021-08-12</small>
+
+- [Search](#search)
+  - GraphQL API for text search, in particular `search()`, `matchCount`, `stats.languages`
+  - Query syntax: Code insights "construct" search queries programmatically
+  - Exhaustive search (with `count:all`/`count:999999` operator)
+  - Historical search (= unindexed search, currently)
+  - Commit search to find historical commits to search over
+- [Repository Syncing](#repository-syncing)
+  - The code insights backend has direct dependencies on `gitserver` and `repo-updater`
+- [Permission syncing](#permission-syncing)
+  - The code insights backend depends on synced repository permissions for access control.
+- [Settings cascade](#settings-cascade)
+  - Insights and dashboard configuration is currently stored in user, organization and global settings. This will change in the future and is planned to be moved to the database.
+  - Insights contributed by extensions are configured through settings (this will stay the same).
+- Future: [Batch Changes](#batch-changes)
+  - "Create a batch change from a code insight" flow
+- Future: [Code monitoring](#code-monitoring)
+  - "Create a code monitor from a code insight" flow
+
 ## Code monitoring
 
 Code monitoring allows users to get notified of changes to their codebase.
@@ -100,6 +156,13 @@ The **actions** are run in response to a trigger event. For now, the only suppor
 If you want to learn more about code monitoring:
 
 - [Code monitoring documentation](https://docs.sourcegraph.com/code_monitoring)
+
+### Dependencies
+
+<small>Last updated: 2021-07-05</small>
+
+- [Search](#search)
+  - Diff and commit search triggers
 
 ## Browser extensions
 
@@ -124,6 +187,13 @@ If you want to learn more about native integrations:
 
 - [Overview of code host integrations](../web/code_host_integrations.md)
 
+### Dependencies
+
+<small>Last updated: 2021-07-05</small>
+
+- [Repository Syncing](#repository-syncing)
+  - Uses the GraphQL API to resolve repositories and revisions on code hosts
+
 ## Sourcegraph extension API
 
 The Sourcegraph extension API allows developers to write extensions that extend the functionality of Sourcegraph.
@@ -141,6 +211,15 @@ If you want to learn more about our extension API:
 
 - [Sourcegraph extension architecture](sourcegraph-extensions.md)
 
+### Dependencies
+
+<small>Last updated: 2021-08-12</small>
+
+- [Search](#search)
+  - Query transformer API hooks into search in the web app
+- [Settings cascade](#settings-cascade)
+  - Which extensions are enabled and configuration for extensions are stored in settings. Extensions may also change settings.
+
 ## src-cli
 
 src-cli, or `src`, is a command line tool that users can run locally to interact with Sourcegraph.
@@ -153,6 +232,15 @@ If you want to learn more about src-cli:
 
 - [src-cli repository](https://github.com/sourcegraph/src-cli)
 - [src-cli documentation](../../../cli/index.md)
+
+### Dependencies
+
+<small>Last updated: 2021-07-05</small>
+
+- [Search](#search)
+  - GraphQL API
+- [Batch Changes](#batch-changes)
+  - GraphQL API
 
 ## Editor extensions
 

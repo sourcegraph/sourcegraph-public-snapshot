@@ -78,22 +78,19 @@ OR  (
 		)
 	)
 )
-OR (                              -- Restricted repositories require checking permissions
-    (
-		SELECT object_ids_ints @> INTSET(repo.id)
-		FROM user_permissions
-		WHERE
-			user_id = %s
-		AND permission = %s
-		AND object_type = 'repos'
-	) AND (
-		EXISTS (                  -- Check if the current user added this repo or the repo was added at the instance level
-		    SELECT
-			FROM external_service_repos
-			WHERE repo_id = repo.id
-			AND (user_id = %s OR user_id IS NULL)
-		)
-	)
+OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
+	SELECT 1
+	FROM external_service_repos
+	WHERE repo_id = repo.id
+	AND user_id = %s
+)
+OR (                             -- Restricted repositories require checking permissions
+	SELECT object_ids_ints @> INTSET(repo.id)
+	FROM user_permissions
+	WHERE
+		user_id = %s
+	AND permission = %s
+	AND object_type = 'repos'
 )
 )
 `
@@ -102,7 +99,7 @@ OR (                              -- Restricted repositories require checking pe
 		bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
-		perms.String(),
 		authenticatedUserID,
+		perms.String(),
 	)
 }

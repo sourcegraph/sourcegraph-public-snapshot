@@ -145,8 +145,6 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 }
 
 func TestWorkerConcurrent(t *testing.T) {
-	t.Skip("Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/22595")
-
 	NumTestRecords := 50
 
 	for numHandlers := 1; numHandlers < NumTestRecords; numHandlers++ {
@@ -480,7 +478,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 	}
 
 	// Might dequeue 5 or 6 based on timing
-	if callCount := len(store.DequeueFunc.History()); callCount > 5 {
-		t.Errorf("unexpected call count. want<=%d have=%d", 5, callCount)
+	if callCount := len(store.DequeueFunc.History()); callCount != 5 && callCount != 6 {
+		t.Errorf("unexpected call count. want=5 or 6 have=%d", callCount)
 	}
 }

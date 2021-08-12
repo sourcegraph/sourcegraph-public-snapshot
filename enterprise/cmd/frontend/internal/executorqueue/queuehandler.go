@@ -1,7 +1,6 @@
 package executorqueue
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -10,15 +9,12 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func newExecutorQueueHandler(db dbutil.DB, observationContext *observation.Context, queueOptions map[string]handler.QueueOptions, uploadHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(queueOptions map[string]handler.QueueOptions, uploadHandler http.Handler) (func() http.Handler, error) {
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))
@@ -38,8 +34,7 @@ func newExecutorQueueHandler(db dbutil.DB, observationContext *observation.Conte
 		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
 		// Serve the executor queue API.
-		subRouter := base.PathPrefix("/queue/").Subrouter()
-		initQueues(db, observationContext, queueOptions, subRouter)
+		handler.SetupRoutes(queueOptions, base.PathPrefix("/queue/").Subrouter())
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
@@ -48,29 +43,6 @@ func newExecutorQueueHandler(db dbutil.DB, observationContext *observation.Conte
 	}
 
 	return factory, nil
-}
-
-func initQueues(db dbutil.DB, observationContext *observation.Context, queueOptions map[string]handler.QueueOptions, router *mux.Router) {
-	for queueName, options := range queueOptions {
-		// Make local copy of queue name for capture below
-		queueName, store := queueName, options.Store
-
-		prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-			Name:        "src_executor_total",
-			Help:        "Total number of jobs in the queued state.",
-			ConstLabels: map[string]string{"queue": queueName},
-		}, func() float64 {
-			// TODO(efritz) - do not count soft-deleted code intel index records
-			count, err := store.QueuedCount(context.Background(), nil)
-			if err != nil {
-				log15.Error("Failed to get queued job count", "queue", queueName, "error", err)
-			}
-
-			return float64(count)
-		}))
-	}
-
-	handler.SetupRoutes(queueOptions, router)
 }
 
 // basicAuthMiddleware rejects requests that do not have a basic auth username and password matching
