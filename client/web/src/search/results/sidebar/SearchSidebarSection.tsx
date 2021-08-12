@@ -9,7 +9,7 @@ import styles from './SearchSidebarSection.module.scss'
 
 export const SearchSidebarSection: React.FunctionComponent<{
     header: string
-    children?: React.ReactElement[] | ((filter: string) => React.ReactElement)
+    children?: React.ReactElement | React.ReactElement[] | ((filter: string) => React.ReactElement)
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
     onToggle?: (open: boolean) => void
@@ -34,11 +34,12 @@ export const SearchSidebarSection: React.FunctionComponent<{
 
     let body
     let searchVisible = showSearch
-    let visible = typeof children === 'function'
+    let visible = false
 
     if (typeof children === 'function') {
+        visible = true
         body = children(filter)
-    } else {
+    } else if (Array.isArray(children)) {
         visible = children.length > 0
         searchVisible = searchVisible && children.length > 1
         const childrenList = children as React.ReactElement[]
@@ -68,6 +69,9 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 </ul>
             </>
         )
+    } else {
+        visible = true
+        body = children
     }
 
     const [collapsed, setCollapsed] = useState(startCollapsed)

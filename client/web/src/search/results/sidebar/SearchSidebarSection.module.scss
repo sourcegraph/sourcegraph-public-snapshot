@@ -1,6 +1,11 @@
 .sidebar-section {
     isolation: isolate; // Prevent the z-index below from leaking out of this container
 
+    &__tabs-header {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
     &__button-link {
         // The global font-weight for .btn elements is 500, which also applies to
         // link-like buttons. But in this context we want it to be 400.
