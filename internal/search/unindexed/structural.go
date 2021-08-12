@@ -78,8 +78,8 @@ func repoSets(indexed *zoektutil.IndexedSearchRequest, mode search.GlobalSearchM
 	return repoSets
 }
 
-// StructuralSearchFilesInRepos searches a set of repos for a structural pattern.
-func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
+// streamStructuralSearch runs structural search jobs and streams the results.
+func streamStructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
@@ -97,15 +97,15 @@ func StructuralSearchFilesInRepos(ctx context.Context, args *search.TextParamete
 
 func StructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) error {
 	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
-		// Service structural search via SearchFilesInRepos when we have
-		// an explicit `count` value that differs from the default value
-		// (e.g., user sets higher counts).
-		return StructuralSearchFilesInRepos(ctx, args, stream)
+		// streamStructuralSearch performs a streaming search when the user sets a value
+		// for `count`. The first return parameter indicates whether the request was
+		// serviced with streaming.
+		return streamStructuralSearch(ctx, args, stream)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 	fileMatches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return StructuralSearchFilesInRepos(ctx, args, stream)
+		return streamStructuralSearch(ctx, args, stream)
 	})
 
 	if len(fileMatches) == 0 && err == nil {
@@ -118,7 +118,7 @@ func StructuralSearch(ctx context.Context, args *search.TextParameters, stream s
 		args = &argsCopy
 
 		fileMatches, stats, err = streaming.CollectStream(func(stream streaming.Sender) error {
-			return StructuralSearchFilesInRepos(ctx, args, stream)
+			return streamStructuralSearch(ctx, args, stream)
 		})
 		if err != nil {
 			return err
