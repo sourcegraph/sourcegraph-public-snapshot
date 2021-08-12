@@ -34,23 +34,30 @@ type workHandler struct {
 	metadadataStore *store.InsightStore
 	limiter         *rate.Limiter
 
-	mu          sync.Mutex
+	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if val, ok := r.seriesCache[seriesID]; !ok {
+	var val *types.InsightSeries
+	var ok bool
+
+	r.mu.RLock()
+	val, ok = r.seriesCache[seriesID]
+	r.mu.RUnlock()
+
+	if !ok {
 		series, err := r.fetchSeries(ctx, seriesID)
 		if err != nil {
 			return nil, err
 		}
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
 		r.seriesCache[seriesID] = series
-		return series, nil
-	} else {
-		return val, nil
+		val = series
 	}
+	return val, nil
 }
 
 func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
@@ -79,7 +86,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
-	series, err := r.fetchSeries(ctx, job.SeriesID)
+	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
 		return err
 	}
