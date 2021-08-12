@@ -220,9 +220,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
-	// NOTE: We take the assumption that if a pair of repo_id and user_id ends up in
-	//  the external_service_repos table, the user must have proved that they have
-	//  read-access to the repository.
+	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
+	//  table, the user has proven that they have read access to the repository.
 	repoIDs, err := s.reposStore.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "list external service repo IDs by user ID")
@@ -491,9 +490,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	// NOTE: We take the assumption that if a pair of repo_id and user_id ends up in
-	//  the external_service_repos table, the user must have proved that they have
-	//  read-access to the repository.
+	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
+	//  table, the user has proven that they have read access to the repository.
 	userIDs, err := s.reposStore.ListExternalServiceUserIDsByRepoID(ctx, repoID)
 	if err != nil {
 		return errors.Wrap(err, "list external service user IDs by repo ID")

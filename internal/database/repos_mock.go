@@ -19,7 +19,7 @@ type MockRepos struct {
 	Create        func(ctx context.Context, repos ...*types.Repo) (err error)
 	Count         func(ctx context.Context, opt ReposListOptions) (int, error)
 
-	// TODO: these two methods do not belong here
+	// TODO: we're knowingly taking on a little tech debt by placing these here for now.
 	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
 	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
 }
