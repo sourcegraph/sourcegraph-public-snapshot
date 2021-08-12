@@ -321,39 +321,36 @@ func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID a
 	return userIDs, nil
 }
 
-// todo
-func (s *Store) ListExternalServiceRepoIDsByUserID(ctx context.Context, userID int32) ([]api.RepoID, error) {
+const listExternalServiceRepoIDsByUserIDQuery = `
+SELECT repo_id FROM external_service_repos
+WHERE user_id = %s
+`
+
+// ListExternalServiceRepoIDsByUserID returns the repos associated with a given
+// user. As with ListExternalServiceUserIDsByRepoID, the user has already proven
+// that they have read access to the repositories since they are present in the
+// external_service_repos table.
+func (s *Store) ListExternalServiceRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
 	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
 		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	}
 
-	// TODO: fix tracing
-	// tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
-	// tr.LogFields(
-	// 	otlog.String("name", string(r.Name)),
-	// 	otlog.Int64("external_service_id", svc.ID),
-	// 	otlog.String("external_repo_spec", r.ExternalRepo.String()),
-	// )
-	//
-	// defer func(began time.Time) {
-	// 	secs := time.Since(began).Seconds()
-	//
-	// 	s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
-	// 	logging.Log(s.Log, "store.create-external-service-repo", &err,
-	// 		"external-service-id", svc.ID,
-	// 		"name", r.Name,
-	// 		"external-repo-spec", r.ExternalRepo.String(),
-	// 	)
-	//
-	// 	tr.SetError(err)
-	// 	tr.Finish()
-	// }(time.Now())
+	tr, ctx := s.trace(ctx, "Store.ListExternalServiceRepoIDsByUserID")
+	tr.LogFields(
+		otlog.Int32("user_id", userID),
+	)
 
-	var repoIDs []api.RepoID
-	q := sqlf.Sprintf(`
-SELECT repo_id FROM external_service_repos
-WHERE user_id = %s
-`, userID)
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		s.Metrics.ListExternalServiceRepoIDsByUserID.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.list-external-service-repo-ids-by-user-id", &err,
+			"user-id", userID,
+		)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	q := sqlf.Sprintf(listExternalServiceRepoIDsByUserIDQuery, userID)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err

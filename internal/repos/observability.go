@@ -148,6 +148,7 @@ type StoreMetrics struct {
 	UpsertSources                      *metrics.OperationMetrics
 	ListExternalRepoSpecs              *metrics.OperationMetrics
 	ListExternalServiceUserIDsByRepoID *metrics.OperationMetrics
+	ListExternalServiceRepoIDsByUserID *metrics.OperationMetrics
 	GetExternalService                 *metrics.OperationMetrics
 	SetClonedRepos                     *metrics.OperationMetrics
 	CountNotClonedRepos                *metrics.OperationMetrics
