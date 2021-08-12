@@ -40,8 +40,6 @@ func TestIntegrationK8SNotReadyAddressesBug(t *testing.T) {
 		disco:   k8sDiscovery(urlspec, "dogfood-k8s", localClient),
 	}
 
-	m.discover()
-
 	began := time.Now()
 	count := 0
 	for time.Since(began) <= time.Minute {
@@ -72,8 +70,6 @@ func TestIntegrationK8SStatefulSet(t *testing.T) {
 		urlspec: urlspec,
 		disco:   k8sDiscovery(urlspec, "dogfood-k8s", localClient),
 	}
-
-	m.discover()
 
 	t.Log(m.Endpoints())
 }

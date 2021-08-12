@@ -20,6 +20,7 @@ type Map struct {
 	mu      sync.RWMutex
 	hm      *hashMap
 	err     error
+	init    sync.Once
 	disco   func(chan endpoints)
 }
 
@@ -88,6 +89,8 @@ func (m *Map) String() string {
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
 func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
+	m.init.Do(m.discover)
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -104,6 +107,8 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 // is it is faster (O(1) mutex acquires vs O(n)) and consistent (endpoint map
 // is immutable vs may change between Get calls).
 func (m *Map) GetMany(keys ...string) ([]string, error) {
+	m.init.Do(m.discover)
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -121,6 +126,8 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 
 // Endpoints returns a set of all addresses. Do not modify the returned value.
 func (m *Map) Endpoints() (map[string]struct{}, error) {
+	m.init.Do(m.discover)
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
