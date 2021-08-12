@@ -102,7 +102,7 @@ export function getTooltipMessage(
                     return "This is an automatically created dashboard that lists all your private insights. You can't edit this dashboard."
                 case InsightsDashboardType.Organization:
                 case InsightsDashboardType.Global:
-                    return `This is an automatically created dashboard that lists all the ${dashboard.owner.name} insights. You can't edit this dashboard.`
+                    return `This is an automatically created dashboard that lists all the ${dashboard.owner.name}'s insights. You can't edit this dashboard.`
             }
         case DashboardReasonDenied.AllVirtualDashboard:
             return "This is an automatically created dashboard that lists all the insights you have access to. You can't edit this dashboard."
