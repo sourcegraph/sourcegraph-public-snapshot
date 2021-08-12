@@ -53,6 +53,8 @@ interface RevisionsPopoverProps {
     getURLFromRevision?: (href: string, revision: string) => string
 
     tabs?: RevisionsPopoverTab[]
+
+    allowSpeculativeSearch?: boolean
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -134,7 +136,9 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 defaultBranch={props.defaultBranch}
                                 repo={props.repo}
                                 repoName={props.repoName}
-                                allowSpeculativeSearch={tab.type === GitRefType.GIT_BRANCH}
+                                allowSpeculativeSearch={
+                                    props.allowSpeculativeSearch && tab.type === GitRefType.GIT_BRANCH
+                                }
                             />
                         ) : (
                             <RevisionCommitsTab

@@ -76,6 +76,7 @@ export const RepositoryComparePopover: React.FunctionComponent<{
                     location={location}
                     togglePopover={togglePopover}
                     getURLFromRevision={getURLFromRevision}
+                    allowSpeculativeSearch={true}
                 />
             </Popover>
         </Button>

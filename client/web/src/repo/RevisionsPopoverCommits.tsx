@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 import { Link } from 'react-router-dom'
 
-import { CircleChevronLeftIcon } from '@sourcegraph/shared/src/components/icons'
-import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { getTotalCount } from '@sourcegraph/web/src/components/FilteredConnection/ConnectionNodes'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
@@ -109,6 +109,8 @@ interface RevisionCommitsTabProps {
     currentCommitID?: string
 }
 
+const BATCH_COUNT = 15
+
 export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps> = ({
     repo,
     defaultBranch,
@@ -130,7 +132,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
         query: REPOSITORY_GIT_COMMIT,
         variables: {
             query,
-            first: 15,
+            first: BATCH_COUNT,
             repo,
             revision: currentRev || defaultBranch,
         },
@@ -156,9 +158,9 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
     const summary = connection && (
         <ConnectionSummary
             connection={connection}
+            first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
-            totalCount={connection.totalCount ?? null}
             hasNextPage={hasNextPage}
             connectionQuery={query}
         />

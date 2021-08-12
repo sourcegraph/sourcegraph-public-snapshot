@@ -122,6 +122,8 @@ interface RevisionReferencesTabProps {
     allowSpeculativeSearch?: boolean
 }
 
+const BATCH_COUNT = 50
+
 export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTabProps> = ({
     type,
     repo,
@@ -145,7 +147,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
         query: REPOSITORY_GIT_REFS,
         variables: {
             query,
-            first: 50,
+            first: BATCH_COUNT,
             repo,
             type,
             withBehindAhead: false,
@@ -158,15 +160,13 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
         },
     })
 
-    console.log('Loading:', loading)
-
     const summary = connection && (
         <ConnectionSummary
             emptyElement={allowSpeculativeSearch ? <></> : undefined}
             connection={connection}
+            first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
-            totalCount={connection.totalCount ?? null}
             hasNextPage={hasNextPage}
             connectionQuery={query}
         />
