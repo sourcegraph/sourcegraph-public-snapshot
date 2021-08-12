@@ -7,17 +7,17 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -102,7 +102,11 @@ func Commit(ctx context.Context, db dbutil.DB, repo *types.Repo, commitID api.Co
 //
 // It logs errors to the trace but does not return errors, because external links are not worth
 // failing any request for.
-func linksForRepository(ctx context.Context, db dbutil.DB, repo *types.Repo) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
+func linksForRepository(
+	ctx context.Context,
+	db dbutil.DB,
+	repo *types.Repo,
+) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
 	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
 	span.SetTag("Repo", repo.Name)
@@ -115,25 +119,65 @@ func linksForRepository(ctx context.Context, db dbutil.DB, repo *types.Repo) (ph
 		span.SetTag("phabErr", err.Error())
 	}
 
-	// Look up repo links in the repo-updater. This supplies links from code host APIs.
-	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo: repo.Name,
-	})
-	if err != nil {
-		ext.Error.Set(span, true)
-		span.SetTag("repoUpdaterErr", err.Error())
-		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.Name, "error", err)
-		linksForRepositoryFailed.Inc()
-	}
-	if info != nil && info.Repo != nil {
-		link = info.Repo.Links
-		serviceType = info.Repo.ExternalRepo.ServiceType
+	typ, _ := extsvc.ParseServiceType(repo.ExternalRepo.ServiceType)
+	switch typ {
+	case extsvc.TypeGitHub:
+		ghrepo := repo.Metadata.(*github.Repository)
+		links = &protocol.RepoLinks{
+			Root:   ghrepo.URL,
+			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
+		}
+	case extsvc.TypeGitLab:
+		proj := repo.Metadata.(*gitlab.Project)
+		links = &protocol.RepoLinks{
+			Root:   proj.WebURL,
+			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
+		}
+	case extsvc.TypeBitbucketServer:
+		repo := repo.Metadata.(*bitbucketserver.Repo)
+		if len(repo.Links.Self) == 0 {
+			break
+		}
+
+		href := repo.Links.Self[0].Href
+		root := strings.TrimSuffix(href, "/browse")
+		links = &protocol.RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Commit: pathAppend(root, "/commits/{commit}"),
+		}
+	case extsvc.TypeAWSCodeCommit:
+		repo := repo.Metadata.(*awscodecommit.Repository)
+		if repo.ARN == "" {
+			break
+		}
+
+		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
+		if len(splittedARN) == 0 {
+			break
+		}
+		region := splittedARN[0]
+		webURL := fmt.Sprintf(
+			"https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s",
+			region,
+			repo.Name,
+		)
+		links = &protocol.RepoLinks{
+			Root:   webURL + "/browse",
+			Tree:   webURL + "/browse/{rev}/--/{path}",
+			Blob:   webURL + "/browse/{rev}/--/{path}",
+			Commit: webURL + "/commit/{commit}",
+		}
 	}
 
-	return phabRepo, link, serviceType
+	return phabRepo, links, repo.ExternalRepo.ServiceType
 }
 
-var linksForRepositoryFailed = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_graphql_links_for_repository_failed_total",
-	Help: "The total number of times the GraphQL field LinksForRepository failed.",
-})
+func pathAppend(base, p string) string {
+	return strings.TrimRight(base, "/") + p
+}
