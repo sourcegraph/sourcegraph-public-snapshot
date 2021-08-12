@@ -51,7 +51,7 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 		Metrics:           metrics,
 	}
 
-	defaultRateLimit := rate.Limit(2.0)
+	defaultRateLimit := rate.Limit(10.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
 	limiter := rate.NewLimiter(getRateLimit(), 1)
