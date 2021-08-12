@@ -97,7 +97,6 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
-	// TODO(slimsag): future: Logs are not a good way to surface these errors to users.
 	if len(results.Errors) > 0 {
 		return errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
@@ -129,7 +128,6 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		if err := r.metadadataStore.InsertDirtyQuery(ctx, series, &dq); err != nil {
 			return errors.Wrap(err, "failed to write dirty query record")
 		}
-		log15.Info("wrote dirty query", "dq", dq)
 	}
 	if cloning := len(results.Data.Search.Results.Cloning); cloning > 0 {
 		log15.Error("insights query issue", "cloning_repos", cloning, "query", job.SearchQuery)
