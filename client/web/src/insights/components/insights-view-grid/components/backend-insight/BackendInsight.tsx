@@ -43,10 +43,15 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
     const insightCardReference = useRef<HTMLDivElement>(null)
 
-    // Drill-down filters
-    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
-    const [filters, setFilters] = useState<SearchBasedBackendFilters>(insight.filters ?? EMPTY_DRILLDOWN_FILTERS)
+    // Original insight filters values that are stored in setting subject with insight
+    // configuration object, They are updated  whenever the user clicks update/save button
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters ?? EMPTY_DRILLDOWN_FILTERS)
 
+    // Live valid filters from filter form. They are updated whenever the user is changing
+    // filter value in filters fields.
+    const [filters, setFilters] = useState<SearchBasedBackendFilters>(originalInsightFilters)
+
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const debouncedFilters = useDebounce(useDistinctValue<BackendInsightFilters>(filters), 500)
 
     const handleDrillDownFiltersChange = (filters: SearchBasedBackendFilters): void => {
@@ -68,6 +73,8 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterUpdatingClick')
+
+            setOriginalInsightFilters(filters)
             setIsFiltersOpen(false)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -99,7 +106,8 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 <DrillDownFiltersAction
                     isOpen={isFiltersOpen}
                     popoverTargetRef={insightCardReference}
-                    filters={filters}
+                    initialFiltersValue={filters}
+                    originalFiltersValue={originalInsightFilters}
                     onFilterChange={handleDrillDownFiltersChange}
                     onFilterSave={handleFilterSave}
                     onVisibilityChange={setIsFiltersOpen}

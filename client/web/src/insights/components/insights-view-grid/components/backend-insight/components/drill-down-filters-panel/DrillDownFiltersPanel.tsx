@@ -16,12 +16,13 @@ enum DrillDownFiltersStep {
 
 export interface DrillDownFiltersPanelProps {
     initialFiltersValue: SearchBasedBackendFilters
+    originalFiltersValue: SearchBasedBackendFilters
     onFiltersChange: (filters: SearchBasedBackendFilters) => void
     onFilterSave: (filters: SearchBasedBackendFilters) => SubmissionResult
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const { initialFiltersValue, onFiltersChange, onFilterSave } = props
+    const { initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave } = props
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {
@@ -46,6 +47,7 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
             <DrillDownFiltersForm
                 className={styles.filtersForm}
                 initialFiltersValue={initialFiltersValue}
+                originalFiltersValue={originalFiltersValue}
                 onFiltersChange={handleFilterChange}
                 onFilterSave={handleFilterSave}
             />

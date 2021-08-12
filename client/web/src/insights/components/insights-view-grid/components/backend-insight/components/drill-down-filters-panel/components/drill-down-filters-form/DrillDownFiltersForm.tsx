@@ -1,15 +1,14 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
+import { isEqual } from 'lodash'
+import React from 'react'
 
 import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { TruncatedText } from '../../../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components/trancated-text/TrancatedText'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
 import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
-import { FlexTextArea } from '../../../../../../../form/repositories-field/components/flex-textarea/FlexTextArea'
 
-import styles from './DrillDownFiltersForm.module.scss'
+import { DrillDownRegExpInput, LabelWithReset } from './components/drill-down-reg-exp-input/DrillDownRegExpInput'
 import { validRegexp } from './validators'
 
 export interface DrillDownFiltersFormValues {
@@ -17,22 +16,47 @@ export interface DrillDownFiltersFormValues {
     excludeRepoRegexp: string
 }
 
-const INITIAL_FORM_VALUES: DrillDownFiltersFormValues = {
-    includeRepoRegexp: '',
-    excludeRepoRegexp: '',
+export const hasActiveFilters = (filters?: DrillDownFiltersFormValues): boolean => {
+    if (!filters) {
+        return false
+    }
+
+    // We don't have the repo list mode support yet
+    return filters.excludeRepoRegexp.trim() !== '' || filters.includeRepoRegexp.trim() !== ''
 }
 
 interface DrillDownFiltersFormProps {
     className?: string
-    initialFiltersValue?: DrillDownFiltersFormValues
+
+    /**
+     * Insight filters value that are stored in setting subject with
+     * insight configuration object, change whenever the user click
+     * save/update default filters.
+     */
+    originalFiltersValue: DrillDownFiltersFormValues
+
+    /**
+     * Live filters that lives only in runtime memory and can be different
+     * from originalFiltersValue of insight until the user syncs them by
+     * save/update default filters.
+     */
+    initialFiltersValue: DrillDownFiltersFormValues
+
+    /**
+     * Fires whenever the user changes filter value in any form input.
+     */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
+
+    /**
+     * Fires whenever the user clicks the save/update filter button.
+     */
     onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
 }
 
 export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormProps> = props => {
-    const { className, initialFiltersValue = INITIAL_FORM_VALUES, onFiltersChange, onFilterSave } = props
+    const { className, initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave } = props
 
-    const { ref, formAPI, handleSubmit } = useForm<DrillDownFiltersFormValues>({
+    const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues: initialFiltersValue,
         onChange: onFiltersChange,
         onSubmit: onFilterSave,
@@ -50,107 +74,91 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
         validators: { sync: validRegexp },
     })
 
+    const hasFiltersChanged = !isEqual(originalFiltersValue, values)
+    const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
+
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} className={classnames(className, styles.drilldownFilters)} onSubmit={handleSubmit}>
-            <header className="">
-                <h4 className="mb-2">Filters by Repositories</h4>
-                <p className="text-muted mb-2">
-                    Default filters applied.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </a>
-                </p>
+        <form ref={ref} className={classnames(className, 'd-flex flex-column')} onSubmit={handleSubmit}>
+            <header className="d-flex align-items-baseline px-3 py-2 mt-1">
+                <h4 className="mb-0">Filters by Repositories</h4>
+
+                {hasAppliedFilters && (
+                    <small className="text-muted ml-auto mb-0">
+                        Default filters applied.{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Learn more.
+                        </a>
+                    </small>
+                )}
             </header>
 
-            <hr className="ml-n3 mr-n3" />
+            <hr className="w-100 m-0 mt-1" />
 
-            <h4 className="mt-3 mb-3">Regular expression</h4>
+            <fieldset className="px-3 mt-3">
+                <h4 className="mb-3">Regular expression</h4>
 
-            <FormInput
-                as={DrillDownRegExpInput}
-                autoFocus={true}
-                prefix="repo:"
-                title={
-                    <LabelWithReset onReset={() => includeRegex.input.onChange('')}>
-                        Include repositories
-                    </LabelWithReset>
-                }
-                placeholder="^github\.com/sourcegraph/sourcegraph$"
-                className="mb-4"
-                valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
-                error={includeRegex.meta.dirty && includeRegex.meta.error}
-                {...includeRegex.input}
-            />
+                <FormInput
+                    as={DrillDownRegExpInput}
+                    autoFocus={true}
+                    prefix="repo:"
+                    title={
+                        <LabelWithReset onReset={() => includeRegex.input.onChange('')}>
+                            Include repositories
+                        </LabelWithReset>
+                    }
+                    placeholder="^github\.com/sourcegraph/sourcegraph$"
+                    className="mb-4"
+                    valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
+                    error={includeRegex.meta.dirty && includeRegex.meta.error}
+                    {...includeRegex.input}
+                />
 
-            <FormInput
-                as={DrillDownRegExpInput}
-                prefix="-repo:"
-                title={
-                    <LabelWithReset onReset={() => excludeRegex.input.onChange('')}>
-                        Exclude repositories
-                    </LabelWithReset>
-                }
-                placeholder="^github\.com/sourcegraph/sourcegraph$"
-                valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
-                error={excludeRegex.meta.dirty && excludeRegex.meta.error}
-                className="mb-4"
-                {...excludeRegex.input}
-            />
+                <FormInput
+                    as={DrillDownRegExpInput}
+                    prefix="-repo:"
+                    title={
+                        <LabelWithReset onReset={() => excludeRegex.input.onChange('')}>
+                            Exclude repositories
+                        </LabelWithReset>
+                    }
+                    placeholder="^github\.com/sourcegraph/sourcegraph$"
+                    valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
+                    error={excludeRegex.meta.dirty && excludeRegex.meta.error}
+                    className="mb-4"
+                    {...excludeRegex.input}
+                />
+            </fieldset>
 
-            <hr className="ml-n3 mr-n3" />
+            <hr className="w-100 m-0" />
 
-            {formAPI.submitErrors?.[FORM_ERROR] && (
-                <ErrorAlert className="mt-3 mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
-            )}
+            <footer className="px-3 d-flex flex-column py-3">
+                {formAPI.submitErrors?.[FORM_ERROR] && (
+                    <ErrorAlert className="mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
+                )}
 
-            <LoaderButton
-                alwaysShowLabel={true}
-                loading={formAPI.submitting}
-                label={formAPI.submitting ? 'Updating' : 'Update default filters'}
-                spinnerClassName="mr-2"
-                type="submit"
-                disabled={formAPI.submitting}
-                className="d-flex btn btn-outline-secondary ml-auto mt-3 mb-1"
-            />
+                <LoaderButton
+                    alwaysShowLabel={true}
+                    loading={formAPI.submitting}
+                    label={
+                        formAPI.submitting
+                            ? hasAppliedFilters
+                                ? 'Updating'
+                                : 'Saving'
+                            : hasAppliedFilters
+                            ? 'Update default filters'
+                            : 'Save default filters'
+                    }
+                    spinnerClassName="mr-2"
+                    type="submit"
+                    disabled={formAPI.submitting || !hasFiltersChanged}
+                    className="d-flex btn btn-outline-secondary ml-auto"
+                />
+            </footer>
         </form>
     )
 }
-
-interface LabelWithResetProps {
-    onReset?: () => void
-}
-
-const LabelWithReset: React.FunctionComponent<PropsWithChildren<LabelWithResetProps>> = props => (
-    <span className="d-flex align-items-center">
-        <TruncatedText>{props.children}</TruncatedText>
-        <button
-            type="button"
-            className="btn btn-link ml-auto pt-0 pb-0 pr-0 font-weight-normal"
-            onClick={props.onReset}
-        >
-            Reset
-        </button>
-    </span>
-)
-
-interface DrillDownRegExpInputProps extends InputHTMLAttributes<HTMLInputElement> {
-    prefix: string
-}
-
-export const DrillDownRegExpInput = forwardRef((props: DrillDownRegExpInputProps, reference: Ref<HTMLInputElement>) => {
-    const { prefix, ...inputProps } = props
-
-    return (
-        <span className={classnames(styles.regexpField, 'w-100')}>
-            <span className={styles.regexpFieldPrefix}>{prefix}</span>
-            <FlexTextArea
-                {...inputProps}
-                className={classnames(inputProps.className, styles.regexpFieldInput)}
-                ref={reference}
-            />
-        </span>
-    )
-})
-
-DrillDownRegExpInput.displayName = 'DrillDownRegExpInput'

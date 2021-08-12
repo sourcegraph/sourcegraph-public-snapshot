@@ -6,19 +6,17 @@ import FocusLock from 'react-focus-lock'
 
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
+import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
 import styles from './DrillDownFiltersPanel.module.scss'
 import { useKeyboard } from './hooks/use-keyboard'
 import { useOnClickOutside } from './hooks/use-outside-click'
 
-const hasActiveFilters = (filters: SearchBasedBackendFilters): boolean =>
-    // We don't have the repo list mode support yet
-    filters.excludeRepoRegexp.trim() !== '' || filters.includeRepoRegexp.trim() !== ''
-
 interface DrillDownFiltersProps {
     isOpen: boolean
-    filters: SearchBasedBackendFilters
+    initialFiltersValue: SearchBasedBackendFilters
+    originalFiltersValue: SearchBasedBackendFilters
     popoverTargetRef: React.RefObject<HTMLElement>
     onFilterChange: (filters: SearchBasedBackendFilters) => void
     onFilterSave: (filters: SearchBasedBackendFilters) => void
@@ -26,7 +24,15 @@ interface DrillDownFiltersProps {
 }
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { isOpen, popoverTargetRef, filters, onVisibilityChange, onFilterChange, onFilterSave } = props
+    const {
+        isOpen,
+        popoverTargetRef,
+        initialFiltersValue,
+        originalFiltersValue,
+        onVisibilityChange,
+        onFilterChange,
+        onFilterSave,
+    } = props
 
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     const popoverReference = useRef<HTMLDivElement>(null)
@@ -65,7 +71,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 ref={targetButtonReference}
                 type="button"
                 className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
-                    [styles.filterButtonActive]: hasActiveFilters(filters),
+                    [styles.filterButtonActive]: hasActiveFilters(initialFiltersValue),
                 })}
                 // To prevent grid layout position change animation. Attempts to drag
                 // the filter panel should not trigger react-grid-layout events.
@@ -87,7 +93,8 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 >
                     <FocusLock returnFocus={true}>
                         <DrillDownFiltersPanel
-                            initialFiltersValue={filters}
+                            initialFiltersValue={initialFiltersValue}
+                            originalFiltersValue={originalFiltersValue}
                             onFiltersChange={onFilterChange}
                             onFilterSave={onFilterSave}
                         />
