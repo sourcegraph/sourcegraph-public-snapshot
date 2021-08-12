@@ -800,7 +800,7 @@ spec:
               value: bob
 ```
 
-## Narrowing cAdvisor metrics
+## Filtering cAdvisor metrics
 
 Due to how cAdvisor works, Sourcegraph's cAdvisor deployment can pick up metrics for services unrelated to the Sourcegraph deployment running on the same nodes as Sourcegraph services.
 [Learn more](../../../dev/background-information/observability/cadvisor.md#identifying-containers).
