@@ -70,7 +70,8 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
             <button
                 ref={targetButtonReference}
                 type="button"
-                className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
+                className={classnames('btn btn-icon p-1', styles.filterButton, {
+                    [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: hasActiveFilters(initialFiltersValue),
                 })}
                 // To prevent grid layout position change animation. Attempts to drag
@@ -78,7 +79,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 onMouseDown={event => event.stopPropagation()}
                 onClick={handleTargetClick}
             >
-                <FilterOutlineIcon size="1rem" />
+                <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
             </button>
 
             {isOpen && (

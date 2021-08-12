@@ -35,24 +35,29 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
 
     return (
         <Menu>
-            <MenuButton
-                data-testid="InsightContextMenuButton"
-                className={classnames(menuButtonClassName, 'btn btn-outline p-1')}
-            >
-                <DotsVerticalIcon size={16} />
-            </MenuButton>
-            <MenuPopover portal={true} position={positionRight}>
-                <MenuItems
-                    data-testid={`context-menu.${insightID}`}
-                    className={classnames(styles.panel, 'dropdown-menu')}
-                >
-                    <MenuLink
-                        data-testid="InsightContextMenuEditLink"
-                        className={classnames('btn btn-outline', styles.item)}
-                        onClick={handleEditClick}
+            {({ isOpen }) => (
+                <>
+                    <MenuButton
+                        data-testid="InsightContextMenuButton"
+                        className={classnames(menuButtonClassName, 'btn btn-outline p-1', styles.button)}
                     >
-                        Edit
-                    </MenuLink>
+                        <DotsVerticalIcon
+                            className={classnames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
+                            size={16}
+                        />
+                    </MenuButton>
+                    <MenuPopover portal={true} position={positionRight}>
+                        <MenuItems
+                            data-testid={`context-menu.${insightID}`}
+                            className={classnames(styles.panel, 'dropdown-menu')}
+                        >
+                            <MenuLink
+                                data-testid="InsightContextMenuEditLink"
+                                className={classnames('btn btn-outline', styles.item)}
+                                onClick={handleEditClick}
+                            >
+                                Edit
+                            </MenuLink>
 
                     {showYAxisToggleMenu && (
                         <MenuLink
@@ -65,15 +70,17 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                         </MenuLink>
                     )}
 
-                    <MenuItem
-                        data-testid="insight-context-menu-delete-button"
-                        onSelect={() => onDelete(insightID)}
-                        className={classnames('btn btn-outline-', styles.item)}
-                    >
-                        Delete
-                    </MenuItem>
-                </MenuItems>
-            </MenuPopover>
+                            <MenuItem
+                                data-testid="insight-context-menu-delete-button"
+                                onSelect={() => onDelete(insightID)}
+                                className={classnames('btn btn-outline-', styles.item)}
+                            >
+                                Delete
+                            </MenuItem>
+                        </MenuItems>
+                    </MenuPopover>
+                </>
+            )}
         </Menu>
     )
 }
