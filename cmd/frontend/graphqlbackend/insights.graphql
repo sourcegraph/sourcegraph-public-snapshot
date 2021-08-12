@@ -107,7 +107,6 @@ type InsightDataPoint {
 An insight query that has been marked dirty (some form of partially or wholly unsuccessful state).
 """
 type InsightDirtyQueryMetadata {
-
     """
     The number of dirty queries for this data point and reason combination.
     """
