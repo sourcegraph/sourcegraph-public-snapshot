@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Add a new environment variable `SRC_HTTP_CLI_EXTERNAL_TIMEOUT` to control the timeout for all external HTTP requests. [#23620](https://github.com/sourcegraph/sourcegraph/pull/23620)
 - Improved usability where filters followed by a space in the search query will warn users that the filter value is empty. [#23646](https://github.com/sourcegraph/sourcegraph/pull/23646)
 - Passthrough of [`git p4`'s `--use-client-spec` option](https://git-scm.com/docs/git-p4#Documentation/git-p4.txt---use-client-spec) is now supported by configuring the `useClientSpec` field. [#23833](https://github.com/sourcegraph/sourcegraph/pull/23833)
+- Code Insights will do a one-time reset of ephemeral insights specific database tables to clean up stale and invalid data. Insight data will regenerate automatically. [23791](https://github.com/sourcegraph/sourcegraph/pull/23791)
 
 ### Changed
 
@@ -39,6 +40,14 @@ All notable changes to Sourcegraph are documented in this file.
 - Sourcegraph's Prometheus dependency has been upgraded to v2.28.1. [23663](https://github.com/sourcegraph/sourcegraph/pull/23663)
 - Sourcegraph's Alertmanager dependency has been upgraded to v0.22.2. [23663](https://github.com/sourcegraph/sourcegraph/pull/23714)
 - Code Insights will now schedule sample recordings for the first of the next month after creation or a previous recording. [#23799](https://github.com/sourcegraph/sourcegraph/pull/23799)
+- Code Insights now stores data in a new format. Data points will store complete vectors for all repositories even if the underlying Sourcegraph queries were compressed. [#23768](https://github.com/sourcegraph/sourcegraph/pull/23768)
+- Code Insights rate limit values have been tuned for a more reasonable performance. [#23860](https://github.com/sourcegraph/sourcegraph/pull/23860)
+- Code Insights will now generate historical data once per month on the first of the month, up to the configured `insights.historical.frames` number of frames. [#23768](https://github.com/sourcegraph/sourcegraph/pull/23768)
+- Code Insights will now schedule recordings for the first of the next calendar month after an insight is created or recorded. [#23799](https://github.com/sourcegraph/sourcegraph/pull/23799)
+- Code Insights will attempt to sync insight definitions from settings to the database once every 10 minutes. [23805](https://github.com/sourcegraph/sourcegraph/pull/23805)
+- Code Insights exposes information about queries that are flagged `dirty` through the `insights` GraphQL query. [#23857](https://github.com/sourcegraph/sourcegraph/pull/23857/)
+- Code Insights GraphQL query `insights` will now fetch 12 months of data instead of 6 if a specific time range is not provided. [#23786](https://github.com/sourcegraph/sourcegraph/pull/23786)
+- Code Insights will now generate 12 months of historical data during a backfill instead of 6. [#23860](https://github.com/sourcegraph/sourcegraph/pull/23860)
 
 ### Fixed
 
