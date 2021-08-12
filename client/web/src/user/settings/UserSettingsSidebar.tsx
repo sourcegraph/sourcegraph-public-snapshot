@@ -88,7 +88,11 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                                     <AddIcon className="icon-inline" /> New organization
                                 </Link>
                             ) : (
-                                <a href="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud" target="_blank" rel="noopener">
+                                <a
+                                    href="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
                                     Learn More <ExternalLinkIcon className="icon-inline" />
                                 </a>
                             )}
