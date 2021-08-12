@@ -62,7 +62,7 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 		limiter.SetLimit(val)
 	})
 
-	sharedCache := make(map[string]*types.InsightSeries, 0)
+	sharedCache := make(map[string]*types.InsightSeries)
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		workerBaseStore: workerBaseStore,
