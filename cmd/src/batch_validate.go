@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/batches/ui"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
@@ -25,9 +27,12 @@ Examples:
 `
 
 	flagSet := flag.NewFlagSet("validate", flag.ExitOnError)
+	apiFlags := api.NewFlags(flagSet)
 	fileFlag := flagSet.String("f", "", "The batch spec file to read.")
 
 	handler := func(args []string) error {
+		ctx := context.Background()
+
 		if err := flagSet.Parse(args); err != nil {
 			return err
 		}
@@ -36,7 +41,13 @@ Examples:
 			return cmderrors.Usage("additional arguments not allowed")
 		}
 
-		svc := service.New(&service.Opts{})
+		svc := service.New(&service.Opts{
+			Client: cfg.apiClient(apiFlags, flagSet.Output()),
+		})
+
+		if err := svc.DetermineFeatureFlags(ctx); err != nil {
+			return err
+		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
 		if _, _, err := batchParseSpec(fileFlag, svc); err != nil {

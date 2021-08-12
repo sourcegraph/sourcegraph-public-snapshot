@@ -13,9 +13,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- `src batch validate` now accepts the standard flags used to control communication with Sourcegraph: `-dump-requests`, `-get-curl`, `-insecure-skip-verify`, and `-trace`. [#577](https://github.com/sourcegraph/src-cli/pull/577)
+
 ### Changed
 
 ### Fixed
+
+- `src batch validate` would fail to validate batch specs that use features that depend on specific versions of Sourcegraph, such as workspaces. This has been fixed. [#576](https://github.com/sourcegraph/src-cli/issues/576)
 
 ### Removed
 
