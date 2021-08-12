@@ -230,8 +230,11 @@ func newOperations(observationContext *observation.Context) *operations {
 				Name:         fmt.Sprintf("batches.dbstore.%s", name),
 				MetricLabels: []string{name},
 				Metrics:      m,
-				ErrorFilter: func(err error) bool {
-					return errors.Is(err, ErrNoResults)
+				ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+					if errors.Is(err, ErrNoResults) {
+						return observation.EmitForNone
+					}
+					return observation.EmitForAll
 				},
 			})
 		}
