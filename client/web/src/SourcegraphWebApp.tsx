@@ -25,11 +25,7 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import {
-    REDESIGN_CLASS_NAME,
-    getIsRedesignEnabled,
-    REDESIGN_TOGGLE_KEY,
-} from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { client } from './backend/graphql'
@@ -221,11 +217,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     enableAPIDocs: boolean
 
     /**
-     * Whether the design refresh toggle is enabled.
-     */
-    designRefreshToggleEnabled: boolean
-
-    /**
      * Evaluated feature flags for the current viewer
      */
     featureFlags: FlagSet
@@ -320,7 +311,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
-            designRefreshToggleEnabled: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
@@ -462,13 +452,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
         document.documentElement.classList.toggle('theme-light', this.isLightTheme())
         document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
-
-        // If the refresh toggle is enabled and a user hasn't modified the toggle before, default the value to true
-        if (this.state.designRefreshToggleEnabled && localStorage.getItem(REDESIGN_TOGGLE_KEY) === null) {
-            localStorage.setItem(REDESIGN_TOGGLE_KEY, 'true')
-        }
-
-        document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, getIsRedesignEnabled())
+        document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, true)
     }
 
     public render(): React.ReactFragment | null {

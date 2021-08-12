@@ -378,7 +378,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 func TestInsightStore_StampRecording(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	now := time.Now().Round(0).Truncate(time.Microsecond)
+	now := time.Date(2020, 1, 5, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	ctx := context.Background()
 
 	store := NewInsightStore(timescale)
@@ -402,7 +402,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 		want := created
 		want.LastRecordedAt = now
-		want.NextRecordingAfter = now.Add(time.Hour * 24 * time.Duration(want.RecordingIntervalDays))
+		want.NextRecordingAfter = time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC)
 
 		got, err := store.StampRecording(ctx, created)
 		if err != nil {
