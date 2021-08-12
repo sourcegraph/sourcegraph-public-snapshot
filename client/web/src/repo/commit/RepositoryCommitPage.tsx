@@ -49,8 +49,6 @@ import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 
-import { DiffModeSelector } from './DiffModeSelector'
-
 const queryCommit = memoizeObservable(
     (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
         requestGraphQL<RepositoryCommitResult, RepositoryCommitVariables>(

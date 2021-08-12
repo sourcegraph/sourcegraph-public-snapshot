@@ -174,7 +174,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
             <DropdownToggle
                 tag="button"
                 caret={false}
-                className="btn btn-sm text-decoration-none feedback-prompt__toggle btn-outline-secondary"
+                className="btn btn-sm btn-outline-secondary text-decoration-none feedback-prompt__toggle"
                 aria-label="Feedback"
             >
                 <span>Feedback</span>

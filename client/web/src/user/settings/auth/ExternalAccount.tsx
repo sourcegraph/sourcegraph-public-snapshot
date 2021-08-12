@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { useState, useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'

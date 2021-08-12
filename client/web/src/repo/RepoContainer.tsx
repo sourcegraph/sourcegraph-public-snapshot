@@ -246,14 +246,14 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className="text-nowrap test-repo-header-repo-link btn btn-sm btn-outline-secondary"
+                                className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Link>
                             <button
                                 type="button"
                                 id="repo-popover"
-                                className="btn repo-container__repo-change btn-sm btn-outline-secondary"
+                                className="btn btn-sm btn-outline-secondary repo-container__repo-change"
                                 aria-label="Change repository"
                             >
                                 <ChevronDownIcon className="icon-inline" />

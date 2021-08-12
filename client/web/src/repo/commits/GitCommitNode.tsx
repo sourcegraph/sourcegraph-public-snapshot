@@ -178,7 +178,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between">
             <Link
-                className="btn btn-sm align-center btn-outline-secondary d-inline-flex"
+                className="btn btn-sm btn-outline-secondary align-center d-inline-flex"
                 to={node.tree.canonicalURL}
                 data-tooltip="View files at this commit"
             >
