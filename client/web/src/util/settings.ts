@@ -70,7 +70,6 @@ export function experimentalFeaturesFromSettings(
     showQueryBuilder: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
-    designRefreshToggleEnabled: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
@@ -88,7 +87,6 @@ export function experimentalFeaturesFromSettings(
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
         apiDocs = true, // Default to true if not set
-        designRefreshToggleEnabled = false,
     } = experimentalFeatures
 
     return {
@@ -102,6 +100,5 @@ export function experimentalFeaturesFromSettings(
         showQueryBuilder,
         enableCodeMonitoring: codeMonitoring,
         enableAPIDocs: apiDocs,
-        designRefreshToggleEnabled,
     }
 }

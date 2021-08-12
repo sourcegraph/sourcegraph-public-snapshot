@@ -46,7 +46,6 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BatchChangesProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
-    isRedesignEnabled: boolean
     isMacPlatform: boolean
 }
 

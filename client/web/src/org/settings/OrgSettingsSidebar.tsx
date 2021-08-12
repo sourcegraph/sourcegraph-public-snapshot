@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
@@ -33,17 +33,15 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
 
             <SidebarGroup>
                 <SidebarGroupHeader label="Organization" />
-                <SidebarGroupItems>
-                    <SidebarNavItem to={match.url} exact={true}>
-                        Organization Settings
-                    </SidebarNavItem>
-                    <SidebarNavItem to={`${match.url}/profile`} exact={true}>
-                        Profile
-                    </SidebarNavItem>
-                    <SidebarNavItem to={`${match.url}/members`} exact={true}>
-                        Members
-                    </SidebarNavItem>
-                </SidebarGroupItems>
+                <SidebarNavItem to={match.url} exact={true}>
+                    Organization Settings
+                </SidebarNavItem>
+                <SidebarNavItem to={`${match.url}/profile`} exact={true}>
+                    Profile
+                </SidebarNavItem>
+                <SidebarNavItem to={`${match.url}/members`} exact={true}>
+                    Members
+                </SidebarNavItem>
             </SidebarGroup>
         </div>
     )
