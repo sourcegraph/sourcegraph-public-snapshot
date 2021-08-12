@@ -9,13 +9,13 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func init() {
-	gob.Register(&semantic.DocumentData{})
-	gob.Register(&semantic.ResultChunkData{})
-	gob.Register(&semantic.LocationData{})
+	gob.Register(&precise.DocumentData{})
+	gob.Register(&precise.ResultChunkData{})
+	gob.Register(&precise.LocationData{})
 }
 
 type Serializer struct {
@@ -40,7 +40,7 @@ type MarshalledDocumentData struct {
 
 // MarshalDocumentData transforms the fields of the given document data payload into a set of
 // string of bytes writable to disk.
-func (s *Serializer) MarshalDocumentData(document semantic.DocumentData) (data MarshalledDocumentData, err error) {
+func (s *Serializer) MarshalDocumentData(document precise.DocumentData) (data MarshalledDocumentData, err error) {
 	if data.Ranges, err = s.encode(&document.Ranges); err != nil {
 		return MarshalledDocumentData{}, err
 	}
@@ -61,17 +61,17 @@ func (s *Serializer) MarshalDocumentData(document semantic.DocumentData) (data M
 }
 
 // MarshalLegacyDocumentData encodes a legacy-formatted document (the value in the `data` column).
-func (s *Serializer) MarshalLegacyDocumentData(document semantic.DocumentData) ([]byte, error) {
+func (s *Serializer) MarshalLegacyDocumentData(document precise.DocumentData) ([]byte, error) {
 	return s.encode(&document)
 }
 
 // MarshalResultChunkData transforms result chunk data into a string of bytes writable to disk.
-func (s *Serializer) MarshalResultChunkData(resultChunks semantic.ResultChunkData) ([]byte, error) {
+func (s *Serializer) MarshalResultChunkData(resultChunks precise.ResultChunkData) ([]byte, error) {
 	return s.encode(&resultChunks)
 }
 
 // MarshalLocations transforms a slice of locations into a string of bytes writable to disk.
-func (s *Serializer) MarshalLocations(locations []semantic.LocationData) ([]byte, error) {
+func (s *Serializer) MarshalLocations(locations []precise.LocationData) ([]byte, error) {
 	return s.encode(&locations)
 }
 
@@ -99,40 +99,40 @@ func (s *Serializer) encode(payload interface{}) (_ []byte, err error) {
 }
 
 // UnmarshalDocumentData is the inverse of MarshalDocumentData.
-func (s *Serializer) UnmarshalDocumentData(data MarshalledDocumentData) (document semantic.DocumentData, err error) {
+func (s *Serializer) UnmarshalDocumentData(data MarshalledDocumentData) (document precise.DocumentData, err error) {
 	if err := s.decode(data.Ranges, &document.Ranges); err != nil {
-		return semantic.DocumentData{}, err
+		return precise.DocumentData{}, err
 	}
 	if err := s.decode(data.HoverResults, &document.HoverResults); err != nil {
-		return semantic.DocumentData{}, err
+		return precise.DocumentData{}, err
 	}
 	if err := s.decode(data.Monikers, &document.Monikers); err != nil {
-		return semantic.DocumentData{}, err
+		return precise.DocumentData{}, err
 	}
 	if err := s.decode(data.PackageInformation, &document.PackageInformation); err != nil {
-		return semantic.DocumentData{}, err
+		return precise.DocumentData{}, err
 	}
 	if err := s.decode(data.Diagnostics, &document.Diagnostics); err != nil {
-		return semantic.DocumentData{}, err
+		return precise.DocumentData{}, err
 	}
 
 	return document, nil
 }
 
 // UnmarshalLegacyDocumentData unmarshals a legacy-formatted document (the value in the `data` column).
-func (s *Serializer) UnmarshalLegacyDocumentData(data []byte) (document semantic.DocumentData, err error) {
+func (s *Serializer) UnmarshalLegacyDocumentData(data []byte) (document precise.DocumentData, err error) {
 	err = s.decode(data, &document)
 	return document, err
 }
 
 // UnmarshalResultChunkData is the inverse of MarshalResultChunkData.
-func (s *Serializer) UnmarshalResultChunkData(data []byte) (resultChunk semantic.ResultChunkData, err error) {
+func (s *Serializer) UnmarshalResultChunkData(data []byte) (resultChunk precise.ResultChunkData, err error) {
 	err = s.decode(data, &resultChunk)
 	return resultChunk, err
 }
 
 // UnmarshalLocations is the inverse of MarshalLocations.
-func (s *Serializer) UnmarshalLocations(data []byte) (locations []semantic.LocationData, err error) {
+func (s *Serializer) UnmarshalLocations(data []byte) (locations []precise.LocationData, err error) {
 	err = s.decode(data, &locations)
 	return locations, err
 }

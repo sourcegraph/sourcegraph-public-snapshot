@@ -1,13 +1,13 @@
 package store
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -21,8 +21,9 @@ func testStore(db dbutil.DB, options Options) *store {
 }
 
 type TestRecord struct {
-	ID    int
-	State string
+	ID            int
+	State         string
+	ExecutionLogs []ExecutionLogEntry
 }
 
 func (v TestRecord) RecordID() int {
@@ -37,7 +38,7 @@ func testScanFirstRecord(rows *sql.Rows, queryErr error) (v workerutil.Record, _
 
 	if rows.Next() {
 		var record TestRecord
-		if err := rows.Scan(&record.ID, &record.State); err != nil {
+		if err := rows.Scan(&record.ID, &record.State, pq.Array(&record.ExecutionLogs)); err != nil {
 			return nil, false, err
 		}
 
@@ -147,23 +148,22 @@ func defaultTestStoreOptions(clock glock.Clock) Options {
 		ColumnExpressions: []*sqlf.Query{
 			sqlf.Sprintf("w.id"),
 			sqlf.Sprintf("w.state"),
+			sqlf.Sprintf("w.execution_logs"),
 		},
-		HeartbeatInterval: time.Second,
-		StalledMaxAge:     time.Second * 5,
-		MaxNumResets:      5,
-		MaxNumRetries:     3,
-		clock:             clock,
+		StalledMaxAge: time.Second * 5,
+		MaxNumResets:  5,
+		MaxNumRetries: 3,
+		clock:         clock,
 	}
 }
 
-func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, cancel context.CancelFunc, ok bool, err error) {
+func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a dequeueable record")
 	}
-	defer cancel()
 
 	if val := record.(TestRecord).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
@@ -173,14 +173,19 @@ func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{},
 	}
 }
 
-func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, cancel context.CancelFunc, ok bool, err error) {
+func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record interface{}) {
+	if val := len(record.(TestRecord).ExecutionLogs); val != expectedLogCount {
+		t.Errorf("unexpected count of logs. want=%d have=%d", expectedLogCount, val)
+	}
+}
+
+func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a dequeueable record")
 	}
-	defer cancel()
 
 	if val := record.(TestRecordView).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
@@ -193,14 +198,13 @@ func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField in
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, cancel context.CancelFunc, ok bool, err error) {
+func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected a dequeueable record")
 	}
-	defer cancel()
 
 	if val := record.(TestRecordRetry).ID; val != expectedID {
 		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)

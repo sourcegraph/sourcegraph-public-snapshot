@@ -78,12 +78,12 @@
         margin: auto;
     }
 
-    .copy-link-action {
+    .copy-path-action {
         opacity: 0;
     }
     &:hover,
     &:focus-within {
-        .copy-link-action {
+        .copy-path-action {
             opacity: 1;
         }
     }

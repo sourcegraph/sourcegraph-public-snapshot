@@ -25,15 +25,18 @@ import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
+import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStreamingProps } from '../search'
+import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
-import { CopyLinkAction } from './actions/CopyLinkAction'
+import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
@@ -61,7 +64,10 @@ export interface RepoRevisionContainerContext
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        BatchChangesProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -69,6 +75,10 @@ export interface RepoRevisionContainerContext
     routePrefix: string
 
     globbing: boolean
+
+    showSearchNotebook: boolean
+
+    isMacPlatform: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -90,7 +100,11 @@ interface RepoRevisionContainerProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
+        BatchChangesProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -107,6 +121,10 @@ interface RepoRevisionContainerProps
     history: H.History
 
     globbing: boolean
+
+    showSearchNotebook: boolean
+
+    isMacPlatform: boolean
 }
 
 interface RepoRevisionBreadcrumbProps
@@ -312,10 +330,10 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
             </Switch>
             <RepoHeaderContributionPortal
                 position="left"
-                id="copy-link"
+                id="copy-path"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {() => <CopyLinkAction key="copy-link" />}
+                {() => <CopyPathAction key="copy-path" />}
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"

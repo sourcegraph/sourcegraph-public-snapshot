@@ -155,6 +155,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}, err
 }
 
+// FetchUserPermsByToken is currently only required for syncing permissions for
+// GitHub and GitLab on sourcegraph.com
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+	return nil, errors.New("not implemented")
+}
+
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given repo on the code host. The user ID has the same value as it would
 // be used as extsvc.Account.AccountID. The returned list includes both direct access

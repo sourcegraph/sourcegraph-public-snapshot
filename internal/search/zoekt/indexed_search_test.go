@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
-	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -13,7 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -260,7 +257,7 @@ func TestIndexedSearch(t *testing.T) {
 			args := &search.TextParameters{
 				Query:           q,
 				PatternInfo:     tt.args.patternInfo,
-				RepoPromise:     (&search.RepoPromise{}).Resolve(tt.args.repos),
+				Repos:           tt.args.repos,
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
 					Client: &searchbackend.FakeSearcher{
@@ -271,7 +268,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := NewIndexedSearchRequest(context.Background(), args, TextRequest, streaming.StreamFunc(func(streaming.SearchEvent) {}))
+			indexed, err := NewIndexedSearchRequest(context.Background(), args, TextRequest, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -463,219 +460,6 @@ func TestZoektResultCountFactor(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestQueryToZoektQuery(t *testing.T) {
-	cases := []struct {
-		Name    string
-		Type    IndexedRequestType
-		Pattern *search.TextPatternInfo
-		Query   string
-	}{
-		{
-			Name: "substr",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "foo",
-				IncludePatterns:              nil,
-				ExcludePattern:               "",
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query: "foo case:no",
-		},
-		{
-			Name: "symbol substr",
-			Type: SymbolRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "foo",
-				IncludePatterns:              nil,
-				ExcludePattern:               "",
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query: "sym:foo case:no",
-		},
-		{
-			Name: "regex",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "(foo).*?(bar)",
-				IncludePatterns:              nil,
-				ExcludePattern:               "",
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query: "(foo).*?(bar) case:no",
-		},
-		{
-			Name: "path",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "foo",
-				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
-				ExcludePattern:               `\bvendor\b`,
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
-		},
-		{
-			Name: "case",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              true,
-				Pattern:                      "foo",
-				IncludePatterns:              []string{`\.go$`, `yaml`},
-				ExcludePattern:               "",
-				PathPatternsAreCaseSensitive: true,
-			},
-			Query: `foo case:yes f:\.go$ f:yaml`,
-		},
-		{
-			Name: "casepath",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              true,
-				Pattern:                      "foo",
-				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
-				ExcludePattern:               `\bvendor\b`,
-				PathPatternsAreCaseSensitive: true,
-			},
-			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
-		},
-		{
-			Name: "path matches only",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "test",
-				IncludePatterns:              []string{},
-				ExcludePattern:               ``,
-				PathPatternsAreCaseSensitive: true,
-				PatternMatchesContent:        false,
-				PatternMatchesPath:           true,
-			},
-			Query: `f:test`,
-		},
-		{
-			Name: "content matches only",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "test",
-				IncludePatterns:              []string{},
-				ExcludePattern:               ``,
-				PathPatternsAreCaseSensitive: true,
-				PatternMatchesContent:        true,
-				PatternMatchesPath:           false,
-			},
-			Query: `c:test`,
-		},
-		{
-			Name: "content and path matches 1",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "test",
-				IncludePatterns:              []string{},
-				ExcludePattern:               ``,
-				PathPatternsAreCaseSensitive: true,
-				PatternMatchesContent:        true,
-				PatternMatchesPath:           true,
-			},
-			Query: `test`,
-		},
-		{
-			Name: "content and path matches 2",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "test",
-				IncludePatterns:              []string{},
-				ExcludePattern:               ``,
-				PathPatternsAreCaseSensitive: true,
-				PatternMatchesContent:        false,
-				PatternMatchesPath:           false,
-			},
-			Query: `test`,
-		},
-		{
-			Name: "repos must include",
-			Type: TextRequest,
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				Pattern:                      "foo",
-				FilePatternsReposMustInclude: []string{`\.go$`, `\.yaml$`},
-				FilePatternsReposMustExclude: []string{`\.java$`, `\.xml$`},
-			},
-			Query: `foo (type:repo file:\.go$) (type:repo file:\.yaml$) -(type:repo file:\.java$) -(type:repo file:\.xml$)`,
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			q, err := zoektquery.Parse(tt.Query)
-			if err != nil {
-				t.Fatalf("failed to parse %q: %v", tt.Query, err)
-			}
-			got, err := queryToZoektQuery(tt.Pattern, tt.Type)
-			if err != nil {
-				t.Fatal("queryToZoektQuery failed:", err)
-			}
-			if !queryEqual(got, q) {
-				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
-			}
-		})
-	}
-}
-
-func queryEqual(a, b zoektquery.Q) bool {
-	sortChildren := func(q zoektquery.Q) zoektquery.Q {
-		switch s := q.(type) {
-		case *zoektquery.And:
-			sort.Slice(s.Children, func(i, j int) bool {
-				return s.Children[i].String() < s.Children[j].String()
-			})
-		case *zoektquery.Or:
-			sort.Slice(s.Children, func(i, j int) bool {
-				return s.Children[i].String() < s.Children[j].String()
-			})
-		}
-		return q
-	}
-	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
-}
-
-func generateZoektMatches(count int) []zoekt.FileMatch {
-	var zoektFileMatches []zoekt.FileMatch
-	for i := 1; i <= count; i++ {
-		repoName := fmt.Sprintf("repo-%d", i)
-		fileName := fmt.Sprintf("foobar-%d.go", i)
-
-		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
-			Score:      5.0,
-			FileName:   fileName,
-			Repository: repoName, // Important: this needs to match a name in `repos`
-			Branches:   []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
-		})
-	}
-	return zoektFileMatches
 }
 
 func TestZoektIndexedRepos_single(t *testing.T) {
@@ -895,35 +679,6 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("expected context to be done")
 	}
-}
-
-func TestBufferedSender(t *testing.T) {
-	// We create an unbuffered Sender, which means a call to Send blocks if there is
-	// no consumer.
-	c := make(chan *zoekt.SearchResult)
-	defer close(c)
-	unbufferedMockSender := searchbackend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		c <- event
-	})
-
-	// We add a buffer to unbufferedMockSender. A call to Send should not block anymore.
-	bufferedMockSender, cleanup := bufferedSender(1, unbufferedMockSender)
-	defer cleanup()
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		// Should not block.
-		bufferedMockSender.Send(&zoekt.SearchResult{Files: generateZoektMatches(1)})
-
-	}()
-	select {
-	case <-done:
-	case <-time.After(1 * time.Second):
-		t.Errorf("bufferedMockSender.Send did not return in time")
-	}
-	// Drain the buffer to make sure that cleanup() can return.
-	<-c
 }
 
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {

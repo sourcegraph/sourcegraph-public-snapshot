@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -688,6 +688,46 @@ func TestDeleteUploadByID(t *testing.T) {
 	// Ensure record was deleted
 	if states, err := getUploadStates(db, 1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleting"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+
+	repositoryIDs, err := store.DirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if len(keys) != 1 || keys[0] != 50 {
+		t.Errorf("expected repository to be marked dirty")
+	}
+}
+
+func TestDeleteUploadByIDNotCompleted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 1, RepositoryID: 50, State: "uploading"},
+	)
+
+	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error deleting upload: %s", err)
+	} else if !found {
+		t.Fatalf("expected record to exist")
+	}
+
+	// Ensure record was deleted
+	if states, err := getUploadStates(db, 1); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
@@ -845,8 +885,8 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 		// old and only reachable from other deletion candidates
 		{upload: Upload{ID: 17, State: "uploaded", UploadedAt: t3}, expectedState: "deleted"},
 		{upload: Upload{ID: 18, State: "errored", FinishedAt: &t2}, expectedState: "deleted"},
-		{upload: Upload{ID: 19, State: "completed", FinishedAt: &t1}, expectedState: "deleted"},
-		{upload: Upload{ID: 20, State: "completed", FinishedAt: &t3}, expectedState: "deleted"}, // dependency of 19
+		{upload: Upload{ID: 19, State: "completed", FinishedAt: &t1}, expectedState: "deleting"},
+		{upload: Upload{ID: 20, State: "completed", FinishedAt: &t3}, expectedState: "deleting"}, // dependency of 19
 
 		// old, but dependency of a non-deletion candidate
 		{upload: Upload{ID: 21, State: "completed", FinishedAt: &t1}, expectedState: "completed"}, // dependency of 13
@@ -864,19 +904,19 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 14, 15)
 	insertVisibleAtTipNonDefaultBranch(t, db, 50, 16)
 
-	packages := map[int][]semantic.Package{
+	packages := map[int][]precise.Package{
 		20: {{Scheme: "s0", Name: "n0", Version: "v0"}},
 		21: {{Scheme: "s1", Name: "n1", Version: "v1"}},
 		22: {{Scheme: "s2", Name: "n2", Version: "v2"}},
 		23: {{Scheme: "s3", Name: "n3", Version: "v3"}},
 		24: {{Scheme: "s4", Name: "n4", Version: "v4"}},
 	}
-	references := map[int][]semantic.PackageReference{
-		13: {{Package: semantic.Package{Scheme: "s1", Name: "n1", Version: "v1"}}},
-		14: {{Package: semantic.Package{Scheme: "s2", Name: "n2", Version: "v2"}}},
-		16: {{Package: semantic.Package{Scheme: "s3", Name: "n3", Version: "v3"}}},
-		19: {{Package: semantic.Package{Scheme: "s0", Name: "n0", Version: "v0"}}},
-		23: {{Package: semantic.Package{Scheme: "s4", Name: "n4", Version: "v4"}}},
+	references := map[int][]precise.PackageReference{
+		13: {{Package: precise.Package{Scheme: "s1", Name: "n1", Version: "v1"}}},
+		14: {{Package: precise.Package{Scheme: "s2", Name: "n2", Version: "v2"}}},
+		16: {{Package: precise.Package{Scheme: "s3", Name: "n3", Version: "v3"}}},
+		19: {{Package: precise.Package{Scheme: "s0", Name: "n0", Version: "v0"}}},
+		23: {{Package: precise.Package{Scheme: "s4", Name: "n4", Version: "v4"}}},
 	}
 
 	for id, packages := range packages {

@@ -79,7 +79,7 @@ SELECT time,
 			t.Fatal(err)
 		}
 		t.Log(points)
-		autogold.Want("SeriesPoints(2).len", int(14)).Equal(t, len(points))
+		autogold.Want("SeriesPoints(2).len", int(16)).Equal(t, len(points))
 	})
 
 	t.Run("subset of data", func(t *testing.T) {
@@ -110,7 +110,7 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		if diff := cmp.Diff(14, len(points)); diff != "" {
+		if diff := cmp.Diff(16, len(points)); diff != "" {
 			t.Errorf("unexpected results from include list: %v", diff)
 		}
 	})
@@ -249,14 +249,21 @@ func TestRecordSeriesPoints(t *testing.T) {
 		},
 		{
 			SeriesID: "one",
-			Point:    SeriesPoint{Time: current.Add(-time.Hour * 24 * 15), Value: 2.2},
+			Point:    SeriesPoint{Time: current.Add(-time.Hour * 24 * 14), Value: 2.2},
 			RepoName: optionalString("repo1"),
 			RepoID:   optionalRepoID(3),
 			Metadata: []interface{}{"some", "data", "two"},
 		},
 		{
 			SeriesID: "one",
-			Point:    SeriesPoint{Time: current.Add(-time.Hour * 24 * 43), Value: 3.3},
+			Point:    SeriesPoint{Time: current.Add(-time.Hour * 24 * 28), Value: 3.3},
+			RepoName: optionalString("repo1"),
+			RepoID:   optionalRepoID(3),
+			Metadata: nil,
+		},
+		{
+			SeriesID: "one",
+			Point:    SeriesPoint{Time: current.Add(-time.Hour * 24 * 42), Value: 3.3},
 			RepoName: optionalString("repo1"),
 			RepoID:   optionalRepoID(3),
 			Metadata: nil,

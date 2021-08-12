@@ -10,7 +10,7 @@ import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
@@ -100,6 +100,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
             ) : (
                 <>
                     <PageHeader
+                        headingElement="h2"
                         path={[
                             {
                                 text: (
@@ -123,30 +124,37 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             },
                         ]}
                         actions={
-                            <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
+                            <CodeIntelDeleteUpload
+                                state={uploadOrError.state}
+                                deleteUpload={deleteUpload}
+                                deletionOrError={deletionOrError}
+                            />
                         }
                         className="mb-3"
                     />
 
-                    <CodeIntelStateBanner
-                        state={uploadOrError.state}
-                        placeInQueue={uploadOrError.placeInQueue}
-                        failure={uploadOrError.failure}
-                        typeName="upload"
-                        pluralTypeName="uploads"
-                        className={classNamesByState.get(uploadOrError.state)}
-                    />
-                    {uploadOrError.isLatestForRepo && (
-                        <div className="mb-3">
-                            <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for the
-                            tip of the default branch and are targets of cross-repository find reference operations.
-                        </div>
-                    )}
-                    <CodeIntelUploadMeta node={uploadOrError} now={now} />
-                    <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
+                    <Container>
+                        <CodeIntelStateBanner
+                            state={uploadOrError.state}
+                            placeInQueue={uploadOrError.placeInQueue}
+                            failure={uploadOrError.failure}
+                            typeName="upload"
+                            pluralTypeName="uploads"
+                            className={classNamesByState.get(uploadOrError.state)}
+                        />
+                        {uploadOrError.isLatestForRepo && (
+                            <div className="mb-3">
+                                <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for
+                                the tip of the default branch and are targets of cross-repository find reference
+                                operations.
+                            </div>
+                        )}
+                        <CodeIntelUploadMeta node={uploadOrError} now={now} />
+                        <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
 
-                    <h3>Timeline</h3>
-                    <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
+                        <h3>Timeline</h3>
+                        <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
+                    </Container>
                 </>
             )}
         </div>
@@ -160,19 +168,31 @@ function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): 
 }
 
 interface CodeIntelDeleteUploadProps {
+    state: LSIFUploadState
     deleteUpload: () => Promise<void>
     deletionOrError?: 'loading' | 'deleted' | ErrorLike
 }
 
-const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({ deleteUpload, deletionOrError }) => (
-    <button
-        type="button"
-        className="btn btn-outline-danger"
-        onClick={deleteUpload}
-        disabled={deletionOrError === 'loading'}
-        aria-describedby="upload-delete-button-help"
-        data-tooltip="Deleting this upload makes it immediately unavailable to answer code intelligence queries."
-    >
-        <DeleteIcon className="icon-inline" /> Delete upload
-    </button>
-)
+const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
+    state,
+    deleteUpload,
+    deletionOrError,
+}) =>
+    state === LSIFUploadState.DELETING ? (
+        <></>
+    ) : (
+        <button
+            type="button"
+            className="btn btn-outline-danger"
+            onClick={deleteUpload}
+            disabled={deletionOrError === 'loading'}
+            aria-describedby="upload-delete-button-help"
+            data-tooltip={
+                state === LSIFUploadState.COMPLETED
+                    ? 'Deleting this upload will make it unavailable to answer code intelligence queries the next time the repository commit graph is refreshed.'
+                    : 'Delete this upload immediately'
+            }
+        >
+            <DeleteIcon className="icon-inline" /> Delete upload
+        </button>
+    )

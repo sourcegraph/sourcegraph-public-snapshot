@@ -4,8 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -34,6 +37,7 @@ type observedSource struct {
 // SourceMetrics encapsulates the Prometheus metrics of a Source.
 type SourceMetrics struct {
 	ListRepos *metrics.OperationMetrics
+	GetRepo   *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in SourceMetrics in the given
@@ -42,6 +46,9 @@ func (sm SourceMetrics) MustRegister(r prometheus.Registerer) {
 	r.MustRegister(sm.ListRepos.Count)
 	r.MustRegister(sm.ListRepos.Duration)
 	r.MustRegister(sm.ListRepos.Errors)
+	r.MustRegister(sm.GetRepo.Count)
+	r.MustRegister(sm.GetRepo.Duration)
+	r.MustRegister(sm.GetRepo.Errors)
 }
 
 // NewSourceMetrics returns SourceMetrics that need to be registered
@@ -60,6 +67,20 @@ func NewSourceMetrics() SourceMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_source_errors_total",
 				Help: "Total number of sourcing errors",
+			}, []string{}),
+		},
+		GetRepo: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_source_get_repo_duration_seconds",
+				Help: "Time spent calling GetRepo",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_source_get_repo_total",
+				Help: "Total number of GetRepo calls",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_source_get_repo_errors_total",
+				Help: "Total number of GetRepo errors",
 			}, []string{}),
 		},
 	}
@@ -95,6 +116,23 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 	if errs != nil {
 		err = errs.ErrorOrNil()
 	}
+}
+
+// GetRepo calls into the inner Source and registers the observed results.
+func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *types.Repo, err error) {
+	rg, ok := o.Source.(RepoGetter)
+	if !ok {
+		return nil, errors.New("RepoGetter not implemented")
+	}
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		o.metrics.GetRepo.Observe(secs, 1, &err)
+		log15.Info("source.get-repo", "name", path)
+		logging.Log(o.log, "source.get-repo", &err)
+	}(time.Now())
+
+	return rg.GetRepo(ctx, path)
 }
 
 // StoreMetrics encapsulates the Prometheus metrics of a Store.

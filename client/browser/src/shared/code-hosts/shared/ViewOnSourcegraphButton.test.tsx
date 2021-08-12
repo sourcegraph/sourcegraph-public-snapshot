@@ -19,6 +19,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
+                        onPrivateCloudError={noop}
                     />
                 )
             })
@@ -36,6 +37,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={true}
+                        onPrivateCloudError={noop}
                     />
                 )
             })
@@ -57,6 +59,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
+                        onPrivateCloudError={noop}
                     />
                 )
             })
@@ -81,6 +84,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
+                        onPrivateCloudError={noop}
                     />
                 )
             })
@@ -103,6 +107,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
+                        onPrivateCloudError={noop}
                     />
                 )
             })
@@ -130,6 +135,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                                     className="test"
                                     repoExistsOrError={new HTTPStatusError(new Response('', { status: 401 }))}
                                     minimalUI={minimalUI}
+                                    onPrivateCloudError={noop}
                                 />
                             )
                         })
@@ -156,6 +162,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                             className="test"
                             repoExistsOrError={new Error('Something unknown happened!')}
                             minimalUI={false}
+                            onPrivateCloudError={noop}
                         />
                     )
                 })

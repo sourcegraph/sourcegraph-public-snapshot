@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -78,6 +78,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearchOnSearchContextChange = true,
         isSearchOnboardingTourVisible,
         className,
+        telemetryService,
     } = props
 
     const tour = useFeatureTour(
@@ -98,9 +99,10 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
+        telemetryService.log('SearchContextDropdownToggled')
         setIsOpen(value => !value)
         tour.cancel()
-    }, [tour])
+    }, [tour, telemetryService])
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
@@ -138,6 +140,19 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         [submitSearchOnSearchContextChange, submitOnToggle, setSelectedSearchContextSpec]
     )
 
+    useEffect(() => {
+        if (isOpen && authenticatedUser) {
+            // Log search context dropdown view event whenever dropdown is opened, if user is authenticated
+            telemetryService.log('SearchContextsDropdownViewed')
+        }
+
+        if (isOpen && !authenticatedUser) {
+            // Log CTA view event whenver dropdown is opened, if user is not authenticated
+            telemetryService.log('SearchResultContextsCTAShown')
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
+
     return (
         <Dropdown
             isOpen={isOpen}
@@ -173,7 +188,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
                 {isSourcegraphDotCom && !hasUserAddedRepositories ? (
                     <SearchContextCtaPrompt
-                        telemetryService={props.telemetryService}
+                        telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
                     />

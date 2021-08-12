@@ -96,6 +96,13 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         return undefined
     }, [settingsCascade])
 
+    // We want to filter extensions based on the settings when the filter was last changed.
+    // If we used the latest settings, which are updated after extensions are enabled/disabled,
+    // extensions would confusingly disappear when a filter is used (example: user wants to see disabled extensions.
+    // user enables an extension, then the extension disappears since it is now enabled in settings).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const settingsFromLastFilterChange = useMemo(() => settingsCascade.final, [enablementFilter])
+
     if (!data || data === LOADING) {
         return <LoadingSpinner className="icon-inline mt-2" />
     }
@@ -160,7 +167,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
             const enablementFilteredExtensionIDs = applyEnablementFilter(
                 extensionIDsByCategory[category].primaryExtensionIDs,
                 enablementFilter,
-                settingsCascade.final
+                settingsFromLastFilterChange
             )
             return applyWIPFilter(enablementFilteredExtensionIDs, showExperimentalExtensions, extensions)
         })
@@ -223,7 +230,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         const enablementFilteredExtensionIDs = applyEnablementFilter(
             allExtensionIDs,
             enablementFilter,
-            settingsCascade.final
+            settingsFromLastFilterChange
         )
         const extensionIDs = applyWIPFilter(enablementFilteredExtensionIDs, showExperimentalExtensions, extensions)
 

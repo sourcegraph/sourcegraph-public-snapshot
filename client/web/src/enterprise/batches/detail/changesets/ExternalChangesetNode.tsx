@@ -33,8 +33,10 @@ import styles from './ExternalChangesetNode.module.scss'
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
-    onSelect?: (id: string, selected: boolean) => void
-    isSelected?: (id: string) => boolean
+    selectable?: {
+        onSelect: (id: string, selected: boolean) => void
+        isSelected: (id: string) => boolean
+    }
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -49,8 +51,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
     node: initialNode,
     viewerCanAdminister,
-    onSelect,
-    isSelected,
+    selectable,
     isLightTheme,
     history,
     location,
@@ -71,12 +72,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         [isExpanded]
     )
 
-    const selected = isSelected?.(node.id)
+    const selected = selectable?.isSelected(node.id)
     const toggleSelected = useCallback((): void => {
-        if (onSelect !== undefined) {
-            onSelect(node.id, !selected)
-        }
-    }, [onSelect, selected, node.id])
+        selectable?.onSelect(node.id, !selected)
+    }, [selectable, selected, node.id])
 
     return (
         <>
@@ -92,17 +91,23 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            <div className="p-2">
-                <input
-                    id={`select-changeset-${node.id}`}
-                    type="checkbox"
-                    className="btn"
-                    checked={selected}
-                    onChange={toggleSelected}
-                    disabled={!viewerCanAdminister}
-                    data-tooltip="Click to select changeset for bulk operation"
-                />
-            </div>
+            {selectable ? (
+                <div className="p-2">
+                    <input
+                        id={`select-changeset-${node.id}`}
+                        type="checkbox"
+                        className="btn"
+                        checked={selected}
+                        onChange={toggleSelected}
+                        disabled={!viewerCanAdminister}
+                        data-tooltip="Click to select changeset for bulk operation"
+                    />
+                </div>
+            ) : (
+                // 0-width empty element to allow us to keep the identical grid template of the parent
+                // list, regardless of whether or not the nodes have the checkbox selector
+                <span />
+            )}
             <ChangesetStatusCell
                 id={node.id}
                 state={node.state}

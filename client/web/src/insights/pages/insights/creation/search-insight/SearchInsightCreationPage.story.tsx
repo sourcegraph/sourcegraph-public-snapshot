@@ -6,7 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../components/WebStory'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../core/backend/insights-api'
-import { SETTINGS_CASCADE } from '../../../../mocks/settings-cascade'
+import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import {
     DEFAULT_MOCK_CHART_CONTENT,
@@ -18,7 +18,7 @@ const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
-            viewports: [320, 576, 978, 1440],
+            viewports: [576, 1440],
         },
     })
 
@@ -56,7 +56,7 @@ add('Page', () => (
         <SearchInsightCreationPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
             platformContext={PLATFORM_CONTEXT}
-            settingsCascade={SETTINGS_CASCADE}
+            settingsCascade={SETTINGS_CASCADE_MOCK}
         />
     </InsightsApiContext.Provider>
 ))

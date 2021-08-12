@@ -1,6 +1,6 @@
 import { Remote } from 'comlink'
 import { createMemoryHistory, MemoryHistory, createPath } from 'history'
-import { from, Observable, of, throwError, Subscription } from 'rxjs'
+import { from, Observable, of, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
@@ -16,7 +16,6 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { integrationTestContext } from '../api/integration-test/testHelpers'
 import { TextDocumentPositionParameters } from '../api/protocol'
-import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
 import { SuccessGraphQLResult } from '../graphql/graphql'
 import { PlatformContext, URLToFileContext } from '../platform/context'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
@@ -399,37 +398,6 @@ describe('getDefinitionURL', () => {
                 filePath: 'f',
                 position: undefined,
                 rawRepoName: 'github.com/r3',
-                repoName: 'r3',
-                revision: 'v3',
-            })
-        })
-
-        it('fails gracefully when resolveRawRepoName() fails with a PrivateRepoPublicSourcegraph error', async () => {
-            const requestGraphQL = (): Observable<never> =>
-                throwError(new PrivateRepoPublicSourcegraphComError('ResolveRawRepoName'))
-            const urlToFile = sinon.spy()
-            await of<MaybeLoadingResult<Location[]>>({
-                isLoading: false,
-                result: [{ uri: 'git://r3?c3#f' }],
-            })
-                .pipe(
-                    getDefinitionURL(
-                        { urlToFile, requestGraphQL },
-                        {
-                            getWorkspaceRoots: () => of([FIXTURE_WORKSPACE]),
-                        },
-                        FIXTURE_PARAMS
-                    ),
-                    first(({ isLoading }) => !isLoading)
-                )
-                .toPromise()
-            sinon.assert.calledOnce(urlToFile)
-            sinon.assert.calledWith(urlToFile, {
-                commitID: undefined,
-                filePath: 'f',
-                position: undefined,
-                range: undefined,
-                rawRepoName: 'r3',
                 repoName: 'r3',
                 revision: 'v3',
             })

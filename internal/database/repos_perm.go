@@ -32,13 +32,17 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	}
 
 	authenticatedUserID := int32(0)
+	a := actor.FromContext(ctx)
 
-	// Authz is bypassed when the request is coming from an internal actor or there
-	// is no authz provider configured and access to all repositories are allowed by
-	// default. Authz can be bypassed by site admins unless
+	// Authz is bypassed when the request is coming from an internal actor or
+	// there is no authz provider configured and access to all repositories are
+	// allowed by default. Authz can be bypassed by site admins unless
 	// conf.AuthEnforceForSiteAdmins is set to "true".
-	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
-	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
+	//
+	// 🚨 SECURITY: internal requests bypass authz provider permissions checks,
+	// so correctness is important here.
+	bypassAuthz := a.IsInternal() || (authzAllowByDefault && len(authzProviders) == 0)
+	if !bypassAuthz && a.IsAuthenticated() {
 		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
@@ -71,23 +75,25 @@ OR  (
 				AND es.unrestricted = TRUE
 				AND es.deleted_at IS NULL
 			)
-			LIMIT 1
 		)
 	)
 )
-OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
-  SELECT 1
-  FROM external_service_repos
-  WHERE repo_id = repo.id
-  AND user_id = %s
-)
-OR (                             -- Restricted repositories require checking permissions
-	SELECT object_ids_ints @> INTSET(repo.id)
-	FROM user_permissions
-	WHERE
-		user_id = %s
-	AND permission = %s
-	AND object_type = 'repos'
+OR (                              -- Restricted repositories require checking permissions
+    (
+		SELECT object_ids_ints @> INTSET(repo.id)
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND permission = %s
+		AND object_type = 'repos'
+	) AND (
+		EXISTS (                  -- Check if the current user added this repo or the repo was added at the instance level
+		    SELECT
+			FROM external_service_repos
+			WHERE repo_id = repo.id
+			AND (user_id = %s OR user_id IS NULL)
+		)
+	)
 )
 )
 `
@@ -96,16 +102,7 @@ OR (                             -- Restricted repositories require checking per
 		bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
-		authenticatedUserID,
 		perms.String(),
+		authenticatedUserID,
 	)
-}
-
-// isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
-// request that originates from within Sourcegraph itself).
-//
-// 🚨 SECURITY: internal requests bypass authz provider permissions checks, so correctness is
-// important here.
-func isInternalActor(ctx context.Context) bool {
-	return actor.FromContext(ctx).Internal
 }

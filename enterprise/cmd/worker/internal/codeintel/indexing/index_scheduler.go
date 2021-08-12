@@ -2,12 +2,12 @@ package indexing
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type IndexScheduler struct {
@@ -23,13 +24,11 @@ type IndexScheduler struct {
 	settingStore  IndexingSettingStore
 	repoStore     IndexingRepoStore
 	indexEnqueuer IndexEnqueuer
-	limiter       *rate.Limiter
 	operations    *operations
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
-
-const defaultRepositoriesQueuedPerSecond = 25
+var _ goroutine.ErrorHandler = &IndexScheduler{}
 
 func NewIndexScheduler(
 	dbStore DBStore,
@@ -44,7 +43,6 @@ func NewIndexScheduler(
 		settingStore:  settingStore,
 		repoStore:     repoStore,
 		indexEnqueuer: indexEnqueuer,
-		limiter:       rate.NewLimiter(defaultRepositoriesQueuedPerSecond, 1),
 		operations:    newOperations(observationContext),
 	}
 
@@ -59,68 +57,44 @@ func NewIndexScheduler(
 // For mocking in tests
 var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
 
-// Used to filter the valid repo group names
-var enabledRepoGroupNames = []string{"cncf"}
-
 func (s *IndexScheduler) Handle(ctx context.Context) error {
 	if !indexSchedulerEnabled() {
 		return nil
 	}
 
-	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
+	disabledRepoGroups, err := s.getDisabledRepositoryIDMap(ctx)
 	if err != nil {
-		return errors.Wrap(err, "DBStore.GetRepositoriesWithIndexConfiguration")
+		return err
 	}
 
-	// TODO(autoindex): We should create a way to gather _all_ repogroups (including all user repogroups)
-	//    https://github.com/sourcegraph/sourcegraph/issues/22130
-	settings, err := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
-	if err != nil {
-		return errors.Wrap(err, "IndexingSettingStore.GetLastestSchemaSettings")
+	repositoryIDSourcers := []func(ctx context.Context) ([]int, error){
+		s.getRepositoryIDsWithIndexConfiguration,
+		s.getRepositoryIDsFromRepositoryGroups,
+		s.getRepositoryIDsByPopularity,
 	}
 
-	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
-	//    https://github.com/sourcegraph/sourcegraph/issues/22130
-	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
-	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(enabledRepoGroupNames, groupsByName)
-
-	options := database.ReposListOptions{
-		IncludePatterns: []string{includePatterns},
-		OnlyCloned:      true,
-		NoForks:         true,
-		NoArchived:      true,
-		NoPrivate:       true,
-	}
-
-	repoGroupRepositoryIDs, err := s.repoStore.ListRepoNames(ctx, options)
-	if err != nil {
-		return errors.Wrap(err, "IndexingRepoStore.ListRepoNames")
-	}
-
-	disabledRepoGroupsList, err := s.dbStore.GetAutoindexDisabledRepositories(ctx)
-	if err != nil {
-		return errors.Wrap(err, "DBStore.GetAutoindexDisabledRepositories")
-	}
-
-	disabledRepoGroups := map[int]struct{}{}
-	for _, v := range disabledRepoGroupsList {
-		disabledRepoGroups[v] = struct{}{}
-	}
-
-	var indexableRepositoryIDs []int
-	for _, indexableRepository := range repoGroupRepositoryIDs {
-		repoID := int(indexableRepository.ID)
-		if _, disabled := disabledRepoGroups[repoID]; !disabled {
-			indexableRepositoryIDs = append(indexableRepositoryIDs, repoID)
-		}
-	}
-
-	var queueErr error
-	for _, repositoryID := range deduplicateRepositoryIDs(configuredRepositoryIDs, indexableRepositoryIDs) {
-		if err := s.limiter.Wait(ctx); err != nil {
+	repositoryIDMap := map[int]struct{}{}
+	for _, repositoryIDSourcer := range repositoryIDSourcers {
+		repositoryIDs, err := repositoryIDSourcer(ctx)
+		if err != nil {
 			return err
 		}
 
+		for _, repositoryID := range repositoryIDs {
+			if _, ok := disabledRepoGroups[repositoryID]; !ok {
+				repositoryIDMap[repositoryID] = struct{}{}
+			}
+		}
+	}
+
+	repositoryIDs := make([]int, 0, len(repositoryIDMap))
+	for repositoryID := range repositoryIDMap {
+		repositoryIDs = append(repositoryIDs, repositoryID)
+	}
+	sort.Ints(repositoryIDs)
+
+	var queueErr error
+	for _, repositoryID := range repositoryIDs {
 		if err := s.indexEnqueuer.QueueIndexesForRepository(ctx, repositoryID); err != nil {
 			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 				continue
@@ -144,16 +118,82 @@ func (s *IndexScheduler) HandleError(err error) {
 	log15.Error("Failed to update indexable repositories", "err", err)
 }
 
-func deduplicateRepositoryIDs(ids ...[]int) (repositoryIDs []int) {
-	repositoryIDMap := map[int]struct{}{}
-	for _, s := range ids {
-		for _, v := range s {
-			repositoryIDMap[v] = struct{}{}
-		}
+func (s *IndexScheduler) getDisabledRepositoryIDMap(ctx context.Context) (map[int]struct{}, error) {
+	disabledRepoGroupsList, err := s.dbStore.GetAutoindexDisabledRepositories(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "DBStore.GetAutoindexDisabledRepositories")
 	}
 
-	for repositoryID := range repositoryIDMap {
-		repositoryIDs = append(repositoryIDs, repositoryID)
+	disabledRepoGroups := make(map[int]struct{}, len(disabledRepoGroupsList))
+	for _, v := range disabledRepoGroupsList {
+		disabledRepoGroups[v] = struct{}{}
+	}
+
+	return disabledRepoGroups, nil
+}
+
+func (s *IndexScheduler) getRepositoryIDsWithIndexConfiguration(ctx context.Context) ([]int, error) {
+	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "DBStore.GetRepositoriesWithIndexConfiguration")
+	}
+
+	return configuredRepositoryIDs, nil
+}
+
+func (s *IndexScheduler) getRepositoryIDsFromRepositoryGroups(ctx context.Context) ([]int, error) {
+	// TODO(autoindex): We should create a way to gather _all_ repogroups (including all user repogroups)
+	//    https://github.com/sourcegraph/sourcegraph/issues/22130
+	settings, err := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
+	if err != nil {
+		return nil, errors.Wrap(err, "IndexingSettingStore.GetLastestSchemaSettings")
+	}
+
+	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
+	//    https://github.com/sourcegraph/sourcegraph/issues/22130
+	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
+	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(settings.CodeIntelligenceAutoIndexRepositoryGroups, groupsByName)
+
+	options := database.ReposListOptions{
+		IncludePatterns: []string{includePatterns},
+		OnlyCloned:      true,
+		NoForks:         true,
+		NoArchived:      true,
+		NoPrivate:       true,
+	}
+
+	repositories, err := s.repoStore.ListRepoNames(ctx, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "IndexingRepoStore.ListRepoNames")
+	}
+
+	return extractIDs(repositories), nil
+}
+
+func (s *IndexScheduler) getRepositoryIDsByPopularity(ctx context.Context) ([]int, error) {
+	settings, err := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
+	if err != nil {
+		return nil, errors.Wrap(err, "IndexingSettingStore.GetLastestSchemaSettings")
+	}
+
+	if settings.CodeIntelligenceAutoIndexPopularRepoLimit == 0 {
+		return nil, nil
+	}
+
+	repositories, err := s.repoStore.ListIndexableRepos(ctx, database.ListIndexableReposOptions{
+		LimitOffset: &database.LimitOffset{Limit: settings.CodeIntelligenceAutoIndexPopularRepoLimit},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "IndexingRepoStore.ListIndexableRepos")
+	}
+
+	return extractIDs(repositories), nil
+}
+
+func extractIDs(repositories []types.RepoName) []int {
+	repositoryIDs := make([]int, 0, len(repositories))
+	for _, repoGroupRepository := range repositories {
+		repositoryIDs = append(repositoryIDs, int(repoGroupRepository.ID))
 	}
 
 	return repositoryIDs

@@ -33,6 +33,13 @@ type BackgroundRoutine interface {
 	Stop()
 }
 
+// WaitableBackgroundRoutine enhances BackgroundRoutine with a Wait method that
+// blocks until the value's Start method has returned.
+type WaitableBackgroundRoutine interface {
+	BackgroundRoutine
+	Wait()
+}
+
 // MonitorBackgroundRoutines will start the given background routines in their own
 // goroutine. If the given context is canceled or a signal is received, the Stop
 // method of each routine will be called. This method blocks until the Stop methods

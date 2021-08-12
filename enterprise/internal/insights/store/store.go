@@ -22,6 +22,7 @@ import (
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
+	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 }
 
@@ -33,6 +34,18 @@ type Store struct {
 	*basestore.Store
 	now       func() time.Time
 	permStore InsightPermissionStore
+}
+
+func (s *Store) Transact(ctx context.Context) (*Store, error) {
+	txBase, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &Store{
+		Store:     txBase,
+		now:       s.now,
+		permStore: s.permStore,
+	}, nil
 }
 
 // New returns a new Store backed by the given Timescale db.
@@ -92,6 +105,9 @@ type SeriesPointsOpts struct {
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
+	IncludeRepoRegex string
+	ExcludeRepoRegex string
+
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
 
@@ -99,7 +115,7 @@ type SeriesPointsOpts struct {
 	Limit int
 }
 
-//SeriesPoints queries data points over time for a specific insights' series.
+// SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
 
@@ -138,44 +154,25 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	return points, err
 }
 
-// This query is a barebones implementation of per-repo per-series last-observation carried forward. Long term
-// this query is too expensive to run in real-time and should be moved to a materialized view.
-const lastObservationCarriedPointsSql = `select sub.series_id, sub.interval_time, sum(value) as value, null as metadata from (WITH target_times AS (SELECT *
-FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '26 weeks', CURRENT_TIMESTAMP::date, '2 weeks') as interval_time)
-SELECT sub.series_id, sub.repo_id, sub.value, interval_time
-FROM (select distinct repo_id, series_id from series_points) as r
-cross join target_times tt
-join LATERAL (
-    select sp.* from series_points as sp
-    where sp.repo_id = r.repo_id and sp.time <= tt.interval_time and sp.series_id = r.series_id
-    order by time DESC
-    limit 1
-    ) sub on sub.repo_id = r.repo_id and r.series_id = sub.series_id
-order by interval_time, repo_id) as sub
-where %s
-group by sub.series_id, sub.interval_time
-order by interval_time desc
+const fullVectorSeriesAggregation = `
+-- source: enterprise/internal/insights/store/store.go:SeriesPoints
+SELECT sp.series_id, sp.time AS interval_time, SUM(value) as value, null as metadata
+FROM series_points sp JOIN repo_names rn ON sp.repo_name_id = rn.id
+WHERE %s
+GROUP BY sp.series_id, interval_time
+ORDER BY sp.series_id, interval_time DESC
 `
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular
 // intervals. In specific:
 //
-// 1. It may have multiple points recorded at the same exact point in time, e.g. with different
-//    repo_id (datapoint recorded per repository), or only a single point recorded (datapoint
-//    recorded globally.)
-// 2. Rarely, it may contain duplicate data points. For example, when repo-updater is started the
-//    initial jobs for recording insights will be enqueued, and then e.g. 12h later. If repo-updater
-//    gets restarted multiple times, there may be many multiple nearly identical data points recorded
-//    in a short period of time instead of at the 12h interval.
-// 3. Data backfilling may not operate at the same interval, or same # of points per interval, and
-//    thus the interval between data points may be irregular.
-// 4. Searches may not complete at the same exact time, so even in a perfect world if the interval
+// 1. Multiple points recorded at the same time T for cardinality C will be considered part of the same vector.
+//    For example, series S and repos R1, R2 have a point at time T. The sum over R1,R2 at T will give the
+//    aggregated sum for that series at time T.
+// 2. Rarely, it may contain duplicate data points due to the at-least once semantics of query execution.
+//    This will cause some jitter in the aggregated series, and will skew the results slightly.
+// 3. Searches may not complete at the same exact time, so even in a perfect world if the interval
 //    should be 12h it may be off by a minute or so.
-// 5. Intervals that are missing a data point will need to resolve the last observation and carry it forward.
-//
-// Additionally, it is important to note that there may be data points associated with a repo OR not
-// associated with a repo at all (global.)
-
 func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
 
@@ -186,10 +183,10 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
 	}
 	if opts.From != nil {
-		preds = append(preds, sqlf.Sprintf("interval_time >= %s", *opts.From))
+		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
 	}
 	if opts.To != nil {
-		preds = append(preds, sqlf.Sprintf("interval_time <= %s", *opts.To))
+		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
 	limitClause := ""
 	if opts.Limit > 0 {
@@ -203,12 +200,18 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
 		preds = append(preds, sqlf.Sprintf(s))
 	}
+	if len(opts.IncludeRepoRegex) > 0 {
+		preds = append(preds, sqlf.Sprintf("rn.name ~ %s", opts.IncludeRepoRegex))
+	}
+	if len(opts.ExcludeRepoRegex) > 0 {
+		preds = append(preds, sqlf.Sprintf("rn.name !~ %s", opts.ExcludeRepoRegex))
+	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 	return sqlf.Sprintf(
-		lastObservationCarriedPointsSql+limitClause,
+		fullVectorSeriesAggregation+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -309,7 +312,7 @@ type RecordSeriesPointArgs struct {
 func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) (err error) {
 	// Start transaction.
 	var txStore *basestore.Store
-	txStore, err = s.Transact(ctx)
+	txStore, err = s.Store.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -362,6 +365,23 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		repoNameID,         // repo_name_id
 		repoNameID,         // original_repo_name_id
 	))
+}
+
+// RecordSeriesPoints stores multiple data points atomically.
+func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, pt := range pts {
+		// this is a pretty naive implementation, this can be refactored to reduce db calls
+		if err := s.RecordSeriesPoint(ctx, pt); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 const upsertRepoNameFmtStr = `

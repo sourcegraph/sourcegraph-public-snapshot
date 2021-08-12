@@ -19,22 +19,21 @@ import {
     share,
 } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorMessage } from '../alerts'
-
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
-import { Connection } from './ConnectionType'
-import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
-import { getFilterFromURL, parseQueryInt } from './utils'
+import { Connection, ConnectionQueryArguments } from './ConnectionType'
+import { QUERY_KEY } from './constants'
+import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
+import { ConnectionError, ConnectionLoading, ConnectionForm } from './ui'
+import type { ConnectionFormProps } from './ui/ConnectionForm'
+import { getFilterFromURL, getUrlQuery, parseQueryInt } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
  * that are most likely to be needed by callers, and it's simpler for them if they are in a parameter-less type.
  */
-interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
+interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, ConnectionFormProps {
     history: H.History
     location: H.Location
 
@@ -62,39 +61,11 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
     /** The number of items to fetch, by default. */
     defaultFirst?: number
 
-    /** Hides the filter input field. */
-    hideSearch?: boolean
-
     /** Hides filters and search when the list of nodes is empty  */
     hideControlsWhenEmpty?: boolean
 
-    /** Autofocuses the filter input field. */
-    autoFocus?: boolean
-
     /** Whether we will use the URL query string to reflect the filter and pagination state or not. */
     useURLQuery?: boolean
-
-    /**
-     * Filters to display next to the filter input field.
-     *
-     * Filters are mutually exclusive.
-     */
-    filters?: FilteredConnectionFilter[]
-
-    /**
-     * The filter to select by default. If not supplied, this defaults to the first
-     * filter defined in the list.
-     */
-    defaultFilter?: string
-
-    /** Called when a filter is selected and on initial render. */
-    onValueSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
-
-    /** CSS class name for the <input> element */
-    inputClassName?: string
-
-    /** Placeholder text for the <input> element */
-    inputPlaceholder?: string
 }
 
 /**
@@ -126,12 +97,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
 /**
  * The arguments for the Props.queryConnection function.
  */
-export interface FilteredConnectionQueryArguments {
-    first?: number
-    after?: string
-    query?: string
-}
-
+export interface FilteredConnectionQueryArguments extends ConnectionQueryArguments {}
 interface FilteredConnectionState<C extends Connection<N>, N> extends ConnectionNodesState {
     activeValues: Map<string, FilteredConnectionFilterValue>
 
@@ -149,9 +115,6 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
      */
     visible?: number
 }
-
-/** The URL query parameter where the search query for FilteredConnection is stored. */
-const QUERY_KEY = 'query'
 
 /**
  * Displays a collection of items with filtering and pagination. It is called
@@ -355,7 +318,7 @@ export class FilteredConnection<
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
-                            const searchFragment = this.urlQuery({ visible: previousPage.length })
+                            const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
                             if (this.props.location.search !== searchFragment) {
                                 this.props.history.replace({
                                     search: searchFragment,
@@ -438,12 +401,12 @@ export class FilteredConnection<
         first,
         query,
         values,
-        visible,
+        visibleResultCount,
     }: {
         first?: number
         query?: string
         values?: Map<string, FilteredConnectionFilterValue>
-        visible?: number
+        visibleResultCount?: number
     }): string {
         if (!first) {
             first = this.state.first
@@ -454,34 +417,19 @@ export class FilteredConnection<
         if (!values) {
             values = this.state.activeValues
         }
-        const searchParameters = new URLSearchParams(this.props.location.search)
-        if (query) {
-            searchParameters.set(QUERY_KEY, query)
-        }
 
-        if (first !== this.props.defaultFirst) {
-            searchParameters.set('first', String(first))
-        }
-        if (values && this.props.filters) {
-            for (const filter of this.props.filters) {
-                if (values === undefined) {
-                    continue
-                }
-                const value = values.get(filter.id)
-                if (value === undefined) {
-                    continue
-                }
-                if (value !== filter.values[0]) {
-                    searchParameters.set(filter.id, value.value)
-                } else {
-                    searchParameters.delete(filter.id)
-                }
-            }
-        }
-        if (visible !== 0 && visible !== first) {
-            searchParameters.set('visible', String(visible))
-        }
-        return searchParameters.toString()
+        return getUrlQuery({
+            query,
+            first: {
+                actual: first,
+                // Always set through `defaultProps`
+                default: this.props.defaultFirst!,
+            },
+            values,
+            visibleResultCount,
+            search: this.props.location.search,
+            filters: this.props.filters,
+        })
     }
 
     public componentDidUpdate(): void {
@@ -523,47 +471,21 @@ export class FilteredConnection<
             >
                 {
                     /* shouldShowControls && */ (!this.props.hideSearch || this.props.filters) && (
-                        <Form
-                            className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
-                            onSubmit={this.onSubmit}
-                        >
-                            {this.props.filters && (
-                                <FilterControl
-                                    filters={this.props.filters}
-                                    onDidSelectValue={this.onDidSelectValue}
-                                    values={this.state.activeValues}
-                                >
-                                    {this.props.additionalFilterElement}
-                                </FilterControl>
-                            )}
-                            {!this.props.hideSearch && (
-                                <input
-                                    className={classNames('form-control', this.props.inputClassName)}
-                                    type="search"
-                                    placeholder={this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`}
-                                    name="query"
-                                    value={this.state.query}
-                                    onChange={this.onChange}
-                                    autoFocus={this.props.autoFocus}
-                                    autoComplete="off"
-                                    autoCorrect="off"
-                                    autoCapitalize="off"
-                                    ref={this.setFilterRef}
-                                    spellCheck={false}
-                                />
-                            )}
-                        </Form>
+                        <ConnectionForm
+                            ref={this.setFilterRef}
+                            hideSearch={this.props.hideSearch}
+                            inputClassName={this.props.inputClassName}
+                            inputPlaceholder={this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`}
+                            inputValue={this.state.query}
+                            onInputChange={this.onChange}
+                            autoFocus={this.props.autoFocus}
+                            filters={this.props.filters}
+                            onValueSelect={this.onDidSelectValue}
+                            values={this.state.activeValues}
+                        />
                     )
                 }
-                {errors.length > 0 && (
-                    <div className="alert alert-danger filtered-connection__error">
-                        {errors.map((error, index) => (
-                            <React.Fragment key={index}>
-                                <ErrorMessage error={error} />
-                            </React.Fragment>
-                        ))}
-                    </div>
-                )}
+                {errors.length > 0 && <ConnectionError errors={errors} />}
                 {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
                     <ConnectionNodes
                         connection={this.state.connectionOrError}
@@ -590,16 +512,7 @@ export class FilteredConnection<
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                     />
                 )}
-                {this.state.loading && (
-                    <span
-                        className={classNames(
-                            'filtered-connection__loader test-filtered-connection__loader',
-                            this.props.loaderClassName
-                        )}
-                    >
-                        <LoadingSpinner className="icon-inline" />
-                    </span>
-                )}
+                {this.state.loading && <ConnectionLoading className={this.props.loaderClassName} />}
             </div>
         )
     }
@@ -617,11 +530,6 @@ export class FilteredConnection<
         if (this.filterRef) {
             this.filterRef.focus()
         }
-    }
-
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
-        // Do nothing. The <input onChange> handler will pick up any changes shortly.
-        event.preventDefault()
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {

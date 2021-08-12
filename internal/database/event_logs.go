@@ -54,6 +54,7 @@ type Event struct {
 	UserID          uint32
 	AnonymousUserID string
 	Argument        json.RawMessage
+	PublicArgument  json.RawMessage
 	Source          string
 	Timestamp       time.Time
 	FeatureFlags    featureflag.FlagSet
@@ -65,6 +66,10 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 	if argument == nil {
 		argument = json.RawMessage([]byte(`{}`))
 	}
+	publicArgument := e.PublicArgument
+	if e.PublicArgument == nil {
+		publicArgument = json.RawMessage([]byte(`{}`))
+	}
 
 	featureFlags, err := json.Marshal(e.FeatureFlags)
 	if err != nil {
@@ -73,13 +78,14 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 
 	_, err = l.Handle().DB().ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, public_argument, version, timestamp, feature_flags, cohort_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
 		e.Name,
 		e.URL,
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
 		argument,
+		publicArgument,
 		version.Version(),
 		e.Timestamp.UTC(),
 		featureFlags,

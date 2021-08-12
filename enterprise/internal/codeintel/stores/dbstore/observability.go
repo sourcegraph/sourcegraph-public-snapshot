@@ -24,6 +24,7 @@ type operations struct {
 	dirtyRepositories                      *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
+	getAutoindexDisabledRepositories       *observation.Operation
 	getDumpsByIDs                          *observation.Operation
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
@@ -31,7 +32,6 @@ type operations struct {
 	getIndexesByIDs                        *observation.Operation
 	getOldestCommitDate                    *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
-	getAutoindexDisabledRepositories       *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
 	getUploadsByIDs                        *observation.Operation
@@ -70,14 +70,7 @@ type operations struct {
 	persistUploadsVisibleAtTip *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"codeintel_dbstore",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
-
+func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
 			Name:         fmt.Sprintf("codeintel.dbstore.%s", name),
@@ -112,6 +105,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
+		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
@@ -119,7 +113,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexesByIDs:                        op("GetIndexesByIDs"),
 		getOldestCommitDate:                    op("GetOldestCommitDate"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
-		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
 		getUploadsByIDs:                        op("GetUploadsByIDs"),

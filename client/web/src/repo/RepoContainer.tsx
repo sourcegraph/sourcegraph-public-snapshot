@@ -27,6 +27,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -35,6 +36,8 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
+import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -44,14 +47,21 @@ import { ActionItemsBarProps, useWebActionItems } from '../extensions/components
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps, searchQueryForRepoRevision } from '../search'
+import {
+    CaseSensitivityProps,
+    PatternTypeProps,
+    SearchContextProps,
+    searchQueryForRepoRevision,
+    SearchStreamingProps,
+} from '../search'
 import { QueryState } from '../search/helpers'
+import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
+import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -80,7 +90,11 @@ export interface RepoContainerContext
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
+        BatchChangesProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -92,6 +106,10 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
+
+    showSearchNotebook: boolean
+
+    isMacPlatform: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -115,7 +133,11 @@ interface RepoContainerProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        BreadcrumbsProps {
+        BreadcrumbsProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
+        BatchChangesProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -125,10 +147,13 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+    showSearchNotebook: boolean
+    isMacPlatform: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
 const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+const HAS_DISMISSED_FIREFOX_ALERT_KEY = 'has-dismissed-firefox-addon-alert'
 
 export const HOVER_THRESHOLD = 5
 
@@ -357,10 +382,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         setHasDismissedPopover(true)
     }, [])
 
+    const [hasDismissedFirefoxAlert, setHasDismissedFirefoxAlert] = useLocalStorage(
+        HAS_DISMISSED_FIREFOX_ALERT_KEY,
+        false
+    )
+    const showFirefoxAddonAlert = isFirefox() && !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
+
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()
         setHasDismissedExtensionAlert(true)
-    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
+        // TEMPORARY
+        setHasDismissedFirefoxAlert(true)
+    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert, setHasDismissedFirefoxAlert])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -405,12 +438,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         }
                     />
                 )}
-            {showExtensionAlert && (
+            {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}
                     onAlertDismissed={onAlertDismissed}
                     externalURLs={repoOrError.externalURLs}
                     codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                    showFirefoxAddonAlert={showFirefoxAddonAlert}
                 />
             )}
             <RepoHeader

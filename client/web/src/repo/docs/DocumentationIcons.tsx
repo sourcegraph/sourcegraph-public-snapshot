@@ -23,15 +23,16 @@ function pickIconTags(tags: Tag[]): Tag[] {
 
 interface Props {
     tags: Tag[]
+    className?: string
 }
 
 /**
  * Renders icons for the given documentation tags on a single node.
  */
-export const DocumentationIcons: React.FunctionComponent<Props> = ({ tags }) => (
+export const DocumentationIcons: React.FunctionComponent<Props> = ({ tags, className }) => (
     <>
         {pickIconTags(tags).map(tag => (
-            <DocumentationIcon key={tag} tag={tag} />
+            <DocumentationIcon key={tag} tag={tag} className={className} />
         ))}
     </>
 )

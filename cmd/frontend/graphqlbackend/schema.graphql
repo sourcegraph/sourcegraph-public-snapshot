@@ -431,6 +431,12 @@ type Mutation {
         The additional argument information.
         """
         argument: String
+        """
+        Public argument information. PRIVACY: Do NOT include any potentially private information in this field.
+        These properties get sent to our analytics tools for Cloud, so must not include private information,
+        such as search queries or repository names.
+        """
+        publicArgument: String
     ): EmptyResponse
     """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
@@ -2055,6 +2061,7 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    JVMPACKAGES
     PERFORCE
     PHABRICATOR
     OTHER
@@ -6120,6 +6127,22 @@ type CodeIntelligenceRange {
     The hover result of the symbol occurring within the range.
     """
     hover: Hover
+
+    """
+    The documentation result of the symbol occurring within the range, if any.
+    """
+    documentation: Documentation
+}
+
+"""
+Documentation at some position in a file.
+"""
+type Documentation {
+    """
+    The path ID of the documentation, which can be used to build a link to the documentation or
+    (after trimming the URL hash) passed to documentationPage or documentationPathInfo.
+    """
+    pathID: String!
 }
 
 """
@@ -6346,9 +6369,9 @@ type ExecutionLogEntry {
     startTime: DateTime!
 
     """
-    The exit code of the command.
+    The exit code of the command. Null, if the command has not finished yet.
     """
-    exitCode: Int!
+    exitCode: Int
 
     """
     The combined stdout and stderr logs of the command.
@@ -6356,7 +6379,7 @@ type ExecutionLogEntry {
     out: String!
 
     """
-    The duration in milliseconds of the command.
+    The duration in milliseconds of the command. Null, if the command has not finished yet.
     """
-    durationMilliseconds: Int!
+    durationMilliseconds: Int
 }

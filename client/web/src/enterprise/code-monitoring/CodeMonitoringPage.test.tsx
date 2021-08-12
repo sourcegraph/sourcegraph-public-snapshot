@@ -105,25 +105,10 @@ describe('CodeMonitoringListPage', () => {
         expect(history.location.pathname).toBe('/code-monitoring')
     })
 
-    test('Redirect to sign in if not logged in', () => {
+    test('Redirect to getting started if not logged in', () => {
         const component = mount(
             <MemoryRouter initialEntries={['/code-monitoring']}>
                 <CodeMonitoringPage {...additionalProps} authenticatedUser={null} />
-            </MemoryRouter>
-        )
-
-        const history: H.History = component.find('Router').prop('history')
-        expect(history.location.pathname).toBe('/sign-in')
-    })
-
-    test('Redirect to getting started if not logged in and feature flag is enabled', () => {
-        const component = mount(
-            <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CodeMonitoringPage
-                    {...additionalProps}
-                    authenticatedUser={null}
-                    featureFlags={new Map([['w1-signup-optimisation', true]])}
-                />
             </MemoryRouter>
         )
 

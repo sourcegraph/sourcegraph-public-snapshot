@@ -1,5 +1,4 @@
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useContext, useMemo } from 'react'
+import React, { useMemo } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
@@ -10,35 +9,37 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'
-import { CodeInsightsIcon, InsightsViewGrid } from '../../../../../../../components'
-import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
-import { useDeleteInsight } from '../../../../../../insights/insights-page/hooks/use-delete-insight'
+import { CodeInsightsIcon } from '../../../../../../../components'
+import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid'
+import { InsightDashboard } from '../../../../../../../core/types'
+import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
+import { useInsights } from '../../../../../../../hooks/use-insight/use-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
+
+const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps
     extends ExtensionsControllerProps,
         TelemetryProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps<'updateSettings'> {
-    /**
-     * Dashboard specific insight ids.
-     */
-    insightIds?: string[]
+    dashboard: InsightDashboard
+    onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, extensionsController, insightIds = [], settingsCascade, platformContext } = props
-    const { getInsightCombinedViews } = useContext(InsightsApiContext)
+    const {
+        telemetryService,
+        extensionsController,
+        dashboard,
+        settingsCascade,
+        platformContext,
+        onAddInsightRequest,
+    } = props
 
-    const views = useObservable(
-        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, insightIds), [
-            insightIds,
-            extensionsController,
-            getInsightCombinedViews,
-        ])
-    )
-
-    const { handleDelete } = useDeleteInsight({ settingsCascade, platformContext })
+    const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
+    const insightIds = useDistinctValue(dashboardInsightIds)
+    const insights = useInsights({ insightIds, settingsCascade })
 
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
     const areExtensionsReady = useObservable(
@@ -46,16 +47,6 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     )
 
     if (!areExtensionsReady) {
-        return (
-            <div className="d-flex justify-content-center align-items-center pt-5">
-                <LoadingSpinner />
-                <span className="mx-2">Loading Sourcegraph extensions</span>
-                <PuzzleIcon className="icon-inline" />
-            </div>
-        )
-    }
-
-    if (views === undefined) {
         return (
             <div className="d-flex justify-content-center align-items-center pt-5">
                 <LoadingSpinner />
@@ -67,15 +58,20 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <div>
-            {insightIds.length > 0 && views.length > 0 ? (
-                <InsightsViewGrid
-                    views={views}
-                    hasContextMenu={true}
+            {insightIds.length > 0 ? (
+                <SmartInsightsViewGrid
+                    insights={insights}
                     telemetryService={telemetryService}
-                    onDelete={handleDelete}
+                    settingsCascade={settingsCascade}
+                    platformContext={platformContext}
+                    extensionsController={extensionsController}
                 />
             ) : (
-                <EmptyInsightDashboard />
+                <EmptyInsightDashboard
+                    dashboard={dashboard}
+                    settingsCascade={settingsCascade}
+                    onAddInsight={onAddInsightRequest}
+                />
             )}
         </div>
     )

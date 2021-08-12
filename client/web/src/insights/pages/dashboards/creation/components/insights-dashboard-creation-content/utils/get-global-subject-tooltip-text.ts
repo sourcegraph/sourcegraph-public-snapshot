@@ -10,9 +10,9 @@ export function getGlobalSubjectTooltipText(globalSubject: SettingsSiteSubject |
 
     const globalSubjectAdminCheckMessage = globalSubject.viewerCanAdminister
         ? undefined
-        : "You don't have a permission to change global scope. Reach out your site admin"
+        : 'Only site admins can create global dashboards'
 
     return globalSubject.allowSiteSettingsEdits
         ? globalSubjectAdminCheckMessage
-        : 'The global subject can not be edited since it was configured by settings file'
+        : 'The global subject cannot be edited since your Sourcegraph instance is using a separate settings file'
 }

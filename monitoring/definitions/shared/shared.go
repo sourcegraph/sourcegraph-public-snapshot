@@ -24,9 +24,13 @@ package shared
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
+
+// sharedObservable defines the type all shared observable variables should have in this package.
+type sharedObservable func(containerName string, owner monitoring.ObservableOwner) Observable
 
 // Observable is a variant of normal Observables that offer convenience functions for
 // customizing shared observables.
@@ -63,8 +67,40 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 	return o
 }
 
-// sharedObservable defines the type all shared observable variables should have in this package.
-type sharedObservable func(containerName string, owner monitoring.ObservableOwner) Observable
+// ObservableOption is a function that transforms an observable.
+type ObservableOption func(observable Observable) Observable
+
+func (f ObservableOption) safeApply(observable Observable) Observable {
+	if f == nil {
+		return observable
+	}
+
+	return f(observable)
+}
+
+// WarningOption creates an ObservableOption that overrides this Observable's
+// warning-level alert with the given alert.
+func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+	return func(observable Observable) Observable {
+		return observable.WithWarning(a)
+	}
+}
+
+// CriticalOption creates an ObservableOption that overrides this Observable's
+// critical-level alert with the given alert.
+func CriticalOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+	return func(observable Observable) Observable {
+		return observable.WithCritical(a)
+	}
+}
+
+// NoAlertsOption creates an ObservableOption that disables alerting on this
+// Observable and sets the given interpretation instead.
+func NoAlertsOption(interpretation string) ObservableOption {
+	return func(observable Observable) Observable {
+		return observable.WithNoAlerts(interpretation)
+	}
+}
 
 // CadvisorNameMatcher generates Prometheus matchers that capture metrics that match the
 // given container name while excluding some irrelevant series.
@@ -81,4 +117,12 @@ func CadvisorNameMatcher(containerName string) string {
 	//   See https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+target_label:+name&patternType=literal
 	// - because of above, suffix could be pod name in Kubernetes
 	return fmt.Sprintf(`name=~"^%s.*"`, containerName)
+}
+
+func titlecase(s string) string {
+	if s == "" {
+		return s
+	}
+
+	return strings.ToUpper(s[:1]) + s[1:]
 }

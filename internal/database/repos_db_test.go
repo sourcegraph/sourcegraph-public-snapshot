@@ -514,7 +514,7 @@ func TestRepos_List_FailedSync(t *testing.T) {
 	assertCount(t, ReposListOptions{FailedFetch: true}, 0)
 
 	repo := created[0]
-	if err := GitserverRepos(db).SetLastError(ctx, repo.ID, "Oops", "test"); err != nil {
+	if err := GitserverRepos(db).SetLastError(ctx, repo.Name, "Oops", "test"); err != nil {
 		t.Fatal(err)
 	}
 	assertCount(t, ReposListOptions{}, 1)

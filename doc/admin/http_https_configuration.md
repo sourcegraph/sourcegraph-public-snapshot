@@ -19,12 +19,12 @@ Sourcegraph's single Docker image and Kubernetes deployments use [NGINX](https:/
 
 The first time Sourcegraph is run, it will create an [`nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/server/shared/assets/nginx.conf) file at:
 
-- `~/.sourcegraph/config/nginx.conf` on the Docker/Sourcegraph host (presuming you're using the [quickstart `docker run` command](../index.md#quickstart))
+- `~/.sourcegraph/config/nginx.conf` on the Docker/Sourcegraph host (presuming you're using the [quickstart `docker run` command](../index.md#quick-install))
 - `/etc/sourcegraph/nginx.conf` inside the container
 
 SSL support requires two things:
 
-1. [Manual editing](#nginx-ssl-https-configuration) of the NGINX configuration file if using the [quickstart docker run command](../index.md#quickstart) as it presumes local or internal usage.
+1. [Manual editing](#nginx-ssl-https-configuration) of the NGINX configuration file if using the [quickstart docker run command](../index.md#quick-install) as it presumes local or internal usage.
 1. (Now that NGINX is listening on port 7443), we need to configure the Sourcegraph container to forward
 443 to 7443 by adding `--publish 443:7443` to the `docker run` command:
 
@@ -37,7 +37,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.29.1
+  sourcegraph/server:3.30.3
 ```
 
 ### Sourcegraph Cluster (Kubernetes)

@@ -44,7 +44,7 @@ Example: if the Threshold is set to 3%, and 2% of your code is in python and 2% 
 
 This controls who else can see your insight. 
 
-Anything set to "Personal" won't be visible by anyone else.  Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](quickstart.md#1-enable-the-experimental-feature-flag)).
+Anything set to "Private" won't be visible by anyone else.  Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](quickstart.md#1-enable-the-experimental-feature-flag)).
 
 ### 7. Click "create code insight" to view and save your insight
 

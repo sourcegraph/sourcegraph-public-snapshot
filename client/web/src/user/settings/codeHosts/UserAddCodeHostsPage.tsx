@@ -222,7 +222,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
-                eventLogger.log('UserAttemptConnectCodeHost', { kind })
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href
@@ -251,12 +251,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             {/* display external service errors and success banners */}
             {getErrorAndSuccessBanners(statusOrError)}
-
             {/* display other errors, e.g. network errors */}
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
             )}
-
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">

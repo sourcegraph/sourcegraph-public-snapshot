@@ -9,16 +9,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
-	dependencyIndexingRepositoryIDs = []int{50}
-
 	mockDBStore := NewMockDBStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
 	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v2.2.0"}}, true, nil)
@@ -46,7 +44,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 6 {
 		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForRepositoryFunc.History()))
 	} else {
-		var packages []semantic.Package
+		var packages []precise.Package
 		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
 			packages = append(packages, call.Arg1)
 		}
@@ -67,7 +65,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 			return false
 		})
 
-		expectedPackages := []semantic.Package{
+		expectedPackages := []precise.Package{
 			{Scheme: "test", Name: "name1", Version: "v1.2.0"},
 			{Scheme: "test", Name: "name1", Version: "v2.2.0"},
 			{Scheme: "test", Name: "name1", Version: "v3.2.0"},
@@ -82,12 +80,10 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
-	dependencyIndexingRepositoryIDs = []int{50}
-
 	mockDBStore := NewMockDBStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "lsif-tsc"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()

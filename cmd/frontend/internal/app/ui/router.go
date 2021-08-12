@@ -31,52 +31,56 @@ import (
 )
 
 const (
-	routeHome           = "home"
-	routeSearch         = "search"
-	routeSearchBadge    = "search-badge"
-	routeRepo           = "repo"
-	routeRepoSettings   = "repo-settings"
-	routeRepoCommit     = "repo-commit"
-	routeRepoBranches   = "repo-branches"
-	routeRepoDocs       = "repo-docs"
-	routeRepoCommits    = "repo-commits"
-	routeRepoTags       = "repo-tags"
-	routeRepoCompare    = "repo-compare"
-	routeRepoStats      = "repo-stats"
-	routeInsights       = "insights"
-	routeBatchChanges   = "batch-changes"
-	routeCodeMonitoring = "code-monitoring"
-	routeContexts       = "contexts"
-	routeThreads        = "threads"
-	routeTree           = "tree"
-	routeBlob           = "blob"
-	routeRaw            = "raw"
-	routeOrganizations  = "org"
-	routeSettings       = "settings"
-	routeSiteAdmin      = "site-admin"
-	routeAPIConsole     = "api-console"
-	routeUser           = "user"
-	routeUserSettings   = "user-settings"
-	routeUserRedirect   = "user-redirect"
-	routeAboutSubdomain = "about-subdomain"
-	aboutRedirectScheme = "https"
-	aboutRedirectHost   = "about.sourcegraph.com"
-	routeSurvey         = "survey"
-	routeSurveyScore    = "survey-score"
-	routeRegistry       = "registry"
-	routeExtensions     = "extensions"
-	routeHelp           = "help"
-	routeRepoGroups     = "repo-groups"
-	routeCncf           = "repo-groups.cncf"
-	routeSnippets       = "snippets"
-	routeSubscriptions  = "subscriptions"
-	routeStats          = "stats"
-	routeViews          = "views"
-	routeDevToolTime    = "devtooltime"
+	routeHome                 = "home"
+	routeSearch               = "search"
+	routeSearchBadge          = "search-badge"
+	routeRepo                 = "repo"
+	routeRepoSettings         = "repo-settings"
+	routeRepoCodeIntelligence = "repo-code-intelligence"
+	routeRepoCommit           = "repo-commit"
+	routeRepoBranches         = "repo-branches"
+	routeRepoBatchChanges     = "repo-batch-changes"
+	routeRepoDocs             = "repo-docs"
+	routeRepoCommits          = "repo-commits"
+	routeRepoTags             = "repo-tags"
+	routeRepoCompare          = "repo-compare"
+	routeRepoStats            = "repo-stats"
+	routeInsights             = "insights"
+	routeBatchChanges         = "batch-changes"
+	routeWelcome              = "welcome"
+	routeCodeMonitoring       = "code-monitoring"
+	routeContexts             = "contexts"
+	routeThreads              = "threads"
+	routeTree                 = "tree"
+	routeBlob                 = "blob"
+	routeRaw                  = "raw"
+	routeOrganizations        = "org"
+	routeSettings             = "settings"
+	routeSiteAdmin            = "site-admin"
+	routeAPIConsole           = "api-console"
+	routeUser                 = "user"
+	routeUserSettings         = "user-settings"
+	routeUserRedirect         = "user-redirect"
+	routeAboutSubdomain       = "about-subdomain"
+	aboutRedirectScheme       = "https"
+	aboutRedirectHost         = "about.sourcegraph.com"
+	routeSurvey               = "survey"
+	routeSurveyScore          = "survey-score"
+	routeRegistry             = "registry"
+	routeExtensions           = "extensions"
+	routeHelp                 = "help"
+	routeRepoGroups           = "repo-groups"
+	routeCncf                 = "repo-groups.cncf"
+	routeSnippets             = "snippets"
+	routeSubscriptions        = "subscriptions"
+	routeStats                = "stats"
+	routeViews                = "views"
+	routeDevToolTime          = "devtooltime"
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
 	routeSearchConsole      = "search.console"
+	routeSearchNotebook     = "search.notebook"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -134,8 +138,10 @@ func newRouter() *mux.Router {
 	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
+	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
@@ -163,7 +169,7 @@ func newRouter() *mux.Router {
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm", "temporal"}
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm", "temporal", "o3de"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
@@ -192,8 +198,10 @@ func newRouter() *mux.Router {
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
+	repo.PathPrefix("/code-intelligence").Methods("GET").Name(routeRepoCodeIntelligence)
 	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
+	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
@@ -234,14 +242,17 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil)))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil)))
+	router.Get(routeWelcome).Handler(handler(serveBrandedPageString("Welcome", nil)))
 	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil)))
 	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings", nil)))
 	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin", nil)))
 	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password", nil)))
 	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console", nil)))
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil)))
+	router.Get(routeRepoCodeIntelligence).Handler(handler(serveBrandedPageString("Code intelligence", nil)))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
 	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
+	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
 	router.Get(routeRepoDocs).Handler(handler(serveBrandedPageString("API docs", nil)))
 	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil)))
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
@@ -265,6 +276,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	}, nil)))
 	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil)))
 	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil)))
+	router.Get(routeSearchNotebook).Handler(handler(serveBrandedPageString("Search Notebook", nil)))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {
@@ -451,15 +463,15 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
-	// Determine span URl and log the error.
-	var spanURL string
+	// Determine trace URL and log the error.
+	var traceURL string
 	if span := opentracing.SpanFromContext(r.Context()); span != nil {
 		ext.Error.Set(span, true)
 		span.SetTag("err", err)
 		span.SetTag("error-id", errorID)
-		spanURL = trace.SpanURL(span)
+		traceURL = trace.URL(trace.IDFromSpan(span))
 	}
-	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", spanURL)
+	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it

@@ -85,6 +85,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         }
     }
 
+    const handleAddInsightRequest = (): void => {
+        setAddInsightsState(true)
+    }
+
     return (
         <div>
             <section className="d-flex flex-wrap align-items-center">
@@ -110,11 +114,12 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
             {currentDashboard ? (
                 <DashboardInsights
-                    insightIds={currentDashboard.insightIds}
+                    dashboard={currentDashboard}
                     extensionsController={extensionsController}
                     telemetryService={telemetryService}
                     platformContext={platformContext}
                     settingsCascade={settingsCascade}
+                    onAddInsightRequest={handleAddInsightRequest}
                 />
             ) : (
                 <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />

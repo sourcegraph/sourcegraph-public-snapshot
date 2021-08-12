@@ -2,12 +2,16 @@ import * as H from 'history'
 import { upperFirst } from 'lodash'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect, useCallback, useMemo, useState } from 'react'
+import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -16,6 +20,7 @@ import { Container } from '@sourcegraph/wildcard'
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
+import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
 import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
 import { routes } from '../../routes'
@@ -25,7 +30,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
-import { fetchDocumentationPage, fetchDocumentationPathInfo, isExcluded, Tag } from './graphql'
+import { fetchDocumentationPage, fetchDocumentationPathInfo, GQLDocumentationNode, isExcluded, Tag } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -42,10 +47,14 @@ interface Props
     extends RepoHeaderContributionsLifecycleProps,
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        SettingsCascadeProps,
+        VersionContextProps {
     repo: RepositoryFields
     history: H.History
     location: H.Location
+    isLightTheme: boolean
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     pathID: string
     commitID: string
 }
@@ -53,20 +62,14 @@ interface Props
 const LOADING = 'loading' as const
 
 /** A page that shows a repository's documentation at the current revision. */
-export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ useBreadcrumb, ...props }) => {
-    // TODO(slimsag): nightmare: there is _something_ in the props that causes this entire page to
-    // rerender whenever you type in the search bar. In fact, this also appears to happen on all other
-    // pages!
-    //
-    // 1. Navigate to https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/HEAD~40...HEAD?visible=45
-    // 2. Scroll to the bottom of this page twice and click "Show more"
-    // 3. Try typing in the search bar at the top of the page and the whole thing stutters a ton
-    //
-    // See https://sourcegraph.slack.com/archives/C01C3NCGD40/p1621485604017100
-    // and https://github.com/sourcegraph/sourcegraph/issues/21200
+export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React.memo(function Render({
+    useBreadcrumb,
+    ...props
+}) {
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
+    useScrollToLocationHash(props.location)
 
     const thisPage = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: '' })
     useBreadcrumb(useMemo(() => ({ key: 'node', element: <Link to={thisPage}>API docs</Link> }), [thisPage]))
@@ -112,7 +115,58 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
     const loading = page === LOADING || pathInfo === LOADING
     const error = isErrorLike(page) ? page : isErrorLike(pathInfo) ? pathInfo : null
 
-    const excludingTags: Tag[] = ['private']
+    const excludingTags: Tag[] = useMemo(() => ['private'], [])
+
+    const containerReference = useRef<HTMLDivElement>(null)
+
+    // Keep track of which node on the page is most visible, so that when visibility changes we can
+    // know the active node and can apply various visual effects (like scrolling to it in the
+    // sidebar.)
+    const [visiblePathID, setVisiblePathID] = useState<string | null>(null)
+    const [, setVisibilityEvents] = useState<{ pathID: string; intersectionRatio: number; element: HTMLElement }[]>([])
+    const onVisible = React.useMemo(
+        // eslint-disable-next-line unicorn/consistent-function-scoping
+        () => (node: GQLDocumentationNode, entry?: IntersectionObserverEntry): void =>
+            setVisibilityEvents(visibilityEvents => {
+                // Update the list of currently-visible nodes.
+                if (!entry || !entry.isIntersecting) {
+                    // Remove all events for the now non-visible node.
+                    visibilityEvents = visibilityEvents.filter(event => event.pathID !== node.pathID)
+                } else {
+                    // Add the new event.
+                    visibilityEvents = visibilityEvents.filter(event => event.pathID !== node.pathID)
+                    visibilityEvents.push({
+                        pathID: node.pathID,
+                        intersectionRatio: entry.intersectionRatio,
+                        element: entry.target as HTMLElement,
+                    })
+                }
+
+                if (containerReference.current) {
+                    // Verify visibility of elements ourselves, because the IntersectionObserver API
+                    // sometimes loses track of elements (does not fire a isIntersecting=false event)
+                    // when scrolling very fast. I think that the IntersectionObserver v2 API solves
+                    // this using the trackVisibility option, but we cannot use it except in Chrome:
+                    // https://caniuse.com/intersectionobserver-v2
+                    visibilityEvents = visibilityEvents.filter(event =>
+                        isElementInView(event.element, containerReference.current!, true)
+                    )
+
+                    // Sort events by distance to the center of the screen. This way the "visible" node
+                    // is always what's in the middle of your screen.
+                    visibilityEvents.sort((a, b) => {
+                        const aDistance = distanceToCenter(a.element, containerReference.current!)
+                        const bDistance = distanceToCenter(b.element, containerReference.current!)
+                        return aDistance < bDistance ? -1 : 1
+                    })
+                }
+                if (visibilityEvents.length > 0) {
+                    setVisiblePathID(visibilityEvents[0].pathID)
+                }
+                return visibilityEvents
+            }),
+        [setVisiblePathID, setVisibilityEvents]
+    )
 
     return (
         <div className="repository-docs-page">
@@ -181,15 +235,20 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                         node={page.tree}
                         pathInfo={pathInfo}
                         pagePathID={pagePathID}
+                        activePathID={visiblePathID || pagePathID}
                         depth={0}
                     />
-                    <div className="repository-docs-page__container">
+                    <div className="repository-docs-page__container" ref={containerReference}>
                         <div
                             className={`repository-docs-page__container-content${
                                 sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
                             }`}
                         >
-                            <DocumentationWelcomeAlert />
+                            {/*
+                                TODO(apidocs): Eventually this welcome alert should go away entirely, but for now
+                                it's the best thing we have for the sometimes empty root landing page.
+                            */}
+                            {page.tree.detail.value === '' && <DocumentationWelcomeAlert />}
                             {isExcluded(page.tree, excludingTags) ? (
                                 <div className="m-3">
                                     <h2 className="text-muted">Looks like there's nothing to see here.</h2>
@@ -202,27 +261,58 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 node={page.tree}
                                 pagePathID={pagePathID}
                                 depth={0}
+                                isFirstChild={true}
                                 excludingTags={excludingTags}
+                                scrollingRoot={containerReference}
+                                onVisible={onVisible}
                             />
-                        </div>
-                    </div>
-                    <div className="repository-docs-page__feedback-container">
-                        <div className="repository-docs-page__feedback-container-content">
-                            <Badge status="experimental" className="text-uppercase mr-2" />
-                            <a
-                                // eslint-disable-next-line react/jsx-no-target-blank
-                                target="_blank"
-                                rel="noopener"
-                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
-                            >
-                                Learn more
-                            </a>
-                            <FeedbackPrompt routes={routes} />
                         </div>
                     </div>
                 </>
             ) : null}
         </div>
     )
+})
+
+/** Checks if an element is in view of the scrolling container. */
+function isElementInView(element: HTMLElement, container: HTMLElement, partial: boolean): boolean {
+    const containerTop = container.scrollTop
+    const containerBottom = containerTop + container.clientHeight
+
+    const elementTop = element.offsetTop as number
+    const elementBottom = elementTop + element.clientHeight
+
+    if (elementTop >= containerTop && elementBottom <= containerBottom) {
+        return true
+    }
+    return (
+        (partial && elementTop < containerTop && elementBottom > containerTop) ||
+        (elementBottom > containerBottom && elementTop < containerBottom)
+    )
+}
+
+/**
+ * Returns the distance between the element's area (whichever point is lesser) and the scrolling
+ * container's viewport center. i.e., how far away the element is from being in the middle of the
+ * scrolling container's viewport.
+ */
+function distanceToCenter(element: HTMLElement, container: HTMLElement): number {
+    const containerTop = container.scrollTop
+    const containerBottom = containerTop + container.clientHeight
+    const containerHeight = containerBottom - containerTop
+    const containerCenter = containerTop + containerHeight / 2
+
+    const elementTop = element.offsetTop
+    const elementBottom = elementTop + element.clientHeight
+    const elementHeight = elementBottom - elementTop
+    const elementCenter = elementTop + elementHeight / 2
+
+    if (elementTop < containerCenter && elementBottom > containerCenter) {
+        return 0
+    }
+    return absolute(containerCenter - elementCenter)
+}
+
+function absolute(value: number): number {
+    return value < 0 ? -value : value
 }

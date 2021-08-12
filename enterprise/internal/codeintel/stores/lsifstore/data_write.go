@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // CurrentDocumentSchemaVersion is the schema version used for new lsif_data_documents rows.
@@ -24,7 +24,7 @@ const CurrentDefinitionsSchemaVersion = 2
 const CurrentReferencesSchemaVersion = 2
 
 // WriteMeta is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaData) (err error) {
+func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) (err error) {
 	ctx, endObservation := s.operations.writeMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -34,7 +34,7 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaD
 }
 
 // WriteDocuments is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan semantic.KeyedDocumentData) (err error) {
+func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocuments.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -125,7 +125,7 @@ FROM t_lsif_data_documents source
 `
 
 // WriteResultChunks is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan semantic.IndexedResultChunkData) (err error) {
+func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -193,7 +193,7 @@ FROM t_lsif_data_result_chunks source
 `
 
 // WriteDefinitions is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) (err error) {
+func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -203,7 +203,7 @@ func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocat
 }
 
 // WriteReferences is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) (err error) {
+func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -212,7 +212,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
 }
 
-func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan semantic.MonikerLocations, traceLog observation.TraceLogger) (err error) {
+func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, traceLog observation.TraceLogger) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err

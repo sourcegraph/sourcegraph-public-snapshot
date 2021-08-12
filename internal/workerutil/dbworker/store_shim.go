@@ -37,13 +37,37 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 }
 
 // Dequeue calls into the inner store.
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 
 	return s.Store.Dequeue(ctx, workerHostname, conditions)
+}
+
+func (s *storeShim) Heartbeat(ctx context.Context, ids []int) (knownIDs []int, err error) {
+	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
+}
+
+func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
+	return s.Store.AddExecutionLogEntry(ctx, id, entry, store.ExecutionLogEntryOptions{})
+}
+
+func (s *storeShim) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry) error {
+	return s.Store.UpdateExecutionLogEntry(ctx, recordID, entryID, entry, store.ExecutionLogEntryOptions{})
+}
+
+func (s *storeShim) MarkComplete(ctx context.Context, id int) (bool, error) {
+	return s.Store.MarkComplete(ctx, id, store.MarkFinalOptions{})
+}
+
+func (s *storeShim) MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error) {
+	return s.Store.MarkFailed(ctx, id, failureMessage, store.MarkFinalOptions{})
+}
+
+func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string) (bool, error) {
+	return s.Store.MarkErrored(ctx, id, errorMessage, store.MarkFinalOptions{})
 }
 
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.

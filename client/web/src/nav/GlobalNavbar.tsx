@@ -11,7 +11,6 @@ import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -20,18 +19,17 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -56,7 +54,6 @@ import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
-import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
 interface Props
@@ -76,7 +73,7 @@ interface Props
         SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps,
-        FeatureFlagProps {
+        BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
@@ -85,7 +82,6 @@ interface Props
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
-    showBatchChanges: boolean
     routes: readonly LayoutRouteProps<{}>[]
 
     // Whether globbing is enabled for filters.
@@ -190,33 +186,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         props.showSearchContext,
     ])
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
     const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
     const codeInsights =
         settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
-
-    const logo = (
-        <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
-            <BrandLogo
-                branding={branding}
-                isLightTheme={isLightTheme}
-                variant="symbol"
-                className="global-navbar__logo"
-            />
-        </LinkOrSpan>
-    )
-    const navLinks = !authRequired && !hideNavLinks && (
-        <NavLinks
-            showDotComMarketing={showDotComMarketing}
-            minimalNavLinks={minimalNavLinks}
-            location={location}
-            history={history}
-            isLightTheme={isLightTheme}
-            isSourcegraphDotCom={isSourcegraphDotCom}
-            {...props}
-        />
-    )
 
     const searchNavBar = (
         <SearchNavbarItem
@@ -232,180 +204,139 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         />
     )
 
-    if (isRedesignEnabled) {
-        return (
-            <>
-                <NavBar
-                    logo={
-                        <BrandLogo
-                            branding={branding}
-                            isLightTheme={isLightTheme}
-                            variant="symbol"
-                            className="global-navbar__logo"
-                        />
-                    }
-                >
-                    <NavGroup>
-                        <NavItem icon={MagnifyIcon}>
-                            <NavLink to="/search">Code Search</NavLink>
+    return (
+        <>
+            <NavBar
+                logo={
+                    <BrandLogo
+                        branding={branding}
+                        isLightTheme={isLightTheme}
+                        variant="symbol"
+                        className="global-navbar__logo"
+                    />
+                }
+            >
+                <NavGroup>
+                    <NavItem icon={MagnifyIcon}>
+                        <NavLink to="/search">Code Search</NavLink>
+                    </NavItem>
+                    {props.enableCodeMonitoring && (
+                        <NavItem icon={CodeMonitoringLogo}>
+                            <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
-                        {props.enableCodeMonitoring && (
-                            <NavItem icon={CodeMonitoringLogo}>
-                                <NavLink to="/code-monitoring">Monitoring</NavLink>
-                            </NavItem>
-                        )}
-                        {props.showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
-                        {codeInsights && (
-                            <NavItem icon={BarChartIcon}>
-                                <NavLink to="/insights/dashboards/all">Insights</NavLink>
-                            </NavItem>
-                        )}
-                        <NavItem icon={PuzzleOutlineIcon}>
-                            <NavLink to="/extensions">Extensions</NavLink>
+                    )}
+                    {/* This is the only circumstance where we show something
+                         batch-changes-related even if the instance does not have batch
+                         changes enabled, for marketing purposes on sourcegraph.com */}
+                    {(props.batchChangesEnabled || isSourcegraphDotCom) && (
+                        <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />
+                    )}
+                    {codeInsights && (
+                        <NavItem icon={BarChartIcon}>
+                            <NavLink to="/insights/dashboards/all">Insights</NavLink>
                         </NavItem>
-                        {props.activation && (
-                            <NavItem>
-                                <ActivationDropdown activation={props.activation} history={history} />
-                            </NavItem>
-                        )}
-                    </NavGroup>
-                    <NavActions>
-                        {!props.authenticatedUser && (
-                            <>
-                                {showDotComMarketing && (
-                                    <NavAction>
-                                        <Link
-                                            className="global-navbar__link font-weight-medium"
-                                            to="/help"
-                                            target="_blank"
-                                        >
-                                            Docs
-                                        </Link>
-                                    </NavAction>
-                                )}
-
+                    )}
+                    <NavItem icon={PuzzleOutlineIcon}>
+                        <NavLink to="/extensions">Extensions</NavLink>
+                    </NavItem>
+                    {props.activation && (
+                        <NavItem>
+                            <ActivationDropdown activation={props.activation} history={history} />
+                        </NavItem>
+                    )}
+                </NavGroup>
+                <NavActions>
+                    {!props.authenticatedUser && (
+                        <>
+                            {showDotComMarketing && (
                                 <NavAction>
-                                    <Link
-                                        className="global-navbar__link"
-                                        to="https://about.sourcegraph.com"
-                                        rel="noreferrer noopener"
-                                        target="_blank"
-                                    >
-                                        About
+                                    <Link className="global-navbar__link font-weight-medium" to="/help" target="_blank">
+                                        Docs
                                     </Link>
                                 </NavAction>
-                            </>
-                        )}
-                        {props.authenticatedUser && (
-                            <NavAction>
-                                <FeedbackPrompt routes={props.routes} />
-                            </NavAction>
-                        )}
-                        <NavAction>
-                            <WebCommandListPopoverButton
-                                {...props}
-                                location={location}
-                                buttonClassName="btn btn-link p-0 m-0"
-                                menu={ContributableMenu.CommandPalette}
-                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                            />
-                        </NavAction>
-                        {props.authenticatedUser &&
-                            (props.authenticatedUser.siteAdmin ||
-                                userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
-                                <NavAction>
-                                    <StatusMessagesNavItem
-                                        user={{
-                                            id: props.authenticatedUser.id,
-                                            username: props.authenticatedUser.username,
-                                            isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                        }}
-                                        history={history}
-                                    />
-                                </NavAction>
                             )}
-                        {!props.authenticatedUser ? (
-                            <>
-                                <NavAction>
-                                    <div>
-                                        <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
-                                            Log in
-                                        </Link>
-                                        <Link
-                                            className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
-                                            to="/sign-up"
-                                        >
-                                            Sign up
-                                        </Link>
-                                    </div>
-                                </NavAction>
-                            </>
-                        ) : (
+
                             <NavAction>
-                                <UserNavItem
-                                    {...props}
-                                    location={location}
-                                    isLightTheme={isLightTheme}
-                                    authenticatedUser={props.authenticatedUser}
-                                    showDotComMarketing={showDotComMarketing}
-                                    showRepositorySection={showRepositorySection}
-                                    codeHostIntegrationMessaging={
-                                        (!isErrorLike(props.settingsCascade.final) &&
-                                            props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                        'browser-extension'
-                                    }
-                                    keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                                <Link
+                                    className="global-navbar__link"
+                                    to="https://about.sourcegraph.com"
+                                    rel="noreferrer noopener"
+                                    target="_blank"
+                                >
+                                    About
+                                </Link>
+                            </NavAction>
+                        </>
+                    )}
+                    {props.authenticatedUser && (
+                        <NavAction>
+                            <FeedbackPrompt routes={props.routes} />
+                        </NavAction>
+                    )}
+                    <NavAction>
+                        <WebCommandListPopoverButton
+                            {...props}
+                            location={location}
+                            buttonClassName="btn btn-link p-0 m-0"
+                            menu={ContributableMenu.CommandPalette}
+                            keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                        />
+                    </NavAction>
+                    {props.authenticatedUser &&
+                        (props.authenticatedUser.siteAdmin ||
+                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
+                            <NavAction>
+                                <StatusMessagesNavItem
+                                    user={{
+                                        id: props.authenticatedUser.id,
+                                        username: props.authenticatedUser.username,
+                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
+                                    }}
+                                    history={history}
                                 />
                             </NavAction>
                         )}
-                    </NavActions>
-                </NavBar>
-                {showSearchBox && (
-                    <div className="w-100 px-3 pt-2">
-                        <div className="pb-2 border-bottom">{searchNavBar}</div>
-                    </div>
-                )}
-            </>
-        )
-    }
-
-    return (
-        <div
-            className={`global-navbar ${
-                variant === 'low-profile' || variant === 'low-profile-with-logo'
-                    ? ''
-                    : 'global-navbar--bg border-bottom'
-            } py-1`}
-        >
-            {variant === 'low-profile' || variant === 'low-profile-with-logo' ? (
-                <>
-                    {variant === 'low-profile-with-logo' && logo}
-                    <div className="flex-1" />
-                    {navLinks}
-                </>
-            ) : variant === 'no-search-input' ? (
-                <>
-                    {logo}
-                    <div className="nav-item flex-1">
-                        <Link to="/search" className="nav-link">
-                            Search
-                        </Link>
-                    </div>
-                    {navLinks}
-                </>
-            ) : (
-                <>
-                    {logo}
-                    {authRequired ? (
-                        <div className="flex-1" />
+                    {!props.authenticatedUser ? (
+                        <>
+                            <NavAction>
+                                <div>
+                                    <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
+                                        Log in
+                                    </Link>
+                                    <Link
+                                        className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+                                        to="/sign-up"
+                                    >
+                                        Sign up
+                                    </Link>
+                                </div>
+                            </NavAction>
+                        </>
                     ) : (
-                        <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                            {searchNavBar}
-                        </div>
+                        <NavAction>
+                            <UserNavItem
+                                {...props}
+                                location={location}
+                                isLightTheme={isLightTheme}
+                                authenticatedUser={props.authenticatedUser}
+                                showDotComMarketing={showDotComMarketing}
+                                showRepositorySection={showRepositorySection}
+                                codeHostIntegrationMessaging={
+                                    (!isErrorLike(props.settingsCascade.final) &&
+                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                                    'browser-extension'
+                                }
+                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                            />
+                        </NavAction>
                     )}
-                    {navLinks}
-                </>
+                </NavActions>
+            </NavBar>
+            {showSearchBox && (
+                <div className="w-100 px-3 pt-2">
+                    <div className="pb-2 border-bottom">{searchNavBar}</div>
+                </div>
             )}
-        </div>
+        </>
     )
 }

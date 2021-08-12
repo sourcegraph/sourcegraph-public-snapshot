@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
-import { debounceTime } from 'rxjs/operators'
+import { throttleTime } from 'rxjs/operators'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -127,7 +127,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     caseSensitive,
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
                     trace,
-                }).pipe(debounceTime(500)),
+                }).pipe(throttleTime(500, undefined, { leading: true, trailing: true })),
             [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
         )
     )
@@ -221,11 +221,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const resultsFound = results ? results.results.length > 0 : false
     const submittedSearchesCount = getSubmittedSearchesCount()
     const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
-    const showSignUpCta =
-        !authenticatedUser &&
-        resultsFound &&
-        isValidSignUpCtaCadence &&
-        props.featureFlags.get('w0-signup-optimisation')
+    const showSignUpCta = !authenticatedUser && resultsFound && isValidSignUpCtaCadence
+
+    // Log view event when signup CTA is shown
+    useEffect(() => {
+        if (showSignUpCta) {
+            telemetryService.log('SearchResultResultsCTAShown')
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showSignUpCta])
 
     return (
         <div className={styles.streamingSearchResults}>

@@ -1,18 +1,21 @@
-import { applyEdits, parse } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+// import { applyEdits, parse } from '@sqs/jsonc-parser'
+// import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+// import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
-import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import {
+    ensureLoggedInOrCreateTestUser,
+    // getGlobalSettings
+} from './util/helpers'
 import { getTestTools } from './util/init'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
@@ -204,48 +207,49 @@ describe('Core functionality regression test suite', () => {
         ).rejects.toThrowError('401 Unauthorized')
     })
 
-    test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
-        const quicklinkInfo = {
-            name: 'Quicklink',
-            url: config.sourcegraphBaseUrl + '/api/console',
-            description: 'This is a quicklink',
-        }
+    // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/23049
+    // test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
+    //     const quicklinkInfo = {
+    //         name: 'Quicklink',
+    //         url: config.sourcegraphBaseUrl + '/api/console',
+    //         description: 'This is a quicklink',
+    //     }
 
-        const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
-        const parsedOldContents = parse(oldContents)
-        if (parsedOldContents?.quicklinks) {
-            throw new Error('Global setting quicklinks already exists, aborting test')
-        }
-        const newContents = applyEdits(
-            oldContents,
-            setProperty(oldContents, ['quicklinks'], [quicklinkInfo], {
-                eol: '\n',
-                insertSpaces: true,
-                tabSize: 2,
-            })
-        )
-        await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
-        alwaysCleanupManager.add('Global setting', 'quicklinks', async () => {
-            const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings(gqlClient)
-            await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
-        })
+    //     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
+    //     const parsedOldContents = parse(oldContents)
+    //     if (parsedOldContents?.quicklinks) {
+    //         throw new Error('Global setting quicklinks already exists, aborting test')
+    //     }
+    //     const newContents = applyEdits(
+    //         oldContents,
+    //         setProperty(oldContents, ['quicklinks'], [quicklinkInfo], {
+    //             eol: '\n',
+    //             insertSpaces: true,
+    //             tabSize: 2,
+    //         })
+    //     )
+    //     await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
+    //     alwaysCleanupManager.add('Global setting', 'quicklinks', async () => {
+    //         const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings(gqlClient)
+    //         await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
+    //     })
 
-        await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-        await (
-            await driver.findElementWithText(quicklinkInfo.name, {
-                selector: 'a',
-                wait: { timeout: 1000 },
-            })
-        ).hover()
-        await driver.findElementWithText(quicklinkInfo.description, {
-            wait: { timeout: 1000 },
-        })
-        await driver.findElementWithText(quicklinkInfo.name, {
-            action: 'click',
-            selector: 'a',
-            wait: { timeout: 1000 },
-        })
-        await driver.page.waitForNavigation()
-        expect(driver.page.url()).toEqual(quicklinkInfo.url)
-    })
+    //     await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+    //     await (
+    //         await driver.findElementWithText(quicklinkInfo.name, {
+    //             selector: 'a',
+    //             wait: { timeout: 1000 },
+    //         })
+    //     ).hover()
+    //     await driver.findElementWithText(quicklinkInfo.description, {
+    //         wait: { timeout: 1000 },
+    //     })
+    //     await driver.findElementWithText(quicklinkInfo.name, {
+    //         action: 'click',
+    //         selector: 'a',
+    //         wait: { timeout: 1000 },
+    //     })
+    //     await driver.page.waitForNavigation()
+    //     expect(driver.page.url()).toEqual(quicklinkInfo.url)
+    // })
 })

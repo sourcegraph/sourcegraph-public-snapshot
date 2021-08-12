@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/alertmanager/api/v2/client/general"
 	amconfig "github.com/prometheus/alertmanager/config"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -153,26 +152,6 @@ func (c *SiteConfigSubscriber) Handler() http.Handler {
 }
 
 func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
-	// Syncing relies on access to frontend, so wait until it is ready before subscribing.
-	// At this point, everything else should have started as normal, so it's safe to block
-	// here for however long is needed.
-	//
-	// Note that in the event that e.g. the Sourcegraph frontend is entirely down or never becomes
-	// accessible, we simply use the existing configuration persisted on disk.
-	c.log.Info("waiting for frontend", "url", api.InternalClient.URL)
-	var frontendConnected bool
-	for !frontendConnected {
-		waitCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		if err := api.InternalClient.WaitForFrontend(waitCtx); err != nil {
-			c.log.Warn("unable to connect to frontend, trying again - disable config sync with DISABLE_SOURCEGRAPH_CONFIG=true",
-				"error", err)
-		} else {
-			frontendConnected = true
-		}
-		cancel()
-	}
-	c.log.Info("detected frontend ready, loading initial configuration")
-
 	// Load initial alerts configuration
 	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
 	diffs := siteConfig.Diff(c.config)

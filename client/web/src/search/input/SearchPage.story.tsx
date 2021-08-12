@@ -92,6 +92,19 @@ add('Cloud with repogroups', () => (
     </WebStory>
 ))
 
+add('Cloud with notebook onboarding', () => (
+    <WebStory>
+        {webProps => (
+            <SearchPage
+                {...defaultProps(webProps)}
+                isSourcegraphDotCom={true}
+                showRepogroupHomepage={true}
+                featureFlags={new Map([['search-notebook-onboarding', true]])}
+            />
+        )}
+    </WebStory>
+))
+
 add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
 add('Server without panels, with query builder', () => (

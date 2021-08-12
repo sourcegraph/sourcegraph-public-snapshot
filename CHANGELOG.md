@@ -15,6 +15,81 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Backend Code Insights GraphQL queries now support arguments `includeRepoRegex` and `excludeRepoRegex` to filter on repository names. [#23256](https://github.com/sourcegraph/sourcegraph/pull/23256)
+- Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
+- Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
+- Syntax highlighting support for the [Cue](https://cuelang.org) language.
+- Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170)
+- Add a new environment variable `SRC_HTTP_CLI_EXTERNAL_TIMEOUT` to control the timeout for all external HTTP requests. [#23620](https://github.com/sourcegraph/sourcegraph/pull/23620)
+- Improved usability where filters followed by a space in the search query will warn users that the filter value is empty. [#23646](https://github.com/sourcegraph/sourcegraph/pull/23646)
+
+### Changed
+
+- Code Insights will now always backfill from the time the data series was created. [#23430](https://github.com/sourcegraph/sourcegraph/pull/23430)
+- Code Insights queries will now extract repository name out of the GraphQL response instead of going to the database. [#23388](https://github.com/sourcegraph/sourcegraph/pull/23388)
+- Code Insights backend has moved from the `repo-updater` service to the `worker` service. [#23050](https://github.com/sourcegraph/sourcegraph/pull/23050)
+- Code Insights feature flag `DISABLE_CODE_INSIGHTS` environment variable has moved from the `repo-updater` service to the `worker` service. Any users of this flag will need to update their `worker` service configuration to continue using it. [#23050](https://github.com/sourcegraph/sourcegraph/pull/23050)
+- Updated Docker-Compose Caddy Image to v2.0.0-alpine. [#468](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/468)
+- Code Insights historical samples will record using the timestamp of the commit that was searched. [#23520](https://github.com/sourcegraph/sourcegraph/pull/23520)
+- Authorization checks are now handled using role based permissions instead of manually altering SQL statements. [23398](https://github.com/sourcegraph/sourcegraph/pull/23398)
+- Docker Compose: the Jaeger container's `SAMPLING_STRATEGIES_FILE` now has a default value. If you are currently using a custom sampling strategies configuration, you may need to make sure your configuration is not overridden by the change when upgrading. [sourcegraph/deploy-sourcegraph#489](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/489)
+- Code Insights historical samples will record using the most recent commit to the start of the frame instead of the middle of the frame. [#23573](https://github.com/sourcegraph/sourcegraph/pull/23573)
+- The copy icon displayed next to files and repositories will now copy the file or repository path. Previously, this action copied the URL to clipboard. [#23390](https://github.com/sourcegraph/sourcegraph/pull/23390)
+- Sourcegraph's Prometheus dependency has been upgraded to v2.28.1. [23663](https://github.com/sourcegraph/sourcegraph/pull/23663)
+- Sourcegraph's Alertmanager dependency has been upgraded to v0.22.2. [23663](https://github.com/sourcegraph/sourcegraph/pull/23714)
+- Code Insights will now schedule sample recordings for the first of the next month after creation or a previous recording. [#23799](https://github.com/sourcegraph/sourcegraph/pull/23799)
+
+### Fixed
+
+- The search reference will now show matching entries when using the filter input. [#23224](https://github.com/sourcegraph/sourcegraph/pull/23224)
+- Graceful termination periods have been added to database deployments. [#3358](https://github.com/sourcegraph/deploy-sourcegraph/pull/3358) & [#477](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/477)
+- All commit search results for `and`-expressions are now highlighted. [#23336](https://github.com/sourcegraph/sourcegraph/pull/23336)
+- Email notifiers in `observability.alerts` now correctly respect the `email.smtp.noVerifyTLS` site configuration field. [#23636](https://github.com/sourcegraph/sourcegraph/issues/23636)
+- Alertmanager (Prometheus) now respects `SMTPServerConfig.noVerifyTLS` field. [#23636](https://github.com/sourcegraph/sourcegraph/issues/23636)
+- Clicking on symbols in the left search pane now renders hover tooltips for indexed repositories. [#23664](https://github.com/sourcegraph/sourcegraph/pull/23664)
+- Fixed a result streaming throttling issue that was causing significantly increased latency for some searches. [#23736](https://github.com/sourcegraph/sourcegraph/pull/23736)
+
+### Removed
+
+- The old batch repository syncer was removed and can no longer be activated by setting `ENABLE_STREAMING_REPOS_SYNCER=false`. [#22949](https://github.com/sourcegraph/sourcegraph/pull/22949)
+- Email notifications for saved searches are now deprecated in favor of Code Monitoring. Email notifications can no longer be enabled for saved searches. Saved searches that already have notifications enabled will continue to work, but there is now a button users can click to migrate to code monitors. Notifications for saved searches will be removed entirely in the future. [#23275](https://github.com/sourcegraph/sourcegraph/pull/23275)
+- The `sg_service` Postgres role and `sg_repo_access_policy` policy on the `repo` table have been removed due to performance concerns. [#23622](https://github.com/sourcegraph/sourcegraph/pull/23622)
+- Deprecated site configuration field `email.smtp.disableTLS` has been removed. [#23639](https://github.com/sourcegraph/sourcegraph/pull/23639)
+
+## 3.30.3
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
+
+### Fixed
+
+- Codeintel-db database images have been reverted back to debian due to corruption caused by glibc and alpine. [23324](https://github.com/sourcegraph/sourcegraph/pull/23324)
+
+## 3.30.2
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
+
+### Fixed
+
+- Postgres database images have been reverted back to debian due to corruption caused by glibc and alpine. [23302](https://github.com/sourcegraph/sourcegraph/pull/23302)
+
+## 3.30.1
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
+
+### Fixed
+
+- An issue where the UI would occasionally display `lsifStore.Ranges: ERROR: relation \"lsif_documentation_mappings\" does not exist (SQLSTATE 42P01)` [#23115](https://github.com/sourcegraph/sourcegraph/pull/23115)
+- Fixed a vulnerability in our Postgres Alpine image related to libgcrypt [#23174](https://github.com/sourcegraph/sourcegraph/pull/23174)
+- When syncing in streaming mode, repo-updater will now ensure a repo's transaction is committed before notifying gitserver to update that repo. [#23169](https://github.com/sourcegraph/sourcegraph/pull/23169)
+- When encountering spurious errors during streaming syncing (like temporary 500s from codehosts), repo-updater will no longer delete all associated repos that weren't seen. Deletion will happen only if there were no errors or if the error was one of "Unauthorized", "Forbidden" or "Account Suspended". [#23171](https://github.com/sourcegraph/sourcegraph/pull/23171)
+- External HTTP requests are now automatically retried when appropriate. [#23131](https://github.com/sourcegraph/sourcegraph/pull/23131)
+
+## 3.30.0
+
+**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](https://docs.sourcegraph.com/admin/migration/3_30).
+
+### Added
+
 - Added support for `select:file.directory` in search queries, which returns unique directory paths for results that satisfy the query. [#22449](https://github.com/sourcegraph/sourcegraph/pull/22449)
 - An `sg_service` Postgres role has been introduced, as well as an `sg_repo_access_policy` policy on the `repo` table that restricts access to that role. The role that owns the `repo` table will continue to get unrestricted access. [#22303](https://github.com/sourcegraph/sourcegraph/pull/22303)
 - Every service that connects to the database (i.e. Postgres) now has a "Database connections" monitoring section in its Grafana dashboard. [#22570](https://github.com/sourcegraph/sourcegraph/pull/22570)
@@ -22,13 +97,15 @@ All notable changes to Sourcegraph are documented in this file.
 - Backend Code Insights will aggregate viewable repositories based on the authenticated user. [#22471](https://github.com/sourcegraph/sourcegraph/pull/22471)
 - Added support for highlighting .frugal files as Thrift syntax.
 - Added `file:contains.content(regexp)` predicate, which filters only to files that contain matches of the given pattern. [#22666](https://github.com/sourcegraph/sourcegraph/pull/22666)
-- Repository syncing can now be done in a streaming mode via the `ENABLE_STREAMING_REPOS_SYNCER` environment variable in `repo-updater`. Customers with many repositories should notice code host updates much faster when this is enabled. It will become default in the next release. [#22756](https://github.com/sourcegraph/sourcegraph/pull/22756)
+- Repository syncing is now done in streaming mode by default. Customers with many repositories should notice code host updates much faster, with repo-updater consuming less memory. Using the previous batch mode can be done by setting the `ENABLE_STREAMING_REPOS_SYNCER` environment variable to `false` in `repo-updater`. That environment variable will be deleted in the next release. [#22756](https://github.com/sourcegraph/sourcegraph/pull/22756)
 - Enabled the ability to query Batch Changes changesets, changesets stats, and file diff stats for an individual repository via the Sourcegraph GraphQL API. [#22744](https://github.com/sourcegraph/sourcegraph/pull/22744/)
 - Added "Groovy" to the initial `lang:` filter suggestions in the search bar. [#22755](https://github.com/sourcegraph/sourcegraph/pull/22755)
 - The `lang:` filter suggestions now show all supported, matching languages as the user types a language name. [#22765](https://github.com/sourcegraph/sourcegraph/pull/22765)
 - Code Insights can now be grouped into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
-- Added the code insights dashboards functionality. Now you can divide insights into dashboards. [#22215](https://github.com/sourcegraph/sourcegraph/issues/22215)
 - Batch Changes changesets can now be [published from the Sourcegraph UI](https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#within-the-ui). [#18277](https://github.com/sourcegraph/sourcegraph/issues/18277)
+- The repository page now has a new button to view batch change changesets created in that specific repository, with a badge indicating how many changesets are currently open. [#22804](https://github.com/sourcegraph/sourcegraph/pull/22804)
+- Experimental: Search-based code insights can run over all repositories on the instance. To enable, use the feature flag `"experimentalFeatures": { "codeInsightsAllRepos": true }` and tick the checkbox in the insight creation/edit UI. [#22759](https://github.com/sourcegraph/sourcegraph/issues/22759)
+- Search References is a new search sidebar section to simplify learning about the available search filters directly where they are used. [#21539](https://github.com/sourcegraph/sourcegraph/issues/21539)
 
 ### Changed
 
@@ -38,6 +115,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Search queries now disallow specifying `rev:` without `repo:`. Note that to search across potentially multiple revisions, a query like `repo:.* rev:<revision>` remains valid. [#22705](https://github.com/sourcegraph/sourcegraph/pull/22705)
 - The extensions status bar on diff pages has been redesigned and now shows information for both the base and head commits. [#22123](https://github.com/sourcegraph/sourcegraph/pull/22123/files)
 - The `applyBatchChange` and `createBatchChange` mutations now accept an optional `publicationStates` argument to set the publication state of specific changesets within the batch change. [#22485](https://github.com/sourcegraph/sourcegraph/pull/22485) and [#22854](https://github.com/sourcegraph/sourcegraph/pull/22854)
+- Search queries now return up to 80 suggested filters. Previously we returned up to 24. [#22863](https://github.com/sourcegraph/sourcegraph/pull/22863)
+- GitHub code host connections can now include `repositoryQuery` entries that match more than 1000 repositories from the GitHub search API without requiring the previously documented work-around of splitting the query up with `created:` qualifiers, which is now done automatically. [#2562](https://github.com/sourcegraph/sourcegraph/issues/2562)
 
 ### Fixed
 
@@ -48,12 +127,17 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue where using `select:repo` in conjunction with `and` patterns did not yield expected repo results. [#22743](https://github.com/sourcegraph/sourcegraph/pull/22743)
 - The `isLocked` and `isDisabled` fields of GitHub repositories are now fetched correctly from the GraphQL API of GitHub Enterprise instances. Users that rely on the `repos` config in GitHub code host connections should update so that locked and disabled repositories defined in that list are actually skipped. [#22788](https://github.com/sourcegraph/sourcegraph/pull/22788)
 - Homepage no longer fails to load if there are invalid entries in user's search history. [#22857](https://github.com/sourcegraph/sourcegraph/pull/22857)
+- An issue where regexp query highlighting in the search bar would render incorrectly on Firefox. [#23043](https://github.com/sourcegraph/sourcegraph/pull/23043)
+- Code intelligence uploads and indexes are restricted to only site-admins. It was read-only for any user. [#22890](https://github.com/sourcegraph/sourcegraph/pull/22890)
+- Daily usage statistics are restricted to only site-admins. It was read-only for any user. [#23026](https://github.com/sourcegraph/sourcegraph/pull/23026)
+- Ephemeral storage requests now match their cache size requests for Kubernetes deployments. [#2953](https://github.com/sourcegraph/deploy-sourcegraph/pull/2953)
 
 ### Removed
 
 - The experimental paginated search feature (the `stable:` keyword) has been removed, to be replaced with streaming search. [#22428](https://github.com/sourcegraph/sourcegraph/pull/22428)
 - The experimental extensions view page has been removed. [#22565](https://github.com/sourcegraph/sourcegraph/pull/22565)
 - A search query diagnostic that previously warned the user when quotes are interpreted literally has been removed. The literal meaning has been Sourcegraph's default search behavior for some time now. [#22892](https://github.com/sourcegraph/sourcegraph/pull/22892)
+- Non-root overlays were removed for `deploy-sourcegraph` in favor of using `non-privileged`. [#3404](https://github.com/sourcegraph/deploy-sourcegraph/pull/3404)
 
 ### API docs (experimental)
 
@@ -2529,7 +2613,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](https://docs.sou
 - Code intelligence indexes are now built for all repositories in the background, regardless of whether or not they are visited directly by a user.
 - Language servers are now automatically enabled when visiting a repository. For example, visiting a Go repository will now automatically download and run the relevant Docker container for Go code intelligence.
   - This change only affects when Sourcegraph is deployed using the `sourcegraph/server` Docker image (not using Kubernetes).
-  - You will need to use the new `docker run` command at https://docs.sourcegraph.com/#quickstart in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://docs.sourcegraph.com/extensions/language_servers for more information.
+  - You will need to use the new `docker run` command at https://docs.sourcegraph.com/#quick-install in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://docs.sourcegraph.com/extensions/language_servers for more information.
 - The site admin Analytics page will now display the number of "Code Intelligence" actions each user has made, including hovers, jump to definitions, and find references, on the Sourcegraph webapp or in a code host integration or extension.
 - An experimental cross repository jump to definition which consults the OSS index on Sourcegraph.com. This is disabled by default; use `"experimentalFeatures": { "jumpToDefOSSIndex": "enabled" }` in your site configuration to enable it.
 - Users can now view Git branches, tags, and commits, and compare Git branches and revisions on Sourcegraph. (The code host icon in the header takes you to the commit on the code host.)

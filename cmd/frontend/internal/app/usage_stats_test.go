@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -36,7 +36,7 @@ func TestUsageStatsArchiveHandler(t *testing.T) {
 	t.Run("admins can download archive", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "", nil)
 		rec := httptest.NewRecorder()
-		usageStatsArchiveHandler(db)(rec, req.WithContext(backend.WithAuthzBypass(context.Background())))
+		usageStatsArchiveHandler(db)(rec, req.WithContext(actor.WithInternalActor(context.Background())))
 
 		contentType := rec.Header().Get("Content-Type")
 		if have, want := contentType, "application/zip"; have != want {

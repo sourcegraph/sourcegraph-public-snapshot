@@ -20,8 +20,8 @@
             "pointer": true
           }
         },
-        "codeInsightsDashboards": {
-          "description": "Enables code insights dashboards separation for the code insight page.",
+        "codeInsightsAllRepos": {
+          "description": "Enables the experimental ability to run an insight over all repositories on the instance.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -118,6 +118,14 @@
         },
         "showMultilineSearchConsole": {
           "description": "Enables the multiline search console at search/console",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showSearchNotebook": {
+          "description": "Enables the search notebook at search/notebook",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -258,6 +266,19 @@
           ]
         }
       }
+    },
+    "codeIntelligence.autoIndexRepositoryGroups": {
+      "description": "A list of search.repositoryGroups that have auto-indexing enabled.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "codeIntelligence.autoIndexPopularRepoLimit": {
+      "description": "Up to this number of repos are auto indexed automatically. Ordered by star count.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
     },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",

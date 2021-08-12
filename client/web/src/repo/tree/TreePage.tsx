@@ -1,6 +1,7 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -39,12 +40,15 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
+import { BatchChangesProps } from '../../batches'
+import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { InsightsApiContext, InsightsViewGrid } from '../../insights'
+import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
@@ -113,6 +117,8 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         VersionContextProps,
+        CodeIntelligenceProps,
+        BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
@@ -143,6 +149,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
     caseSensitive,
     settingsCascade,
     useBreadcrumb,
+    codeIntelligenceEnabled,
+    batchChangesEnabled,
     ...props
 }) => {
     useEffect(() => {
@@ -352,6 +360,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
+
     return (
         <div className="tree-page">
             <Container className="tree-page__container">
@@ -421,6 +430,20 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
                                         </Link>
+                                        {codeIntelligenceEnabled && (
+                                            <Link
+                                                className="btn btn-outline-secondary"
+                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                            >
+                                                <BrainIcon className="icon-inline" /> Code Intelligence
+                                            </Link>
+                                        )}
+                                        {batchChangesEnabled && (
+                                            <RepoBatchChangesButton
+                                                className="btn btn-outline-secondary"
+                                                repoName={repo.name}
+                                            />
+                                        )}
                                         {repo.viewerCanAdminister && (
                                             <Link
                                                 className="btn btn-outline-secondary"
@@ -439,7 +462,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
                         {views && (
-                            <InsightsViewGrid
+                            <StaticInsightsViewGrid
                                 telemetryService={props.telemetryService}
                                 className="tree-page__section mb-3"
                                 views={views}

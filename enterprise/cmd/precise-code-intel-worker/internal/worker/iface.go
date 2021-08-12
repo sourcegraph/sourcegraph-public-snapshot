@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type DBStore interface {
@@ -20,8 +20,8 @@ type DBStore interface {
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
 
-	UpdatePackages(ctx context.Context, dumpID int, packages []semantic.Package) error
-	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []semantic.PackageReference) error
+	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) error
+	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []precise.PackageReference) error
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int) (int, error)
@@ -49,14 +49,14 @@ type LSIFStore interface {
 	Transact(ctx context.Context) (LSIFStore, error)
 	Done(err error) error
 
-	WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaData) error
-	WriteDocuments(ctx context.Context, bundleID int, documents chan semantic.KeyedDocumentData) error
-	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan semantic.IndexedResultChunkData) error
-	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
-	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
-	WriteDocumentationPages(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPageData) error
-	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPathInfoData) error
-	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan semantic.DocumentationMapping) error
+	WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) error
+	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) error
+	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) error
+	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
+	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
+	WriteDocumentationPages(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPageData) error
+	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) error
+	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) error
 }
 
 type LSIFStoreShim struct {

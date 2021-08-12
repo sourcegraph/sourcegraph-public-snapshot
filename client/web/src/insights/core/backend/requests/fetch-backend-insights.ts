@@ -1,3 +1,4 @@
+import { uniqBy } from 'lodash'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -10,6 +11,7 @@ import {
     SubjectSettingsResult,
     SubjectSettingsVariables,
 } from '../../../../graphql-operations'
+import { BackendInsightFilters } from '../types'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
@@ -18,17 +20,21 @@ const insightFieldsFragment = gql`
         description
         series {
             label
-            points {
+            points(excludeRepoRegex: $excludeRepoRegex, includeRepoRegex: $includeRepoRegex) {
                 dateTime
                 value
             }
         }
     }
 `
-export function fetchBackendInsights(insightsIds: string[]): Observable<InsightFields[]> {
+
+export function fetchBackendInsights(
+    insightsIds: string[],
+    filters?: BackendInsightFilters
+): Observable<InsightFields[]> {
     return requestGraphQL<InsightsResult>(
         gql`
-            query Insights($ids: [ID!]!) {
+            query Insights($ids: [ID!]!, $includeRepoRegex: String, $excludeRepoRegex: String) {
                 insights(ids: $ids) {
                     nodes {
                         ...InsightFields
@@ -37,10 +43,15 @@ export function fetchBackendInsights(insightsIds: string[]): Observable<InsightF
             }
             ${insightFieldsFragment}
         `,
-        { ids: insightsIds }
+        {
+            ids: insightsIds,
+            excludeRepoRegex: filters?.excludeRepoRegexp ?? null,
+            includeRepoRegex: filters?.includeRepoRegexp ?? null,
+        }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.insights?.nodes ?? [])
+        map(data => data.insights?.nodes ?? []),
+        map(data => uniqBy(data, 'id'))
     )
 }
 

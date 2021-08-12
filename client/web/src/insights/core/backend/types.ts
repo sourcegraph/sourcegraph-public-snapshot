@@ -1,7 +1,7 @@
 import { Remote } from 'comlink'
 import { Duration } from 'date-fns'
 import { Observable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
+import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -14,9 +14,27 @@ export enum ViewInsightProviderSourceType {
     Extension = 'Extension',
 }
 
+/**
+ * Unified insight data interface.
+ */
 export interface ViewInsightProviderResult extends ViewProviderResult {
-    /** The source of view provider to distinguish between data from extension and data from backend */
+    /**
+     * The source of view provider to distinguish between data from extension
+     * and data from backend
+     */
     source: ViewInsightProviderSourceType
+}
+
+/**
+ * Backend insight result data interface
+ */
+export interface BackendInsightData {
+    id: string
+    view: {
+        title: string
+        subtitle: string
+        content: LineChartContent<any, string>[]
+    }
 }
 
 export interface SubjectSettingsResult {
@@ -30,17 +48,27 @@ export interface SearchInsightSettings {
     repositories: string[]
 }
 
-export interface LangStatsInsightsSettings {
-    /** URL of git repository from which statistics will be collected */
-    repository: string
-    /** The threshold below which a language is counted as part of 'Other' */
-    threshold: number
-}
-
 export interface DataSeries {
     name: string
     stroke: string
     query: string
+}
+
+export interface BackendInsightFilters {
+    excludeRepoRegexp: string
+    includeRepoRegexp: string
+}
+
+export interface LangStatsInsightsSettings {
+    /**
+     * URL of git repository from which statistics will be collected
+     */
+    repository: string
+
+    /**
+     * The threshold below which a language is counted as part of 'Other'
+     */
+    threshold: number
 }
 
 export interface ApiService {
@@ -50,22 +78,27 @@ export interface ApiService {
      * homepage, directory pages.
      *
      * @param getExtensionsInsights - extensions based insights getter via extension API.
+     * @param backendInsightsIds - specific dashboard subset of BE-like insight ids.
      */
     getCombinedViews: (
-        getExtensionsInsights: () => Observable<ViewProviderResult[]>
+        getExtensionsInsights: () => Observable<ViewProviderResult[]>,
+        backendInsightsIds?: string[]
     ) => Observable<ViewInsightProviderResult[]>
 
     /**
-     * Returns insights list (backend and extension based) for the insights page.
+     * Returns backend insight (via gql API handler) by insight id.
      *
-     * @param extensionApi - extension API for getting extension insights.
-     * @param insightsIds - specific insight ids for loading. Used by dashboard
-     * pages that have only sub-set of all insights.
+     * @param id - insight id
      */
-    getInsightCombinedViews: (
-        extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
-        insightsIds?: string[]
-    ) => Observable<ViewInsightProviderResult[]>
+    getBackendInsightById: (id: string, filters?: BackendInsightFilters) => Observable<BackendInsightData>
+
+    /**
+     * Returns resolved extension provider result by extension view id via extension API.
+     */
+    getExtensionViewById: (
+        id: string,
+        extensionApi: Promise<Remote<FlatExtensionHostAPI>>
+    ) => Observable<ViewInsightProviderResult>
 
     /**
      * Finds and returns the subject settings by the subject id.
@@ -93,14 +126,14 @@ export interface ApiService {
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
-    getSearchInsightContent: (insight: SearchInsightSettings) => Promise<sourcegraph.LineChartContent<any, string>>
+    getSearchInsightContent: (insight: SearchInsightSettings) => Promise<LineChartContent<any, string>>
 
     /**
      * Returns content for the code stats insight live preview chart.
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
-    getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<sourcegraph.PieChartContent<any>>
+    getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<PieChartContent<any>>
 
     /**
      * Returns a list of suggestions for the repositories field in the insight creation UI.

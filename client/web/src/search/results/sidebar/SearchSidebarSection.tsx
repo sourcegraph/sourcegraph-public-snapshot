@@ -4,8 +4,6 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-
 import { FilterLink, FilterLinkProps } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
 
@@ -14,21 +12,20 @@ export const SearchSidebarSection: React.FunctionComponent<{
     children?: React.ReactElement[] | ((filter: string) => React.ReactElement)
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
-    ctaLinkText?: string
-    ctaLinkTo?: string
-    onCtaLinkClick?: () => void
     onToggle?: (open: boolean) => void
-    open?: boolean
+    startCollapsed?: boolean
+    /**
+     * Shown when the built-in search doesn't find any results.
+     */
+    noResultText?: React.ReactElement | string
 }> = ({
     header,
     children = [],
     className,
     showSearch = false,
-    ctaLinkText,
-    ctaLinkTo,
-    onCtaLinkClick,
     onToggle,
-    open,
+    startCollapsed,
+    noResultText = 'No results',
 }) => {
     const [filter, setFilter] = useState('')
 
@@ -65,19 +62,15 @@ export const SearchSidebarSection: React.FunctionComponent<{
                         <li key={child.key || index}>{child}</li>
                     ))}
                     {filteredChildren.length === 0 && (
-                        <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
+                        <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>{noResultText}</li>
                     )}
                 </ul>
-                {ctaLinkText && ctaLinkTo && (
-                    <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to={ctaLinkTo}>
-                        {ctaLinkText}
-                    </Link>
-                )}
             </>
         )
     }
 
-    const [collapsed, setCollapsed] = useState(!open)
+    const [collapsed, setCollapsed] = useState(startCollapsed)
+    useEffect(() => setCollapsed(startCollapsed), [startCollapsed])
 
     return visible ? (
         <div className={classNames(styles.sidebarSection, className)}>
@@ -87,7 +80,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 onClick={() =>
                     setCollapsed(collapsed => {
                         if (onToggle) {
-                            onToggle(collapsed)
+                            onToggle(!collapsed)
                         }
                         return !collapsed
                     })

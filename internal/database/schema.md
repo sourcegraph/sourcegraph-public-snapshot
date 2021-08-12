@@ -105,7 +105,7 @@ Indexes:
 Check constraints:
     "batch_spec_executions_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
-    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
+    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     "batch_spec_executions_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) DEFERRABLE
     "batch_spec_executions_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) DEFERRABLE
     "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
@@ -134,7 +134,7 @@ Foreign-key constraints:
     "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id)
+    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```
@@ -318,6 +318,7 @@ Referenced by:
  trigger_event     | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -437,6 +438,7 @@ Foreign-key constraints:
  num_results       | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -569,6 +571,7 @@ Referenced by:
  timestamp         | timestamp with time zone |           | not null | 
  feature_flags     | jsonb                    |           |          | 
  cohort_id         | date                     |           |          | 
+ public_argument   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -730,6 +733,7 @@ Referenced by:
  shard_id              | text                     |           | not null | 
  last_error            | text                     |           |          | 
  updated_at            | timestamp with time zone |           | not null | now()
+ last_fetched          | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
@@ -770,13 +774,43 @@ Indexes:
  record_time       | timestamp with time zone |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ priority          | integer                  |           | not null | 1
+ cost              | integer                  |           | not null | 500
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
+    "insights_query_runner_jobs_cost_idx" btree (cost)
+    "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_state_btree" btree (state)
+Referenced by:
+    TABLE "insights_query_runner_jobs_dependencies" CONSTRAINT "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
 
 ```
 
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+
+**cost**: Integer representing a cost approximation of executing this search query.
+
+**priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
+
+# Table "public.insights_query_runner_jobs_dependencies"
+```
+     Column     |            Type             | Collation | Nullable |                               Default                               
+----------------+-----------------------------+-----------+----------+---------------------------------------------------------------------
+ id             | integer                     |           | not null | nextval('insights_query_runner_jobs_dependencies_id_seq'::regclass)
+ job_id         | integer                     |           | not null | 
+ recording_time | timestamp without time zone |           | not null | 
+Indexes:
+    "insights_query_runner_jobs_dependencies_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
+
+```
+
+Stores data points for a code insight that do not need to be queried directly, but depend on the result of a query at a different point
+
+**job_id**: Foreign key to the job that owns this record.
+
+**recording_time**: The time for which this dependency should be recorded at using the parents value.
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
@@ -848,35 +882,6 @@ Stores the configuration used for code intel index jobs for a repository.
 **autoindex_enabled**: Whether or not auto-indexing should be attempted on this repo. Index jobs may be inferred from the repository contents if data is empty.
 
 **data**: The raw user-supplied [configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/autoindex/config/types.go#L3:6) (encoded in JSONC).
-
-# Table "public.lsif_indexable_repositories"
-```
-         Column         |           Type           | Collation | Nullable |                         Default                         
-------------------------+--------------------------+-----------+----------+---------------------------------------------------------
- id                     | integer                  |           | not null | nextval('lsif_indexable_repositories_id_seq'::regclass)
- repository_id          | integer                  |           | not null | 
- search_count           | integer                  |           | not null | 0
- precise_count          | integer                  |           | not null | 0
- last_index_enqueued_at | timestamp with time zone |           |          | 
- last_updated_at        | timestamp with time zone |           | not null | now()
- enabled                | boolean                  |           |          | 
-Indexes:
-    "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
-    "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
-
-```
-
-Stores the number of code intel events for repositories. Used for auto-index scheduling heursitics Sourcegraph Cloud.
-
-**enabled**: **Column unused.**
-
-**last_index_enqueued_at**: The last time an index for the repository was enqueued (for basic rate limiting).
-
-**last_updated_at**: The last time the event counts were updated for this repository.
-
-**precise_count**: The number of precise code intel events for the repository in the past week.
-
-**search_count**: The number of search-based code intel events for the repository in the past week.
 
 # Table "public.lsif_indexes"
 ```
@@ -1075,6 +1080,7 @@ Stores the retention policy of code intellience data for a repository.
  commit_last_checked_at | timestamp with time zone |           |          | 
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
+ execution_logs         | json[]                   |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1492,17 +1498,6 @@ Referenced by:
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
-Policies:
-    POLICY "sg_repo_access_policy"
-      TO sg_service
-      USING ((((NOT (current_setting('rls.use_permissions_user_mapping'::text))::boolean) AND ((private IS FALSE) OR (EXISTS ( SELECT
-   FROM (external_services es
-     JOIN external_service_repos esr ON (((esr.external_service_id = es.id) AND (esr.repo_id = repo.id) AND (es.unrestricted = true) AND (es.deleted_at IS NULL))))
- LIMIT 1)))) OR (EXISTS ( SELECT 1
-   FROM external_service_repos
-  WHERE ((external_service_repos.repo_id = repo.id) AND (external_service_repos.user_id = (current_setting('rls.user_id'::text))::integer)))) OR ( SELECT (user_permissions.object_ids_ints @> intset(repo.id))
-   FROM user_permissions
-  WHERE ((user_permissions.user_id = (current_setting('rls.user_id'::text))::integer) AND (user_permissions.permission = current_setting('rls.permission'::text)) AND (user_permissions.object_type = 'repos'::text)))))
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
 
@@ -1713,6 +1708,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.temporary_settings"
+```
+   Column   |           Type           | Collation | Nullable |                    Default                     
+------------+--------------------------+-----------+----------+------------------------------------------------
+ id         | integer                  |           | not null | nextval('temporary_settings_id_seq'::regclass)
+ user_id    | integer                  |           | not null | 
+ contents   | jsonb                    |           |          | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "temporary_settings_pkey" PRIMARY KEY, btree (id)
+    "temporary_settings_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+Foreign-key constraints:
+    "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+Stores per-user temporary settings used in the UI, for example, which modals have been dimissed or what theme is preferred.
+
+**contents**: JSON-encoded temporary settings.
+
+**user_id**: The ID of the user the settings will be saved for.
+
 # Table "public.user_credentials"
 ```
         Column         |           Type           | Collation | Nullable |                   Default                    
@@ -1899,6 +1917,7 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
@@ -2045,7 +2064,7 @@ Triggers:
     u.associated_index_id,
     u.finished_at AS processed_at
    FROM lsif_uploads u
-  WHERE (u.state = 'completed'::text);
+  WHERE ((u.state = 'completed'::text) OR (u.state = 'deleting'::text));
 ```
 
 # View "public.lsif_dumps_with_repository_name"

@@ -9,25 +9,29 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+// externalServiceSyncerInterval is the time in between synchronizations with the
+// database to start/stop syncers as needed.
+const externalServiceSyncerInterval = 1 * time.Minute
 
 // SyncRegistry manages a changesetSyncer per code host
 type SyncRegistry struct {
 	ctx         context.Context
+	cancel      context.CancelFunc
 	syncStore   SyncStore
 	httpFactory *httpcli.Factory
+	metrics     *syncerMetrics
 
 	// Used to receive high priority sync requests
 	priorityNotify chan []int64
@@ -37,45 +41,64 @@ type SyncRegistry struct {
 	syncers map[string]*changesetSyncer
 }
 
-type SyncStore interface {
-	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*btypes.CodeHost, error)
-	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error)
-	GetChangeset(context.Context, store.GetChangesetOpts) (*btypes.Changeset, error)
-	UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) error
-	UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) error
-	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
-	Transact(context.Context) (*store.Store, error)
-	Repos() *database.RepoStore
-	ExternalServices() *database.ExternalServiceStore
-	Clock() func() time.Time
-	DB() dbutil.DB
-	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
-	UserCredentials() *database.UserCredentialsStore
-}
+var _ goroutine.BackgroundRoutine = &SyncRegistry{}
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, cstore SyncStore, cf *httpcli.Factory) *SyncRegistry {
-	r := &SyncRegistry{
+func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory, observationContext *observation.Context) *SyncRegistry {
+	ctx, cancel := context.WithCancel(ctx)
+	return &SyncRegistry{
 		ctx:            ctx,
-		syncStore:      cstore,
+		cancel:         cancel,
+		syncStore:      bstore,
 		httpFactory:    cf,
 		priorityNotify: make(chan []int64, 500),
 		syncers:        make(map[string]*changesetSyncer),
+		metrics:        makeMetrics(observationContext),
 	}
+}
 
-	if err := r.syncCodeHosts(ctx); err != nil {
+func (s *SyncRegistry) Start() {
+	// Fetch initial list of syncers.
+	if err := s.syncCodeHosts(s.ctx); err != nil {
 		log15.Error("Fetching initial list of code hosts", "err", err)
 	}
 
-	go r.handlePriorityItems()
+	goroutine.Go(func() {
+		s.handlePriorityItems()
+	})
 
-	return r
+	externalServiceSyncer := goroutine.NewPeriodicGoroutine(
+		s.ctx,
+		externalServiceSyncerInterval,
+		goroutine.NewHandlerWithErrorMessage("Batch Changes syncer external service sync", func(ctx context.Context) error {
+			return s.syncCodeHosts(ctx)
+		}),
+	)
+
+	goroutine.MonitorBackgroundRoutines(s.ctx, externalServiceSyncer)
 }
 
-// Add adds a syncer for the code host associated with the supplied code host if the syncer hasn't
+func (s *SyncRegistry) Stop() {
+	s.cancel()
+}
+
+// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
+// An error indicates that no changesets have been enqueued.
+func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
+	// The channel below is buffered so we'll usually send without blocking.
+	// It is important not to block here as this method is called from the UI
+	select {
+	case s.priorityNotify <- ids:
+	default:
+		return errors.New("high priority sync capacity reached")
+	}
+	return nil
+}
+
+// addCodeHostSyncer adds a syncer for the code host associated with the supplied code host if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) Add(codeHost *btypes.CodeHost) {
+func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
 		log15.Info("Code host not support by batch changes", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
@@ -101,33 +124,14 @@ func (s *SyncRegistry) Add(codeHost *btypes.CodeHost) {
 		codeHostURL:    syncerKey,
 		cancel:         cancel,
 		priorityNotify: make(chan []int64, 500),
+		metrics:        s.metrics,
 	}
 
 	s.syncers[syncerKey] = syncer
 
-	go syncer.Run(ctx)
-}
-
-// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
-// An error indicates that no changesets have been enqueued.
-func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
-	// The channel below is buffered so we'll usually send without blocking.
-	// It is important not to block here as this method is called from the UI
-	select {
-	case s.priorityNotify <- ids:
-	default:
-		return errors.New("high priority sync capacity reached")
-	}
-	return nil
-}
-
-// HandleExternalServiceSync handles changes to external services.
-func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	if btypes.IsKindSupported(es.Kind) {
-		if err := s.syncCodeHosts(s.ctx); err != nil {
-			log15.Error("Syncing on change of code hosts", "err", err)
-		}
-	}
+	goroutine.Go(func() {
+		syncer.Run(ctx)
+	})
 }
 
 // handlePriorityItems fetches changesets in the priority queue from the database and passes them
@@ -189,7 +193,7 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 	// Add and start syncers
 	for _, host := range codeHosts {
 		codeHostsByExternalServiceID[host.ExternalServiceID] = host
-		s.Add(host)
+		s.addCodeHostSyncer(host)
 	}
 
 	s.mu.Lock()
@@ -214,6 +218,8 @@ type changesetSyncer struct {
 	syncStore   SyncStore
 	httpFactory *httpcli.Factory
 
+	metrics *syncerMetrics
+
 	codeHostURL string
 
 	// scheduleInterval determines how often a new schedule will be computed.
@@ -230,42 +236,52 @@ type changesetSyncer struct {
 	cancel context.CancelFunc
 }
 
-var syncerMetrics = struct {
+type syncerMetrics struct {
 	syncs                   *prometheus.CounterVec
 	priorityQueued          *prometheus.CounterVec
 	syncDuration            *prometheus.HistogramVec
 	computeScheduleDuration *prometheus.HistogramVec
 	scheduleSize            *prometheus.GaugeVec
 	behindSchedule          *prometheus.GaugeVec
-}{}
+}
 
-func init() {
-	syncerMetrics.syncs = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_changeset_syncer_syncs",
-		Help: "Total number of changeset syncs",
-	}, []string{"codehost", "success"})
-	syncerMetrics.priorityQueued = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_changeset_syncer_priority_queued",
-		Help: "Total number of priority items added to queue",
-	}, []string{"codehost"})
-	syncerMetrics.syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_repoupdater_changeset_syncer_sync_duration_seconds",
-		Help:    "Time spent syncing changesets",
-		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
-	}, []string{"codehost", "success"})
-	syncerMetrics.computeScheduleDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_repoupdater_changeset_syncer_compute_schedule_duration_seconds",
-		Help:    "Time spent computing changeset schedule",
-		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
-	}, []string{"codehost", "success"})
-	syncerMetrics.scheduleSize = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_changeset_syncer_schedule_size",
-		Help: "The number of changesets scheduled to sync",
-	}, []string{"codehost"})
-	syncerMetrics.behindSchedule = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_changeset_syncer_behind_schedule",
-		Help: "The number of changesets behind schedule",
-	}, []string{"codehost"})
+func makeMetrics(observationContext *observation.Context) *syncerMetrics {
+	metrics := &syncerMetrics{
+		syncs: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "src_repoupdater_changeset_syncer_syncs",
+			Help: "Total number of changeset syncs",
+		}, []string{"codehost", "success"}),
+		priorityQueued: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "src_repoupdater_changeset_syncer_priority_queued",
+			Help: "Total number of priority items added to queue",
+		}, []string{"codehost"}),
+		syncDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "src_repoupdater_changeset_syncer_sync_duration_seconds",
+			Help:    "Time spent syncing changesets",
+			Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
+		}, []string{"codehost", "success"}),
+		computeScheduleDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "src_repoupdater_changeset_syncer_compute_schedule_duration_seconds",
+			Help:    "Time spent computing changeset schedule",
+			Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
+		}, []string{"codehost", "success"}),
+		scheduleSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "src_repoupdater_changeset_syncer_schedule_size",
+			Help: "The number of changesets scheduled to sync",
+		}, []string{"codehost"}),
+		behindSchedule: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "src_repoupdater_changeset_syncer_behind_schedule",
+			Help: "The number of changesets behind schedule",
+		}, []string{"codehost"}),
+	}
+	observationContext.Registerer.MustRegister(metrics.syncs)
+	observationContext.Registerer.MustRegister(metrics.priorityQueued)
+	observationContext.Registerer.MustRegister(metrics.syncDuration)
+	observationContext.Registerer.MustRegister(metrics.computeScheduleDuration)
+	observationContext.Registerer.MustRegister(metrics.scheduleSize)
+	observationContext.Registerer.MustRegister(metrics.behindSchedule)
+
+	return metrics
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -330,12 +346,12 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			start := s.syncStore.Clock()()
 			schedule, err := s.computeSchedule(ctx)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
-			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
+			s.metrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
-			syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Set(float64(len(schedule)))
+			s.metrics.scheduleSize.WithLabelValues(s.codeHostURL).Set(float64(len(schedule)))
 			s.queue.Upsert(schedule...)
 			var behindSchedule int
 			now := s.syncStore.Clock()()
@@ -344,13 +360,13 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 					behindSchedule++
 				}
 			}
-			syncerMetrics.behindSchedule.WithLabelValues(s.codeHostURL).Set(float64(behindSchedule))
+			s.metrics.behindSchedule.WithLabelValues(s.codeHostURL).Set(float64(behindSchedule))
 		case <-timerChan:
 			start := s.syncStore.Clock()()
 			err := s.syncFunc(ctx, next.changesetID)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
-			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
-			syncerMetrics.syncs.WithLabelValues(labelValues...).Add(1)
+			s.metrics.syncDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
+			s.metrics.syncs.WithLabelValues(labelValues...).Add(1)
 
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
@@ -359,7 +375,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 
 			// Remove item now that it has been processed
 			s.queue.Remove(next.changesetID)
-			syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Dec()
+			s.metrics.scheduleSize.WithLabelValues(s.codeHostURL).Dec()
 		case ids := <-s.priorityNotify:
 			if timer != nil {
 				timer.Stop()
@@ -377,9 +393,9 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 				}
 				item.priority = priorityHigh
 				s.queue.Upsert(item)
-				syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Inc()
+				s.metrics.scheduleSize.WithLabelValues(s.codeHostURL).Inc()
 			}
-			syncerMetrics.priorityQueued.WithLabelValues(s.codeHostURL).Add(float64(len(ids)))
+			s.metrics.priorityQueued.WithLabelValues(s.codeHostURL).Add(float64(len(ids)))
 		}
 	}
 }

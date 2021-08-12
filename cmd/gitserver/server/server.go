@@ -24,7 +24,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -849,13 +848,10 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
 					ev.AddField("fetch_duration_ms", fetchDuration.Milliseconds())
 				}
-				if span := opentracing.SpanFromContext(ctx); span != nil {
-					spanURL := trace.SpanURL(span)
-					// URLs starting with # don't have a trace. eg
-					// "#tracer-not-enabled"
-					if !strings.HasPrefix(spanURL, "#") {
-						ev.AddField("trace", spanURL)
-					}
+
+				if traceID := trace.ID(ctx); traceID != "" {
+					ev.AddField("traceID", traceID)
+					ev.AddField("trace", trace.URL(traceID))
 				}
 
 				if honey.Enabled() {
@@ -1085,13 +1081,10 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				if !cmdStart.IsZero() {
 					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
 				}
-				if span := opentracing.SpanFromContext(ctx); span != nil {
-					spanURL := trace.SpanURL(span)
-					// URLs starting with # don't have a trace. eg
-					// "#tracer-not-enabled"
-					if !strings.HasPrefix(spanURL, "#") {
-						ev.AddField("trace", spanURL)
-					}
+
+				if traceID := trace.ID(ctx); traceID != "" {
+					ev.AddField("traceID", traceID)
+					ev.AddField("trace", trace.URL(traceID))
 				}
 
 				if honey.Enabled() {
@@ -1144,17 +1137,14 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if s.DB == nil {
 		return nil
 	}
-	tx, err := database.Repos(s.DB).Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	return database.GitserverRepos(s.DB).SetLastError(ctx, name, error, s.Hostname)
+}
 
-	repo, err := tx.GetByName(ctx, name)
-	if err != nil {
-		return err
+func (s *Server) setLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time) error {
+	if s.DB == nil {
+		return nil
 	}
-	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
+	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, lastFetched, s.Hostname)
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors
@@ -1172,17 +1162,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if s.DB == nil {
 		return nil
 	}
-	tx, err := database.Repos(s.DB).Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repo, err := tx.GetByName(ctx, name)
-	if err != nil {
-		return err
-	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
+	return database.GitserverRepos(s.DB).SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
@@ -1379,6 +1359,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmp); err != nil {
 			return errors.Wrapf(err, "failed to update last changed time")
+		}
+
+		// Update the DB with the last fetched time
+		if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
+			return errors.Wrap(err, "update last fetched time")
 		}
 
 		// Set gitattributes
@@ -1688,6 +1673,11 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {
 		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
+	}
+
+	// Update the DB with the last fetched time
+	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
+		return errors.Wrap(err, "update last fetched time")
 	}
 
 	return nil

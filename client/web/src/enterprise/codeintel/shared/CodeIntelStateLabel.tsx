@@ -14,6 +14,8 @@ const labelClassNames = 'codeintel-state__label text-muted'
 export const CodeIntelStateLabel: FunctionComponent<CodeIntelStateLabelProps> = ({ state, placeInQueue, className }) =>
     state === LSIFUploadState.UPLOADING ? (
         <span className={classNames(labelClassNames, className)}>Uploading</span>
+    ) : state === LSIFUploadState.DELETING ? (
+        <span className={classNames(labelClassNames, className)}>Deleting</span>
     ) : state === LSIFUploadState.QUEUED || state === LSIFIndexState.QUEUED ? (
         <span className={classNames(labelClassNames, className)}>
             Queued <CodeIntelStateLabelPlaceInQueue placeInQueue={placeInQueue} />

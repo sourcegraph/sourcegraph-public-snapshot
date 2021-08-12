@@ -1,14 +1,15 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode, useEffect } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import styles from './FormInput.module.scss'
 import { ForwardReferenceComponent } from './types'
 
-interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'title'> {
     /** Title of input. */
-    title?: string
+    title?: ReactNode
     /** Description block for field. */
     description?: ReactNode
     /** Custom class name for root label element. */
@@ -32,7 +33,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
 /**
  * Displays the input with description, error message, visual invalid and valid states.
  */
-export const FormInput = forwardRef((props, reference) => {
+const FormInput = forwardRef((props, reference) => {
     const {
         as: Component = 'input',
         type = 'text',
@@ -45,8 +46,26 @@ export const FormInput = forwardRef((props, reference) => {
         error,
         loading = false,
         errorInputState,
+        autoFocus,
         ...otherProps
     } = props
+
+    const localReference = useRef<HTMLInputElement>(null)
+    const mergedReference = useMergeRefs([localReference, reference])
+
+    useEffect(() => {
+        if (autoFocus) {
+            // In some cases if form input has been rendered within reach/portal element
+            // react autoFocus set focus too early and in this case we have to
+            // call focus explicitly in the next tick to be sure that focus will be
+            // on input element. See reach/portal implementation and notice async way to
+            // render children in react portal component.
+            // https://github.com/reach/reach-ui/blob/0ae833201cf842fc00859612cfc6c30a593d593d/packages/portal/src/index.tsx#L45
+            requestAnimationFrame(() => {
+                localReference.current?.focus()
+            })
+        }
+    }, [autoFocus])
 
     return (
         <label className={classnames('w-100', className)}>
@@ -60,7 +79,8 @@ export const FormInput = forwardRef((props, reference) => {
                         'is-invalid': !!error || errorInputState,
                     })}
                     {...otherProps}
-                    ref={reference}
+                    autoFocus={autoFocus}
+                    ref={mergedReference}
                 />
 
                 {inputSymbol}
@@ -77,3 +97,7 @@ export const FormInput = forwardRef((props, reference) => {
         </label>
     )
 }) as ForwardReferenceComponent<'input', FormInputProps>
+
+FormInput.displayName = 'FormInput'
+
+export { FormInput }

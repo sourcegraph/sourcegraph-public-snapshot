@@ -42,25 +42,23 @@ const (
 // The tracked value can be changed with the METRICS_TRACK_ORIGIN environmental variable.
 var trackOrigin = "https://gitlab.com"
 
-var metricLabels = []string{"route", "method", "code", "repo", "origin"}
-var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_http_request_duration_seconds",
-	Help:    "The HTTP request latencies in seconds.",
-	Buckets: UserLatencyBuckets,
-}, metricLabels)
+var (
+	metricLabels    = []string{"route", "method", "code", "repo", "origin"}
+	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_http_request_duration_seconds",
+		Help:    "The HTTP request latencies in seconds.",
+		Buckets: UserLatencyBuckets,
+	}, metricLabels)
+)
 
 var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_http_requests_last_timestamp_unixtime",
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-func Init(shouldInitSentry bool) {
+func Init() {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
-	}
-
-	if shouldInitSentry {
-		sentry.Init()
 	}
 }
 
@@ -141,7 +139,11 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
-		rw.Header().Set("X-Trace", SpanURL(span))
+
+		traceID := IDFromSpan(span)
+		traceURL := URL(traceID)
+
+		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
 		routeName := "unknown"
@@ -194,19 +196,43 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		log15.Debug("TRACE HTTP",
-			"method", r.Method,
-			"url", r.URL.String(),
-			"route_name", routeName,
-			"trace", SpanURL(span),
-			"user_agent", r.UserAgent(),
-			"user", userID,
-			"x_forwarded_for", r.Header.Get("X-Forwarded-For"),
-			"written", m.Written,
-			"code", m.Code,
-			"duration", m.Duration,
-			"graphql_error", strconv.FormatBool(gqlErr),
-		)
+		minCode, _ := strconv.Atoi(os.Getenv("SRC_HTTP_LOG_MIN_CODE"))
+		if minCode == 0 {
+			minCode = 500
+		}
+
+		minDuration, _ := time.ParseDuration(os.Getenv("SRC_HTTP_LOG_MIN_DURATION"))
+		if minDuration == 0 {
+			minDuration = time.Second
+		}
+
+		if m.Duration >= minDuration || m.Code >= minCode {
+			kvs := make([]interface{}, 0, 20)
+			kvs = append(kvs,
+				"method", r.Method,
+				"url", r.URL.String(),
+				"code", m.Code,
+				"duration", m.Duration,
+			)
+
+			if traceID != "" {
+				kvs = append(kvs, "traceID", traceID)
+			}
+
+			if v := r.Header.Get("X-Forwarded-For"); v != "" {
+				kvs = append(kvs, "x_forwarded_for", v)
+			}
+
+			if userID != 0 {
+				kvs = append(kvs, "user", userID)
+			}
+
+			if gqlErr {
+				kvs = append(kvs, "graphql_error", gqlErr)
+			}
+
+			log15.Warn("http", kvs...)
+		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
 		if m.Code >= 500 {
@@ -225,6 +251,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				"written":         strconv.FormatInt(m.Written, 10),
 				"duration":        m.Duration.String(),
 				"graphql_error":   strconv.FormatBool(gqlErr),
+				"trace":           traceURL,
 			})
 		}
 	}))

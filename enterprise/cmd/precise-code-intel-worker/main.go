@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -44,9 +45,11 @@ func main() {
 
 	env.Lock()
 	env.HandleHelpFlag()
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	if err := config.Validate(); err != nil {
 		log.Fatalf("Failed to load config: %s", err)
@@ -169,7 +172,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 
 func mustRegisterQueueMetric(observationContext *observation.Context, workerStore dbworkerstore.Store) {
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_upload_queue_uploads_total",
+		Name: "src_codeintel_upload_total",
 		Help: "Total number of uploads in the queued state.",
 	}, func() float64 {
 		count, err := workerStore.QueuedCount(context.Background(), nil)
@@ -182,7 +185,7 @@ func mustRegisterQueueMetric(observationContext *observation.Context, workerStor
 }
 
 func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
-	return workerutil.NewMetrics(observationContext, "codeintel_upload_queue_processor", nil)
+	return workerutil.NewMetrics(observationContext, "codeintel_upload_processor", nil)
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

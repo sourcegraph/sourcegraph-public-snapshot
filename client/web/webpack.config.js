@@ -14,6 +14,7 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const { getCSSLoaders } = require('./dev/webpack/get-css-loaders')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
@@ -22,7 +23,6 @@ const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
 const isCI = process.env.CI === 'true'
 const isCacheEnabled = isDevelopment && !isCI
-const isHotReloadEnabled = isDevelopment && !isCI
 
 const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 

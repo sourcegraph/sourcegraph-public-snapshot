@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -56,9 +57,11 @@ func main() {
 		log.Fatalf("failed to start profiler: %v", err)
 	}
 
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
@@ -135,6 +138,26 @@ func main() {
 				return &server.PerforceDepotSyncer{
 					MaxChanges: int(c.MaxChanges),
 				}, nil
+			case extsvc.TypeJVMPackages:
+				var c schema.JVMPackagesConnection
+				for _, info := range r.Sources {
+					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+					if err != nil {
+						return nil, errors.Wrap(err, "get external service")
+					}
+
+					normalized, err := jsonc.Parse(es.Config)
+					if err != nil {
+						return nil, errors.Wrap(err, "normalize JSON")
+					}
+
+					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+						return nil, errors.Wrap(err, "unmarshal JSON")
+					}
+					break
+				}
+
+				return &server.JVMPackagesSyncer{Config: &c}, nil
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
@@ -146,13 +169,15 @@ func main() {
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
 	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-		// Additionally set TMP_DIR so other temporary files we may accidentally
+		// Additionally, set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
 		log.Fatalf("Setting TMP_DIR: %s", err)
 	}
 
 	// Create Handler now since it also initializes state
-	handler := ot.Middleware(gitserver.Handler())
+
+	// TODO: Why do we set server state as a side effect of creating our handler?
+	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -213,11 +238,14 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
+
 	//
 	// START FLAILING
 
-	// Gitserver is an internal actor. We rely on the frontend to do authz
-	// checks for user requests.
+	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
+	// user requests.
+	//
+	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
 	// END FLAILING

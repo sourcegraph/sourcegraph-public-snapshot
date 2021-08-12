@@ -76,6 +76,13 @@ type AddExecutionLogEntryRequest struct {
 	workerutil.ExecutionLogEntry
 }
 
+type UpdateExecutionLogEntryRequest struct {
+	ExecutorName string `json:"executorName"`
+	JobID        int    `json:"jobId"`
+	EntryID      int    `json:"entryId"`
+	workerutil.ExecutionLogEntry
+}
+
 type MarkCompleteRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobID        int    `json:"jobId"`

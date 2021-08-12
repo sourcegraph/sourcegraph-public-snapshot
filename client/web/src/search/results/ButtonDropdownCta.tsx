@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -15,6 +15,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps {
     title: string
     copyText: string
     source: ExperimentalSignUpSource
+    viewEventName: string
     returnTo: string
     onToggle?: () => void
     className?: string
@@ -27,18 +28,29 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     copyText,
     telemetryService,
     source,
+    viewEventName,
     returnTo,
     onToggle,
     className,
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+
     const toggleDropdownOpen = useCallback(() => {
         setIsDropdownOpen(isOpen => !isOpen)
         onToggle?.()
     }, [onToggle])
+
     const onClick = (): void => {
         telemetryService.log(`SignUpPLG${source}_1_Search`)
     }
+
+    // Whenever dropdown opens, log view event
+    useEffect(() => {
+        if (isDropdownOpen) {
+            telemetryService.log(viewEventName)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isDropdownOpen])
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>

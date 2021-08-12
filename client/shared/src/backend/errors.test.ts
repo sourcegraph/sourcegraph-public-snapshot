@@ -1,8 +1,6 @@
 import {
     isRepoSeeOtherErrorLike,
     RepoSeeOtherError,
-    isPrivateRepoPublicSourcegraphComErrorLike,
-    PrivateRepoPublicSourcegraphComError,
     RepoNotFoundError,
     isRevisionNotFoundErrorLike,
     RevisionNotFoundError,
@@ -43,20 +41,6 @@ describe('backend errors', () => {
         })
         it('returns false for other values', () => {
             expect(isRepoSeeOtherErrorLike('foo')).toBe(false)
-        })
-    })
-    describe('isPrivateRepoPublicSourcegraphComErrorLike()', () => {
-        it('returns true for PrivateRepoPublicSourcegraphComError', () => {
-            expect(
-                isPrivateRepoPublicSourcegraphComErrorLike(new PrivateRepoPublicSourcegraphComError('ResolveFoo'))
-            ).toBe(true)
-        })
-        it('returns true for plain PrivateRepoPublicSourcegraphComError', () => {
-            expect(
-                isPrivateRepoPublicSourcegraphComErrorLike({
-                    message: new PrivateRepoPublicSourcegraphComError('ResolveFoo').message,
-                })
-            ).toBe(true)
         })
     })
 })

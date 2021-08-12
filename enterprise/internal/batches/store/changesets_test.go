@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -1383,6 +1384,62 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			SyncErrorMessage: nil,
 		})
 	})
+
+	t.Run("UpdateChangesetBatchChanges", func(t *testing.T) {
+		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			ReconcilerState: btypes.ReconcilerStateCompleted,
+			Repo:            repo.ID,
+		})
+
+		// Add 3 batch changes
+		c1.Attach(123)
+		c1.Attach(456)
+		c1.Attach(789)
+
+		// This is what we expect after the update
+		want := c1.Clone()
+
+		// These two and other columsn should not be updated in the DB
+		c1.ReconcilerState = btypes.ReconcilerStateErrored
+		c1.ExternalServiceType = "external-service-type"
+
+		err := s.UpdateChangesetBatchChanges(ctx, c1)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		have := c1
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("invalid changeset: %s", diff)
+		}
+	})
+
+	t.Run("UpdateChangesetUiPublicationState", func(t *testing.T) {
+		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			ReconcilerState: btypes.ReconcilerStateCompleted,
+			Repo:            repo.ID,
+		})
+
+		// Update the UiPublicationState
+		c1.UiPublicationState = &btypes.ChangesetUiPublicationStateDraft
+
+		// This is what we expect after the update
+		want := c1.Clone()
+
+		// These two and other columsn should not be updated in the DB
+		c1.ReconcilerState = btypes.ReconcilerStateErrored
+		c1.ExternalServiceType = "external-service-type"
+
+		err := s.UpdateChangesetUiPublicationState(ctx, c1)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		have := c1
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("invalid changeset: %s", diff)
+		}
+	})
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -2082,7 +2139,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 
-	s := New(db, nil)
+	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
@@ -2217,7 +2274,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 
-	s := New(db, nil)
+	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)

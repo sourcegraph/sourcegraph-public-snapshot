@@ -19,7 +19,7 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	user := ct.CreateTestUser(t, db, true)
 
-	s := store.New(db, nil)
+	s := store.New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), executorWorkerStoreOptions, &observation.TestContext)
 
 	t.Run("success", func(t *testing.T) {
@@ -40,7 +40,7 @@ func TestLoadAndExtractBatchSpecRandID(t *testing.T) {
 				Command:    []string{"ignite", "run"},
 				StartTime:  time.Now().Add(-5 * time.Second),
 				Out:        `stdout: cool`,
-				DurationMs: 200,
+				DurationMs: intptr(200),
 			},
 			{
 				Key:       "step.src.0",
@@ -51,14 +51,17 @@ stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z"
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.528Z","status":"STARTED"}
 stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.535Z","status":"SUCCESS","message":"http://USERNAME_REMOVED:PASSWORD_REMOVED@localhost:3080/users/mrnugget/batch-changes/apply/QmF0Y2hTcGVjOiJBZFBMTDU5SXJmWCI="}
 `,
-				DurationMs: 200,
+				DurationMs: intptr(200),
 			},
 		}
 
-		for _, e := range entries {
-			err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), e)
+		for i, e := range entries {
+			entryID, err := workStore.AddExecutionLogEntry(context.Background(), int(specExec.ID), e, dbworkerstore.ExecutionLogEntryOptions{})
 			if err != nil {
 				t.Fatal(err)
+			}
+			if entryID != i+1 {
+				t.Fatalf("AddExecutionLogEntry returned wrong entryID. want=%d, have=%d", i+1, entryID)
 			}
 		}
 
@@ -223,3 +226,5 @@ stdout: {"operation":"CREATING_BATCH_SPEC","timestamp":"2021-07-12T12:26:01.165Z
 	}
 
 }
+
+func intptr(v int) *int { return &v }

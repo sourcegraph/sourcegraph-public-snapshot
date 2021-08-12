@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // NewDependencyIndexingScheduler returns a new worker instance that processes
@@ -33,10 +33,11 @@ func NewDependencyIndexingScheduler(
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
-		Name:        "precise_code_intel_dependency_indexing_scheduler_worker",
-		NumHandlers: numProcessorRoutines,
-		Interval:    pollInterval,
-		Metrics:     workerMetrics,
+		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
+		NumHandlers:       numProcessorRoutines,
+		Interval:          pollInterval,
+		Metrics:           workerMetrics,
+		HeartbeatInterval: 1 * time.Second,
 	})
 }
 
@@ -52,6 +53,10 @@ var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
 func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
+	if !indexSchedulerEnabled() {
+		return nil
+	}
+
 	job := record.(dbstore.DependencyIndexingJob)
 
 	if ok, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID); err != nil || !ok {
@@ -78,7 +83,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			break
 		}
 
-		pkg := semantic.Package{
+		pkg := precise.Package{
 			Scheme:  packageReference.Package.Scheme,
 			Name:    packageReference.Package.Name,
 			Version: packageReference.Package.Version,
@@ -98,27 +103,14 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 	return multierror.Append(nil, errs...)
 }
 
-var dependencyIndexingRepositoryIDs = []int{
-	35703861, // github.com/sourcegraph/jsonx on cloud
-	36146693, // github.com/sourcegraph/src-clion cloud
-	36809250, // github.com/sourcegraph/sourcegraph on cloud
-	38967070, // github.com/sourcegraph/lsif-go on cloud
-}
-
 // shouldIndexDependencies returns true if the given upload should undergo dependency
-// indexing. Currently, we're only enabling dependency indexing for a small, hard-coded
-// list of repository identifiers in the Cloud env.
+// indexing. Currently, we're only enabling dependency indexing for a repositories that
+// were indexed via lsif-go.
 func (h *dependencyIndexingSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")
 	}
 
-	for _, repositoryID := range dependencyIndexingRepositoryIDs {
-		if upload.RepositoryID == repositoryID {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return upload.Indexer == "lsif-go", nil
 }

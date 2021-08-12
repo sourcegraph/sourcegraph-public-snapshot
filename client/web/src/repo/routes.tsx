@@ -151,6 +151,18 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
 
             const mode = getModeFromPath(filePath)
 
+            // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
+            const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
+            if (objectType === 'blob' && hashLineNumberMatch) {
+                const startLineNumber = parseInt(hashLineNumberMatch[1], 10)
+                const endLineNumber = hashLineNumberMatch[2] ? parseInt(hashLineNumberMatch[2].slice(1), 10) : undefined
+                const url = appendLineRangeQueryParameter(
+                    window.location.pathname + window.location.search,
+                    `L${startLineNumber}` + (endLineNumber ? `-${endLineNumber}` : '')
+                )
+                return <Redirect to={url} />
+            }
+
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
             // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
             if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(window.location.hash)) {
@@ -243,24 +255,53 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/docs/:pathID*',
-        condition: ({ settingsCascade }) => {
+        condition: ({ settingsCascade }): boolean => {
             if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
                 return false
             }
             const settings: Settings = settingsCascade.final
             return settings.experimentalFeatures?.apiDocs !== false
         },
-        render: ({ resolvedRev: { commitID }, match, repoHeaderContributionsLifecycleProps, ...context }: any) => (
+        render: ({
+            useBreadcrumb,
+            setBreadcrumb,
+            settingsCascade,
+            versionContext,
+            repo,
+            history,
+            location,
+            isLightTheme,
+            fetchHighlightedFileLineRanges,
+            resolvedRev: { commitID },
+            match,
+            ...context
+        }) => (
             <>
+                {/*
+                    IMPORTANT: do NOT use `{...context}` expansion to pass props to page components
+                    here. Doing so adds other props that exist in `context` that are NOT required
+                    or specified by the component props, but TypeScript will NOT strip them out.
+                    For example, the navbarSearchQueryState - meaning every time a user types into
+                    the search input our React component props would change despite it being a field
+                    that we are absolutely not using in any way. See:
+                    https://github.com/sourcegraph/sourcegraph/issues/21200
+                */}
                 <RepositoryDocumentationPage
-                    {...context}
-                    match={match}
-                    commitID={commitID}
+                    useBreadcrumb={useBreadcrumb}
+                    setBreadcrumb={setBreadcrumb}
+                    settingsCascade={settingsCascade}
+                    versionContext={versionContext}
+                    repo={repo}
+                    history={history}
+                    location={location}
+                    isLightTheme={isLightTheme}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
+                    commitID={commitID}
                 />
                 <ActionItemsBar
                     useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
+                    location={location}
                     extensionsController={context.extensionsController}
                     platformContext={context.platformContext}
                     telemetryService={context.telemetryService}

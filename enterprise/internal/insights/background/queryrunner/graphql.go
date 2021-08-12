@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"golang.org/x/net/context/ctxhttp"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
 )
@@ -37,6 +37,7 @@ const gqlSearchQuery = `query Search(
 				... on FileMatch {
 					repository {
 						id
+						name
 					}
 					lineMatches {
 						offsetAndLengths
@@ -54,11 +55,13 @@ const gqlSearchQuery = `query Search(
 					commit {
 						repository {
 							id
+							name
 						}
 					}
 				}
 				... on Repository {
 					id
+					name
 				}
 			}
 			alert {
@@ -109,7 +112,14 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
 
-	resp, err := ctxhttp.Post(ctx, nil, url, "application/json", &buf)
+	req, err := http.NewRequest("POST", url, &buf)
+	if err != nil {
+		return nil, errors.Wrap(err, "Post")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}

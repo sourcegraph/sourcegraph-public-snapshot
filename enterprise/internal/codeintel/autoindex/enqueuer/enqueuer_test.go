@@ -8,13 +8,19 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
+
+var testConfig = Config{
+	MaximumRepositoriesInspectedPerSecond:    rate.Inf,
+	MaximumIndexJobsPerInferredConfiguration: 50,
+}
 
 func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
 	indexConfiguration := store.IndexConfiguration{
@@ -59,17 +65,11 @@ func TestQueueIndexesForRepositoryInDatabase(t *testing.T) {
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
-
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 	_ = scheduler.QueueIndexesForRepository(context.Background(), 42)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
@@ -180,20 +180,15 @@ func TestQueueIndexesForRepositoryInRepository(t *testing.T) {
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) (bool, error) {
 		return file == "sourcegraph.yaml", nil
 	})
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 
 	if err := scheduler.QueueIndexesForRepository(context.Background(), 42); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
@@ -269,8 +264,8 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		switch repositoryID {
@@ -283,12 +278,7 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 		}
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &testConfig, &observation.TestContext)
 
 	for _, id := range []int{41, 42, 43, 44} {
 		if err := scheduler.QueueIndexesForRepository(context.Background(), id); err != nil {
@@ -339,8 +329,8 @@ func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
 	}
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, bool, error) {
-		return fmt.Sprintf("c%d", repositoryID), true, nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
+		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		if repositoryID == 42 {
@@ -350,12 +340,9 @@ func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
 		return nil, nil
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		maxJobsPerCommit: 20,
-		operations:       newOperations(&observation.TestContext),
-	}
+	config := testConfig
+	config.MaximumIndexJobsPerInferredConfiguration = 20
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, nil, &config, &observation.TestContext)
 
 	if err := scheduler.QueueIndexesForRepository(context.Background(), 42); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
@@ -390,15 +377,9 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		return &protocol.RepoUpdateResponse{ID: 42}, nil
 	})
 
-	scheduler := &IndexEnqueuer{
-		dbStore:          mockDBStore,
-		gitserverClient:  mockGitserverClient,
-		repoUpdater:      mockRepoUpdater,
-		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       newOperations(&observation.TestContext),
-	}
+	scheduler := NewIndexEnqueuer(mockDBStore, mockGitserverClient, mockRepoUpdater, &testConfig, &observation.TestContext)
 
-	_ = scheduler.QueueIndexesForPackage(context.Background(), semantic.Package{
+	_ = scheduler.QueueIndexesForPackage(context.Background(), precise.Package{
 		Scheme:  "gomod",
 		Name:    "https://github.com/sourcegraph/sourcegraph",
 		Version: "v3.26.0-4e7eeb0f8a96",

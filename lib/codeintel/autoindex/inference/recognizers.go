@@ -25,8 +25,9 @@ type IndexJobRecognizer interface {
 
 // Recognizers is a list of registered index job recognizers.
 var Recognizers = map[string]IndexJobRecognizer{
-	"go":  recognizer{GoPatterns, CanIndexGoRepo, InferGoIndexJobs},
-	"tsc": recognizer{TypeScriptPatterns, CanIndexTypeScriptRepo, InferTypeScriptIndexJobs},
+	"go":   recognizer{GoPatterns, CanIndexGoRepo, InferGoIndexJobs},
+	"tsc":  recognizer{TypeScriptPatterns, CanIndexTypeScriptRepo, InferTypeScriptIndexJobs},
+	"java": recognizer{JavaPatterns, CanIndexJavaRepo, InferJavaIndexJobs},
 }
 
 type recognizer struct {

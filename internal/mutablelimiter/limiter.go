@@ -1,6 +1,5 @@
-// package mutablelimiter provides a Limiter (Semaphore) which supports
-// havings its limit (capacity) adjusted and is integrated with
-// context.Context.
+// Package mutablelimiter provides a Limiter (Semaphore) which supports having
+// its limit (capacity) adjusted and is integrated with context.Context.
 package mutablelimiter
 
 import (
@@ -8,7 +7,7 @@ import (
 	"context"
 )
 
-// Limiter is a semaphore which supports having it's limit (capacity)
+// Limiter is a semaphore which supports having its limit (capacity)
 // adjusted. It integrates with context.Context to handle adjusting the limit
 // down.
 //

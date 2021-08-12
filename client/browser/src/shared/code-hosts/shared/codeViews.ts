@@ -4,7 +4,6 @@ import { Omit } from 'utility-types'
 
 import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
-import { isPrivateRepoPublicSourcegraphComErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -98,6 +97,7 @@ export const trackCodeViews = ({
 
 const fetchFileContentForFileInfo = (
     fileInfo: FileInfoWithRepoName,
+    checkPrivateCloudError: (error: any) => boolean,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithContent> =>
     ensureRevisionIsClonedForFileInfo(fileInfo, requestGraphQL).pipe(
@@ -116,7 +116,13 @@ const fetchFileContentForFileInfo = (
             return { ...fileInfo }
         }),
         catchError(error => {
-            if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
+            // Check if the repository is a private repository
+            // that has not been found. (if the browser extension is pointed towards
+            // Sourcegraph cloud). In that case, it's impossible to resolve the file content,
+            // so we fallback with undefined content.
+            // Note: we recover/fallback in this case so that we can show informative
+            // alerts to the user.
+            if (checkPrivateCloudError(error)) {
                 // In this case, fileInfo will have undefined content.
                 return of(fileInfo)
             }
@@ -126,25 +132,36 @@ const fetchFileContentForFileInfo = (
 
 export const fetchFileContentForDiffOrFileInfo = (
     diffOrBlobInfo: DiffOrBlobInfo<FileInfoWithRepoName>,
+    checkPrivateCloudError: (error: any) => boolean,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<DiffOrBlobInfo<FileInfoWithContent>> => {
     if ('blob' in diffOrBlobInfo) {
-        return fetchFileContentForFileInfo(diffOrBlobInfo.blob, requestGraphQL).pipe(
+        return fetchFileContentForFileInfo(diffOrBlobInfo.blob, checkPrivateCloudError, requestGraphQL).pipe(
             map(fileInfo => ({ blob: fileInfo }))
         )
     }
     if (diffOrBlobInfo.head && diffOrBlobInfo.base) {
-        const fetchingBaseFile = fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL)
-        const fetchingHeadFile = fetchFileContentForFileInfo(diffOrBlobInfo.head, requestGraphQL)
+        const fetchingBaseFile = fetchFileContentForFileInfo(
+            diffOrBlobInfo.base,
+            checkPrivateCloudError,
+            requestGraphQL
+        )
+        const fetchingHeadFile = fetchFileContentForFileInfo(
+            diffOrBlobInfo.head,
+            checkPrivateCloudError,
+            requestGraphQL
+        )
 
         return zip(fetchingBaseFile, fetchingHeadFile).pipe(
             map(([base, head]): DiffOrBlobInfo<FileInfoWithContent> => ({ head, base }))
         )
     }
     if (diffOrBlobInfo.head) {
-        return fetchFileContentForFileInfo(diffOrBlobInfo.head, requestGraphQL).pipe(
+        return fetchFileContentForFileInfo(diffOrBlobInfo.head, checkPrivateCloudError, requestGraphQL).pipe(
             map((head): DiffOrBlobInfo<FileInfoWithContent> => ({ head }))
         )
     }
-    return fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL).pipe(map(base => ({ base })))
+    return fetchFileContentForFileInfo(diffOrBlobInfo.base, checkPrivateCloudError, requestGraphQL).pipe(
+        map(base => ({ base }))
+    )
 }

@@ -15,11 +15,11 @@ export interface TelemetryService {
     /**
      * Log an event (by sending it to the server).
      */
-    log(eventName: string, eventProperties?: any): void
+    log(eventName: string, eventProperties?: any, publicArgument?: any): void
     /**
      * Log a pageview event (by sending it to the server).
      */
-    logViewEvent(eventName: string, eventProperties?: any): void
+    logViewEvent(eventName: string, eventProperties?: any, publicArgument?: any): void
 }
 
 /**

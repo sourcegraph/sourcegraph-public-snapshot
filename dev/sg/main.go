@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -28,15 +30,20 @@ var (
 	runFlagSet = flag.NewFlagSet("sg run", flag.ExitOnError)
 	runCommand = &ffcli.Command{
 		Name:       "run",
-		ShortUsage: "sg run <command>",
-		ShortHelp:  "Run the given command.",
+		ShortUsage: "sg run <command>...",
+		ShortHelp:  "Run the given commands.",
 		FlagSet:    runFlagSet,
 		Exec:       runExec,
 		UsageFunc:  printRunUsage,
 	}
 
-	runSetFlagSet = flag.NewFlagSet("sg run-set", flag.ExitOnError)
-	runSetCommand = &ffcli.Command{
+	runSetFlagSet       = flag.NewFlagSet("sg run-set", flag.ExitOnError)
+	debugRunSetServices = runSetFlagSet.String("debug", "", "Comma separated list of services to set at debug log level.")
+	infoRunSetServices  = runSetFlagSet.String("info", "", "Comma separated list of services to set at info log level.")
+	warnRunSetServices  = runSetFlagSet.String("warn", "", "Comma separated list of services to set at warn log level.")
+	errorRunSetServices = runSetFlagSet.String("error", "", "Comma separated list of services to set at error log level.")
+	critRunSetServices  = runSetFlagSet.String("crit", "", "Comma separated list of services to set at crit log level.")
+	runSetCommand       = &ffcli.Command{
 		Name:       "run-set",
 		ShortUsage: "sg run-set <commandset>",
 		ShortHelp:  "Run the given command set.",
@@ -162,6 +169,16 @@ var (
 			migrationFixupCommand,
 		},
 	}
+
+	rfcFlagSet = flag.NewFlagSet("sg rfc", flag.ExitOnError)
+	rfcCommand = &ffcli.Command{
+		Name:       "rfc",
+		ShortUsage: "sg rfc [list|search|open]",
+		ShortHelp:  "Run the given RFC command to manage RFCs.",
+		FlagSet:    rfcFlagSet,
+		Exec:       rfcExec,
+		UsageFunc:  printRFCUsage,
+	}
 )
 
 const (
@@ -206,18 +223,37 @@ var (
 			doctorCommand,
 			liveCommand,
 			migrationCommand,
+			rfcCommand,
 		},
 	}
 )
+
+func setMaxOpenFiles() error {
+	const maxOpenFiles = 10000
+
+	var rLimit syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
+		return err
+	}
+
+	if rLimit.Cur < maxOpenFiles {
+		rLimit.Cur = maxOpenFiles
+
+		// This may not succeed, see https://github.com/golang/go/issues/30401
+		return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	}
+
+	return nil
+}
 
 func main() {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
 	}
 
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		out.WriteLine(errLine)
+	// We always try to set this, since we often want to watch files, start commands, etc.
+	if err := setMaxOpenFiles(); err != nil {
+		fmt.Printf("failed to set max open files: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -227,12 +263,14 @@ func main() {
 	}
 }
 
-var conf *Config
+// globalConf is the global config. If a command needs to access it, it *must* call
+// `parseConf` before.
+var globalConf *Config
 
 // parseConf parses the config file and the optional overwrite file.
-// If the conf has already been parsed it's a noop.
+// Iear the conf has already been parsed it's a noop.
 func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
-	if conf != nil {
+	if globalConf != nil {
 		return true, output.FancyLine{}
 	}
 
@@ -252,7 +290,7 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 		overwriteFile = filepath.Join(repoRoot, overwriteFile)
 	}
 
-	conf, err = ParseConfigFile(confFile)
+	globalConf, err = ParseConfigFile(confFile)
 	if err != nil {
 		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
 	}
@@ -262,32 +300,58 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 		if err != nil {
 			return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s\n", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
 		}
-		conf.Merge(overwriteConf)
+		globalConf.Merge(overwriteConf)
 	}
 
 	return true, output.FancyLine{}
 }
 
 func runSetExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No commandset specified\n"))
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
+	if len(args) > 2 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
 	}
 
-	names, ok := conf.Commandsets[args[0]]
+	set, ok := globalConf.Commandsets[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(\n", args[0]))
 		return flag.ErrHelp
 	}
 
-	cmds := make([]Command, 0, len(names))
-	for _, name := range names {
-		cmd, ok := conf.Commands[name]
+	var checks []run.Check
+	for _, name := range set.Checks {
+		check, ok := globalConf.Checks[name]
+		if !ok {
+			out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config\n", name))
+			continue
+		}
+		checks = append(checks, check)
+	}
+
+	ok, err := run.Checks(ctx, globalConf.Env, checks...)
+	if err != nil {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s\n", err))
+	}
+
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks did not pass, aborting start of commandset %s\n", set.Name))
+		return nil
+	}
+
+	cmds := make([]run.Command, 0, len(set.Commands))
+	for _, name := range set.Commands {
+		cmd, ok := globalConf.Commands[name]
 		if !ok {
 			return errors.Errorf("command %q not found in commandset %q", name, args[0])
 		}
@@ -295,25 +359,84 @@ func runSetExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run(ctx, cmds...)
+	levelOverrides := logLevelOverrides()
+	for _, cmd := range cmds {
+		enrichWithLogLevels(&cmd, levelOverrides)
+	}
+	return run.Commands(ctx, globalConf.Env, cmds...)
+}
+
+// enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
+func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
+	logLevelVariable := "SRC_LOG_LEVEL"
+
+	if level, ok := overrides[cmd.Name]; ok {
+		out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
+		if cmd.Env == nil {
+			cmd.Env = make(map[string]string, 1)
+			cmd.Env[logLevelVariable] = level
+		}
+		cmd.Env[logLevelVariable] = level
+	}
+}
+
+// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
+func parseCsv(input string) []string {
+	tokens := strings.Split(input, ",")
+	results := make([]string, 0, len(tokens))
+	for _, token := range tokens {
+		results = append(results, strings.TrimSpace(token))
+	}
+	return results
+}
+
+// logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
+func logLevelOverrides() map[string]string {
+	levelServices := make(map[string][]string)
+	levelServices["debug"] = parseCsv(*debugRunSetServices)
+	levelServices["info"] = parseCsv(*infoRunSetServices)
+	levelServices["warn"] = parseCsv(*warnRunSetServices)
+	levelServices["error"] = parseCsv(*errorRunSetServices)
+	levelServices["crit"] = parseCsv(*critRunSetServices)
+
+	overrides := make(map[string]string)
+	for level, services := range levelServices {
+		for _, service := range services {
+			overrides[service] = level
+		}
+	}
+
+	return overrides
 }
 
 func testExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified\n"))
 		return flag.ErrHelp
 	}
 
-	cmd, ok := conf.Tests[args[0]]
+	cmd, ok := globalConf.Tests[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(\n", args[0]))
 		return flag.ErrHelp
 	}
 
-	return runTest(ctx, cmd, args[1:])
+	return run.Test(ctx, cmd, args[1:], globalConf.Env)
 }
 
 func startExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) != 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
@@ -323,27 +446,43 @@ func startExec(ctx context.Context, args []string) error {
 }
 
 func runExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No command specified\n"))
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
-		return flag.ErrHelp
+	var cmds []run.Command
+	for _, arg := range args {
+		cmd, ok := globalConf.Commands[arg]
+		if !ok {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", arg))
+			return flag.ErrHelp
+		}
+		cmds = append(cmds, cmd)
 	}
 
-	cmd, ok := conf.Commands[args[0]]
-	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", args[0]))
-		return flag.ErrHelp
-	}
-
-	return run(ctx, cmd)
+	return run.Commands(ctx, globalConf.Env, cmds...)
 }
 
 func doctorExec(ctx context.Context, args []string) error {
-	return runChecks(ctx, conf.Checks)
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
+	}
+
+	var checks []run.Check
+	for _, c := range globalConf.Checks {
+		checks = append(checks, c)
+	}
+	_, err := run.Checks(ctx, globalConf.Env, checks...)
+	return err
 }
 
 func liveExec(ctx context.Context, args []string) error {
@@ -493,17 +632,19 @@ func printRunUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
+	fmt.Fprintf(&out, "  sg %s <command>...\n", c.Name)
+	fmt.Fprintln(&out, "")
+	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
 	// Attempt to parse config to list available commands, but don't fail on
 	// error, because we should never error when the user wants --help output.
 	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
 
-	if conf != nil {
+	if globalConf != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-		for name := range conf.Commands {
+		for name := range globalConf.Commands {
 			fmt.Fprintf(&out, "  %s\n", name)
 		}
 	}
@@ -553,11 +694,11 @@ func printTestUsage(c *ffcli.Command) string {
 	// error, because we should never error when the user wants --help output.
 	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
 
-	if conf != nil {
+	if globalConf != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-		for name := range conf.Tests {
+		for name := range globalConf.Tests {
 			fmt.Fprintf(&out, "  %s\n", name)
 		}
 	}
@@ -574,11 +715,11 @@ func printRunSetUsage(c *ffcli.Command) string {
 	// Attempt to parse config so we can list available sets, but don't fail on
 	// error, because we should never error when the user wants --help output.
 	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
-	if conf != nil {
+	if globalConf != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-		for name := range conf.Commandsets {
+		for name := range globalConf.Commandsets {
 			fmt.Fprintf(&out, "  %s\n", name)
 		}
 	}
@@ -709,6 +850,20 @@ func printMigrationFixupUsage(c *ffcli.Command) string {
 	for _, name := range db.DatabaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
+
+	return out.String()
+}
+
+func printRFCUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "COMMANDS:\n")
+	fmt.Fprintf(&out, "    list - list all RFCs\n")
+	fmt.Fprintf(&out, "    search <query> - search for RFCs matching the query\n")
+	fmt.Fprintf(&out, "    open <number> - Open the specified RFC\n")
 
 	return out.String()
 }

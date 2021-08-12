@@ -118,6 +118,26 @@ add('Errored', () => (
     </EnterpriseWebStory>
 ))
 
+add('Deleting', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelUploadPage
+                {...props}
+                fetchLsifUpload={fetch({
+                    state: LSIFUploadState.DELETING,
+                    uploadedAt: '2020-06-15T12:20:30+00:00',
+                    startedAt: '2020-06-15T12:25:30+00:00',
+                    finishedAt: '2020-06-15T12:30:30+00:00',
+                    failure: null,
+                    placeInQueue: null,
+                    associatedIndex: null,
+                })}
+                now={now}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
 add('Failed Upload', () => (
     <EnterpriseWebStory>
         {props => (

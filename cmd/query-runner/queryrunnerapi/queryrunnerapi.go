@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -15,15 +14,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var (
-	queryRunnerURL = env.Get("QUERY_RUNNER_URL", "http://query-runner", "URL at which the query-runner service can be reached")
+	queryRunnerURL = env.Get(
+		"QUERY_RUNNER_URL",
+		"http://query-runner",
+		"URL at which the query-runner service can be reached",
+	)
 
 	Client = &client{
-		client: &http.Client{
-			Timeout: 5 * time.Second,
-		},
+		client: httpcli.InternalClient,
 	}
 )
 
@@ -53,7 +55,12 @@ type SavedQueryWasCreatedOrUpdatedArgs struct {
 
 // SavedQueryWasCreated should be called whenever a saved query was created
 // or updated after the server has started.
-func (c *client) SavedQueryWasCreatedOrUpdated(ctx context.Context, subject api.SettingsSubject, config api.PartialConfigSavedQueries, disableSubscriptionNotifications bool) error {
+func (c *client) SavedQueryWasCreatedOrUpdated(
+	ctx context.Context,
+	subject api.SettingsSubject,
+	config api.PartialConfigSavedQueries,
+	disableSubscriptionNotifications bool,
+) error {
 	return c.post(PathSavedQueryWasCreatedOrUpdated, &SavedQueryWasCreatedOrUpdatedArgs{
 		SubjectAndConfig: &SubjectAndConfig{
 			Subject: subject,
@@ -70,7 +77,11 @@ type SavedQueryWasDeletedArgs struct {
 
 // SavedQueryWasDeleted should be called whenever a saved query was deleted
 // after the server has started.
-func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryIDSpec, disableSubscriptionNotifications bool) error {
+func (c *client) SavedQueryWasDeleted(
+	ctx context.Context,
+	spec api.SavedQueryIDSpec,
+	disableSubscriptionNotifications bool,
+) error {
 	return c.post(PathSavedQueryWasDeleted, &SavedQueryWasDeletedArgs{
 		Spec:                             spec,
 		DisableSubscriptionNotifications: disableSubscriptionNotifications,

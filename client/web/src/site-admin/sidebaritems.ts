@@ -110,6 +110,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             label: 'Instrumentation',
             to: '/-/debug/',
             source: 'server',
+            condition: () => window.context.deployType === 'kubernetes',
         },
         {
             label: 'Monitoring',

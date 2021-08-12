@@ -5,7 +5,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, redactSensitiveInfoFromURL } from './util'
+import { getPreviousMonday, redactSensitiveInfoFromAppURL } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -69,11 +69,11 @@ export class EventLogger implements TelemetryService {
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      */
-    public log(eventLabel: string, eventProperties?: any): void {
+    public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
-        serverAdmin.trackAction(eventLabel, eventProperties)
+        serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties)
     }
 
@@ -103,7 +103,7 @@ export class EventLogger implements TelemetryService {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        const redactedURL = redactSensitiveInfoFromURL(firstSourceURL)
+        const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
 
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
@@ -116,16 +116,17 @@ export class EventLogger implements TelemetryService {
     public getReferrer(): string {
         const referrer = document.referrer
         try {
-            // 🚨 SECURITY: Return if the referrer is a valid non-Sourcegraph.com URL
-            // to avoid leaking private code URLs.
+            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+            // only send the hostname instead of the whole URL to avoid
+            // leaking private repository names and files into our data.
             const url = new URL(referrer)
-            if (url.hostname !== 'sourcegraph.com') {
-                return referrer
+            if (url.hostname === 'sourcegraph.com') {
+                return 'sourcegraph.com'
             }
+            return referrer
         } catch {
             return ''
         }
-        return ''
     }
 
     /**

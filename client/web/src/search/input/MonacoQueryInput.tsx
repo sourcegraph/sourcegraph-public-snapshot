@@ -4,6 +4,7 @@ import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -17,7 +18,7 @@ import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keybo
 import { observeResize } from '../../util/dom'
 import { fetchSuggestions } from '../backend'
 import { QueryChangeSource, QueryState } from '../helpers'
-import { SOURCEGRAPH_SEARCH, useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
+import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
 export interface MonacoQueryInputProps
     extends ThemeProps,
@@ -84,6 +85,13 @@ const hasKeybindingService = (
     typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
         .addDynamicKeybinding === 'function'
 
+const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
+    selectionStartLineNumber: range.startLineNumber,
+    positionLineNumber: range.endLineNumber,
+    selectionStartColumn: range.startColumn,
+    positionColumn: range.endColumn,
+})
+
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
  * syntax highlighting, hovers, completions and diagnostics for search queries.
@@ -133,7 +141,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         [selectedSearchContextSpec, versionContext]
     )
 
-    useQueryIntelligence(fetchSuggestionsWithContext, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestionsWithContext, {
         patternType,
         globbing,
         interpretComments,
@@ -220,12 +228,20 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             case QueryChangeSource.userInput:
                 // Don't react to user input
                 break
+            case QueryChangeSource.searchTypes:
             case QueryChangeSource.searchReference: {
-                editor.setSelection(queryState.selection)
-                if (queryState.showSuggestions) {
-                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                const textModel = editor.getModel()
+                if (textModel) {
+                    const selectionRange = toMonacoSelection(toMonacoRange(queryState.selectionRange, textModel))
+                    editor.setSelection(selectionRange)
+                    if (queryState.showSuggestions) {
+                        editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                    }
+                    // For some reason this has to come *after* triggering the
+                    // suggestion, otherwise the suggestion box will be shown
+                    // and the filter is not scrolled into view.
+                    editor.revealRange(toMonacoRange(queryState.revealRange, textModel))
                 }
-                editor.revealRange(queryState.revealRange)
                 break
             }
             default: {
@@ -346,7 +362,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         >
             <MonacoEditor
                 id="monaco-query-input"
-                language={SOURCEGRAPH_SEARCH}
+                language={sourcegraphSearchLanguageId}
                 value={queryState.query}
                 height={17}
                 isLightTheme={isLightTheme}

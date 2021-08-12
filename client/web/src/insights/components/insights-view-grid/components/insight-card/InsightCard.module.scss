@@ -1,4 +1,14 @@
 .insight-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 1rem;
+    cursor: default;
+
+    &:focus,
+    &:focus-within {
+        box-shadow: var(--focus-box-shadow);
+    }
+
     &__header {
         display: flex;
         align-items: center;
@@ -18,10 +28,6 @@
         margin-bottom: 1rem;
     }
 
-    &__header-content &__menu {
-        align-self: flex-start;
-    }
-
     // Handle views with only a title
     &__title,
     &__subtitle {
@@ -30,10 +36,5 @@
         &:last-child {
             margin-bottom: 0;
         }
-    }
-
-    &__description {
-        // Place description at the bottom of view card
-        margin-top: auto;
     }
 }

@@ -28,7 +28,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { InsightsApiContext, InsightsViewGrid } from '../../insights'
+import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
@@ -79,7 +79,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const showCodeInsights =
         !isErrorLike(props.settingsCascade.final) &&
         !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-        props.settingsCascade.final['insights.displayLocation.homepage'] !== false
+        props.settingsCascade.final['insights.displayLocation.homepage'] === true
 
     const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
@@ -106,7 +106,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                {views && <InsightsViewGrid {...props} className="mt-5" views={views} />}
+                {views && <StaticInsightsViewGrid {...props} className="mt-5" views={views} />}
             </div>
             {props.isSourcegraphDotCom &&
                 props.showRepogroupHomepage &&

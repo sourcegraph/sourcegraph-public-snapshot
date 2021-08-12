@@ -1,5 +1,8 @@
+import React from 'react'
+
 import { SearchPatternType } from '../graphql-operations'
 
+import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import { RepogroupMetadata } from './types'
 
 export const kubernetes: RepogroupMetadata = {
@@ -40,3 +43,7 @@ export const kubernetes: RepogroupMetadata = {
     homepageDescription: 'Search within the Kubernetes community.',
     homepageIcon: 'https://code.benco.io/icon-collection/logos/kubernetes.svg',
 }
+
+export const KubernetesRepogroupPage: React.FunctionComponent<
+    Omit<RepogroupPageProps, 'repogroupMetadata'>
+> = props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />

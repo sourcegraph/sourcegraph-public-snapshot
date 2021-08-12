@@ -39,11 +39,11 @@ import { DOMFunctions } from './codeViews'
  *
  */
 export function initializeExtensions(
-    { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
+    { urlToFile }: Pick<CodeHost, 'urlToFile'>,
     urls: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): { platformContext: BrowserPlatformContext } & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, isExtension)
+    const platformContext = createPlatformContext({ urlToFile }, urls, isExtension)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }

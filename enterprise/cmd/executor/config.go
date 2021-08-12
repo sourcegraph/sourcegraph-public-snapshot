@@ -1,7 +1,7 @@
 package main
 
 import (
-	"net/http"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -21,17 +22,18 @@ type Config struct {
 	FrontendPassword     string
 	QueueName            string
 	QueuePollInterval    time.Duration
-	HeartbeatInterval    time.Duration
 	MaximumNumJobs       int
 	FirecrackerImage     string
+	VMStartupScriptPath  string
+	VMPrefix             string
 	UseFirecracker       bool
 	FirecrackerNumCPUs   int
 	FirecrackerMemory    string
 	FirecrackerDiskSpace string
-	ImageArchivesPath    string
-	DisableHealthServer  bool
-	HealthServerPort     int
 	MaximumRuntimePerJob time.Duration
+	CleanupTaskInterval  time.Duration
+	NumTotalJobs         int
+	MaxActiveTime        time.Duration
 }
 
 func (c *Config) Load() {
@@ -40,29 +42,39 @@ func (c *Config) Load() {
 	c.FrontendPassword = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password supplied to the frontend.")
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
-	c.HeartbeatInterval = c.GetInterval("EXECUTOR_HEARTBEAT_INTERVAL", "1s", "Interval between heartbeat requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", "true", "Whether to isolate commands in virtual machines.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
+	c.VMStartupScriptPath = c.GetOptional("EXECUTOR_VM_STARTUP_SCRIPT_PATH", "A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.")
+	c.VMPrefix = c.Get("EXECUTOR_VM_PREFIX", "executor", "A name prefix for virtual machines controlled by this instance.")
 	c.FirecrackerNumCPUs = c.GetInt("EXECUTOR_FIRECRACKER_NUM_CPUS", "4", "How many CPUs to allocate to each virtual machine or container.")
 	c.FirecrackerMemory = c.Get("EXECUTOR_FIRECRACKER_MEMORY", "12G", "How much memory to allocate to each virtual machine or container.")
 	c.FirecrackerDiskSpace = c.Get("EXECUTOR_FIRECRACKER_DISK_SPACE", "20G", "How much disk space to allocate to each virtual machine or container.")
-	c.ImageArchivesPath = c.Get("EXECUTOR_IMAGE_ARCHIVE_PATH", "", "Where to store tar archives of docker images shared by virtual machines.")
-	c.DisableHealthServer = c.GetBool("EXECUTOR_DISABLE_HEALTHSERVER", "false", "Whether or not to disable the health server.")
-	c.HealthServerPort = c.GetInt("EXECUTOR_HEALTH_SERVER_PORT", "3192", "The port to listen on for the health server.")
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
+	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
+	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
+	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 }
 
-func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options {
+func (c *Config) Validate() error {
+	if c.FirecrackerNumCPUs != 1 && c.FirecrackerNumCPUs%2 != 0 {
+		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
+		c.AddError(fmt.Errorf("EXECUTOR_FIRECRACKER_NUM_CPUS must be 1 or an even number"))
+	}
+
+	return c.BaseConfig.Validate()
+}
+
+func (c *Config) APIWorkerOptions() apiworker.Options {
 	return apiworker.Options{
+		VMPrefix:             c.VMPrefix,
 		QueueName:            c.QueueName,
-		HeartbeatInterval:    c.HeartbeatInterval,
 		WorkerOptions:        c.WorkerOptions(),
 		FirecrackerOptions:   c.FirecrackerOptions(),
 		ResourceOptions:      c.ResourceOptions(),
 		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
 		GitServicePath:       "/.executors/git",
-		ClientOptions:        c.ClientOptions(transport),
+		ClientOptions:        c.ClientOptions(),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -73,18 +85,21 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 
 func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
-		Name:        "precise_code_intel_index_worker",
-		NumHandlers: c.MaximumNumJobs,
-		Interval:    c.QueuePollInterval,
-		Metrics:     makeWorkerMetrics(c.QueueName),
+		Name:              fmt.Sprintf("executor_%s_worker", c.QueueName),
+		NumHandlers:       c.MaximumNumJobs,
+		Interval:          c.QueuePollInterval,
+		HeartbeatInterval: 1 * time.Second,
+		Metrics:           makeWorkerMetrics(c.QueueName),
+		NumTotalJobs:      c.NumTotalJobs,
+		MaxActiveTime:     c.MaxActiveTime,
 	}
 }
 
 func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 	return command.FirecrackerOptions{
-		Enabled:           c.UseFirecracker,
-		Image:             c.FirecrackerImage,
-		ImageArchivesPath: c.ImageArchivesPath,
+		Enabled:             c.UseFirecracker,
+		Image:               c.FirecrackerImage,
+		VMStartupScriptPath: c.VMStartupScriptPath,
 	}
 }
 
@@ -96,19 +111,21 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) ClientOptions(transport http.RoundTripper) apiclient.Options {
+func (c *Config) ClientOptions() apiclient.Options {
+	hn := hostname.Get()
+
 	return apiclient.Options{
-		ExecutorName:      uuid.New().String(),
+		// Be unique but also descriptive.
+		ExecutorName:      hn + "-" + uuid.New().String(),
+		ExecutorHostname:  hn,
 		PathPrefix:        "/.executors/queue",
 		EndpointOptions:   c.EndpointOptions(),
-		BaseClientOptions: c.BaseClientOptions(transport),
+		BaseClientOptions: c.BaseClientOptions(),
 	}
 }
 
-func (c *Config) BaseClientOptions(transport http.RoundTripper) apiclient.BaseClientOptions {
-	return apiclient.BaseClientOptions{
-		Transport: transport,
-	}
+func (c *Config) BaseClientOptions() apiclient.BaseClientOptions {
+	return apiclient.BaseClientOptions{}
 }
 
 func (c *Config) EndpointOptions() apiclient.EndpointOptions {

@@ -12,7 +12,7 @@ Sourcegraph has been deployed inside of thousands of organizations. From our exp
 
 ## 1. Define trial success
 
-What? You shouldn't start with [`docker run...`](../../index.md#quickstart-guide)?
+What? You shouldn't start with [`docker run...`](../../index.md#quick-install)?
 
 The single most important predictor of a successful trial is deciding and agreeing up-front why your organization needs Sourcegraph, and how you'll judge the results.
 
@@ -43,7 +43,7 @@ We have helped hundreds of customers run trials and cannot overemphasize enough 
 
 ## 2. Deploy Sourcegraph
 
-Identify the correct site admin(s) — the person or team responsible for owning the technical deployment — so they can [deploy Sourcegraph internally](../../index.md#quickstart-guide).
+Identify the correct site admin(s) — the person or team responsible for owning the technical deployment — so they can [deploy Sourcegraph internally](../../index.md#quick-install).
 
 Site admins can get direct support from Sourcegraph Engineers in our open source repository's [public issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 

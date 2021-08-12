@@ -57,7 +57,7 @@ func (s *streamClient) search(ctx context.Context, query, queryName string) (*me
 	}
 	defer resp.Body.Close()
 
-	dec := streamhttp.Decoder{
+	dec := streamhttp.FrontendStreamDecoder{
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			if first && len(matches) > 0 {
 				m.firstResult = time.Since(start)

@@ -27,3 +27,7 @@ func (r *CodeIntelligenceRangeResolver) References(ctx context.Context) (gql.Loc
 func (r *CodeIntelligenceRangeResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
 	return NewHoverResolver(r.r.HoverText, convertRange(r.r.Range)), nil
 }
+
+func (r *CodeIntelligenceRangeResolver) Documentation(ctx context.Context) (gql.DocumentationResolver, error) {
+	return NewDocumentationResolver(r.r.ToDocumentation()), nil
+}

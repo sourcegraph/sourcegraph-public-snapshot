@@ -4,11 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -18,27 +17,33 @@ var _ graphqlbackend.InsightSeriesResolver = &insightSeriesResolver{}
 type insightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
-	series          insights.TimeSeries
+	series          types.InsightViewSeries
 }
 
-func (r *insightSeriesResolver) Label() string { return r.series.Name }
+func (r *insightSeriesResolver) Label() string { return r.series.Label }
 
 func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var opts store.SeriesPointsOpts
 
 	// Query data points only for the series we are representing.
-	seriesID := discovery.Encode(r.series)
+	seriesID := r.series.SeriesID
 	opts.SeriesID = &seriesID
 
 	if args.From == nil {
-		// Default to last 6mo of data.
-		args.From = &graphqlbackend.DateTime{Time: time.Now().Add(-6 * 30 * 24 * time.Hour)}
+		// Default to last 12mo of data
+		args.From = &graphqlbackend.DateTime{Time: time.Now().AddDate(-1, 0, 0)}
 	}
 	if args.From != nil {
 		opts.From = &args.From.Time
 	}
 	if args.To != nil {
 		opts.To = &args.To.Time
+	}
+	if args.IncludeRepoRegex != nil {
+		opts.IncludeRepoRegex = *args.IncludeRepoRegex
+	}
+	if args.ExcludeRepoRegex != nil {
+		opts.ExcludeRepoRegex = *args.ExcludeRepoRegex
 	}
 	// TODO(slimsag): future: Pass through opts.Limit
 
@@ -54,7 +59,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 }
 
 func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
-	seriesID := discovery.Encode(r.series)
+	seriesID := r.series.SeriesID
 
 	totalPoints, err := r.insightsStore.CountData(ctx, store.CountDataOpts{
 		SeriesID: &seriesID,

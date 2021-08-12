@@ -1,6 +1,9 @@
 @import './RepositoryDocumentationSidebar';
 @import './DocumentationWelcomeAlert';
 @import './DocumentationIcon';
+@import './DocumentationExamples';
+@import './DocumentationIndexNode';
+@import './DocumentationNode';
 
 .repository-docs-page {
     width: 100%;
@@ -19,23 +22,6 @@
             }
         }
     }
-    &__feedback-container {
-        width: 0;
-        height: 0;
-        z-index: 1;
-        &-content {
-            display: block;
-            width: 19rem;
-            margin-top: 1rem;
-            float: right;
-            .btn {
-                background-color: var(--color-bg-1);
-            }
-            .feedback-prompt {
-                display: inline-block;
-            }
-        }
-    }
     a.h1,
     a.h2,
     a.h3,
@@ -44,19 +30,5 @@
     a.h6 {
         display: inline-block;
         margin-top: 1rem;
-    }
-}
-
-// We are bypassing the official Markdown code block background color for now, as the contrast
-// is too poor for this developer to see. :) I promise I'll try to get design to come up with a
-// higher contrast, better color, soon - for all our markdown code blocks (some don't have any background
-// color?!?!)
-// https://github.com/sourcegraph/sourcegraph/issues/22435
-.theme-light {
-    .repository-docs-page {
-        .markdown pre,
-        .markdown code {
-            background: var(--input-border-color);
-        }
     }
 }

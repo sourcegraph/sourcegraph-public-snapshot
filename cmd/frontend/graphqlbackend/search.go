@@ -266,6 +266,12 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		return mockResolveRepositories()
 	}
 
+	// To send back proper search stats, we want to finish repository resolution
+	// even if we have already found enough results and the parent context was
+	// cancelled because we hit the limit.
+	ctx, cleanup := streaming.IgnoreContextCancellation(ctx, streaming.CanceledLimitHit)
+	defer cleanup()
+
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("options: %+v", options))
 	defer func() {
 		tr.SetError(err)
@@ -313,12 +319,18 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     &search.RepoPromise{}, // TODO(rvantonder) remove this field for this type.
 		Query:           r.Query,
 		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil,
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
+
+	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
+	if isEmpty {
+		// Empty query isn't an error, but it has no results.
+		return nil, nil
+	}
+
 	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {
@@ -331,7 +343,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
-	args.RepoPromise = (&search.RepoPromise{}).Resolve(resolved.RepoRevs)
+	args.Repos = resolved.RepoRevs
 
 	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {

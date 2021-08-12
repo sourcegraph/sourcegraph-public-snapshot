@@ -9,11 +9,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // WriteDocumentationPages is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, documentationPages chan *semantic.DocumentationPageData) (err error) {
+func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, documentationPages chan *precise.DocumentationPageData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -80,7 +80,7 @@ FROM t_lsif_data_documentation_pages source
 `
 
 // WriteDocumentationPathInfo is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *semantic.DocumentationPathInfoData) (err error) {
+func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -147,7 +147,7 @@ FROM t_lsif_data_documentation_path_info source
 `
 
 // WriteDocumentationMappings is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan semantic.DocumentationMapping) (err error) {
+func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationMappings.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -167,7 +167,7 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 	var count uint32
 	inserter := func(inserter *batch.Inserter) error {
 		for mapping := range mappings {
-			if err := inserter.Insert(ctx, mapping.PathID, mapping.ResultID); err != nil {
+			if err := inserter.Insert(ctx, mapping.PathID, mapping.ResultID, mapping.FilePath); err != nil {
 				return err
 			}
 			atomic.AddUint32(&count, 1)
@@ -180,7 +180,7 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 		ctx,
 		tx.Handle().DB(),
 		"t_lsif_data_documentation_mappings",
-		[]string{"path_id", "result_id"},
+		[]string{"path_id", "result_id", "file_path"},
 		inserter,
 	); err != nil {
 		return err
@@ -196,13 +196,14 @@ const writeDocumentationMappingsTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationMappings
 CREATE TEMPORARY TABLE t_lsif_data_documentation_mappings (
 	path_id TEXT NOT NULL,
-	result_id integer NOT NULL
+	result_id integer NOT NULL,
+	file_path text
 ) ON COMMIT DROP
 `
 
 const writeDocumentationMappingsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationMappings
-INSERT INTO lsif_data_documentation_mappings (dump_id, path_id, result_id)
-SELECT %s, source.path_id, source.result_id
+INSERT INTO lsif_data_documentation_mappings (dump_id, path_id, result_id, file_path)
+SELECT %s, source.path_id, source.result_id, source.file_path
 FROM t_lsif_data_documentation_mappings source
 `

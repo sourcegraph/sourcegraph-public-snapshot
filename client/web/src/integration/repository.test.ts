@@ -20,6 +20,7 @@ import {
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
+    createRepoChangesetsStatsResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
@@ -31,6 +32,7 @@ export const getCommonRepositoryGraphQlResults = (
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+    RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRev: () => createResolveRevisionResult(repositoryName),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),

@@ -263,6 +263,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}, errors.Wrap(scanner.Err(), "scanner.Err")
 }
 
+// FetchUserPermsByToken is currently only required for syncing permissions for
+// GitHub and GitLab on sourcegraph.com
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+	return nil, errors.New("not implemented")
+}
+
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
 func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, error) {
 	if p.cachedAllUserEmails != nil {

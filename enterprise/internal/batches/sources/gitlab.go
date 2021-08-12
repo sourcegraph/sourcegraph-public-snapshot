@@ -41,7 +41,7 @@ func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Au
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.ExternalClientFactory
 	}
 
 	var opts []httpcli.Opt

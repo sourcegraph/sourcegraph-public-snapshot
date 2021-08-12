@@ -23,7 +23,9 @@
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
     "test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json NODE_NO_WARNINGS=1 mocha --parallel=$CI --retries=1 --jobs=2  \"./client/web/src/integration/**/*.test.ts\"",
+    "test-browser-integration": "yarn --cwd client/browser run test-integration",
     "cover-integration": "nyc --hook-require=false yarn test-integration",
+    "cover-browser-integration": "nyc --hook-require=false yarn --cwd client/browser test-integration",
     "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/end-to-end.test.ts",
     "cover-e2e": "nyc --hook-require=false --silent=true yarn test-e2e",
     "storybook": "yarn workspace @sourcegraph/storybook run start",
@@ -39,7 +41,8 @@
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser",
-    "build-browser-extension": "yarn --cwd client/browser run build"
+    "build-browser-extension": "yarn --cwd client/browser run build",
+    "install:sg": "dev/sg/install.sh"
   },
   "browserslist": [
     "last 1 version",
@@ -99,6 +102,7 @@
     "@gql2ts/types": "^1.9.0",
     "@graphql-codegen/cli": "^1.19.4",
     "@graphql-codegen/typescript": "1.17.9",
+    "@graphql-codegen/typescript-apollo-client-helpers": "^1.1.9",
     "@graphql-codegen/typescript-operations": "1.17.8",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@mermaid-js/mermaid-cli": "^8.7.0",
@@ -360,6 +364,7 @@
     "monaco-editor": "^0.24.0",
     "nice-ticks": "^1.0.1",
     "open-color": "^1.8.0",
+    "path-browserify": "^1.0.1",
     "postcss-inset": "^1.0.0",
     "pretty-bytes": "^5.3.0",
     "prop-types": "^15.7.2",

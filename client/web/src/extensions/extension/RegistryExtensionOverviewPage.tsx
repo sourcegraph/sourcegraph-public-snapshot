@@ -13,9 +13,9 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon } from '../icons'
+import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExtensionIcon } from '../icons'
 
-import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
+import { extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
 import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
@@ -94,7 +94,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
         }
     }
 
-    const { isSourcegraphExtension } = splitExtensionID(extension.id)
+    const { publisher, isSourcegraphExtension } = splitExtensionID(extension.id)
 
     return (
         <div className="registry-extension-overview-page d-flex flex-wrap">
@@ -103,9 +103,81 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 <ExtensionReadme extension={extension} />
             </div>
             <aside className="registry-extension-overview-page__sidebar">
+                <RegistryExtensionOverviewIcon extension={extension} isLightTheme={isLightTheme} />
+                {/* Publisher */}
+                {publisher && (
+                    <div className="pt-2 pb-3">
+                        <h3>Publisher</h3>
+                        <small
+                            data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
+                        >
+                            {publisher}
+                        </small>
+                        {isSourcegraphExtension && (
+                            <SourcegraphExtensionIcon className="registry-extension-overview-page__sourcegraph-icon" />
+                        )}
+                    </div>
+                )}
+                {/* Installs/user count will go here */}
+                {/* Rating (readonly) will go here */}
+                {/* Last updated */}
+                {extension.registryExtension &&
+                    (extension.registryExtension.updatedAt || extension.registryExtension.publishedAt) && (
+                        <div className="registry-extension-overview-page__sidebar-section">
+                            <h3>Last updated</h3>
+                            <small className="text-muted">
+                                <Timestamp
+                                    date={maxDate(
+                                        [extension.registryExtension.updatedAt, extension.registryExtension.publishedAt]
+                                            .filter(isDefined)
+                                            .map(date => parseISO(date))
+                                    )}
+                                />
+                            </small>
+                        </div>
+                    )}
+                {/* Resources */}
+                <div className="registry-extension-overview-page__sidebar-section">
+                    <h3>Resources</h3>
+                    <small>
+                        {extension.registryExtension && (
+                            <Link to={`${extension.registryExtension.url}/-/manifest`} className="d-block mb-1">
+                                Manifest (package.json)
+                            </Link>
+                        )}
+                        {extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.url && (
+                            <a
+                                href={extension.manifest.url}
+                                target="_blank"
+                                rel="nofollow noopener noreferrer"
+                                className="d-block mb-1"
+                            >
+                                Source code (JavaScript)
+                            </a>
+                        )}
+                        {repositoryURL && (
+                            <div className="d-flex">
+                                {repositoryURL.hostname === 'github.com' && <GithubIcon className="icon-inline mr-1" />}
+                                <a
+                                    href={repositoryURL.href}
+                                    rel="nofollow noreferrer noopener"
+                                    target="_blank"
+                                    className="d-block"
+                                >
+                                    Repository
+                                </a>
+                            </div>
+                        )}
+                    </small>
+                </div>
+                {/* Full extension ID */}
+                <div className="registry-extension-overview-page__sidebar-section">
+                    <h3>Extension ID</h3>
+                    <small className="text-muted">{extension.id}</small>
+                </div>
+                {/* Categories */}
                 {categories && (
-                    <div className="mb-3">
-                        <RegistryExtensionOverviewIcon extension={extension} isLightTheme={isLightTheme} />
+                    <div className="registry-extension-overview-page__sidebar-section pb-0">
                         <h3>Categories</h3>
                         <ul className="list-inline test-registry-extension-categories">
                             {categories.map(category => (
@@ -121,11 +193,12 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                         </ul>
                     </div>
                 )}
+                {/* Tags */}
                 {extension.manifest &&
                     !isErrorLike(extension.manifest) &&
                     extension.manifest.tags &&
                     extension.manifest.tags.length > 0 && (
-                        <div className="mb-3">
+                        <div className="registry-extension-overview-page__sidebar-section pb-0">
                             <h3>Tags</h3>
                             <ul className="list-inline">
                                 {extension.manifest.tags.map(tag => (
@@ -141,92 +214,13 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                             </ul>
                         </div>
                     )}
-                <small className="text-muted">
-                    <dl className="border-top pt-2">
-                        {extension.registryExtension?.publisher && (
-                            <>
-                                <dt>Publisher</dt>
-                                <dd>
-                                    {extension.registryExtension.publisher ? (
-                                        <Link to={extension.registryExtension.publisher.url}>
-                                            {extensionIDPrefix(extension.registryExtension.publisher)}
-                                        </Link>
-                                    ) : (
-                                        'Unavailable'
-                                    )}
-                                </dd>
-                            </>
-                        )}
-                        {extension.registryExtension?.registryName && (
-                            <>
-                                <dt className={extension.registryExtension.publisher ? 'border-top pt-2' : ''}>
-                                    Published on
-                                </dt>
-                                <dd>
-                                    <span>{extension.registryExtension.registryName}</span>
-                                </dd>
-                            </>
-                        )}
-                        <dt className="border-top pt-2">Extension ID</dt>
-                        <dd>{extension.id}</dd>
-                        {extension.registryExtension &&
-                            (extension.registryExtension.updatedAt || extension.registryExtension.publishedAt) && (
-                                <>
-                                    <dt className="border-top pt-2">Last updated</dt>
-                                    <dd>
-                                        <Timestamp
-                                            date={maxDate(
-                                                [
-                                                    extension.registryExtension.updatedAt,
-                                                    extension.registryExtension.publishedAt,
-                                                ]
-                                                    .filter(isDefined)
-                                                    .map(date => parseISO(date))
-                                            )}
-                                        />
-                                    </dd>
-                                </>
-                            )}
-                        <dt className="border-top pt-2">Resources</dt>
-                        <dd className="border-bottom pb-2">
-                            {extension.registryExtension && (
-                                <Link to={`${extension.registryExtension.url}/-/manifest`} className="d-block">
-                                    Manifest (package.json)
-                                </Link>
-                            )}
-                            {extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.url && (
-                                <a
-                                    href={extension.manifest.url}
-                                    target="_blank"
-                                    rel="nofollow noopener noreferrer"
-                                    className="d-block"
-                                >
-                                    Source code (JavaScript)
-                                </a>
-                            )}
-                            {repositoryURL && (
-                                <div className="d-flex">
-                                    {repositoryURL.hostname === 'github.com' && (
-                                        <GithubIcon className="icon-inline mr-1" />
-                                    )}
-                                    <a
-                                        href={repositoryURL.href}
-                                        rel="nofollow noreferrer noopener"
-                                        target="_blank"
-                                        className="d-block"
-                                    >
-                                        Repository
-                                    </a>
-                                </div>
-                            )}
-                        </dd>
-                        {isSourcegraphExtension && (
-                            <dd className="mt-2 py-2">
-                                <SourcegraphExtensionFeedback extensionID={extension.id} />
-                            </dd>
-                        )}
-                    </dl>
-                </small>
+                {/* Rating widget will go here */}
+                {/* Message the author */}
+                {isSourcegraphExtension && (
+                    <div className="registry-extension-overview-page__sidebar-section">
+                        <SourcegraphExtensionFeedback extensionID={extension.id} />
+                    </div>
+                )}
             </aside>
         </div>
     )

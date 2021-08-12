@@ -27,7 +27,10 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
                 return null
             }
 
-            const previousDate = stages.map(stage => stage.date).find((date, index) => !!date && index < stageIndex)
+            const previousDate = stages
+                .map(stage => stage.date)
+                .filter((date, index) => !!date && index < stageIndex)
+                .reverse()?.[0]
 
             const meta = <TimelineMeta stage={{ ...stage, date: stage.date }} now={now} />
 
@@ -82,7 +85,10 @@ export const TimelineMeta: FunctionComponent<TimelineMetaProps> = ({ stage, now 
                 <div className={classNames('timeline__executor-task-icon', stage.className)}>{stage.icon}</div>
             </div>
             <div className="flex-1">
-                {stage.text} <Timestamp date={stage.date} now={now} noAbout={true} />
+                {stage.text}{' '}
+                <span className="text-muted">
+                    <Timestamp date={stage.date} now={now} noAbout={true} />
+                </span>
             </div>
         </div>
     </>
