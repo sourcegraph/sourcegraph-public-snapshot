@@ -94,4 +94,3 @@ func TestEndpoints(t *testing.T) {
 		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
 	}
 }
-

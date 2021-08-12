@@ -2,10 +2,11 @@ package endpoint
 
 import (
 	"flag"
+	"os"
 	"testing"
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	m.Run()
+	os.Exit(m.Run())
 }
