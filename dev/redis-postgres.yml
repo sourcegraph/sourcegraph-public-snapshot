@@ -19,6 +19,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${PGUSER:-sourcegraph}
       - POSTGRES_USER=${PGPASSWORD:-sourcegraph}
+      - POSTGRES_DB=${PGDATABASE:-sourcegraph}
       - "POSTGRES_INITDB_ARGS= --encoding=UTF8 "
     volumes:
       - ${PGDATA_DIR:-postgres_data}:/var/lib/postgresql/data

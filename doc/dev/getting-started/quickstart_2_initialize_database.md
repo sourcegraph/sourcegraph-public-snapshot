@@ -2,7 +2,7 @@
 
 ## Without Docker
 
-You need a fresh Postgres database, and a database user that has full ownership of that database.
+You need a fresh Postgres database and a database user that has full ownership of that database.
 
 1. Create a database for the current Unix user
 
@@ -27,7 +27,7 @@ You need a fresh Postgres database, and a database user that has full ownership 
 3. Create the Sourcegraph database
 
     ```
-    createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sg 
+    createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
     ```
 
 4. Configure database settings in your environment
@@ -59,8 +59,8 @@ The development server startup script as well as the docker compose file provide
 To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
 
 ```sh
-export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sg
-docker-compose -f dev/redis-postgres.yml up -d
+export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
+createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 ```
 
 You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
