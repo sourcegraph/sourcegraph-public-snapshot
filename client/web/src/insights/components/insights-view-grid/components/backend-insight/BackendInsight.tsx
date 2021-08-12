@@ -52,11 +52,15 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const debouncedFilters = useDebounce(regexpFilters, 500)
 
     const { data, loading, error } = useParallelRequests(
-        useCallback(() => getBackendInsightById(insight.id, debouncedFilters), [
-            insight.id,
-            debouncedFilters,
-            getBackendInsightById,
-        ])
+        useCallback(
+            () =>
+                getBackendInsightById({
+                    id: insight.id,
+                    filters: debouncedFilters,
+                    series: insight.series,
+                }),
+            [insight.id, insight.series, debouncedFilters, getBackendInsightById]
+        )
     )
 
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
