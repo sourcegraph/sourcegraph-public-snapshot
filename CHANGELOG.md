@@ -93,6 +93,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Postgres has been upgraded to `12.8` in the single-server Sourcegraph image [#23999](https://github.com/sourcegraph/sourcegraph/pull/23999)
+- The experimental `codeInsightsAllRepos` feature flag has been removed.
 
 ## 3.30.3
 

@@ -20,14 +20,6 @@
             "pointer": true
           }
         },
-        "codeInsightsAllRepos": {
-          "description": "Enables the experimental ability to run an insight over all repositories on the instance.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
           "type": "boolean",
