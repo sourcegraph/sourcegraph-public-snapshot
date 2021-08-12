@@ -40,11 +40,7 @@
 
         &:active {
             // stylelint-disable-next-line declaration-property-unit-whitelist
-            border: 2px solid var(--color-border-active);
-
-            .theme-redesign & {
-                border-color: var(--primary);
-            }
+            border: 2px solid var(--primary);
         }
 
         &.disabled,
@@ -64,19 +60,11 @@
         }
 
         &--active {
-            background-color: var(--color-border-active);
+            background-color: var(--primary);
             color: #ffffff !important;
 
-            .theme-redesign & {
-                background-color: var(--primary);
-            }
-
             &:hover {
-                background-color: var(--color-border-active);
-
-                .theme-redesign & {
-                    background-color: var(--primary);
-                }
+                background-color: var(--primary);
             }
         }
     }

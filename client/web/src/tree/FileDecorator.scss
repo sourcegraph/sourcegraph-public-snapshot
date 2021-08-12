@@ -5,9 +5,6 @@
 
         &--active {
             color: $white;
-        }
-
-        .theme-redesign &--active {
             color: var(--text-muted);
         }
     }
