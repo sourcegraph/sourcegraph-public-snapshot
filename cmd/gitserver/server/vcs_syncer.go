@@ -224,10 +224,19 @@ func (s *PerforceDepotSyncer) p4CommandOptions() []string {
 	if s.UseClientSpec {
 		flags = append(flags, "--use-client-spec")
 	}
-	if s.Client != "" {
-		flags = append(flags, "-c", s.Client)
-	}
 	return flags
+}
+
+func (s *PerforceDepotSyncer) p4CommandEnv(host, username, password string) []string {
+	env := append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+		"P4PASSWD="+password,
+	)
+	if s.Client != "" {
+		env = append(env, "P4CLIENT="+s.Client)
+	}
+	return env
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
@@ -258,11 +267,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 	args = append(args, depot+"@all", tmpPath)
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"P4USER="+username,
-		"P4PASSWD="+password,
-	)
+	cmd.Env = s.p4CommandEnv(host, username, password)
 
 	return cmd, nil
 }
@@ -283,11 +288,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"P4USER="+username,
-		"P4PASSWD="+password,
-	)
+	cmd.Env = s.p4CommandEnv(host, username, password)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
 		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
