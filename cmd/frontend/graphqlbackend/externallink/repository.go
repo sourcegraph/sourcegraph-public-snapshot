@@ -14,10 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -119,65 +115,7 @@ func linksForRepository(
 		span.SetTag("phabErr", err.Error())
 	}
 
-	typ, _ := extsvc.ParseServiceType(repo.ExternalRepo.ServiceType)
-	switch typ {
-	case extsvc.TypeGitHub:
-		ghrepo := repo.Metadata.(*github.Repository)
-		links = &protocol.RepoLinks{
-			Root:   ghrepo.URL,
-			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
-		}
-	case extsvc.TypeGitLab:
-		proj := repo.Metadata.(*gitlab.Project)
-		links = &protocol.RepoLinks{
-			Root:   proj.WebURL,
-			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
-		}
-	case extsvc.TypeBitbucketServer:
-		repo := repo.Metadata.(*bitbucketserver.Repo)
-		if len(repo.Links.Self) == 0 {
-			break
-		}
+	repoInfo := protocol.NewRepoInfo(repo)
 
-		href := repo.Links.Self[0].Href
-		root := strings.TrimSuffix(href, "/browse")
-		links = &protocol.RepoLinks{
-			Root:   href,
-			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Commit: pathAppend(root, "/commits/{commit}"),
-		}
-	case extsvc.TypeAWSCodeCommit:
-		repo := repo.Metadata.(*awscodecommit.Repository)
-		if repo.ARN == "" {
-			break
-		}
-
-		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
-		if len(splittedARN) == 0 {
-			break
-		}
-		region := splittedARN[0]
-		webURL := fmt.Sprintf(
-			"https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s",
-			region,
-			repo.Name,
-		)
-		links = &protocol.RepoLinks{
-			Root:   webURL + "/browse",
-			Tree:   webURL + "/browse/{rev}/--/{path}",
-			Blob:   webURL + "/browse/{rev}/--/{path}",
-			Commit: webURL + "/commit/{commit}",
-		}
-	}
-
-	return phabRepo, links, repo.ExternalRepo.ServiceType
-}
-
-func pathAppend(base, p string) string {
-	return strings.TrimRight(base, "/") + p
+	return phabRepo, repoInfo.Links, repoInfo.ExternalRepo.ServiceType
 }
