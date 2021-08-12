@@ -93,6 +93,7 @@ export const useConnection = <TResult, TVariables, TData>({
             ...variables,
             ...initialControls,
         },
+        notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
     })
 
     /**

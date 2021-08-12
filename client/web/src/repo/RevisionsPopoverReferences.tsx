@@ -158,6 +158,8 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
         },
     })
 
+    console.log('Loading:', loading)
+
     const summary = connection && (
         <ConnectionSummary
             emptyElement={allowSpeculativeSearch ? <></> : undefined}
@@ -205,7 +207,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                 )}
             </ConnectionList>
             {loading && <ConnectionLoading />}
-            {connection && (
+            {!loading && connection && (
                 <SummaryContainer>
                     {!query && summary}
                     {hasNextPage && <ShowMoreButton onClick={fetchMore} />}

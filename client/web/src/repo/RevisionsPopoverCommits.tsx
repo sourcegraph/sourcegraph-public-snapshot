@@ -119,7 +119,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
     currentCommitID,
 }) => {
     const [searchValue, setSearchValue] = useState('')
-    const debouncedSearchValue = useDebounce(searchValue, 200)
+    const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
     const { connection, loading, errors, hasNextPage, fetchMore } = useConnection<
@@ -129,7 +129,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
     >({
         query: REPOSITORY_GIT_COMMIT,
         variables: {
-            query: debouncedSearchValue,
+            query,
             first: 15,
             repo,
             revision: currentRev || defaultBranch,
@@ -160,6 +160,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
             pluralNoun={pluralNoun}
             totalCount={connection.totalCount ?? null}
             hasNextPage={hasNextPage}
+            connectionQuery={query}
         />
     )
 
@@ -172,7 +173,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                 inputPlaceholder="Find..."
                 inputClassName="connection-popover__input"
             />
-            <SummaryContainer>{searchValue && summary}</SummaryContainer>
+            <SummaryContainer>{query && summary}</SummaryContainer>
             <ConnectionList className="connection-popover__nodes">
                 {connection?.nodes?.map((node, index) => (
                     <GitCommitNode
@@ -185,9 +186,9 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                 ))}
             </ConnectionList>
             {loading && <ConnectionLoading />}
-            {connection && (
+            {!loading && connection && (
                 <SummaryContainer>
-                    {summary}
+                    {!query && summary}
                     {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                 </SummaryContainer>
             )}
