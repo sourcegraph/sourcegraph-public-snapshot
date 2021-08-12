@@ -659,7 +659,6 @@ func testSyncExternalServicePermsSync(store *repos.Store) func(t *testing.T) {
 			name                 string
 			private              bool
 			expectedInvokedState bool
-			testSetup            func(r *types.Repo) (*types.Repo, error)
 		}{
 			{
 				name:                 "new private repo triggers permissions sync",
@@ -693,13 +692,6 @@ func testSyncExternalServicePermsSync(store *repos.Store) func(t *testing.T) {
 				sourcer := repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(githubService.Clone(), nil, repo.Clone()),
 				)
-
-				if tc.testSetup != nil {
-					var err error
-					if repo, err = tc.testSetup(repo); err != nil {
-						t.Fatal(err)
-					}
-				}
 
 				clock := timeutil.NewFakeClock(time.Now(), 0)
 				permsSyncer := &mockPermsSyncer{testing: t}
