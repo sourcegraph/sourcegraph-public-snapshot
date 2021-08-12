@@ -180,8 +180,12 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	}
 
 	// Flush remaining matches before sending a different event
-	matchesBuf.Flush()
-	eventWriter.Event("done", doneEvent)
+	if err := matchesBuf.Flush(); err != nil {
+		log.Printf("failed to flush matches: %s", err)
+	}
+	if err := eventWriter.Event("done", doneEvent); err != nil {
+		log.Printf("failed to send done event: %s", err)
+	}
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (deadlineHit bool, err error) {
