@@ -19,9 +19,9 @@ Repository permissions are by default being mirrored from code hosts to Sourcegr
 
 If you want to learn more about how repository permissions are synchronized in the background, read [Background permissions syncing](../../../admin/repo/permissions.md#background-permissions-syncing).
 
-## User settings
+## Settings cascade
 
-Sourcegraph offers the flexibility of customizing settings by users. The settings of a single user is the result of bundled individual settings, organization settings and global settings.
+Sourcegraph offers the flexibility of customizing settings by users. The settings of a single user is generally the result of merging user settings, organization settings and global settings. Each of these are referred to as a _settings subject_, which are part of the _settings cascade_. They are all exposed over GraphQL.
 
 ## Search
 
