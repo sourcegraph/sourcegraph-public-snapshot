@@ -31,9 +31,7 @@ Support is generally poorly documented, but a search through the [cAdvisor repos
 
 ## Known issues
 
-- cAdvisor can pick up non-Sourcegraph metrics (can cause issues with [our built-in observability](../../observability/index.md) and, in extreme cases, cause cAdvisor and Prometheus performance issues if the number of metrics is very large) due to how [identifying containers works](#identifying-containers): [sourcegraph#17365](https://github.com/sourcegraph/sourcegraph/issues/17365) ([Kubernetes workaround](../../../admin/install/kubernetes/configure.md#narrowing-cadvisor-metrics))
-
-### Metrics
-
-- `disk` metrics are not available in `containerd`: [cadvisor#2785](https://github.com/google/cadvisor/issues/2785)
-- `diskIO` metrics do not seem to be available in Kubernetes: [sourcegraph#12163](https://github.com/sourcegraph/sourcegraph/issues/12163)
+- cAdvisor can pick up non-Sourcegraph metrics (can cause issues with [our built-in observability](../../../admin/observability/index.md) and, in extreme cases, cause cAdvisor and Prometheus performance issues if the number of metrics is very large) due to how [identifying containers works](#identifying-containers): [sourcegraph#17365](https://github.com/sourcegraph/sourcegraph/issues/17365) ([Kubernetes workaround](../../../admin/install/kubernetes/configure.md#narrowing-cadvisor-metrics))
+- Metrics issues
+  - `disk` metrics are not available in `containerd`: [cadvisor#2785](https://github.com/google/cadvisor/issues/2785)
+  - `diskIO` metrics do not seem to be available in Kubernetes: [sourcegraph#12163](https://github.com/sourcegraph/sourcegraph/issues/12163)
