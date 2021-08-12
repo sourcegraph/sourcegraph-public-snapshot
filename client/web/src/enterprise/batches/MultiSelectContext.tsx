@@ -74,21 +74,26 @@ export const MultiSelectContext = React.createContext<MultiSelectContextState>(d
  * various callbacks that are used by consumers.
  */
 export const MultiSelectContextProvider: React.FunctionComponent<{
+    // These props are only for testing purposes.
+    initialSelected?: MultiSelectContextSelected | string[]
+    initialTotalCount?: number
     initialVisible?: string[]
-}> = ({ children, initialVisible }) => {
+}> = ({ children, initialSelected, initialTotalCount, initialVisible }) => {
     // Set up state and callbacks for the visible items.
-    const [visible, setVisibleInternal] = useState<Set<string>>(new Set())
+    const [visible, setVisibleInternal] = useState<Set<string>>(new Set(initialVisible ?? []))
     const setVisible = useCallback((ids: string[]) => {
         setVisibleInternal(new Set(ids))
     }, [])
 
     // Now for selected items.
-    const [selected, setSelected] = useState<MultiSelectContextSelected>(new Set(initialVisible ?? []))
+    const [selected, setSelected] = useState<MultiSelectContextSelected>(
+        initialSelected === 'all' ? 'all' : new Set(initialSelected)
+    )
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
 
     // Total count handling.
-    const [totalCount, setTotalCountInternal] = useState<number | undefined>(undefined)
+    const [totalCount, setTotalCountInternal] = useState<number | undefined>(initialTotalCount)
     const setTotalCount = useCallback((totalCount?: number) => {
         setTotalCountInternal(totalCount)
     }, [])

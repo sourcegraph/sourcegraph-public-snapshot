@@ -205,7 +205,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                         areAllVisibleSelected() &&
                         (totalCount === undefined ? true : totalCount > selected.size) && (
                             <button type="button" className="btn btn-link py-0 px-1" onClick={selectAll}>
-                                (Select all {totalCount})
+                                (Select all{totalCount !== undefined && ` ${totalCount}`})
                             </button>
                         )}
                 </div>
