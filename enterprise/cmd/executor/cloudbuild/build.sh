@@ -87,7 +87,7 @@ EOF
   # replaced during periods of lighter loads.
 
   cat <<EOF >/shutdown_executor.sh
-#!/usr/bin/env/sh
+#!/usr/bin/env sh
 
 if [ -z "\${EXIT_CODE}" ]; then
   echo 'Executor has exited cleanly. Shutting down host.'
