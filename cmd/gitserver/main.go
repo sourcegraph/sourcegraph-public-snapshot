@@ -137,7 +137,8 @@ func main() {
 
 				return &server.PerforceDepotSyncer{
 					MaxChanges:    int(c.MaxChanges),
-					UseClientSpec: c.UseClientSpec,
+					UseClientSpec: c.P4Client != "",
+					Client:        c.P4Client,
 				}, nil
 			case extsvc.TypeJVMPackages:
 				var c schema.JVMPackagesConnection

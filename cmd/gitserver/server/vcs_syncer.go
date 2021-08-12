@@ -130,6 +130,8 @@ type PerforceDepotSyncer struct {
 	MaxChanges int
 	// UseClientSpec enables use of a client spec to find the list of interesting files in p4.
 	UseClientSpec bool
+	// Client configures the client to use with p4.
+	Client string
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -221,6 +223,9 @@ func (s *PerforceDepotSyncer) p4CommandOptions() []string {
 	}
 	if s.UseClientSpec {
 		flags = append(flags, "--use-client-spec")
+	}
+	if s.Client != "" {
+		flags = append(flags, "-c", s.Client)
 	}
 	return flags
 }

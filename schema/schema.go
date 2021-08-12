@@ -1121,6 +1121,8 @@ type PerforceConnection struct {
 	Depots []string `json:"depots,omitempty"`
 	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
 	MaxChanges float64 `json:"maxChanges,omitempty"`
+	// P4Client description: Client specified as an option for p4 CLI (P4CLIENT, also enables '--use-client-spec')
+	P4Client string `json:"p4.client,omitempty"`
 	// P4Passwd description: The ticket value for the user (P4PASSWD).
 	P4Passwd string `json:"p4.passwd"`
 	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
@@ -1135,8 +1137,6 @@ type PerforceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// UseClientSpec description: Use a client spec to find the list of interesting files in p4 (git p4 clone --use-client-spec).
-	UseClientSpec bool `json:"useClientSpec,omitempty"`
 }
 
 // PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
