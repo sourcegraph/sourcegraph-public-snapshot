@@ -74,6 +74,7 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
     const location = useLocation()
 
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
+    const handleToggleZeroYAxisMin = (): void => setZeroYAxisMin(!zeroYAxisMin)
 
     // We support actions only over search and lang insights and not able to edit or delete
     // custom insight or backend insight.
@@ -94,6 +95,7 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
                 data-testid={`insight-card.${id}`}
                 /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
                 tabIndex={0}
+                ref={innerRef}
                 className={classnames('card', otherProps.className, styles.insightCard)}
             >
                 <ErrorBoundary
@@ -120,7 +122,7 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
                                         menuButtonClassName="ml-1 mr-n2 d-inline-flex"
                                         insightID={id}
                                         onDelete={onDelete}
-                                        toggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                                        onToggleZeroYAxisMin={handleToggleZeroYAxisMin}
                                     />
                                 )}
                             </div>

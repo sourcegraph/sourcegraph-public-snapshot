@@ -1,11 +1,11 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@reach/menu-button'
 import classnames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React, { MouseEvent, useContext } from 'react'
+import React, { MouseEvent } from 'react'
 import { useHistory } from 'react-router'
 
+import { isSearchBasedInsightId } from '../../../../../../core/types'
 import { positionRight } from '../../../../../context-menu/utils'
-import { LineChartSettingsContext } from '../../../../../insight-view-content/chart-view-content/charts/line/line-chart-settings-provider'
 
 import styles from './InsightCardMenu.module.scss'
 
@@ -13,20 +13,22 @@ export interface InsightCardMenuProps {
     menuButtonClassName?: string
     onDelete: (insightID: string) => void
     insightID: string
-    toggleZeroYAxisMin?: () => void
+    onToggleZeroYAxisMin?: () => void
 }
 
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insightID, menuButtonClassName, onDelete, toggleZeroYAxisMin } = props
+    const { insightID, menuButtonClassName, onDelete, onToggleZeroYAxisMin } = props
     const history = useHistory()
 
     const handleEditClick = (event: MouseEvent): void => {
         event.preventDefault()
         history.push(`/insights/edit/${insightID}`)
     }
+
+    const showYAxisToggleMenu = isSearchBasedInsightId(insightID) && onToggleZeroYAxisMin
 
     return (
         <Menu>
@@ -49,11 +51,11 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                         Edit
                     </MenuLink>
 
-                    {toggleZeroYAxisMin && (
+                    {showYAxisToggleMenu && (
                         <MenuLink
                             data-testid="InsightContextMenuEditLink"
                             className={classnames('btn btn-outline', styles.item)}
-                            onClick={toggleZeroYAxisMin}
+                            onClick={onToggleZeroYAxisMin}
                         >
                             Toggle Y Axis Zero
                         </MenuLink>
