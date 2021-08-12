@@ -13,7 +13,7 @@ At its core, Sourcegraph maintains a persistent cache of all repositories that a
 
 If you want to learn more about how repositories are synchronized, read [Life of a repository](life-of-a-repository.md).
 
-## Permissions syncing
+## Permission syncing
 
 Repository permissions are by default being mirrored from code hosts to Sourcegraph, it builds the fundantion of Sourcegraph authorization for repositories to ensure users see consistent content as on code hosts. Currently, the background permissions syncer resides in the [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md).
 
@@ -132,7 +132,9 @@ If you want to learn more about code insights:
   - Historical search (= unindexed search, currently)
   - Commit search to find historical commits to search over
 - [Repository Syncing](#repository-syncing)
-  - The WIP code insights backend has direct dependencies on `gitserver` and `repo-updater`
+  - The code insights backend has direct dependencies on `gitserver` and `repo-updater`
+- [Permission syncing](#permission-syncing)
+  - The code insights backend depends on synced repository permissions for access control.
 - [Settings cascade](#settings-cascade)
   - Insights and dashboard configuration is currently stored in user, organization and global settings. This will change in the future and is planned to be moved to the database.
   - Insights contributed by extensions are configured through settings (this will stay the same).
