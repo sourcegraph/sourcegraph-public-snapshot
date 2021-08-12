@@ -6,7 +6,7 @@ import { Popover } from 'reactstrap'
 
 import { Button, PageHeader } from '@sourcegraph/wildcard'
 
-import { BRANCHES_TAB, RevisionsPopover, TAGS_TAB } from '../RevisionsPopover'
+import { RevisionsPopover } from '../revisions-popover/RevisionsPopover'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
@@ -72,8 +72,6 @@ export const RepositoryComparePopover: React.FunctionComponent<{
                     repoName={repo.name}
                     defaultBranch={repo.defaultBranch?.abbrevName || ''}
                     currentRev={undefined}
-                    history={history}
-                    location={location}
                     togglePopover={togglePopover}
                     getURLFromRevision={getURLFromRevision}
                     allowSpeculativeSearch={true}

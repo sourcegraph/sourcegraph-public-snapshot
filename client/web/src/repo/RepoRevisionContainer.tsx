@@ -43,7 +43,7 @@ import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
-import { RevisionsPopover } from './RevisionsPopover'
+import { RevisionsPopover } from './revisions-popover/RevisionsPopover'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
@@ -222,8 +222,6 @@ const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContaine
                 defaultBranch={resolvedRevisionOrError.defaultBranch}
                 currentRev={revision}
                 currentCommitID={resolvedRevisionOrError.commitID}
-                history={history}
-                location={location}
                 togglePopover={togglePopover}
             />
         </Popover>

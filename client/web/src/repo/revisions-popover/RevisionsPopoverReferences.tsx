@@ -4,7 +4,6 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 
-import { CircleChevronLeftIcon } from '@sourcegraph/shared/src/components/icons'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
@@ -19,9 +18,8 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../graphql-operations'
-
-import { GitReferenceNode, REPOSITORY_GIT_REFS } from './GitReference'
+import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
+import { GitReferenceNode, REPOSITORY_GIT_REFS } from '../GitReference'
 
 interface GitReferencePopoverNodeProps {
     node: GitRefFields

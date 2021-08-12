@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { getTotalCount } from '@sourcegraph/web/src/components/FilteredConnection/ConnectionNodes'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
@@ -19,7 +18,11 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { GitCommitAncestorFields, RepositoryGitCommitResult, RepositoryGitCommitVariables } from '../graphql-operations'
+import {
+    GitCommitAncestorFields,
+    RepositoryGitCommitResult,
+    RepositoryGitCommitVariables,
+} from '../../graphql-operations'
 
 export const REPOSITORY_GIT_COMMIT = gql`
     query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {

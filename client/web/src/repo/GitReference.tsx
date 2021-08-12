@@ -102,6 +102,7 @@ export const gitReferenceFragments = gql`
     }
 
     fragment SignatureFieldsForReferences on Signature {
+        __typename
         person {
             displayName
             user {
@@ -115,8 +116,10 @@ export const gitReferenceFragments = gql`
 export const REPOSITORY_GIT_REFS = gql`
     query RepositoryGitRefs($repo: ID!, $first: Int, $query: String, $type: GitRefType!, $withBehindAhead: Boolean!) {
         node(id: $repo) {
+            __typename
             ... on Repository {
                 gitRefs(first: $first, query: $query, type: $type, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                    __typename
                     ...GitRefConnectionFields
                 }
             }
@@ -125,6 +128,7 @@ export const REPOSITORY_GIT_REFS = gql`
 
     fragment GitRefConnectionFields on GitRefConnection {
         nodes {
+            __typename
             ...GitRefFields
         }
         totalCount
@@ -153,7 +157,7 @@ export const queryGitReferences = memoizeObservable(
                 args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
         }).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || !data.node.gitRefs) {
+                if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
                     throw createAggregateError(errors)
                 }
                 return data.node.gitRefs
