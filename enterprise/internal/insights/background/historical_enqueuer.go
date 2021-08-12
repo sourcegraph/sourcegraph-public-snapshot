@@ -98,7 +98,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		if frames := conf.Get().InsightsHistoricalFrames; frames != 0 {
 			return frames
 		}
-		return 6 // 6 one-month frames.
+		return 12 // 1 year by default
 	}
 
 	frameLength := func() time.Duration {
