@@ -87,11 +87,11 @@ EOF
   # replaced during periods of lighter loads.
 
   cat <<EOF >/shutdown_executor.sh
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-if [ -z "\${EXIT_STATUS}" ]; then
+if [ "\${EXIT_STATUS}" == "0" ]; then
   echo 'Executor has exited cleanly. Shutting down host.'
-  systemctl shutdown
+  systemctl poweroff
 else
   echo 'Executor has exited with an error. Service will restart.'
 fi
