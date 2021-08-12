@@ -840,6 +840,20 @@ Tracks jobs that scan imports of indexes to schedule auto-index jobs.
 
 **upload_id**: The identifier of the triggering upload record.
 
+# Table "public.lsif_dependency_repos"
+```
+ Column  |  Type  | Collation | Nullable |                      Default                      
+---------+--------+-----------+----------+---------------------------------------------------
+ id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
+ name    | text   |           | not null | 
+ version | text   |           | not null | 
+ scheme  | text   |           | not null | 
+Indexes:
+    "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+
+```
+
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |           Type           | Collation | Nullable | Default 
