@@ -556,7 +556,7 @@ func (p *mockPermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.Repo
 	p.invoked = true
 }
 
-func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
+func testSyncRepoPermsSyncer(store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		servicesPerKind := createExternalServices(t, store, func(svc *types.ExternalService) { svc.CloudDefault = true })
 

@@ -38,7 +38,7 @@ func TestIntegration(t *testing.T) {
 		{"EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
 		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
 		{"Syncer/Sync", testSyncerSync},
-		{"Syncer/PermsSyncer", testSyncerPermsSyncer},
+		{"Syncer/SyncRepoPermsSyncer", testSyncRepoPermsSyncer},
 		{"Syncer/SyncExternalServicePermsSync", testSyncExternalServicePermsSync},
 		{"Syncer/SyncRepo", testSyncRepo},
 		{"Syncer/Run", testSyncRun},
