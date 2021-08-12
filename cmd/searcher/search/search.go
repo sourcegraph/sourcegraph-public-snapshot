@@ -156,12 +156,9 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	}
 
 	var bufMux sync.Mutex
-	matchesBuf := &streamhttp.JSONArrayBuf{
-		FlushSize: 32 * 1024,
-		Write: func(data []byte) error {
-			return eventWriter.EventBytes("matches", data)
-		},
-	}
+	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
 	onMatches := func(match protocol.FileMatch) {
 		bufMux.Lock()
 		if err := matchesBuf.Append(match); err != nil {

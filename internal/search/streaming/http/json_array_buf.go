@@ -15,6 +15,17 @@ type JSONArrayBuf struct {
 	buf bytes.Buffer
 }
 
+func NewJSONArrayBuf(flushSize int, write func([]byte) error) *JSONArrayBuf {
+	b := &JSONArrayBuf{
+		FlushSize: flushSize,
+		Write:     write,
+	}
+	// Grow the buffer to flushSize to reduce the number of small allocations
+	// caused by repeatedly growing the buffer
+	b.buf.Grow(flushSize)
+	return b
+}
+
 // Append marshals v and adds it to the json array buffer. If the size of the
 // buffer exceed FlushSize the buffer is written out.
 func (j *JSONArrayBuf) Append(v interface{}) error {

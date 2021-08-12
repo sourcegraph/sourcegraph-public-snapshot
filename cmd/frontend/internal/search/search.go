@@ -117,15 +117,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store marshalled matches and flush periodically or when we go over
-	// 32kb.
-	matchesBuf := &streamhttp.JSONArrayBuf{
-		// 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
-		// still write more than that.
-		FlushSize: 32 * 1024,
-		Write: func(data []byte) error {
-			return eventWriter.EventBytes("matches", data)
-		},
-	}
+	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
+	// still write more than that.
+	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
 	matchesFlush := func() {
 		if err := matchesBuf.Flush(); err != nil {
 			// EOF
