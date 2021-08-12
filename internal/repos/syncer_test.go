@@ -634,7 +634,9 @@ func testSyncerPermsSyncer(store *repos.Store) func(t *testing.T) {
 					PermsSyncer: permsSyncer,
 				}
 
-				syncer.SyncRepo(context.Background(), repo)
+				if err := syncer.SyncRepo(context.Background(), repo); err != nil {
+					t.Fatal(err)
+				}
 
 				if permsSyncer.invoked != tc.expectedInvokedState {
 					t.Errorf(
