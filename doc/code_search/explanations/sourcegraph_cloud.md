@@ -4,6 +4,8 @@
 
 Note that you can search across a maximum of 50 repositories at once using Sourcegraph Cloud. To search across more than 50 repositories at once or to search your organization's internal code, [run your own Sourcegraph instance](../../../admin/install/index.md).
 
+Note that **Organizations** feature is disabled in Sourcegraph Cloud. If you want to use it, you also need to [run your own Sourcegraph instance](../../../admin/install/index.md).
+
 ## Search contexts
 
 >NOTE: This feature is still in active development.
