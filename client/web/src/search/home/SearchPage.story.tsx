@@ -66,7 +66,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     featureFlags: new Map(),
 })
 
-const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({
+const { add } = storiesOf('web/search/home/SearchPage', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
