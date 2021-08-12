@@ -39,25 +39,36 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     ) {
         // The author and committer both exist and are different people.
         return (
-            <small data-testid="git-commit-node-byline" className={className}>
-                <UserAvatar
-                    className="icon-inline-md"
-                    user={author.person}
-                    data-tooltip={`${formatPersonName(author.person)} (author)`}
-                />{' '}
-                <UserAvatar
-                    className="icon-inline mr-1"
-                    user={committer.person}
-                    data-tooltip={`${formatPersonName(committer.person)} (committer)`}
-                />{' '}
-                <PersonLink person={author.person} className="font-weight-bold" /> {!compact && 'authored'} and{' '}
-                <PersonLink person={committer.person} className="font-weight-bold" />{' '}
-                {!compact && (
-                    <>
-                        committed <Timestamp date={committer.date} />
-                    </>
-                )}
-            </small>
+            <div data-testid="git-commit-node-byline" className={className}>
+                <div>
+                    <UserAvatar
+                        className="icon-inline"
+                        user={author.person}
+                        data-tooltip={`${formatPersonName(author.person)} (author)`}
+                    />{' '}
+                    <UserAvatar
+                        className="icon-inline mr-2"
+                        user={committer.person}
+                        data-tooltip={`${formatPersonName(committer.person)} (committer)`}
+                    />
+                </div>
+                <div>
+                    {!compact ? (
+                        <>
+                            {messageElement}
+                            <PersonLink person={author.person} className="font-weight-bold" /> authored and{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" /> commited{' '}
+                            <Timestamp date={author.date} />
+                            {commitMessageBody}
+                        </>
+                    ) : (
+                        <>
+                            <PersonLink person={author.person} className="font-weight-bold" /> and{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                        </>
+                    )}
+                </div>
+            </div>
         )
     }
 
