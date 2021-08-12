@@ -136,7 +136,7 @@ type settingMigrator struct {
 // NewMigrateSettingInsightsJob will migrate insights from settings into the database. This is a job that will be
 // deprecated as soon as this functionality is available over an API.
 func NewMigrateSettingInsightsJob(ctx context.Context, base dbutil.DB, insights dbutil.DB) goroutine.BackgroundRoutine {
-	interval := time.Minute * 10
+	interval := time.Minute * 1
 	m := settingMigrator{
 		base:     base,
 		insights: insights,
@@ -196,7 +196,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	defer func() { err = tx.Store.Done(err) }()
 
 	log15.Info("attempting to migrate insight", "unique_id", from.ID)
-	series := make([]types.InsightSeries, len(from.Series))
+	dataSeries := make([]types.InsightSeries, len(from.Series))
 	metadata := make([]types.InsightViewSeriesMetadata, len(from.Series))
 
 	for i, timeSeries := range from.Series {
@@ -206,11 +206,21 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			RecordingIntervalDays: 1,
 			NextRecordingAfter:    insights.NextRecording(time.Now()),
 		}
-		result, err := tx.CreateSeries(ctx, temp)
+		var series types.InsightSeries
+		// first check if this data series already exists (somebody already created an insight of this query), in which case we just need to attach the view to this data series
+		existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: Encode(timeSeries)})
 		if err != nil {
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+		} else if len(existing) > 0 {
+			series = existing[0]
+			log15.Info("existing data series identified, attempting to construct and attach new view", "series_id", series.SeriesID, "unique_id", from.ID)
+		} else {
+			series, err = tx.CreateSeries(ctx, temp)
+			if err != nil {
+				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+			}
 		}
-		series[i] = result
+		dataSeries[i] = series
 
 		metadata[i] = types.InsightViewSeriesMetadata{
 			Label:  timeSeries.Name,
@@ -229,7 +239,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
 	}
 
-	for i, insightSeries := range series {
+	for i, insightSeries := range dataSeries {
 		err := tx.AttachSeriesToView(ctx, insightSeries, view, metadata[i])
 		if err != nil {
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
