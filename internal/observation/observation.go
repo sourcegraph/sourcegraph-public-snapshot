@@ -75,6 +75,17 @@ type Context struct {
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Registerer: metrics.TestRegisterer}
 
+type ErrorFilterBehaviour uint8
+
+const (
+	EmitForNone    ErrorFilterBehaviour = 0
+	EmitForMetrics ErrorFilterBehaviour = 1 << iota
+	EmitForLogs
+	EmitForTraces
+
+	EmitForAll = EmitForMetrics | EmitForLogs | EmitForTraces
+)
+
 // Op configures an Operation instance.
 type Op struct {
 	Metrics *metrics.OperationMetrics
@@ -94,7 +105,7 @@ type Op struct {
 	// a process interfacing with gitserver. Such an error should not be treated as
 	// an unexpected value in metrics and traces but should be handled higher up in
 	// the stack.
-	ErrorFilter func(err error) bool
+	ErrorFilter func(err error) ErrorFilterBehaviour
 }
 
 // Operation combines the state of the parent context to create a new operation. This value
@@ -119,7 +130,7 @@ type Operation struct {
 	kebabName    string
 	metricLabels []string
 	logFields    []log.Field
-	errorFilter  func(err error) bool
+	errorFilter  func(err error) ErrorFilterBehaviour
 }
 
 // TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
@@ -188,10 +199,14 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabels, finishArgs.MetricLabels)
 
-		err = op.applyErrorFilter(err)
-		op.emitErrorLogs(err, logFields)
-		op.emitMetrics(err, count, elapsed, metricLabels)
-		op.finishTrace(err, tr, logFields)
+		var (
+			logErr     = op.applyErrorFilter(err, EmitForLogs)
+			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
+			traceErr   = op.applyErrorFilter(err, EmitForTraces)
+		)
+		op.emitErrorLogs(logErr, logFields)
+		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
+		op.finishTrace(traceErr, tr, logFields)
 	}
 }
 
@@ -253,8 +268,8 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []log.Fi
 
 // applyErrorFilter returns nil if the given error does not pass the registered error filter.
 // The original value is returned otherwise.
-func (op *Operation) applyErrorFilter(err *error) *error {
-	if op.errorFilter != nil && err != nil && op.errorFilter(*err) {
+func (op *Operation) applyErrorFilter(err *error, behaviour ErrorFilterBehaviour) *error {
+	if op.errorFilter != nil && err != nil && op.errorFilter(*err)&behaviour > 0 {
 		return nil
 	}
 

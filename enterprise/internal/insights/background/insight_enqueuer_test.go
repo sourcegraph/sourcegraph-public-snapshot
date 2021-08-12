@@ -111,7 +111,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	autogold.Want("0", `[
   {
     "SeriesID": "series1",
-    "SearchQuery": "query1 count:9999999",
+    "SearchQuery": "query1 count:all",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,
@@ -128,7 +128,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
   },
   {
     "SeriesID": "series2",
-    "SearchQuery": "query2 count:9999999",
+    "SearchQuery": "query2 count:all",
     "RecordTime": null,
     "Cost": 500,
     "Priority": 10,

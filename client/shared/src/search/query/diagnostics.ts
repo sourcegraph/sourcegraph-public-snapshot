@@ -4,6 +4,7 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import { validateFilter } from './filters'
 import { toMonacoSingleLineRange } from './monaco'
+import { PatternOf, each, matchesValue, eachOf } from './patternMatcher'
 import { Filter, Token } from './token'
 
 type FilterCheck = (f: Filter) => Monaco.editor.IMarkerData[]
@@ -42,10 +43,23 @@ export function checkFilter(filter: Filter): Monaco.editor.IMarkerData[] {
     const checks: FilterCheck[] = [validFilterValue, emptyFilterValue]
     return checks.map(check => check(filter)).find(value => value.length !== 0) || []
 }
+const rules: PatternOf<Token[], Monaco.editor.IMarkerData[]>[] = [
+    // Validate the value of each filter
+    each({
+        type: 'filter',
+        $data: (token, context) => {
+            context.data.push(...checkFilter(token as Filter))
+        },
+    }),
+]
 
 /**
  * Returns the diagnostics for a scanned search query to be displayed in the Monaco query input.
  */
 export function getDiagnostics(tokens: Token[], patternType: SearchPatternType): Monaco.editor.IMarkerData[] {
-    return tokens.filter(token => token.type === 'filter').flatMap(filter => checkFilter(filter as Filter))
+    const result = matchesValue<Token[], Monaco.editor.IMarkerData[]>(tokens, eachOf(...rules), [])
+    if (result.success) {
+        return result.data
+    }
+    return []
 }
