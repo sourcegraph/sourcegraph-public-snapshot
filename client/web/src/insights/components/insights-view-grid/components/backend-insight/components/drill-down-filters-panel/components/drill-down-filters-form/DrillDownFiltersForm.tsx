@@ -81,7 +81,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} className={classnames(className, 'd-flex flex-column')} onSubmit={handleSubmit}>
             <header className="d-flex align-items-baseline px-3 py-2 mt-1">
-                <h4 className="mb-0">Filters by Repositories</h4>
+                <h4 className="mb-0">Filter repositories</h4>
 
                 {hasAppliedFilters && (
                     <small className="text-muted ml-auto mb-0">
