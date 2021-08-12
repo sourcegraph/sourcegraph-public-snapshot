@@ -130,6 +130,33 @@ func scanDirtyQueries(rows *sql.Rows, queryErr error) (_ []*types.DirtyQuery, er
 	return results, nil
 }
 
+// GetDirtyQueriesAggregated returns aggregated information about dirty queries for a given series.
+func (s *InsightStore) GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error) {
+	q := sqlf.Sprintf(getDirtyQueriesAggregatedSql, seriesID)
+	return scanDirtyQueriesAggregated(s.Query(ctx, q))
+}
+
+func scanDirtyQueriesAggregated(rows *sql.Rows, queryErr error) (_ []*types.DirtyQueryAggregate, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]*types.DirtyQueryAggregate, 0)
+	for rows.Next() {
+		var temp types.DirtyQueryAggregate
+		if err := rows.Scan(
+			&temp.Count,
+			&temp.ForTime,
+			&temp.Reason,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, &temp)
+	}
+	return results, nil
+}
+
 const insertDirtyQuerySql = `
 -- source: enterprise/internal/insights/store/insight_store.go:InsertDirtyQuery
 INSERT INTO insight_dirty_queries (insight_series_id, query, reason, for_time, dirty_at)
@@ -141,6 +168,13 @@ const getDirtyQueriesSql = `
 select id, query, reason, for_time, dirty_at from insight_dirty_queries
 where insight_series_id = %s
 limit %s;`
+
+const getDirtyQueriesAggregatedSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueriesAggregated
+select count(*) as count, for_time, reason from insight_dirty_queries
+where insight_dirty_queries.insight_series_id = (select id from insight_series where series_id = %s)
+group by for_time, reason;
+`
 
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
@@ -300,6 +334,7 @@ type DataSeriesStore interface {
 type InsightMetadataStore interface {
 	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
 	GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error)
+	GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error)
 }
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.

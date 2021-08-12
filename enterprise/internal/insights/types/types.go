@@ -62,3 +62,9 @@ type DirtyQuery struct {
 	DirtyAt time.Time
 	Reason  string
 }
+
+type DirtyQueryAggregate struct {
+	Count   int
+	ForTime time.Time
+	Reason  string
+}
