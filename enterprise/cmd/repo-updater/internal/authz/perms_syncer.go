@@ -603,7 +603,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		// Remove existing user from the set of pending users
 		delete(pendingAccountIDsSet, aid)
 	}
-
 	for i := range userIDs {
 		p.UserIDs.Add(uint32(userIDs[i]))
 	}
