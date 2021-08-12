@@ -21,6 +21,8 @@ If you want to learn more about how repository permissions are synchronized in t
 
 ## Settings cascade
 
+<small>Last updated: 2021-08-12</small>
+
 Sourcegraph offers the flexibility of customizing settings by users. The settings of a single user is generally the result of merging user settings, organization settings and global settings. Each of these are referred to as a _settings subject_, which are part of the _settings cascade_. They are all exposed over GraphQL.
 
 ## Search
@@ -59,6 +61,8 @@ If you want to learn more about code intelligence:
 
 ### Dependencies
 
+<small>Last updated: 2021-07-05</small>
+
 - [Search](#search)
   - Symbol search is used for basic code intel
 - [Sourcegraph extension API](#sourcegraph-extension-api)
@@ -82,6 +86,8 @@ If you want to learn more about batch changes:
 - [How `src` executes a batch spec](../../../batch_changes/explanations/how_src_executes_a_batch_spec.md)
 
 ### Dependencies
+
+<small>Last updated: 2021-07-05</small>
 
 - [src-cli](#src-cli)
   - Batch changes are currently executed client-side through the `src` CLI
@@ -117,6 +123,8 @@ If you want to learn more about code insights:
 
 ### Dependencies
 
+<small>Last updated: 2021-08-12</small>
+
 - [Search](#search)
   - GraphQL API for text search, in particular `search()`, `matchCount`, `stats.languages`
   - Query syntax: Code insights "construct" search queries programmatically
@@ -149,6 +157,8 @@ If you want to learn more about code monitoring:
 
 ### Dependencies
 
+<small>Last updated: 2021-07-05</small>
+
 - [Search](#search)
   - Diff and commit search triggers
 
@@ -177,6 +187,8 @@ If you want to learn more about native integrations:
 
 ### Dependencies
 
+<small>Last updated: 2021-07-05</small>
+
 - [Repository Syncing](#repository-syncing)
   - Uses the GraphQL API to resolve repositories and revisions on code hosts
 
@@ -199,6 +211,8 @@ If you want to learn more about our extension API:
 
 ### Dependencies
 
+<small>Last updated: 2021-08-12</small>
+
 - [Search](#search)
   - Query transformer API hooks into search in the web app
 - [Settings cascade](#settings-cascade)
@@ -218,6 +232,8 @@ If you want to learn more about src-cli:
 - [src-cli documentation](../../../cli/index.md)
 
 ### Dependencies
+
+<small>Last updated: 2021-07-05</small>
 
 - [Search](#search)
   - GraphQL API
