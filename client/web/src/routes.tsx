@@ -142,6 +142,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     authenticatedUser={props.authenticatedUser}
                     telemetryService={props.telemetryService}
                     context={window.context}
+                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
+                    setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
                 <Redirect to="/search" />

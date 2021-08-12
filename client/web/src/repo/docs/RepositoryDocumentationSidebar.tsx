@@ -1,7 +1,7 @@
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Button } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -13,7 +13,7 @@ import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import { DocumentationIndexNode } from './DocumentationIndexNode'
+import { DocumentationIndexNode, IndexNode } from './DocumentationIndexNode'
 import { GQLDocumentationNode, GQLDocumentationPathInfo, isExcluded, Tag } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
@@ -24,6 +24,10 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     node: GQLDocumentationNode
     depth: number
     pagePathID: string
+
+    /** The currently active/visible node's path ID */
+    activePathID: string
+
     pathInfo: GQLDocumentationPathInfo
 }
 
@@ -104,12 +108,38 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
 /**
  * The sidebar for a specific repo revision that shows the index of all documentation.
  */
-export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({ onToggle, ...props }) => {
+export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
+    onToggle,
+    node,
+    activePathID,
+    ...props
+}) => {
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, SIDEBAR_DEFAULT_VISIBILITY)
     const handleSidebarToggle = useCallback(() => {
         onToggle(!toggleSidebar)
         setToggleSidebar(!toggleSidebar)
     }, [setToggleSidebar, toggleSidebar, onToggle])
+
+    /**
+     * Convert the regular GraphQL node types into IndexNode types. These contain per-node `isActive`
+     * and `inActivePath` fields. We bake nodes in this way because otherwise we would need to pass
+     * the `activePathID` to every `DocumentationIndexNode` recursively, and it would be an almost-always
+     * changing prop to the component - causing scrolling on the page to rerender the entire sidebar
+     * instead of just the elements that would've been affected due to `isActive` changes, etc.
+     */
+    const indexNode = useMemo(() => {
+        const bake = (node: GQLDocumentationNode): IndexNode => ({
+            ...node,
+            children: node.children.map(child =>
+                child.pathID ? { pathID: child.pathID } : { node: bake(child.node!) }
+            ),
+            isActive: node.pathID === activePathID,
+            inActivePath: hasDescendent(node, activePathID),
+        })
+        return bake(node)
+    }, [node, activePathID])
+
+    const excludingTags: Tag[] = useMemo(() => ['private'], [])
 
     if (!toggleSidebar) {
         return (
@@ -123,7 +153,6 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
             </button>
         )
     }
-    const excludingTags: Tag[] = ['private']
 
     return (
         <Resizable
@@ -148,7 +177,12 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             <>
                                 <h4 className="text-nowrap">Index</h4>
                                 {props.pathInfo.children.length > 0 ? (
-                                    <SubpagesList onToggle={onToggle} {...props} />
+                                    <SubpagesList
+                                        onToggle={onToggle}
+                                        {...props}
+                                        node={node}
+                                        activePathID={activePathID}
+                                    />
                                 ) : (
                                     <p>Looks like there's nothing to see here..</p>
                                 )}
@@ -157,22 +191,21 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                         {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
                             <>
                                 <h4 className="text-nowrap">Subpages</h4>
-                                <SubpagesList onToggle={onToggle} {...props} />
+                                <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
                             </>
                         )}
                         {!props.pathInfo.isIndex &&
                             props.pathInfo.children.length === 0 &&
-                            isExcluded(props.node, excludingTags) && (
+                            isExcluded(node, excludingTags) && (
                                 <>
                                     <p>Looks like there's nothing to see here..</p>
                                 </>
                             )}
                         <DocumentationIndexNode
                             {...props}
-                            node={props.node}
+                            node={indexNode}
                             pagePathID={props.pagePathID}
                             depth={0}
-                            contentOnly={false}
                             excludingTags={excludingTags}
                         />
                     </div>
@@ -180,4 +213,13 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
             }
         />
     )
+}
+
+function hasDescendent(node: GQLDocumentationNode, descendentPathID: string): boolean {
+    return !!node.children.find(child => {
+        if (child.pathID === descendentPathID || child.node?.pathID === descendentPathID) {
+            return true
+        }
+        return child.node ? hasDescendent(child.node, descendentPathID) : false
+    })
 }

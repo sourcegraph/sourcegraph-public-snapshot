@@ -136,7 +136,7 @@ type settingMigrator struct {
 // NewMigrateSettingInsightsJob will migrate insights from settings into the database. This is a job that will be
 // deprecated as soon as this functionality is available over an API.
 func NewMigrateSettingInsightsJob(ctx context.Context, base dbutil.DB, insights dbutil.DB) goroutine.BackgroundRoutine {
-	interval := time.Hour
+	interval := time.Minute * 10
 	m := settingMigrator{
 		base:     base,
 		insights: insights,
@@ -204,6 +204,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			SeriesID:              Encode(timeSeries),
 			Query:                 timeSeries.Query,
 			RecordingIntervalDays: 1,
+			NextRecordingAfter:    insights.NextRecording(time.Now()),
 		}
 		result, err := tx.CreateSeries(ctx, temp)
 		if err != nil {

@@ -92,7 +92,7 @@ func zoektAddr(environ []string) string {
 
 	// Not set, use the default (service discovery on the indexed-search
 	// statefulset)
-	return "k8s+rpc://indexed-search:6070"
+	return "k8s+rpc://indexed-search:6070?include_not_ready=true"
 }
 
 func getEnv(environ []string, key string) (string, bool) {

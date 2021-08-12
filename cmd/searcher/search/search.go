@@ -16,8 +16,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	nettrace "golang.org/x/net/trace"
@@ -32,6 +34,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -98,6 +102,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if p.Stream {
+		s.streamSearch(ctx, w, p)
+		return
+	}
+
 	if p.Limit == 0 || p.Limit > maxLimit {
 		p.Limit = maxLimit
 	}
@@ -132,7 +142,52 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(&resp)
 }
 
-func (s *Service) search(ctx context.Context, p *protocol.Request, sender *limitedStreamCollector) (deadlineHit bool, err error) {
+func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
+	if p.Limit == 0 {
+		// No limit for streaming search since upstream limits
+		// will either be sent in the request, or propagated by
+		// a cancelled context.
+		p.Limit = math.MaxInt32
+	}
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var bufMux sync.Mutex
+	matchesBuf := &streamhttp.JSONArrayBuf{
+		FlushSize: 32 * 1024,
+		Write: func(data []byte) error {
+			return eventWriter.EventBytes("matches", data)
+		},
+	}
+	onMatches := func(match protocol.FileMatch) {
+		bufMux.Lock()
+		if err := matchesBuf.Append(match); err != nil {
+			log.Printf("failed appending match to buffer: %s", err)
+		}
+		bufMux.Unlock()
+	}
+
+	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
+	defer cancel()
+
+	deadlineHit, err := s.search(ctx, &p, stream)
+	doneEvent := searcher.EventDone{
+		DeadlineHit: deadlineHit,
+		LimitHit:    stream.LimitHit(),
+	}
+	if err != nil {
+		doneEvent.Error = err.Error()
+	}
+
+	// Flush remaining matches before sending a different event
+	matchesBuf.Flush()
+	eventWriter.Event("done", doneEvent)
+}
+
+func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (deadlineHit bool, err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 

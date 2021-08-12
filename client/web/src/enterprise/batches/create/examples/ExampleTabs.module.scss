@@ -1,0 +1,19 @@
+// unsets the defaults; can probably go away with the redesign
+.example-tabs {
+    display: flex;
+
+    :global(.theme-redesign) & {
+        [data-reach-tab-list] {
+            background: none;
+        }
+        [data-reach-tab] {
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+        [data-reach-tab][data-selected] {
+            border-bottom: none;
+            font-weight: 400;
+        }
+    }
+}

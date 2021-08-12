@@ -30,8 +30,8 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	opts.SeriesID = &seriesID
 
 	if args.From == nil {
-		// Default to last 6mo of data.
-		args.From = &graphqlbackend.DateTime{Time: time.Now().Add(-6 * 30 * 24 * time.Hour)}
+		// Default to last 12mo of data
+		args.From = &graphqlbackend.DateTime{Time: time.Now().AddDate(-1, 0, 0)}
 	}
 	if args.From != nil {
 		opts.From = &args.From.Time

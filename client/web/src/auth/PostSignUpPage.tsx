@@ -1,8 +1,10 @@
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
@@ -11,6 +13,7 @@ import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
 import { getReturnTo } from './SignInSignUpCommon'
 import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from './Steps'
@@ -23,6 +26,8 @@ interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
+    onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
+    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 interface Step {
@@ -32,8 +37,6 @@ interface Step {
     onNextButtonClick?: () => Promise<void>
 }
 
-// type PerformanceNavigationTimingType = 'navigate' | 'reload' | 'back_forward' | 'prerender'
-
 export type RepoSelectionMode = 'all' | 'selected' | undefined
 
 const USER_FINISHED_WELCOME_FLOW = 'finished-welcome-flow'
@@ -42,6 +45,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     authenticatedUser: user,
     context,
     telemetryService,
+    onUserExternalServicesOrRepositoriesUpdate,
+    setSelectedSearchContextSpec,
 }) => {
     const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useLocalStorage(USER_FINISHED_WELCOME_FLOW, false)
     const isOAuthCall = useRef(false)
@@ -61,7 +66,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     }
 
     const [repoSelectionMode, setRepoSelectionMode] = useState<RepoSelectionMode>()
+    const [error, setError] = useState<ErrorLike>()
     const { externalServices, loadingServices, errorServices, refetchExternalServices } = useExternalServices(user.id)
+
+    const hasErrors = error || errorServices
 
     const beforeUnload = useCallback((): void => {
         // user is not leaving the flow, it's an OAuth page refresh
@@ -69,25 +77,20 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             return
         }
 
-        // TODO: discuss
-        // allow user to manually refresh the page
-        // if (window.performance?.getEntriesByType) {
-        //     const entries = window.performance?.getEntriesByType('navigation')
-        //     // let TS know that we may expect PerformanceNavigationTiming.type
-        //     const lastEntry = entries.pop() as PerformanceEntry & { type?: PerformanceNavigationTimingType }
-        //     if (lastEntry?.type === 'reload') {
-        //         return
-        //     }
-        // }
-
         setUserFinishedWelcomeFlow(true)
     }, [setUserFinishedWelcomeFlow])
 
     useEffect(() => {
+        if (hasErrors) {
+            return
+        }
+
         window.addEventListener('beforeunload', beforeUnload)
 
         return () => window.removeEventListener('beforeunload', beforeUnload)
-    }, [beforeUnload])
+    }, [beforeUnload, error, hasErrors])
+
+    const onError = useCallback((error: ErrorLike) => setError(error), [])
 
     return (
         <>
@@ -107,6 +110,12 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="text-left"
                     body={
                         <div className="post-signup-page__container">
+                            {hasErrors && (
+                                <div className="alert alert-danger mb-4" role="alert">
+                                    Sorry, something went wrong. Try refreshing the page or{' '}
+                                    <Link to="/search">skip to code search</Link>.
+                                </div>
+                            )}
                             <h2>Get started with Sourcegraph</h2>
                             <p className="text-muted pb-3">
                                 Three quick steps to add your repositories and get searching with Sourcegraph
@@ -120,19 +129,17 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
-                                            {externalServices && (
-                                                <CodeHostsConnection
-                                                    user={user}
-                                                    onNavigation={(called: boolean) => {
-                                                        isOAuthCall.current = called
-                                                    }}
-                                                    loading={loadingServices}
-                                                    error={errorServices}
-                                                    externalServices={externalServices}
-                                                    context={context}
-                                                    refetch={refetchExternalServices}
-                                                />
-                                            )}
+                                            <CodeHostsConnection
+                                                user={user}
+                                                onNavigation={(called: boolean) => {
+                                                    isOAuthCall.current = called
+                                                }}
+                                                loading={loadingServices}
+                                                onError={onError}
+                                                externalServices={externalServices}
+                                                context={context}
+                                                refetch={refetchExternalServices}
+                                            />
                                         </StepPanel>
                                         <StepPanel>
                                             <div className="mt-5">
@@ -146,11 +153,20 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     authenticatedUser={user}
                                                     onRepoSelectionModeChange={setRepoSelectionMode}
                                                     telemetryService={telemetryService}
+                                                    onError={onError}
                                                 />
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <StartSearching user={user} repoSelectionMode={repoSelectionMode} />
+                                            <StartSearching
+                                                user={user}
+                                                repoSelectionMode={repoSelectionMode}
+                                                onUserExternalServicesOrRepositoriesUpdate={
+                                                    onUserExternalServicesOrRepositoriesUpdate
+                                                }
+                                                setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                                                onError={onError}
+                                            />
                                         </StepPanel>
                                     </StepPanels>
                                     <StepActions>

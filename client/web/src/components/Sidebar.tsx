@@ -8,7 +8,7 @@ import { Collapse } from 'reactstrap'
 export const SIDEBAR_BUTTON_CLASS = 'btn text-left sidebar__link--inactive w-100'
 
 /**
- * Item of `SideBarGroupItems`.
+ * Item of `SideBarGroup`.
  */
 export const SidebarNavItem: React.FunctionComponent<{
     to: string
@@ -80,6 +80,6 @@ export const SidebarCollapseItems: React.FunctionComponent<{
 }
 
 /**
- * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.
+ * A box of items in the side bar. Use `SideBarGroupHeader` as children.
  */
 export const SidebarGroup: React.FunctionComponent = ({ children }) => <div className="mb-3 sidebar">{children}</div>
