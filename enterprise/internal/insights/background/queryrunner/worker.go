@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
@@ -60,10 +62,14 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 		limiter.SetLimit(val)
 	})
 
+	sharedCache := make(map[string]*types.InsightSeries)
+
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		workerBaseStore: workerBaseStore,
 		insightsStore:   insightsStore,
 		limiter:         limiter,
+		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
+		seriesCache:     sharedCache,
 	}, options)
 }
 

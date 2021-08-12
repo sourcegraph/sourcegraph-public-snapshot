@@ -18,6 +18,7 @@ type insightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
 	series          types.InsightViewSeries
+	metadataStore   store.InsightMetadataStore
 }
 
 func (r *insightSeriesResolver) Label() string { return r.series.Label }
@@ -82,6 +83,18 @@ func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.Insi
 		completedJobs: int32(status.Completed),
 		failedJobs:    int32(status.Failed),
 	}, nil
+}
+
+func (r *insightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
+	data, err := r.metadataStore.GetDirtyQueriesAggregated(ctx, r.series.SeriesID)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.InsightDirtyQueryResolver, 0, len(data))
+	for _, dqa := range data {
+		resolvers = append(resolvers, &insightDirtyQueryResolver{dqa})
+	}
+	return resolvers, nil
 }
 
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
