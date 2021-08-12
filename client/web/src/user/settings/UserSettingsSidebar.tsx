@@ -91,7 +91,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                                 <a
                                     href="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud"
                                     target="_blank"
-                                    rel="noopener"
+                                    rel="noopener noreferrer"
                                 >
                                     Learn More <ExternalLinkIcon className="icon-inline" />
                                 </a>
