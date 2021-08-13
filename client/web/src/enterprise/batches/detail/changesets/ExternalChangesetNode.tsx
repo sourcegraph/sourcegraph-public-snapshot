@@ -14,6 +14,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
+import { DisabledInputTooltip } from '@sourcegraph/web/src/components/DisabledInputTooltip'
 import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
@@ -93,14 +94,18 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             </button>
             {selectable ? (
                 <div className="p-2">
-                    <input
+                    <DisabledInputTooltip
                         id={`select-changeset-${node.id}`}
                         type="checkbox"
                         className="btn"
                         checked={selected}
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}
-                        data-tooltip="Click to select changeset for bulk operation"
+                        tooltip={
+                            viewerCanAdminister
+                                ? 'Click to select changeset for bulk operation'
+                                : 'You do not have permission to perform this operation'
+                        }
                     />
                 </div>
             ) : (
