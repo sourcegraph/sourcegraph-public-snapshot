@@ -33,7 +33,14 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	path := assetsutil.URL("/img/favicon.png").String()
+	url := assetsutil.URL("/img/favicon.png")
+
+	// Add query parameter for cache busting.
+	query := url.Query()
+	query.Set("v", "2")
+	url.RawQuery = query.Encode()
+	path := url.String()
+
 	if branding := globals.Branding(); branding.Favicon != "" {
 		path = branding.Favicon
 	}
