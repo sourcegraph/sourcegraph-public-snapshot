@@ -16,12 +16,12 @@ import (
 // the endpoints for a service and update the map when they change. It can
 // also fallback to static URLs if not configured for kubernetes.
 type Map struct {
-	urlspec   string
-	mu        sync.RWMutex
-	hm        *hashMap
-	err       error
-	init      sync.Once
-	discofunk func(chan endpoints) // I like to know who is in my party!
+	urlspec string
+	mu      sync.RWMutex
+	hm      *hashMap
+	err     error
+	init    sync.Once
+	disco   func(chan endpoints)
 }
 
 // endpoints represents a list of a service's endpoints as discovered through
@@ -140,7 +140,7 @@ func (m *Map) Endpoints() (map[string]struct{}, error) {
 
 // discover updates the Map with discovered endpoints
 func (m *Map) discover() {
-	if m.discofunk == nil {
+	if m.disco == nil {
 		return
 	}
 
@@ -148,7 +148,7 @@ func (m *Map) discover() {
 	ready := make(chan struct{})
 
 	go m.sync(ch, ready)
-	go m.discofunk(ch)
+	go m.disco(ch)
 
 	<-ready
 }
