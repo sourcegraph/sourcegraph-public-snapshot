@@ -66,10 +66,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 			switch o := (obj).(type) {
 			case *corev1.Endpoints:
 				for _, s := range o.Subsets {
-					addrs := append([]corev1.EndpointAddress(nil), s.Addresses...)
-					addrs = append(addrs, s.NotReadyAddresses...)
-
-					for _, a := range addrs {
+					for _, a := range s.Addresses {
 						ep := a.Hostname
 						if ep == "" {
 							ep = a.IP
