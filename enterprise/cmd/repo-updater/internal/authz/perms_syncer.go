@@ -315,7 +315,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		accountsOrServices = append(accountsOrServices, svcs[i])
 	}
 
-	var repoSpecs, includePrefixSpecs, excludePrefixSpecs []api.ExternalRepoSpec
+	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 
 	for _, accountOrService := range accountsOrServices {
 		var extIDs *authz.ExternalUserPermissions
@@ -414,9 +414,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				)
 			}
 		}
-		if len(extIDs.IncludePrefixes) > 0 {
-			for _, includePrefix := range extIDs.IncludePrefixes {
-				includePrefixSpecs = append(includePrefixSpecs,
+		if len(extIDs.IncludeContains) > 0 {
+			for _, includePrefix := range extIDs.IncludeContains {
+				includeContainsSpecs = append(includeContainsSpecs,
 					api.ExternalRepoSpec{
 						ID:          string(includePrefix),
 						ServiceType: provider.ServiceType(),
@@ -425,9 +425,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				)
 			}
 		}
-		if len(extIDs.ExcludePrefixes) > 0 {
-			for _, excludePrefix := range extIDs.ExcludePrefixes {
-				excludePrefixSpecs = append(excludePrefixSpecs,
+		if len(extIDs.ExcludeContains) > 0 {
+			for _, excludePrefix := range extIDs.ExcludeContains {
+				excludeContainsSpecs = append(excludeContainsSpecs,
 					api.ExternalRepoSpec{
 						ID:          string(excludePrefix),
 						ServiceType: provider.ServiceType(),
@@ -446,16 +446,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
-	if len(includePrefixSpecs) > 0 {
+	if len(includeContainsSpecs) > 0 {
 		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
 			database.ReposListOptions{
-				ExternalRepoIncludePrefixes: includePrefixSpecs,
-				ExternalRepoExcludePrefixes: excludePrefixSpecs,
+				ExternalRepoIncludeContains: includeContainsSpecs,
+				ExternalRepoExcludeContains: excludeContainsSpecs,
 				OnlyPrivate:                 true,
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "list external repositories by prefix matching")
+			return errors.Wrap(err, "list external repositories by contains matching")
 		}
 		repoNames = append(repoNames, rs...)
 	}

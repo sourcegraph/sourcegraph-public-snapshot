@@ -433,10 +433,10 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
-		} else if len(args.ExternalRepoIncludePrefixes) == 0 {
-			return nil, errors.New("ExternalRepoIncludePrefixes want non-zero but got zero")
-		} else if len(args.ExternalRepoExcludePrefixes) == 0 {
-			return nil, errors.New("ExternalRepoExcludePrefixes want non-zero but got zero")
+		} else if len(args.ExternalRepoIncludeContains) == 0 {
+			return nil, errors.New("ExternalRepoIncludeContains want non-zero but got zero")
+		} else if len(args.ExternalRepoExcludeContains) == 0 {
+			return nil, errors.New("ExternalRepoExcludeContains want non-zero but got zero")
 		}
 		return []types.RepoName{{ID: 1}}, nil
 	}
@@ -459,8 +459,8 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
-			IncludePrefixes: []extsvc.RepoID{"//Engineering/"},
-			ExcludePrefixes: []extsvc.RepoID{"//Engineering/Security/"},
+			IncludeContains: []extsvc.RepoID{"//Engineering/"},
+			ExcludeContains: []extsvc.RepoID{"//Engineering/Security/"},
 		}, nil
 	}
 
