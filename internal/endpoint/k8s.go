@@ -23,8 +23,8 @@ import (
 // service discovery in the background.
 func K8S(urlspec string) *Map {
 	return &Map{
-		urlspec: urlspec,
-		disco:   k8sDiscovery(urlspec, namespace(), loadClient),
+		urlspec:   urlspec,
+		discofunk: k8sDiscovery(urlspec, namespace(), loadClient),
 	}
 }
 
