@@ -35,6 +35,40 @@ unset_env() {
   unset PGPASSWORD
 }
 
+postgres_stop_cleanly() {
+  pg_ctl -D "$PGDATA" -m fast -w stop
+}
+
+postgres_stop() {
+  # This logic handles the case where we've restored a snapshot
+  # that was taken from a still running or improperly shutdown
+  # postgres instance. We'll need to check to see if postgres is
+  # actually still running under the pid specified in the postmaster.pid
+  # file. If it is, we shut it down properly. If it isn't, we
+  # delete the pid file so that we can start up properly.
+  local postmaster_file="$PGDATA/postmaster.pid"
+
+  if ! [[ -s "$postmaster_file" ]]; then
+    # postgres isn't running - nothing to do
+    return 0
+  fi
+
+  local pid
+  pid="$(head -1 "$postmaster_file")"
+
+  local proc_entry="/proc/$pid/comm"
+
+  if [[ -s "$proc_entry" ]] && grep -q "postgres" "$proc_entry"; then
+    # postgres is currently running in the container - shut it down cleanly
+    postgres_stop_cleanly
+    return 0
+  fi
+
+  # we have a postmaster file, but a postgres process isn't running anymore.
+  # remove the postmaster file - we can't do any better here
+  rm "$postmaster_file" || true
+}
+
 postgres_start() {
   # internal start of server in order to allow set-up using psql-client
   # - does not listen on external TCP/IP and waits until start finishes
@@ -44,15 +78,11 @@ postgres_start() {
   pg_ctl -D "$PGDATA" \
     -o "-c listen_addresses=''" \
     -o "-P" \
-    -w start
-}
-
-postgres_stop() {
-  pg_ctl -D "$PGDATA" -m fast -w stop
+    -w restart
 }
 
 cleanup() {
-  postgres_stop
+  postgres_stop_cleanly
   unset_env
 }
 
@@ -69,6 +99,7 @@ fi
 # look specifically for REINDEX_COMPLETED_FILE, as it is expected in the DB dir
 if [ ! -s "${REINDEX_COMPLETED_FILE}" ]; then
   prepare_env
+  postgres_stop
   postgres_start
   trap cleanup EXIT
 
