@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
+
 import { DisabledInputTooltip } from '@sourcegraph/web/src/components/DisabledInputTooltip'
 
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
