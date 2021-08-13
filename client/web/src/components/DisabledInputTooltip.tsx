@@ -11,9 +11,9 @@ import styles from './DisabledInputTooltip.module.scss'
  */
 export const DisabledInputTooltip: React.FunctionComponent<
     React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & { tooltip: string }
-> = ({ tooltip, ...props }) => (
+> = ({ disabled, tooltip, ...props }) => (
     <div className={styles.container}>
-        <div className={styles.containerTooltip} data-tooltip={tooltip} />
-        <input {...props} />
+        {disabled ? <div className={styles.containerTooltip} data-tooltip={tooltip} /> : null}
+        <input disabled={disabled} data-tooltip={disabled ? undefined : tooltip} {...props} />
     </div>
 )
