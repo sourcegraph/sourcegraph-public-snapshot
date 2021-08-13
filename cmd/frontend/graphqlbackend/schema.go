@@ -35,3 +35,7 @@ var insightsSchema string
 // authzSchema is the Authz raw graqhql schema.
 //go:embed authz.graphql
 var authzSchema string
+
+// computeSchema is an experimental graphql endpoint for computing values from search results.
+//go:embed compute.graphql
+var computeSchema string
