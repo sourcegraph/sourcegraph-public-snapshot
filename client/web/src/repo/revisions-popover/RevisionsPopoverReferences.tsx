@@ -151,7 +151,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
             withBehindAhead: false,
         },
         getConnection: ({ data, errors }) => {
-            if (!data || !data.node || !data.node.gitRefs) {
+            if (!data || !data.node || data.node.__typename !== 'Repository' || !data.node.gitRefs) {
                 throw createAggregateError(errors)
             }
             return data.node.gitRefs

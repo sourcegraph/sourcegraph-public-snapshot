@@ -30,7 +30,9 @@ export const REPOSITORY_GIT_COMMIT = gql`
             __typename
             ... on Repository {
                 commit(rev: $revision) {
+                    __typename
                     ancestors(first: $first, query: $query) {
+                        __typename
                         ...GitCommitAncestorsConnectionFields
                     }
                 }
@@ -40,6 +42,7 @@ export const REPOSITORY_GIT_COMMIT = gql`
 
     fragment GitCommitAncestorsConnectionFields on GitCommitConnection {
         nodes {
+            __typename
             ...GitCommitAncestorFields
         }
         pageInfo {

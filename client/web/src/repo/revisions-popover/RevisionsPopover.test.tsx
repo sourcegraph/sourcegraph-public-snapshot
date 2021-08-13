@@ -1,229 +1,217 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
-import { RenderResult, cleanup } from '@testing-library/react'
-import { subDays } from 'date-fns'
+import { MockedProvider } from '@apollo/client/testing'
+import { cleanup, within, fireEvent, act } from '@testing-library/react'
 import React from 'react'
 
-import { GitRefType } from '@sourcegraph/shared/src/graphql-operations'
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { cache } from '@sourcegraph/shared/src/graphql/cache'
 import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
-
-import { RepositoryGitCommitResult, RepositoryGitRefsResult } from '../../graphql-operations'
-import { REPOSITORY_GIT_REFS } from '../GitReference'
+import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { RevisionsPopover, RevisionsPopoverProps } from './RevisionsPopover'
-import { REPOSITORY_GIT_COMMIT } from './RevisionsPopoverCommits'
+import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'
 
 describe('RevisionsPopover', () => {
-    let queries: RenderResult
+    let queries: RenderWithRouterResult
 
-    // eslint-disable-next-line ban/ban
-    const togglePopoverMock = jest.fn()
-
-    beforeEach(() => {
-        togglePopoverMock.mockReset()
-    })
-
-    const props: RevisionsPopoverProps = {
-        repo: 'some-repo-id',
-        repoName: 'testorg/testrepo',
-        defaultBranch: 'main',
-        currentRev: undefined,
-        currentCommitID: undefined,
-        togglePopover: togglePopoverMock,
-        getURLFromRevision: undefined,
-        allowSpeculativeSearch: false,
+    const fetchMoreNodes = async (currentTab: HTMLElement) => {
+        fireEvent.click(within(currentTab).getByText('Show more'))
+        await waitForNextApolloResponse()
     }
 
-    const yesterday = subDays(new Date(), 1).toISOString()
-
-    const commitPerson = {
-        displayName: 'display-name',
-        user: {
-            username: 'username',
-        },
-    }
-    const branchMock: MockedResponse<RepositoryGitRefsResult> = {
-        request: {
-            query: getDocumentNode(REPOSITORY_GIT_REFS),
-            variables: {
-                query: '',
-                first: 50,
-                repo: props.repo,
-                type: GitRefType.GIT_BRANCH,
-                withBehindAhead: false,
-            },
-        },
-        result: {
-            data: {
-                node: {
-                    __typename: 'Repository',
-                    gitRefs: {
-                        __typename: 'GitRefConnection',
-                        totalCount: 100,
-                        nodes: [
-                            {
-                                __typename: 'GitRef',
-                                id: 'id-1',
-                                displayName: 'branch-display-name',
-                                abbrevName: 'branch-display-name',
-                                name: 'refs/heads/branch-display-name',
-                                url: '/github.com/testorg/testrepo@branch-display-name',
-                                target: {
-                                    commit: {
-                                        author: {
-                                            __typename: 'Signature',
-                                            date: yesterday,
-                                            person: commitPerson,
-                                        },
-                                        committer: {
-                                            __typename: 'Signature',
-                                            date: yesterday,
-                                            person: commitPerson,
-                                        },
-                                        behindAhead: null,
-                                    },
-                                },
-                            },
-                        ],
-                        pageInfo: {
-                            hasNextPage: true,
-                        },
-                    },
-                },
-            },
-        },
-    }
-
-    const tagsMock: MockedResponse<RepositoryGitRefsResult> = {
-        request: {
-            query: getDocumentNode(REPOSITORY_GIT_REFS),
-            variables: {
-                query: '',
-                first: 50,
-                repo: props.repo,
-                type: GitRefType.GIT_TAG,
-                withBehindAhead: false,
-            },
-        },
-        result: {
-            data: {
-                node: {
-                    __typename: 'Repository',
-                    gitRefs: {
-                        __typename: 'GitRefConnection',
-                        totalCount: 100,
-                        nodes: [
-                            {
-                                __typename: 'GitRef',
-                                id: 'id-1',
-                                displayName: 'branch-display-name',
-                                abbrevName: 'branch-display-name',
-                                name: 'refs/heads/branch-display-name',
-                                url: '/github.com/testorg/testrepo@branch-display-name',
-                                target: {
-                                    commit: {
-                                        author: {
-                                            __typename: 'Signature',
-                                            date: yesterday,
-                                            person: commitPerson,
-                                        },
-                                        committer: {
-                                            __typename: 'Signature',
-                                            date: yesterday,
-                                            person: commitPerson,
-                                        },
-                                        behindAhead: null,
-                                    },
-                                },
-                            },
-                        ],
-                        pageInfo: {
-                            hasNextPage: true,
-                        },
-                    },
-                },
-            },
-        },
-    }
-
-    const commitsMock: MockedResponse<RepositoryGitCommitResult> = {
-        request: {
-            query: getDocumentNode(REPOSITORY_GIT_COMMIT),
-            variables: {
-                query: '',
-                first: 15,
-                repo: props.repo,
-                revision: props.defaultBranch,
-            },
-        },
-        result: {
-            data: {
-                node: {
-                    __typename: 'Repository',
-                    commit: {
-                        ancestors: {
-                            nodes: [
-                                {
-                                    id: 'some-id',
-                                    oid: 'some-oid-12345',
-                                    abbreviatedOID: 'some-oid',
-                                    author: {
-                                        person: {
-                                            name: commitPerson.displayName,
-                                            avatarURL: null,
-                                        },
-                                        date: yesterday,
-                                    },
-                                    subject: 'Commit: do something',
-                                },
-                            ],
-                            pageInfo: {
-                                hasNextPage: true,
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    }
+    const renderPopover = (props?: Partial<RevisionsPopoverProps>): RenderWithRouterResult =>
+        renderWithRouter(
+            <MockedProvider mocks={MOCK_REQUESTS} cache={cache}>
+                <RevisionsPopover {...MOCK_PROPS} {...props} />
+            </MockedProvider>,
+            { route: `/${MOCK_PROPS.repoName}` }
+        )
 
     describe('Branches', () => {
+        let branchesTab: HTMLElement
+
         beforeEach(async () => {
-            queries = renderWithRouter(
-                <MockedProvider mocks={[branchMock, tagsMock, commitsMock]} addTypename={false}>
-                    <RevisionsPopover {...props} />
-                </MockedProvider>,
-                { route: `/${props.repoName}` }
-            )
+            queries = renderPopover()
 
+            fireEvent.click(queries.getByText('Branches'))
             await waitForNextApolloResponse()
+
+            branchesTab = queries.getByRole('tabpanel', { name: 'Branches' })
         })
 
-        it('renders results correctly', () => {
-            queries.debug()
+        afterEach(cleanup)
+
+        it('renders correct number of results', () => {
+            expect(within(branchesTab).getAllByRole('link')).toHaveLength(50)
+            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent(
+                '100 branches total (showing first 50)'
+            )
+            expect(within(branchesTab).getByText('Show more')).toBeVisible()
         })
 
-        it.skip('fetches additional results correctly', () => {})
+        it('renders result nodes correctly', () => {
+            const firstNode = within(branchesTab).getByText('GIT_BRANCH-0-display-name')
+            expect(firstNode).toBeVisible()
 
-        it.skip('filters correctly', () => {})
+            const firstLink = firstNode.closest('a')
+            expect(firstLink?.getAttribute('href')).toBe(`/${MOCK_PROPS.repoName}@GIT_BRANCH-0-abbrev-name`)
+        })
+
+        it('fetches remaining results correctly', async () => {
+            await fetchMoreNodes(branchesTab)
+            expect(within(branchesTab).getAllByRole('link')).toHaveLength(100)
+            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent('100 branches total')
+            expect(within(branchesTab).queryByText('Show more')).not.toBeInTheDocument()
+        })
+
+        it('searches correctly', async () => {
+            const searchInput = within(branchesTab).getByRole('searchbox')
+            fireEvent.change(searchInput, { target: { value: 'some query' } })
+
+            // Allow input to debounce
+            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForNextApolloResponse()
+
+            expect(within(branchesTab).getAllByRole('link')).toHaveLength(2)
+            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent('2 branches matching some query')
+        })
+
+        it('displays no results correctly', async () => {
+            const searchInput = within(branchesTab).getByRole('searchbox')
+            fireEvent.change(searchInput, { target: { value: 'some other query' } })
+
+            // Allow input to debounce
+            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForNextApolloResponse()
+
+            expect(within(branchesTab).queryByRole('link')).not.toBeInTheDocument()
+            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent(
+                'No branches matching some other query'
+            )
+        })
+
+        describe('Speculative search', () => {
+            beforeEach(async () => {
+                cleanup()
+                queries = renderPopover({ allowSpeculativeSearch: true })
+
+                fireEvent.click(queries.getByText('Branches'))
+                await waitForNextApolloResponse()
+
+                branchesTab = queries.getByRole('tabpanel', { name: 'Branches' })
+            })
+
+            it('displays results correctly by displaying a single speculative result', async () => {
+                const searchInput = within(branchesTab).getByRole('searchbox')
+                fireEvent.change(searchInput, { target: { value: 'some other query' } })
+
+                // Allow input to debounce
+                await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+                await waitForNextApolloResponse()
+
+                expect(within(branchesTab).getByRole('link')).toBeInTheDocument()
+
+                const firstNode = within(branchesTab).getByText('some other query')
+                expect(firstNode).toBeVisible()
+
+                const firstLink = firstNode.closest('a')
+                expect(firstLink?.getAttribute('href')).toBe(`/${MOCK_PROPS.repoName}@some%20other%20query`)
+            })
+        })
     })
 
-    describe.skip('Tags', () => {})
+    describe('Tags', () => {
+        let tagsTab: HTMLElement
 
-    describe.skip('Commits', () => {})
+        beforeEach(async () => {
+            queries = renderPopover()
 
-    afterEach(cleanup)
+            fireEvent.click(queries.getByText('Tags'))
+            await waitForNextApolloResponse()
+
+            tagsTab = queries.getByRole('tabpanel', { name: 'Tags' })
+        })
+
+        afterEach(cleanup)
+
+        it('renders correct number of results', () => {
+            expect(within(tagsTab).getAllByRole('link')).toHaveLength(50)
+            expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('100 tags total (showing first 50)')
+            expect(within(tagsTab).getByText('Show more')).toBeVisible()
+        })
+
+        it('renders result nodes correctly', () => {
+            const firstNode = within(tagsTab).getByText('GIT_TAG-0-display-name')
+            expect(firstNode).toBeVisible()
+
+            const firstLink = firstNode.closest('a')
+            expect(firstLink?.getAttribute('href')).toBe(`/${MOCK_PROPS.repoName}@GIT_TAG-0-abbrev-name`)
+        })
+
+        it('fetches remaining results correctly', async () => {
+            await fetchMoreNodes(tagsTab)
+            expect(within(tagsTab).getAllByRole('link')).toHaveLength(100)
+            expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('100 tags total')
+            expect(within(tagsTab).queryByText('Show more')).not.toBeInTheDocument()
+        })
+
+        it('searches correctly', async () => {
+            const searchInput = within(tagsTab).getByRole('searchbox')
+            fireEvent.change(searchInput, { target: { value: 'some query' } })
+
+            // Allow input to debounce
+            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForNextApolloResponse()
+
+            expect(within(tagsTab).getAllByRole('link')).toHaveLength(2)
+            expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('2 tags matching some query')
+        })
+    })
+
+    describe('Commits', () => {
+        let commitsTab: HTMLElement
+
+        beforeEach(async () => {
+            queries = renderPopover()
+
+            fireEvent.click(queries.getByText('Commits'))
+            await waitForNextApolloResponse()
+
+            commitsTab = queries.getByRole('tabpanel', { name: 'Commits' })
+        })
+
+        afterEach(cleanup)
+
+        it('renders correct number of results', () => {
+            expect(within(commitsTab).getAllByRole('link')).toHaveLength(15)
+            expect(within(commitsTab).getByText('Show more')).toBeVisible()
+        })
+
+        it('renders result nodes correctly', () => {
+            const firstNode = within(commitsTab).getByText('git-commit-oid-0')
+            expect(firstNode).toBeVisible()
+            expect(within(commitsTab).getByText('Commit 0: Hello world')).toBeVisible()
+            expect(firstNode.closest('a')?.getAttribute('href')).toBe(`/${MOCK_PROPS.repoName}@git-commit-oid-0`)
+        })
+
+        it('fetches remaining results correctly', async () => {
+            await fetchMoreNodes(commitsTab)
+            expect(within(commitsTab).getAllByRole('link')).toHaveLength(30)
+            expect(within(commitsTab).queryByText('Show more')).not.toBeInTheDocument()
+        })
+
+        it('searches correctly', async () => {
+            const searchInput = within(commitsTab).getByRole('searchbox')
+            fireEvent.change(searchInput, { target: { value: 'some query' } })
+
+            // Allow input to debounce
+            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForNextApolloResponse()
+
+            expect(within(commitsTab).getAllByRole('link')).toHaveLength(2)
+            expect(within(commitsTab).getByTestId('summary')).toHaveTextContent('2 commits matching some query')
+        })
+    })
 })
 
 /**
- *
- * 1. Renders results correctly
- * 2. Filters correctly
- * 3. Fetches additional results correctly
- *
- * Additional:
- * 1. URL logic
  * 2. Speculative search
- *
  */

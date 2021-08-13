@@ -44,7 +44,7 @@ const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 const TABS: RevisionsPopoverTab[] = [
     { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
     { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
-    // { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
+    { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
 ]
 
 /**
