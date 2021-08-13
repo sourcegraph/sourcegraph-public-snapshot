@@ -222,9 +222,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
 	//  table, the user has proven that they have read access to the repository.
-	//
-	// TODO: Ideally, we only want to get back list of private repo IDs.
-	repoIDs, err := s.reposStore.ListExternalServiceRepoIDsByUserID(ctx, userID)
+	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "list external service repo IDs by user ID")
 	}

@@ -278,8 +278,8 @@ SELECT user_id FROM external_service_repos
 WHERE repo_id = %s AND user_id IS NOT NULL
 `
 
-// ListExternalServiceUserIDsByRepoID returns the users associated with a given
-// repository. These users have proven that they have read access to the
+// ListExternalServiceUserIDsByRepoID returns the user IDs associated with a
+// given repository. These users have proven that they have read access to the
 // repository given their presence in our external_service_repos table.
 func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
 	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
@@ -302,28 +302,28 @@ func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID a
 	}(time.Now())
 
 	q := sqlf.Sprintf(listExternalServiceUserIDsByRepoIDQuery, repoID)
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return basestore.ScanInt32s(rows, err)
+	return basestore.ScanInt32s(s.Query(ctx, q))
 }
 
 const listExternalServiceRepoIDsByUserIDQuery = `
-SELECT repo_id FROM external_service_repos
-WHERE user_id = %s
+SELECT repo_id
+FROM external_service_repos esr
+JOIN repo ON repo.id = esr.repo_id
+WHERE
+	user_id = %s
+AND repo.private
 `
 
-// ListExternalServiceRepoIDsByUserID returns the repos associated with a given
-// user. As with ListExternalServiceUserIDsByRepoID, the user has already proven
-// that they have read access to the repositories since they are present in the
-// external_service_repos table.
-func (s *Store) ListExternalServiceRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
+// ListExternalServicePrivateRepoIDsByUserID returns the private repo IDs
+// associated with a given user. As with ListExternalServiceUserIDsByRepoID, the
+// user has already proven that they have read access to the repositories since
+// they are present in the external_service_repos table.
+func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
 	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
 		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	}
 
-	tr, ctx := s.trace(ctx, "Store.ListExternalServiceRepoIDsByUserID")
+	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
 	tr.LogFields(
 		otlog.Int32("user_id", userID),
 	)
@@ -339,12 +339,7 @@ func (s *Store) ListExternalServiceRepoIDsByUserID(ctx context.Context, userID i
 	}(time.Now())
 
 	q := sqlf.Sprintf(listExternalServiceRepoIDsByUserIDQuery, userID)
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids, err := basestore.ScanInt32s(rows, err)
+	ids, err := basestore.ScanInt32s(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}

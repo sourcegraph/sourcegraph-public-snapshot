@@ -328,7 +328,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 		}
 	}
 }
-func testStoreListExternalServiceRepoIDsByUserID(store *repos.Store) func(*testing.T) {
+func testStoreListExternalServicePrivateRepoIDsByUserID(store *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		t.Cleanup(func() {
@@ -368,15 +368,17 @@ DELETE FROM users;
 INSERT INTO repo (id, name, private)
 VALUES
 	(1, 'repo-1', TRUE),
-	(2, 'repo-2', TRUE)
+	(2, 'repo-2', TRUE),
+	(3, 'repo-3', FALSE)
 `),
 			sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'alice')`),
 			sqlf.Sprintf(`
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id)
-		VALUES
-			(%s, 1, '', NULL),
-			(%s, 2, '', 1);
-		`, svc.ID, svc.ID),
+VALUES
+	(%s, 1, '', NULL),
+	(%s, 2, '', 1),
+	(%s, 3, '', 1)
+		`, svc.ID, svc.ID, svc.ID),
 		}
 		for _, q := range qs {
 			if err := store.Exec(ctx, q); err != nil {
@@ -384,7 +386,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 			}
 		}
 
-		got, err := store.ListExternalServiceRepoIDsByUserID(ctx, 1)
+		got, err := store.ListExternalServicePrivateRepoIDsByUserID(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
