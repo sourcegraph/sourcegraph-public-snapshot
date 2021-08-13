@@ -96,7 +96,7 @@ func NewExternalClientFactory() *Factory {
 		ExternalTransportOpt,
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries()),
-			ExpJitterDelay(200*time.Millisecond, 10*time.Second),
+			ExpJitterDelay(200*time.Millisecond, 3*time.Second),
 		),
 		TracedTransportOpt,
 		NewCachedTransportOpt(redisCache, true),
@@ -125,7 +125,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries()),
-			ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			ExpJitterDelay(50*time.Millisecond, 1*time.Second),
 		),
 		MeteredTransportOpt(subsystem),
 		TracedTransportOpt,
@@ -380,7 +380,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		status := 0
 
 		defer func() {
-			if retry || a.Error == nil {
+			if retry || a.Error == nil || a.Index == 0 {
 				return
 			}
 
