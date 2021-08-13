@@ -150,11 +150,11 @@ const FindReplaceIcon: React.FunctionComponent<{ className?: string }> = ({ clas
         <rect x="96.9984" y="0.569092" width="6.21545" height="8" rx="2.07182" fill="#CAD2E2" />
         <rect x="30.5" y="12.7127" width="71" height="8" rx="2.07182" fill="#CAD2E2" />
         <rect x="30.5" y="24.8564" width="38.8466" height="8" rx="2.07182" fill="#CAD2E2" />
-        <rect x="74.5261" y="24.8564" width="38.8466" height="8" rx="2.07182" fill="#F96216" />
+        <rect x="74.5261" y="24.8564" width="38.8466" height="8" rx="2.07182" fill="#ff5543" />
         <rect x="30.5" y="37" width="54" height="8" rx="2.07182" fill="#CAD2E2" />
         <rect x="10.5" y="49.1436" width="6.21545" height="8" rx="2.07182" fill="#CAD2E2" />
         <g filter="url(#filter0_d)">
-            <rect x="80.6899" y="15.7872" width="44.3626" height="10" rx="2.07182" fill="#00B4F2" />
+            <rect x="80.6899" y="15.7872" width="44.3626" height="10" rx="2.07182" fill="#00cbec" />
         </g>
         <defs>
             <filter
@@ -190,12 +190,12 @@ const RefactorCombyIcon: React.FunctionComponent<{ className?: string }> = ({ cl
         <rect x="15.5" y="0.788292" width="53.935" height="8" rx="2.03528" fill="#CAD2E2" />
         <rect x="74.5233" y="0.788292" width="31.5469" height="8" rx="2.03528" fill="#CAD2E2" />
         <rect x="111.158" y="0.788292" width="6.10585" height="8" rx="2.03528" fill="#CAD2E2" />
-        <rect x="25.4979" y="12.8589" width="14.4969" height="8" rx="2.03528" fill="#F96216" />
-        <rect x="44.9938" y="12.8589" width="38.1616" height="8" rx="2.03528" fill="#F96216" />
-        <rect x="88.1543" y="12.8589" width="21.4955" height="8" rx="2.03528" fill="#00B4F2" />
-        <rect x="114.649" y="12.8589" width="6.10585" height="8" rx="2.03528" fill="#F96216" />
+        <rect x="25.4979" y="12.8589" width="14.4969" height="8" rx="2.03528" fill="#ff5543" />
+        <rect x="44.9938" y="12.8589" width="38.1616" height="8" rx="2.03528" fill="#ff5543" />
+        <rect x="88.1543" y="12.8589" width="21.4955" height="8" rx="2.03528" fill="#00cbec" />
+        <rect x="114.649" y="12.8589" width="6.10585" height="8" rx="2.03528" fill="#ff5543" />
         <rect x="25.4979" y="24.9294" width="38.1616" height="8" rx="2.03528" fill="#94D82D" />
-        <rect x="68.7476" y="24.9294" width="21.5" height="8" rx="2.03528" fill="#00B4F2" />
+        <rect x="68.7476" y="24.9294" width="21.5" height="8" rx="2.03528" fill="#00cbec" />
         <rect x="95.3359" y="24.9294" width="6.10585" height="8" rx="2.03528" fill="#94D82D" />
         <g filter="url(#filter0_d)">
             <rect x="25.4979" y="37" width="25" height="8" rx="2.03528" fill="#CAD2E2" />
