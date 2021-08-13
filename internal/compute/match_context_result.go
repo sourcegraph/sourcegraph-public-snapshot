@@ -1,8 +1,8 @@
 package compute
 
 import (
-	"fmt"
 	"regexp"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -83,7 +83,7 @@ func ofRegexpMatches(matches [][]int, namedGroups []string, lineValue string, li
 
 			var v string
 			if namedGroups[j/2] == "" {
-				v = fmt.Sprintf("$%d", j/2)
+				v = strconv.Itoa(j / 2)
 			} else {
 				v = namedGroups[j/2]
 			}
