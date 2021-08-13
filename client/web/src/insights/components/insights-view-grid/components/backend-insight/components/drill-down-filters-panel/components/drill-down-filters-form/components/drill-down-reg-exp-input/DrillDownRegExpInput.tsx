@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { TruncatedText } from '../../../../../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components/trancated-text/TrancatedText'
 import { FlexTextArea } from '../../../../../../../../../form/repositories-field/components/flex-textarea/FlexTextArea'
 
@@ -14,13 +16,9 @@ export const DrillDownRegExpInput = forwardRef((props: DrillDownRegExpInputProps
     const { prefix, ...inputProps } = props
 
     return (
-        <span className={classnames(styles.regexpField, 'w-100')}>
-            <span className={styles.regexpFieldPrefix}>{prefix}</span>
-            <FlexTextArea
-                {...inputProps}
-                className={classnames(inputProps.className, styles.regexpFieldInput)}
-                ref={reference}
-            />
+        <span className="d-flex w-100">
+            <span className={styles.prefixText}>{prefix}</span>
+            <FlexTextArea {...inputProps} className={classnames(inputProps.className, styles.input)} ref={reference} />
         </span>
     )
 })
@@ -34,12 +32,8 @@ interface LabelWithResetProps {
 export const LabelWithReset: React.FunctionComponent<PropsWithChildren<LabelWithResetProps>> = props => (
     <span className="d-flex align-items-center">
         <TruncatedText>{props.children}</TruncatedText>
-        <button
-            type="button"
-            className="btn btn-link ml-auto pt-0 pb-0 pr-0 font-weight-normal"
-            onClick={props.onReset}
-        >
+        <Button variant="link" className="ml-auto pt-0 pb-0 pr-0 font-weight-normal" onClick={props.onReset}>
             Reset
-        </button>
+        </Button>
     </span>
 )
