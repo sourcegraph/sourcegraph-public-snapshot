@@ -19,7 +19,7 @@ export interface useTitleValidatorProps {
 /**
  * Shared validator for title insight.
  * We can't have two or more insights with the same name, since we rely on name as on id at insights pages.
- * */
+ */
 export function useInsightTitleValidator(props: useTitleValidatorProps): Validator<string> {
     const { settings, insightType } = props
 
