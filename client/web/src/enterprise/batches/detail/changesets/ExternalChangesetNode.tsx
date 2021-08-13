@@ -13,8 +13,8 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-
 import { DisabledInputTooltip } from '@sourcegraph/web/src/components/DisabledInputTooltip'
+
 import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
