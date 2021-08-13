@@ -449,7 +449,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "list external repositories by depot matching")
+			return errors.Wrap(err, "list external repositories by contains matching")
 		}
 		repoNames = append(repoNames, rs...)
 	}
