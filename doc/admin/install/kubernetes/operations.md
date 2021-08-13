@@ -151,6 +151,8 @@ The following instructions are specific to backing up and restoring the sourcegr
 
 These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
 
+Be sure to make copies of the site-config.json of both the old and new instance.
+
 1. Go into the machine hosting the deployment `ssh whatever`
 2. `cd` to the `deploy-sourcegraph-directory....` on the host
 3. Verify deployment running
