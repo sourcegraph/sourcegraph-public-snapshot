@@ -22,6 +22,9 @@ export function getBackendInsightById(props: BackendInsightInputs): Observable<B
                 title: insight.title,
                 subtitle: insight.description,
                 content: [createViewContent(insight, series)],
+                isFetchingHistoricalData: insight.series.some(
+                    line => line.status.pendingJobs > 0 || line.status.failedJobs > 0
+                ),
             },
         }))
     )

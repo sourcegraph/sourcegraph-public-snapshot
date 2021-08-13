@@ -1,3 +1,4 @@
+import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
@@ -27,20 +28,24 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
 }
 
-const mockInsightAPI = createMockInsightAPI({
-    getBackendInsightById: ({ id }) =>
-        of({
-            id,
-            view: {
-                title: 'Backend Insight Mock',
-                subtitle: 'Backend insight description text',
-                content: [LINE_CHART_CONTENT_MOCK],
-            },
-        }),
-})
+const mockInsightAPI = ({ isFetchingHistoricalData = false, delayAmount = 0 }) =>
+    createMockInsightAPI({
+        getBackendInsightById: ({ id }) =>
+            of({
+                id,
+                view: {
+                    title: 'Backend Insight Mock',
+                    subtitle: 'Backend insight description text',
+                    content: [LINE_CHART_CONTENT_MOCK],
+                    isFetchingHistoricalData,
+                },
+            }).pipe(delay(delayAmount)),
+    })
+
+const loadingKnob = () => boolean('Backend loading', false)
 
 add('Backend Insight Card', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI}>
+    <InsightsApiContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: loadingKnob() })}>
         <BackendInsight
             style={{ width: 400, height: 400 }}
             insight={INSIGHT_CONFIGURATION_MOCK}
@@ -51,20 +56,8 @@ add('Backend Insight Card', () => (
     </InsightsApiContext.Provider>
 ))
 
-const mockInsightAPIWithDelay = createMockInsightAPI({
-    getBackendInsightById: ({ id }) =>
-        of({
-            id,
-            view: {
-                title: 'Backend Insight Mock',
-                subtitle: 'Backend insight description text',
-                content: [LINE_CHART_CONTENT_MOCK],
-            },
-        }).pipe(delay(2000)),
-})
-
 add('Backend Insight Card with delay API', () => (
-    <InsightsApiContext.Provider value={mockInsightAPIWithDelay}>
+    <InsightsApiContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: loadingKnob(), delayAmount: 2000 })}>
         <BackendInsight
             style={{ width: 400, height: 400 }}
             insight={INSIGHT_CONFIGURATION_MOCK}

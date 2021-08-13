@@ -1,7 +1,9 @@
 import classnames from 'classnames'
+import AlertIcon from 'mdi-react/AlertIcon'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -134,22 +136,36 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         return
     }
 
+    const LoadingIndicator: React.FunctionComponent = () => (
+        <>
+            <Tooltip />
+            <AlertIcon
+                size={16}
+                className="text-warning"
+                data-tooltip="Some data for this insight is still being processed."
+            />
+        </>
+    )
+
     return (
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
             actions={
-                <DrillDownFiltersAction
-                    isOpen={isFiltersOpen}
-                    settings={settingsCascade.final ?? {}}
-                    popoverTargetRef={insightCardReference}
-                    initialFiltersValue={filters}
-                    originalFiltersValue={originalInsightFilters}
-                    onFilterChange={setFilters}
-                    onFilterSave={handleFilterSave}
-                    onInsightCreate={handleInsightFilterCreation}
-                    onVisibilityChange={setIsFiltersOpen}
-                />
+                <>
+                    {data?.view.isFetchingHistoricalData && <LoadingIndicator />}
+                    <DrillDownFiltersAction
+                        isOpen={isFiltersOpen}
+                        settings={settingsCascade.final ?? {}}
+                        popoverTargetRef={insightCardReference}
+                        initialFiltersValue={filters}
+                        originalFiltersValue={originalInsightFilters}
+                        onFilterChange={setFilters}
+                        onFilterSave={handleFilterSave}
+                        onInsightCreate={handleInsightFilterCreation}
+                        onVisibilityChange={setIsFiltersOpen}
+                    />
+                </>
             }
             telemetryService={telemetryService}
             onDelete={() => handleDelete(insight)}

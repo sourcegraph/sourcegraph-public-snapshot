@@ -207,6 +207,11 @@ export const BACKEND_INSIGHTS = [
                         value: 0,
                     },
                 ],
+                status: {
+                    pendingJobs: 0,
+                    completedJobs: 0,
+                    failedJobs: 0,
+                },
             },
         ],
     },
