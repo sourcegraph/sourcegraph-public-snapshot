@@ -18,6 +18,12 @@ export const SearchSidebarSection: React.FunctionComponent<{
      * Shown when the built-in search doesn't find any results.
      */
     noResultText?: React.ReactElement | string
+    /**
+     * Clear the search input whenever this value changes. This is supposed to
+     * be used together with function children, which use the search input but
+     * handle search on their own.
+     */
+    clearSearchOnChange?: {}
 }> = ({
     header,
     children = [],
@@ -26,11 +32,13 @@ export const SearchSidebarSection: React.FunctionComponent<{
     onToggle,
     startCollapsed,
     noResultText = 'No results',
+    clearSearchOnChange = children,
 }) => {
     const [filter, setFilter] = useState('')
 
-    // Clear filter when children change
-    useEffect(() => setFilter(''), [children])
+    // Clears the filter whenever clearSearchOnChange changes or the
+    // component's children
+    useEffect(() => setFilter(''), [clearSearchOnChange])
 
     let body
     let searchVisible = showSearch

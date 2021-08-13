@@ -3,9 +3,9 @@ import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 
+import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -17,8 +17,9 @@ import { useTemporarySetting } from '../../../settings/temporary/useTemporarySet
 import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
+import { useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
-import { Revisions } from './Revisions'
+import { getRevisions } from './Revisions'
 import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
@@ -115,6 +116,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         () => (props.filters || []).filter(filter => filter.kind === 'repo' && filter.value !== ''),
         [props.filters]
     )
+    const repoName = useLastRepoName(props.query, repoFilters)
     const repoFilterLinks = useMemo(
         () => (repoFilters.length > 1 ? getRepoFilterLinks(repoFilters, onDynamicFilterClicked) : null),
         [repoFilters, onDynamicFilterClicked]
@@ -130,15 +132,6 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
                 >
                     {getSearchTypeLinks(props)}
-                </SearchSidebarSection>
-                <SearchSidebarSection
-                    className={styles.searchSidebarItem}
-                    header="Search reference"
-                    showSearch={true}
-                    startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
-                    onToggle={onSearchReferenceToggle}
-                >
-                    {getSearchReferenceFactory(props)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
@@ -165,16 +158,30 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         {repoFilterLinks}
                     </SearchSidebarSection>
                 ) : null}
-                {repoFilters.length === 1 ? (
+                {repoName ? (
                     <SearchSidebarSection
                         className={styles.searchSidebarItem}
                         header="Revisions"
                         startCollapsed={collapsedSections?.[SectionID.REVISIONS]}
                         onToggle={open => persistToggleState(SectionID.REVISIONS, open)}
+                        showSearch={true}
+                        clearSearchOnChange={repoName}
                     >
-                        <Revisions repoName={repoFilters[0].label} onFilterClick={updateSearchQuery} />
+                        {getRevisions({ repoName, onFilterClick: updateSearchQuery })}
                     </SearchSidebarSection>
                 ) : null}
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Search reference"
+                    showSearch={true}
+                    startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
+                    onToggle={onSearchReferenceToggle}
+                    // search reference should always preserve the filter
+                    // (false is just an arbitrary but static value)
+                    clearSearchOnChange={false}
+                >
+                    {getSearchReferenceFactory(props)}
+                </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
                     header="Search snippets"
