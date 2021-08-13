@@ -100,7 +100,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 				continue
 			}
 
-			if queueErr != nil {
+			if queueErr == nil {
 				queueErr = err
 			} else {
 				queueErr = multierror.Append(queueErr, err)
