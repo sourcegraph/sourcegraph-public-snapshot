@@ -128,8 +128,10 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.UR
 type PerforceDepotSyncer struct {
 	// MaxChanges indicates to only import at most n changes when possible.
 	MaxChanges int
-	// UseClientSpec enables use of a client spec to find the list of interesting files in p4.
-	UseClientSpec bool
+
+	// Client configures the client to use with p4 and enables use of a client spec to
+	// find the list of interesting files in p4.
+	Client string
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -219,10 +221,22 @@ func (s *PerforceDepotSyncer) p4CommandOptions() []string {
 	if s.MaxChanges > 0 {
 		flags = append(flags, "--max-changes", strconv.Itoa(s.MaxChanges))
 	}
-	if s.UseClientSpec {
+	if s.Client != "" {
 		flags = append(flags, "--use-client-spec")
 	}
 	return flags
+}
+
+func (s *PerforceDepotSyncer) p4CommandEnv(host, username, password string) []string {
+	env := append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+		"P4PASSWD="+password,
+	)
+	if s.Client != "" {
+		env = append(env, "P4CLIENT="+s.Client)
+	}
+	return env
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
@@ -253,11 +267,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 	args = append(args, depot+"@all", tmpPath)
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"P4USER="+username,
-		"P4PASSWD="+password,
-	)
+	cmd.Env = s.p4CommandEnv(host, username, password)
 
 	return cmd, nil
 }
@@ -278,11 +288,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"P4USER="+username,
-		"P4PASSWD="+password,
-	)
+	cmd.Env = s.p4CommandEnv(host, username, password)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
 		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
