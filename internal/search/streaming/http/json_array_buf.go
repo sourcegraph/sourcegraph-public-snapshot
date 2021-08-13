@@ -15,13 +15,21 @@ type JSONArrayBuf struct {
 	buf bytes.Buffer
 }
 
+func NewJSONArrayBuf(flushSize int, write func([]byte) error) *JSONArrayBuf {
+	b := &JSONArrayBuf{
+		FlushSize: flushSize,
+		Write:     write,
+	}
+	// Grow the buffer to flushSize to reduce the number of small allocations
+	// caused by repeatedly growing the buffer
+	b.buf.Grow(flushSize)
+	return b
+}
+
 // Append marshals v and adds it to the json array buffer. If the size of the
 // buffer exceed FlushSize the buffer is written out.
 func (j *JSONArrayBuf) Append(v interface{}) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
+	oldLen := j.buf.Len()
 
 	if j.buf.Len() == 0 {
 		j.buf.WriteByte('[')
@@ -29,8 +37,15 @@ func (j *JSONArrayBuf) Append(v interface{}) error {
 		j.buf.WriteByte(',')
 	}
 
-	// err is always nil for a bytes.Buffer
-	_, _ = j.buf.Write(b)
+	enc := json.NewEncoder(&j.buf)
+	if err := enc.Encode(v); err != nil {
+		// Reset the buffer to where it was before failing to marshal
+		j.buf.Truncate(oldLen)
+		return err
+	}
+
+	// Trim the trailing newline left by the JSON encoder
+	j.buf.Truncate(j.buf.Len() - 1)
 
 	if j.buf.Len() >= j.FlushSize {
 		return j.Flush()

@@ -34,6 +34,11 @@
       "default": 1000,
       "minimum": 1
     },
+    "useClientSpec": {
+      "description": "Use a client spec to find the list of interesting files in p4 (git p4 clone --use-client-spec).",
+      "type": "boolean",
+      "default": false
+    },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to Perforce.",
       "title": "PerforceRateLimit",

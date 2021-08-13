@@ -1135,6 +1135,8 @@ type PerforceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
+	// UseClientSpec description: Use a client spec to find the list of interesting files in p4 (git p4 clone --use-client-spec).
+	UseClientSpec bool `json:"useClientSpec,omitempty"`
 }
 
 // PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
