@@ -1,0 +1,103 @@
+# EXPERIMENTAL: Extends the query API with an endpoint that computes values from search results.
+extend type Query {
+    """
+    Computes valus from search results.
+    """
+    compute(
+        """
+        The search query.
+        """
+        query: String = ""
+    ): [ComputeResult!]!
+}
+
+"""
+A compute operation result.
+"""
+union ComputeResult = ComputeMatchContext | ComputeText
+
+"""
+The result of matching data that satisfy a search pattern, including an environment of submatches.
+"""
+type ComputeMatchContext {
+    """
+    The repository.
+    """
+    repository: Repository!
+    """
+    The commit.
+    """
+    commit: String!
+    """
+    The file path.
+    """
+    path: String!
+    """
+    Computed match results
+    """
+    matches: [ComputeMatch]!
+}
+
+"""
+Represents a value matched within file content, and an environment of submatches within this value corresponding to an input pattern (e.g., regular expression capture groups).
+"""
+type ComputeMatch {
+    """
+    The string value
+    """
+    value: String!
+    """
+    The range of this value within the file.
+    """
+    range: Range!
+    """
+    The environment of submatches within value.
+    """
+    environment: [ComputeEnvironmentEntry]!
+}
+
+"""
+An entry in match environment is a variable with a value spanning a range. Variable names correspond to
+a variable names in a pattern metasyntax. For regular expression patterns, named capture groups will use the variable
+specified. For unnamed capture groups, variable names correspond to capture '1', '2', etc.
+"""
+type ComputeEnvironmentEntry {
+    """
+    The variable name.
+    """
+    variable: String!
+    """
+    The value associated with this variable.
+    """
+    value: String!
+    """
+    The absolute range spanned by this value in the input.
+    """
+    range: Range!
+}
+
+"""
+A general computed result for arbitrary textual data. A result optionally specifies a related repository, commit, file path, or the kind of textual data.
+"""
+type ComputeText {
+    """
+    The repository.
+    """
+    repository: Repository
+    """
+    The commit.
+    """
+    commit: String
+    """
+    The file path.
+    """
+    path: String
+    """
+    An arbitrary label communicating the kind of data the value represents.
+    """
+    kind: String
+    """
+    The computed value.
+    """
+    value: String!
+}

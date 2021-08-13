@@ -40,7 +40,7 @@ type Match struct {
 	Environment Environment `json:"environment"`
 }
 
-type Result struct {
+type MatchContext struct {
 	Matches []Match `json:"matches"`
 	Path    string  `json:"path"`
 }
@@ -93,7 +93,7 @@ func ofRegexpMatches(matches [][]int, namedGroups []string, lineValue string, li
 	return Match{Value: firstValue, Range: firstRange, Environment: env}
 }
 
-func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
+func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 	matches := make([]Match, 0, len(fm.LineMatches))
 	for _, l := range fm.LineMatches {
 		regexpMatches := r.FindAllStringSubmatchIndex(l.Preview, -1)
@@ -101,5 +101,5 @@ func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
 			matches = append(matches, ofRegexpMatches(regexpMatches, r.SubexpNames(), l.Preview, int(l.LineNumber)))
 		}
 	}
-	return &Result{Matches: matches, Path: fm.Path}
+	return &MatchContext{Matches: matches, Path: fm.Path}
 }
