@@ -1995,6 +1995,19 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			want: filterRepoNames(repoNamesFromRepos(repos), "/Backend", ""),
 		},
 		{
+			name: "only apply multiple transformed '...' Perforce wildcard ExternalRepoIncludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//%/%/Backend/",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: filterRepoNames(repoNamesFromRepos(repos), "Handbook/Backend", ""),
+		},
+		{
 			name: "only apply transformed '*' Perforce wildcard ExternalRepoIncludeContains",
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
