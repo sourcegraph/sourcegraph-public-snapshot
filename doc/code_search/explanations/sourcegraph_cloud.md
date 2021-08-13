@@ -6,15 +6,12 @@ Note that you can search across a maximum of 50 repositories at once using Sourc
 
 Note that **Organizations** feature is disabled in Sourcegraph Cloud. If you want to use it, you also need to [run your own Sourcegraph instance](../../../admin/install/index.md).
 
-## Search contexts
+## Explanations and how-tos
 
->NOTE: This feature is still in active development.
+- [Adding repositories to Sourcegraph Cloud](../how-to/adding_repositories_to_cloud.md)
+- [Searching across repositories you’ve added to Sourcegraph Cloud with search contexts](../how-to/searching_with_search_contexts.md)
+- [Who can see your code on Sourcegraph Cloud](./code_visibility_on_sourcegraph_cloud.md)
 
-Search contexts help you search the code you care about on Sourcegraph Cloud. A search context represents a set of repositories on Sourcegraph Cloud that will be targeted by search queries by default.
+## Working with your organization on Sourcegraph Cloud
 
-Sourcegraph Cloud supports two search contexts: 
-
-- Your personal context, `context:@username`, which automatically includes [all repositories you add to Sourcegraph](../how-to/adding_repositories_to_cloud.md).
-- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
-
-**Coming soon:** create your own search contexts that include the repositories you choose. Want early access to custom search contexts? [Let us know](mailto:feedback@sourcegraph.com).
+Sourcegraph Cloud currently supports individual use of Sourcegraph Cloud. To create and manage an organization with Sourcegraph with team-oriented functionality, get started with the [self-hosted deployment](../../../admin/install/index.md) in less than a minute.
