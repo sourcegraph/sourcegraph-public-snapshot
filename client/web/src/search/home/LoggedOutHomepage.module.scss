@@ -14,15 +14,34 @@
 
     &__repogroup-list {
         &-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-            grid-auto-rows: minmax(4rem, auto);
-            gap: $spacer * 0.75;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+
+            @media (--md-breakpoint-down) {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+                grid-auto-rows: minmax(4rem, auto);
+                gap: $spacer * 0.75;
+            }
+
+            @media (--sm-breakpoint-down) {
+                display: flex;
+                flex-wrap: wrap;
+            }
+        }
+
+        &-card {
+            max-width: 13.5rem;
+
+            @media (--sm-breakpoint-down) {
+                margin-right: 0.75rem;
+            }
         }
 
         &-icon {
-            width: 3rem;
-            height: 3rem;
+            width: 2rem;
+            height: 2rem;
             object-fit: contain;
         }
     }
