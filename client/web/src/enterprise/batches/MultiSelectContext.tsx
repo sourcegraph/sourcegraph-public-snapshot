@@ -185,9 +185,9 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
     const toggleSingle = useCallback(
         (id: string): void => {
             if (isSelected(id)) {
-                selectSingle(id)
-            } else {
                 deselectSingle(id)
+            } else {
+                selectSingle(id)
             }
         },
         [deselectSingle, isSelected, selectSingle]
