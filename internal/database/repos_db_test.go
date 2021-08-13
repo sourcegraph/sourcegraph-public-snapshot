@@ -1973,7 +1973,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//Engineering/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -1986,7 +1986,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//%/Backend/",
+						ID:          "//%/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -1999,7 +1999,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//%/%/Backend/",
+						ID:          "//%/%/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2012,7 +2012,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//[^/]+/[^/]+/Backend/",
+						ID:          "//[^/]+/[^/]+/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2026,7 +2026,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//Engineering/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2039,7 +2039,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//%/Backend/",
+						ID:          "//%/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2052,7 +2052,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//[^/]+/[^/]+/Backend/",
+						ID:          "//[^/]+/[^/]+/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2066,19 +2066,19 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//Engineering/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/Backend/",
+						ID:          "//Engineering/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 					{
-						ID:          "//Engineering/Handbook/",
+						ID:          "//Engineering/Handbook/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2091,14 +2091,14 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//Engineering/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//%/Backend/",
+						ID:          "//%/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2111,14 +2111,14 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//Engineering/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/[^/]+/Backend/",
+						ID:          "//Engineering/[^/]+/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2131,14 +2131,14 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//%/Backend/",
+						ID:          "//%/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/Handbook/",
+						ID:          "//Engineering/Handbook/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
@@ -2151,14 +2151,14 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 			opt: ReposListOptions{
 				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/[^/]+/Backend/",
+						ID:          "//Engineering/[^/]+/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//Engineering/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},

@@ -198,6 +198,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}
 	defer func() { _ = rc.Close() }()
 
+	const (
+		wildcardMatchAll       = "%"     // for Perforce '...'
+		wildcardMatchDirectory = "[^/]+" // for Perforce '*'
+	)
+
 	var includeContains, excludeContains []extsvc.RepoID
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
@@ -229,14 +234,16 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		// '...' matches all files under the current working directory and all subdirectories.
 		// Matches anything, including slashes, and does so across subdirectories.
 		// Replace with '%' for PostgreSQL's LIKE and SIMILAR TO.
-		depotContains = strings.TrimRight(depotContains, ".") // drop trailing, treat everything as a prefix
-		const wildcardMatchAll = "%"
+		//
+		// At first, we drop trailing '...' so that we can check for prefixes (see below).
+		// We assume all paths are prefixes, so add 'wildcardMatchAll' to all contains
+		// later on.
+		depotContains = strings.TrimRight(depotContains, ".")
 		depotContains = strings.ReplaceAll(depotContains, "...", wildcardMatchAll)
 
 		// '*' matches all characters except slashes within one directory.
 		// Replace with character class that matches anything except another '/' supported
 		// by PostgreSQL's SIMILAR TO.
-		const wildcardMatchDirectory = "[^/]+"
 		depotContains = strings.ReplaceAll(depotContains, "*", wildcardMatchDirectory)
 
 		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
@@ -278,6 +285,14 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 			includeContains = append(includeContains, extsvc.RepoID(depotContains))
 		}
+	}
+
+	// Treat all paths as a prefix.
+	for i, include := range includeContains {
+		includeContains[i] = extsvc.RepoID(string(include) + wildcardMatchAll)
+	}
+	for i, exclude := range excludeContains {
+		excludeContains[i] = extsvc.RepoID(string(exclude) + wildcardMatchAll)
 	}
 
 	// As per interface definition for this method, implementation should return

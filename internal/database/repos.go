@@ -864,7 +864,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if len(opt.ExternalRepoIncludeContains) > 0 {
 		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludeContains))
 		for _, spec := range opt.ExternalRepoIncludeContains {
-			er = append(er, sqlf.Sprintf("(external_id SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+			er = append(er, sqlf.Sprintf("(external_id SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
@@ -872,7 +872,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if len(opt.ExternalRepoExcludeContains) > 0 {
 		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludeContains))
 		for _, spec := range opt.ExternalRepoExcludeContains {
-			er = append(er, sqlf.Sprintf("(external_id NOT SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+			er = append(er, sqlf.Sprintf("(external_id NOT SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
 	}
