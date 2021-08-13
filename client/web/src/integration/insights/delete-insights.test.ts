@@ -96,7 +96,11 @@ describe('Code insights page', () => {
             await driver.page.click(
                 '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuButton"]'
             )
-            await driver.page.click('[data-testid="insight-context-menu-delete-button"]')
+
+            await Promise.all([
+                driver.acceptNextDialog(),
+                driver.page.click('[data-testid="insight-context-menu-delete-button"]'),
+            ])
         }, 'OverwriteSettings')
 
         assert.deepStrictEqual(JSON.parse(variables.contents), {
