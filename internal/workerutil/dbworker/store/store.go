@@ -72,11 +72,8 @@ var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated
 type Store interface {
 	basestore.ShareableStore
 
-	// QueuedCount returns the number of records in the queued state matching the given conditions.
-	QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error)
-
-	// ActiveCount returns the number of records in the queued/processing state matching the given conditions.
-	ActiveCount(ctx context.Context, conditions []*sqlf.Query) (int, error)
+	// QueuedCount returns the number of queued records matching the given conditions.
+	QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (int, error)
 
 	// Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
 	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
@@ -327,19 +324,15 @@ func DefaultColumnExpressions() []*sqlf.Query {
 	return expressions
 }
 
-// QueuedCount returns the number of records in the queued state matching the given conditions.
-func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error) {
-	return s.queuedCount(ctx, []string{"queued"}, conditions)
-}
-
-// ActiveCount returns the number of records in the queued/processing state matching the given conditions.
-func (s *store) ActiveCount(ctx context.Context, conditions []*sqlf.Query) (int, error) {
-	return s.queuedCount(ctx, []string{"queued", "processing"}, conditions)
-}
-
-func (s *store) queuedCount(ctx context.Context, states []string, conditions []*sqlf.Query) (_ int, err error) {
+// QueuedCount returns the number of queued records matching the given conditions.
+func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (_ int, err error) {
 	ctx, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
+	states := []string{"queued"}
+	if includeProcessing {
+		states = append(states, "processing")
+	}
 
 	stateQueries := make([]*sqlf.Query, 0, len(states))
 	for _, state := range states {
@@ -358,7 +351,7 @@ func (s *store) queuedCount(ctx context.Context, states []string, conditions []*
 }
 
 const queuedCountQuery = `
--- source: internal/workerutil/store.go:queuedCount
+-- source: internal/workerutil/store.go:QueuedCount
 SELECT COUNT(*) FROM %s WHERE (
 	{state} IN %s OR
 	({state} = 'errored' AND {num_failures} < %s)

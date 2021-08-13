@@ -68,7 +68,7 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		Name: "src_codeintel_dependency_index_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
-		count, err := dependencyIndexStore.QueuedCount(context.Background(), nil)
+		count, err := dependencyIndexStore.QueuedCount(context.Background(), false, nil)
 		if err != nil {
 			log15.Error("Failed to get queued job count", "error", err)
 		}
