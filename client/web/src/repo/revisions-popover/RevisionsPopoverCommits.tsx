@@ -7,15 +7,7 @@ import { Link } from 'react-router-dom'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import {
-    ConnectionContainer,
-    ConnectionForm,
-    ConnectionList,
-    ConnectionLoading,
-    ConnectionSummary,
-    ShowMoreButton,
-    SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import {
@@ -23,6 +15,8 @@ import {
     RepositoryGitCommitResult,
     RepositoryGitCommitVariables,
 } from '../../graphql-operations'
+
+import { RevisionsPopoverTab } from './RevisionsPopoverTab'
 
 export const REPOSITORY_GIT_COMMIT = gql`
     query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {
@@ -130,11 +124,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    const { connection, loading, errors, hasNextPage, fetchMore } = useConnection<
-        RepositoryGitCommitResult,
-        RepositoryGitCommitVariables,
-        GitCommitAncestorFields
-    >({
+    const response = useConnection<RepositoryGitCommitResult, RepositoryGitCommitVariables, GitCommitAncestorFields>({
         query: REPOSITORY_GIT_COMMIT,
         variables: {
             query,
@@ -161,45 +151,34 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
         },
     })
 
-    const summary = connection && (
+    const summary = response.connection && (
         <ConnectionSummary
-            connection={connection}
+            connection={response.connection}
             first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
-            hasNextPage={hasNextPage}
+            hasNextPage={response.hasNextPage}
             connectionQuery={query}
         />
     )
 
     return (
-        <ConnectionContainer compact={true} className="connection-popover__content">
-            <ConnectionForm
-                inputValue={searchValue}
-                onInputChange={event => setSearchValue(event.target.value)}
-                autoFocus={true}
-                inputPlaceholder="Find..."
-                inputClassName="connection-popover__input"
-            />
-            <SummaryContainer>{query && summary}</SummaryContainer>
-            <ConnectionList className="connection-popover__nodes">
-                {connection?.nodes?.map((node, index) => (
-                    <GitCommitNode
-                        key={index}
-                        node={node}
-                        currentCommitID={currentCommitID}
-                        location={location}
-                        getURLFromRevision={getURLFromRevision}
-                    />
-                ))}
-            </ConnectionList>
-            {loading && <ConnectionLoading />}
-            {!loading && connection && (
-                <SummaryContainer>
-                    {!query && summary}
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                </SummaryContainer>
-            )}
-        </ConnectionContainer>
+        <RevisionsPopoverTab
+            {...response}
+            query={query}
+            summary={summary}
+            inputValue={searchValue}
+            onInputChange={setSearchValue}
+        >
+            {response.connection?.nodes?.map((node, index) => (
+                <GitCommitNode
+                    key={index}
+                    node={node}
+                    currentCommitID={currentCommitID}
+                    location={location}
+                    getURLFromRevision={getURLFromRevision}
+                />
+            ))}
+        </RevisionsPopoverTab>
     )
 }

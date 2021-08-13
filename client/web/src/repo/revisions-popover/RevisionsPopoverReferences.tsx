@@ -7,19 +7,13 @@ import { useLocation } from 'react-router'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import {
-    ConnectionContainer,
-    ConnectionForm,
-    ConnectionList,
-    ConnectionLoading,
-    ConnectionSummary,
-    ShowMoreButton,
-    SummaryContainer,
-} from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
 import { GitReferenceNode, REPOSITORY_GIT_REFS } from '../GitReference'
+
+import { RevisionsPopoverTab } from './RevisionsPopoverTab'
 
 interface GitReferencePopoverNodeProps {
     node: GitRefFields
@@ -137,11 +131,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    const { connection, loading, hasNextPage, fetchMore } = useConnection<
-        RepositoryGitRefsResult,
-        RepositoryGitRefsVariables,
-        GitRefFields
-    >({
+    const response = useConnection<RepositoryGitRefsResult, RepositoryGitRefsVariables, GitRefFields>({
         query: REPOSITORY_GIT_REFS,
         variables: {
             query,
@@ -158,59 +148,48 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
         },
     })
 
-    const summary = connection && (
+    const summary = response.connection && (
         <ConnectionSummary
             emptyElement={allowSpeculativeSearch ? <></> : undefined}
-            connection={connection}
+            connection={response.connection}
             first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
-            hasNextPage={hasNextPage}
+            hasNextPage={response.hasNextPage}
             connectionQuery={query}
         />
     )
 
     return (
-        <ConnectionContainer compact={true} className="connection-popover__content">
-            <ConnectionForm
-                inputValue={searchValue}
-                onInputChange={event => setSearchValue(event.target.value)}
-                autoFocus={true}
-                inputPlaceholder="Find..."
-                inputClassName="connection-popover__input"
-            />
-            <SummaryContainer>{query && summary}</SummaryContainer>
-            <ConnectionList className="connection-popover__nodes">
-                {connection?.nodes?.map((node, index) => (
-                    <GitReferencePopoverNode
-                        key={index}
-                        node={node}
-                        currentRevision={currentRev}
-                        defaultBranch={defaultBranch}
-                        getURLFromRevision={getURLFromRevision}
-                        location={location}
-                    />
-                ))}
-                {/* For branch filtering, we support speculative searching */}
-                {allowSpeculativeSearch && connection && query && (
-                    <SpectulativeGitReferencePopoverNode
-                        name={query}
-                        repoName={repoName}
-                        existingNodes={connection.nodes}
-                        currentRevision={currentRev}
-                        defaultBranch={defaultBranch}
-                        getURLFromRevision={getURLFromRevision}
-                        location={location}
-                    />
-                )}
-            </ConnectionList>
-            {loading && <ConnectionLoading />}
-            {!loading && connection && (
-                <SummaryContainer>
-                    {!query && summary}
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                </SummaryContainer>
+        <RevisionsPopoverTab
+            {...response}
+            query={query}
+            summary={summary}
+            inputValue={searchValue}
+            onInputChange={setSearchValue}
+        >
+            {response.connection?.nodes?.map((node, index) => (
+                <GitReferencePopoverNode
+                    key={index}
+                    node={node}
+                    currentRevision={currentRev}
+                    defaultBranch={defaultBranch}
+                    getURLFromRevision={getURLFromRevision}
+                    location={location}
+                />
+            ))}
+            {/* For branch filtering, we support speculative searching */}
+            {allowSpeculativeSearch && response.connection && query && (
+                <SpectulativeGitReferencePopoverNode
+                    name={query}
+                    repoName={repoName}
+                    existingNodes={response.connection.nodes}
+                    currentRevision={currentRev}
+                    defaultBranch={defaultBranch}
+                    getURLFromRevision={getURLFromRevision}
+                    location={location}
+                />
             )}
-        </ConnectionContainer>
+        </RevisionsPopoverTab>
     )
 }
