@@ -38,17 +38,7 @@ type Syncer struct {
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
 
-	// Registerer is the interface to register / unregister prometheus metrics.
 	Registerer prometheus.Registerer
-
-	// PermsSyncer is the interface that lets the syncer schedule permissions syncing without
-	// directly having access to the permissions syncer client.
-	PermsSyncer interface {
-		// ScheduleRepos will schedule a repository permissions sync. PermsSyncer can be nil so
-		// callers of syncer.PermsSyncer.ScheduleRepos must ensure to check if the interface is nil
-		// before invoking the method.
-		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
-	}
 
 	// UserReposMaxPerUser can be used to override the value read from config.
 	// If zero, we'll read from config instead.
@@ -554,7 +544,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		return Diff{}, errors.Wrap(err, "syncer: getting repo from the database")
 	}
 
-	scheduleRepoPermsSync := false
 	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
@@ -578,16 +567,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		stored = types.Repos{existing}
 		fallthrough
 	case 1: // Existing repo, update.
-		// If the repo is public and is being made private, we want to schedule a repository
-		// permissions sync.
-		//
-		// We do not need to check if an existing private repo was made public because public repos
-		// are on the quick path of authz checks and will be skipped even if we enqueue it for
-		// permissions syncing.
-		if !stored[0].Private && sourced.Private {
-			scheduleRepoPermsSync = true
-		}
-
 		if !stored[0].Update(sourced) {
 			d.Unmodified = append(d.Unmodified, stored[0])
 			break
@@ -599,10 +578,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		d.Modified = append(d.Modified, stored[0])
 	case 0: // New repo, create.
-		if sourced.Private {
-			scheduleRepoPermsSync = true
-		}
-
 		if svc.NamespaceUserID != 0 { // enforce user repo limits
 			siteAdded, err := tx.CountUserAddedRepos(ctx)
 			if err != nil {
@@ -631,18 +606,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		d.Added = append(d.Added, sourced)
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
-	}
-
-	// PermsSyncer is available in enterprise mode only.
-	// Even in enterprise mode, only trigger repo permissions sync if we need to.
-	if s.PermsSyncer == nil || !scheduleRepoPermsSync {
-		return d, nil
-	}
-
-	// We expect the length of d.Added and d.Modified to be either 0 or 1.
-	// Ranging over it is simpler.
-	for _, r := range append(d.Added, d.Modified...) {
-		s.PermsSyncer.ScheduleRepos(ctx, r.ID)
 	}
 
 	return d, nil
