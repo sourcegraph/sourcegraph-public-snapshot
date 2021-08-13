@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { DisabledInputTooltip } from '@sourcegraph/web/src/components/DisabledInputTooltip'
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
@@ -17,7 +17,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
     <>
         <span className="d-none d-sm-block" />
         <div className="p-2">
-            <DisabledInputTooltip
+            <InputTooltip
                 id={`select-changeset-${node.id}`}
                 type="checkbox"
                 className="btn"

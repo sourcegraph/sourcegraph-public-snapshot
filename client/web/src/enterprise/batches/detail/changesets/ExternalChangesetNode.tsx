@@ -13,7 +13,7 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { DisabledInputTooltip } from '@sourcegraph/web/src/components/DisabledInputTooltip'
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
@@ -94,7 +94,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             </button>
             {selectable ? (
                 <div className="p-2">
-                    <DisabledInputTooltip
+                    <InputTooltip
                         id={`select-changeset-${node.id}`}
                         type="checkbox"
                         className="btn"

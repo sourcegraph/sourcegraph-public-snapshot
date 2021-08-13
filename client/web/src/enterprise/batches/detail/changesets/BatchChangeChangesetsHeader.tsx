@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DisabledInputTooltip } from '@sourcegraph/web/src/components/DisabledInputTooltip'
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 export interface BatchChangeChangesetsHeaderProps {
     allSelected?: boolean
@@ -16,7 +16,7 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeCha
     <>
         <span className="d-none d-md-block" />
         {toggleSelectAll && (
-            <DisabledInputTooltip
+            <InputTooltip
                 type="checkbox"
                 className="btn ml-2"
                 checked={allSelected}

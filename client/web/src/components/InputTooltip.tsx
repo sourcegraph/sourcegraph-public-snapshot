@@ -1,6 +1,6 @@
 import React from 'react'
 
-import styles from './DisabledInputTooltip.module.scss'
+import styles from './InputTooltip.module.scss'
 
 /**
  * A wrapper around `input` that restores the hover tooltip capability even if the input is disabled.
@@ -9,7 +9,7 @@ import styles from './DisabledInputTooltip.module.scss'
  *
  * All other props are passed to the `input` element.
  */
-export const DisabledInputTooltip: React.FunctionComponent<
+export const InputTooltip: React.FunctionComponent<
     React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & { tooltip: string }
 > = ({ disabled, tooltip, ...props }) => (
     <div className={styles.container}>
