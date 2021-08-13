@@ -287,7 +287,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		}
 	}
 
-	// Treat all paths as a prefix.
+	// Treat all paths as prefixes.
 	for i, include := range includeContains {
 		includeContains[i] = extsvc.RepoID(string(include) + wildcardMatchAll)
 	}
