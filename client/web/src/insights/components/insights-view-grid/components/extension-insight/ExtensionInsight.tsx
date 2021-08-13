@@ -24,10 +24,19 @@ interface ExtensionInsightProps
         ExtensionsControllerProps,
         React.HTMLAttributes<HTMLElement> {
     viewId: string
+    viewTitle: string
 }
 
 export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = props => {
-    const { viewId, telemetryService, settingsCascade, platformContext, extensionsController, ...otherProps } = props
+    const {
+        viewId,
+        viewTitle,
+        telemetryService,
+        settingsCascade,
+        platformContext,
+        extensionsController,
+        ...otherProps
+    } = props
     const { getExtensionViewById } = useContext(InsightsApiContext)
 
     const { data, loading } = useParallelRequests(
@@ -45,7 +54,7 @@ export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = 
             telemetryService={telemetryService}
             hasContextMenu={true}
             insight={{ id: viewId, view: data?.view }}
-            onDelete={handleDelete}
+            onDelete={() => handleDelete({ id: viewId, title: viewTitle })}
             {...otherProps}
             className={classnames('extension-insight-card', otherProps.className)}
         >

@@ -6,7 +6,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
 import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
-import { DataSeries } from '../../../../../../core/backend/types'
+import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine, getSanitizedRepositories } from '../../utils/insight-sanitizer'
@@ -35,7 +35,7 @@ export interface SearchInsightLivePreviewProps {
 /**
  * Displays live preview chart for creation UI with latest insights settings
  * from creation UI form.
- * */
+ */
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
     const { series, repositories, step, stepValue, disabled = false, className } = props
 
@@ -52,7 +52,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             // Cut off all unnecessary for live preview fields in order to
             // not trigger live preview update if any of unnecessary has been updated
             // Example: edit true => false - chart shouldn't re-fetch data
-            .map<DataSeries>(getSanitizedLine)
+            .map<SearchBasedInsightSeries>(getSanitizedLine)
     )
 
     const liveSettings = useMemo(

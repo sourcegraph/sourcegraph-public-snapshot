@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
@@ -49,7 +51,7 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 		Metrics:           metrics,
 	}
 
-	defaultRateLimit := rate.Limit(2.0)
+	defaultRateLimit := rate.Limit(10.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
 	limiter := rate.NewLimiter(getRateLimit(), 1)
@@ -60,10 +62,14 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 		limiter.SetLimit(val)
 	})
 
+	sharedCache := make(map[string]*types.InsightSeries)
+
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		workerBaseStore: workerBaseStore,
 		insightsStore:   insightsStore,
 		limiter:         limiter,
+		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
+		seriesCache:     sharedCache,
 	}, options)
 }
 

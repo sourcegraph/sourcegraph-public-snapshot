@@ -2,6 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { MultiSelectContextProvider } from '../../MultiSelectContext'
 
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
@@ -15,126 +16,108 @@ add('all states', () => (
     <EnterpriseWebStory>
         {props => (
             <>
-                <ChangesetSelectRow
-                    {...props}
-                    onSubmit={onSubmit}
-                    selected={new Set(['id-1', 'id-2'])}
-                    allSelected={false}
-                    batchChangeID="test-123"
-                    allVisibleSelected={false}
-                    setAllSelected={() => undefined}
-                    totalCount={100}
-                    queryArguments={{
-                        batchChange: 'test-123',
-                        checkState: null,
-                        onlyArchived: null,
-                        onlyPublishedByThisBatchChange: null,
-                        reviewState: null,
-                        search: null,
-                        state: null,
-                    }}
-                />
+                <MultiSelectContextProvider
+                    initialSelected={[]}
+                    initialVisible={['id-1', 'id-2']}
+                    initialTotalCount={100}
+                >
+                    <ChangesetSelectRow
+                        {...props}
+                        onSubmit={onSubmit}
+                        batchChangeID="test-123"
+                        queryArguments={{
+                            batchChange: 'test-123',
+                            checkState: null,
+                            onlyArchived: null,
+                            onlyPublishedByThisBatchChange: null,
+                            reviewState: null,
+                            search: null,
+                            state: null,
+                        }}
+                    />
+                </MultiSelectContextProvider>
                 <hr />
-                <ChangesetSelectRow
-                    {...props}
-                    onSubmit={onSubmit}
-                    selected={new Set(['id-1', 'id-2'])}
-                    allSelected={false}
-                    batchChangeID="test-123"
-                    allVisibleSelected={false}
-                    setAllSelected={() => undefined}
-                    totalCount={100}
-                    queryArguments={{
-                        batchChange: 'test-123',
-                        checkState: null,
-                        onlyArchived: null,
-                        onlyPublishedByThisBatchChange: null,
-                        reviewState: null,
-                        search: null,
-                        state: null,
-                    }}
-                />
+                <MultiSelectContextProvider
+                    initialSelected={['id-1', 'id-2']}
+                    initialVisible={['id-1', 'id-2']}
+                    initialTotalCount={100}
+                >
+                    <ChangesetSelectRow
+                        {...props}
+                        onSubmit={onSubmit}
+                        batchChangeID="test-123"
+                        queryArguments={{
+                            batchChange: 'test-123',
+                            checkState: null,
+                            onlyArchived: null,
+                            onlyPublishedByThisBatchChange: null,
+                            reviewState: null,
+                            search: null,
+                            state: null,
+                        }}
+                    />
+                </MultiSelectContextProvider>
                 <hr />
-                <ChangesetSelectRow
-                    {...props}
-                    onSubmit={onSubmit}
-                    selected={new Set(['id-1', 'id-2'])}
-                    allSelected={false}
-                    batchChangeID="test-123"
-                    allVisibleSelected={false}
-                    setAllSelected={() => undefined}
-                    totalCount={100}
-                    queryArguments={{
-                        batchChange: 'test-123',
-                        checkState: null,
-                        onlyArchived: null,
-                        onlyPublishedByThisBatchChange: null,
-                        reviewState: null,
-                        search: null,
-                        state: null,
-                    }}
-                />
+                {/* No total count, just to make sure that's handled. */}
+                <MultiSelectContextProvider initialSelected={['id-1', 'id-2']} initialVisible={['id-1', 'id-2']}>
+                    <ChangesetSelectRow
+                        {...props}
+                        onSubmit={onSubmit}
+                        batchChangeID="test-123"
+                        queryArguments={{
+                            batchChange: 'test-123',
+                            checkState: null,
+                            onlyArchived: null,
+                            onlyPublishedByThisBatchChange: null,
+                            reviewState: null,
+                            search: null,
+                            state: null,
+                        }}
+                    />
+                </MultiSelectContextProvider>
                 <hr />
-                <ChangesetSelectRow
-                    {...props}
-                    onSubmit={onSubmit}
-                    selected={new Set(['id-1', 'id-2'])}
-                    allSelected={false}
-                    batchChangeID="test-123"
-                    allVisibleSelected={true}
-                    setAllSelected={() => undefined}
-                    totalCount={100}
-                    queryArguments={{
-                        batchChange: 'test-123',
-                        checkState: null,
-                        onlyArchived: null,
-                        onlyPublishedByThisBatchChange: null,
-                        reviewState: null,
-                        search: null,
-                        state: null,
-                    }}
-                />
+                <MultiSelectContextProvider
+                    initialSelected="all"
+                    initialVisible={['id-1', 'id-2']}
+                    initialTotalCount={100}
+                >
+                    <ChangesetSelectRow
+                        {...props}
+                        onSubmit={onSubmit}
+                        batchChangeID="test-123"
+                        queryArguments={{
+                            batchChange: 'test-123',
+                            checkState: null,
+                            onlyArchived: null,
+                            onlyPublishedByThisBatchChange: null,
+                            reviewState: null,
+                            search: null,
+                            state: null,
+                        }}
+                    />
+                </MultiSelectContextProvider>
                 <hr />
-                <ChangesetSelectRow
-                    {...props}
-                    onSubmit={onSubmit}
-                    selected={new Set(['id-1', 'id-2'])}
-                    allSelected={true}
-                    batchChangeID="test-123"
-                    allVisibleSelected={true}
-                    setAllSelected={() => undefined}
-                    totalCount={100}
-                    queryArguments={{
-                        batchChange: 'test-123',
-                        checkState: null,
-                        onlyArchived: null,
-                        onlyPublishedByThisBatchChange: null,
-                        reviewState: null,
-                        search: null,
-                        state: null,
-                    }}
-                />
-                <hr />
-                <ChangesetSelectRow
-                    {...props}
-                    onSubmit={onSubmit}
-                    selected={new Set(['id-1', 'id-2'])}
-                    allSelected={false}
-                    batchChangeID="test-123"
-                    allVisibleSelected={false}
-                    setAllSelected={() => undefined}
-                    totalCount={100}
-                    queryArguments={{
-                        batchChange: 'test-123',
-                        checkState: null,
-                        onlyArchived: true,
-                        onlyPublishedByThisBatchChange: null,
-                        reviewState: null,
-                        search: null,
-                        state: null,
-                    }}
-                    dropDownInitiallyOpen={true}
-                />
+                <MultiSelectContextProvider
+                    initialSelected={['id-1', 'id-2']}
+                    initialVisible={['id-1', 'id-2']}
+                    initialTotalCount={100}
+                >
+                    <ChangesetSelectRow
+                        {...props}
+                        onSubmit={onSubmit}
+                        batchChangeID="test-123"
+                        queryArguments={{
+                            batchChange: 'test-123',
+                            checkState: null,
+                            onlyArchived: true,
+                            onlyPublishedByThisBatchChange: null,
+                            reviewState: null,
+                            search: null,
+                            state: null,
+                        }}
+                        dropDownInitiallyOpen={true}
+                    />
+                </MultiSelectContextProvider>
             </>
         )}
     </EnterpriseWebStory>

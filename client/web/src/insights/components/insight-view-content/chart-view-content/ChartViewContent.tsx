@@ -29,7 +29,11 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const { content, className = '', viewID, telemetryService } = props
 
     const handleDatumLinkClick = useCallback((): void => {
-        telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
+        telemetryService.log(
+            'InsightDataPointClick',
+            { insightType: getInsightTypeByViewId(viewID) },
+            { insightType: getInsightTypeByViewId(viewID) }
+        )
     }, [viewID, telemetryService])
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
@@ -41,7 +45,11 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
                 return
             }
 
-            telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
+            telemetryService.log(
+                'InsightDataPointClick',
+                { insightType: getInsightTypeByViewId(viewID) },
+                { insightType: getInsightTypeByViewId(viewID) }
+            )
 
             window.open(event.link, '_blank', 'noopener')?.focus()
         },

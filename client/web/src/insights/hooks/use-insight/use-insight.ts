@@ -7,10 +7,9 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { Settings } from '../../../schema/settings.schema'
 import {
     Insight,
-    InsightConfiguration,
+    InsightExtensionBasedConfiguration,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightType,
-    SearchBasedInsightSettings,
 } from '../../core/types'
 import { useDistinctValue } from '../use-distinct-value'
 
@@ -47,7 +46,7 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
             settings &&
             !isErrorLike(settings) &&
             (settings[insightId] ||
-                // Also check insights all repos map as a second place if insights store
+                // Also check insights all repos map as a second place of insights store
                 (settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, Insight>)?.[insightId])
     )
 
@@ -57,7 +56,7 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
 
     // Top level match means we are dealing with extension based insights
     if (subject.settings[insightId]) {
-        const insightConfiguration = subject.settings[insightId] as InsightConfiguration
+        const insightConfiguration = subject.settings[insightId] as InsightExtensionBasedConfiguration
 
         return {
             id: insightId,
@@ -67,8 +66,7 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
         }
     }
 
-    const allReposInsights =
-        (subject.settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, SearchBasedInsightSettings>) ?? {}
+    const allReposInsights = subject.settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
 
     // Match in all repos object means that we are dealing with backend search based insight.
     if (allReposInsights[insightId]) {
@@ -87,7 +85,7 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
 
 interface InsightsInputs {
     insightKey: string
-    insightConfiguration: InsightConfiguration
+    insightConfiguration: InsightExtensionBasedConfiguration
     ownerId: string
 }
 

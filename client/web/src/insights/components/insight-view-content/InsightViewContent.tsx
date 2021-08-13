@@ -43,7 +43,11 @@ export const InsightViewContent: React.FunctionComponent<InsightViewContentProps
             // view, as opposed to accidentally moving past it. If the mouse leaves
             // the view quickly, clear the timeout for logging the event
             timeoutID = window.setTimeout(() => {
-                props.telemetryService.log('InsightHover', { insightType: viewID.split('.')[0] })
+                props.telemetryService.log(
+                    'InsightHover',
+                    { insightType: viewID.split('.')[0] },
+                    { insightType: viewID.split('.')[0] }
+                )
             }, 500)
 
             viewContentElement?.addEventListener('mouseleave', onMouseLeave)

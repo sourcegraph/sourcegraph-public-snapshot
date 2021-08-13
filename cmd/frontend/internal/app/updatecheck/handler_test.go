@@ -340,17 +340,12 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 
 func TestSerializeCodeIntelUsage(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
-	waus1 := int32(25)
-	waus2 := int32(10)
-	waus3 := int32(40)
-	withUploads := int32(50)
-	withoutUploads := int32(85)
 
 	testUsage, err := json.Marshal(types.NewCodeIntelUsageStatistics{
 		StartOfWeek:                now,
-		WAUs:                       &waus1,
-		SearchBasedWAUs:            &waus2,
-		PreciseCrossRepositoryWAUs: &waus3,
+		WAUs:                       int32Ptr(25),
+		SearchBasedWAUs:            int32Ptr(10),
+		PreciseCrossRepositoryWAUs: int32Ptr(40),
 		EventSummaries: []types.CodeIntelEventSummary{
 			{
 				Action:          types.HoverAction,
@@ -401,8 +396,27 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				TotalActions:    3,
 			},
 		},
-		NumRepositoriesWithUploadRecords:    &withUploads,
-		NumRepositoriesWithoutUploadRecords: &withoutUploads,
+		NumRepositories:                                  int32Ptr(50 + 85),
+		NumRepositoriesWithUploadRecords:                 int32Ptr(50),
+		NumRepositoriesWithFreshUploadRecords:            int32Ptr(40),
+		NumRepositoriesWithIndexRecords:                  int32Ptr(30),
+		NumRepositoriesWithFreshIndexRecords:             int32Ptr(20),
+		NumRepositoriesWithAutoIndexConfigurationRecords: int32Ptr(7),
+		CountsByLanguage: map[string]types.CodeIntelRepositoryCountsByLanguage{
+			"go": {
+				NumRepositoriesWithUploadRecords:      int32Ptr(10),
+				NumRepositoriesWithFreshUploadRecords: int32Ptr(20),
+				NumRepositoriesWithIndexRecords:       int32Ptr(30),
+				NumRepositoriesWithFreshIndexRecords:  int32Ptr(40),
+			},
+			"typescript": {
+				NumRepositoriesWithUploadRecords:      int32Ptr(15),
+				NumRepositoriesWithFreshUploadRecords: int32Ptr(25),
+				NumRepositoriesWithIndexRecords:       int32Ptr(35),
+				NumRepositoriesWithFreshIndexRecords:  int32Ptr(45),
+			},
+		},
+		SettingsPageViewCount: int32Ptr(1489),
 	})
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
@@ -509,8 +523,30 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 					"total_actions": 3
 				}
 			],
+			"num_repositories": 135,
 			"num_repositories_with_upload_records": 50,
-			"num_repositories_without_upload_records": 85
+			"num_repositories_without_upload_records": 85,
+			"num_repositories_with_fresh_upload_records": 40,
+			"num_repositories_with_index_records": 30,
+			"num_repositories_with_fresh_index_records": 20,
+			"num_repositories_with_index_configuration_records": 7,
+			"counts_by_language": [
+				{
+					"language_id": "go",
+					"num_repositories_with_upload_records": 10,
+					"num_repositories_with_fresh_upload_records": 20,
+					"num_repositories_with_index_records": 30,
+					"num_repositories_with_fresh_index_records": 40
+				},
+				{
+					"language_id": "typescript",
+					"num_repositories_with_upload_records": 15,
+					"num_repositories_with_fresh_upload_records": 25,
+					"num_repositories_with_index_records": 35,
+					"num_repositories_with_fresh_index_records": 45
+				}
+			],
+			"settings_page_view_count": 1489
 		},
 		"code_monitoring_usage": null,
 		"dependency_versions": null,
@@ -539,25 +575,21 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 }
 
 func TestSerializeOldCodeIntelUsage(t *testing.T) {
-	v1 := int32(1)
-	v2 := int32(2)
-	v3 := int32(3)
-	v4 := int32(4)
 	now := time.Unix(1587396557, 0).UTC()
 
 	testPeriod, err := json.Marshal(&types.OldCodeIntelUsagePeriod{
 		StartTime: now,
 		Hover: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 1, EventsCount: &v1},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 2, EventsCount: &v2},
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 1, EventsCount: int32Ptr(1)},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 2, EventsCount: int32Ptr(2)},
 		},
 		Definitions: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 3, EventsCount: &v3},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 4, EventsCount: &v4},
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 3, EventsCount: int32Ptr(3)},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 4, EventsCount: int32Ptr(4)},
 		},
 		References: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 5, EventsCount: &v1},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 6, EventsCount: &v3},
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 5, EventsCount: int32Ptr(1)},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 6, EventsCount: int32Ptr(3)},
 		},
 	})
 	if err != nil {
@@ -666,8 +698,15 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 					"total_actions": 3
 				}
 			],
+			"num_repositories": null,
 			"num_repositories_with_upload_records": null,
-			"num_repositories_without_upload_records": null
+			"num_repositories_without_upload_records": null,
+			"num_repositories_with_fresh_upload_records": null,
+			"num_repositories_with_index_records": null,
+			"num_repositories_with_fresh_index_records": null,
+			"num_repositories_with_index_configuration_records": null,
+			"counts_by_language": null,
+			"settings_page_view_count": null
 		},
 		"code_monitoring_usage": null,
 		"dependency_versions": null,
@@ -781,4 +820,8 @@ func compareJSON(t *testing.T, actual []byte, expected string) {
 	if diff := cmp.Diff(o2, o1); diff != "" {
 		t.Fatalf("mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func int32Ptr(v int32) *int32 {
+	return &v
 }

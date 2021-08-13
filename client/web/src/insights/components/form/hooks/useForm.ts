@@ -8,6 +8,7 @@ import { useDistinctValue } from '../../../hooks/use-distinct-value'
 export const FORM_ERROR = 'useForm/submissionErrors'
 
 export type SubmissionErrors = Record<string, any> | undefined
+export type SubmissionResult = SubmissionErrors | Promise<SubmissionErrors> | void
 export type ValidationResult = string | undefined | void
 
 export interface FormChangeEvent<FormValues> {

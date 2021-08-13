@@ -1859,9 +1859,9 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 	}
 }
 
-// This function tests for both individual uses of ExternalRepoIncludePrefixes,
-// ExternalRepoExcludePrefixes as well as combination of these two options.
-func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
+// This function tests for both individual uses of ExternalRepoIncludeContains,
+// ExternalRepoExcludeContains as well as combination of these two options.
+func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1883,8 +1883,8 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos := types.Repos{
-		{
+	var (
+		perforceMarketing = &types.Repo{
 			Name:    api.RepoName("perforce/Marketing"),
 			URI:     "Marketing",
 			Private: true,
@@ -1893,8 +1893,8 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineering = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering"),
 			URI:     "Engineering",
 			Private: true,
@@ -1903,8 +1903,8 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineeringFrontend = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering/Frontend"),
 			URI:     "Engineering/Frontend",
 			Private: true,
@@ -1913,8 +1913,8 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineeringBackend = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering/Backend"),
 			URI:     "Engineering/Backend",
 			Private: true,
@@ -1923,9 +1923,35 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-	}
-	if err := Repos(db).Create(ctx, repos...); err != nil {
+		}
+		perforceEngineeringHandbookFrontend = &types.Repo{
+			Name:    api.RepoName("perforce/Engineering/Handbook/Frontend"),
+			URI:     "Engineering/Handbook/Frontend",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "//Engineering/Handbook/Frontend/",
+				ServiceType: extsvc.TypePerforce,
+				ServiceID:   "ssl:111.222.333.444:1666",
+			},
+		}
+		perforceEngineeringHandbookBackend = &types.Repo{
+			Name:    api.RepoName("perforce/Engineering/Handbook/Backend"),
+			URI:     "Engineering/Handbook/Backend",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "//Engineering/Handbook/Backend/",
+				ServiceType: extsvc.TypePerforce,
+				ServiceID:   "ssl:111.222.333.444:1666",
+			},
+		}
+	)
+	if err := Repos(db).Create(ctx,
+		perforceMarketing,
+		perforceEngineering,
+		perforceEngineeringFrontend,
+		perforceEngineeringBackend,
+		perforceEngineeringHandbookFrontend,
+		perforceEngineeringHandbookBackend); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1935,50 +1961,217 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 		want []types.RepoName
 	}{
 		{
-			name: "only apply ExternalRepoIncludePrefixes",
+			name: "only apply ExternalRepoIncludeContains",
 			opt: ReposListOptions{
-				ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//Engineering/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 			},
-			want: repoNamesFromRepos(repos[1:]),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend, perforceEngineeringBackend, perforceEngineeringHandbookFrontend, perforceEngineeringHandbookBackend}),
 		},
 		{
-			name: "only apply ExternalRepoExcludePrefixes",
+			name: "only apply transformed '...' Perforce wildcard ExternalRepoIncludeContains",
 			opt: ReposListOptions{
-				ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
+						ID:          "//%/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 			},
-			want: repoNamesFromRepos(repos[:1]),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringBackend, perforceEngineeringHandbookBackend}),
 		},
 		{
-			name: "apply both ExternalRepoIncludePrefixes and ExternalRepoExcludePrefixes",
+			name: "only apply multiple transformed '...' Perforce wildcard ExternalRepoIncludeContains",
 			opt: ReposListOptions{
-				ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
 					{
-						ID:          "//Engineering/",
-						ServiceType: extsvc.TypePerforce,
-						ServiceID:   "ssl:111.222.333.444:1666",
-					},
-				},
-				ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{
-					{
-						ID:          "//Engineering/Backend/",
+						ID:          "//%/%/Backend/%",
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
 				},
 			},
-			want: repoNamesFromRepos(repos[1:3]),
+			// Only match this specific nested folder, and not the other Backends
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringHandbookBackend}),
+		},
+		{
+			name: "only apply transformed '*' Perforce wildcard ExternalRepoIncludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//[^/]+/[^/]+/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			// Only match this specific nested folder, and not the other Backends
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringHandbookBackend}),
+		},
+		{
+			name: "only apply transformed '*' Perforce partial wildcard ExternalRepoIncludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//[^/]+/Back[^/]+/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			// Only match this specific nested folder, and not the other Backends
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringBackend}),
+		},
+		{
+			name: "only apply ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos([]*types.Repo{perforceMarketing}),
+		},
+		{
+			name: "only apply transformed '...' Perforce wildcard ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//%/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos([]*types.Repo{perforceMarketing, perforceEngineering, perforceEngineeringFrontend, perforceEngineeringHandbookFrontend}),
+		},
+		{
+			name: "only apply transformed '*' Perforce wildcard ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//[^/]+/[^/]+/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			// Only filter this very specific nesting level
+			want: repoNamesFromRepos([]*types.Repo{perforceMarketing, perforceEngineering, perforceEngineeringFrontend, perforceEngineeringBackend, perforceEngineeringHandbookFrontend}),
+		},
+		{
+			name: "apply both ExternalRepoIncludeContains and ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+					{
+						ID:          "//Engineering/Handbook/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend}),
+		},
+		{
+			name: "apply both ExternalRepoIncludeContains and transformed '...' Perforce wildcard ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//%/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend, perforceEngineeringHandbookFrontend}),
+		},
+		{
+			name: "apply both ExternalRepoIncludeContains and transformed '*' Perforce wildcard ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/[^/]+/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend, perforceEngineeringBackend, perforceEngineeringHandbookFrontend}),
+		},
+		{
+			name: "apply both transformed '...' Perforce wildcard ExternalRepoIncludeContains and ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//%/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/Handbook/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringBackend}),
+		},
+		{
+			name: "apply both transformed '*' Perforce wildcard ExternalRepoIncludeContains and ExternalRepoExcludeContains",
+			opt: ReposListOptions{
+				ExternalRepoIncludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/[^/]+/Backend/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+				ExternalRepoExcludeContains: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/%",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: nil,
 		},
 	}
 

@@ -2,8 +2,9 @@ import { AxisScaleOutput } from '@visx/axis'
 import { DefaultOutput, ScaleConfig, scaleLinear, scaleTime } from '@visx/scale'
 import { PickScaleConfigWithoutType } from '@visx/scale/lib/types/ScaleConfig'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
-import { useMemo } from 'react'
+import { useMemo, useContext } from 'react'
 
+import { LineChartSettingsContext } from '../line-chart-settings-provider'
 import { Accessors } from '../types'
 
 import { getMinAndMax } from './get-min-max'
@@ -49,18 +50,23 @@ interface UseScalesOutput {
  */
 export function useScales<Datum>(props: UseScalesProps<Datum>): UseScalesOutput {
     const { config, accessors, width, height, data } = props
+    const { zeroYAxisMin } = useContext(LineChartSettingsContext)
 
     // Extend origin config with calculated domain with vertical padding
-    const scalesConfig = useMemo(
-        () => ({
+    const scalesConfig = useMemo(() => {
+        let [min, max] = getMinAndMax(data, accessors)
+        if (zeroYAxisMin) {
+            min = 0
+        }
+
+        return {
             ...config,
             y: {
                 ...config.y,
-                domain: getRangeWithPadding(getMinAndMax(data, accessors), LINE_VERTICAL_PADDING),
+                domain: getRangeWithPadding([min, max], LINE_VERTICAL_PADDING),
             },
-        }),
-        [accessors, data, config]
-    )
+        }
+    }, [data, accessors, zeroYAxisMin, config])
 
     const xScale = useMemo(
         () =>
