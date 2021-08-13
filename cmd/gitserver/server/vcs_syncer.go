@@ -128,9 +128,9 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.UR
 type PerforceDepotSyncer struct {
 	// MaxChanges indicates to only import at most n changes when possible.
 	MaxChanges int
-	// UseClientSpec enables use of a client spec to find the list of interesting files in p4.
-	UseClientSpec bool
-	// Client configures the client to use with p4.
+
+	// Client configures the client to use with p4 and enables use of a client spec to
+	// find the list of interesting files in p4.
 	Client string
 }
 
@@ -221,7 +221,7 @@ func (s *PerforceDepotSyncer) p4CommandOptions() []string {
 	if s.MaxChanges > 0 {
 		flags = append(flags, "--max-changes", strconv.Itoa(s.MaxChanges))
 	}
-	if s.UseClientSpec {
+	if s.Client != "" {
 		flags = append(flags, "--use-client-spec")
 	}
 	return flags
