@@ -7,14 +7,12 @@ interface Props extends React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLB
     loading: boolean
     label: string
     alwaysShowLabel: boolean
-    spinnerClassName?: string
 }
 
 export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
     loading,
     label,
     alwaysShowLabel,
-    spinnerClassName,
     ...props
 }) => (
     <button
@@ -25,7 +23,7 @@ export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
     >
         {loading ? (
             <>
-                <LoadingSpinner className={classnames(spinnerClassName, 'icon-inline')} />
+                <LoadingSpinner className="icon-inline" />
                 {alwaysShowLabel && <span className="ml-1">{label}</span>}
             </>
         ) : (
