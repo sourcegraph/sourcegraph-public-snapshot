@@ -11,7 +11,7 @@ import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
-const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
+const SearchPage = lazyComponent(() => import('./search/home/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(
     () => import('./search/results/StreamingSearchResults'),
     'StreamingSearchResults'

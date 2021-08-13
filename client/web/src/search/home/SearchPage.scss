@@ -1,12 +1,12 @@
 @import '../../nav/GlobalNavbar';
 @import '../QuickLinks';
-@import './MonacoQueryInput';
-@import './InfoDropdown';
-@import './SearchContextDropdown';
-@import './SearchContextMenu';
-@import './SearchOnboardingTour';
+@import '../input/MonacoQueryInput';
+@import '../input/InfoDropdown';
+@import '../input/SearchContextDropdown';
+@import '../input/SearchContextMenu';
+@import '../input/SearchOnboardingTour';
 @import '../panels/HomePanels';
-@import './toggles/Toggles';
+@import '../input/toggles/Toggles';
 @import './homepage';
 
 .search-page {
