@@ -133,3 +133,109 @@ SELECT * FROM users;
 ```
 
 > NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the docker container exec command.
+
+## Backup and restore
+
+The following instructions are specific to backing up and restoring the sourcegraph databases in a Kubernetes deployment. These do not apply to other deployment types.
+
+> WARNING: **Only core data will be backed up**.
+>
+> These instructions will only back up core data including user accounts, configuration, repository-metadata, etc. Other data will be regenerated automatically:
+>
+> - Repositories will be re-cloned
+> - Search indexes will be rebuilt from scratch
+>
+> The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
+
+### Back up sourcegraph databases
+
+These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
+
+1. Go into the machine hosting the deployment `ssh whatever`
+2. `cd` to the `deploy-sourcegraph-directory....` on the host
+3. Verify deployment running
+
+```bash
+deployment stuff
+```
+
+4. Stop deployment
+
+```bash
+STOP STUFF
+```
+5. Generate the database dumps
+
+```bash
+PUT STUFF HERE
+```
+6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
+
+### Restore sourcegraph databases
+
+#### Restoring sourcegraph databases into a new environment
+
+The following instructions apply only if you are restoring your databases into a new deployment of sourcegraph ie: a new virtual machine 
+
+If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
+
+1. Copy the database dump files into the `deploy-sourcegraph directory...`
+2. Start the database services
+
+```bash
+START STUFF
+```
+
+3. Copy the database files into the containers
+
+```bash
+kubectl cp ? stuff
+```
+4. Restore the databases
+
+```bash
+kubectl ... pgsql
+kubectl ... codeintel-db
+```
+5. Start the remaining sourcegraph services
+
+```bash
+kubectl start stuff
+```
+6. Verify the deployment has started
+
+```bash
+kubectl (?)
+```
+
+7. Browse to your sourcegraph deployment, login and verify your existing configuration has been restored
+
+#### Restoring sourcegraph databases into an existing environment
+
+1. stop the previous deployment and remove any existing volumes
+```bash
+stop stuff
+remove pgsql
+remove codeintel-db
+```
+2. Start the database services only
+```bash
+kubectl start stuff
+```
+3. Copy the database files into the containers
+```bash
+stuff stuff
+```
+4. Restore the databases
+```bash
+stuff stuff
+```
+5. Start the remaining sourcegraph services
+```bash
+stuff stuff
+```
+6. Verify the deployment has started 
+```bash
+stuff stuff
+```
+7. Browse to your sourcegraph deployment, login and verify your existing configuration has been restored
