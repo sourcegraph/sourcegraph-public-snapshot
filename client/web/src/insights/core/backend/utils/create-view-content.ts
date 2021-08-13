@@ -1,11 +1,14 @@
 import { LineChartContent } from 'sourcegraph'
 
 import { InsightFields } from '../../../../graphql-operations'
+import { DataSeries } from '../types'
 
 export function createViewContent(
-    insight: InsightFields
+    insight: InsightFields,
+    seriesSettings: DataSeries[] = []
 ): LineChartContent<{ dateTime: number; [seriesKey: string]: number }, 'dateTime'> {
     const dataByXValue = new Map<string, { dateTime: number; [seriesKey: string]: number }>()
+
     for (const [seriesIndex, series] of insight.series.entries()) {
         for (const point of series.points) {
             let dataObject = dataByXValue.get(point.dateTime)
@@ -20,12 +23,14 @@ export function createViewContent(
             dataObject[`series${seriesIndex}`] = point.value
         }
     }
+
     return {
         chart: 'line',
         data: [...dataByXValue.values()],
         series: insight.series.map((series, index) => ({
             name: series.label,
             dataKey: `series${index}`,
+            stroke: seriesSettings[index]?.stroke,
         })),
         xAxis: {
             dataKey: 'dateTime',

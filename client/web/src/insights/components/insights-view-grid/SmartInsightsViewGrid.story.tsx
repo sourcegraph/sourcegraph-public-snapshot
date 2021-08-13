@@ -43,7 +43,7 @@ const insights: Insight[] = [
 ]
 
 const mockInsightAPI = createMockInsightAPI({
-    getBackendInsightById: (id: string) =>
+    getBackendInsightById: ({ id }) =>
         of({
             id,
             view: {
