@@ -77,21 +77,8 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
     return (
         <div className="code-intel-indexes">
-            <PageTitle title="Code intelligence auto-index records" />
-            <PageHeader
-                headingElement="h2"
-                path={[{ text: 'Code intelligence auto-index records' }]}
-                description={
-                    <>
-                        Popular repositories are indexed automatically on{' '}
-                        <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
-                            Sourcegraph.com
-                        </a>
-                        .
-                    </>
-                }
-                className="mb-3"
-            />
+            <PageTitle title="Auto-indexing jobs" />
+            <PageHeader headingElement="h2" path={[{ text: 'Auto-indexing jobs' }]} className="mb-3" />
 
             <Container>
                 <div className="list-group position-relative">

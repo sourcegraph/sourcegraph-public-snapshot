@@ -103,33 +103,17 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         headingElement="h2"
                         path={[
                             {
-                                text: (
-                                    <>
-                                        <span className="text-muted">Upload for commit</span>
-                                        <span className="ml-2">
-                                            {uploadOrError.projectRoot
-                                                ? uploadOrError.projectRoot.commit.abbreviatedOID
-                                                : uploadOrError.inputCommit.slice(0, 7)}
-                                        </span>
-                                        <span className="ml-2 text-muted">indexed by</span>
-                                        <span className="ml-2">{uploadOrError.inputIndexer}</span>
-                                        <span className="ml-2 text-muted">rooted at</span>
-                                        <span className="ml-2">
-                                            {(uploadOrError.projectRoot
-                                                ? uploadOrError.projectRoot.path
-                                                : uploadOrError.inputRoot) || '/'}
-                                        </span>
-                                    </>
-                                ),
+                                text: `Upload for commit${
+                                    uploadOrError.projectRoot
+                                        ? uploadOrError.projectRoot.commit.abbreviatedOID
+                                        : uploadOrError.inputCommit.slice(0, 7)
+                                } indexed by ${uploadOrError.inputIndexer} rooted at ${
+                                    (uploadOrError.projectRoot
+                                        ? uploadOrError.projectRoot.path
+                                        : uploadOrError.inputRoot) || '/'
+                                }`,
                             },
                         ]}
-                        actions={
-                            <CodeIntelDeleteUpload
-                                state={uploadOrError.state}
-                                deleteUpload={deleteUpload}
-                                deletionOrError={deletionOrError}
-                            />
-                        }
                         className="mb-3"
                     />
 
@@ -154,6 +138,14 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
 
                         <h3>Timeline</h3>
                         <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
+                    </Container>
+
+                    <Container className="mt-2">
+                        <CodeIntelDeleteUpload
+                            state={uploadOrError.state}
+                            deleteUpload={deleteUpload}
+                            deletionOrError={deletionOrError}
+                        />
                     </Container>
                 </>
             )}
