@@ -2,9 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
+	"regexp"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type ComputeArgs struct {
@@ -128,12 +134,94 @@ func (r *computeResultResolver) ToComputeText() (*computeTextResolver, bool) {
 	return res, ok
 }
 
+func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContext, db dbutil.DB) *computeMatchContextResolver {
+	type repoKey struct {
+		Name types.RepoName
+		Rev  string
+	}
+	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+			return existing
+		}
+		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver.RepoMatch.Rev = rev
+		repoResolvers[repoKey{repoName, rev}] = resolver
+		return resolver
+	}
+
+	var computeMatches []*computeMatchResolver
+	for _, m := range mc.Matches {
+		computeMatches = append(computeMatches, &computeMatchResolver{m: &m})
+	}
+	return &computeMatchContextResolver{
+		repository: getRepoResolver(fm.Repo, ""),
+		commit:     string(fm.CommitID),
+		path:       fm.Path,
+		matches:    computeMatches,
+	}
+}
+
+func toComputeResultResolver(r *computeMatchContextResolver) *computeResultResolver {
+	return &computeResultResolver{result: r}
+}
+
+func regexpFromQuery(q string) (*regexp.Regexp, error) {
+	plan, err := query.Pipeline(query.Init(q, query.SearchTypeRegex))
+	if err != nil {
+		return nil, err
+	}
+	if len(plan) != 1 {
+		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
+	}
+	switch node := plan[0].Pattern.(type) {
+	case query.Operator:
+		if len(node.Operands) == 1 {
+			if pattern, ok := node.Operands[0].(query.Pattern); ok && !pattern.Negated {
+				rp, err := regexp.Compile(pattern.Value)
+				if err != nil {
+					return nil, errors.Wrap(err, "regular expression is not valid for compute endpoint")
+				}
+				return rp, nil
+			}
+		}
+		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
+	case query.Pattern:
+		if !node.Negated {
+			return regexp.Compile(node.Value)
+		}
+	}
+	// unreachable
+	return nil, nil
+}
+
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
-func NewComputeImplementer(ctx context.Context, args *ComputeArgs) ([]*computeResultResolver, error) {
-	return []*computeResultResolver{{&computeTextResolver{t: &compute.Text{Value: "value"}}}}, nil
+func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
+	pattern, err := regexpFromQuery(args.Query)
+	if err != nil {
+		return nil, err
+	}
+	patternType := "regexp"
+	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: args.Query, PatternType: &patternType})
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := job.Results(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var computeResult []*computeResultResolver
+	for _, m := range results.Matches {
+		if fm, ok := m.(*result.FileMatch); ok {
+			matchContext := compute.FromFileMatch(fm, pattern)
+			computeResult = append(computeResult, toComputeResultResolver(toComputeMatchContextResolver(fm, matchContext, db)))
+		}
+	}
+	return computeResult, err
 }
 
 func (r *schemaResolver) Compute(ctx context.Context, args *ComputeArgs) ([]*computeResultResolver, error) {
-	return NewComputeImplementer(ctx, args)
+	return NewComputeImplementer(ctx, r.db, args)
 }
