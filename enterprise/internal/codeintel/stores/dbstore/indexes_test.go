@@ -370,79 +370,131 @@ func TestIsQueued(t *testing.T) {
 	}
 }
 
-func TestInsertIndex(t *testing.T) {
+func TestInsertIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	insertRepo(t, db, 50, "")
 
-	id, err := store.InsertIndex(context.Background(), Index{
-		State:        "queued",
-		Commit:       makeCommit(1),
-		RepositoryID: 50,
-		DockerSteps: []DockerStep{
-			{
-				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+	indexes, err := store.InsertIndexes(ctx, []Index{
+		{
+			State:        "queued",
+			Commit:       makeCommit(1),
+			RepositoryID: 50,
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/node:12.16",
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+				},
+			},
+			LocalSteps:  []string{"echo hello"},
+			Root:        "/foo/bar",
+			Indexer:     "sourcegraph/lsif-tsc:latest",
+			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
 		},
-		LocalSteps:  []string{"echo hello"},
-		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/lsif-tsc:latest",
-		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
-		Outfile:     "dump.lsif",
-		ExecutionLogs: []workerutil.ExecutionLogEntry{
-			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+		{
+			State:        "queued",
+			Commit:       makeCommit(2),
+			RepositoryID: 50,
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/rust:nightly",
+					Commands: []string{"cargo install"},
+				},
+			},
+			LocalSteps:  nil,
+			Root:        "/baz",
+			Indexer:     "sourcegraph/lsif-rust:15",
+			IndexerArgs: []string{"-v"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+			},
 		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
 	}
-
-	rank := 1
-	expected := Index{
-		ID:             id,
-		Commit:         makeCommit(1),
-		QueuedAt:       time.Time{},
-		State:          "queued",
-		FailureMessage: nil,
-		StartedAt:      nil,
-		FinishedAt:     nil,
-		RepositoryID:   50,
-		RepositoryName: "n-50",
-		DockerSteps: []DockerStep{
-			{
-				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
-			},
-		},
-		LocalSteps:  []string{"echo hello"},
-		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/lsif-tsc:latest",
-		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
-		Outfile:     "dump.lsif",
-		ExecutionLogs: []workerutil.ExecutionLogEntry{
-			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
-		},
-		Rank: &rank,
+	if len(indexes) == 0 {
+		t.Fatalf("expected records to be inserted")
 	}
 
-	if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else {
-		// Update auto-generated timestamp
-		expected.QueuedAt = index.QueuedAt
+	rank1 := 1
+	rank2 := 2
+	expected := []Index{
+		{
+			ID:             1,
+			Commit:         makeCommit(1),
+			QueuedAt:       time.Time{},
+			State:          "queued",
+			FailureMessage: nil,
+			StartedAt:      nil,
+			FinishedAt:     nil,
+			RepositoryID:   50,
+			RepositoryName: "n-50",
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/node:12.16",
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+				},
+			},
+			LocalSteps:  []string{"echo hello"},
+			Root:        "/foo/bar",
+			Indexer:     "sourcegraph/lsif-tsc:latest",
+			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+			},
+			Rank: &rank1,
+		},
+		{
+			ID:             2,
+			Commit:         makeCommit(2),
+			QueuedAt:       time.Time{},
+			State:          "queued",
+			FailureMessage: nil,
+			StartedAt:      nil,
+			FinishedAt:     nil,
+			RepositoryID:   50,
+			RepositoryName: "n-50",
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/rust:nightly",
+					Commands: []string{"cargo install"},
+				},
+			},
+			LocalSteps:  []string{},
+			Root:        "/baz",
+			Indexer:     "sourcegraph/lsif-rust:15",
+			IndexerArgs: []string{"-v"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+			},
+			Rank: &rank2,
+		},
+	}
 
-		if diff := cmp.Diff(expected, index); diff != "" {
-			t.Errorf("unexpected index (-want +got):\n%s", diff)
-		}
+	for i := range expected {
+		// Update auto-generated timestamp
+		expected[i].QueuedAt = indexes[0].QueuedAt
+	}
+
+	if diff := cmp.Diff(expected, indexes); diff != "" {
+		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
 
