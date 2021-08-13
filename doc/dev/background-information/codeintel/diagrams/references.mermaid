@@ -9,6 +9,9 @@ sequenceDiagram
     loop for each dumps[i]
       QueryResolver     -->>+ Position adjuster: AdjustPosition(file, position, from: commit, to: dumps[i].commit)
       Position adjuster -->>- QueryResolver: adjusted file, adjusted position
+    end
+
+    loop for each dumps[i]
       QueryResolver      ->>+ LSIF store: MonikersByPosition(dump, adjusted file, adjusted position)
       LSIF store        -->>- QueryResolver: monikers
     end
@@ -16,7 +19,7 @@ sequenceDiagram
     QueryResolver    ->>+ DB store: DefinitionDumps(monikers)
     DB store        -->>- QueryResolver: definitionDumps
 
-    Note right of Resolvers: Create curso from dumps, definitionDumps, monikers, adjusted files, adjusted positions>
+    Note right of Resolvers: Create cursor from dumps, definitionDumps, monikers, adjusted files, adjusted positions>
   end
 
   loop len(locations) < limit and !cursor.RemotePhase
