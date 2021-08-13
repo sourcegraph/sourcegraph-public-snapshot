@@ -117,10 +117,14 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [props.filters]
     )
     const repoName = useLastRepoName(props.query, repoFilters)
-    const repoFilterLinks = useMemo(
-        () => (repoFilters.length > 1 ? getRepoFilterLinks(repoFilters, onDynamicFilterClicked) : null),
-        [repoFilters, onDynamicFilterClicked]
-    )
+    const repoFilterLinks = useMemo(() => getRepoFilterLinks(repoFilters, onDynamicFilterClicked), [
+        repoFilters,
+        onDynamicFilterClicked,
+    ])
+    const showRevisionsSection = props.featureFlags.get('search-sidebar-revisions')
+    // If the revisions section feature is enable we only show the repos
+    // section if there is more than one repo
+    const showReposSection = !showRevisionsSection || repoFilterLinks.length > 1
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
@@ -141,7 +145,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 >
                     {getDynamicFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
-                {repoFilterLinks ? (
+                {showReposSection ? (
                     <SearchSidebarSection
                         className={styles.searchSidebarItem}
                         header="Repositories"
@@ -158,7 +162,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         {repoFilterLinks}
                     </SearchSidebarSection>
                 ) : null}
-                {repoName ? (
+                {showRevisionsSection && repoName ? (
                     <SearchSidebarSection
                         className={styles.searchSidebarItem}
                         header="Revisions"
