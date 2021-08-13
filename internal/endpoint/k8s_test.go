@@ -60,18 +60,29 @@ func TestIntegrationK8SNotReadyAddressesBug(t *testing.T) {
 	}
 }
 
-func TestIntegrationK8SStatefulSet(t *testing.T) {
+func TestIntegrationK8SStatefulSetEquivalence(t *testing.T) {
 	if !*integration {
 		t.Skip("Not running integration tests")
 	}
 
-	urlspec := "k8s+rpc://indexed-search?kind=sts"
-	m := Map{
-		urlspec: urlspec,
-		disco:   k8sDiscovery(urlspec, "dogfood-k8s", localClient),
+	u1 := "k8s+rpc://indexed-search:6070?kind=sts"
+	m1 := Map{
+		urlspec: u1,
+		disco:   k8sDiscovery(u1, "prod", localClient),
 	}
 
-	t.Log(m.Endpoints())
+	u2 := "k8s+rpc://indexed-search:6070"
+	m2 := Map{
+		urlspec: u2,
+		disco:   k8sDiscovery(u2, "prod", localClient),
+	}
+
+	have, _ := m1.Endpoints()
+	want, _ := m2.Endpoints()
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf("mismatch (-have, +want):\n%s", diff)
+	}
 }
 
 func TestK8sURL(t *testing.T) {

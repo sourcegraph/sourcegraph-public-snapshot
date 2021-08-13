@@ -67,9 +67,11 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 			case *corev1.Endpoints:
 				for _, s := range o.Subsets {
 					for _, a := range s.Addresses {
-						ep := a.Hostname
-						if ep == "" {
-							ep = a.IP
+						var ep string
+						if a.Hostname != "" {
+							ep = u.endpointURL(a.Hostname + "." + u.Service)
+						} else if a.IP != "" {
+							ep = u.endpointURL(a.IP)
 						}
 						eps = append(eps, ep)
 					}
@@ -80,7 +82,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 					replicas = *o.Spec.Replicas
 				}
 				for i := int32(0); i < replicas; i++ {
-					eps = append(eps, fmt.Sprintf("%s-%d", o.Name, i))
+					eps = append(eps, u.endpointURL(fmt.Sprintf("%s-%d.%s", o.Name, i, u.Service)))
 				}
 			}
 
