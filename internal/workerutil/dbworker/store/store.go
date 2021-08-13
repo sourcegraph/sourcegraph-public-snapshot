@@ -329,20 +329,16 @@ func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditi
 	ctx, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	states := []string{"queued"}
+	stateQueries := make([]*sqlf.Query, 0, 2)
+	stateQueries = append(stateQueries, sqlf.Sprintf("%s", "queued"))
 	if includeProcessing {
-		states = append(states, "processing")
-	}
-
-	stateQueries := make([]*sqlf.Query, 0, len(states))
-	for _, state := range states {
-		stateQueries = append(stateQueries, sqlf.Sprintf("%s", state))
+		stateQueries = append(stateQueries, sqlf.Sprintf("%s", "processing"))
 	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		queuedCountQuery,
 		quote(s.options.ViewName),
-		sqlf.Sprintf("(%s)", sqlf.Join(stateQueries, ",")),
+		sqlf.Join(stateQueries, ","),
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 	)))
@@ -353,7 +349,7 @@ func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditi
 const queuedCountQuery = `
 -- source: internal/workerutil/store.go:QueuedCount
 SELECT COUNT(*) FROM %s WHERE (
-	{state} IN %s OR
+	{state} IN (%s) OR
 	({state} = 'errored' AND {num_failures} < %s)
 ) %s
 `
