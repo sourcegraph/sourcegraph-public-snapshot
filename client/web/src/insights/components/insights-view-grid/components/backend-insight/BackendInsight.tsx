@@ -86,7 +86,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 />
             }
             telemetryService={telemetryService}
-            onDelete={handleDelete}
+            onDelete={() => handleDelete(insight)}
             innerRef={insightCardReference}
             {...otherProps}
             className={classnames('be-insight-card', otherProps.className, {
