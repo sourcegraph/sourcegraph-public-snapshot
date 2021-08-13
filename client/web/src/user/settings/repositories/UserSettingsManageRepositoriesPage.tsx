@@ -155,9 +155,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
 
-    // if 'sync all' radio button is enabled and users can sync all repos from code hosts
-    const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
-
     // set up state hooks
     const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
@@ -352,7 +349,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          */
 
         const radioSelectOption =
-            ALLOW_SYNC_ALL &&
+            ALLOW_PRIVATE_CODE &&
             ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
                 codeHostsHaveSyncAllQuery.every(Boolean)) ||
                 affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
@@ -373,7 +370,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, ALLOW_SYNC_ALL])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, ALLOW_PRIVATE_CODE])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {
@@ -540,23 +537,23 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <input
                     type="radio"
                     value="all"
-                    disabled={!ALLOW_SYNC_ALL || noCodeHostsOrErrors}
+                    disabled={!ALLOW_PRIVATE_CODE || noCodeHostsOrErrors}
                     checked={selectionState.radio === 'all'}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
                     <p
                         className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
+                            'user-settings-repos__text': ALLOW_PRIVATE_CODE,
+                            'user-settings-repos__text-disabled': !ALLOW_PRIVATE_CODE,
                         })}
                     >
-                        Sync all repositories {!ALLOW_SYNC_ALL && '(coming soon)'}
+                        Sync all repositories {!ALLOW_PRIVATE_CODE && '(coming soon)'}
                     </p>
                     <p
                         className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
+                            'user-settings-repos__text': ALLOW_PRIVATE_CODE,
+                            'user-settings-repos__text-disabled': !ALLOW_PRIVATE_CODE,
                         })}
                     >
                         Will sync all current and future public and private repositories
