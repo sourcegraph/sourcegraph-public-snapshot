@@ -23,7 +23,7 @@ func initPrometheusMetric(observationContext *observation.Context, queueOptions 
 		Help:        "Total number of jobs in the queued state.",
 		ConstLabels: map[string]string{"queue": queueName},
 	}, func() float64 {
-		count, err := store.QueuedCount(context.Background(), nil)
+		count, err := store.QueuedCount(context.Background(), false, nil)
 		if err != nil {
 			log15.Error("Failed to get queued job count", "queue", queueName, "error", err)
 		}
