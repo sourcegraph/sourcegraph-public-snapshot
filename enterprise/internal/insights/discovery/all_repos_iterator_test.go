@@ -174,7 +174,7 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 		return result, nil
 	})
 
-	iter := NewAllReposIterator(indexableReposLister, repoStore, clock, true, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
+	iter := NewAllReposIterator(indexableReposLister, repoStore, clock, true, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name456"})
 
 	{
 		// Do we get all 9 repositories?
