@@ -179,7 +179,7 @@ export const useRepoCloningStatus = ({
         loading,
         error,
         stopPolling,
-        statusSummary: `${clonedReposCount}/${repoLines.length} done`,
+        statusSummary: `${clonedReposCount}/${repoLines.length} repositories synced`,
     }
 }
 
