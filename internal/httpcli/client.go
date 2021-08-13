@@ -121,7 +121,7 @@ var ExternalClient, _ = ExternalClientFactory.Client()
 var InternalClientFactory = NewInternalClientFactory("internal")
 
 var (
-	internalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "5m", "Timeout for internal HTTP requests"))
+	internalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
 	internalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
 	internalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
 	internalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
@@ -134,6 +134,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
+		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts)),
@@ -533,7 +534,9 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 // NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
 func NewTimeoutOpt(timeout time.Duration) Opt {
 	return func(cli *http.Client) error {
-		cli.Timeout = timeout
+		if timeout > 0 {
+			cli.Timeout = timeout
+		}
 		return nil
 	}
 }
