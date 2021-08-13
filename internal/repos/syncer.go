@@ -202,8 +202,12 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *Stor
 type Diff struct {
 	Added      types.Repos
 	Deleted    types.Repos
-	Modified   types.Repos
+	Modified   []ModifiedRepo
 	Unmodified types.Repos
+}
+
+type ModifiedRepo struct {
+	Before, After *types.Repo
 }
 
 // Sort sorts all Diff elements by Repo.IDs.
@@ -567,16 +571,19 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		stored = types.Repos{existing}
 		fallthrough
 	case 1: // Existing repo, update.
-		if !stored[0].Update(sourced) {
-			d.Unmodified = append(d.Unmodified, stored[0])
+		before := stored[0].Clone()
+		after := stored[0]
+
+		if !after.Update(sourced) {
+			d.Unmodified = append(d.Unmodified, after)
 			break
 		}
 
-		if err = tx.UpdateExternalServiceRepo(ctx, svc, stored[0]); err != nil {
+		if err = tx.UpdateExternalServiceRepo(ctx, svc, after); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to update external service repo")
 		}
 
-		d.Modified = append(d.Modified, stored[0])
+		d.Modified = append(d.Modified, ModifiedRepo{before, after})
 	case 0: // New repo, create.
 		if svc.NamespaceUserID != 0 { // enforce user repo limits
 			siteAdded, err := tx.CountUserAddedRepos(ctx)
