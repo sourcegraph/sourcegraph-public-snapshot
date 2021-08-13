@@ -422,10 +422,6 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.Indexed
 
 // zoektSearch searches repositories using zoekt.
 func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *IndexedRepoRevs, since func(t time.Time) time.Duration, c streaming.Sender) error {
-	if args == nil {
-		return nil
-	}
-
 	if args.Mode == search.ZoektGlobalSearch {
 		q := zoektGlobalQuery(ctx, args.Query, args.Mode, args.RepoOptions, args.UserPrivateRepos)
 		return doZoektSearchGlobal(ctx, q, args.Typ, args.Zoekt.Client, args.FileMatchLimit, args.Select, c)
