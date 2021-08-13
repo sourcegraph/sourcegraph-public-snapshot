@@ -36,8 +36,8 @@ func TestIntegrationK8SNotReadyAddressesBug(t *testing.T) {
 
 	urlspec := "k8s+rpc://indexed-search"
 	m := Map{
-		urlspec: urlspec,
-		disco:   k8sDiscovery(urlspec, "dogfood-k8s", localClient),
+		urlspec:   urlspec,
+		discofunk: k8sDiscovery(urlspec, "dogfood-k8s", localClient),
 	}
 
 	began := time.Now()
@@ -67,14 +67,14 @@ func TestIntegrationK8SStatefulSetEquivalence(t *testing.T) {
 
 	u1 := "k8s+rpc://indexed-search:6070?kind=sts"
 	m1 := Map{
-		urlspec: u1,
-		disco:   k8sDiscovery(u1, "prod", localClient),
+		urlspec:   u1,
+		discofunk: k8sDiscovery(u1, "prod", localClient),
 	}
 
 	u2 := "k8s+rpc://indexed-search:6070"
 	m2 := Map{
-		urlspec: u2,
-		disco:   k8sDiscovery(u2, "prod", localClient),
+		urlspec:   u2,
+		discofunk: k8sDiscovery(u2, "prod", localClient),
 	}
 
 	have, _ := m1.Endpoints()
