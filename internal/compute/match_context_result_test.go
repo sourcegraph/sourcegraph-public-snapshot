@@ -38,7 +38,7 @@ func TestOfLineMatches(t *testing.T) {
 
 	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
-		result := ofFileMatches(data, r)
+		result := FromFileMatch(data, r)
 		v, _ := json.MarshalIndent(serialize(result), "", "  ")
 		return string(v)
 	}
