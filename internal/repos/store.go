@@ -279,8 +279,8 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 `
 
 // ListExternalServiceUserIDsByRepoID returns the users associated with a given
-// repository. These users have proven that they have read access to the repository
-// given their presence in our external_service_repos table.
+// repository. These users have proven that they have read access to the
+// repository given their presence in our external_service_repos table.
 func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
 	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
 		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
@@ -306,19 +306,7 @@ func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID a
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		var userID int32
-		err = rows.Scan(userID)
-		if err != nil {
-			return nil, err
-		}
-
-		userIDs = append(userIDs, userID)
-	}
-
-	return userIDs, nil
+	return basestore.ScanInt32s(rows, err)
 }
 
 const listExternalServiceRepoIDsByUserIDQuery = `
@@ -355,18 +343,16 @@ func (s *Store) ListExternalServiceRepoIDsByUserID(ctx context.Context, userID i
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = basestore.CloseRows(rows, err) }()
 
-	for rows.Next() {
-		var repoID api.RepoID
-		err = rows.Scan(repoID)
-		if err != nil {
-			return nil, err
-		}
-
-		repoIDs = append(repoIDs, repoID)
+	ids, err := basestore.ScanInt32s(rows, err)
+	if err != nil {
+		return nil, err
 	}
 
+	repoIDs = make([]api.RepoID, len(ids))
+	for i := range ids {
+		repoIDs[i] = api.RepoID(ids[i])
+	}
 	return repoIDs, nil
 }
 
