@@ -65,12 +65,12 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
     </div>
 )
 
-interface LogOutputProps {
+export interface LogOutputProps {
     text: string
     className?: string
 }
 
-const LogOutput: React.FunctionComponent<LogOutputProps> = React.memo(({ text, className }) => (
+export const LogOutput: React.FunctionComponent<LogOutputProps> = React.memo(({ text, className }) => (
     <pre className={classNames(styles.logs, 'rounded p-3 mb-0', className)}>
         {
             // Use index as key because log lines may not be unique. This is OK

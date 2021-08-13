@@ -1,11 +1,8 @@
 import { parseISO } from 'date-fns'
-import { formatDistance } from 'date-fns/esm'
 import { isArray, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
-import InformationIcon from 'mdi-react/InformationIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -20,7 +17,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
-import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
+import { ExecutionLogEntry, LogOutput } from '../../../components/ExecutionLogEntry'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
@@ -175,7 +172,7 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({
             },
 
             setupStage(execution, expandStage === 'setup', now),
-            batchPreviewStage(execution, expandStage === 'srcPreview', now),
+            ...batchPreviewStages(execution, expandStage === 'srcPreview', now),
             teardownStage(execution, expandStage === 'teardown', now),
 
             execution.state === BatchSpecExecutionState.COMPLETED
@@ -204,22 +201,143 @@ const setupStage = (
               ...genericStage(execution.steps.setup, expand),
           }
 
-const batchPreviewStage = (
+const batchPreviewStages = (
     execution: BatchSpecExecutionFields,
     expand: boolean,
     now?: () => Date
-): TimelineStage | undefined =>
-    !execution.steps.srcPreview
-        ? undefined
-        : {
-              text: 'Create batch spec preview',
-              details: (
-                  <ExecutionLogEntry logEntry={execution.steps.srcPreview} now={now}>
-                      {execution.steps.srcPreview.out && <ParsedJsonOutput out={execution.steps.srcPreview.out} />}
-                  </ExecutionLogEntry>
-              ),
-              ...genericStage(execution.steps.srcPreview, expand),
-          }
+): TimelineStage[] => {
+    if (!execution.steps.srcPreview) {
+        return []
+    }
+
+    const result: TimelineStage[] = []
+
+    const parsed = parseLogLines(execution.steps.srcPreview.out)
+    for (const operation of Object.keys(JSONLogLineOperation)) {
+        if (operation === JSONLogLineOperation.EXECUTING_TASKS) {
+            const possibleTuple = findLogLineTuple(parsed, operation)
+            if (!possibleTuple) {
+                continue
+            }
+            const [start] = possibleTuple as [ExecutingTasksJSONLogLine, ExecutingTasksJSONLogLine | undefined]
+
+            const tasks = start.metadata.tasks
+
+            const step = transformLogsForOperationToStage(
+                parsed,
+                operation as JSONLogLineOperation,
+                expand,
+                now,
+                <ul className="list-group mt-3">
+                    {tasks.map(task => {
+                        const tuple = findLogLineTuple(
+                            parsed,
+                            JSONLogLineOperation.EXECUTING_TASK,
+                            line =>
+                                !!(line.metadata as { task?: Task })?.task &&
+                                line.metadata.task.Repository === task.Repository &&
+                                line.metadata.task.Workspace === task.Workspace
+                        )
+                        const out = getCombinedLog(
+                            parsed,
+                            JSONLogLineOperation.EXECUTING_TASK,
+                            line =>
+                                !!(line.metadata as { task?: Task })?.task &&
+                                line.metadata.task.Repository === task.Repository &&
+                                line.metadata.task.Workspace === task.Workspace
+                        )
+                        return (
+                            <li key={task.Repository + task.Workspace} className="list-group-item">
+                                <h3>
+                                    {!tuple && <TimerSandIcon className="icon-inline" />}
+                                    {tuple && tuple[1] === undefined && <LoadingSpinner className="icon-inline" />}
+                                    {tuple?.[1] !== undefined && <CheckIcon className="icon-inline" />}
+                                    {task.Repository}
+                                </h3>
+                                <p>Running in {task.Workspace || '/'}</p>
+                                <h4>Steps</h4>
+                                <ul className="text-monospace mb-3">
+                                    {task.Steps.map((step, index) => (
+                                        <li key={index}>
+                                            <p>
+                                                {step.container}: {step.run}
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <LogOutput text={out} className="mb-2" />
+
+                                {task.CachedStepResultsFound && <p className="text-success">Cached result found!</p>}
+                            </li>
+                        )
+                    })}
+                </ul>
+            )
+            if (step) {
+                result.push(step)
+            }
+            continue
+        }
+        if (operation === JSONLogLineOperation.EXECUTING_TASK) {
+            continue
+        }
+        const step = transformLogsForOperationToStage(parsed, operation as JSONLogLineOperation, expand, now)
+        if (step) {
+            result.push(step)
+        }
+    }
+
+    return result
+}
+
+function transformLogsForOperationToStage(
+    logLines: JSONLogLine[],
+    operation: JSONLogLineOperation,
+    expand: boolean,
+    now?: () => Date,
+    executionLogEntryChildren?: React.ReactNode
+): TimelineStage | undefined {
+    const possibleTuple = findLogLineTuple(logLines, operation)
+    if (!possibleTuple) {
+        return undefined
+    }
+    const [start, end] = possibleTuple
+    const out = getCombinedLog(logLines, operation)
+    return {
+        text: prettyOperationNames[operation],
+        details: (
+            <ExecutionLogEntry
+                key={operation}
+                logEntry={{
+                    command: ['src', 'batch', 'preview', operation],
+                    durationMilliseconds:
+                        end && start ? parseISO(end.timestamp).getTime() - parseISO(start.timestamp).getTime() : null,
+                    exitCode: end ? 0 : null,
+                    key: operation,
+                    out,
+                    startTime: start.timestamp,
+                }}
+                now={now}
+            >
+                {executionLogEntryChildren}
+            </ExecutionLogEntry>
+        ),
+        ...genericStage({ exitCode: end ? 0 : null, startTime: start.timestamp }, expand),
+    }
+}
+
+function getCombinedLog(
+    logLines: JSONLogLine[],
+    operation: JSONLogLineOperation,
+    filter?: (line: JSONLogLine) => boolean
+): string {
+    const allEntries = findLogLines(logLines, operation, undefined, filter)
+    const out = allEntries
+        .filter(entry => entry.message !== undefined && entry.message !== '')
+        .map(entry => entry.message)
+        .join('\n')
+    return out
+}
 
 const teardownStage = (
     execution: BatchSpecExecutionFields,
@@ -296,18 +414,26 @@ interface ExecutingTaskJSONLogLine {
     }
 }
 
+interface ExecutingTasksJSONLogLine {
+    operation: JSONLogLineOperation.EXECUTING_TASKS
+    timestamp: string
+    status: JSONLogLineStatus
+    message?: string
+    metadata: {
+        tasks: Task[]
+    }
+}
+
 type JSONLogLine =
     | {
           operation: JSONLogLineOperation
           timestamp: string
           status: JSONLogLineStatus
           message?: string
-          metadata: {
-              task?: Task
-              tasks?: Task[]
-          }
+          metadata?: any
       }
     | ExecutingTaskJSONLogLine
+    | ExecutingTasksJSONLogLine
 
 interface Step {
     run: string
@@ -321,130 +447,55 @@ interface Task {
     CachedStepResultsFound: boolean
 }
 
-const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => {
-    const parsed = useMemo<JSONLogLine[]>(
-        () =>
-            out
-                .split('\n')
-                .map(line => line.replace(/^std(out|err): /, ''))
-                .map(line => {
-                    try {
-                        return JSON.parse(line) as JSONLogLine
-                    } catch (error) {
-                        return String(error)
-                    }
-                })
-                .filter((line): line is JSONLogLine => typeof line !== 'string'),
-        [out]
-    )
-
-    const parsedExecutingTaskLines = useMemo<ExecutingTaskJSONLogLine[]>(
-        () =>
-            parsed.filter(
-                (line): line is ExecutingTaskJSONLogLine => line.operation === JSONLogLineOperation.EXECUTING_TASK
-            ),
-        [parsed]
-    )
-
-    return (
-        <ul className="list-group w-100 mt-3">
-            {Object.values<JSONLogLineOperation>(JSONLogLineOperation).map(operation => {
-                const tuple = findLogLineTuple(parsed, operation)
-                if (tuple === undefined) {
-                    return null
-                }
-                const completionStatus = tuple[1]?.status
-                return (
-                    <li className="list-group-item p-2" key={operation}>
-                        <div className="d-flex justify-content-between">
-                            <p>
-                                {completionStatus === JSONLogLineStatus.SUCCESS && (
-                                    <CheckCircleIcon className="icon-inline text-success mr-1" />
-                                )}
-                                {completionStatus === JSONLogLineStatus.FAILED && (
-                                    <ErrorIcon className="icon-inline text-danger mr-1" />
-                                )}
-                                {prettyOperationNames[tuple[0].operation]}
-                            </p>
-                            <span>
-                                {formatDistance(
-                                    parseISO(tuple[0].timestamp),
-                                    parseISO(tuple[1]?.timestamp ?? new Date().toISOString()),
-                                    { includeSeconds: true }
-                                )}
-                            </span>
-                        </div>
-                        {operation === JSONLogLineOperation.EXECUTING_TASKS && (
-                            <ParsedTaskExecutionOutput lines={parsedExecutingTaskLines} />
-                        )}
-                        <code className="d-block">
-                            {[tuple[0].message, tuple[1]?.message].filter(line => !!line).join('\n')}
-                        </code>
-                    </li>
-                )
-            })}
-        </ul>
-    )
+function parseLogLines(out: string): JSONLogLine[] {
+    return out
+        .split('\n')
+        .map(line => line.replace(/^std(out|err): /, ''))
+        .map(line => {
+            try {
+                return JSON.parse(line) as JSONLogLine
+            } catch (error) {
+                return String(error)
+            }
+        })
+        .filter((line): line is JSONLogLine => typeof line !== 'string')
 }
-
-const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: ExecutingTaskJSONLogLine[] }> = ({ lines }) => (
-    <ul className="list-group w-100 mt-3">
-        {lines.map((line, index) => {
-            const repo = line.metadata.task.Repository
-            const key = `${repo}-${index}`
-
-            if (line.status === JSONLogLineStatus.STARTED) {
-                return (
-                    <li className="list-group-item p-2" key={key}>
-                        <InformationIcon className="icon-inline mr-1" />
-                        <b>{repo}</b>: Starting execution of {line.metadata?.task?.Steps?.length}
-                    </li>
-                )
-            }
-            if (line.status === JSONLogLineStatus.SUCCESS) {
-                return (
-                    <li className="list-group-item p-2" key={key}>
-                        <CheckCircleIcon className="icon-inline text-success mr-1" />
-                        <b>{repo}</b>: Success! All steps executed.
-                    </li>
-                )
-            }
-            if (line.status === JSONLogLineStatus.FAILED) {
-                return (
-                    <li className="list-group-item p-2" key={key}>
-                        <ErrorIcon className="icon-inline text-danger mr-1" />
-                        <b>{repo}</b>: Failed :(
-                    </li>
-                )
-            }
-            return (
-                <li className="list-group-item p-2" key={key}>
-                    <b>{repo}</b>: <code>{line.message}</code>
-                </li>
-            )
-        })}
-    </ul>
-)
 
 function findLogLine(
     lines: JSONLogLine[],
     operation: JSONLogLineOperation,
-    status: JSONLogLineStatus
+    status: JSONLogLineStatus | undefined,
+    filter?: (line: JSONLogLine) => boolean
 ): JSONLogLine | undefined {
-    return lines.find(line => line.operation === operation && line.status === status)
+    return findLogLines(lines, operation, status, filter)?.[0]
+}
+
+function findLogLines(
+    lines: JSONLogLine[],
+    operation: JSONLogLineOperation,
+    status: JSONLogLineStatus | undefined,
+    filter?: (line: JSONLogLine) => boolean
+): JSONLogLine[] {
+    return lines.filter(
+        line =>
+            line.operation === operation &&
+            (status === undefined || line.status === status) &&
+            (filter ? filter(line) : true)
+    )
 }
 
 function findLogLineTuple(
     lines: JSONLogLine[],
-    operation: JSONLogLineOperation
+    operation: JSONLogLineOperation,
+    filter?: (line: JSONLogLine) => boolean
 ): [JSONLogLine] | [JSONLogLine, JSONLogLine] | undefined {
-    const start = findLogLine(lines, operation, JSONLogLineStatus.STARTED)
+    const start = findLogLine(lines, operation, JSONLogLineStatus.STARTED, filter)
     if (!start) {
         return undefined
     }
-    let end = findLogLine(lines, operation, JSONLogLineStatus.SUCCESS)
+    let end = findLogLine(lines, operation, JSONLogLineStatus.SUCCESS, filter)
     if (!end) {
-        end = findLogLine(lines, operation, JSONLogLineStatus.FAILED)
+        end = findLogLine(lines, operation, JSONLogLineStatus.FAILED, filter)
     }
     if (end) {
         return [start, end]
