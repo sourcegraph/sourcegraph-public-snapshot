@@ -151,27 +151,26 @@ The following instructions are specific to backing up and restoring the sourcegr
 
 These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
 
-Be sure to make copies of the site-config.json of both the old and new instance.
-
-1. Go into the machine hosting the deployment `ssh whatever`
-2. `cd` to the `deploy-sourcegraph-directory....` on the host
-3. Verify deployment running
+1. Verify deployment running
 
 ```bash
-deployment stuff
+kubectl get pods -A
 ```
 
-4. Stop deployment
-
-```bash
-STOP STUFF
-```
-5. Generate the database dumps
+2. Stop all connections to the database by removing the frontend deployment
 
 ```bash
-PUT STUFF HERE
+kubectl delete deployment sourcegraph-frontend --namespace=default
 ```
-6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
+
+3. Generate the database dumps
+
+```bash
+kubectl exec -it --namespace=default $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
+kubectl exec -it --namespace=default $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
+```
+
+4. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
 
 ### Restore sourcegraph databases
 
@@ -181,30 +180,29 @@ The following instructions apply only if you are restoring your databases into a
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-1. Copy the database dump files into the `deploy-sourcegraph directory...`
-2. Start the database services
+1. Start the database services
 
 ```bash
 START STUFF
 ```
 
-3. Copy the database files into the containers
+2. Copy the database files into the containers
 
 ```bash
 kubectl cp ? stuff
 ```
-4. Restore the databases
+3. Restore the databases
 
 ```bash
 kubectl ... pgsql
 kubectl ... codeintel-db
 ```
-5. Start the remaining sourcegraph services
+4. Start the remaining sourcegraph services
 
 ```bash
 kubectl start stuff
 ```
-6. Verify the deployment has started
+5. Verify the deployment has started
 
 ```bash
 kubectl (?)
