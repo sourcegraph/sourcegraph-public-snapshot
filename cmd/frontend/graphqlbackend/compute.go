@@ -152,7 +152,8 @@ func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContex
 
 	var computeMatches []*computeMatchResolver
 	for _, m := range mc.Matches {
-		computeMatches = append(computeMatches, &computeMatchResolver{m: &m})
+		mCopy := m
+		computeMatches = append(computeMatches, &computeMatchResolver{m: &mCopy})
 	}
 	return &computeMatchContextResolver{
 		repository: getRepoResolver(fm.Repo, ""),
@@ -195,6 +196,17 @@ func regexpFromQuery(q string) (*regexp.Regexp, error) {
 	return nil, nil
 }
 
+func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbutil.DB) []*computeResultResolver {
+	var computeResult []*computeResultResolver
+	for _, m := range matches {
+		if fm, ok := m.(*result.FileMatch); ok {
+			matchContext := compute.FromFileMatch(fm, pattern)
+			computeResult = append(computeResult, toComputeResultResolver(toComputeMatchContextResolver(fm, matchContext, db)))
+		}
+	}
+	return computeResult
+}
+
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
 func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
@@ -212,14 +224,7 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	if err != nil {
 		return nil, err
 	}
-	var computeResult []*computeResultResolver
-	for _, m := range results.Matches {
-		if fm, ok := m.(*result.FileMatch); ok {
-			matchContext := compute.FromFileMatch(fm, pattern)
-			computeResult = append(computeResult, toComputeResultResolver(toComputeMatchContextResolver(fm, matchContext, db)))
-		}
-	}
-	return computeResult, err
+	return toResultResolverList(pattern, results.Matches, db), nil
 }
 
 func (r *schemaResolver) Compute(ctx context.Context, args *ComputeArgs) ([]*computeResultResolver, error) {
