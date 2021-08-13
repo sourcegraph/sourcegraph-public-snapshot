@@ -80,7 +80,12 @@ var redisCache = rcache.NewWithTTL("http", 604800)
 // and middleware pre-set for communicating with external services.
 var ExternalClientFactory = NewExternalClientFactory()
 
-var externalTimeout, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
+var (
+	externalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
+	externalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
+	externalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
+	externalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
+)
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services.
@@ -95,8 +100,8 @@ func NewExternalClientFactory() *Factory {
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries()),
-			ExpJitterDelay(200*time.Millisecond, 3*time.Second),
+			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts)),
+			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
 		NewCachedTransportOpt(redisCache, true),
@@ -115,6 +120,13 @@ var ExternalClient, _ = ExternalClientFactory.Client()
 // and middleware pre-set for communicating with internal services.
 var InternalClientFactory = NewInternalClientFactory("internal")
 
+var (
+	internalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
+	internalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
+	internalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
+	internalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
+)
+
 // NewInternalClientFactory returns a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
 func NewInternalClientFactory(subsystem string) *Factory {
@@ -122,10 +134,11 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
+		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries()),
-			ExpJitterDelay(50*time.Millisecond, 1*time.Second),
+			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts)),
+			ExpJitterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
 		TracedTransportOpt,
@@ -360,17 +373,11 @@ var noSuchHostErrorRe = lazyregexp.New(`no such host`)
 // MaxRetries returns the max retries to be attempted, which should be passed
 // to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
 // parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
-func MaxRetries() int {
+func MaxRetries(n int) int {
 	if strings.HasSuffix(os.Args[0], ".test") {
 		return 0
 	}
-
-	max, _ := strconv.Atoi(os.Getenv("SRC_HTTP_CLI_MAX_RETRIES"))
-	if max == 0 {
-		return 20
-	}
-
-	return max
+	return n
 }
 
 // NewRetryPolicy returns a retry policy used in any Doer or Client returned
@@ -527,7 +534,9 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 // NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
 func NewTimeoutOpt(timeout time.Duration) Opt {
 	return func(cli *http.Client) error {
-		cli.Timeout = timeout
+		if timeout > 0 {
+			cli.Timeout = timeout
+		}
 		return nil
 	}
 }
