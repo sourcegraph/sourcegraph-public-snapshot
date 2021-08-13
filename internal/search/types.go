@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -157,7 +157,7 @@ type TextParameters struct {
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
 
-	Zoekt        *searchbackend.Zoekt
+	Zoekt        *backend.Zoekt
 	SearcherURLs *endpoint.Map
 }
 
