@@ -83,8 +83,9 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 				if err != nil {
 					crlog.Crit("Could not reload Grafana instance", "error", err)
 					return err
+				} else {
+					crlog.Info("Reloaded Grafana instance")
 				}
-				crlog.Info("Reloaded Grafana instance")
 			}
 		}
 
@@ -120,13 +121,14 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 		if err != nil {
 			rlog.Crit("Could not reload Prometheus", "error", err)
 			return err
+		} else {
+			defer resp.Body.Close()
+			if resp.StatusCode != 200 {
+				rlog.Crit("Unexpected status code while reloading Prometheus rules", "code", resp.StatusCode)
+				return err
+			}
+			rlog.Info("Reloaded Prometheus instance")
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			rlog.Crit("Unexpected status code while reloading Prometheus rules", "code", resp.StatusCode)
-			return err
-		}
-		rlog.Info("Reloaded Prometheus instance")
 	}
 
 	// Generate documentation
