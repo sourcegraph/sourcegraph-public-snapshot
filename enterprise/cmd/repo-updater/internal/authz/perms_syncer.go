@@ -222,6 +222,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
 	//  table, the user has proven that they have read access to the repository.
+	//
+	// TODO: Ideally, we only want to get back list of private repo IDs.
 	repoIDs, err := s.reposStore.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "list external service repo IDs by user ID")
@@ -490,13 +492,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
-	//  table, the user has proven that they have read access to the repository.
-	userIDs, err := s.reposStore.ListExternalServiceUserIDsByRepoID(ctx, repoID)
-	if err != nil {
-		return errors.Wrap(err, "list external service user IDs by repo ID")
-	}
-
 	rs, err := s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
 		IDs: []api.RepoID{repoID},
 	})
@@ -507,11 +502,19 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	repo := rs[0]
 
+	var userIDs []int32
 	var provider authz.Provider
 
 	// Only check authz provider for private repositories because we only need to
 	// fetch permissions for private repositories.
 	if repo.Private {
+		// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
+		//  table, the user has proven that they have read access to the repository.
+		userIDs, err = s.reposStore.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+		if err != nil {
+			return errors.Wrap(err, "list external service user IDs by repo ID")
+		}
+
 		// Loop over repository's sources and see if matching any authz provider's URN.
 		providers := s.providersByURNs()
 		for urn := range repo.Sources {
