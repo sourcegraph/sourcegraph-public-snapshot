@@ -91,20 +91,6 @@ func repoNamesFromRepos(repos []*types.Repo) []types.RepoName {
 	return rnames
 }
 
-func filterRepoNames(names []types.RepoName, contains, excludes string) []types.RepoName {
-	rnames := make([]types.RepoName, 0)
-	for _, name := range names {
-		if contains != "" && !strings.Contains(string(name.Name), contains) {
-			continue
-		}
-		if excludes != "" && strings.Contains(string(name.Name), excludes) {
-			continue
-		}
-		rnames = append(rnames, name)
-	}
-	return rnames
-}
-
 func reposFromRepoNames(names []types.RepoName) []*types.Repo {
 	repos := make([]*types.Repo, 0, len(names))
 	for _, name := range names {
@@ -1897,8 +1883,8 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos := types.Repos{
-		{
+	var (
+		perforceMarketing = &types.Repo{
 			Name:    api.RepoName("perforce/Marketing"),
 			URI:     "Marketing",
 			Private: true,
@@ -1907,8 +1893,8 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineering = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering"),
 			URI:     "Engineering",
 			Private: true,
@@ -1917,8 +1903,8 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineeringFrontend = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering/Frontend"),
 			URI:     "Engineering/Frontend",
 			Private: true,
@@ -1927,8 +1913,8 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineeringBackend = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering/Backend"),
 			URI:     "Engineering/Backend",
 			Private: true,
@@ -1937,8 +1923,8 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineeringHandbookFrontend = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering/Handbook/Frontend"),
 			URI:     "Engineering/Handbook/Frontend",
 			Private: true,
@@ -1947,8 +1933,8 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-		{
+		}
+		perforceEngineeringHandbookBackend = &types.Repo{
 			Name:    api.RepoName("perforce/Engineering/Handbook/Backend"),
 			URI:     "Engineering/Handbook/Backend",
 			Private: true,
@@ -1957,9 +1943,15 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
-		},
-	}
-	if err := Repos(db).Create(ctx, repos...); err != nil {
+		}
+	)
+	if err := Repos(db).Create(ctx,
+		perforceMarketing,
+		perforceEngineering,
+		perforceEngineeringFrontend,
+		perforceEngineeringBackend,
+		perforceEngineeringHandbookFrontend,
+		perforceEngineeringHandbookBackend); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1979,7 +1971,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: repoNamesFromRepos(repos[1:]),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend, perforceEngineeringBackend, perforceEngineeringHandbookFrontend, perforceEngineeringHandbookBackend}),
 		},
 		{
 			name: "only apply transformed '...' Perforce wildcard ExternalRepoIncludeContains",
@@ -1992,7 +1984,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: filterRepoNames(repoNamesFromRepos(repos), "/Backend", ""),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringBackend, perforceEngineeringHandbookBackend}),
 		},
 		{
 			name: "only apply multiple transformed '...' Perforce wildcard ExternalRepoIncludeContains",
@@ -2005,7 +1997,8 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: filterRepoNames(repoNamesFromRepos(repos), "Handbook/Backend", ""),
+			// Only match this specific nested folder, and not the other Backends
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringHandbookBackend}),
 		},
 		{
 			name: "only apply transformed '*' Perforce wildcard ExternalRepoIncludeContains",
@@ -2019,7 +2012,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				},
 			},
 			// Only match this specific nested folder, and not the other Backends
-			want: repoNamesFromRepos(repos[5:6]),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringHandbookBackend}),
 		},
 		{
 			name: "only apply ExternalRepoExcludeContains",
@@ -2032,7 +2025,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: repoNamesFromRepos(repos[:1]),
+			want: repoNamesFromRepos([]*types.Repo{perforceMarketing}),
 		},
 		{
 			name: "only apply transformed '...' Perforce wildcard ExternalRepoExcludeContains",
@@ -2045,7 +2038,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: filterRepoNames(repoNamesFromRepos(repos), "", "/Backend"),
+			want: repoNamesFromRepos([]*types.Repo{perforceMarketing, perforceEngineering, perforceEngineeringFrontend, perforceEngineeringHandbookFrontend}),
 		},
 		{
 			name: "only apply transformed '*' Perforce wildcard ExternalRepoExcludeContains",
@@ -2059,7 +2052,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 				},
 			},
 			// Only filter this very specific nesting level
-			want: filterRepoNames(repoNamesFromRepos(repos), "", "/Handbook/Backend"),
+			want: repoNamesFromRepos([]*types.Repo{perforceMarketing, perforceEngineering, perforceEngineeringFrontend, perforceEngineeringBackend, perforceEngineeringHandbookFrontend}),
 		},
 		{
 			name: "apply both ExternalRepoIncludeContains and ExternalRepoExcludeContains",
@@ -2084,7 +2077,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: repoNamesFromRepos(repos[1:3]),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend}),
 		},
 		{
 			name: "apply both ExternalRepoIncludeContains and transformed '...' Perforce wildcard ExternalRepoExcludeContains",
@@ -2104,7 +2097,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: filterRepoNames(repoNamesFromRepos(repos), "/Engineering", "/Backend"),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend, perforceEngineeringHandbookFrontend}),
 		},
 		{
 			name: "apply both ExternalRepoIncludeContains and transformed '*' Perforce wildcard ExternalRepoExcludeContains",
@@ -2124,7 +2117,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: filterRepoNames(repoNamesFromRepos(repos), "/Engineering", "/Engineering/Handbook/Backend"),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineering, perforceEngineeringFrontend, perforceEngineeringBackend, perforceEngineeringHandbookFrontend}),
 		},
 		{
 			name: "apply both transformed '...' Perforce wildcard ExternalRepoIncludeContains and ExternalRepoExcludeContains",
@@ -2144,7 +2137,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: filterRepoNames(repoNamesFromRepos(repos), "/Backend", "/Handbook"),
+			want: repoNamesFromRepos([]*types.Repo{perforceEngineeringBackend}),
 		},
 		{
 			name: "apply both transformed '*' Perforce wildcard ExternalRepoIncludeContains and ExternalRepoExcludeContains",
