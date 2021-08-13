@@ -207,7 +207,7 @@ The following instructions are specific to backing up and restoring the sourcegr
 
 ### Back up sourcegraph databases
 
-These instuctions will back up the primary `sourcegraph` database the [codeintel](../../../code_intelligence/index.md) database.
+These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
 
 1. `ssh` from your local machine into the machine hosting the `sourcegraph` deployment
 2. `cd` to the `deploy-sourcegraph-docker/docker-compose` directory on the host
@@ -255,9 +255,9 @@ docker exec pgsql sh -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
 docker exec codeintel-db -c 'pg_dump -C --username sg sg' > codeintel_db.out
 ```
 
-6. Ensure the `sourcgraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
+6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
 
-### Restore sourcgraph databases
+### Restore sourcegraph databases
 
 #### Restoring sourcegraph databases into a new environment
 
@@ -265,7 +265,7 @@ The following instructions apply only if you are restoring your databases into a
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-1. Copy the database dump files, into the `deploy-sourcegraph-docker/docker-compose` directory. 
+1. Copy the database dump files into the `deploy-sourcegraph-docker/docker-compose` directory. 
 2. Start the database services
 
 ```bash
