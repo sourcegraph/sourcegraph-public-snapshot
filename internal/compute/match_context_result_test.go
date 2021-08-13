@@ -49,7 +49,7 @@ func TestOfLineMatches(t *testing.T) {
 }`).Equal(t, test("nothing", match))
 
 	autogold.Want("compute named regexp submatch", `{
-  "$1": "a",
+  "1": "a",
   "ThisIsNamed": "b"
 }`).Equal(t, test("(a)(?P<ThisIsNamed>b)", environment))
 
@@ -70,7 +70,7 @@ func TestOfLineMatches(t *testing.T) {
         }
       },
       "environment": {
-        "$1": {
+        "1": {
           "value": "bc",
           "range": {
             "start": {
@@ -85,7 +85,7 @@ func TestOfLineMatches(t *testing.T) {
             }
           }
         },
-        "$2": {
+        "2": {
           "value": "c",
           "range": {
             "start": {
@@ -100,7 +100,7 @@ func TestOfLineMatches(t *testing.T) {
             }
           }
         },
-        "$3": {
+        "3": {
           "value": "de",
           "range": {
             "start": {
@@ -115,7 +115,7 @@ func TestOfLineMatches(t *testing.T) {
             }
           }
         },
-        "$4": {
+        "4": {
           "value": "g",
           "range": {
             "start": {
