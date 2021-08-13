@@ -81,6 +81,7 @@ export const RepositoryComparePopover: React.FunctionComponent<{
                 <RevisionsPopover
                     repo={repo.id}
                     repoName={repo.name}
+                    // TODO: abbrevName? or displayName?
                     defaultBranch={repo.defaultBranch?.abbrevName || ''}
                     // TODO support currentRev? Or default to branch
                     currentRev={undefined}
