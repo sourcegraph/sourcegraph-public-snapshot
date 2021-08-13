@@ -1,6 +1,5 @@
 import { renderHook, act } from '@testing-library/react-hooks'
 import { Observable, ObservableInput, of } from 'rxjs'
-import {} from 'rxjs/testing'
 import { delay, map, switchMap, tap } from 'rxjs/operators'
 import sinon from 'sinon'
 
@@ -18,7 +17,9 @@ describe('useParallelRequests', () => {
     describe('with single request', () => {
         it('should executes immediately without queueing', async () => {
             const request = sinon.spy<() => Promise<{ payload: string }>>(() => Promise.resolve({ payload: 'data' }))
-            const { result } = renderHook(() => useParallelRequests(() => request()))
+            const requestFactory = () => request()
+
+            const { result } = renderHook(() => useParallelRequests(requestFactory))
 
             expect(result.current.loading).toBeTruthy()
             expect(result.current.data).toBe(undefined)
@@ -37,7 +38,9 @@ describe('useParallelRequests', () => {
         it('should handle error', async () => {
             const networkError = new Error('Network error')
             const request = sinon.spy<() => Promise<unknown>>(() => Promise.reject(networkError))
-            const { result } = renderHook(() => useParallelRequests(() => request()))
+            const requestFactory = () => request()
+
+            const { result } = renderHook(() => useParallelRequests(requestFactory))
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
@@ -53,7 +56,9 @@ describe('useParallelRequests', () => {
 
         it('should cancel promise-like request on unmount', async () => {
             const request = sinon.spy<() => Promise<unknown>>(() => Promise.resolve({}))
-            const { result, unmount } = renderHook(() => useParallelRequests(() => request()))
+            const requestFactory = () => request()
+
+            const { result, unmount } = renderHook(() => useParallelRequests(requestFactory))
 
             expect(result.current).toStrictEqual({
                 data: undefined,
@@ -86,8 +91,9 @@ describe('useParallelRequests', () => {
                     )
                 )
             )
+            const requestFactory = () => request()
 
-            const { result, unmount } = renderHook(() => useParallelRequests(() => request()))
+            const { result, unmount } = renderHook(() => useParallelRequests(requestFactory))
 
             expect(result.current).toStrictEqual({
                 data: undefined,
@@ -121,10 +127,12 @@ describe('useParallelRequests', () => {
     describe('with two requests', () => {
         it('should execute two requests one by one with queueing', async () => {
             const request1 = sinon.spy<() => Promise<{ payload: string }>>(() => Promise.resolve({ payload: 'data1' }))
+            const requestFactory1 = () => request1()
             const request2 = sinon.spy<() => Promise<{ payload: string }>>(() => Promise.resolve({ payload: 'data2' }))
+            const requestFactory2 = () => request2()
 
-            const { result: result1 } = renderHook(() => useParallelRequests(() => request1()))
-            const { result: result2 } = renderHook(() => useParallelRequests(() => request2()))
+            const { result: result1 } = renderHook(() => useParallelRequests(requestFactory1))
+            const { result: result2 } = renderHook(() => useParallelRequests(requestFactory2))
 
             expect(result1.current).toStrictEqual({
                 data: undefined,
@@ -169,11 +177,13 @@ describe('useParallelRequests', () => {
 
         it('should cancel second request if unmount happened', async () => {
             const firstRequest = sinon.spy(() => Promise.resolve({ data: 'payload1' }))
+            const firstRequestFactory = () => firstRequest()
             const secondRequest = sinon.spy(() => Promise.resolve({ data: 'payload2' }))
+            const secondRequestFactory = () => secondRequest()
 
-            const { result: firstResult } = renderHook(() => useParallelRequests(() => firstRequest()))
+            const { result: firstResult } = renderHook(() => useParallelRequests(firstRequestFactory))
             const { result: secondResult, unmount: unmountSecond } = renderHook(() =>
-                useParallelRequests(() => secondRequest())
+                useParallelRequests(secondRequestFactory)
             )
 
             expect(firstResult.current).toStrictEqual({

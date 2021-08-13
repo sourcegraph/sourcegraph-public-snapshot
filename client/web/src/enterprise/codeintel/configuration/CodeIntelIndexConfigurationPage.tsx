@@ -71,7 +71,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         setSaveError(undefined)
 
         try {
-            await enqueueIndexJob(repo.id).toPromise()
+            await enqueueIndexJob(repo.id, 'HEAD').toPromise()
         } catch (error) {
             setSaveError(error)
         } finally {
@@ -108,13 +108,13 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         <ErrorAlert prefix="Error fetching index configuration" error={fetchError} />
     ) : (
         <div className="code-intel-index-configuration">
-            <PageTitle title="Precise code intelligence index configuration" />
+            <PageTitle title="Code intelligence index configuration" />
 
             <PageHeader
                 headingElement="h2"
                 path={[
                     {
-                        text: <>Precise code intelligence index configuration</>,
+                        text: <>Code intelligence index configuration</>,
                     },
                 ]}
                 description={

@@ -13,7 +13,12 @@ import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module).addParameters({
+    chromatic: {
+        // Delay screenshot taking, so <CodeMonitoringPage /> is ready to show content.
+        delay: 600,
+    },
+})
 
 const additionalProps = {
     authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,

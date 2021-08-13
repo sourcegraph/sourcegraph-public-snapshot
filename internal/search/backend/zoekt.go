@@ -2,21 +2,15 @@ package backend
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/rpc"
 	zoektstream "github.com/google/zoekt/stream"
-
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-var zoektHTTPClient = &http.Client{
-	Transport: &ot.Transport{
-		RoundTripper: http.DefaultTransport,
-	},
-}
+var zoektHTTPClient, _ = httpcli.NewInternalClientFactory("zoekt_webserver").Client()
 
 // ZoektStreamFunc is a convenience function to create a stream receiver from a
 // function.
@@ -42,7 +36,12 @@ type StreamSearchAdapter struct {
 	zoekt.Searcher
 }
 
-func (s *StreamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) error {
+func (s *StreamSearchAdapter) StreamSearch(
+	ctx context.Context,
+	q query.Q,
+	opts *zoekt.SearchOptions,
+	c zoekt.Sender,
+) error {
 	sr, err := s.Search(ctx, q, opts)
 	if err != nil {
 		return err

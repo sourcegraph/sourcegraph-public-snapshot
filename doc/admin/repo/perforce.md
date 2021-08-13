@@ -1,15 +1,18 @@
 # Using Perforce depots with Sourcegraph
 
-Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter. This creates an equivalent Git repository from a Perforce depot. For Sourcegraph <3.25.1, [`src serve-git`](../external_service/src_serve_git.md), Sourcegraph's tool for serving local directories, is required. For Sourcegraph 3.25.1+ an experimental feature can be enabled to configure Perforce depots through the Sourcegraph UI.
+Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter. This creates an equivalent Git repository from a Perforce depot. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host). For Sourcegraph <3.25.1, Sourcegraph's tool for serving local directories is required - see [adding depots using `src serve-git`](#add-perforce-depos-using-src-serve-git).
 
 Screenshot of using Sourcegraph for code navigation in a Perforce depot:
 
 ![Viewing a Perforce repository on Sourcegraph](https://sourcegraphstatic.com/git-p4-example.png)
 
+> NOTE: Perforce support is a work in progress - see [known issues and limitations](#known-issues-and-limitations).
 
-## Sourcegraph 3.25.1+ configuration instructions
+## Add a Perforce code host
 
-Adding Perforce depots through the UI is an experimental feature in Sourcegraph 3.25.1. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
+<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 3.25.1+</span>
+
+Adding Perforce depots as an [external code host](../external_service/index.md) through the UI is an experimental feature. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
 
 ```json
 {
@@ -23,13 +26,14 @@ Adding Perforce depots through the UI is an experimental feature in Sourcegraph 
 To connect Perforce to Sourcegraph:
 
 1. Depending on whether you are a site admin or user:
-   1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
-   1. *User*: Go to **Settings > Manage repositories**.
-1. Select **Perforce**.
-1. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-1. Press **Add repositories**.
+   1. *Site admin*: Go to **Site admin > Manage code hosts > Add code host**
+   1. *User*: Go to **Settings > Code host connections**.
 
-**NOTE** That adding code hosts as a user is currently in private beta.
+        > NOTE: That adding code hosts as a user is currently in private beta.
+
+2. Select **Perforce**.
+3. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+4. Click **Add repositories**.
 
 ### Depot syncing
 
@@ -48,9 +52,9 @@ Notable things about depot syncing:
 
 ### Repository permissions
 
-> NOTE: Permissions syncing for Perforce depots is available in Sourcegraph 3.26+.
+<span class="badge badge-note">Sourcegraph 3.26+</span>
 
-To enable permissions syncing for Perforce depots by including the `authorization` field:
+To enable permissions syncing for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include the `authorization` field:
 
 ```json
 {
@@ -59,7 +63,12 @@ To enable permissions syncing for Perforce depots by including the `authorizatio
 }
 ```
 
-Sourcegraph only supports repository-level permissions and does not match the granularity of Perforce access control lists (which supports file-level permissions). The workaround is for site admins to sync arbitrary subdirectories of a depot, which can then enforce permissions in Sourcegraph. We suggest using the most concrete path of your permissions boundary.
+> WARNING: Sourcegraph only supports repository-level permissions and does not match the granularity of [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). Some notable disparities include:
+>
+> - [file-level permissions are not supported](#file-level-permissions). Read on to learn more about the workaround.
+> - [the host field from protections are not supported](#known-issues-and-limitations).
+
+Site admins should sync subdirectories of a depot using the `depots` configuration that best describe the most concrete path of your permissions boundary, which can then enforce permissions in Sourcegraph.
 
 For example, if your Perforce depot `//Sourcegraph/` has different permissions for `//Sourcegraph/Backend/` and some subdirectories of `//Sourcegraph/Frontend/`, we recommend setting the following `depots`:
 
@@ -76,7 +85,6 @@ For example, if your Perforce depot `//Sourcegraph/` has different permissions f
 
 By configuring each subdirectory that has unique permissions, Sourcegraph is able to recognize and enforce permissions for each defined repository. You *cannot* define these permissions as:
 
-
 ```json
 {
   ...
@@ -88,11 +96,25 @@ By configuring each subdirectory that has unique permissions, Sourcegraph is abl
 }
 ```
 
-as this will override the permissions for the `//Sourcegraph/Frontend/Extension/` depot. See **Known limitations** below. 
+as this will override the permissions for the `//Sourcegraph/Frontend/Extension/` depot. [Learn more](#file-level-permissions).
 
-#### Known limitations
+#### Wildcards
 
-Sourcegraph uses prefix-matching to determine if a user has access to a repository in Sourcegraph. That means if a user has access to a directory and also has exclusions to some subdirectories, _those exclusions will not be enforced in Sourcegraph_ because Sourcegraph does not support file-level permissions.
+<span class="badge badge-note">Sourcegraph 3.31+</span>
+
+Sourcegraph provides limited support for `*` and `...` paths ("wildcards") in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). For example, the following can be supported using [the workaround described in repository permissions](#repository-permissions):
+
+```sh
+write user alice * //TestDepot/...
+write user alice * //TestDepot/*/spec/...
+write user alice * //TestDepot/.../spec/...
+```
+
+> WARNING: Permissions only be enforced per-repository, **not per-file** - [learn more](#file-level-permissions).
+
+#### File-level permissions
+
+Sourcegraph does not support file-level permissions, as allowed in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). That means if a user has access to a directory and also has exclusions to some subdirectories, _those exclusions will not be enforced in Sourcegraph_ because Sourcegraph does not support file-level permissions.
 
 For example, consider the following output of `p4 protects -u alice`:
 
@@ -103,15 +125,17 @@ write user alice * //TestDepot/...
 =write user alice * -//TestDepot/Secret/...
 ```
 
-If the site admin configures `"depots": ["//TestDepot/"]`, the exclusion of the last line will not be enforced in Sourcegraph. In other words, the user alice _will have access_ to `//TestDepot/Secret/` in Sourcegraph even though alice does not have access to this directory on the Perforce Server. To mitigate, use the most concrete path of your permissions boundary as described in the above section.
+If the site admin configures `"depots": ["//TestDepot/"]`, the exclusion of the last line will not be enforced in Sourcegraph. In other words, the user alice _will have access_ to `//TestDepot/Secret/` in Sourcegraph even though alice does not have access to this directory on the Perforce Server.
 
-Besides, the host (fourth) value is disregarded from the output of `p4 protects`.
+Since Sourcegraph uses partial matching to determine if a user has access to a repository in Sourcegraph, refer to [the workaround described in repository permissions](#repository-permissions) to mitigate this issue.
 
 ### Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce) to see rendered content.</div>
 
-## Sourcegraph <3.25.1 configuration instructions with `src serve-git`
+## Add Perforce depots using `src serve-git`
+
+<span class="badge badge-note">Sourcegraph < 3.26</span>
 
 ### Prerequisites
 
@@ -144,9 +168,14 @@ If you do this, the repositories you created on your Git host are normal Git rep
 
 The instructions below will help you get Perforce depots on Sourcegraph quickly and easily, while retaining all code change history. If your Perforce codebase is large enough that converting it to Git takes long enough to cause noticeable staleness on Sourcegraph, you can use `src-expose`'s [optional syncing functionality](../external_service/non-git.md#syncing-repositories) along with a faster fetching command (like `p4 sync` instead of `git p4 sync`) to periodically fetch and squash changes without trying to preserve the original Perforce history.
 
-## Known issues
+<br />
+
+## Known issues and limitations
 
 We intend to improve Sourcegraph's Perforce support in the future. Please [file an issue](https://github.com/sourcegraph/sourcegraph/issues) to help us prioritize any specific improvements you'd like to see.
 
 - Sourcegraph was initially built for Git repositories only, so it exposes Git concepts that are meaningless for converted Perforce depots, such as the commit SHA, branches, and tags.
 - The commit messages for a Perforce depot converted to a Git repository have an extra line at the end with Perforce information, such as `[git-p4: depot-paths = "//guest/acme_org/myproject/": change = 12345]`.
+- [Permissions](#repository-permissions)
+  - [File-level permissions](#file-level-permissions) are not supported when syncing permissions via the [code host integration](#add-a-perforce-code-host).
+  - The [host field](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html#Form_Fields_..361) in protections are not supported.

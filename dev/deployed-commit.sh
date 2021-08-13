@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script determines the commit of sourcegraph/sourcegraph that is currently
 # running on sourcegraph.com. The returned version has one of the following

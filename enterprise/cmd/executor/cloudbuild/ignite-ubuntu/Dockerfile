@@ -8,8 +8,6 @@ RUN set -ex && \
     docker.io \
     git
 
-RUN mkdir -p /etc/docker/ && echo '{"registry-mirrors": ["http://localhost:5000"] }' >/etc/docker/daemon.json
-
 ARG SRC_CLI_VERSION
 
 RUN set -ex && \

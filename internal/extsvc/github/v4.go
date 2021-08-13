@@ -62,7 +62,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 		cli = disabledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer()
+		cli = httpcli.ExternalDoer
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {

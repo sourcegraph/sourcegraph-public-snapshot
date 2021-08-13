@@ -2,9 +2,11 @@ package insights
 
 import (
 	"context"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -174,3 +176,25 @@ const insightSettingSimple = `{"searchInsights.insight.global.simple": {
       "weeks": 2
     }
   }}`
+
+func TestNextRecording(t *testing.T) {
+	type args struct {
+		current time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want time.Time
+	}{
+		{name: "given first get next first", args: struct{ current time.Time }{current: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}, want: time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC)},
+		{name: "given december first get jan first", args: struct{ current time.Time }{current: time.Date(2020, 12, 1, 0, 0, 0, 0, time.UTC)}, want: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{name: "given december 31 get jan first", args: struct{ current time.Time }{current: time.Date(2020, 12, 31, 0, 0, 0, 0, time.UTC)}, want: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NextRecording(tt.args.current); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NextRecording() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

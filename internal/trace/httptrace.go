@@ -56,13 +56,9 @@ var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-func Init(shouldInitSentry bool) {
+func Init() {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
-	}
-
-	if shouldInitSentry {
-		sentry.Init()
 	}
 }
 
@@ -220,7 +216,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			)
 
 			if traceID != "" {
-				kvs = append(kvs, "traceid", traceID)
+				kvs = append(kvs, "traceID", traceID)
 			}
 
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {

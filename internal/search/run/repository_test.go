@@ -34,11 +34,7 @@ func TestSearchRepositories(t *testing.T) {
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
 	unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repos, err := args.RepoPromise.Get(context.Background())
-		if err != nil {
-			return nil, nil, err
-		}
-		repoName := repos[0].Repo.Name
+		repoName := args.Repos[0].Repo.Name
 		rev := "1a2b3c"
 		switch repoName {
 		case "foo/one":
@@ -102,7 +98,7 @@ func TestSearchRepositories(t *testing.T) {
 			pattern := search.ToTextPatternInfo(b, search.Batch, query.Identity)
 			matches, _, err := searchRepositoriesBatch(context.Background(), &search.TextParameters{
 				PatternInfo: pattern,
-				RepoPromise: (&search.RepoPromise{}).Resolve(repositories),
+				Repos:       repositories,
 				Query:       q,
 				Zoekt:       zoekt,
 			}, int32(100))
@@ -132,11 +128,7 @@ func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, l
 
 func TestRepoShouldBeAdded(t *testing.T) {
 	unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repos, err := args.RepoPromise.Get(context.Background())
-		if err != nil {
-			return nil, nil, err
-		}
-		repoName := repos[0].Repo.Name
+		repoName := args.Repos[0].Repo.Name
 		rev := "1a2b3c"
 		switch repoName {
 		case "foo/one":
@@ -288,7 +280,7 @@ func BenchmarkSearchRepositories(b *testing.B) {
 	pattern := search.ToTextPatternInfo(bq, search.Batch, query.Identity)
 	tp := search.TextParameters{
 		PatternInfo: pattern,
-		RepoPromise: (&search.RepoPromise{}).Resolve(repos),
+		Repos:       repos,
 		Query:       q,
 	}
 	for i := 0; i < b.N; i++ {

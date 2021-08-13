@@ -1,31 +1,23 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import {
-    AbsoluteRepoFile,
-    makeRepoURI,
-    ModeSpec,
-    ParsedRepoURI,
-    parseQueryAndHash,
-} from '@sourcegraph/shared/src/util/url'
+import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../auth'
-import { queryGraphQL } from '../../backend/graphql'
 import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
@@ -41,59 +33,12 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
+import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 import { RenderedSearchNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedSearchNotebookMarkdown'
-
-function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
-}
-
-const fetchBlob = memoizeObservable(
-    (args: {
-        repoName: string
-        commitID: string
-        filePath: string
-        isLightTheme: boolean
-        disableTimeout: boolean
-    }): Observable<GQL.File2> =>
-        queryGraphQL(
-            gql`
-                query Blob(
-                    $repoName: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $isLightTheme: Boolean!
-                    $disableTimeout: Boolean!
-                ) {
-                    repository(name: $repoName) {
-                        commit(rev: $commitID) {
-                            file(path: $filePath) {
-                                content
-                                richHTML
-                                highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
-                                    aborted
-                                    html
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            args
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                if (!data.repository?.commit?.file?.highlight) {
-                    throw new Error('Not found')
-                }
-                return data.repository.commit.file
-            })
-        ),
-    fetchBlobCacheKey
-)
 
 interface Props
     extends AbsoluteRepoFile,
@@ -156,7 +101,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
     const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<
         void,
-        (BlobInfo & { richHTML: string; aborted: boolean }) | ErrorLike
+        (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
     >(
         useCallback(
             (clicks: Observable<void>) =>
@@ -173,6 +118,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         })
                     ),
                     map(blob => {
+                        if (blob === null) {
+                            return blob
+                        }
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
                             html: blob.highlight.html,
@@ -301,9 +249,29 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         )
     }
 
-    if (!blobInfoOrError) {
+    if (blobInfoOrError === undefined) {
         // Render placeholder for layout before content is fetched.
-        return <div className="blob-page__placeholder">{alwaysRender}</div>
+        return (
+            <div className="blob-page__placeholder">
+                {alwaysRender}
+                <div className="d-flex mt-3 justify-content-center">
+                    <LoadingSpinner />
+                </div>
+            </div>
+        )
+    }
+
+    // File not found:
+    if (blobInfoOrError === null) {
+        return (
+            <div className="blob-page__placeholder">
+                <HeroPage
+                    icon={MapSearchIcon}
+                    title="Not found"
+                    subtitle={`${filePath} does not exist at this revision.`}
+                />
+            </div>
+        )
     }
 
     return (

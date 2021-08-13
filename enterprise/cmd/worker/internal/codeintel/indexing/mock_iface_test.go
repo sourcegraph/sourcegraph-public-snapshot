@@ -12,7 +12,7 @@ import (
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
-	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	schema "github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1428,7 +1428,7 @@ type MockIndexEnqueuer struct {
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: func(context.Context, semantic.Package) error {
+			defaultHook: func(context.Context, precise.Package) error {
 				return nil
 			},
 		},
@@ -1458,15 +1458,15 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 // QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
 // invoked.
 type IndexEnqueuerQueueIndexesForPackageFunc struct {
-	defaultHook func(context.Context, semantic.Package) error
-	hooks       []func(context.Context, semantic.Package) error
+	defaultHook func(context.Context, precise.Package) error
+	hooks       []func(context.Context, precise.Package) error
 	history     []IndexEnqueuerQueueIndexesForPackageFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueIndexesForPackage delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 semantic.Package) error {
+func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 precise.Package) error {
 	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
 	m.QueueIndexesForPackageFunc.appendCall(IndexEnqueuerQueueIndexesForPackageFuncCall{v0, v1, r0})
 	return r0
@@ -1475,7 +1475,7 @@ func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 semant
 // SetDefaultHook sets function that is called when the
 // QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
 // invoked and the hook queue is empty.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, semantic.Package) error) {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, precise.Package) error) {
 	f.defaultHook = hook
 }
 
@@ -1484,7 +1484,7 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, semantic.Package) error) {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, precise.Package) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1493,7 +1493,7 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, semantic.Package) error {
+	f.SetDefaultHook(func(context.Context, precise.Package) error {
 		return r0
 	})
 }
@@ -1501,12 +1501,12 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, semantic.Package) error {
+	f.PushHook(func(context.Context, precise.Package) error {
 		return r0
 	})
 }
 
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, semantic.Package) error {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, precise.Package) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1545,7 +1545,7 @@ type IndexEnqueuerQueueIndexesForPackageFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 semantic.Package
+	Arg1 precise.Package
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

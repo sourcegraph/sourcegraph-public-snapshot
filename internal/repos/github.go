@@ -85,7 +85,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.ExternalClientFactory
 	}
 
 	opts := []httpcli.Opt{
@@ -490,11 +490,10 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string, results ch
 			// 404 errors on external service config validation.
 			if github.IsNotFound(err) {
 				log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
-				continue
+			} else {
+				results <- &githubResult{err: errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)}
 			}
-
-			results <- &githubResult{err: errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)}
-			break
+			continue
 		}
 		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
 

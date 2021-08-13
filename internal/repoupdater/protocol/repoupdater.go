@@ -6,6 +6,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoUpdateSchedulerInfoArgs struct {
@@ -104,6 +110,83 @@ type RepoInfo struct {
 	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
 	// service itself).
 	ExternalRepo api.ExternalRepoSpec
+}
+
+func NewRepoInfo(r *types.Repo) *RepoInfo {
+	info := RepoInfo{
+		Name:         r.Name,
+		Description:  r.Description,
+		Fork:         r.Fork,
+		Archived:     r.Archived,
+		Private:      r.Private,
+		ExternalRepo: r.ExternalRepo,
+	}
+
+	if urls := r.CloneURLs(); len(urls) > 0 {
+		info.VCS.URL = urls[0]
+	}
+
+	typ, _ := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	switch typ {
+	case extsvc.TypeGitHub:
+		ghrepo := r.Metadata.(*github.Repository)
+		info.Links = &RepoLinks{
+			Root:   ghrepo.URL,
+			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
+		}
+	case extsvc.TypeGitLab:
+		proj := r.Metadata.(*gitlab.Project)
+		info.Links = &RepoLinks{
+			Root:   proj.WebURL,
+			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
+			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
+			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
+		}
+	case extsvc.TypeBitbucketServer:
+		repo := r.Metadata.(*bitbucketserver.Repo)
+		if len(repo.Links.Self) == 0 {
+			break
+		}
+
+		href := repo.Links.Self[0].Href
+		root := strings.TrimSuffix(href, "/browse")
+		info.Links = &RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
+			Commit: pathAppend(root, "/commits/{commit}"),
+		}
+	case extsvc.TypeAWSCodeCommit:
+		repo := r.Metadata.(*awscodecommit.Repository)
+		if repo.ARN == "" {
+			break
+		}
+
+		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
+		if len(splittedARN) == 0 {
+			break
+		}
+		region := splittedARN[0]
+		webURL := fmt.Sprintf(
+			"https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s",
+			region,
+			repo.Name,
+		)
+		info.Links = &RepoLinks{
+			Root:   webURL + "/browse",
+			Tree:   webURL + "/browse/{rev}/--/{path}",
+			Blob:   webURL + "/browse/{rev}/--/{path}",
+			Commit: webURL + "/commit/{commit}",
+		}
+	}
+
+	return &info
+}
+
+func pathAppend(base, p string) string {
+	return strings.TrimRight(base, "/") + p
 }
 
 func (r *RepoInfo) String() string {

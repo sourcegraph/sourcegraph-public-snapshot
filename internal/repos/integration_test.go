@@ -36,6 +36,8 @@ func TestIntegration(t *testing.T) {
 		{"SyncRateLimiters", testSyncRateLimiters},
 		{"EnqueueSyncJobs", testStoreEnqueueSyncJobs},
 		{"EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
+		{"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
+		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
 		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
 		{"Syncer/Sync", testSyncerSync},
 		{"Syncer/SyncRepo", testSyncRepo},

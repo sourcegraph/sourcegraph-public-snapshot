@@ -1,23 +1,11 @@
 BEGIN;
 
--- The "sg_service" role is one that the frontend and other services
--- will assume on startup/init. It lowers the privilege of those services
--- such that we can apply security policies to the role and let Postgres
--- manage things that previously would need to be done in app-level code.
-DO $$
-BEGIN
-    CREATE ROLE sg_service INHERIT;
-    GRANT USAGE ON SCHEMA public TO sg_service;
-    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sg_service;
-    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO sg_service;
-EXCEPTION 
-	WHEN duplicate_object THEN
-    -- Roles are cluster-wide, which makes them visible to both real and test
-    -- code. The test runners may effectively execute this code multiple times,
-    -- so if the role happens to exist, we just ignore it.
-	WHEN unique_violation THEN
-    -- Same as above.
-END;
-$$;
+-- We encountered performance issues for our use cases when we deployed
+-- RLS to production. We made the decision to back that approach out and
+-- solve the security concerns in application-level code instead.
+--
+-- ref migrations/frontend/1528395860_remove_repo_table_policy.up.sql
+-- ref migrations/frontend/1528395861_remove_sg_service_grants.up.sql
+-- ref migrations/frontend/1528395862_remove_sg_service_role.up.sql
 
 COMMIT;

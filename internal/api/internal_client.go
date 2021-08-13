@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,10 +11,10 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -35,50 +34,6 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
-
-// WaitForFrontend retries a noop request to the internal API until it is able to reach
-// the endpoint, indicating that the frontend is available.
-func (c *internalClient) WaitForFrontend(ctx context.Context) error {
-	ping := func(ctx context.Context) error {
-		resp, err := ctxhttp.Get(ctx, nil, c.URL+"/.internal/ping")
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return errors.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
-		}
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		if want := "pong"; string(body) != want {
-			const max = 15
-			if len(body) > max {
-				body = body[:max]
-			}
-			return errors.Errorf("ping: bad HTTP response body %q (want %q)", body, want)
-		}
-		return nil
-	}
-
-	var lastErr error
-	for {
-		err := ping(ctx)
-		if err != nil {
-			if ctx.Err() != nil {
-				return errors.Errorf("frontend API not reachable: %s (last error: %v)", err, lastErr)
-			}
-
-			// Keep trying.
-			lastErr = err
-			time.Sleep(250 * time.Millisecond)
-			continue
-		}
-		break
-	}
-	return nil
-}
 
 type SavedQueryIDSpec struct {
 	Subject SettingsSubject
@@ -168,7 +123,10 @@ func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query strin
 	return c.postInternal(ctx, "saved-queries/delete-info", query, nil)
 }
 
-func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject SettingsSubject) (parsed *schema.Settings, settings *Settings, err error) {
+func (c *internalClient) SettingsGetForSubject(
+	ctx context.Context,
+	subject SettingsSubject,
+) (parsed *schema.Settings, settings *Settings, err error) {
 	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
 	if err == nil {
 		err = jsonc.Unmarshal(settings.Contents, &parsed)
@@ -291,7 +249,10 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 }
 
 // ExternalServicesList returns all external services of the given kind.
-func (c *internalClient) ExternalServicesList(ctx context.Context, opts ExternalServicesListRequest) ([]*ExternalService, error) {
+func (c *internalClient) ExternalServicesList(
+	ctx context.Context,
+	opts ExternalServicesListRequest,
+) ([]*ExternalService, error) {
 	var extsvcs []*ExternalService
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
@@ -331,7 +292,14 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 		}
 	}
 
-	resp, err := ctxhttp.Post(ctx, nil, c.URL+route, "application/json", bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", c.URL+route, bytes.NewBuffer(data))
+	if err != nil {
+		return -1, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return -1, err
 	}
@@ -353,7 +321,12 @@ func checkAPIResponse(resp *http.Response) error {
 		b := buf.Bytes()
 		errString := string(b)
 		if errString != "" {
-			return errors.Errorf("internal API response error code %d: %s (%s)", resp.StatusCode, errString, resp.Request.URL)
+			return errors.Errorf(
+				"internal API response error code %d: %s (%s)",
+				resp.StatusCode,
+				errString,
+				resp.Request.URL,
+			)
 		}
 		return errors.Errorf("internal API response error code %d (%s)", resp.StatusCode, resp.Request.URL)
 	}

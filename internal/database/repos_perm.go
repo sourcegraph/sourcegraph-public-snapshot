@@ -75,15 +75,14 @@ OR  (
 				AND es.unrestricted = TRUE
 				AND es.deleted_at IS NULL
 			)
-			LIMIT 1
 		)
 	)
 )
 OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
-  SELECT 1
-  FROM external_service_repos
-  WHERE repo_id = repo.id
-  AND user_id = %s
+	SELECT 1
+	FROM external_service_repos
+	WHERE repo_id = repo.id
+	AND user_id = %s
 )
 OR (                             -- Restricted repositories require checking permissions
 	SELECT object_ids_ints @> INTSET(repo.id)

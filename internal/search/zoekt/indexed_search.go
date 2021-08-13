@@ -13,7 +13,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -231,10 +230,6 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	// If Zoekt is disabled just fallback to Unindexed.
 	if !args.Zoekt.Enabled() {
@@ -243,7 +238,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed:        limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -254,14 +249,14 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, errors.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed: limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
 		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed: limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		}, nil
 	}
 
@@ -288,7 +283,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
+			Unindexed:        limitUnindexedRepos(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
@@ -296,7 +291,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.repoRevs)),
@@ -346,7 +341,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	g, ctx := errgroup.WithContext(ctx)
+	var qs []zoektquery.Q
 
 	// Public
 	if !args.RepoOptions.OnlyPrivate {
@@ -362,9 +357,7 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		apply(zoektquery.RcOnlyForks, args.RepoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
 
-		g.Go(func() error {
-			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query), args, typ, c)
-		})
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
 	}
 
 	// Private
@@ -374,12 +367,10 @@ func zoektSearchGlobal(ctx context.Context, args *search.TextParameters, query z
 		for _, r := range args.UserPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-
-		g.Go(func() error {
-			return doZoektSearchGlobal(ctx, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query), args, typ, c)
-		})
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
 	}
-	return g.Wait()
+
+	return doZoektSearchGlobal(ctx, zoektquery.Simplify(zoektquery.NewOr(qs...)), args, typ, c)
 }
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.TextParameters, typ IndexedRequestType, c streaming.Sender) error {
@@ -563,30 +554,6 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ Ind
 	})
 }
 
-// bufferedSender returns a buffered Sender with capacity cap, and a cleanup
-// function which blocks until the buffer is drained. The cleanup function may
-// only be called once. For cap=0, bufferedSender returns the input sender.
-func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
-	if cap == 0 {
-		return sender, func() {}
-	}
-	buf := make(chan *zoekt.SearchResult, cap-1)
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for e := range buf {
-			sender.Send(e)
-		}
-	}()
-	cleanup := func() {
-		close(buf)
-		<-done
-	}
-	return backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		buf <- event
-	}), cleanup
-}
-
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
@@ -645,38 +612,6 @@ func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
 	return lines
 }
 
-func escape(s string) string {
-	isSpecial := func(c rune) bool {
-		switch c {
-		case '\\', '/':
-			return true
-		default:
-			return false
-		}
-	}
-
-	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
-	// but is more efficient since it does it via bytes.
-	count := 0
-	for _, c := range s {
-		if isSpecial(c) {
-			count++
-		}
-	}
-	if count == 0 {
-		return s
-	}
-
-	escaped := make([]rune, 0, len(s)+count)
-	for _, c := range s {
-		if isSpecial(c) {
-			escaped = append(escaped, '\\')
-		}
-		escaped = append(escaped, c)
-	}
-	return string(escaped)
-}
-
 func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	newFile := &result.File{
 		Path:     file.FileName,
@@ -696,23 +631,17 @@ func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, fil
 				continue
 			}
 
-			symbols = append(symbols, &result.SymbolMatch{
-				Symbol: result.Symbol{
-					Name:       m.SymbolInfo.Sym,
-					Kind:       m.SymbolInfo.Kind,
-					Parent:     m.SymbolInfo.Parent,
-					ParentKind: m.SymbolInfo.ParentKind,
-					Path:       file.FileName,
-					Line:       l.LineNumber,
-					// symbolRange requires a Pattern /^...$/ containing the line of the symbol to compute the symbol's offsets.
-					// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
-					// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
-					// It must escape `/` or `\` in the line.
-					Pattern:  fmt.Sprintf("/^%s$/", escape(string(l.Line))),
-					Language: file.Language,
-				},
-				File: newFile,
-			})
+			symbols = append(symbols, result.NewSymbolMatch(
+				newFile,
+				l.LineNumber,
+				m.SymbolInfo.Sym,
+				m.SymbolInfo.Kind,
+				m.SymbolInfo.Parent,
+				m.SymbolInfo.ParentKind,
+				file.Language,
+				string(l.Line),
+				false,
+			))
 		}
 	}
 

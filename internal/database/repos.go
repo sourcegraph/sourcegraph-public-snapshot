@@ -287,6 +287,60 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	return ct, err
 }
 
+// Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
+// number of IDs given if a repo with the given ID does not exist.
+func (s *RepoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
+	if Mocks.Repos.Metadata != nil {
+		return Mocks.Repos.Metadata(ctx, ids...)
+	}
+	s.ensureStore()
+
+	tr, ctx := trace.New(ctx, "repos.Metadata", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := ReposListOptions{
+		IDs: ids,
+		// Return a limited subset of fields
+		Select: []string{
+			"repo.id",
+			"repo.name",
+			"repo.description",
+			"repo.fork",
+			"repo.archived",
+			"repo.private",
+			"repo.stars",
+			"gr.last_fetched",
+		},
+		// Required so gr.last_fetched is select-able
+		joinGitserverRepos: true,
+	}
+
+	res := make([]*types.SearchedRepo, 0, len(ids))
+	scanMetadata := func(rows *sql.Rows) error {
+		var r types.SearchedRepo
+		if err := rows.Scan(
+			&r.ID,
+			&r.Name,
+			&dbutil.NullString{S: &r.Description},
+			&r.Fork,
+			&r.Archived,
+			&r.Private,
+			&dbutil.NullInt{N: &r.Stars},
+			&r.LastFetched,
+		); err != nil {
+			return err
+		}
+
+		res = append(res, &r)
+		return nil
+	}
+
+	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
+}
+
 const listReposQueryFmtstr = `
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
@@ -486,13 +540,13 @@ type ReposListOptions struct {
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
 	ExternalRepos []api.ExternalRepoSpec
 
-	// ExternalRepoIncludePrefixes is the list of specs to include repos using
-	// prefix matching. When zero-valued, this is omitted from the predicate set.
-	ExternalRepoIncludePrefixes []api.ExternalRepoSpec
+	// ExternalRepoIncludeContains is the list of specs to include repos using
+	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoIncludeContains []api.ExternalRepoSpec
 
-	// ExternalRepoExcludePrefixes is the list of specs to exclude repos using
-	// prefix matching. When zero-valued, this is omitted from the predicate set.
-	ExternalRepoExcludePrefixes []api.ExternalRepoSpec
+	// ExternalRepoExcludeContains is the list of specs to exclude repos using
+	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoExcludeContains []api.ExternalRepoSpec
 
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
@@ -558,6 +612,10 @@ type ReposListOptions struct {
 
 	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
 	IncludeDeleted bool
+
+	// joinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
+	// with the table alias "gr".
+	joinGitserverRepos bool
 
 	*LimitOffset
 }
@@ -803,18 +861,18 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
-	if len(opt.ExternalRepoIncludePrefixes) > 0 {
-		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludePrefixes))
-		for _, spec := range opt.ExternalRepoIncludePrefixes {
-			er = append(er, sqlf.Sprintf("(external_id LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+	if len(opt.ExternalRepoIncludeContains) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludeContains))
+		for _, spec := range opt.ExternalRepoIncludeContains {
+			er = append(er, sqlf.Sprintf("(external_id SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
-	if len(opt.ExternalRepoExcludePrefixes) > 0 {
-		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludePrefixes))
-		for _, spec := range opt.ExternalRepoExcludePrefixes {
-			er = append(er, sqlf.Sprintf("(external_id NOT LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+	if len(opt.ExternalRepoExcludeContains) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludeContains))
+		for _, spec := range opt.ExternalRepoExcludeContains {
+			er = append(er, sqlf.Sprintf("(external_id NOT SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
 	}
@@ -832,16 +890,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("archived"))
 	}
 	if opt.NoCloned {
-		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
-		// We'll remove repo.cloned and can then switch to this:
-		// where = append(where, sqlf.Sprintf("gr.clone_status IS NULL OR gr.clone_status = 'not_cloned'"))
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR (gr.clone_status IS NULL AND NOT repo.cloned))"))
+		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR gr.clone_status IS NULL)"))
 	}
 	if opt.OnlyCloned {
-		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
-		// We'll remove repo.cloned and can then switch to this:
-		// where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'cloned' OR (gr.clone_status IS NULL AND repo.cloned))"))
+		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 	}
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
@@ -888,7 +940,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 

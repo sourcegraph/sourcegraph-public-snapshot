@@ -10,10 +10,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-// TODO(efritz) - add tracing, metrics
-var client = http.DefaultClient
+var client = httpcli.InternalDoer
 
 // reverseProxy creates an HTTP handler that will proxy requests to the given target URL. See
 // makeProxyRequest for details on how the request URI is constructed.

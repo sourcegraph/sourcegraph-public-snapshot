@@ -55,8 +55,7 @@ export const Stepper: Story = () => (
 
 Stepper.storyName = 'Steps component top navigation'
 
-// eslint-disable-next-line import/no-default-export
 export default {
-    title: 'wildcard/Steps',
+    title: 'web/Steps',
     component: Stepper,
 } as Meta

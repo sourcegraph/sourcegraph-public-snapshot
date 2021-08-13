@@ -107,7 +107,7 @@ export const createSharedIntegrationTestContext = async <
     }
     const subscriptions = new Subscription()
     const cdpAdapterOptions: CdpAdapterOptions = {
-        page: driver.page,
+        browser: driver.browser,
     }
     const polly = new Polly(snakeCase(currentTest.title), {
         adapters: [CdpAdapter.id],
@@ -240,7 +240,7 @@ export const createSharedIntegrationTestContext = async <
         driver,
         server,
         overrideGraphQL: overrides => {
-            graphQlOverrides = overrides
+            graphQlOverrides = { ...graphQlOverrides, ...overrides }
         },
         waitForGraphQLRequest: async <O extends TGraphQlOperationNames>(
             triggerRequest: () => Promise<void> | void,

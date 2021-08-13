@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang/gddo/httputil"
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,11 +38,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const port = "3182"
@@ -67,9 +65,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatalf("failed to start profiler: %v", err)
 	}
 
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -107,19 +107,6 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	// Syncing relies on access to frontend and git-server, so wait until they started up.
-	log15.Info("waiting for frontend")
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
-	}
-	log15.Info("detected frontend ready")
-
-	log15.Info("waiting for gitservers")
-	if err := gitserver.DefaultClient.WaitForGitServers(ctx); err != nil {
-		log.Fatalf("gitservers not reachable: %v", err)
-	}
-	log15.Info("detected gitservers ready")
-
 	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		newDSN := conf.Get().ServiceConnections.PostgresDSN
@@ -155,7 +142,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		store.Metrics = m
 	}
 
-	cf := httpcli.NewExternalHTTPClientFactory()
+	cf := httpcli.ExternalClientFactory
 
 	var src repos.Sourcer
 	{
@@ -167,9 +154,10 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	scheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
-		Store:           store,
-		Scheduler:       scheduler,
-		GitserverClient: gitserver.DefaultClient,
+		Store:                 store,
+		Scheduler:             scheduler,
+		GitserverClient:       gitserver.DefaultClient,
+		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 
 	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore)
@@ -185,57 +173,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
 		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
-	}
-
-	if envvar.SourcegraphDotComMode() {
-		server.SourcegraphDotComMode = true
-
-		es, err := store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
-			// On Cloud we only want to fetch site level external services here where the
-			// cloud_default flag has been set.
-			NoNamespace:      true,
-			OnlyCloudDefault: true,
-			Kinds: []string{
-				extsvc.KindGitHub,
-				extsvc.KindGitLab,
-				extsvc.KindJVMPackages,
-			},
-		})
-		if err != nil {
-			log.Fatalf("failed to list external services: %v", err)
-		}
-
-		for _, e := range es {
-			cfg, err := e.Configuration()
-			if err != nil {
-				log.Fatalf("bad external service config: %v", err)
-			}
-
-			switch c := cfg.(type) {
-			case *schema.GitHubConnection:
-				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
-					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
-				}
-			case *schema.GitLabConnection:
-				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
-					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
-				}
-			case *schema.JVMPackagesConnection:
-				server.JVMPackagesSource, err = repos.NewJVMPackagesSource(e)
-			}
-
-			if err != nil {
-				log.Fatalf("failed to construct source: %v", err)
-			}
-		}
-
-		if server.GithubDotComSource == nil {
-			log.Fatalf("No github.com external service configured with a token")
-		}
-
-		if server.GitLabDotComSource == nil {
-			log.Fatalf("No gitlab.com external service configured with a token")
-		}
 	}
 
 	syncer := &repos.Syncer{

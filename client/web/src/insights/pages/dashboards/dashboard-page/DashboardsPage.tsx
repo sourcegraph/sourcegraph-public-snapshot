@@ -1,5 +1,5 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
@@ -38,6 +38,10 @@ export interface DashboardsPageProps
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
     const { dashboardID, settingsCascade, extensionsController, telemetryService, platformContext } = props
     const { url } = useRouteMatch()
+
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeInsightsDashboardPage')
+    }, [telemetryService])
 
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fallback on

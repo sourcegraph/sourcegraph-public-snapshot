@@ -51,7 +51,7 @@ function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; conten
     element.append(close)
     element.querySelector('.tour-card__close')?.addEventListener('click', () => {
         options.tour.cancel()
-        eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber })
+        eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber }, { stage: options.stepNumber })
     })
 
     return element

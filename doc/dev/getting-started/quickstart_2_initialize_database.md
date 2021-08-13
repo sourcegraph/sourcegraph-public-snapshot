@@ -56,16 +56,23 @@ You need a fresh Postgres database and a database user that has full ownership o
 The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
 The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.
+To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
 
-You can overwrite these settings e.g. via your `~/.bashrc`:
-
-```
-export PGUSER=sourcegraph
-export PGPASSWORD=sourcegraph
-export PGDATABASE=sourcegraph
+```sh
+export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
+createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 ```
 
 You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
+
+This can also be spun up using [`sg start redis-postgres`](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md), with the following `sg.config.override.yaml`:
+
+```yaml
+env:
+    PGHOST: localhost
+    PGPASSWORD: sourcegraph
+    PGUSER: sourcegraph
+```
 
 ## More info
 

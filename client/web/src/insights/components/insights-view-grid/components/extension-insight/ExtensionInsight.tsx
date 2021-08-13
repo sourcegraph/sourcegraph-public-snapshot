@@ -1,4 +1,5 @@
 import classnames from 'classnames'
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useContext, useMemo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -9,13 +10,12 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { ViewInsightProviderSourceType } from '../../../../core/backend/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
-import { getInsightViewIcon, InsightContentCard } from '../insight-card/InsightContentCard'
+import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 interface ExtensionInsightProps
     extends TelemetryProps,
@@ -53,14 +53,10 @@ export const ExtensionInsight: React.FunctionComponent<ExtensionInsightProps> = 
                 <InsightLoadingContent
                     text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
                     subTitle={viewId}
-                    icon={getInsightViewIcon(ViewInsightProviderSourceType.Extension)}
+                    icon={PuzzleIcon}
                 />
             ) : isErrorLike(data.view) ? (
-                <InsightErrorContent
-                    error={data.view}
-                    title={viewId}
-                    icon={getInsightViewIcon(ViewInsightProviderSourceType.Extension)}
-                />
+                <InsightErrorContent error={data.view} title={viewId} icon={PuzzleIcon} />
             ) : (
                 data.view && (
                     <InsightViewContent

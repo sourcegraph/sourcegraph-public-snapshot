@@ -3,7 +3,12 @@ package queryrunner
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -26,7 +31,41 @@ var _ workerutil.Handler = &workHandler{}
 type workHandler struct {
 	workerBaseStore *basestore.Store
 	insightsStore   *store.Store
+	metadadataStore *store.InsightStore
 	limiter         *rate.Limiter
+
+	mu          sync.RWMutex
+	seriesCache map[string]*types.InsightSeries
+}
+
+func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
+	var val *types.InsightSeries
+	var ok bool
+
+	r.mu.RLock()
+	val, ok = r.seriesCache[seriesID]
+	r.mu.RUnlock()
+
+	if !ok {
+		series, err := r.fetchSeries(ctx, seriesID)
+		if err != nil {
+			return nil, err
+		}
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.seriesCache[seriesID] = series
+		val = series
+	}
+	return val, nil
+}
+
+func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
+	result, err := r.metadadataStore.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: seriesID})
+	if err != nil || len(result) < 1 {
+		return nil, err
+	}
+	return &result[0], nil
 }
 
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -46,6 +85,12 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+
+	series, err := r.getSeries(ctx, job.SeriesID)
+	if err != nil {
+		return err
+	}
+
 	// Actually perform the search query.
 	//
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
@@ -59,7 +104,6 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
-	// TODO(slimsag): future: Logs are not a good way to surface these errors to users.
 	if len(results.Errors) > 0 {
 		return errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
@@ -83,6 +127,14 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	if results.Data.Search.Results.LimitHit {
 		log15.Error("insights query issue", "problem", "limit hit", "query", job.SearchQuery)
+		dq := types.DirtyQuery{
+			Query:   job.SearchQuery,
+			ForTime: *job.RecordTime,
+			Reason:  "limit hit",
+		}
+		if err := r.metadadataStore.InsertDirtyQuery(ctx, series, &dq); err != nil {
+			return errors.Wrap(err, "failed to write dirty query record")
+		}
 	}
 	if cloning := len(results.Data.Search.Results.Cloning); cloning > 0 {
 		log15.Error("insights query issue", "cloning_repos", cloning, "query", job.SearchQuery)
@@ -131,17 +183,31 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
 			continue
 		}
-		if recordErr := r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
-			SeriesID: job.SeriesID,
-			Point: store.SeriesPoint{
-				Time:  recordTime,
-				Value: float64(matchCount),
-			},
-			RepoName: &repoName,
-			RepoID:   &dbRepoID,
-		}); recordErr != nil {
-			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoint"))
+		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
+		if recordErr := r.insightsStore.RecordSeriesPoints(ctx, args); recordErr != nil {
+			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
 	}
 	return err
+}
+
+func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID) []store.RecordSeriesPointArgs {
+	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
+	base := store.RecordSeriesPointArgs{
+		SeriesID: record.SeriesID,
+		Point: store.SeriesPoint{
+			SeriesID: record.SeriesID,
+			Time:     recordTime,
+			Value:    value,
+		},
+		RepoName: &repoName,
+		RepoID:   &repoID,
+	}
+	args = append(args, base)
+	for _, dependent := range record.DependentFrames {
+		arg := base
+		arg.Point.Time = dependent
+		args = append(args, arg)
+	}
+	return args
 }

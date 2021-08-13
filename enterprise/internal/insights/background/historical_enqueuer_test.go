@@ -126,9 +126,9 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		return &git.Commit{Committer: &git.Signature{Date: yearsAgo}}, nil
 	}
 
-	gitFindNearestCommit := func(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*git.Commit, error) {
+	gitFindRecentCommit := func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*git.Commit, error) {
 		nearby := target.Add(-2 * 24 * time.Hour)
-		return &git.Commit{Committer: &git.Signature{Date: nearby}}, nil
+		return []*git.Commit{{Committer: &git.Signature{Date: nearby}}}, nil
 	}
 
 	limiter := rate.NewLimiter(10, 1)
@@ -140,7 +140,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		enqueueQueryRunnerJob: enqueueQueryRunnerJob,
 		allReposIterator:      allReposIterator,
 		gitFirstEverCommit:    gitFirstEverCommit,
-		gitFindNearestCommit:  gitFindNearestCommit,
+		gitFindRecentCommit:   gitFindRecentCommit,
 		limiter:               limiter,
 		frameFilter:           &dataFrameFilter,
 		framesToBackfill:      func() int { return p.frames },
@@ -193,14 +193,54 @@ func Test_historicalEnqueuer(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{
 			allReposIteratorCalls: 1, reposGetByName: 2,
 			operations: []string{
-				`enqueueQueryRunnerJob("2020-09-29T18:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-03-31T06:00:01Z", "query1 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-09-29T18:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-03-31T06:00:01Z", "query2 count:9999999 repo:^repo/0$@")`,
-				`enqueueQueryRunnerJob("2020-09-29T18:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
-				`enqueueQueryRunnerJob("2020-03-31T06:00:01Z", "query1 count:9999999 repo:^repo/1$@")`,
-				`enqueueQueryRunnerJob("2020-09-29T18:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
-				`enqueueQueryRunnerJob("2020-03-31T06:00:01Z", "query2 count:9999999 repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "query1 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "query2 count:all repo:^repo/0$@")`,
+				`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "query1 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
+				`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "query2 count:all repo:^repo/1$@")`,
 			},
 		})
 		want.Equal(t, testHistoricalEnqueuer(t, &testParams{
@@ -209,5 +249,21 @@ func Test_historicalEnqueuer(t *testing.T) {
 			frames:                2,
 			recordSleepOperations: true,
 		}))
+	})
+}
+
+func TestDayOfMonthFrames(t *testing.T) {
+	now := time.Date(2020, 1, 1, 5, 0, 0, 0, time.UTC)
+	t.Run("zero points first of month frames", func(t *testing.T) {
+		got := FirstOfMonthFrames(0, now)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("one point first of month frames", func(t *testing.T) {
+		got := FirstOfMonthFrames(1, now)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("six points first of month frames", func(t *testing.T) {
+		got := FirstOfMonthFrames(6, now)
+		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }

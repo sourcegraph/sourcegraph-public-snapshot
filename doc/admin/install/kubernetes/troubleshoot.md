@@ -1,97 +1,14 @@
-# Troubleshooting
+# Troubleshoot Sourcegraph with Kubernetes
 
-If Sourcegraph does not start up or shows unexpected behavior, there are a variety of ways you can determine the root
-cause of the failure.
+If [Sourcegraph with Kubernetes](./index.md) does not start up or shows unexpected behavior, there are a variety of ways you can determine the root cause of the failure.
 
-## The most helpful commands:
+Also refer to our [operations guide](./operations.md) for useful commands and operations.
 
-List all pods in your cluster and the corresponding health status of each pod:
-
-```bash
-kubectl get pods -o=wide
-```
-
-Tail the logs for the specified pod:
-
-```bash
-kubectl logs -f $POD_NAME
-```
-
-If Sourcegraph is unavailable and the `sourcegraph-frontend-*` pod(s) are not in status `Running`, then view their logs with `kubectl logs -f sourcegraph-frontend-$POD_ID` (filling in `$POD_ID` from the `kubectl get pods` output). Inspect both the log messages printed at startup (at the beginning of the log output) and recent log messages.
-
-## Less frequently used commands:
-
-Display detailed information about the status of a single pod:
-
-```bash
-kubectl describe $POD_NAME
-```
-
-List all Persistent Volume Claims (PVCs) and their statuses:
-
-```bash
-kubectl get pvc
-```
-
-List all Persistent Volumes (PVs) that have been provisioned. In a healthy cluster, there should
-  be a one-to-one mapping between PVs and PVCs:
-
-```bash
-kubectl get pv
-```
-
-List all events in the cluster's history:
-
-```bash
-kubectl get events
-```
-
-Delete failing pod so it gets recreated, possibly on a different node:
-
-```bash
-kubectl delete pod $POD_NAME
-```
-
-Remove all pods from a node and mark it as unschedulable to prevent new pods from arriving
-
-```bash
-kubectl drain --force --ignore-daemonsets --delete-local-data $NODE
-```
-
-Restarting Sourcegraph Instance:
-
-```bash
-kubectl rollout restart deployment sourcegraph-frontend
-```
-
-### How do I access the Sourcegraph database? >  Kubernetes cluster deployments 
-
-Get the id of one `pgsql` Pod:
-
-```bash
-kubectl get pods -l app=pgsql
-NAME                     READY     STATUS    RESTARTS   AGE
-pgsql-76a4bfcd64-rt4cn   2/2       Running   0          19m
-```
-
-Make sure you are operating under the correct namespace (i.e. add `-n prod` if your pod is under the `prod` namespace).
-
-Open a PostgreSQL interactive terminal:
-
-```bash
-kubectl exec -it pgsql-76a4bfcd64-rt4cn -- psql -U sg
-```
-
-Run your SQL query:
-
-```sql
-SELECT * FROM users;
-```
-
-> NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the docker container exec command.
+Still need additional help? Contact us at [@sourcegraph](https://twitter.com/sourcegraph)
+or <mailto:support@sourcegraph.com>, or file issues on
+our [public issue tracker](https://github.com/sourcegraph/issues/issues).
 
 ## Common errors
-
 
 ### Error: Error from server (Forbidden): error when creating "base/frontend/sourcegraph-frontend.Role.yaml": roles.rbac.authorization.k8s.io "sourcegraph-frontend" is forbidden: attempt to grant extra privileges.
 
@@ -148,11 +65,10 @@ This indicates the instance is getting rate-limited by Docker Hub([link](https:/
 - [**OPTIONAL**] Upgrade your account to a Docker Pro or Team subscription ([See Docker Hub for more information](https://www.docker.com/increase-rate-limits))
 
 
-### Prometheus Pod is constantly down when using the namespace overlays.
+### Irrelevant cAdvisor metrics are causing strange alerts and performance issues.
 
-This is most likely due to cadvisor picking up other metrics from the cluster.
-You can confirm this theory by checking your [prometheus.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@3.27/-/blob/base/prometheus/prometheus.ConfigMap.yaml#L248-250) file, where the `source_labels: [container_label_io_kubernetes_pod_namespace]` fields under `metric_relabel_configs` should be commented out and the `regex` field must be updated with your namespace.
-
+This is most likely due to cAdvisor picking up other metrics from the cluster.
+A workaround is available: [Filtering cAdvisor metrics](./configure.md#filtering-cadvisor-metrics).
 
 ### I don't see any metrics on my Grafana Dashboard.
 
@@ -185,7 +101,3 @@ livenessProbe:
     path: /minio/health/live
     port: minio   #this port name MUST exist in the same spec
 ```
-
-Any other issues? Contact us at [@sourcegraph](https://twitter.com/sourcegraph)
-or <mailto:support@sourcegraph.com>, or file issues on
-our [public issue tracker](https://github.com/sourcegraph/issues/issues).

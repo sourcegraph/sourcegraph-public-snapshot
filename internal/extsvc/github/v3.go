@@ -82,7 +82,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		cli = disabledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer()
+		cli = httpcli.ExternalDoer
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
@@ -202,6 +202,8 @@ func (e *APIError) Unauthorized() bool {
 func (e *APIError) AccountSuspended() bool {
 	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
 }
+
+func (e *APIError) Temporary() bool { return IsRateLimitExceeded(e) }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.

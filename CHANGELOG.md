@@ -19,7 +19,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
 - Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
 - Syntax highlighting support for the [Cue](https://cuelang.org) language.
-- Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170(
+- Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170)
+- Add a new environment variable `SRC_HTTP_CLI_EXTERNAL_TIMEOUT` to control the timeout for all external HTTP requests. [#23620](https://github.com/sourcegraph/sourcegraph/pull/23620)
+- Improved usability where filters followed by a space in the search query will warn users that the filter value is empty. [#23646](https://github.com/sourcegraph/sourcegraph/pull/23646)
+- Perforce: [`git p4`'s `--use-client-spec` option](https://git-scm.com/docs/git-p4#Documentation/git-p4.txt---use-client-spec) can now be enabled by configuring the `p4.client` field. [#23833](https://github.com/sourcegraph/sourcegraph/pull/23833), [#23845](https://github.com/sourcegraph/sourcegraph/pull/23845)
+- Code Insights will do a one-time reset of ephemeral insights specific database tables to clean up stale and invalid data. Insight data will regenerate automatically. [23791](https://github.com/sourcegraph/sourcegraph/pull/23791)
+- Perforce: added basic support for Perforce permission table path wildcards. [#23755](https://github.com/sourcegraph/sourcegraph/pull/23755)
 
 ### Changed
 
@@ -29,17 +34,39 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights feature flag `DISABLE_CODE_INSIGHTS` environment variable has moved from the `repo-updater` service to the `worker` service. Any users of this flag will need to update their `worker` service configuration to continue using it. [#23050](https://github.com/sourcegraph/sourcegraph/pull/23050)
 - Updated Docker-Compose Caddy Image to v2.0.0-alpine. [#468](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/468)
 - Code Insights historical samples will record using the timestamp of the commit that was searched. [#23520](https://github.com/sourcegraph/sourcegraph/pull/23520)
+- Authorization checks are now handled using role based permissions instead of manually altering SQL statements. [23398](https://github.com/sourcegraph/sourcegraph/pull/23398)
+- Docker Compose: the Jaeger container's `SAMPLING_STRATEGIES_FILE` now has a default value. If you are currently using a custom sampling strategies configuration, you may need to make sure your configuration is not overridden by the change when upgrading. [sourcegraph/deploy-sourcegraph#489](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/489)
+- Code Insights historical samples will record using the most recent commit to the start of the frame instead of the middle of the frame. [#23573](https://github.com/sourcegraph/sourcegraph/pull/23573)
+- The copy icon displayed next to files and repositories will now copy the file or repository path. Previously, this action copied the URL to clipboard. [#23390](https://github.com/sourcegraph/sourcegraph/pull/23390)
+- Sourcegraph's Prometheus dependency has been upgraded to v2.28.1. [23663](https://github.com/sourcegraph/sourcegraph/pull/23663)
+- Sourcegraph's Alertmanager dependency has been upgraded to v0.22.2. [23663](https://github.com/sourcegraph/sourcegraph/pull/23714)
+- Code Insights will now schedule sample recordings for the first of the next month after creation or a previous recording. [#23799](https://github.com/sourcegraph/sourcegraph/pull/23799)
+- Code Insights now stores data in a new format. Data points will store complete vectors for all repositories even if the underlying Sourcegraph queries were compressed. [#23768](https://github.com/sourcegraph/sourcegraph/pull/23768)
+- Code Insights rate limit values have been tuned for a more reasonable performance. [#23860](https://github.com/sourcegraph/sourcegraph/pull/23860)
+- Code Insights will now generate historical data once per month on the first of the month, up to the configured `insights.historical.frames` number of frames. [#23768](https://github.com/sourcegraph/sourcegraph/pull/23768)
+- Code Insights will now schedule recordings for the first of the next calendar month after an insight is created or recorded. [#23799](https://github.com/sourcegraph/sourcegraph/pull/23799)
+- Code Insights will attempt to sync insight definitions from settings to the database once every 10 minutes. [23805](https://github.com/sourcegraph/sourcegraph/pull/23805)
+- Code Insights exposes information about queries that are flagged `dirty` through the `insights` GraphQL query. [#23857](https://github.com/sourcegraph/sourcegraph/pull/23857/)
+- Code Insights GraphQL query `insights` will now fetch 12 months of data instead of 6 if a specific time range is not provided. [#23786](https://github.com/sourcegraph/sourcegraph/pull/23786)
+- Code Insights will now generate 12 months of historical data during a backfill instead of 6. [#23860](https://github.com/sourcegraph/sourcegraph/pull/23860)
 
 ### Fixed
 
 - The search reference will now show matching entries when using the filter input. [#23224](https://github.com/sourcegraph/sourcegraph/pull/23224)
 - Graceful termination periods have been added to database deployments. [#3358](https://github.com/sourcegraph/deploy-sourcegraph/pull/3358) & [#477](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/477)
 - All commit search results for `and`-expressions are now highlighted. [#23336](https://github.com/sourcegraph/sourcegraph/pull/23336)
+- Email notifiers in `observability.alerts` now correctly respect the `email.smtp.noVerifyTLS` site configuration field. [#23636](https://github.com/sourcegraph/sourcegraph/issues/23636)
+- Alertmanager (Prometheus) now respects `SMTPServerConfig.noVerifyTLS` field. [#23636](https://github.com/sourcegraph/sourcegraph/issues/23636)
+- Clicking on symbols in the left search pane now renders hover tooltips for indexed repositories. [#23664](https://github.com/sourcegraph/sourcegraph/pull/23664)
+- Fixed a result streaming throttling issue that was causing significantly increased latency for some searches. [#23736](https://github.com/sourcegraph/sourcegraph/pull/23736)
+- GitCredentials passwords stored in AWS CodeCommit configuration is now redacted. [#23832](https://github.com/sourcegraph/sourcegraph/pull/23832)
 
 ### Removed
 
 - The old batch repository syncer was removed and can no longer be activated by setting `ENABLE_STREAMING_REPOS_SYNCER=false`. [#22949](https://github.com/sourcegraph/sourcegraph/pull/22949)
 - Email notifications for saved searches are now deprecated in favor of Code Monitoring. Email notifications can no longer be enabled for saved searches. Saved searches that already have notifications enabled will continue to work, but there is now a button users can click to migrate to code monitors. Notifications for saved searches will be removed entirely in the future. [#23275](https://github.com/sourcegraph/sourcegraph/pull/23275)
+- The `sg_service` Postgres role and `sg_repo_access_policy` policy on the `repo` table have been removed due to performance concerns. [#23622](https://github.com/sourcegraph/sourcegraph/pull/23622)
+- Deprecated site configuration field `email.smtp.disableTLS` has been removed. [#23639](https://github.com/sourcegraph/sourcegraph/pull/23639)
 
 ## 3.30.3
 

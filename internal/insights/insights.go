@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -256,3 +257,9 @@ const (
 	User SettingFilter = "user"
 	All  SettingFilter = "all"
 )
+
+// NextRecording calculates the time that a series recording should occur given the current or most recent recording time.
+func NextRecording(current time.Time) time.Time {
+	year, month, _ := current.In(time.UTC).Date()
+	return time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+}

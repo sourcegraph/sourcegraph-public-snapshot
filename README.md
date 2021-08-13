@@ -5,7 +5,7 @@
 
 [Sourcegraph](https://about.sourcegraph.com/) OSS edition is a fast, open-source, fully-featured code search and navigation engine. [Enterprise editions](https://about.sourcegraph.com/pricing) are available.
 
-![Screenshot](https://user-images.githubusercontent.com/1646931/46309383-09ba9800-c571-11e8-8ee4-1a2ec32072f2.png)
+![sourcegraph com_github com_golang_go_-_blob_src_net_http_request go_L855_6](https://user-images.githubusercontent.com/989826/126650657-cef98203-1505-4848-aab6-57acda1ec35f.png)
 
 **Features**
 

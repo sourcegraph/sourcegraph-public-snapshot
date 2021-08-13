@@ -128,10 +128,10 @@ func TestDisplayLimit(t *testing.T) {
 				done: make(chan struct{}),
 			}
 
-			database.Mocks.Repos.GetByIDs = func(ctx context.Context, ids ...api2.RepoID) (_ []*types.Repo, err error) {
-				res := make([]*types.Repo, 0, len(ids))
+			database.Mocks.Repos.Metadata = func(ctx context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
+				res := make([]*types.SearchedRepo, 0, len(ids))
 				for _, id := range ids {
-					res = append(res, &types.Repo{
+					res = append(res, &types.SearchedRepo{
 						ID: id,
 					})
 				}
@@ -164,7 +164,7 @@ func TestDisplayLimit(t *testing.T) {
 			var displayLimitHit bool
 			var message string
 			var matchCount int
-			decoder := streamhttp.Decoder{
+			decoder := streamhttp.FrontendStreamDecoder{
 				OnProgress: func(progress *api.Progress) {
 					if skipped, ok := any(api.DisplayLimit, progress.Skipped); ok {
 						displayLimitHit = true

@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -271,6 +272,84 @@ WHERE id = %s AND NOT EXISTS (
 	WHERE repo_id = %s LIMIT 1
 )
 `
+
+const listExternalServiceUserIDsByRepoIDQuery = `
+SELECT user_id FROM external_service_repos
+WHERE repo_id = %s AND user_id IS NOT NULL
+`
+
+// ListExternalServiceUserIDsByRepoID returns the user IDs associated with a
+// given repository. These users have proven that they have read access to the
+// repository given their presence in our external_service_repos table.
+func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
+	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
+		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+	}
+
+	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
+	tr.LogFields(
+		otlog.Int32("repo_id", int32(repoID)),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		s.Metrics.ListExternalServiceUserIDsByRepoID.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.list-external-service-user-ids-by-repo-id", &err,
+			"repo-id", repoID,
+		)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	q := sqlf.Sprintf(listExternalServiceUserIDsByRepoIDQuery, repoID)
+	return basestore.ScanInt32s(s.Query(ctx, q))
+}
+
+const listExternalServiceRepoIDsByUserIDQuery = `
+SELECT repo_id
+FROM external_service_repos esr
+JOIN repo ON repo.id = esr.repo_id
+WHERE
+	user_id = %s
+AND repo.private
+`
+
+// ListExternalServicePrivateRepoIDsByUserID returns the private repo IDs
+// associated with a given user. As with ListExternalServiceUserIDsByRepoID, the
+// user has already proven that they have read access to the repositories since
+// they are present in the external_service_repos table.
+func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
+	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
+		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
+	}
+
+	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
+	tr.LogFields(
+		otlog.Int32("user_id", userID),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		s.Metrics.ListExternalServiceRepoIDsByUserID.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.list-external-service-repo-ids-by-user-id", &err,
+			"user-id", userID,
+		)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	q := sqlf.Sprintf(listExternalServiceRepoIDsByUserIDQuery, userID)
+	ids, err := basestore.ScanInt32s(s.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+
+	repoIDs = make([]api.RepoID, len(ids))
+	for i := range ids {
+		repoIDs[i] = api.RepoID(ids[i])
+	}
+	return repoIDs, nil
+}
 
 // CreateExternalServiceRepo inserts a single repo and its association to an external service, respectively in the repo and
 // external_service_repos table. The associated external service must already exist.

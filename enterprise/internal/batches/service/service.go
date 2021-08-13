@@ -30,7 +30,7 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
-	svc := &Service{store: store, sourcer: sources.NewSourcer(httpcli.NewExternalHTTPClientFactory()), clock: clock}
+	svc := &Service{store: store, sourcer: sources.NewSourcer(httpcli.ExternalClientFactory), clock: clock}
 
 	return svc
 }

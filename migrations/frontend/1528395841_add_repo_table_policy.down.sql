@@ -1,8 +1,11 @@
 BEGIN;
 
--- With row-level security disabled, all rows in the repo table
--- will be accessible/visible to all roles.
-DROP POLICY IF EXISTS sg_repo_access_policy ON repo;
-ALTER TABLE repo DISABLE ROW LEVEL SECURITY;
+-- We encountered performance issues for our use cases when we deployed
+-- RLS to production. We made the decision to back that approach out and
+-- solve the security concerns in application-level code instead.
+--
+-- ref migrations/frontend/1528395860_remove_repo_table_policy.up.sql
+-- ref migrations/frontend/1528395861_remove_sg_service_grants.up.sql
+-- ref migrations/frontend/1528395862_remove_sg_service_role.up.sql
 
 COMMIT;

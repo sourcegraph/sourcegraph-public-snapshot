@@ -540,7 +540,7 @@ func check(db dbutil.DB) {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(ctx)
 
-		resp, err := httpcli.ExternalDoer().Do(req)
+		resp, err := httpcli.ExternalDoer.Do(req)
 		if err != nil {
 			return "", err
 		}

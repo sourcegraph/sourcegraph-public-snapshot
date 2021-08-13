@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // NewDependencyIndexingScheduler returns a new worker instance that processes
@@ -83,7 +83,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			break
 		}
 
-		pkg := semantic.Package{
+		pkg := precise.Package{
 			Scheme:  packageReference.Package.Scheme,
 			Name:    packageReference.Package.Name,
 			Version: packageReference.Package.Version,

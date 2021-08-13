@@ -13,12 +13,20 @@ export const SearchSidebarSection: React.FunctionComponent<{
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
     onToggle?: (open: boolean) => void
-    open?: boolean
+    startCollapsed?: boolean
     /**
      * Shown when the built-in search doesn't find any results.
      */
     noResultText?: React.ReactElement | string
-}> = ({ header, children = [], className, showSearch = false, onToggle, open, noResultText = 'No results' }) => {
+}> = ({
+    header,
+    children = [],
+    className,
+    showSearch = false,
+    onToggle,
+    startCollapsed,
+    noResultText = 'No results',
+}) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
@@ -61,7 +69,8 @@ export const SearchSidebarSection: React.FunctionComponent<{
         )
     }
 
-    const [collapsed, setCollapsed] = useState(!open)
+    const [collapsed, setCollapsed] = useState(startCollapsed)
+    useEffect(() => setCollapsed(startCollapsed), [startCollapsed])
 
     return visible ? (
         <div className={classNames(styles.sidebarSection, className)}>
@@ -71,7 +80,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 onClick={() =>
                     setCollapsed(collapsed => {
                         if (onToggle) {
-                            onToggle(collapsed)
+                            onToggle(!collapsed)
                         }
                         return !collapsed
                     })
