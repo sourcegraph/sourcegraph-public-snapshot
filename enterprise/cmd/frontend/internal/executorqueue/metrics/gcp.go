@@ -49,9 +49,9 @@ func initGCPMetric(config *GCPConfig, metricClient *monitoring.MetricClient, que
 }
 
 func sendGCPMetric(config *GCPConfig, metricClient *monitoring.MetricClient, queueName string, store store.Store) error {
-	count, err := store.QueuedCount(context.Background(), nil)
+	count, err := store.ActiveCount(context.Background(), nil)
 	if err != nil {
-		return errors.Wrap(err, "dbworkerstore.QueuedCount")
+		return errors.Wrap(err, "dbworkerstore.ActiveCount")
 	}
 
 	if err := metricClient.CreateTimeSeries(context.Background(), makeGCPMetricRequest(config, queueName, count)); err != nil {
