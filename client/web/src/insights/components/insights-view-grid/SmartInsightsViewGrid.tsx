@@ -1,4 +1,5 @@
-import React from 'react'
+import { isEqual } from 'lodash'
+import React, { memo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -20,10 +21,36 @@ interface SmartInsightsViewGridProps
 }
 
 /**
+ * Custom props checker for the smart grid component.
+ *
+ * Ignore settings cascade change and insight body config changes to avoid
+ * animations of grid item rerender and grid position items. In some cases (like insight
+ * filters updating, we want to ignore insights from settings cascade).
+ * But still trigger grid animation rerender if insight ordering or insight count
+ * have been changed.
+ */
+const equalSmartGridProps = (
+    previousProps: SmartInsightsViewGridProps,
+    nextProps: SmartInsightsViewGridProps
+): boolean => {
+    const { insights: previousInsights, settingsCascade: previousSettingCascade, ...otherPrepProps } = previousProps
+    const { insights: nextInsights, settingsCascade, ...otherNextProps } = nextProps
+
+    if (!isEqual(otherPrepProps, otherNextProps)) {
+        return false
+    }
+
+    return isEqual(
+        previousInsights.map(insight => insight.id),
+        nextInsights.map(insight => insight.id)
+    )
+}
+
+/**
  * Renders grid of smart (stateful) insight card. These cards can independently extract and update
  * the insights settings (settings cascade subjects).
  */
-export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = props => {
+export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
     const { telemetryService, insights, platformContext, settingsCascade, extensionsController } = props
 
     return (
@@ -40,4 +67,4 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
             ))}
         </ViewGrid>
     )
-}
+}, equalSmartGridProps)
