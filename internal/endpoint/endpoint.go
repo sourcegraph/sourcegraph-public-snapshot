@@ -155,6 +155,8 @@ func (m *Map) discover() {
 
 func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	for eps := range ch {
+		log15.Info("endpoints discovered", "service", eps.Service, "endpoints", eps.Endpoints, "error", eps.Error)
+
 		switch {
 		case eps.Error != nil:
 			m.mu.Lock()
@@ -163,7 +165,6 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 		case len(eps.Endpoints) > 0:
 			sort.Strings(eps.Endpoints)
 
-			log15.Debug("endpoints", "service", eps.Service, "endpoints", eps.Endpoints)
 			metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
 
 			hm := newConsistentHashMap(eps.Endpoints)
