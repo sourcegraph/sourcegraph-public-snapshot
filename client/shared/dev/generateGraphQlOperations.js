@@ -71,7 +71,7 @@ async function generateGraphQlOperations() {
           JSONValue: 'unknown',
           GitObjectID: 'string',
           JSONCString: 'string',
-          PublishedValue: "boolean | 'draft'",
+          PublishedValue: "boolean | 'draft' | null",
           BigInt: 'string',
         },
       },
