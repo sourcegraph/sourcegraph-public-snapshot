@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -330,11 +329,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektGlobalQuery(ctx context.Context, query zoektquery.Q, mode search.GlobalSearchMode, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
-	if mode != search.ZoektGlobalSearch {
-		return nil, fmt.Errorf("zoektSearchGlobal called with args.Mode %d instead of %d", mode, search.ZoektGlobalSearch)
-	}
-
+func zoektGlobalQuery(ctx context.Context, query zoektquery.Q, mode search.GlobalSearchMode, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
 	var qs []zoektquery.Q
 
 	// Public
@@ -364,7 +359,7 @@ func zoektGlobalQuery(ctx context.Context, query zoektquery.Q, mode search.Globa
 		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
 	}
 
-	return zoektquery.Simplify(zoektquery.NewOr(qs...)), nil
+	return zoektquery.Simplify(zoektquery.NewOr(qs...))
 }
 
 func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, c streaming.Sender) error {
@@ -432,10 +427,7 @@ func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *Index
 	}
 
 	if args.Mode == search.ZoektGlobalSearch {
-		q, err := zoektGlobalQuery(ctx, args.Query, args.Mode, args.RepoOptions, args.UserPrivateRepos)
-		if err != nil {
-			return err
-		}
+		q := zoektGlobalQuery(ctx, args.Query, args.Mode, args.RepoOptions, args.UserPrivateRepos)
 		return doZoektSearchGlobal(ctx, q, args.Typ, args.Zoekt.Client, args.FileMatchLimit, args.Select, c)
 	}
 
