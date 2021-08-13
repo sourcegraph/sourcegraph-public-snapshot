@@ -24,7 +24,7 @@ This website is home to Sourcegraph's feature, installation, administration, and
   <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph Cloud">
    <span>★ Sourcegraph Cloud</span>
    </br>
-   <b>Search open source code or your own public repositories.</b> No signup or installation required.
+   <b>Search 1 million+ open source respositories or your own repositories.</b> No installation required.
   </a>
 
   <a href="admin/install" class="btn btn-primary" alt="Self-host">
@@ -79,6 +79,7 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Using Sourcegraph](getting-started/index.md)
 - [Administration](admin/index.md)
 - [Extensions](extensions/index.md)
+- [Cloud](code_search/explanations/sourcegraph_cloud.md)
 
 ### Features and tutorials
 

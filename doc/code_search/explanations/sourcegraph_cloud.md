@@ -1,8 +1,8 @@
 # Sourcegraph Cloud
 
-[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search inside your public code on GitHub or GitLab, and inside any open-source project on GitHub.
+[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search your public code on GitHub or GitLab, and across millions of open-source project.
 
-Note that you can search across a maximum of 50 repositories at once using Sourcegraph Cloud. To search across more than 50 repositories at once or to search your organization's internal code, [run your own Sourcegraph instance](../../../admin/install/index.md).
+Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem enviornment, [run your own Sourcegraph instance](../../../admin/install/index.md).
 
 ## Search contexts
 
@@ -15,4 +15,4 @@ Sourcegraph Cloud supports two search contexts:
 - Your personal context, `context:@username`, which automatically includes [all repositories you add to Sourcegraph](../how-to/adding_repositories_to_cloud.md).
 - The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
 
-**Coming soon:** create your own search contexts that include the repositories you choose. Want early access to custom search contexts? [Let us know](mailto:feedback@sourcegraph.com).
+You can also define your own search contexts to include the subset of repositories you search most often. See more about [search contexts here](../how-to/search_contexts.md)
