@@ -1,16 +1,18 @@
-import { ApolloError } from '@apollo/client'
 import React, { useEffect } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { ListExternalServiceFields } from '../../graphql-operations'
 import { UserCodeHosts } from '../../user/settings/codeHosts/UserCodeHosts'
 import { useSteps } from '../Steps'
 
-interface CodeHostsConnection extends Omit<UserCodeHosts, 'onDidRemove' | 'onDidError'> {
+interface CodeHostsConnection extends Omit<UserCodeHosts, 'onDidRemove' | 'onDidError' | 'externalServices'> {
     refetch: UserCodeHosts['onDidRemove']
     loading: boolean
-    error: ApolloError | undefined
+    onError: (error: ErrorLike) => void
     onNavigation?: (called: boolean) => void
+    externalServices: ListExternalServiceFields[] | undefined
 }
 
 export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> = ({
@@ -20,6 +22,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
     externalServices,
     loading,
     onNavigation,
+    onError,
 }) => {
     const { setComplete, currentIndex } = useSteps()
 
@@ -31,7 +34,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
         }
     }, [currentIndex, externalServices, setComplete])
 
-    if (loading) {
+    if (loading || !externalServices) {
         return (
             <div className="d-flex justify-content-center">
                 <LoadingSpinner className="icon-inline" />
@@ -53,7 +56,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
                 externalServices={externalServices}
                 context={context}
                 onNavigation={onNavigation}
-                onDidError={error => console.warn('<UserCodeHosts .../>', error)}
+                onDidError={onError}
                 onDidRemove={refetch}
             />
         </>

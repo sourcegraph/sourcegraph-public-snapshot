@@ -29,7 +29,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
 }
 
 const mockInsightAPI = createMockInsightAPI({
-    getBackendInsightById: (id: string) =>
+    getBackendInsightById: ({ id }) =>
         of({
             id,
             view: {
@@ -53,7 +53,7 @@ add('Backend Insight Card', () => (
 ))
 
 const mockInsightAPIWithDelay = createMockInsightAPI({
-    getBackendInsightById: (id: string) =>
+    getBackendInsightById: ({ id }) =>
         of({
             id,
             view: {

@@ -47,9 +47,11 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	nameSet := janitor.NewNameSet()
+	ctx, cancel := context.WithCancel(context.Background())
+	worker := worker.NewWorker(nameSet, config.APIWorkerOptions(), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
-		worker.NewWorker(nameSet, config.APIWorkerOptions(), observationContext),
+		worker,
 	}
 	if config.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(
@@ -61,7 +63,21 @@ func main() {
 
 		mustRegisterVMCountMetric(observationContext, config.VMPrefix)
 	}
-	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
+
+	go func() {
+		// Block until the worker has exited. The executor worker is unique
+		// in that we want a maximum runtime and/or number of jobs to be
+		// executed by a single instance, after which the service should shut
+		// down without error.
+		worker.Wait()
+
+		// Once the worker has finished its current set of jobs and stops
+		// the dequeue loop, we want to finish off the rest of the sibling
+		// routines so that the service can shut down.
+		cancel()
+	}()
+
+	goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
 func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {

@@ -129,7 +129,6 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	pointTime := now.Add(-time.Hour * 24)
 	authz.SetProviders(false, []authz.Provider{}) // setting authz in this way will force user permissions to be enabled
 
 	// Set up an external service
@@ -199,7 +198,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		VALUES
 			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 5.0, null, 1, 1, 1),
 			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 6.0, null, 2, 1, 1),
-			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 7.0, null, 3, 1, 1)`, pointTime)
+			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 7.0, null, 3, 1, 1)`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +248,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		want := []point{
 			{
 				value: 18.0,
-				time:  time.Now().Truncate(time.Hour * 24),
+				time:  now,
 			},
 		}
 
@@ -270,7 +269,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		want := []point{
 			{
 				value: 13.0,
-				time:  time.Now().Truncate(time.Hour * 24),
+				time:  now,
 			},
 		}
 

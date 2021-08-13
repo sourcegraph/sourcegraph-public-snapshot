@@ -66,7 +66,7 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
 
             if (authProvider) {
                 onNavigation?.(true)
-                eventLogger.log('UserAttemptConnectCodeHost', { kind })
+                eventLogger.log('UserAttemptConnectCodeHost', { kind }, { kind })
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href

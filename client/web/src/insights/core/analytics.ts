@@ -39,7 +39,7 @@ export function logCodeInsightsCount(
             const newGroupedInsights = getInsightsGroupedByType(newSettings, authUser)
 
             if (!isEqual(oldGroupedInsights, newGroupedInsights)) {
-                telemetryService.log('InsightsGroupedCount', newGroupedInsights)
+                telemetryService.log('InsightsGroupedCount', newGroupedInsights, newGroupedInsights)
             }
         }
     } catch {
@@ -61,7 +61,7 @@ export function logSearchBasedInsightStepSize(
             const newGroupedStepSizes = getGroupedStepSizes(newSettings.final)
 
             if (!isEqual(oldGroupedStepSizes, newGroupedStepSizes)) {
-                telemetryService.log('InsightsGroupedStepSizes', newGroupedStepSizes)
+                telemetryService.log('InsightsGroupedStepSizes', newGroupedStepSizes, newGroupedStepSizes)
             }
         }
     } catch {
@@ -164,7 +164,7 @@ export function logCodeInsightsChanges(
 
         if (oldSettings && newSettings) {
             for (const { action, insightType } of diffCodeInsightsSettings(oldSettings, newSettings)) {
-                telemetryService.log(`Insight${action}`, { insightType })
+                telemetryService.log(`Insight${action}`, { insightType }, { insightType })
             }
         }
     } catch {

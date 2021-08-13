@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -38,13 +40,7 @@ func TestAllReposIterator(t *testing.T) {
 		return result, nil
 	})
 
-	iter := &AllReposIterator{
-		IndexableReposLister:    indexableReposLister,
-		RepoStore:               repoStore,
-		Clock:                   clock,
-		RepositoryListCacheTime: 15 * time.Minute,
-	}
-
+	iter := NewAllReposIterator(indexableReposLister, repoStore, clock, false, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
 	{
 		// Do we get all 9 repositories?
 		var each []string
@@ -178,13 +174,7 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 		return result, nil
 	})
 
-	iter := &AllReposIterator{
-		IndexableReposLister:    indexableReposLister,
-		RepoStore:               repoStore,
-		Clock:                   clock,
-		SourcegraphDotComMode:   true,
-		RepositoryListCacheTime: 15 * time.Minute,
-	}
+	iter := NewAllReposIterator(indexableReposLister, repoStore, clock, true, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name456"})
 
 	{
 		// Do we get all 9 repositories?

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -16,11 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -326,10 +321,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return nil, err
 	}
 
-	repoInfo, err := newRepoInfo(repo)
-	if err != nil {
-		return nil, err
-	}
+	repoInfo := protocol.NewRepoInfo(repo)
 
 	return &protocol.RepoLookupResult{Repo: repoInfo}, nil
 }
@@ -379,79 +371,4 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
 	respond(w, http.StatusOK, nil)
-}
-
-func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
-	urls := r.CloneURLs()
-	if len(urls) == 0 {
-		return nil, errors.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)
-	}
-
-	info := protocol.RepoInfo{
-		Name:         r.Name,
-		Description:  r.Description,
-		Fork:         r.Fork,
-		Archived:     r.Archived,
-		Private:      r.Private,
-		VCS:          protocol.VCSInfo{URL: urls[0]},
-		ExternalRepo: r.ExternalRepo,
-	}
-
-	typ, _ := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
-	switch typ {
-	case extsvc.TypeGitHub:
-		ghrepo := r.Metadata.(*github.Repository)
-		info.Links = &protocol.RepoLinks{
-			Root:   ghrepo.URL,
-			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
-		}
-	case extsvc.TypeGitLab:
-		proj := r.Metadata.(*gitlab.Project)
-		info.Links = &protocol.RepoLinks{
-			Root:   proj.WebURL,
-			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
-		}
-	case extsvc.TypeBitbucketServer:
-		repo := r.Metadata.(*bitbucketserver.Repo)
-		if len(repo.Links.Self) == 0 {
-			break
-		}
-
-		href := repo.Links.Self[0].Href
-		root := strings.TrimSuffix(href, "/browse")
-		info.Links = &protocol.RepoLinks{
-			Root:   href,
-			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Commit: pathAppend(root, "/commits/{commit}"),
-		}
-	case extsvc.TypeAWSCodeCommit:
-		repo := r.Metadata.(*awscodecommit.Repository)
-		if repo.ARN == "" {
-			break
-		}
-
-		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
-		if len(splittedARN) == 0 {
-			break
-		}
-		region := splittedARN[0]
-		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s", region, repo.Name)
-		info.Links = &protocol.RepoLinks{
-			Root:   webURL + "/browse",
-			Tree:   webURL + "/browse/{rev}/--/{path}",
-			Blob:   webURL + "/browse/{rev}/--/{path}",
-			Commit: webURL + "/commit/{commit}",
-		}
-	}
-
-	return &info, nil
-}
-
-func pathAppend(base, p string) string {
-	return strings.TrimRight(base, "/") + p
 }

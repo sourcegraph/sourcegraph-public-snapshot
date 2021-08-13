@@ -27,6 +27,7 @@ func newTestStore() *MockSyncStore {
 }
 
 func TestSyncerRun(t *testing.T) {
+	t.Skip("Flaky test")
 	t.Parallel()
 
 	t.Run("Sync due", func(t *testing.T) {
@@ -155,6 +156,7 @@ func TestSyncerRun(t *testing.T) {
 }
 
 func TestSyncRegistry(t *testing.T) {
+	t.Skip("Flaky test")
 	t.Parallel()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -249,6 +251,7 @@ func TestSyncRegistry(t *testing.T) {
 }
 
 func TestLoadChangesetSource(t *testing.T) {
+	t.Skip("Flaky test")
 	ctx := context.Background()
 	cf := httpcli.NewFactory(
 		func(cli httpcli.Doer) httpcli.Doer {

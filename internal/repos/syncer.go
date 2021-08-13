@@ -249,6 +249,11 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
+		return nil, &database.RepoNotFoundErr{Name: name}
+	}
+
 	repo, err = s.Store.RepoStore.GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
@@ -256,7 +261,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 
 	if repo == nil {
 		// We don't have this repo yet, so block before returning.
-		return s.syncRepo(ctx, name, nil)
+		return s.syncRepo(ctx, codehost, name, nil)
 	}
 
 	// Only public repos can be individually synced on sourcegraph.com
@@ -268,14 +273,19 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
-			s.syncRepo(ctx, name, repo)
+			s.syncRepo(ctx, codehost, name, repo)
 		}()
 	}
 
 	return repo, nil
 }
 
-func (s *Syncer) syncRepo(ctx context.Context, name api.RepoName, stored *types.Repo) (repo *types.Repo, err error) {
+func (s *Syncer) syncRepo(
+	ctx context.Context,
+	codehost *extsvc.CodeHost,
+	name api.RepoName,
+	stored *types.Repo,
+) (repo *types.Repo, err error) {
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
 	defer func() { save(svc, err) }()
@@ -303,11 +313,6 @@ func (s *Syncer) syncRepo(ctx context.Context, name api.RepoName, stored *types.
 		}
 	}
 
-	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
-	if codehost == nil {
-		return nil, errors.Errorf("unsupported public code host for repo %q", name)
-	}
-
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
 		Kinds:            []string{extsvc.TypeToKind(codehost.ServiceType)},
 		OnlyCloudDefault: true,
@@ -318,7 +323,10 @@ func (s *Syncer) syncRepo(ctx context.Context, name api.RepoName, stored *types.
 	}
 
 	if len(svcs) != 1 {
-		return nil, errors.Wrapf(err, "cloud default external service of type %q not found", codehost.ServiceType)
+		return nil, errors.Wrapf(
+			&database.RepoNotFoundErr{Name: name},
+			"cloud default external service of type %q not found", codehost.ServiceType,
+		)
 	}
 
 	svc = svcs[0]
@@ -372,7 +380,11 @@ func (s *Syncer) syncRepo(ctx context.Context, name api.RepoName, stored *types.
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
-func (s *Syncer) SyncExternalService(ctx context.Context, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(
+	ctx context.Context,
+	externalServiceID int64,
+	minSyncInterval time.Duration,
+) (err error) {
 	s.log().Debug("Syncing external service", "serviceID", externalServiceID)
 
 	var svc *types.ExternalService
@@ -631,7 +643,13 @@ func (s *Syncer) log() log15.Logger {
 	return s.Logger
 }
 
-func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Duration, modified bool, err error) time.Duration {
+func calcSyncInterval(
+	now time.Time,
+	lastSync time.Time,
+	minSyncInterval time.Duration,
+	modified bool,
+	err error,
+) time.Duration {
 	const maxSyncInterval = 8 * time.Hour
 
 	// Special case, we've never synced
@@ -652,7 +670,10 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 	return interval
 }
 
-func (s *Syncer) observeSync(ctx context.Context, family, title string) (context.Context, func(*types.ExternalService, error)) {
+func (s *Syncer) observeSync(
+	ctx context.Context,
+	family, title string,
+) (context.Context, func(*types.ExternalService, error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 

@@ -5,12 +5,10 @@ import React, { useCallback, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Collapse } from 'reactstrap'
 
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
-
 export const SIDEBAR_BUTTON_CLASS = 'btn text-left sidebar__link--inactive w-100'
 
 /**
- * Item of `SideBarGroupItems`.
+ * Item of `SideBarGroup`.
  */
 export const SidebarNavItem: React.FunctionComponent<{
     to: string
@@ -18,10 +16,8 @@ export const SidebarNavItem: React.FunctionComponent<{
     exact?: boolean
     source?: string
 }> = ({ children, className, to, exact, source }) => {
-    const [isRedesign] = useRedesignToggle()
-    const buttonClassNames = isRedesign
-        ? 'btn text-left sidebar__link--inactive d-flex sidebar-nav-link'
-        : 'list-group-item list-group-item-action py-2'
+    const buttonClassNames = 'btn text-left sidebar__link--inactive d-flex sidebar-nav-link'
+
     if (source === 'server') {
         return (
             <a href={to} className={classNames(buttonClassNames, className)}>
@@ -29,12 +25,13 @@ export const SidebarNavItem: React.FunctionComponent<{
             </a>
         )
     }
+
     return (
         <NavLink
             to={to}
             exact={exact}
             className={classNames(buttonClassNames, className)}
-            activeClassName={isRedesign ? 'btn-primary' : undefined}
+            activeClassName="btn-primary"
         >
             {children}
         </NavLink>
@@ -44,27 +41,13 @@ export const SidebarNavItem: React.FunctionComponent<{
  *
  * Header of a `SideBarGroup`
  */
-export const SidebarGroupHeader: React.FunctionComponent<{
-    icon?: React.ComponentType<{ className?: string }>
-    label: string
-    children?: undefined
-}> = ({ icon: Icon, label }) => {
-    const [isRedesign] = useRedesignToggle()
-    if (isRedesign) {
-        return <h3>{label}</h3>
-    }
-    return (
-        <div className="card-header">
-            {Icon && <Icon className="icon-inline mr-1" />} {label}
-        </div>
-    )
-}
+export const SidebarGroupHeader: React.FunctionComponent<{ label: string }> = ({ label }) => <h3>{label}</h3>
 
 /**
  * Sidebar with collapsible items
  */
 export const SidebarCollapseItems: React.FunctionComponent<{
-    children: JSX.Element
+    children: React.ReactNode
     icon?: React.ComponentType<{ className?: string }>
     label?: string
     openByDefault?: boolean
@@ -97,20 +80,6 @@ export const SidebarCollapseItems: React.FunctionComponent<{
 }
 
 /**
- * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.
+ * A box of items in the side bar. Use `SideBarGroupHeader` as children.
  */
-export const SidebarGroup: React.FunctionComponent<{}> = ({ children }) => {
-    const [isRedesign] = useRedesignToggle()
-    return <div className={classNames('mb-3 sidebar', !isRedesign && 'card')}>{children}</div>
-}
-
-/**
- * Container for all `SideBarNavItem` in a `SideBarGroup`.
- */
-export const SidebarGroupItems: React.FunctionComponent<{}> = ({ children }) => {
-    const [isRedesign] = useRedesignToggle()
-    if (isRedesign) {
-        return <>{children}</>
-    }
-    return <div className="list-group list-group-flush">{children}</div>
-}
+export const SidebarGroup: React.FunctionComponent = ({ children }) => <div className="mb-3 sidebar">{children}</div>
