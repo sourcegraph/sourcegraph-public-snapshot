@@ -10,7 +10,7 @@ Note that **Organizations** feature is disabled in Sourcegraph Cloud. If you wan
 
 - [Adding repositories to Sourcegraph Cloud](../how-to/adding_repositories_to_cloud.md)
 - [Searching across repositories you’ve added to Sourcegraph Cloud with search contexts](../how-to/searching_with_search_contexts.md)
-- [Who can see your code on Sourcegraph Cloud](./code_visibility_on_sourceraph_cloud.md)
+- [Who can see your code on Sourcegraph Cloud](./code_visibility_on_sourcegraph_cloud.md)
 
 ## Working with your organization on Sourcegraph Cloud
 
