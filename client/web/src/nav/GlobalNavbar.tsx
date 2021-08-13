@@ -248,14 +248,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 <NavActions>
                     {!props.authenticatedUser && (
                         <>
-                            {showDotComMarketing && (
-                                <NavAction>
-                                    <Link className="global-navbar__link font-weight-medium" to="/help" target="_blank">
-                                        Docs
-                                    </Link>
-                                </NavAction>
-                            )}
-
                             <NavAction>
                                 <Link
                                     className="global-navbar__link"
@@ -263,9 +255,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     rel="noreferrer noopener"
                                     target="_blank"
                                 >
-                                    About
+                                    About Sourcegraph
                                 </Link>
                             </NavAction>
+
+                            {showDotComMarketing && (
+                                <NavAction>
+                                    <Link className="global-navbar__link font-weight-medium" to="/help" target="_blank">
+                                        Docs
+                                    </Link>
+                                </NavAction>
+                            )}
                         </>
                     )}
                     {props.authenticatedUser && (
@@ -273,15 +273,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <FeedbackPrompt routes={props.routes} />
                         </NavAction>
                     )}
-                    <NavAction>
-                        <WebCommandListPopoverButton
-                            {...props}
-                            location={location}
-                            buttonClassName="btn btn-link p-0 m-0"
-                            menu={ContributableMenu.CommandPalette}
-                            keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                        />
-                    </NavAction>
+                    {props.authenticatedUser && (
+                        <NavAction>
+                            <WebCommandListPopoverButton
+                                {...props}
+                                location={location}
+                                buttonClassName="btn btn-link p-0 m-0"
+                                menu={ContributableMenu.CommandPalette}
+                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                            />
+                        </NavAction>
+                    )}
                     {props.authenticatedUser &&
                         (props.authenticatedUser.siteAdmin ||
                             userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
@@ -303,10 +305,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
                                         Log in
                                     </Link>
-                                    <Link
-                                        className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
-                                        to="/sign-up"
-                                    >
+                                    <Link className="btn btn-sm global-navbar__sign-up" to="/sign-up">
                                         Sign up
                                     </Link>
                                 </div>
