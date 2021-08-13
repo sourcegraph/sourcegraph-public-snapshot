@@ -1,16 +1,10 @@
-/*
-	The functions in this file are used to redact secrets from ExternalServices in
-	transit, eg when written back and forth between the client and API, as we don't
-	want to leak an access token once it's been configured. Any config written back
-	from the client with a redacted token should then be updated with the real token
-	from the database, the validation in the ExternalService DB methods will check
-	for this field and throw an error if it's not been replaced, to prevent us
-	accidentally blanking tokens in the DB.
-
-	This is risky, hacky, and ugly, and we fully intend to replace it ASAP, once our
-	Vault tooling is ready we will migrate external services into their own tables
-	for each kind, and encrypt secrets using Vault's KMS.
-*/
+// The functions in this file are used to redact secrets from ExternalServices in
+// transit, eg when written back and forth between the client and API, as we
+// don't want to leak an access token once it's been configured. Any config
+// written back from the client with a redacted token should then be updated with
+// the real token from the database, the validation in the ExternalService DB
+// methods will check for this field and throw an error if it's not been
+// replaced, to prevent us accidentally blanking tokens in the DB.
 
 package types
 
