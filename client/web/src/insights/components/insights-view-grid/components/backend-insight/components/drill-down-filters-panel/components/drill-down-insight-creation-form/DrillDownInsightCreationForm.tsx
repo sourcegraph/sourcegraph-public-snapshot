@@ -1,48 +1,70 @@
-import React from 'react';
+import classnames from 'classnames'
+import React, { useMemo } from 'react'
 
-import { Button } from '@sourcegraph/wildcard';
+import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../components/alerts';
-import { LoaderButton } from '../../../../../../../../../components/LoaderButton';
-import { InsightTypePrefix } from '../../../../../../../../core/types';
+import { ErrorAlert } from '../../../../../../../../../components/alerts'
+import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
+import { InsightTypePrefix } from '../../../../../../../../core/types'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
-import { useField } from '../../../../../../../form/hooks/useField';
-import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm';
-import { useInsightTitleValidator } from '../../../../../../../form/hooks/useInsightTitleValidator';
+import { useField, Validator } from '../../../../../../../form/hooks/useField'
+import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
+import {
+    useInsightTitleDuplicationCheck,
+    useTitleValidatorProps,
+} from '../../../../../../../form/hooks/useInsightTitleValidator'
+import { composeValidators, createRequiredValidator } from '../../../../../../../form/validators'
 
 interface DrillDownInsightCreationFormValues {
     insightName: string
 }
 
 const DEFAULT_FORM_VALUES: DrillDownInsightCreationFormValues = {
-    insightName: ''
+    insightName: '',
+}
+
+function useInsightNameValidator(props: useTitleValidatorProps): Validator<string> {
+    const hasInsightTitleDuplication = useInsightTitleDuplicationCheck(props)
+
+    return useMemo(
+        () =>
+            composeValidators<string>(
+                createRequiredValidator('Insight name is a required field.'),
+                hasInsightTitleDuplication
+            ),
+        [hasInsightTitleDuplication]
+    )
 }
 
 interface DrillDownInsightCreationFormProps {
+    className?: string
     onCreateInsight: (values: DrillDownInsightCreationFormValues) => SubmissionResult
-    onReset: () => void
+    onCancel: () => void
 }
 
 export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsightCreationFormProps> = props => {
-    const { onCreateInsight, onReset } = props;
+    const { className, onCreateInsight, onCancel } = props
 
-    const { formAPI, ref, handleSubmit, } = useForm({
+    const { formAPI, ref, handleSubmit } = useForm({
         initialValues: DEFAULT_FORM_VALUES,
-        onSubmit: onCreateInsight
+        onSubmit: onCreateInsight,
     })
 
-    const nameValidator = useInsightTitleValidator({ insightType: InsightTypePrefix.search, settings: null })
+    const nameValidator = useInsightNameValidator({
+        insightType: InsightTypePrefix.search,
+        settings: null,
+    })
 
     const insightName = useField({
         name: 'insightName',
         formApi: formAPI,
-        validators: { sync: nameValidator }
+        validators: { sync: nameValidator },
     })
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} onSubmit={handleSubmit} noValidate={true}>
-            <h4>Save as new view</h4>
+        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={classnames(className, 'p-3')}>
+            <h3 className="mb-3">Save as new view</h3>
 
             <FormInput
                 title="Name"
@@ -54,11 +76,12 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
                 {...insightName.input}
             />
 
-            <footer className='d-flex flex-wrap align-items-baseline'>
-                {formAPI.submitErrors?.[FORM_ERROR] &&
-                    <ErrorAlert className='' error={formAPI.submitErrors[FORM_ERROR]} />}
+            <footer className="mt-4 d-flex flex-wrap align-items-baseline">
+                {formAPI.submitErrors?.[FORM_ERROR] && (
+                    <ErrorAlert className="w-100 mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
+                )}
 
-                <Button type="reset" variant='secondary' onClick={onReset}>
+                <Button type="reset" variant="secondary" className="ml-auto mr-2" onClick={onCancel}>
                     Cancel
                 </Button>
 
@@ -69,7 +92,7 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
                     label={formAPI.submitting ? 'Saving' : 'Save'}
                     disabled={formAPI.submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2 mb-2"
+                    className="btn btn-primary"
                 />
             </footer>
         </form>

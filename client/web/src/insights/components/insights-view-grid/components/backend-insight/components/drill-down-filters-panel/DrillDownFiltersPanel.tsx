@@ -7,6 +7,7 @@ import {
     DrillDownFiltersForm,
     DrillDownFiltersFormValues,
 } from './components/drill-down-filters-form/DrillDownFiltersForm'
+import { DrillDownInsightCreationForm } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import styles from './DrillDownFiltersPanel.module.scss'
 
 enum DrillDownFiltersStep {
@@ -40,7 +41,7 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
         })
 
     // By default always render filters mode
-    const [step] = useState(DrillDownFiltersStep.Filters)
+    const [step, setStep] = useState(DrillDownFiltersStep.Filters)
 
     if (step === DrillDownFiltersStep.Filters) {
         return (
@@ -50,9 +51,16 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
                 originalFiltersValue={originalFiltersValue}
                 onFiltersChange={handleFilterChange}
                 onFilterSave={handleFilterSave}
+                onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
             />
         )
     }
 
-    return <span>Create new insight view with filters</span>
+    return (
+        <DrillDownInsightCreationForm
+            className={styles.filtersViewCreation}
+            onCreateInsight={() => {}}
+            onCancel={() => setStep(DrillDownFiltersStep.Filters)}
+        />
+    )
 }
