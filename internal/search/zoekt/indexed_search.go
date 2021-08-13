@@ -321,31 +321,24 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}, nil
 }
 
-// zoektSearchGlobal searches the entire universe of indexed repositories.
+// zoektGlobalQuery constructs a query that searches the entire universe of indexed repositories.
 //
-// We send 2 queries to Zoekt. One query for public repos and one query for
+// We construct 2 Zoekt queries. One query for public repos and one query for
 // private repos.
 //
 // We only have to search "HEAD", because global queries, per definition, don't
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
-	if args == nil {
-		return nil
+func zoektGlobalQuery(ctx context.Context, query zoektquery.Q, mode search.GlobalSearchMode, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
+	if mode != search.ZoektGlobalSearch {
+		return nil, fmt.Errorf("zoektSearchGlobal called with args.Mode %d instead of %d", mode, search.ZoektGlobalSearch)
 	}
-
-	if args.Mode != search.ZoektGlobalSearch {
-		return fmt.Errorf("zoektSearchGlobal called with args.Mode %d instead of %d", args.Mode, search.ZoektGlobalSearch)
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	var qs []zoektquery.Q
 
 	// Public
-	if !args.RepoOptions.OnlyPrivate {
+	if !repoOptions.OnlyPrivate {
 		rc := zoektquery.RcOnlyPublic
 		apply := func(f zoektquery.RawConfig, b bool) {
 			if !b {
@@ -353,30 +346,33 @@ func zoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c stre
 			}
 			rc |= f
 		}
-		apply(zoektquery.RcOnlyArchived, args.RepoOptions.OnlyArchived)
-		apply(zoektquery.RcNoArchived, args.RepoOptions.NoArchived)
-		apply(zoektquery.RcOnlyForks, args.RepoOptions.OnlyForks)
-		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
+		apply(zoektquery.RcOnlyArchived, repoOptions.OnlyArchived)
+		apply(zoektquery.RcNoArchived, repoOptions.NoArchived)
+		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
+		apply(zoektquery.RcNoForks, repoOptions.NoForks)
 
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, args.Query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
 	}
 
 	// Private
-	if !args.RepoOptions.OnlyPublic && len(args.UserPrivateRepos) > 0 {
-		privateRepoSet := make(map[string][]string, len(args.UserPrivateRepos))
+	if repoOptions.OnlyPublic && len(userPrivateRepos) > 0 {
+		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
 		head := []string{"HEAD"}
-		for _, r := range args.UserPrivateRepos {
+		for _, r := range userPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, args.Query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
 	}
 
-	return doZoektSearchGlobal(ctx, zoektquery.Simplify(zoektquery.NewOr(qs...)), args, c)
+	return zoektquery.Simplify(zoektquery.NewOr(qs...)), nil
 }
 
-func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.ZoektParameters, c streaming.Sender) error {
-	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit)
+func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, c streaming.Sender) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	k := ResultCountFactor(0, fileMatchLimit, true)
+	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -397,8 +393,8 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.Zoekt
 
 	// PERF: if we are going to be selecting to repo results only anyways, we can
 	// just ask zoekt for only results of type repo.
-	if args.Select.Root() == filter.Repository {
-		repoList, err := args.Zoekt.Client.List(ctx, q, nil)
+	if selector.Root() == filter.Repository {
+		repoList, err := client.List(ctx, q, nil)
 		if err != nil {
 			return err
 		}
@@ -418,14 +414,14 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.Zoekt
 		return nil
 	}
 
-	return args.Zoekt.Client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	return client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
 			repo := types.RepoName{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
 			return repo, []string{""}
-		}, args.Typ, c)
+		}, typ, c)
 	}))
 }
 
@@ -436,7 +432,11 @@ func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *Index
 	}
 
 	if args.Mode == search.ZoektGlobalSearch {
-		return zoektSearchGlobal(ctx, args, c)
+		q, err := zoektGlobalQuery(ctx, args.Query, args.Mode, args.RepoOptions, args.UserPrivateRepos)
+		if err != nil {
+			return err
+		}
+		return doZoektSearchGlobal(ctx, q, args.Typ, args.Zoekt.Client, args.FileMatchLimit, args.Select, c)
 	}
 
 	if len(repos.repoRevs) == 0 {
