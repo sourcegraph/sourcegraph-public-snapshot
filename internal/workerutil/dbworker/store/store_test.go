@@ -27,7 +27,7 @@ func TestStoreQueuedCount(t *testing.T) {
 			(2, 'queued', NOW() - '2 minute'::interval),
 			(3, 'state2', NOW() - '3 minute'::interval),
 			(4, 'queued', NOW() - '4 minute'::interval),
-			(5, 'state2', NOW() - '5 minute'::interval)
+			(5, 'processing', NOW() - '5 minute'::interval)
 	`); err != nil {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
@@ -88,6 +88,30 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	}
 	if count != 2 {
 		t.Errorf("unexpected count. want=%d have=%d", 2, count)
+	}
+}
+
+func TestStoreActiveCount(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, uploaded_at)
+		VALUES
+			(1, 'queued', NOW() - '1 minute'::interval),
+			(2, 'queued', NOW() - '2 minute'::interval),
+			(3, 'state2', NOW() - '3 minute'::interval),
+			(4, 'queued', NOW() - '4 minute'::interval),
+			(5, 'processing', NOW() - '5 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	count, err := testStore(db, defaultTestStoreOptions(nil)).ActiveCount(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error getting queued count: %s", err)
+	}
+	if count != 4 {
+		t.Errorf("unexpected count. want=%d have=%d", 4, count)
 	}
 }
 

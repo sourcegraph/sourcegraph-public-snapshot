@@ -75,6 +75,9 @@ type Store interface {
 	// QueuedCount returns the number of records in the queued state matching the given conditions.
 	QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error)
 
+	// ActiveCount returns the number of records in the queued/processing state matching the given conditions.
+	ActiveCount(ctx context.Context, conditions []*sqlf.Query) (int, error)
+
 	// Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
 	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
@@ -325,13 +328,28 @@ func DefaultColumnExpressions() []*sqlf.Query {
 }
 
 // QueuedCount returns the number of records in the queued state matching the given conditions.
-func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (_ int, err error) {
+func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error) {
+	return s.queuedCount(ctx, []string{"queued"}, conditions)
+}
+
+// ActiveCount returns the number of records in the queued/processing state matching the given conditions.
+func (s *store) ActiveCount(ctx context.Context, conditions []*sqlf.Query) (int, error) {
+	return s.queuedCount(ctx, []string{"queued", "processing"}, conditions)
+}
+
+func (s *store) queuedCount(ctx context.Context, states []string, conditions []*sqlf.Query) (_ int, err error) {
 	ctx, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
+	stateQueries := make([]*sqlf.Query, 0, len(states))
+	for _, state := range states {
+		stateQueries = append(stateQueries, sqlf.Sprintf("%s", state))
+	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		queuedCountQuery,
 		quote(s.options.ViewName),
+		sqlf.Sprintf("(%s)", sqlf.Join(stateQueries, ",")),
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 	)))
@@ -340,9 +358,9 @@ func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (_ in
 }
 
 const queuedCountQuery = `
--- source: internal/workerutil/store.go:QueuedCount
+-- source: internal/workerutil/store.go:queuedCount
 SELECT COUNT(*) FROM %s WHERE (
-	{state} = 'queued' OR
+	{state} IN %s OR
 	({state} = 'errored' AND {num_failures} < %s)
 ) %s
 `
