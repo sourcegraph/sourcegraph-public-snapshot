@@ -30,6 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1623,6 +1624,9 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
+
+	// This background process should use our internal actor
+	ctx = actor.WithInternalActor(ctx)
 
 	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
 	if err != nil {
