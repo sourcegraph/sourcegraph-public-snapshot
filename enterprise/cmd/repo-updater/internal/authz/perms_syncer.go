@@ -192,7 +192,7 @@ func (s *PermsSyncer) listPrivateRepoNamesByExact(ctx context.Context, repoSpecs
 		nextCut = len(remaining)
 	}
 
-	var repoNames []types.RepoName
+	repoNames := make([]types.RepoName, 0, len(repoSpecs))
 	for nextCut > 0 {
 		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
 			database.ReposListOptions{
