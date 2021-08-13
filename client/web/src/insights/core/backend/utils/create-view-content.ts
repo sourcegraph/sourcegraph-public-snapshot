@@ -30,7 +30,7 @@ export function createViewContent(
         series: insight.series.map((series, index) => ({
             name: series.label,
             dataKey: `series${index}`,
-            stroke: `${seriesSettings[index]?.stroke ?? undefined}`,
+            stroke: seriesSettings[index]?.stroke,
         })),
         xAxis: {
             dataKey: 'dateTime',
