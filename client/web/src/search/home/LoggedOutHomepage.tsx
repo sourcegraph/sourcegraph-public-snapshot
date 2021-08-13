@@ -144,13 +144,18 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
         </div>
 
         <div className="mt-5">
-            <div className="d-flex align-items-baseline mt-5 mb-3">
-                <div className={classNames(styles.title, 'mr-2')}>Repository groups</div>
-                <div className="font-weight-normal text-muted">Search sets of repositories</div>
+            <div className="d-block d-md-flex align-items-baseline mt-5 mb-3">
+                <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
+                <div className="font-weight-normal text-muted">
+                    Customized search portals for our open source partners
+                </div>
             </div>
             <div className={styles.loggedOutHomepageRepogroupListCards}>
                 {repogroupList.map(repogroup => (
-                    <div className="d-flex align-items-center" key={repogroup.name}>
+                    <div
+                        className={classNames(styles.loggedOutHomepageRepogroupListCard, 'd-flex align-items-center')}
+                        key={repogroup.name}
+                    >
                         <img
                             className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
                             src={repogroup.homepageIcon}
