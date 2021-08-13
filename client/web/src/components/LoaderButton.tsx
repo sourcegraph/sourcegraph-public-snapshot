@@ -17,16 +17,16 @@ export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
     spinnerClassName,
     ...props
 }) => (
-
-    <button {...props}
-            className={classnames(props.className, 'd-flex justify-content-center align-items-center')}
-            // eslint-disable-next-line react/button-has-type
-            type={props.type ?? 'button'}>
+    <button
+        {...props}
+        className={classnames(props.className, 'd-flex justify-content-center align-items-center')}
+        // eslint-disable-next-line react/button-has-type
+        type={props.type ?? 'button'}
+    >
         {loading ? (
             <>
-                <LoadingSpinner
-                    className={classnames(spinnerClassName, 'icon-inline')} />
-                {alwaysShowLabel && <span className='ml-1'>{label}</span>}
+                <LoadingSpinner className={classnames(spinnerClassName, 'icon-inline')} />
+                {alwaysShowLabel && <span className="ml-1">{label}</span>}
             </>
         ) : (
             label
