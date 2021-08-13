@@ -8,7 +8,8 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../components/WebStory'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../core/backend/insights-api'
-import { InsightType, SearchBackendBasedInsight } from '../../../../core/types'
+import { InsightType } from '../../../../core/types'
+import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { LINE_CHART_CONTENT_MOCK } from '../../../../mocks/charts-content'
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
@@ -20,9 +21,7 @@ const { add } = storiesOf('web/insights/BackendInsight', module).addDecorator(st
 
 const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     title: 'Mock Backend Insight',
-    repositories: [],
     series: [],
-    step: { months: 2 },
     visibility: '',
     type: InsightType.Backend,
     id: 'searchInsights.insight.mock_backend_insight_id',

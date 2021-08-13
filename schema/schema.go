@@ -137,6 +137,23 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+type BackendInsight struct {
+	// Description description: The description of this insight
+	Description string          `json:"description,omitempty"`
+	Filters     *InsightFilters `json:"filters,omitempty"`
+	// Series description: Each query will be represented by one line on the chart.
+	Series []*BackendInsightSeries `json:"series"`
+	// Title description: The short title of this insight
+	Title string `json:"title"`
+}
+type BackendInsightSeries struct {
+	// Name description: The name to use for the series in the graph.
+	Name string `json:"name"`
+	// Query description: Performs a search query and shows the number of results returned.
+	Query string `json:"query"`
+	// Stroke description: The color of the line for the series.
+	Stroke string `json:"stroke,omitempty"`
+}
 type BatchChangeRolloutWindow struct {
 	// Days description: Day(s) the window applies to. If omitted, this rule applies to all days of the week.
 	Days []string `json:"days,omitempty"`
@@ -864,6 +881,13 @@ type InsightDashboard struct {
 	// Title description: Title of the dashboard.
 	Title string `json:"title"`
 }
+
+// InsightFilters description: Performs a filter
+type InsightFilters struct {
+	ExcludeRepoRegexp string   `json:"excludeRepoRegexp"`
+	IncludeRepoRegexp string   `json:"includeRepoRegexp"`
+	Repositories      []string `json:"repositories,omitempty"`
+}
 type InsightSeries struct {
 	// Label description: The label to use for the series in the graph.
 	Label string `json:"label"`
@@ -1309,6 +1333,8 @@ type Settings struct {
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
+	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
+	InsightsAllrepos map[string]BackendInsight `json:"insights.allrepos,omitempty"`
 	// InsightsDashboards description: EXPERIMENTAL: Code Insights Dashboards
 	InsightsDashboards                  map[string]InsightDashboard `json:"insights.dashboards,omitempty"`
 	InsightsDisplayLocationDirectory    *bool                       `json:"insights.displayLocation.directory,omitempty"`
