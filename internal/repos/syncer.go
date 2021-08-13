@@ -522,13 +522,9 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		return d, nil
 	}
 
-	// We expect the length of d.Added to be either 0 or 1. Ranging over it is simpler.
-	for _, r := range d.Added {
-		s.PermsSyncer.ScheduleRepos(ctx, r.ID)
-	}
-
-	// We expect the length of d.Modified to be either 0 or 1. Ranging over it is simpler.
-	for _, r := range d.Modified {
+	// We expect the length of d.Added and d.Modified to be either 0 or 1.
+	// Ranging over it is simpler.
+	for _, r := range append(d.Added, d.Modified...) {
 		s.PermsSyncer.ScheduleRepos(ctx, r.ID)
 	}
 
