@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
+import { DisabledInputTooltip } from '@sourcegraph/web/src/components/DisabledInputTooltip'
 
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
@@ -15,13 +16,13 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
     <>
         <span className="d-none d-sm-block" />
         <div className="p-2">
-            <input
+            <DisabledInputTooltip
                 id={`select-changeset-${node.id}`}
                 type="checkbox"
                 className="btn"
                 checked={false}
                 disabled={true}
-                data-tooltip="You do not have permission to perform a bulk operation on this changeset"
+                tooltip="You do not have permission to perform a bulk operation on this changeset"
             />
         </div>
         <ChangesetStatusCell
