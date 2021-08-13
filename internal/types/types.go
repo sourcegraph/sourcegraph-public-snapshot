@@ -140,54 +140,76 @@ func (r *Repo) IsBlocked() error {
 	return nil
 }
 
+type RepoUpdate struct {
+	Field         string
+	Before, After interface{}
+}
+
 // Update updates Repo r with the fields from the given newer Repo n,
 // returning true if modified.
-func (r *Repo) Update(n *Repo) (modified bool) {
+func (r *Repo) Update(n *Repo) (updates []RepoUpdate) {
 	if !r.Name.Equal(n.Name) {
-		r.Name, modified = n.Name, true
+		updates = append(updates, RepoUpdate{"Name", r.Name, n.Name})
+		r.Name = n.Name
 	}
 
 	if r.URI != n.URI {
-		r.URI, modified = n.URI, true
+		updates = append(updates, RepoUpdate{"URI", r.URI, n.URI})
+		r.URI = n.URI
 	}
 
 	if r.Description != n.Description {
-		r.Description, modified = n.Description, true
+		updates = append(updates, RepoUpdate{"Description", r.Description, n.Description})
+		r.Description = n.Description
 	}
 
 	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
 		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo, modified = n.ExternalRepo, true
+		updates = append(updates, RepoUpdate{"ExternalRepo", r.ExternalRepo, n.ExternalRepo})
+		r.ExternalRepo = n.ExternalRepo
 	}
 
 	if r.Archived != n.Archived {
-		r.Archived, modified = n.Archived, true
+		updates = append(updates, RepoUpdate{"Archived", r.Archived, n.Archived})
+		r.Archived = n.Archived
 	}
 
 	if r.Fork != n.Fork {
-		r.Fork, modified = n.Fork, true
+		updates = append(updates, RepoUpdate{"Fork", r.Fork, n.Fork})
+		r.Fork = n.Fork
 	}
 
 	if r.Private != n.Private {
-		r.Private, modified = n.Private, true
+		updates = append(updates, RepoUpdate{"Private", r.Private, n.Private})
+		r.Private = n.Private
 	}
 
 	if r.Stars != n.Stars {
-		r.Stars, modified = n.Stars, true
+		updates = append(updates, RepoUpdate{"Stars", r.Stars, n.Stars})
+		r.Stars = n.Stars
 	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata, modified = n.Metadata, true
+		updates = append(updates, RepoUpdate{"Metadata", r.Metadata, n.Metadata})
+		r.Metadata = n.Metadata
+	}
+
+	sources := make(map[string]*SourceInfo, len(r.Sources))
+	for k, v := range r.Sources {
+		sources[k] = v
 	}
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
 			r.Sources[urn] = info
-			modified = true
 		}
 	}
 
-	return modified
+	if !reflect.DeepEqual(sources, r.Sources) {
+		updates = append(updates, RepoUpdate{"Sources", sources, r.Sources})
+	}
+
+	return updates
 }
 
 // Clone returns a clone of the given repo.
