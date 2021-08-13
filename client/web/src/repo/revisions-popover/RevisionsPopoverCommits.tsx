@@ -124,6 +124,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
+    // TODO: Event logger on completed?
     const response = useConnection<RepositoryGitCommitResult, RepositoryGitCommitVariables, GitCommitAncestorFields>({
         query: REPOSITORY_GIT_COMMIT,
         variables: {
@@ -143,6 +144,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                 throw new Error(`Node is a ${node.__typename}, not a Repository`)
             }
 
+            // TODO: Test throwing these
             if (!node.commit?.ancestors) {
                 throw new Error(`Cannot load ancestors for repository ${repo}`)
             }

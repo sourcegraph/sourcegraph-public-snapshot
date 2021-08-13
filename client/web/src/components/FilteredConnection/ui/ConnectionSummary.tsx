@@ -43,6 +43,7 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
         return null
     }
 
+    // We cannot always rely on `connection.totalCount` to be returned, fallback to `connection.nodes.length` if possible.
     const totalCount = getTotalCount(connection, first)
 
     if (totalCount !== null && totalCount > 0 && TotalCountSummaryComponent) {

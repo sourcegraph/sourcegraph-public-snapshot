@@ -78,6 +78,7 @@ export const SpectulativeGitReferencePopoverNode: React.FunctionComponent<Spectu
         return null
     }
 
+    // TODO: Check the node props and ensure URL is handled correctly
     // We haven't found a node with the same name, render a node with expected props
     return (
         <GitReferencePopoverNode

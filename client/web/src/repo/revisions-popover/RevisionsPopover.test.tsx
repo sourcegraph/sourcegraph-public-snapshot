@@ -25,6 +25,8 @@ describe('RevisionsPopover', () => {
             { route: `/${MOCK_PROPS.repoName}` }
         )
 
+    afterEach(cleanup)
+
     describe('Branches', () => {
         let branchesTab: HTMLElement
 
@@ -36,8 +38,6 @@ describe('RevisionsPopover', () => {
 
             branchesTab = queries.getByRole('tabpanel', { name: 'Branches' })
         })
-
-        afterEach(cleanup)
 
         it('renders correct number of results', () => {
             expect(within(branchesTab).getAllByRole('link')).toHaveLength(50)
@@ -130,8 +130,6 @@ describe('RevisionsPopover', () => {
             tagsTab = queries.getByRole('tabpanel', { name: 'Tags' })
         })
 
-        afterEach(cleanup)
-
         it('renders correct number of results', () => {
             expect(within(tagsTab).getAllByRole('link')).toHaveLength(50)
             expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('100 tags total (showing first 50)')
@@ -178,8 +176,6 @@ describe('RevisionsPopover', () => {
             commitsTab = queries.getByRole('tabpanel', { name: 'Commits' })
         })
 
-        afterEach(cleanup)
-
         it('renders correct number of results', () => {
             expect(within(commitsTab).getAllByRole('link')).toHaveLength(15)
             expect(within(commitsTab).getByText('Show more')).toBeVisible()
@@ -211,7 +207,3 @@ describe('RevisionsPopover', () => {
         })
     })
 })
-
-/**
- * 2. Speculative search
- */
