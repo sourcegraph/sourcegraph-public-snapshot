@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -101,6 +102,9 @@ func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) 
 
 	if err := s.Insert(ctx, e); err != nil {
 		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceid", trace.ID(ctx), "err", err)
+		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "err", err)
+		// We want to capture in sentry as it includes a stack trace which will allow us
+		// to track down the root cause.
+		sentry.CaptureError(err, map[string]string{})
 	}
 }

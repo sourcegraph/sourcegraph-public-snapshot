@@ -13,3 +13,10 @@ jobs:
         column-name: "To Triage 📥"
         label-name: "team/extensibility"
         columns-to-ignore: "*"
+    - uses: konradpabjan/move-labeled-or-milestoned-issue@v2.0
+      with:
+        action-token: "${{ secrets.LABELER_GITHUB_TOKEN }}"
+        project-url: "https://github.com/orgs/sourcegraph/projects/100"
+        column-name: "To Triage"
+        label-name: "team/code-intelligence"
+        columns-to-ignore: "*"

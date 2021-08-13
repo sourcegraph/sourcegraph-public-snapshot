@@ -1,9 +1,6 @@
-import { Remote } from 'comlink'
-import { combineLatest, from, Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { combineLatest, Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { ViewInsightProviderResult } from '../types'
@@ -23,18 +20,3 @@ export const getCombinedViews = (
         getBackendInsights(insightIds),
         getExtensionsInsights().pipe(map(extensionInsights => extensionInsights.map(createExtensionInsight))),
     ]).pipe(map(([backendInsights, extensionViews]) => [...backendInsights, ...extensionViews]))
-
-export const getInsightCombinedViews = (
-    extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
-    allInsightIds?: string[],
-    backendInsightIds?: string[]
-): Observable<ViewInsightProviderResult[]> =>
-    getCombinedViews(
-        () =>
-            from(extensionApi).pipe(
-                switchMap(extensionHostAPI =>
-                    wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, allInsightIds))
-                )
-            ),
-        backendInsightIds
-    )

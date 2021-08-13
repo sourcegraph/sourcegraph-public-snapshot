@@ -7,7 +7,7 @@ export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
     const { builtIn } = dashboard
 
     if (builtIn) {
-        return `${dashboard.owner.name} Insights`
+        return `${dashboard.owner.name}'s Insights`
     }
 
     return dashboard.title

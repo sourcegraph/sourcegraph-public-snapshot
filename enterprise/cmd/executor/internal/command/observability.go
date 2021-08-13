@@ -12,12 +12,8 @@ type Operations struct {
 	SetupGitFetch             *observation.Operation
 	SetupAddRemote            *observation.Operation
 	SetupGitCheckout          *observation.Operation
-	SetupDockerPull           *observation.Operation
-	SetupDockerSave           *observation.Operation
-	SetupDockerLoad           *observation.Operation
 	SetupFirecrackerStart     *observation.Operation
-	SetupRm                   *observation.Operation
-	TeardownFirecrackerStop   *observation.Operation
+	SetupStartupScript        *observation.Operation
 	TeardownFirecrackerRemove *observation.Operation
 	Exec                      *observation.Operation
 }
@@ -43,12 +39,8 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		SetupGitFetch:             op("setup.git.fetch"),
 		SetupAddRemote:            op("setup.git.add-remote"),
 		SetupGitCheckout:          op("setup.git.checkout"),
-		SetupDockerPull:           op("setup.docker.pull"),
-		SetupDockerSave:           op("setup.docker.save"),
-		SetupDockerLoad:           op("setup.docker.load"),
-		SetupRm:                   op("setup.rm"),
 		SetupFirecrackerStart:     op("setup.firecracker.start"),
-		TeardownFirecrackerStop:   op("teardown.firecracker.stop"),
+		SetupStartupScript:        op("setup.startup-script"),
 		TeardownFirecrackerRemove: op("teardown.firecracker.remove"),
 		Exec:                      op("exec"),
 	}

@@ -177,15 +177,57 @@ func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
 	return providers
 }
 
+// listPrivateRepoNamesByExact slices over the `repoSpecs` at pace of 10000
+// elements at a time to workaround Postgres' limit of 65535 bind parameters
+// using exact name matching. This method only includes private repository names
+// and does not do deduplication on the returned list.
+func (s *PermsSyncer) listPrivateRepoNamesByExact(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.RepoName, error) {
+	if len(repoSpecs) == 0 {
+		return []types.RepoName{}, nil
+	}
+
+	remaining := repoSpecs
+	nextCut := 10000
+	if len(remaining) < nextCut {
+		nextCut = len(remaining)
+	}
+
+	repoNames := make([]types.RepoName, 0, len(repoSpecs))
+	for nextCut > 0 {
+		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+			database.ReposListOptions{
+				ExternalRepos: remaining[:nextCut],
+				OnlyPrivate:   true,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		repoNames = append(repoNames, rs...)
+
+		remaining = remaining[nextCut:]
+		if len(remaining) < nextCut {
+			nextCut = len(remaining)
+		}
+	}
+	return repoNames, nil
+}
+
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
-	accounts := database.ExternalAccountsWith(s.reposStore)
+	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
+	//  table, the user has proven that they have read access to the repository.
+	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, userID)
+	if err != nil {
+		return errors.Wrap(err, "list external service repo IDs by user ID")
+	}
 
-	user, err := database.GlobalUsers.GetByID(ctx, userID)
+	user, err := database.UsersWith(s.reposStore).GetByID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "get user")
 	}
@@ -200,7 +242,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
 	}
 
-	userEmails, err := database.GlobalUserEmails.ListByUser(ctx,
+	userEmails, err := database.UserEmailsWith(s.reposStore).ListByUser(ctx,
 		database.UserEmailsListOptions{
 			UserID:       user.ID,
 			OnlyVerified: true,
@@ -216,6 +258,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	byServiceID := s.providersByServiceID()
+	accounts := database.ExternalAccountsWith(s.reposStore)
 
 	// Check if the user has an external account for every authz provider respectively,
 	// and try to fetch the account when not.
@@ -272,7 +315,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		accountsOrServices = append(accountsOrServices, svcs[i])
 	}
 
-	var repoSpecs, includePrefixSpecs, excludePrefixSpecs []api.ExternalRepoSpec
+	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 
 	for _, accountOrService := range accountsOrServices {
 		var extIDs *authz.ExternalUserPermissions
@@ -371,9 +414,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				)
 			}
 		}
-		if len(extIDs.IncludePrefixes) > 0 {
-			for _, includePrefix := range extIDs.IncludePrefixes {
-				includePrefixSpecs = append(includePrefixSpecs,
+		if len(extIDs.IncludeContains) > 0 {
+			for _, includePrefix := range extIDs.IncludeContains {
+				includeContainsSpecs = append(includeContainsSpecs,
 					api.ExternalRepoSpec{
 						ID:          string(includePrefix),
 						ServiceType: provider.ServiceType(),
@@ -382,9 +425,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				)
 			}
 		}
-		if len(extIDs.ExcludePrefixes) > 0 {
-			for _, excludePrefix := range extIDs.ExcludePrefixes {
-				excludePrefixSpecs = append(excludePrefixSpecs,
+		if len(extIDs.ExcludeContains) > 0 {
+			for _, excludePrefix := range extIDs.ExcludeContains {
+				excludeContainsSpecs = append(excludeContainsSpecs,
 					api.ExternalRepoSpec{
 						ID:          string(excludePrefix),
 						ServiceType: provider.ServiceType(),
@@ -396,31 +439,23 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Get corresponding internal database IDs
-	var repoNames []types.RepoName
-	if len(repoSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
-			database.ReposListOptions{
-				ExternalRepos: repoSpecs,
-				OnlyPrivate:   true,
-			},
-		)
-		if err != nil {
-			return errors.Wrap(err, "list external repositories by exact matching")
-		}
-		repoNames = append(repoNames, rs...)
+	repoNames, err := s.listPrivateRepoNamesByExact(ctx, repoSpecs)
+	if err != nil {
+		return errors.Wrap(err, "list external repositories by exact matching")
 	}
+
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
-	if len(includePrefixSpecs) > 0 {
+	if len(includeContainsSpecs) > 0 {
 		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
 			database.ReposListOptions{
-				ExternalRepoIncludePrefixes: includePrefixSpecs,
-				ExternalRepoExcludePrefixes: excludePrefixSpecs,
+				ExternalRepoIncludeContains: includeContainsSpecs,
+				ExternalRepoExcludeContains: excludeContainsSpecs,
 				OnlyPrivate:                 true,
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "list external repositories by prefix matching")
+			return errors.Wrap(err, "list external repositories by contains matching")
 		}
 		repoNames = append(repoNames, rs...)
 	}
@@ -434,6 +469,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 	for i := range repoNames {
 		p.IDs.Add(uint32(repoNames[i].ID))
+	}
+	for i := range repoIDs {
+		p.IDs.Add(uint32(repoIDs[i]))
 	}
 
 	err = s.permsStore.SetUserPermissions(ctx, p)
@@ -462,11 +500,19 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	repo := rs[0]
 
+	var userIDs []int32
 	var provider authz.Provider
 
 	// Only check authz provider for private repositories because we only need to
 	// fetch permissions for private repositories.
 	if repo.Private {
+		// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
+		//  table, the user has proven that they have read access to the repository.
+		userIDs, err = s.reposStore.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+		if err != nil {
+			return errors.Wrap(err, "list external service user IDs by repo ID")
+		}
+
 		// Loop over repository's sources and see if matching any authz provider's URN.
 		providers := s.providersByURNs()
 		for urn := range repo.Sources {
@@ -520,7 +566,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	pendingAccountIDsSet := make(map[string]struct{})
-	var userIDs map[string]int32 // Account ID -> User ID
+	var accountIDToUserID map[string]int32 // Account ID -> User ID
 	if len(extAccountIDs) > 0 {
 		accountIDs := make([]string, len(extAccountIDs))
 		for i := range extAccountIDs {
@@ -528,7 +574,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 
 		// Get corresponding internal database IDs
-		userIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
+		accountIDToUserID, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
 			ServiceType: provider.ServiceType(),
 			ServiceID:   provider.ServiceID(),
 			AccountIDs:  accountIDs,
@@ -551,12 +597,15 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		UserIDs: roaring.NewBitmap(),
 	}
 
-	for aid, uid := range userIDs {
+	for aid, uid := range accountIDToUserID {
 		// Add existing user to permissions
 		p.UserIDs.Add(uint32(uid))
 
 		// Remove existing user from the set of pending users
 		delete(pendingAccountIDsSet, aid)
+	}
+	for i := range userIDs {
+		p.UserIDs.Add(uint32(userIDs[i]))
 	}
 
 	pendingAccountIDs := make([]string, 0, len(pendingAccountIDsSet))

@@ -25,11 +25,7 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import {
-    REDESIGN_CLASS_NAME,
-    getIsRedesignEnabled,
-    REDESIGN_TOGGLE_KEY,
-} from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { client } from './backend/graphql'
@@ -80,6 +76,7 @@ import {
     getUserSearchContextNamespaces,
 } from './search/backend'
 import { QueryState } from './search/helpers'
+import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -220,11 +217,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     enableAPIDocs: boolean
 
     /**
-     * Whether the design refresh toggle is enabled.
-     */
-    designRefreshToggleEnabled: boolean
-
-    /**
      * Evaluated feature flags for the current viewer
      */
     featureFlags: FlagSet
@@ -319,7 +311,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
-            designRefreshToggleEnabled: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
@@ -461,13 +452,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
         document.documentElement.classList.toggle('theme-light', this.isLightTheme())
         document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
-
-        // If the refresh toggle is enabled and a user hasn't modified the toggle before, default the value to true
-        if (this.state.designRefreshToggleEnabled && localStorage.getItem(REDESIGN_TOGGLE_KEY) === null) {
-            localStorage.setItem(REDESIGN_TOGGLE_KEY, 'true')
-        }
-
-        document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, getIsRedesignEnabled())
+        document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, true)
     }
 
     public render(): React.ReactFragment | null {
@@ -506,85 +491,89 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             <ApolloProvider client={client}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <BrowserRouter key={0}>
-                            <Route
-                                path="/"
-                                render={routeComponentProps => (
-                                    <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
-                                        <LayoutWithActivation
-                                            {...props}
-                                            {...routeComponentProps}
-                                            authenticatedUser={authenticatedUser}
-                                            viewerSubject={this.state.viewerSubject}
-                                            settingsCascade={this.state.settingsCascade}
-                                            batchChangesEnabled={this.props.batchChangesEnabled}
-                                            // Theme
-                                            isLightTheme={this.isLightTheme()}
-                                            themePreference={this.state.themePreference}
-                                            onThemePreferenceChange={this.onThemePreferenceChange}
-                                            // Search query
-                                            navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                            onNavbarQueryChange={this.onNavbarQueryChange}
-                                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                            parsedSearchQuery={this.state.parsedSearchQuery}
-                                            setParsedSearchQuery={this.setParsedSearchQuery}
-                                            patternType={this.state.searchPatternType}
-                                            setPatternType={this.setPatternType}
-                                            caseSensitive={this.state.searchCaseSensitivity}
-                                            setCaseSensitivity={this.setCaseSensitivity}
-                                            versionContext={this.state.versionContext}
-                                            setVersionContext={this.setVersionContext}
-                                            availableVersionContexts={this.state.availableVersionContexts}
-                                            previousVersionContext={this.state.previousVersionContext}
-                                            // Extensions
-                                            platformContext={this.platformContext}
-                                            extensionsController={this.extensionsController}
-                                            telemetryService={eventLogger}
-                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                            showRepogroupHomepage={this.state.showRepogroupHomepage}
-                                            showOnboardingTour={this.state.showOnboardingTour}
-                                            showSearchContext={this.state.showSearchContext}
-                                            hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                            hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
-                                            showSearchContextManagement={this.state.showSearchContextManagement}
-                                            selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                            setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                            fetchSearchContexts={fetchSearchContexts}
-                                            fetchSearchContext={fetchSearchContext}
-                                            createSearchContext={createSearchContext}
-                                            updateSearchContext={updateSearchContext}
-                                            deleteSearchContext={deleteSearchContext}
-                                            convertVersionContextToSearchContext={convertVersionContextToSearchContext}
-                                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                            defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                            showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
-                                            globbing={this.state.globbing}
-                                            showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                            showSearchNotebook={this.state.showSearchNotebook}
-                                            showQueryBuilder={this.state.showQueryBuilder}
-                                            enableCodeMonitoring={this.state.enableCodeMonitoring}
-                                            fetchSavedSearches={fetchSavedSearches}
-                                            fetchRecentSearches={fetchRecentSearches}
-                                            fetchRecentFileViews={fetchRecentFileViews}
-                                            streamSearch={aggregateStreamingSearch}
-                                            onUserExternalServicesOrRepositoriesUpdate={
-                                                this.onUserExternalServicesOrRepositoriesUpdate
-                                            }
-                                            onSyncedPublicRepositoriesUpdate={this.onSyncedPublicRepositoriesUpdate}
-                                            featureFlags={this.state.featureFlags}
-                                        />
-                                    </CodeHostScopeProvider>
-                                )}
+                        <TemporarySettingsProvider authenticatedUser={authenticatedUser}>
+                            <BrowserRouter key={0}>
+                                <Route
+                                    path="/"
+                                    render={routeComponentProps => (
+                                        <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                            <LayoutWithActivation
+                                                {...props}
+                                                {...routeComponentProps}
+                                                authenticatedUser={authenticatedUser}
+                                                viewerSubject={this.state.viewerSubject}
+                                                settingsCascade={this.state.settingsCascade}
+                                                batchChangesEnabled={this.props.batchChangesEnabled}
+                                                // Theme
+                                                isLightTheme={this.isLightTheme()}
+                                                themePreference={this.state.themePreference}
+                                                onThemePreferenceChange={this.onThemePreferenceChange}
+                                                // Search query
+                                                navbarSearchQueryState={this.state.navbarSearchQueryState}
+                                                onNavbarQueryChange={this.onNavbarQueryChange}
+                                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                                parsedSearchQuery={this.state.parsedSearchQuery}
+                                                setParsedSearchQuery={this.setParsedSearchQuery}
+                                                patternType={this.state.searchPatternType}
+                                                setPatternType={this.setPatternType}
+                                                caseSensitive={this.state.searchCaseSensitivity}
+                                                setCaseSensitivity={this.setCaseSensitivity}
+                                                versionContext={this.state.versionContext}
+                                                setVersionContext={this.setVersionContext}
+                                                availableVersionContexts={this.state.availableVersionContexts}
+                                                previousVersionContext={this.state.previousVersionContext}
+                                                // Extensions
+                                                platformContext={this.platformContext}
+                                                extensionsController={this.extensionsController}
+                                                telemetryService={eventLogger}
+                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                                showRepogroupHomepage={this.state.showRepogroupHomepage}
+                                                showOnboardingTour={this.state.showOnboardingTour}
+                                                showSearchContext={this.state.showSearchContext}
+                                                hasUserAddedRepositories={this.hasUserAddedRepositories()}
+                                                hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
+                                                showSearchContextManagement={this.state.showSearchContextManagement}
+                                                selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                                setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                                getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                                fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                                fetchSearchContexts={fetchSearchContexts}
+                                                fetchSearchContext={fetchSearchContext}
+                                                createSearchContext={createSearchContext}
+                                                updateSearchContext={updateSearchContext}
+                                                deleteSearchContext={deleteSearchContext}
+                                                convertVersionContextToSearchContext={
+                                                    convertVersionContextToSearchContext
+                                                }
+                                                isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                                defaultSearchContextSpec={this.state.defaultSearchContextSpec}
+                                                showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
+                                                globbing={this.state.globbing}
+                                                showMultilineSearchConsole={this.state.showMultilineSearchConsole}
+                                                showSearchNotebook={this.state.showSearchNotebook}
+                                                showQueryBuilder={this.state.showQueryBuilder}
+                                                enableCodeMonitoring={this.state.enableCodeMonitoring}
+                                                fetchSavedSearches={fetchSavedSearches}
+                                                fetchRecentSearches={fetchRecentSearches}
+                                                fetchRecentFileViews={fetchRecentFileViews}
+                                                streamSearch={aggregateStreamingSearch}
+                                                onUserExternalServicesOrRepositoriesUpdate={
+                                                    this.onUserExternalServicesOrRepositoriesUpdate
+                                                }
+                                                onSyncedPublicRepositoriesUpdate={this.onSyncedPublicRepositoriesUpdate}
+                                                featureFlags={this.state.featureFlags}
+                                            />
+                                        </CodeHostScopeProvider>
+                                    )}
+                                />
+                            </BrowserRouter>
+                            <Tooltip key={1} />
+                            <Notifications
+                                key={2}
+                                extensionsController={this.extensionsController}
+                                notificationClassNames={notificationClassNames}
                             />
-                        </BrowserRouter>
-                        <Tooltip key={1} />
-                        <Notifications
-                            key={2}
-                            extensionsController={this.extensionsController}
-                            notificationClassNames={notificationClassNames}
-                        />
+                        </TemporarySettingsProvider>
                     </ShortcutProvider>
                 </ErrorBoundary>
             </ApolloProvider>

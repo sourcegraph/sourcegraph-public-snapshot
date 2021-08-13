@@ -52,7 +52,7 @@ const getRuntimeAppBundle = (): string => {
 }
 
 /**
- * Creates the intergation test context for integration tests testing the web app.
+ * Creates the integration test context for integration tests testing the web app.
  * This should be called in a `beforeEach()` hook and assigned to a variable `testContext` in the test scope.
  */
 export const createWebIntegrationTestContext = async ({

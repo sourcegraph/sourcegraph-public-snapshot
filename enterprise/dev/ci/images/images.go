@@ -31,7 +31,6 @@ var SourcegraphDockerImages = []string{
 	"frontend",
 	"grafana",
 	"prometheus",
-	"ignite-ubuntu",
 
 	"github-proxy",
 	"gitserver",
@@ -41,7 +40,6 @@ var SourcegraphDockerImages = []string{
 	"searcher",
 	"symbols",
 	"precise-code-intel-worker",
-	"executor",
 
 	// Images under docker-images/
 	"alpine-3.12",

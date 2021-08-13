@@ -36,7 +36,7 @@ type Options struct {
 	// EndpointOptions configures the target request URL.
 	EndpointOptions EndpointOptions
 
-	// BaseClientOptions configures the underlying HTTP client behavior.
+	// BaseClientOptions are the underlying HTTP client options.
 	BaseClientOptions BaseClientOptions
 }
 

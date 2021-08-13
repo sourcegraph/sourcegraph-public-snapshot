@@ -5,55 +5,55 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDocumentData(t *testing.T) {
-	expected := semantic.DocumentData{
-		Ranges: map[semantic.ID]semantic.RangeData{
-			semantic.ID("7864"): {
+	expected := precise.DocumentData{
+		Ranges: map[precise.ID]precise.RangeData{
+			precise.ID("7864"): {
 				StartLine:             541,
 				StartCharacter:        10,
 				EndLine:               541,
 				EndCharacter:          12,
-				DefinitionResultID:    semantic.ID("1266"),
-				ReferenceResultID:     semantic.ID("15871"),
-				HoverResultID:         semantic.ID("1269"),
-				DocumentationResultID: semantic.ID("3372"),
+				DefinitionResultID:    precise.ID("1266"),
+				ReferenceResultID:     precise.ID("15871"),
+				HoverResultID:         precise.ID("1269"),
+				DocumentationResultID: precise.ID("3372"),
 				MonikerIDs:            nil,
 			},
-			semantic.ID("8265"): {
+			precise.ID("8265"): {
 				StartLine:             266,
 				StartCharacter:        10,
 				EndLine:               266,
 				EndCharacter:          16,
-				DefinitionResultID:    semantic.ID("311"),
-				ReferenceResultID:     semantic.ID("15500"),
-				HoverResultID:         semantic.ID("317"),
-				DocumentationResultID: semantic.ID("3372"),
-				MonikerIDs:            []semantic.ID{semantic.ID("314")},
+				DefinitionResultID:    precise.ID("311"),
+				ReferenceResultID:     precise.ID("15500"),
+				HoverResultID:         precise.ID("317"),
+				DocumentationResultID: precise.ID("3372"),
+				MonikerIDs:            []precise.ID{precise.ID("314")},
 			},
 		},
-		HoverResults: map[semantic.ID]string{
-			semantic.ID("1269"): "```go\nvar id string\n```",
-			semantic.ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contains information of a vertex in the graph.\n\n---\n\n```go\nstruct {\n    Element\n    Label VertexLabel \"json:\\\"label\\\"\"\n}\n```",
+		HoverResults: map[precise.ID]string{
+			precise.ID("1269"): "```go\nvar id string\n```",
+			precise.ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contains information of a vertex in the graph.\n\n---\n\n```go\nstruct {\n    Element\n    Label VertexLabel \"json:\\\"label\\\"\"\n}\n```",
 		},
-		Monikers: map[semantic.ID]semantic.MonikerData{
-			semantic.ID("314"): {
+		Monikers: map[precise.ID]precise.MonikerData{
+			precise.ID("314"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
 				Identifier:           "github.com/sourcegraph/lsif-go/protocol:Vertex",
-				PackageInformationID: semantic.ID("213"),
+				PackageInformationID: precise.ID("213"),
 			},
-			semantic.ID("2494"): {
+			precise.ID("2494"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
 				Identifier:           "github.com/sourcegraph/lsif-go/protocol:VertexLabel",
-				PackageInformationID: semantic.ID("213"),
+				PackageInformationID: precise.ID("213"),
 			},
 		},
-		PackageInformation: map[semantic.ID]semantic.PackageInformationData{
-			semantic.ID("213"): {
+		PackageInformation: map[precise.ID]precise.PackageInformationData{
+			precise.ID("213"): {
 				Name:    "github.com/sourcegraph/lsif-go",
 				Version: "v0.0.0-ad3507cbeb18",
 			},
@@ -98,24 +98,24 @@ func TestDocumentData(t *testing.T) {
 }
 
 func TestResultChunkData(t *testing.T) {
-	expected := semantic.ResultChunkData{
-		DocumentPaths: map[semantic.ID]string{
-			semantic.ID("4"):   "internal/gomod/module.go",
-			semantic.ID("302"): "protocol/protocol.go",
-			semantic.ID("305"): "protocol/writer.go",
+	expected := precise.ResultChunkData{
+		DocumentPaths: map[precise.ID]string{
+			precise.ID("4"):   "internal/gomod/module.go",
+			precise.ID("302"): "protocol/protocol.go",
+			precise.ID("305"): "protocol/writer.go",
 		},
-		DocumentIDRangeIDs: map[semantic.ID][]semantic.DocumentIDRangeID{
-			semantic.ID("34"): {
-				{DocumentID: semantic.ID("4"), RangeID: semantic.ID("31")},
+		DocumentIDRangeIDs: map[precise.ID][]precise.DocumentIDRangeID{
+			precise.ID("34"): {
+				{DocumentID: precise.ID("4"), RangeID: precise.ID("31")},
 			},
-			semantic.ID("14040"): {
-				{DocumentID: semantic.ID("3978"), RangeID: semantic.ID("4544")},
+			precise.ID("14040"): {
+				{DocumentID: precise.ID("3978"), RangeID: precise.ID("4544")},
 			},
-			semantic.ID("14051"): {
-				{DocumentID: semantic.ID("3978"), RangeID: semantic.ID("4568")},
-				{DocumentID: semantic.ID("3978"), RangeID: semantic.ID("9224")},
-				{DocumentID: semantic.ID("3978"), RangeID: semantic.ID("9935")},
-				{DocumentID: semantic.ID("3978"), RangeID: semantic.ID("9996")},
+			precise.ID("14051"): {
+				{DocumentID: precise.ID("3978"), RangeID: precise.ID("4568")},
+				{DocumentID: precise.ID("3978"), RangeID: precise.ID("9224")},
+				{DocumentID: precise.ID("3978"), RangeID: precise.ID("9935")},
+				{DocumentID: precise.ID("3978"), RangeID: precise.ID("9996")},
 			},
 		},
 	}
@@ -138,7 +138,7 @@ func TestResultChunkData(t *testing.T) {
 }
 
 func TestLocations(t *testing.T) {
-	expected := []semantic.LocationData{
+	expected := []precise.LocationData{
 		{
 			URI:            "internal/index/indexer.go",
 			StartLine:      36,

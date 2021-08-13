@@ -12,7 +12,7 @@ import (
 // usage (via Firecracker).
 type Runner interface {
 	// Setup prepares the runner to invoke a series of commands.
-	Setup(ctx context.Context, imageNames, scriptPaths []string) error
+	Setup(ctx context.Context) error
 
 	// Teardown disposes of any resources created in Setup.
 	Teardown(ctx context.Context) error
@@ -53,8 +53,9 @@ type FirecrackerOptions struct {
 	// Image is the base image used for all Firecracker virtual machines.
 	Image string
 
-	// ImageArchivesPath is a path on the host where docker image tarfiles will be stored.
-	ImageArchivesPath string
+	// VMStartupScriptPath is a path to a file on the host that is loaded into a fresh
+	// virtual machine and executed on startup.
+	VMStartupScriptPath string
 }
 
 type ResourceOptions struct {
@@ -74,7 +75,13 @@ func NewRunner(dir string, logger *Logger, options Options, operations *Operatio
 		return &dockerRunner{dir: dir, logger: logger, options: options}
 	}
 
-	return &firecrackerRunner{name: options.ExecutorName, dir: dir, logger: logger, options: options, operations: operations}
+	return &firecrackerRunner{
+		name:       options.ExecutorName,
+		dir:        dir,
+		logger:     logger,
+		options:    options,
+		operations: operations,
+	}
 }
 
 type dockerRunner struct {
@@ -85,7 +92,7 @@ type dockerRunner struct {
 
 var _ Runner = &dockerRunner{}
 
-func (r *dockerRunner) Setup(ctx context.Context, imageNames, scriptPaths []string) error {
+func (r *dockerRunner) Setup(ctx context.Context) error {
 	return nil
 }
 
@@ -107,8 +114,8 @@ type firecrackerRunner struct {
 
 var _ Runner = &firecrackerRunner{}
 
-func (r *firecrackerRunner) Setup(ctx context.Context, imageNames, scriptPaths []string) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, imageNames, scriptPaths, r.options, r.operations)
+func (r *firecrackerRunner) Setup(ctx context.Context) error {
+	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, r.options, r.operations)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {

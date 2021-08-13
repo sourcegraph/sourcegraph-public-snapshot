@@ -8,7 +8,9 @@ package shared
 // If it is modified by an external package, it must be modified immediately on startup, before
 // `shared.Main` is called.
 //
-// This should be kept in sync with dev/src-prof-services.json.
+// The same data is currently reflected in the following (and should be kept in-sync):
+//   - the SRC_PROF_SERVICES envvar when using sg
+//   - the file dev/src-prof-services.json when using by using start.sh
 var SrcProfServices = []map[string]string{
 	{"Name": "frontend", "Host": "127.0.0.1:6063"},
 	{"Name": "gitserver", "Host": "127.0.0.1:6068"},
@@ -16,6 +18,9 @@ var SrcProfServices = []map[string]string{
 	{"Name": "symbols", "Host": "127.0.0.1:6071"},
 	{"Name": "repo-updater", "Host": "127.0.0.1:6074"},
 	{"Name": "query-runner", "Host": "127.0.0.1:6067"},
+	{"Name": "worker", "Host": "127.0.0.1:6089"},
+	{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
+	// no executors in server image
 	{"Name": "zoekt-indexserver", "Host": "127.0.0.1:6072"},
 	{"Name": "zoekt-webserver", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/"},
 }

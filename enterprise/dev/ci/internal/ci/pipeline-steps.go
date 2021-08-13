@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -65,11 +66,27 @@ func addWebApp(pipeline *bk.Pipeline) {
 
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
-	// Browser extension build
-	pipeline.AddStep(":webpack::chrome: Build browser extension",
-		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
+	// Browser extension integration tests
+	for _, browser := range []string{"chrome"} {
+		pipeline.AddStep(
+			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "true"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Env("RECORD", "false"), // ensure that we use existing recordings
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
+			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn nyc report -r json"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+			bk.ArtifactPaths("./puppeteer/*.png"),
+		)
+	}
 
-	// Browser extension tests
+	// Browser extension unit tests
 	pipeline.AddStep(":jest::chrome: Test browser extension",
 		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
@@ -426,6 +443,38 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
+	}
+}
+
+var currentBuildTimestamp = strconv.Itoa(int(time.Now().UTC().Unix()))
+
+func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		if !c.isMainBranch() && !c.isMainDryRun {
+			return
+		}
+
+		if final {
+			if !c.isMainDryRun {
+				cmds := []bk.StepOpt{
+					bk.Cmd(`echo "Releasing executor cloud image..."`),
+					bk.Env("VERSION", c.version),
+					bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
+					bk.Cmd("./enterprise/cmd/executor/release.sh"),
+				}
+
+				pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
+			}
+		} else {
+			cmds := []bk.StepOpt{
+				bk.Cmd(`echo "Building executor cloud image..."`),
+				bk.Env("VERSION", c.version),
+				bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
+				bk.Cmd("./enterprise/cmd/executor/build.sh"),
+			}
+
+			pipeline.AddStep(":packer: :construction: executor image", cmds...)
+		}
 	}
 }
 

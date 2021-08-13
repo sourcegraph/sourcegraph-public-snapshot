@@ -20,7 +20,7 @@ func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.
 	}
 
 	return handler.QueueOptions{
-		Store:             background.NewExecutorStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
+		Store:             background.NewExecutorStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext),
 		RecordTransformer: recordTransformer,
 	}
 }

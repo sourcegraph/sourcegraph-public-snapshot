@@ -30,7 +30,7 @@ export const DocumentationExamples: React.FunctionComponent<Props> = props => {
 
     return (
         <VisibilitySensor partialVisibility={true} onChange={onVisibilityChange}>
-            <div className="documentation-examples mt-3 mb-3 px-2">
+            <div className="documentation-examples mt-3 mb-3">
                 {visible && <DocumentationExamplesList {...props} />}
             </div>
         </VisibilitySensor>

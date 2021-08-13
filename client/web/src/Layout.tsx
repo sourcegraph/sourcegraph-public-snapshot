@@ -14,7 +14,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
@@ -213,18 +212,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-    const repogroupPages = [
-        '/refactor-python2-to-3',
-        '/kubernetes',
-        '/golang',
-        '/react-hooks',
-        '/android',
-        '/stanford',
-        '/stackstorm',
-        '/temporal',
-        '/o3de',
-        '/cncf',
-    ]
+    const repogroupPages = ['/kubernetes', '/stanford', '/stackstorm', '/temporal', '/o3de', '/cncf']
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
@@ -235,7 +223,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         props.location.pathname === '/sign-in' ||
         props.location.pathname === '/sign-up' ||
         props.location.pathname === '/password-reset' ||
-        props.location.pathname === '/post-sign-up'
+        props.location.pathname === '/welcome'
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
@@ -251,8 +239,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         props.location.pathname === '/search/notebook'
 
     const breadcrumbProps = useBreadcrumbs()
-
-    const [isRedesignEnabled] = useRedesignToggle()
 
     // Control browser extension discoverability animation here.
     // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
@@ -271,7 +257,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...props,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
-        isRedesignEnabled,
         isMacPlatform,
     }
 

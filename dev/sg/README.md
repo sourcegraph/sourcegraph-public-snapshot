@@ -102,9 +102,15 @@ sg start
 # Run the enterprise environment:
 sg run-set enterprise
 
+# Override the logger levels for specific services
+sg run-set --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
+
 # Run specific commands:
 sg run gitserver
 sg run frontend
+
+# Run multiple commands:
+sg run gitserver frontend repo-updater
 
 # List available commands:
 sg run -help

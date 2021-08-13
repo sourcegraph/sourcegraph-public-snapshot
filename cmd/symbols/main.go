@@ -19,10 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -40,9 +42,11 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	sqliteutil.MustRegisterSqlite3WithPcre()
 

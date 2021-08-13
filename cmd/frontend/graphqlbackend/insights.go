@@ -44,6 +44,7 @@ type InsightSeriesResolver interface {
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
 	Status(ctx context.Context) (InsightStatusResolver, error)
+	DirtyMetadata(ctx context.Context) ([]InsightDirtyQueryResolver, error)
 }
 
 type InsightResolver interface {
@@ -57,4 +58,10 @@ type InsightConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type InsightDirtyQueryResolver interface {
+	Reason(ctx context.Context) string
+	Time(ctx context.Context) DateTime
+	Count(ctx context.Context) int32
 }

@@ -31,49 +31,51 @@ import (
 )
 
 const (
-	routeHome             = "home"
-	routeSearch           = "search"
-	routeSearchBadge      = "search-badge"
-	routeRepo             = "repo"
-	routeRepoSettings     = "repo-settings"
-	routeRepoCommit       = "repo-commit"
-	routeRepoBranches     = "repo-branches"
-	routeRepoBatchChanges = "repo-batch-changes"
-	routeRepoDocs         = "repo-docs"
-	routeRepoCommits      = "repo-commits"
-	routeRepoTags         = "repo-tags"
-	routeRepoCompare      = "repo-compare"
-	routeRepoStats        = "repo-stats"
-	routeInsights         = "insights"
-	routeBatchChanges     = "batch-changes"
-	routeCodeMonitoring   = "code-monitoring"
-	routeContexts         = "contexts"
-	routeThreads          = "threads"
-	routeTree             = "tree"
-	routeBlob             = "blob"
-	routeRaw              = "raw"
-	routeOrganizations    = "org"
-	routeSettings         = "settings"
-	routeSiteAdmin        = "site-admin"
-	routeAPIConsole       = "api-console"
-	routeUser             = "user"
-	routeUserSettings     = "user-settings"
-	routeUserRedirect     = "user-redirect"
-	routeAboutSubdomain   = "about-subdomain"
-	aboutRedirectScheme   = "https"
-	aboutRedirectHost     = "about.sourcegraph.com"
-	routeSurvey           = "survey"
-	routeSurveyScore      = "survey-score"
-	routeRegistry         = "registry"
-	routeExtensions       = "extensions"
-	routeHelp             = "help"
-	routeRepoGroups       = "repo-groups"
-	routeCncf             = "repo-groups.cncf"
-	routeSnippets         = "snippets"
-	routeSubscriptions    = "subscriptions"
-	routeStats            = "stats"
-	routeViews            = "views"
-	routeDevToolTime      = "devtooltime"
+	routeHome                 = "home"
+	routeSearch               = "search"
+	routeSearchBadge          = "search-badge"
+	routeRepo                 = "repo"
+	routeRepoSettings         = "repo-settings"
+	routeRepoCodeIntelligence = "repo-code-intelligence"
+	routeRepoCommit           = "repo-commit"
+	routeRepoBranches         = "repo-branches"
+	routeRepoBatchChanges     = "repo-batch-changes"
+	routeRepoDocs             = "repo-docs"
+	routeRepoCommits          = "repo-commits"
+	routeRepoTags             = "repo-tags"
+	routeRepoCompare          = "repo-compare"
+	routeRepoStats            = "repo-stats"
+	routeInsights             = "insights"
+	routeBatchChanges         = "batch-changes"
+	routeWelcome              = "welcome"
+	routeCodeMonitoring       = "code-monitoring"
+	routeContexts             = "contexts"
+	routeThreads              = "threads"
+	routeTree                 = "tree"
+	routeBlob                 = "blob"
+	routeRaw                  = "raw"
+	routeOrganizations        = "org"
+	routeSettings             = "settings"
+	routeSiteAdmin            = "site-admin"
+	routeAPIConsole           = "api-console"
+	routeUser                 = "user"
+	routeUserSettings         = "user-settings"
+	routeUserRedirect         = "user-redirect"
+	routeAboutSubdomain       = "about-subdomain"
+	aboutRedirectScheme       = "https"
+	aboutRedirectHost         = "about.sourcegraph.com"
+	routeSurvey               = "survey"
+	routeSurveyScore          = "survey-score"
+	routeRegistry             = "registry"
+	routeExtensions           = "extensions"
+	routeHelp                 = "help"
+	routeRepoGroups           = "repo-groups"
+	routeCncf                 = "repo-groups.cncf"
+	routeSnippets             = "snippets"
+	routeSubscriptions        = "subscriptions"
+	routeStats                = "stats"
+	routeViews                = "views"
+	routeDevToolTime          = "devtooltime"
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
@@ -139,6 +141,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
@@ -166,7 +169,7 @@ func newRouter() *mux.Router {
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm", "temporal", "o3de"}
+		repogroups := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
@@ -195,6 +198,7 @@ func newRouter() *mux.Router {
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
+	repo.PathPrefix("/code-intelligence").Methods("GET").Name(routeRepoCodeIntelligence)
 	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
 	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
@@ -238,12 +242,14 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil)))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil)))
+	router.Get(routeWelcome).Handler(handler(serveBrandedPageString("Welcome", nil)))
 	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil)))
 	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings", nil)))
 	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin", nil)))
 	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password", nil)))
 	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console", nil)))
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil)))
+	router.Get(routeRepoCodeIntelligence).Handler(handler(serveBrandedPageString("Code intelligence", nil)))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
 	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
 	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))

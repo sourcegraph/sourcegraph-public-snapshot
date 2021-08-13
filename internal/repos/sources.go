@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
@@ -15,41 +14,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// A Sourcer converts the given ExternalServices to Sources whose yielded Repos
+// A Sourcer converts the given ExternalService to a Source whose yielded Repos
 // should be synced.
-type Sourcer func(...*types.ExternalService) (Sources, error)
+type Sourcer func(*types.ExternalService) (Source, error)
 
-// NewSourcer returns a Sourcer that converts the given ExternalServices
-// into Sources that use the provided httpcli.Factory to create the
+// NewSourcer returns a Sourcer that converts the given ExternalService
+// into a Source that uses the provided httpcli.Factory to create the
 // http.Clients needed to contact the respective upstream code host APIs.
 //
-// Deleted external services are ignored.
-//
-// The provided decorator functions will be applied to each Source.
+// The provided decorator functions will be applied to the Source.
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(svcs ...*types.ExternalService) (Sources, error) {
-		srcs := make([]Source, 0, len(svcs))
-		var errs *multierror.Error
-
-		for _, svc := range svcs {
-			if svc.IsDeleted() {
-				continue
-			}
-
-			src, err := NewSource(svc, cf)
-			if err != nil {
-				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
-				continue
-			}
-
-			for _, dec := range decs {
-				src = dec(src)
-			}
-
-			srcs = append(srcs, src)
+	return func(svc *types.ExternalService) (Source, error) {
+		src, err := NewSource(svc, cf)
+		if err != nil {
+			return nil, err
 		}
 
-		return srcs, errs.ErrorOrNil()
+		for _, dec := range decs {
+			src = dec(src)
+		}
+
+		return src, nil
 	}
 }
 
@@ -89,6 +74,12 @@ type Source interface {
 	ListRepos(context.Context, chan SourceResult)
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() types.ExternalServices
+}
+
+// RepoGetter captures the optional GetRepo method of a Source. It's used only
+// on sourcegraph.com to lazily sync individual repos.
+type RepoGetter interface {
+	GetRepo(context.Context, string) (*types.Repo, error)
 }
 
 // A UserSource is a source that can use a custom authenticator (such as one
@@ -179,74 +170,9 @@ func sourceErrorFormatFunc(es []error) string {
 		len(es), strings.Join(points, "\n\t"))
 }
 
-// Sources is a list of Sources that implements the Source interface.
-type Sources []Source
-
-// ListRepos lists all the repos of all the sources and returns the
-// aggregate result.
-func (srcs Sources) ListRepos(ctx context.Context, results chan SourceResult) {
-	if len(srcs) == 0 {
-		return
-	}
-
-	// Group sources by external service kind so that we execute requests
-	// serially to each code host. This is to comply with abuse rate limits of GitHub,
-	// but we do it for any source to be conservative.
-	// See https://developer.github.com/v3/guides/best-practices-for-integrators/#dealing-with-abuse-rate-limits)
-
-	var wg sync.WaitGroup
-	for _, sources := range group(srcs) {
-		wg.Add(1)
-		go func(sources Sources) {
-			defer wg.Done()
-			for _, src := range sources {
-				src.ListRepos(ctx, results)
-			}
-		}(sources)
-	}
-
-	wg.Wait()
-}
-
-// ExternalServices returns the ExternalServices from the given Sources.
-func (srcs Sources) ExternalServices() types.ExternalServices {
-	es := make(types.ExternalServices, 0, len(srcs))
-	for _, src := range srcs {
-		es = append(es, src.ExternalServices()...)
-	}
-	return es
-}
-
-type multiSource interface {
-	Sources() []Source
-}
-
-// Sources returns the underlying Sources.
-func (srcs Sources) Sources() []Source { return srcs }
-
-func group(srcs []Source) map[string]Sources {
-	groups := make(map[string]Sources)
-
-	for _, src := range srcs {
-		if ms, ok := src.(multiSource); ok {
-			for kind, ss := range group(ms.Sources()) {
-				groups[kind] = append(groups[kind], ss...)
-			}
-		} else if es := src.ExternalServices(); len(es) > 1 {
-			err := errors.Errorf("Source %#v has many external services and isn't a multiSource", src)
-			panic(err)
-		} else {
-			kind := es[0].Kind
-			groups[kind] = append(groups[kind], src)
-		}
-	}
-
-	return groups
-}
-
 // listAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *types.Repo and a single error
-func listAll(ctx context.Context, src Source, onSourced ...func(*types.Repo) error) ([]*types.Repo, error) {
+func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 	results := make(chan SourceResult)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -267,17 +193,6 @@ func listAll(ctx context.Context, src Source, onSourced ...func(*types.Repo) err
 				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue
-		}
-		for _, o := range onSourced {
-			err := o(res.Repo)
-			if err != nil {
-				// onSourced has returned an error indicating we should stop sourcing.
-				// We're being defensive here in case one of the Source implementations doesn't handle
-				// cancellation correctly. We'll continue to drain the results to ensure we don't
-				// have a goroutine leak.
-				cancel()
-				errs = multierror.Append(errs, err)
-			}
 		}
 		repos = append(repos, res.Repo)
 	}

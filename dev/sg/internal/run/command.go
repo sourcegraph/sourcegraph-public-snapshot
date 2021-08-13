@@ -112,11 +112,13 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 	logger := newCmdLogger(cmd.Name, stdout.Out)
 	if cmd.IgnoreStdout {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+		sc.Cmd.Stdout = sc.stdoutBuf
 	} else {
 		sc.Cmd.Stdout = io.MultiWriter(logger, sc.stdoutBuf)
 	}
 	if cmd.IgnoreStderr {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+		sc.Cmd.Stderr = sc.stderrBuf
 	} else {
 		sc.Cmd.Stderr = io.MultiWriter(logger, sc.stderrBuf)
 	}

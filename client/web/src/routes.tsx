@@ -25,14 +25,10 @@ const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
-const Python2To3RepogroupPage = lazyComponent(() => import('./repogroups/Python2To3'), 'Python2To3RepogroupPage')
 const KubernetesRepogroupPage = lazyComponent(() => import('./repogroups/Kubernetes'), 'KubernetesRepogroupPage')
 const StackstormRepogroupPage = lazyComponent(() => import('./repogroups/StackStorm'), 'StackStormRepogroupPage')
 const TemporalRepogroupPage = lazyComponent(() => import('./repogroups/Temporal'), 'TemporalRepogroupPage')
 const O3deRepogroupPage = lazyComponent(() => import('./repogroups/o3de'), 'O3deRepogroupPage')
-const GolangRepogroupPage = lazyComponent(() => import('./repogroups/Golang'), 'GolangRepogroupPage')
-const ReactHooksRepogroupPage = lazyComponent(() => import('./repogroups/ReactHooks'), 'ReactHooksRepogroupPage')
-const AndroidRepogroupPage = lazyComponent(() => import('./repogroups/Android'), 'AndroidRepogroupPage')
 const StanfordRepogroupPage = lazyComponent(() => import('./repogroups/Stanford'), 'StanfordRepogroupPage')
 const CncfRepogroupPage = lazyComponent(() => import('./repogroups/cncf'), 'CncfRepogroupPage')
 
@@ -46,7 +42,6 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BatchChangesProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
-    isRedesignEnabled: boolean
     isMacPlatform: boolean
 }
 
@@ -123,8 +118,33 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/post-sign-up',
-        render: props => <PostSignUpPage {...props} context={window.context} />,
+        path: '/welcome',
+        render: props =>
+            /**
+             * Welcome flow is allowed when:
+             * 1. user is authenticated
+             * 2. it's a DotComMode instance
+             * AND
+             * instance has enabled enablePostSignupFlow experimental feature
+             * OR
+             * user authenticated has a AllowUserViewPostSignup tag
+             */
+
+            !!props.authenticatedUser &&
+            window.context.sourcegraphDotComMode &&
+            (window.context.experimentalFeatures.enablePostSignupFlow ||
+                props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
+                <PostSignUpPage
+                    authenticatedUser={props.authenticatedUser}
+                    telemetryService={props.telemetryService}
+                    context={window.context}
+                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
+                    setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
+                />
+            ) : (
+                <Redirect to="/search" />
+            ),
+
         exact: true,
     },
     {
@@ -241,11 +261,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
-        path: '/refactor-python2-to-3',
-        render: props => <Python2To3RepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
         path: '/kubernetes',
         render: props => <KubernetesRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
@@ -263,21 +278,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/o3de',
         render: props => <O3deRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/golang',
-        render: props => <GolangRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/react-hooks',
-        render: props => <ReactHooksRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/android',
-        render: props => <AndroidRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {

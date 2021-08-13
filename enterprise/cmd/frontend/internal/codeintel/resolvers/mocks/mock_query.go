@@ -8,7 +8,7 @@ import (
 
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // MockQueryResolver is a mock implementation of the QueryResolver interface
@@ -73,12 +73,12 @@ func NewMockQueryResolver() *MockQueryResolver {
 			},
 		},
 		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
-			defaultHook: func(context.Context, string) (*semantic.DocumentationPageData, error) {
+			defaultHook: func(context.Context, string) (*precise.DocumentationPageData, error) {
 				return nil, nil
 			},
 		},
 		DocumentationPathInfoFunc: &QueryResolverDocumentationPathInfoFunc{
-			defaultHook: func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
+			defaultHook: func(context.Context, string) (*precise.DocumentationPathInfoData, error) {
 				return nil, nil
 			},
 		},
@@ -596,15 +596,15 @@ func (c QueryResolverDocumentationDefinitionsFuncCall) Results() []interface{} {
 // DocumentationPage method of the parent MockQueryResolver instance is
 // invoked.
 type QueryResolverDocumentationPageFunc struct {
-	defaultHook func(context.Context, string) (*semantic.DocumentationPageData, error)
-	hooks       []func(context.Context, string) (*semantic.DocumentationPageData, error)
+	defaultHook func(context.Context, string) (*precise.DocumentationPageData, error)
+	hooks       []func(context.Context, string) (*precise.DocumentationPageData, error)
 	history     []QueryResolverDocumentationPageFuncCall
 	mutex       sync.Mutex
 }
 
 // DocumentationPage delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockQueryResolver) DocumentationPage(v0 context.Context, v1 string) (*semantic.DocumentationPageData, error) {
+func (m *MockQueryResolver) DocumentationPage(v0 context.Context, v1 string) (*precise.DocumentationPageData, error) {
 	r0, r1 := m.DocumentationPageFunc.nextHook()(v0, v1)
 	m.DocumentationPageFunc.appendCall(QueryResolverDocumentationPageFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -613,7 +613,7 @@ func (m *MockQueryResolver) DocumentationPage(v0 context.Context, v1 string) (*s
 // SetDefaultHook sets function that is called when the DocumentationPage
 // method of the parent MockQueryResolver instance is invoked and the hook
 // queue is empty.
-func (f *QueryResolverDocumentationPageFunc) SetDefaultHook(hook func(context.Context, string) (*semantic.DocumentationPageData, error)) {
+func (f *QueryResolverDocumentationPageFunc) SetDefaultHook(hook func(context.Context, string) (*precise.DocumentationPageData, error)) {
 	f.defaultHook = hook
 }
 
@@ -621,7 +621,7 @@ func (f *QueryResolverDocumentationPageFunc) SetDefaultHook(hook func(context.Co
 // DocumentationPage method of the parent MockQueryResolver instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *QueryResolverDocumentationPageFunc) PushHook(hook func(context.Context, string) (*semantic.DocumentationPageData, error)) {
+func (f *QueryResolverDocumentationPageFunc) PushHook(hook func(context.Context, string) (*precise.DocumentationPageData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -629,21 +629,21 @@ func (f *QueryResolverDocumentationPageFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *QueryResolverDocumentationPageFunc) SetDefaultReturn(r0 *semantic.DocumentationPageData, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) (*semantic.DocumentationPageData, error) {
+func (f *QueryResolverDocumentationPageFunc) SetDefaultReturn(r0 *precise.DocumentationPageData, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*precise.DocumentationPageData, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *QueryResolverDocumentationPageFunc) PushReturn(r0 *semantic.DocumentationPageData, r1 error) {
-	f.PushHook(func(context.Context, string) (*semantic.DocumentationPageData, error) {
+func (f *QueryResolverDocumentationPageFunc) PushReturn(r0 *precise.DocumentationPageData, r1 error) {
+	f.PushHook(func(context.Context, string) (*precise.DocumentationPageData, error) {
 		return r0, r1
 	})
 }
 
-func (f *QueryResolverDocumentationPageFunc) nextHook() func(context.Context, string) (*semantic.DocumentationPageData, error) {
+func (f *QueryResolverDocumentationPageFunc) nextHook() func(context.Context, string) (*precise.DocumentationPageData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -685,7 +685,7 @@ type QueryResolverDocumentationPageFuncCall struct {
 	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *semantic.DocumentationPageData
+	Result0 *precise.DocumentationPageData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -707,15 +707,15 @@ func (c QueryResolverDocumentationPageFuncCall) Results() []interface{} {
 // DocumentationPathInfo method of the parent MockQueryResolver instance is
 // invoked.
 type QueryResolverDocumentationPathInfoFunc struct {
-	defaultHook func(context.Context, string) (*semantic.DocumentationPathInfoData, error)
-	hooks       []func(context.Context, string) (*semantic.DocumentationPathInfoData, error)
+	defaultHook func(context.Context, string) (*precise.DocumentationPathInfoData, error)
+	hooks       []func(context.Context, string) (*precise.DocumentationPathInfoData, error)
 	history     []QueryResolverDocumentationPathInfoFuncCall
 	mutex       sync.Mutex
 }
 
 // DocumentationPathInfo delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockQueryResolver) DocumentationPathInfo(v0 context.Context, v1 string) (*semantic.DocumentationPathInfoData, error) {
+func (m *MockQueryResolver) DocumentationPathInfo(v0 context.Context, v1 string) (*precise.DocumentationPathInfoData, error) {
 	r0, r1 := m.DocumentationPathInfoFunc.nextHook()(v0, v1)
 	m.DocumentationPathInfoFunc.appendCall(QueryResolverDocumentationPathInfoFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -724,7 +724,7 @@ func (m *MockQueryResolver) DocumentationPathInfo(v0 context.Context, v1 string)
 // SetDefaultHook sets function that is called when the
 // DocumentationPathInfo method of the parent MockQueryResolver instance is
 // invoked and the hook queue is empty.
-func (f *QueryResolverDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, string) (*semantic.DocumentationPathInfoData, error)) {
+func (f *QueryResolverDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, string) (*precise.DocumentationPathInfoData, error)) {
 	f.defaultHook = hook
 }
 
@@ -733,7 +733,7 @@ func (f *QueryResolverDocumentationPathInfoFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *QueryResolverDocumentationPathInfoFunc) PushHook(hook func(context.Context, string) (*semantic.DocumentationPathInfoData, error)) {
+func (f *QueryResolverDocumentationPathInfoFunc) PushHook(hook func(context.Context, string) (*precise.DocumentationPathInfoData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -741,21 +741,21 @@ func (f *QueryResolverDocumentationPathInfoFunc) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *QueryResolverDocumentationPathInfoFunc) SetDefaultReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
+func (f *QueryResolverDocumentationPathInfoFunc) SetDefaultReturn(r0 *precise.DocumentationPathInfoData, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*precise.DocumentationPathInfoData, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *QueryResolverDocumentationPathInfoFunc) PushReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
-	f.PushHook(func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
+func (f *QueryResolverDocumentationPathInfoFunc) PushReturn(r0 *precise.DocumentationPathInfoData, r1 error) {
+	f.PushHook(func(context.Context, string) (*precise.DocumentationPathInfoData, error) {
 		return r0, r1
 	})
 }
 
-func (f *QueryResolverDocumentationPathInfoFunc) nextHook() func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
+func (f *QueryResolverDocumentationPathInfoFunc) nextHook() func(context.Context, string) (*precise.DocumentationPathInfoData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -797,7 +797,7 @@ type QueryResolverDocumentationPathInfoFuncCall struct {
 	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *semantic.DocumentationPathInfoData
+	Result0 *precise.DocumentationPathInfoData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

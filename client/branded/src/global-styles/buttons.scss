@@ -242,6 +242,7 @@
         &:not(:disabled):not(.disabled) {
             &:hover:not(.focus):not(:focus) {
                 color: var(--body-color);
+                border-color: var(--secondary);
 
                 svg {
                     fill: var(--icon-color);

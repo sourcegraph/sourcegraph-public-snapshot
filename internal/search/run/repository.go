@@ -84,17 +84,12 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	}
 
 	// Filter args.Repos by matching their names against the query pattern.
-	resolved, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
-	tr.LogFields(otlog.Int("resolved.len", len(resolved)))
+	tr.LogFields(otlog.Int("resolved.len", len(args.Repos)))
 
 	results := make(chan []*search.RepositoryRevisions)
 	go func() {
 		defer close(results)
-		matchRepos(pattern, resolved, results)
+		matchRepos(pattern, args.Repos, results)
 	}()
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
@@ -218,7 +213,7 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	}
 	newArgs := *args
 	newArgs.PatternInfo = &p
-	newArgs.RepoPromise = (&search.RepoPromise{}).Resolve(repos)
+	newArgs.Repos = repos
 	newArgs.Query = q
 	newArgs.UseFullDeadline = true
 	matches, _, err := unindexed.SearchFilesInReposBatch(ctx, &newArgs)

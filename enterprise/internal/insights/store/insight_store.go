@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/cockroachdb/errors"
 
@@ -96,10 +96,94 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 	return results, nil
 }
 
+func (s *InsightStore) InsertDirtyQuery(ctx context.Context, series *types.InsightSeries, query *types.DirtyQuery) error {
+	q := sqlf.Sprintf(insertDirtyQuerySql, series.ID, query.Query, query.Reason, query.ForTime, s.Now())
+	return s.Exec(ctx, q)
+}
+
+// GetDirtyQueries returns up to 100 dirty queries for a given insight series.
+func (s *InsightStore) GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error) {
+	// We are going to limit this for now to some fixed value, and in the future if necessary add pagination.
+	limit := 100
+	q := sqlf.Sprintf(getDirtyQueriesSql, series.ID, limit)
+	return scanDirtyQueries(s.Query(ctx, q))
+}
+
+func scanDirtyQueries(rows *sql.Rows, queryErr error) (_ []*types.DirtyQuery, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]*types.DirtyQuery, 0)
+	for rows.Next() {
+		var temp types.DirtyQuery
+		if err := rows.Scan(
+			&temp.ID,
+			&temp.Query,
+			&temp.Reason,
+			&temp.ForTime,
+			&temp.DirtyAt,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, &temp)
+	}
+	return results, nil
+}
+
+// GetDirtyQueriesAggregated returns aggregated information about dirty queries for a given series.
+func (s *InsightStore) GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error) {
+	q := sqlf.Sprintf(getDirtyQueriesAggregatedSql, seriesID)
+	return scanDirtyQueriesAggregated(s.Query(ctx, q))
+}
+
+func scanDirtyQueriesAggregated(rows *sql.Rows, queryErr error) (_ []*types.DirtyQueryAggregate, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]*types.DirtyQueryAggregate, 0)
+	for rows.Next() {
+		var temp types.DirtyQueryAggregate
+		if err := rows.Scan(
+			&temp.Count,
+			&temp.ForTime,
+			&temp.Reason,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, &temp)
+	}
+	return results, nil
+}
+
+const insertDirtyQuerySql = `
+-- source: enterprise/internal/insights/store/insight_store.go:InsertDirtyQuery
+INSERT INTO insight_dirty_queries (insight_series_id, query, reason, for_time, dirty_at)
+VALUES (%s, %s, %s, %s, %s);
+`
+
+const getDirtyQueriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueries
+select id, query, reason, for_time, dirty_at from insight_dirty_queries
+where insight_series_id = %s
+limit %s;`
+
+const getDirtyQueriesAggregatedSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueriesAggregated
+select count(*) as count, for_time, reason from insight_dirty_queries
+where insight_dirty_queries.insight_series_id = (select id from insight_series where series_id = %s)
+group by for_time, reason;
+`
+
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
 	Deleted             bool
+	BackfillIncomplete  bool
+	SeriesID            string
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -115,6 +199,12 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+	}
+	if args.BackfillIncomplete {
+		preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
+	}
+	if len(args.SeriesID) > 0 {
+		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -142,7 +232,6 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
-		log15.Info("temp", "temp", temp)
 		results = append(results, temp)
 	}
 	return results, nil
@@ -218,7 +307,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 365)
+		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 7 * 26)
 	}
 	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightSeriesSql,
 		series.SeriesID,
@@ -241,16 +330,19 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 type DataSeriesStore interface {
 	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 }
 
 type InsightMetadataStore interface {
 	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
+	GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error)
+	GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error)
 }
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := current.Add(time.Hour * 24 * time.Duration(series.RecordingIntervalDays))
+	next := insights.NextRecording(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
@@ -258,6 +350,23 @@ func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightS
 	series.NextRecordingAfter = next
 	return series, nil
 }
+
+// StampBackfill will update the backfill queued time for this series and return the InsightSeries struct with updated values.
+func (s *InsightStore) StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	current := s.Now()
+	if err := s.Exec(ctx, sqlf.Sprintf(stampBackfillSql, current, series.ID)); err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.BackfillQueuedAt = current
+	return series, nil
+}
+
+const stampBackfillSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StampRecording
+UPDATE insight_series
+SET backfill_queued_at = %s
+WHERE id = %s;
+`
 
 const stampRecordingSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:StampRecording

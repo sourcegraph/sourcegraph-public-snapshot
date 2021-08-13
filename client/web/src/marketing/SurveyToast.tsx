@@ -34,7 +34,7 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
     }
 
     const handleChange = (score: number): void => {
-        eventLogger.log('SurveyButtonClicked', { score })
+        eventLogger.log('SurveyButtonClicked', { score }, { score })
         history.push(`/survey/${score}`)
 
         if (props.onChange) {

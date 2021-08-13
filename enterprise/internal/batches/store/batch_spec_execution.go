@@ -7,10 +7,12 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -39,6 +41,7 @@ var BatchSpecExecutionColumns = []*sqlf.Query{
 var batchSpecExecutionInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("rand_id"),
 	sqlf.Sprintf("batch_spec"),
+	sqlf.Sprintf("batch_spec_id"),
 	sqlf.Sprintf("user_id"),
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
@@ -47,7 +50,10 @@ var batchSpecExecutionInsertColumns = []*sqlf.Query{
 }
 
 // CreateBatchSpecExecution creates the given BatchSpecExecution.
-func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpecExecution) error {
+func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpecExecution) (err error) {
+	ctx, endObservation := s.operations.createBatchSpecExecution.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	if b.CreatedAt.IsZero() {
 		b.CreatedAt = s.now()
 	}
@@ -66,7 +72,7 @@ func (s *Store) CreateBatchSpecExecution(ctx context.Context, b *btypes.BatchSpe
 var createBatchSpecExecutionQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_executions.go:CreateBatchSpecExecution
 INSERT INTO batch_spec_executions (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, error) {
@@ -82,6 +88,7 @@ func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, e
 		sqlf.Join(batchSpecExecutionInsertColumns, ", "),
 		c.RandID,
 		c.BatchSpec,
+		nullInt64Column(c.BatchSpecID),
 		c.UserID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -98,7 +105,13 @@ type GetBatchSpecExecutionOpts struct {
 }
 
 // GetBatchSpecExecution gets a BatchSpecExecution matching the given options.
-func (s *Store) GetBatchSpecExecution(ctx context.Context, opts GetBatchSpecExecutionOpts) (*btypes.BatchSpecExecution, error) {
+func (s *Store) GetBatchSpecExecution(ctx context.Context, opts GetBatchSpecExecutionOpts) (exec *btypes.BatchSpecExecution, err error) {
+	ctx, endObservation := s.operations.getBatchSpecExecution.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+		log.String("randID", opts.RandID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q, err := getBatchSpecExecutionQuery(&opts)
 	if err != nil {
 		return nil, err

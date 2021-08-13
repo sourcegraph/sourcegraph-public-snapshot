@@ -78,7 +78,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	// Add appdash span ID.
 	if traceID := trace.ID(r.Context()); traceID != "" {
 		pkt.Extra["trace"] = trace.URL(traceID)
-		pkt.Extra["traceid"] = traceID
+		pkt.Extra["traceID"] = traceID
 	}
 
 	// Add request context tags.

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -57,7 +58,8 @@ func main() {
 	env.HandleHelpFlag()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	go func() {
 		c := make(chan os.Signal, 1)

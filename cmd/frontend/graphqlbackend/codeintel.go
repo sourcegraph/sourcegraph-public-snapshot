@@ -22,7 +22,7 @@ type CodeIntelResolver interface {
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ Repository graphql.ID }) (*EmptyResponse, error)
+	QueueAutoIndexJobForRepo(ctx context.Context, args *QueueAutoIndexJobForRepoArgs) (*EmptyResponse, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
@@ -119,12 +119,18 @@ type LSIFIndexConnectionResolver interface {
 }
 
 type IndexConfigurationResolver interface {
-	Configuration() *string
+	Configuration(ctx context.Context) (*string, error)
+	InferredConfiguration(ctx context.Context) (*string, error)
 }
 
 type UpdateRepositoryIndexConfigurationArgs struct {
 	Repository    graphql.ID
 	Configuration string
+}
+
+type QueueAutoIndexJobForRepoArgs struct {
+	Repository graphql.ID
+	Rev        *string
 }
 
 type QueueAutoIndexJobArgs struct {

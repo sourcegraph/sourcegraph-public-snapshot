@@ -1,6 +1,6 @@
-# Install Sourcegraph with Docker on Google Cloud
+# Install single-container Sourcegraph with Docker on Google Cloud
 
-This tutorial shows you how to deploy Sourcegraph to a single node running on Google Cloud.
+This tutorial shows you how to deploy [single-container Sourcegraph with Docker](./index.md) to a single node running on Google Cloud.
 
 > NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/google_cloud.md) for most initial production deployments.
 
@@ -15,7 +15,7 @@ This tutorial shows you how to deploy Sourcegraph to a single node running on Go
 - Open the **Management, disks, networking, and SSH keys** dropdown section and add the following in the **Startup script** field:
 
   ```
-  #!/bin/bash
+  #!/usr/bin/env bash
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   sudo apt-get update

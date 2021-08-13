@@ -3,10 +3,6 @@ package background
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -14,30 +10,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factory) []goroutine.BackgroundRoutine {
+func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factory, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	sourcer := sources.NewSourcer(cf)
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
 	metrics := newMetrics(observationContext)
 
-	routines := []goroutine.BackgroundRoutine{
-		newReconcilerWorker(ctx, batchesStore, gitserver.DefaultClient, sourcer, metrics),
-		newReconcilerWorkerResetter(batchesStore, metrics),
+	reconcilerWorkerStore := NewReconcilerDBWorkerStore(batchesStore.Handle(), observationContext)
+	bulkProcessorWorkerStore := NewBulkOperationDBWorkerStore(batchesStore.Handle(), observationContext)
+	specExecutionWorkerStore := NewExecutorStore(batchesStore.Handle(), observationContext)
 
-		newSpecExpireWorker(ctx, batchesStore),
+	routines := []goroutine.BackgroundRoutine{
+		newReconcilerWorker(ctx, batchesStore, reconcilerWorkerStore, gitserver.DefaultClient, sourcer, metrics),
+		newReconcilerWorkerResetter(reconcilerWorkerStore, metrics),
+
+		newSpecExpireJob(ctx, batchesStore),
 
 		scheduler.NewScheduler(ctx, batchesStore),
 
-		newBulkOperationWorker(ctx, batchesStore, sourcer, metrics),
-		newBulkOperationWorkerResetter(batchesStore, metrics),
+		newBulkOperationWorker(ctx, batchesStore, bulkProcessorWorkerStore, sourcer, metrics),
+		newBulkOperationWorkerResetter(bulkProcessorWorkerStore, metrics),
 
-		newBatchSpecExecutionResetter(batchesStore, observationContext, metrics),
+		newBatchSpecExecutionResetter(specExecutionWorkerStore, metrics),
 	}
 	return routines
 }
