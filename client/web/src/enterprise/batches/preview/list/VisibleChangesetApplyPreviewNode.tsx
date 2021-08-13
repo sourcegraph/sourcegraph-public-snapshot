@@ -11,6 +11,7 @@ import React, { useCallback, useState } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -38,6 +39,10 @@ export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
+    selectable?: {
+        onSelect: (id: string) => void
+        isSelected: (id: string) => boolean
+    }
 
     /** Used for testing. **/
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
@@ -51,7 +56,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     history,
     location,
     authenticatedUser,
-
+    selectable,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions = false,
 }) => {
@@ -78,6 +83,13 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
+            {selectable ? (
+                <SelectBox node={node} selectable={selectable} />
+            ) : (
+                // 0-width empty element to allow us to keep the identical grid template of the parent
+                // list, regardless of whether or not the nodes have the checkbox selector
+                <span />
+            )}
             <VisibleChangesetApplyPreviewNodeStatusCell
                 node={node}
                 className={classNames(
@@ -191,6 +203,52 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 </>
             )}
         </>
+    )
+}
+
+const SelectBox: React.FunctionComponent<{
+    node: VisibleChangesetApplyPreviewFields
+    selectable: {
+        onSelect: (id: string) => void
+        isSelected: (id: string) => boolean
+    }
+}> = ({ node, selectable }) => {
+    const toggleSelected = useCallback((): void => {
+        if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+            return
+        }
+        console.log(node.targets, selectable)
+        selectable?.onSelect(node.targets.changesetSpec.id)
+    }, [selectable, node.targets])
+
+    if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+        return (
+            <div className="p-2">
+                <InputTooltip
+                    id="select-changeset-hidden"
+                    type="checkbox"
+                    className="btn"
+                    checked={false}
+                    disabled={true}
+                    tooltip="You cannot change the publish status for a changeset that will be detached"
+                />
+            </div>
+        )
+    }
+
+    const selected = selectable?.isSelected(node.targets.changesetSpec.id)
+
+    return (
+        <div className="p-2">
+            <input
+                id={`select-changeset-${node.targets.changesetSpec.id}`}
+                type="checkbox"
+                className="btn"
+                checked={selected}
+                onChange={toggleSelected}
+                data-tooltip="Click to select changeset for bulk applying a new publish status"
+            />
+        </div>
     )
 }
 

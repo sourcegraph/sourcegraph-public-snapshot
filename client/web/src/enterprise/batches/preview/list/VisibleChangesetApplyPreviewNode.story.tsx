@@ -23,12 +23,13 @@ const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode'
 const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }
 
 function baseChangesetSpec(
+    id: number,
     published: Scalars['PublishedValue'],
     overrides: Partial<VisibleChangesetSpecFields> = {}
 ): VisibleChangesetSpecFields {
     return {
         __typename: 'VisibleChangesetSpec',
-        id: 'someidv2' + String(published) + JSON.stringify(overrides),
+        id: 'someidv2' + id.toString() + String(published) + JSON.stringify(overrides),
         type: ChangesetSpecType.EXISTING,
         description: {
             __typename: 'GitBranchChangesetDescription',
@@ -105,7 +106,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(1, true),
         },
     },
     'Create changeset draft': {
@@ -122,7 +123,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec('draft'),
+            changesetSpec: baseChangesetSpec(2, 'draft'),
         },
     },
     'Create changeset not published': {
@@ -139,7 +140,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(false),
+            changesetSpec: baseChangesetSpec(3, false),
         },
     },
     'Update changeset title': {
@@ -156,7 +157,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(4, true),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -211,7 +212,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(5, true),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -266,7 +267,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(6, true),
             changeset: {
                 id: '123123',
                 title: 'Le draft changeset',
@@ -321,7 +322,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(7, true),
             changeset: {
                 id: '123123',
                 title: 'Le closed changeset',
@@ -438,7 +439,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(8, true),
             changeset: {
                 id: '123123',
                 title: 'Change base ref',
@@ -493,7 +494,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(9, true),
             changeset: {
                 id: '123123',
                 title: 'Change base ref',
@@ -548,7 +549,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(10, true),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -603,7 +604,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(true),
+            changesetSpec: baseChangesetSpec(11, true),
             changeset: {
                 id: '123123',
                 title: 'the old title',

@@ -3,6 +3,7 @@ import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
@@ -20,6 +21,16 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
 }) => (
     <>
         <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
+        <div className="p-2">
+            <InputTooltip
+                id="select-changeset-hidden"
+                type="checkbox"
+                className="btn"
+                checked={false}
+                disabled={true}
+                tooltip="You do not have permission to perform this operation"
+            />
+        </div>
         <HiddenChangesetApplyPreviewNodeStatusCell
             node={node}
             className={classNames(

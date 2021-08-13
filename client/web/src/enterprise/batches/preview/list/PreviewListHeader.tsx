@@ -1,12 +1,26 @@
 import React from 'react'
 
 export interface PreviewListHeaderProps {
-    // Nothing for now.
+    allSelected?: boolean
+    toggleSelectAll?: () => void
 }
 
-export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = () => (
+export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = ({
+    allSelected,
+    toggleSelectAll,
+}) => (
     <>
         <span className="p-2 d-none d-sm-block" />
+        {toggleSelectAll && (
+            <input
+                type="checkbox"
+                className="btn ml-2"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                data-tooltip="Click to select all changesets"
+                aria-label="Click to select all changesets"
+            />
+        )}
         <h5 className="p-2 d-none d-sm-block text-uppercase text-center">Current state</h5>
         <h5 className="d-none d-sm-block text-uppercase text-center">
             +<br />-
