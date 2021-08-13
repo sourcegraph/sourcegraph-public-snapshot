@@ -50,7 +50,11 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (processedResults && itemsToLoad === pageSize) {
-            telemetryService.log('RecentFilesPanelLoaded', { empty: processedResults.length === 0 })
+            telemetryService.log(
+                'RecentFilesPanelLoaded',
+                { empty: processedResults.length === 0 },
+                { empty: processedResults.length === 0 }
+            )
         }
     }, [processedResults, telemetryService, itemsToLoad])
 

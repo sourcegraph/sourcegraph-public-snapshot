@@ -212,18 +212,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-    const repogroupPages = [
-        '/refactor-python2-to-3',
-        '/kubernetes',
-        '/golang',
-        '/react-hooks',
-        '/android',
-        '/stanford',
-        '/stackstorm',
-        '/temporal',
-        '/o3de',
-        '/cncf',
-    ]
+    const repogroupPages = ['/kubernetes', '/stanford', '/stackstorm', '/temporal', '/o3de', '/cncf']
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,

@@ -1,4 +1,5 @@
 import AddIcon from 'mdi-react/AddIcon'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
@@ -82,9 +83,19 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     ))}
                     {!siteAdminViewingOtherUser && (
                         <div className="user-settings-sidebar__new-org-btn-wrapper">
-                            <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
-                                <AddIcon className="icon-inline" /> New organization
-                            </Link>
+                            {!window.context.sourcegraphDotComMode ? (
+                                <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
+                                    <AddIcon className="icon-inline" /> New organization
+                                </Link>
+                            ) : (
+                                <a
+                                    href="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Learn More <ExternalLinkIcon className="icon-inline" />
+                                </a>
+                            )}
                         </div>
                     )}
                 </SidebarGroup>

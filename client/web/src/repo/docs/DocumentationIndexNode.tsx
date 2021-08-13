@@ -171,11 +171,14 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                             ) : (
                                 <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                             )}
+                            {node.detail.value === '' && <strong id={'index-' + hash}>{node.label.value}</strong>}
                         </button>
                     )}
-                    <Link id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">
-                        {node.label.value}
-                    </Link>
+                    {node.detail.value !== '' && (
+                        <Link id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">
+                            {node.label.value}
+                        </Link>
+                    )}
                 </span>
                 {expanded && (
                     <ul className="pl-3">

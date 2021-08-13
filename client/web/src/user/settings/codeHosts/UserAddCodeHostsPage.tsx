@@ -122,6 +122,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
+    const logAddRepositoriesClicked = useCallback(
+        (source: string) => () => {
+            eventLogger.log('AddRepositoriesLinkClicked', null, { source })
+        },
+        []
+    )
+
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
             <div className="alert alert-info mb-4" role="alert" key="update-github">
@@ -140,7 +147,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         services.length > 0 ? (
             <div className="alert alert-success mb-4" role="alert" key="add-repos">
                 Connected with {services.join(', ')}. Next,{' '}
-                <Link className="alert-link" to={`${routingPrefix}/repositories/manage`}>
+                <Link
+                    className="alert-link"
+                    to={`${routingPrefix}/repositories/manage`}
+                    onClick={logAddRepositoriesClicked('banner')}
+                >
                     add your repositories →
                 </Link>
             </div>
@@ -242,8 +253,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 description={
                     <>
                         Connect with your code hosts. Then,{' '}
-                        <Link to={`${routingPrefix}/repositories/manage`}>add repositories</Link> to search with
-                        Sourcegraph.
+                        <Link
+                            to={`${routingPrefix}/repositories/manage`}
+                            onClick={logAddRepositoriesClicked('description')}
+                        >
+                            add repositories
+                        </Link>{' '}
+                        to search with Sourcegraph.
                     </>
                 }
                 className="mb-3"

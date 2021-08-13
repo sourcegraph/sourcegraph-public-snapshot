@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -433,6 +434,9 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 			NumRepositoriesWithFreshIndexRecords:  counts.NumRepositoriesWithFreshIndexRecords,
 		})
 	}
+	sort.Slice(countsByLanguage, func(i, j int) bool {
+		return *countsByLanguage[i].LanguageID < *countsByLanguage[j].LanguageID
+	})
 
 	numRepositories := codeIntelUsage.NumRepositories
 	if numRepositories == nil && codeIntelUsage.NumRepositoriesWithUploadRecords != nil && codeIntelUsage.NumRepositoriesWithoutUploadRecords != nil {
