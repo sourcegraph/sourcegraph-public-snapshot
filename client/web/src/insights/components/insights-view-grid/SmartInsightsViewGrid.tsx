@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import { isEqual } from 'lodash'
+import React, { memo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -7,7 +8,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { Settings } from '../../../schema/settings.schema'
 import { Insight } from '../../core/types'
-import { useDistinctValue } from '../../hooks/use-distinct-value'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
 import { ViewGrid } from './components/view-grid/ViewGrid'
@@ -21,16 +21,41 @@ interface SmartInsightsViewGridProps
 }
 
 /**
+ * Custom props checker for the smart grid component.
+ *
+ * Ignore settings cascade change and insight body config changes to avoid
+ * animations of grid item rerender and grid position items. In some cases (like insight
+ * filters updating, we want to ignore insights from settings cascade).
+ * But still trigger grid animation rerender if insight ordering or insight count
+ * have been changed.
+ */
+const equalSmartGridProps = (
+    previousProps: SmartInsightsViewGridProps,
+    nextProps: SmartInsightsViewGridProps
+): boolean => {
+    const { insights: previousInsights, settingsCascade: previousSettingCascade, ...otherPrepProps } = previousProps
+    const { insights: nextInsights, settingsCascade, ...otherNextProps } = nextProps
+
+    if (!isEqual(otherPrepProps, otherNextProps)) {
+        return false
+    }
+
+    return isEqual(
+        previousInsights.map(insight => insight.id),
+        nextInsights.map(insight => insight.id)
+    )
+}
+
+/**
  * Renders grid of smart (stateful) insight card. These cards can independently extract and update
  * the insights settings (settings cascade subjects).
  */
-export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = props => {
+export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
     const { telemetryService, insights, platformContext, settingsCascade, extensionsController } = props
 
-    const insightIds = useDistinctValue(insights.map(insight => insight.id))
-    const gridItems = useMemo(
-        () =>
-            insights.map(insight => (
+    return (
+        <ViewGrid viewIds={insights.map(insight => insight.id)} telemetryService={telemetryService}>
+            {insights.map(insight => (
                 <SmartInsight
                     key={insight.id}
                     insight={insight}
@@ -39,19 +64,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     settingsCascade={settingsCascade}
                     extensionsController={extensionsController}
                 />
-            )),
-        // Ignore settings cascade change in order to avoid grid item re-render and
-        // grid position items animations. In some cases (like insight filters updating
-        // we want to ignore changes of insights from settings cascade).
-        // But still trigger grid animation rerender if insight ordering or insight count
-        // have been changed.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [telemetryService, platformContext, extensionsController, insightIds]
-    )
-
-    return (
-        <ViewGrid viewIds={insights.map(insight => insight.id)} telemetryService={telemetryService}>
-            {gridItems}
+            ))}
         </ViewGrid>
     )
-}
+}, equalSmartGridProps)
