@@ -63,7 +63,7 @@ export interface BackendInsightFilters {
 export interface BackendInsightInputs {
     id: string
     filters?: BackendInsightFilters
-    series?: DataSeries[]
+    series?: SearchBasedInsightSeries[]
 }
 
 export interface LangStatsInsightsSettings {
