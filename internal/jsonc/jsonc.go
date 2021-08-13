@@ -74,9 +74,9 @@ func Edit(input string, v interface{}, path ...string) (string, error) {
 
 // ReadProperty attempts to read the value of the specified path, ignoring parse errors. it will only error if the path
 // doesn't exist
-func ReadProperty(input, path string) (interface{}, error) {
+func ReadProperty(input string, path ...string) (interface{}, error) {
 	root, _ := jsonx.ParseTree(input, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	node := jsonx.FindNodeAtLocation(root, jsonx.PropertyPath(path))
+	node := jsonx.FindNodeAtLocation(root, jsonx.PropertyPath(path...))
 	if node == nil {
 		return nil, errors.Errorf("couldn't find node: %s", path)
 	}

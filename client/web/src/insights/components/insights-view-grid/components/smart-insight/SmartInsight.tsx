@@ -38,6 +38,7 @@ export const SmartInsight: React.FunctionComponent<InsightProps> = props => {
         ) : (
             <ExtensionInsight
                 viewId={insight.id}
+                viewTitle={insight.title}
                 telemetryService={telemetryService}
                 settingsCascade={settingsCascade}
                 platformContext={platformContext}
@@ -51,6 +52,7 @@ export const SmartInsight: React.FunctionComponent<InsightProps> = props => {
     return (
         <ExtensionInsight
             viewId={insight.id}
+            viewTitle={insight.title}
             telemetryService={telemetryService}
             settingsCascade={settingsCascade}
             platformContext={platformContext}

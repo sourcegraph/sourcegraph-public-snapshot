@@ -32,6 +32,8 @@ type Config struct {
 	FirecrackerDiskSpace string
 	MaximumRuntimePerJob time.Duration
 	CleanupTaskInterval  time.Duration
+	NumTotalJobs         int
+	MaxActiveTime        time.Duration
 }
 
 func (c *Config) Load() {
@@ -50,6 +52,8 @@ func (c *Config) Load() {
 	c.FirecrackerDiskSpace = c.Get("EXECUTOR_FIRECRACKER_DISK_SPACE", "20G", "How much disk space to allocate to each virtual machine or container.")
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
+	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
+	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 }
 
 func (c *Config) Validate() error {
@@ -86,6 +90,8 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 		Interval:          c.QueuePollInterval,
 		HeartbeatInterval: 1 * time.Second,
 		Metrics:           makeWorkerMetrics(c.QueueName),
+		NumTotalJobs:      c.NumTotalJobs,
+		MaxActiveTime:     c.MaxActiveTime,
 	}
 }
 

@@ -4,35 +4,35 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useCallback, useRef } from 'react'
 import FocusLock from 'react-focus-lock'
 
+import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
-import { FormChangeEvent } from '../../../../../form/hooks/useForm'
+import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
-import { DrillDownFilters, DrillDownFiltersMode } from '../drill-down-filters-panel/types'
 
 import styles from './DrillDownFiltersPanel.module.scss'
 import { useKeyboard } from './hooks/use-keyboard'
 import { useOnClickOutside } from './hooks/use-outside-click'
 
-const hasActiveFilters = (filters: DrillDownFilters): boolean => {
-    switch (filters.mode) {
-        case DrillDownFiltersMode.Regex:
-            return filters.excludeRepoRegex.trim() !== '' || filters.includeRepoRegex.trim() !== ''
-        case DrillDownFiltersMode.Repolist:
-            // We don't have the repo list mode support yet
-            return false
-    }
-}
-
 interface DrillDownFiltersProps {
     isOpen: boolean
-    filters: DrillDownFilters
+    initialFiltersValue: SearchBasedBackendFilters
+    originalFiltersValue: SearchBasedBackendFilters
     popoverTargetRef: React.RefObject<HTMLElement>
-    onFilterChange: (filters: DrillDownFilters) => void
+    onFilterChange: (filters: SearchBasedBackendFilters) => void
+    onFilterSave: (filters: SearchBasedBackendFilters) => void
     onVisibilityChange: (open: boolean) => void
 }
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { isOpen, popoverTargetRef, filters, onFilterChange, onVisibilityChange } = props
+    const {
+        isOpen,
+        popoverTargetRef,
+        initialFiltersValue,
+        originalFiltersValue,
+        onVisibilityChange,
+        onFilterChange,
+        onFilterSave,
+    } = props
 
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     const popoverReference = useRef<HTMLDivElement>(null)
@@ -60,12 +60,6 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
         onVisibilityChange(false)
     }, [onVisibilityChange])
 
-    const handleFilterChange = (event: FormChangeEvent<DrillDownFilters>): void => {
-        if (event.valid) {
-            onFilterChange(event.values)
-        }
-    }
-
     // Catch any outside click of popover element
     useOnClickOutside(popoverReference, handleClickOutside)
     // Close popover on escape
@@ -76,15 +70,16 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
             <button
                 ref={targetButtonReference}
                 type="button"
-                className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
-                    [styles.filterButtonActive]: hasActiveFilters(filters),
+                className={classnames('btn btn-icon p-1', styles.filterButton, {
+                    [styles.filterButtonWithOpenPanel]: isOpen,
+                    [styles.filterButtonActive]: hasActiveFilters(initialFiltersValue),
                 })}
                 // To prevent grid layout position change animation. Attempts to drag
                 // the filter panel should not trigger react-grid-layout events.
                 onMouseDown={event => event.stopPropagation()}
                 onClick={handleTargetClick}
             >
-                <FilterOutlineIcon size="1rem" />
+                <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
             </button>
 
             {isOpen && (
@@ -99,9 +94,10 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 >
                     <FocusLock returnFocus={true}>
                         <DrillDownFiltersPanel
-                            initialFiltersValue={filters}
-                            className={classnames(styles.filterPanel)}
-                            onFiltersChange={handleFilterChange}
+                            initialFiltersValue={initialFiltersValue}
+                            originalFiltersValue={originalFiltersValue}
+                            onFiltersChange={onFilterChange}
+                            onFilterSave={onFilterSave}
                         />
                     </FocusLock>
                 </Popover>

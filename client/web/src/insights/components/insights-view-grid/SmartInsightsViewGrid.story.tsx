@@ -22,28 +22,20 @@ const insights: Insight[] = [
         id: 'searchInsights.insight.Backend_1',
         type: InsightType.Backend,
         title: 'Backend insight #1',
-        repositories: [],
         series: [],
         visibility: 'personal',
-        step: {
-            months: 2,
-        },
     },
     {
         id: 'searchInsights.insight.Backend_2',
         type: InsightType.Backend,
         title: 'Backend insight #2',
-        repositories: [],
         series: [],
         visibility: 'personal',
-        step: {
-            months: 2,
-        },
     },
 ]
 
 const mockInsightAPI = createMockInsightAPI({
-    getBackendInsightById: (id: string) =>
+    getBackendInsightById: ({ id }) =>
         of({
             id,
             view: {

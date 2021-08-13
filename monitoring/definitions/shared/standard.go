@@ -87,7 +87,7 @@ func (standardConstructor) Errors(legend string) observableConstructor {
 				Name:        fmt.Sprintf("%s_errors_total", options.MetricNameRoot),
 				Description: fmt.Sprintf("%s%s errors every 5m", options.MetricDescriptionRoot, legend),
 				Query:       fmt.Sprintf(`sum%s(increase(src_%s_errors_total{%s}[5m]))`, by, options.MetricNameRoot, filters),
-				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData()),
+				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData(options.By...)),
 				Owner:       owner,
 			}
 		}
@@ -116,7 +116,7 @@ func (standardConstructor) ErrorRate(legend string) observableConstructor {
 				Name:        fmt.Sprintf("%s_error_rate", options.MetricNameRoot),
 				Description: fmt.Sprintf("%s%s error rate over 5m", options.MetricDescriptionRoot, legend),
 				Query:       fmt.Sprintf(`sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m])) / (sum%[1]s(increase(src_%[2]s_total{%[3]s}[5m])) + sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[5m]))) * 100`, by, options.MetricNameRoot, filters),
-				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s error rate", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData()).Unit(monitoring.Percentage),
+				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s error rate", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData(options.By...)).Unit(monitoring.Percentage),
 				Owner:       owner,
 			}
 		}

@@ -11,7 +11,8 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 
 import { AuthenticatedUser } from '../../auth'
 
-import { InsightTypePrefix, SearchBasedInsightSettings } from './types'
+import { InsightTypePrefix } from './types'
+import { SearchBasedExtensionInsightSettings } from './types/insight/search-insight'
 
 export function logInsightMetrics(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,
@@ -39,7 +40,7 @@ export function logCodeInsightsCount(
             const newGroupedInsights = getInsightsGroupedByType(newSettings, authUser)
 
             if (!isEqual(oldGroupedInsights, newGroupedInsights)) {
-                telemetryService.log('InsightsGroupedCount', newGroupedInsights)
+                telemetryService.log('InsightsGroupedCount', newGroupedInsights, newGroupedInsights)
             }
         }
     } catch {
@@ -61,7 +62,7 @@ export function logSearchBasedInsightStepSize(
             const newGroupedStepSizes = getGroupedStepSizes(newSettings.final)
 
             if (!isEqual(oldGroupedStepSizes, newGroupedStepSizes)) {
-                telemetryService.log('InsightsGroupedStepSizes', newGroupedStepSizes)
+                telemetryService.log('InsightsGroupedStepSizes', newGroupedStepSizes, newGroupedStepSizes)
             }
         }
     } catch {
@@ -76,7 +77,7 @@ export function getGroupedStepSizes(settings: Settings): number[] {
     return Object.keys(settings)
         .filter(key => key.startsWith(InsightTypePrefix.search))
         .reduce<number[]>((stepsInDays, key) => {
-            const insight = settings[key] as SearchBasedInsightSettings
+            const insight = settings[key] as SearchBasedExtensionInsightSettings
 
             return [...stepsInDays, getDaysFromInsightStep(insight.step)]
         }, [])
@@ -164,7 +165,7 @@ export function logCodeInsightsChanges(
 
         if (oldSettings && newSettings) {
             for (const { action, insightType } of diffCodeInsightsSettings(oldSettings, newSettings)) {
-                telemetryService.log(`Insight${action}`, { insightType })
+                telemetryService.log(`Insight${action}`, { insightType }, { insightType })
             }
         }
     } catch {

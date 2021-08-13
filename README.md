@@ -1,11 +1,11 @@
-# <a href="https://sourcegraph.com"><picture><source srcset="./ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="./ui/assets/img/sourcegraph-light-head-logo.svg" height="48px" /></picture></a>
+# <a href="https://sourcegraph.com"><picture><source srcset="./ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="./ui/assets/img/sourcegraph-logo-light.svg" height="48px" /></picture></a>
 
 [![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)
 [![apache license](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
 
 [Sourcegraph](https://about.sourcegraph.com/) OSS edition is a fast, open-source, fully-featured code search and navigation engine. [Enterprise editions](https://about.sourcegraph.com/pricing) are available.
 
-![Screenshot](https://user-images.githubusercontent.com/1646931/46309383-09ba9800-c571-11e8-8ee4-1a2ec32072f2.png)
+![sourcegraph com_github com_golang_go_-_blob_src_net_http_request go_L855_6](https://user-images.githubusercontent.com/989826/126650657-cef98203-1505-4848-aab6-57acda1ec35f.png)
 
 **Features**
 

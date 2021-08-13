@@ -800,6 +800,35 @@ spec:
               value: bob
 ```
 
+## Filtering cAdvisor metrics
+
+Due to how cAdvisor works, Sourcegraph's cAdvisor deployment can pick up metrics for services unrelated to the Sourcegraph deployment running on the same nodes as Sourcegraph services.
+[Learn more](../../../dev/background-information/observability/cadvisor.md#identifying-containers).
+
+To work around this, update your `prometheus.ConfigMap.yaml` to target your [namespaced Sourcegraph deployment](#namespaced-overlay) by uncommenting the below `metric_relabel_configs` entry and updating it with the appropriate namespace.
+This will cause Prometheus to drop all metrics *from cAdvisor* that are not from services in the desired namespace.
+
+```yaml
+apiVersion: v1
+data:
+  prometheus.yml: |
+    # ...
+
+      metric_relabel_configs:
+      # cAdvisor-specific customization. Drop container metrics exported by cAdvisor
+      # not in the same namespace as Sourcegraph.
+      # Uncomment this if you have problems with certain dashboards or cAdvisor itself
+      # picking up non-Sourcegraph services. Ensure all Sourcegraph services are running
+      # within the Sourcegraph namespace you have defined.
+      # The regex must keep matches on '^$' (empty string) to ensure other metrics do not
+      # get dropped.
+      - source_labels: [container_label_io_kubernetes_pod_namespace]
+        regex: ^$|ns-sourcegraph # ensure this matches with namespace declarations
+        action: keep
+
+    # ...
+```
+
 ## Troubleshooting
 
 See the [Troubleshooting docs](troubleshoot.md).

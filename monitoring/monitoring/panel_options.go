@@ -1,6 +1,8 @@
 package monitoring
 
 import (
+	"fmt"
+
 	"github.com/grafana-tools/sdk"
 )
 
@@ -249,8 +251,8 @@ func (panelOptionsLibrary) NoLegend() ObservablePanelOption {
 // all is well and there are no errors.
 //
 // This is different from Grafana's "null as zero", since "no data" is not "null".
-func (panelOptionsLibrary) ZeroIfNoData() ObservablePanelOption {
-	orZero := " OR on() vector(0)"
+func (panelOptionsLibrary) ZeroIfNoData(labels ...string) ObservablePanelOption {
+	orZero := " OR on() " + labelReplaceZero(labels)
 	return func(o Observable, p *sdk.Panel) {
 		switch o.Panel.panelType {
 		case PanelTypeGraph:
@@ -259,4 +261,14 @@ func (panelOptionsLibrary) ZeroIfNoData() ObservablePanelOption {
 			p.HeatmapPanel.Targets[0].Expr += orZero
 		}
 	}
+}
+
+func labelReplaceZero(labels []string) string {
+	if len(labels) == 0 {
+		return "vector(0)"
+	}
+
+	result := labelReplaceZero(labels[1:])
+
+	return fmt.Sprintf(`label_replace(%s, "%s", "<None>", "", "")`, result, labels[0])
 }
