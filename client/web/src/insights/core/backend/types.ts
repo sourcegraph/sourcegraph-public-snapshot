@@ -60,6 +60,12 @@ export interface BackendInsightFilters {
     includeRepoRegexp: string | null
 }
 
+export interface DataSeries {
+    name: string
+    stroke: string
+    query: string
+}
+
 export interface BackendInsightInputs {
     id: string
     filters?: BackendInsightFilters
