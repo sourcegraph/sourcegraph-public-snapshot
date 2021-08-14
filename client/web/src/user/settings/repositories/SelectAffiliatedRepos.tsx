@@ -36,6 +36,7 @@ interface authenticatedUser {
 interface Props extends TelemetryProps {
     authenticatedUser: authenticatedUser
     onRepoSelectionModeChange: Dispatch<SetStateAction<RepoSelectionMode>>
+    repoSelectionMode: RepoSelectionMode
     onError: (error: ErrorLike) => void
 }
 
@@ -86,6 +87,7 @@ const initialSelectionState = {
 export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     authenticatedUser,
     onRepoSelectionModeChange,
+    repoSelectionMode,
     telemetryService,
     onError,
 }) => {
@@ -93,7 +95,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    const { setComplete, currentIndex } = useSteps()
+    const { setComplete, resetToTheRight, currentIndex } = useSteps()
     const { externalServices, errorServices, loadingServices } = useExternalServices(authenticatedUser.id)
     const { affiliatedRepos, errorAffiliatedRepos, loadingAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
     const { selectedRepos, errorSelectedRepos, loadingSelectedRepos } = useSelectedRepos(authenticatedUser.id)
@@ -109,9 +111,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
-
-    // if 'sync all' radio button is enabled and users can sync all repos from code hosts
-    const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
     const [isRedesignEnabled] = useRedesignToggle()
@@ -129,6 +128,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     useEffect(() => {
         if (externalServices && affiliatedRepos) {
+            debugger
             const codeHostsHaveSyncAllQuery = []
 
             for (const host of externalServices) {
@@ -223,14 +223,14 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
              */
 
             const radioSelectOption =
-                ALLOW_SYNC_ALL &&
+                repoSelectionMode ||
                 ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
                     codeHostsHaveSyncAllQuery.every(Boolean)) ||
-                    affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
+                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size
                     ? 'all'
                     : selectedAffiliatedRepos.size > 0
                     ? 'selected'
-                    : ''
+                    : '')
 
             onRepoSelectionModeChange(radioSelectOption as RepoSelectionMode)
 
@@ -247,7 +247,15 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 loaded: true,
             })
         }
-    }, [externalServices, affiliatedRepos, selectedRepos, ALLOW_SYNC_ALL, onRepoSelectionModeChange])
+    }, [
+        externalServices,
+        affiliatedRepos,
+        selectedRepos,
+        onRepoSelectionModeChange,
+        setComplete,
+        currentIndex,
+        repoSelectionMode,
+    ])
 
     // select repos by code host and query
     useEffect(() => {
@@ -281,36 +289,42 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             loaded: selectionState.loaded,
         })
 
+        if (changeEvent.currentTarget.value === 'all') {
+            saveRepoSelection(affiliatedRepos || [])
+        } else {
+            saveRepoSelection([...selectionState.repos.values()])
+        }
+
         onRepoSelectionModeChange(changeEvent.currentTarget.value as RepoSelectionMode)
     }
+
+    // calculate if the current step is completed based on repo selection when
+    // we toggle between "Sync all" and individual repo selection checkboxes
+    useEffect(() => {
+        if (selectionState.radio) {
+            if (selectionState.radio === 'all') {
+                setComplete(currentIndex, true)
+            } else {
+                const hasSelectedRepos = selectionState.repos.size !== 0
+                if (hasSelectedRepos) {
+                    setComplete(currentIndex, true)
+                } else {
+                    setComplete(currentIndex, false)
+                    resetToTheRight(currentIndex)
+                }
+            }
+        }
+    }, [currentIndex, resetToTheRight, selectionState.radio, selectionState.repos.size, setComplete])
 
     const hasCodeHosts = Array.isArray(externalServices) && externalServices.length > 0
 
     const modeSelect: JSX.Element = (
         <>
             <label className="d-flex flex-row align-items-baseline">
-                <input
-                    type="radio"
-                    value="all"
-                    disabled={!ALLOW_SYNC_ALL}
-                    checked={selectionState.radio === 'all'}
-                    onChange={handleRadioSelect}
-                />
+                <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
                 <div className="d-flex flex-column ml-2">
-                    <p
-                        className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
-                        })}
-                    >
-                        Sync all repositories {!ALLOW_SYNC_ALL && '(coming soon)'}
-                    </p>
-                    <p
-                        className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
-                        })}
-                    >
+                    <p className="mb-0 user-settings-repos__text">Sync all repositories</p>
+                    <p className="user-settings-repos__text">
                         Will sync all current and future public and private repositories
                     </p>
                 </div>
@@ -368,6 +382,23 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         </div>
     )
 
+    const saveRepoSelection = (repos: Repo[]): void => {
+        // save off last selected repos
+        const selection = repos.reduce((accumulator, repo) => {
+            const serviceType = repo.codeHost?.kind.toLowerCase()
+            const serviceName = serviceType ? `${serviceType}.com` : 'unknown'
+
+            accumulator.push({
+                name: `${serviceName}/${repo.name}`,
+                externalRepository: { serviceType: serviceType || 'unknown', id: repo.codeHost?.id },
+            })
+            return accumulator
+        }, [] as MinSelectedRepo[])
+
+        // safe off repo selection to apollo
+        selectedReposVar(selection)
+    }
+
     const onRepoClicked = useCallback(
         (repo: Repo) => (): void => {
             const clickedRepo = getRepoServiceAndName(repo)
@@ -387,22 +418,10 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 setDidSelectionChange(true)
             } else {
                 setComplete(currentIndex, false)
+                resetToTheRight(currentIndex)
             }
 
-            // save off last selected repos
-            const selection = [...newSelection.values()].reduce((accumulator, repo) => {
-                const serviceType = repo.codeHost?.kind.toLowerCase()
-                const serviceName = serviceType ? `${serviceType}.com` : 'unknown'
-
-                accumulator.push({
-                    name: `${serviceName}/${repo.name}`,
-                    externalRepository: { serviceType: serviceType || 'unknown', id: repo.codeHost?.id },
-                })
-                return accumulator
-            }, [] as MinSelectedRepo[])
-
-            // safe off repo selection to apollo
-            selectedReposVar(selection)
+            saveRepoSelection([...newSelection.values()])
 
             // set new selection state
             setSelectionState({
@@ -414,6 +433,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         [
             currentIndex,
             onloadSelectedRepos,
+            resetToTheRight,
             selectionState.loaded,
             selectionState.radio,
             selectionState.repos,
@@ -430,6 +450,9 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 newMap.set(getRepoServiceAndName(repo), repo)
             }
         }
+
+        saveRepoSelection([...newMap.values()])
+
         setSelectionState({
             repos: newMap,
             loaded: selectionState.loaded,
@@ -510,7 +533,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                             {(isLoading || fetchingError) && modeSelectShimmer}
 
                             {/* display type of repo sync radio buttons */}
-                            {hasCodeHosts && selectionState.loaded && modeSelect}
+                            {!isLoading && hasCodeHosts && selectionState.loaded && modeSelect}
 
                             {
                                 // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from

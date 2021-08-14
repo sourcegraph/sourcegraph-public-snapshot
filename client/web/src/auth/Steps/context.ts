@@ -22,6 +22,7 @@ export type Action =
     | { type: 'SET_CURRENT_STEP'; payload: { index: number } }
     | { type: 'SET_COMPLETE_STEP'; payload: { index: number; complete: boolean } }
     | { type: 'SET_STEPS'; payload: { steps: Steps } }
+    | { type: 'RESET_TO_THE_RIGHT'; payload: { index: number } }
 
 export interface StepsContext {
     state: State
@@ -36,6 +37,7 @@ export interface StepListContext {
 interface UseSteps {
     setStep: (index: number) => void
     setComplete: (index: number, complete: boolean) => void
+    resetToTheRight: (index: number) => void
     currentIndex: number
     currentStep: Step
     steps: State['steps']
@@ -78,6 +80,7 @@ export const useSteps = (): UseSteps => {
             setStep: (index: number): void => dispatch({ type: 'SET_CURRENT_STEP', payload: { index } }),
             setComplete: (index: number, complete = true): void =>
                 dispatch({ type: 'SET_COMPLETE_STEP', payload: { index, complete } }),
+            resetToTheRight: (index: number): void => dispatch({ type: 'RESET_TO_THE_RIGHT', payload: { index } }),
         }),
         [dispatch]
     )

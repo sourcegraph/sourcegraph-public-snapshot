@@ -152,6 +152,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 <SelectAffiliatedRepos
                                                     authenticatedUser={user}
                                                     onRepoSelectionModeChange={setRepoSelectionMode}
+                                                    repoSelectionMode={repoSelectionMode}
                                                     telemetryService={telemetryService}
                                                     onError={onError}
                                                 />

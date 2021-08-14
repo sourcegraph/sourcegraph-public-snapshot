@@ -44,6 +44,24 @@ export const reducer = (state: State, action: Action): State => {
                 ...state,
                 steps: { ...action.payload.steps },
             }
+        case 'RESET_TO_THE_RIGHT': {
+            for (const currentIndex in state.steps) {
+                // skip steps to the left
+                if (+currentIndex <= action.payload.index) {
+                    continue
+                }
+
+                const stepToTheRight = state.steps[currentIndex]
+                stepToTheRight.isComplete = false
+                stepToTheRight.isVisited = false
+            }
+
+            return {
+                ...state,
+                steps: state.steps,
+            }
+        }
+
         default:
             throw new Error('wrong action type')
     }

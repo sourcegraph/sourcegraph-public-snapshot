@@ -155,9 +155,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
 
-    // if 'sync all' radio button is enabled and users can sync all repos from code hosts
-    const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
-
     // set up state hooks
     const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
@@ -352,10 +349,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          */
 
         const radioSelectOption =
-            ALLOW_SYNC_ALL &&
-            ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
+            (externalServices.length === codeHostsHaveSyncAllQuery.length &&
                 codeHostsHaveSyncAllQuery.every(Boolean)) ||
-                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
+            affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size
                 ? 'all'
                 : selectedAffiliatedRepos.size > 0
                 ? 'selected'
@@ -373,7 +369,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, ALLOW_SYNC_ALL])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {
@@ -540,25 +536,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <input
                     type="radio"
                     value="all"
-                    disabled={!ALLOW_SYNC_ALL || noCodeHostsOrErrors}
+                    disabled={noCodeHostsOrErrors}
                     checked={selectionState.radio === 'all'}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
-                    <p
-                        className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
-                        })}
-                    >
-                        Sync all repositories {!ALLOW_SYNC_ALL && '(coming soon)'}
-                    </p>
-                    <p
-                        className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
-                        })}
-                    >
+                    <p className="mb-0 user-settings-repos__tex">Sync all repositories</p>
+                    <p className="user-settings-repos__text">
                         Will sync all current and future public and private repositories
                     </p>
                 </div>

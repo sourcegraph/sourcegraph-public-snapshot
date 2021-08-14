@@ -46,7 +46,6 @@ export const useShowAlert = (isDoneCloning: boolean, fetchError: ErrorLike | und
 export const StartSearching: React.FunctionComponent<StartSearching> = ({
     user,
     repoSelectionMode,
-    onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
     onError,
 }) => {
@@ -64,6 +63,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
         userId: user.id,
         pollInterval: 2000,
         selectedReposVar,
+        repoSelectionMode,
     })
 
     const isLoading = loadingServices || cloningStatusLoading
@@ -79,17 +79,18 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     useEffect(() => {
         const selectedRepos = selectedReposVar()
 
-        if (externalServices && selectedRepos) {
+        if (externalServices) {
             for (const host of externalServices) {
-                const repos: string[] = []
-                for (const repo of selectedRepos) {
-                    if (repo.externalRepository.id !== host.id) {
-                        continue
-                    }
+                const repos = selectedRepos
+                    ? selectedRepos.reduce((accumulator, repo) => {
+                          if (repo.externalRepository.id === host.id) {
+                              const nameWithoutService = repo.name.slice(repo.name.indexOf('/') + 1)
+                              accumulator.push(nameWithoutService)
+                          }
 
-                    const nameWithoutService = repo.name.slice(repo.name.indexOf('/') + 1)
-                    repos.push(nameWithoutService)
-                }
+                          return accumulator
+                      }, [] as string[])
+                    : []
 
                 saveSelectedRepos({
                     variables: {
@@ -99,22 +100,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                     },
                 })
                     .then(() => {
-                        // update the external services and the search context
-                        onUserExternalServicesOrRepositoriesUpdate(externalServices.length, selectedRepos.length)
                         setSelectedSearchContextSpec(`@${user.username}`)
                     })
                     .catch(onError)
             }
         }
-    }, [
-        externalServices,
-        saveSelectedRepos,
-        repoSelectionMode,
-        onUserExternalServicesOrRepositoriesUpdate,
-        onError,
-        setSelectedSearchContextSpec,
-        user.username,
-    ])
+    }, [externalServices, saveSelectedRepos, repoSelectionMode, onError, setSelectedSearchContextSpec, user.username])
 
     const { showAlert } = useShowAlert(isDoneCloning, fetchError)
     const { currentIndex, setComplete } = useSteps()
