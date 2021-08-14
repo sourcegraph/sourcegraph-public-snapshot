@@ -27,17 +27,41 @@ func TestStoreQueuedCount(t *testing.T) {
 			(2, 'queued', NOW() - '2 minute'::interval),
 			(3, 'state2', NOW() - '3 minute'::interval),
 			(4, 'queued', NOW() - '4 minute'::interval),
-			(5, 'state2', NOW() - '5 minute'::interval)
+			(5, 'processing', NOW() - '5 minute'::interval)
 	`); err != nil {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), nil)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
 	if count != 3 {
 		t.Errorf("unexpected count. want=%d have=%d", 3, count)
+	}
+}
+
+func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, uploaded_at)
+		VALUES
+			(1, 'queued', NOW() - '1 minute'::interval),
+			(2, 'queued', NOW() - '2 minute'::interval),
+			(3, 'state2', NOW() - '3 minute'::interval),
+			(4, 'queued', NOW() - '4 minute'::interval),
+			(5, 'processing', NOW() - '5 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), true, nil)
+	if err != nil {
+		t.Fatalf("unexpected error getting queued count: %s", err)
+	}
+	if count != 4 {
+		t.Errorf("unexpected count. want=%d have=%d", 4, count)
 	}
 }
 
@@ -57,7 +81,7 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), nil)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -82,7 +106,7 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), conditions)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, conditions)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}

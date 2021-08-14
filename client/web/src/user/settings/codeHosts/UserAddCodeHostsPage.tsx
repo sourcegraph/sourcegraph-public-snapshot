@@ -124,7 +124,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
-            eventLogger.log('AddRepositoriesLinkClicked', null, { source })
+            eventLogger.log('UserSettingsAddRepositoriesCTAClicked', null, { source })
         },
         []
     )

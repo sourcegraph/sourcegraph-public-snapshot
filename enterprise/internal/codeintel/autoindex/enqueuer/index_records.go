@@ -10,14 +10,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
+type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error)
+
 // getIndexRecords determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
 //
+//  - supplied explicitly via parameter
 //  - in the database
 //  - committed to `sourcegraph.yaml` in the repository
 //  - inferred from the repository structure
-func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, commit string) ([]store.Index, error) {
-	fns := []func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error){
+func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string) ([]store.Index, error) {
+	fns := []configurationFactoryFunc{
+		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
 		s.getIndexRecordsFromConfigurationInRepository,
 		s.inferIndexRecordsFromRepositoryStructure,
@@ -32,6 +36,28 @@ func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, c
 	}
 
 	return nil, nil
+}
+
+// makeExplicitConfigurationFactory returns a factory that returns a set of index jobs configured
+// explicitly via a GraphQL query parameter. If no configuration was supplield then a false valued
+// flag is returned.
+func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
+	return func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
+		if configuration == "" {
+			return nil, false, nil
+		}
+
+		indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))
+		if err != nil {
+			// We failed here, but do not try to fall back on another method as having
+			// an explicit config supplied via parameter should always take precedence,
+			// even if it's broken.
+			log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+			return nil, true, nil
+		}
+
+		return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
+	}
 }
 
 // getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for

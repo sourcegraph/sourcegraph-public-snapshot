@@ -1,4 +1,5 @@
 import classnames from 'classnames'
+import { escapeRegExp } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -43,7 +44,9 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
         input: { isChecked, onChange, onBlur },
     } = useCheckboxes('insightIds', formAPI)
 
-    const filteredInsights = insights.filter(insight => insight.title.match(new RegExp(searchInput.input.value, 'gi')))
+    const filteredInsights = insights.filter(insight =>
+        insight.title.match(new RegExp(escapeRegExp(searchInput.input.value), 'gi'))
+    )
 
     return (
         // eslint-disable-next-line react/forbid-elements

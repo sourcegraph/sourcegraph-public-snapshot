@@ -634,6 +634,14 @@ commands:
   postgres_exporter:
     cmd: ./dev/postgres_exporter.sh
 
+  monitoring-generator:
+    cmd: go generate ./monitoring
+    env:
+      RELOAD: true
+    watch:
+      - monitoring
+    continueWatchOnExit: true
+
 checks:
   docker:
     cmd: docker version
@@ -818,6 +826,7 @@ commandsets:
       - prometheus
       - grafana
       - postgres_exporter
+      - monitoring-generator
 
   monitoring-alerts:
     checks:

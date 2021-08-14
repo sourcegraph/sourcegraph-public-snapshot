@@ -233,11 +233,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 		// Temporary redirect so at some point we can reuse the /campaigns path, if needed.
 		http.Redirect(w, r, auth.SafeRedirectURL(r.URL.String()), http.StatusTemporaryRedirect)
 	}))
-	if envvar.SourcegraphDotComMode() {
-		router.Get(routeBatchChanges).Handler(staticRedirectHandler("https://about.sourcegraph.com/batch-changes", http.StatusTemporaryRedirect))
-	} else {
-		router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
-	}
+	router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
 	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil)))
 	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil)))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))

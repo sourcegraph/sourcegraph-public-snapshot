@@ -31,4 +31,4 @@ RUN apk add --no-cache ca-certificates mailcap tini curl
 # Manually upgrade upgrade libxml2 packages due CVE's
 # See https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3517 and https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3518
 # hadolint ignore=DL3018
-RUN apk add --upgrade --no-cache libxml2
+RUN apk add --upgrade --no-cache libxml2=2.9.12-r0  apk-tools=2.10.8-r0
