@@ -82,6 +82,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		wantCreateDraftOnCodeHost bool
 		wantUndraftOnCodeHost     bool
 		wantUpdateOnCodeHost      bool
+		wantUpdateDraftOnCodeHost bool
 		wantCloseOnCodeHost       bool
 		wantLoadFromCodeHost      bool
 		wantReopenOnCodeHost      bool
@@ -210,6 +211,36 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			// We don't want a new commit, only an update on the code host.
 			wantUpdateOnCodeHost: true,
+
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
+				DiffStat:         state.DiffStat,
+				// We update the title/body but want the title/body returned by the code host.
+				Title: githubPR.Title,
+				Body:  githubPR.Body,
+			},
+		},
+		"update draft": {
+			hasCurrentSpec: true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalID:       "12345",
+				ExternalBranch:   "head-ref-on-github",
+				ExternalState:    btypes.ChangesetExternalStateDraft,
+			},
+
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationUpdate,
+				},
+			},
+
+			// We don't want a new commit, only an update on the code host.
+			wantUpdateOnCodeHost:      true,
+			wantUpdateDraftOnCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
@@ -538,6 +569,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			if have, want := fakeSource.UpdateChangesetCalled, tc.wantUpdateOnCodeHost; have != want {
 				t.Fatalf("wrong UpdateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if have, want := fakeSource.UpdateDraftChangesetCalled, tc.wantUpdateDraftOnCodeHost; have != want {
+				t.Fatalf("wrong UpdateDraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
 			if have, want := fakeSource.ReopenChangesetCalled, tc.wantReopenOnCodeHost; have != want {

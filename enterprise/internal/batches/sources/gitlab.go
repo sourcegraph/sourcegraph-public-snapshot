@@ -24,6 +24,9 @@ type GitLabSource struct {
 	au     auth.Authenticator
 }
 
+var _ ChangesetSource = &GitLabSource{}
+var _ DraftChangesetSource = &GitLabSource{}
+
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
@@ -409,6 +412,13 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 // UndraftChangeset marks the changeset as *not* work in progress anymore.
 func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
 	c.Title = gitlab.UnsetWIP(c.Title)
+	return s.UpdateChangeset(ctx, c)
+}
+
+// UpdateDraftChangeset updates a Changeset on the source, being careful to
+// retain its draft status.
+func (s *GitLabSource) UpdateDraftChangeset(ctx context.Context, c *Changeset) error {
+	c.Title = gitlab.SetWIP(c.Title)
 	return s.UpdateChangeset(ctx, c)
 }
 

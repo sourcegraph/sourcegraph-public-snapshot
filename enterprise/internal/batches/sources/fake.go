@@ -42,6 +42,7 @@ type FakeChangesetSource struct {
 	UndraftedChangesetsCalled   bool
 	CreateChangesetCalled       bool
 	UpdateChangesetCalled       bool
+	UpdateDraftChangesetCalled  bool
 	ListReposCalled             bool
 	ExternalServicesCalled      bool
 	LoadChangesetCalled         bool
@@ -184,6 +185,11 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *Changeset)
 
 	s.UpdatedChangesets = append(s.UpdatedChangesets, c)
 	return c.SetMetadata(s.FakeMetadata)
+}
+
+func (s *FakeChangesetSource) UpdateDraftChangeset(ctx context.Context, c *Changeset) error {
+	s.UpdateDraftChangesetCalled = true
+	return s.UpdateChangeset(ctx, c)
 }
 
 var fakeNotImplemented = errors.New("not implemented in FakeChangesetSource")
