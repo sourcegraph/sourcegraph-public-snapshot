@@ -161,6 +161,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
     const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
+    const [onloadRadioValue, setOnloadRadioValue] = useState('')
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
@@ -349,13 +350,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          */
 
         const radioSelectOption =
-            (externalServices.length === codeHostsHaveSyncAllQuery.length &&
-                codeHostsHaveSyncAllQuery.every(Boolean)) ||
-            affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size
+            externalServices.length === codeHostsHaveSyncAllQuery.length && codeHostsHaveSyncAllQuery.every(Boolean)
                 ? 'all'
                 : selectedAffiliatedRepos.size > 0
                 ? 'selected'
                 : ''
+
+        setOnloadRadioValue(radioSelectOption)
 
         // set sorted repos and mark as loaded
         setRepoState(previousRepoState => ({
@@ -435,8 +436,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
 
-        return !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
-    }, [onloadSelectedRepos, publicRepoState.enabled, publicRepoState.repos, selectionState.repos])
+        return (
+            selectionState.radio !== onloadRadioValue ||
+            !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+        )
+    }, [
+        onloadSelectedRepos,
+        publicRepoState.enabled,
+        publicRepoState.repos,
+        selectionState.repos,
+        selectionState.radio,
+        onloadRadioValue,
+    ])
 
     // save changes and update code hosts
     const submit = useCallback(

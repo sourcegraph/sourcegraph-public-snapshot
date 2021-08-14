@@ -222,9 +222,8 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
             const radioSelectOption =
                 repoSelectionMode ||
-                ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
-                    codeHostsHaveSyncAllQuery.every(Boolean)) ||
-                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size
+                (externalServices.length === codeHostsHaveSyncAllQuery.length &&
+                codeHostsHaveSyncAllQuery.every(Boolean)
                     ? 'all'
                     : selectedAffiliatedRepos.size > 0
                     ? 'selected'
